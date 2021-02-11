@@ -102,7 +102,7 @@ class TestCARootProvider(cloudstackTestCase):
         certificate = self.getCaCertificate()
         self.assertTrue(len(certificate) > 0)
 
-        cert =  x509.load_pem_x509_certificate(str(certificate), default_backend())
+        cert =  x509.load_pem_x509_certificate(certificate.encode(), default_backend())
         self.assertEqual(cert.signature_hash_algorithm.name, 'sha256')
         self.assertEqual(cert.issuer.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)[0].value, 'ca.cloudstack.apache.org')
 
@@ -122,7 +122,7 @@ class TestCARootProvider(cloudstackTestCase):
         self.assertTrue(len(response.cacertificates) > 0)
         self.assertTrue(len(response.certificate) > 0)
 
-        cert =  x509.load_pem_x509_certificate(str(response.certificate), default_backend())
+        cert =  x509.load_pem_x509_certificate(response.certificate.encode(), default_backend())
 
         # Validate basic certificate attributes
         self.assertEqual(cert.signature_hash_algorithm.name, 'sha256')
@@ -139,9 +139,9 @@ class TestCARootProvider(cloudstackTestCase):
         global PUBKEY_VERIFY
         if not PUBKEY_VERIFY:
             return
-        caCert =  x509.load_pem_x509_certificate(str(self.getCaCertificate()), default_backend())
+        caCert =  x509.load_pem_x509_certificate(self.getCaCertificate().encode(), default_backend())
         x = X509()
-        x.set_pubkey(load_publickey(FILETYPE_PEM, str(caCert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo))))
+        x.set_pubkey(load_publickey(FILETYPE_PEM, caCert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)))
         verify(x, cert.signature, cert.tbs_certificate_bytes, cert.signature_hash_algorithm.name)
 
 
@@ -158,8 +158,7 @@ class TestCARootProvider(cloudstackTestCase):
         self.assertTrue(response.privatekey is None)
         self.assertTrue(len(response.cacertificates) > 0)
         self.assertTrue(len(response.certificate) > 0)
-
-        cert =  x509.load_pem_x509_certificate(str(response.certificate), default_backend())
+        cert =  x509.load_pem_x509_certificate(response.certificate.encode(), default_backend())
 
         # Validate basic certificate attributes
         self.assertEqual(cert.signature_hash_algorithm.name, 'sha256')
@@ -169,9 +168,9 @@ class TestCARootProvider(cloudstackTestCase):
         global PUBKEY_VERIFY
         if not PUBKEY_VERIFY:
             return
-        caCert =  x509.load_pem_x509_certificate(str(self.getCaCertificate()), default_backend())
+        caCert =  x509.load_pem_x509_certificate(self.getCaCertificate().encode(), default_backend())
         x = X509()
-        x.set_pubkey(load_publickey(FILETYPE_PEM, str(caCert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo))))
+        x.set_pubkey(load_publickey(FILETYPE_PEM, caCert.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)))
         verify(x, cert.signature, cert.tbs_certificate_bytes, cert.signature_hash_algorithm.name)
 
 
@@ -184,8 +183,9 @@ class TestCARootProvider(cloudstackTestCase):
         cmd.serial = 'abc123' # hex value
         cmd.cn = 'example.com'
         cmd.provider = 'root'
-
-        self.dbclient.execute("delete from crl where serial='%s'" % cmd.serial)
+        serials = self.dbclient.execute(f"select serial, cn from crl where serial='{cmd.serial}'")
+        if len(serials) > 0:
+            self.dbclient.execute(f"delete from crl where serial='{cmd.serial}'")
 
         response = self.apiclient.revokeCertificate(cmd)
         self.assertTrue(response.success)
