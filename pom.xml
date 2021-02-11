@@ -960,6 +960,7 @@
                             <exclude>**/*.md</exclude>
                             <exclude>.java-version</exclude>
                             <exclude>.python-version</exclude>
+                            <exclude>systemvm/.pythen-version</exclude>
                             <exclude>.idea/</exclude>
                             <exclude>.metadata/**</exclude>
                             <exclude>.git/**</exclude>
