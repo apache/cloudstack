@@ -21,12 +21,13 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVMActivityOnStoragePoolCommand;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.kvm.resource.KvmAgentHaClient;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
@@ -51,6 +52,7 @@ import org.joda.time.DateTime;
 import java.util.HashMap;
 import java.util.List;
 
+
 public class KVMHostActivityChecker extends AdapterBase implements ActivityCheckerInterface<Host>, HealthCheckerInterface<Host> {
     private final static Logger LOG = Logger.getLogger(KVMHostActivityChecker.class);
 
@@ -66,6 +68,8 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     private StorageManager storageManager;
     @Inject
     private ResourceManager resourceManager;
+    @Inject
+    private ClusterDao clusterDao;
 
     @Override
     public boolean isActive(Host r, DateTime suspectTime) throws HACheckerException {
@@ -87,21 +91,41 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         HashMap<StoragePool, List<Volume>> poolVolMap = getVolumeUuidOnHost(r);
         isHealthy = isHealthyCheckViaNfs(r, isHealthy, poolVolMap);
 
-        KvmAgentHaClient kvmAgentHaClient = new KvmAgentHaClient(r);
-        List<VMInstanceVO> vmsOnHost = vmInstanceDao.listByHostId(r.getId());
-        boolean checkKvmHeatlh = kvmAgentHaClient.checkAgentHealthAndRunningVms(vmsOnHost.size());
+        isHealthy = checkHealthViaKvmHaWebservice(r, isHealthy);
 
-        if(!isHealthy && checkKvmHeatlh) {
-            isHealthy = true;
+        return isHealthy;
+    }
+
+    /**
+     * Checks the host healthy via an web-service that retrieves Running KVM instances via libvirt. <br>
+     * The health-check is executed on the KVM node and verifies the amount of VMs running and if the libvirt service is running. <br><br>
+     *
+     * One can enable or disable it via global settings 'kvm.ha.webservice.enabled'.
+     */
+    private boolean checkHealthViaKvmHaWebservice(Host r, boolean isHealthy) {
+        KvmHaAgentClient kvmHaAgentClient = new KvmHaAgentClient(r);
+        if(!kvmHaAgentClient.isKvmHaWebserviceEnabled()) {
+            ClusterVO cluster = clusterDao.findById(r.getClusterId());
+            LOG.debug(String.format("Skipping KVM HA web-service verification for %s due to 'kvm.ha.webservice.enabled' not enabled for cluster [id: %d, name: %s].",
+                    r.toString(), cluster.getId(), cluster.getName()));
+            return isHealthy;
         }
 
+//        List<VMInstanceVO> vmsOnHost = kvmHaAgentClient.listVmsRunningMigratingStopping(r);
+//        List<VMInstanceVO> vmsOnHost = vmInstanceDao.listByHostAndState(r.getId(), VirtualMachine.State.Running);
+//        vmsOnHost.addAll(vmInstanceDao.listByHostAndState(r.getId(), VirtualMachine.State.Stopping));
+//        vmsOnHost.addAll(vmInstanceDao.listByHostAndState(r.getId(), VirtualMachine.State.Migrating));
+        boolean isKvmHaAgentHealthy = kvmHaAgentClient.isKvmHaAgentHealthy(r, vmInstanceDao);
+
+        if (!isHealthy && isKvmHaAgentHealthy) {
+            isHealthy = true;
+        }
         return isHealthy;
     }
 
     private boolean isHealthyCheckViaNfs(Host r, boolean isHealthy, HashMap<StoragePool, List<Volume>> poolVolMap) {
         for (StoragePool pool : poolVolMap.keySet()) {
             if(Storage.StoragePoolType.NetworkFilesystem == pool.getPoolType()
-                    || Storage.StoragePoolType.ManagedNFS == pool.getPoolType()
                     || Storage.StoragePoolType.ManagedNFS == pool.getPoolType()) {
                 isHealthy = isAgentActive(r);
             }
@@ -176,13 +200,12 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         if (agent.getHypervisorType() != Hypervisor.HypervisorType.KVM && agent.getHypervisorType() != Hypervisor.HypervisorType.LXC) {
             throw new IllegalStateException(String.format("Calling KVM investigator for non KVM Host of type [%s].", agent.getHypervisorType()));
         }
-        boolean activityStatus = false;
+        boolean activityStatus = true;
         HashMap<StoragePool, List<Volume>> poolVolMap = getVolumeUuidOnHost(agent);
         for (StoragePool pool : poolVolMap.keySet()) {
             if(Storage.StoragePoolType.NetworkFilesystem == pool.getPoolType()
-                    || Storage.StoragePoolType.ManagedNFS == pool.getPoolType()
                     || Storage.StoragePoolType.ManagedNFS == pool.getPoolType()) {
-                activityStatus = verifyActivityOfStorageOnHost(poolVolMap, pool, agent, suspectTime, activityStatus);
+                activityStatus = checkVmActivityOnStoragePool(poolVolMap, pool, agent, suspectTime, activityStatus);
                 if (!activityStatus) {
                     LOG.warn(String.format("It seems that the storage pool [%s] does not have activity on %s.", pool.getId(), agent.toString()));
                     break;
@@ -190,21 +213,16 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
             }
         }
 
-        KvmAgentHaClient kvmAgentHaClient = new KvmAgentHaClient(agent);
-        List<VMInstanceVO> vmsOnHost = vmInstanceDao.listByHostId(agent.getId());
-        boolean isVmsOnKvmMatchingWithDatabase = kvmAgentHaClient.checkAgentHealthAndRunningVms(vmsOnHost.size());
+        activityStatus = checkHealthViaKvmHaWebservice(agent, activityStatus);
 
-        if(!activityStatus && isVmsOnKvmMatchingWithDatabase) {
-            activityStatus = true;
-        } else {
+        if(!activityStatus){
             LOG.warn(String.format("No VM activity detected on %s. This might trigger HA Host Recovery and/or Fence.", agent.toString()));
         }
 
         return activityStatus;
     }
 
-
-    protected boolean verifyActivityOfStorageOnHost(HashMap<StoragePool, List<Volume>> poolVolMap, StoragePool pool, Host agent, DateTime suspectTime, boolean activityStatus) throws HACheckerException, IllegalStateException {
+    private boolean checkVmActivityOnStoragePool(HashMap<StoragePool, List<Volume>> poolVolMap, StoragePool pool, Host agent, DateTime suspectTime, boolean activityStatus) throws HACheckerException, IllegalStateException {
         List<Volume> volume_list = poolVolMap.get(pool);
         final CheckVMActivityOnStoragePoolCommand cmd = new CheckVMActivityOnStoragePoolCommand(agent, pool, volume_list, suspectTime);
 

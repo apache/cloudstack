@@ -53,4 +53,11 @@ public class KVMHAConfig {
     public static final ConfigKey<Long> KvmHAFenceTimeout = new ConfigKey<>("Advanced", Long.class, "kvm.ha.fence.timeout", "60",
             "The maximum length of time, in seconds, expected for a fence operation to complete.", true, ConfigKey.Scope.Cluster);
 
+    public static final ConfigKey<Integer> KVM_HA_WEBSERVICE_PORT = new ConfigKey<Integer>("Advanced", Integer.class, "kvm.ha.webservice.port", "8080",
+            "It sets the port used to communicate with the KVM HA Agent Microservice that is running on KVM nodes. Default value is 8080.",
+            true, ConfigKey.Scope.Cluster);
+
+    public static final ConfigKey<Boolean> KVM_HA_WEBSERVICE_ENABLED = new ConfigKey<Boolean>("Advanced", Boolean.class, "kvm.ha.webservice.enabled", "true",
+            "The KVM HA Webservice is executed on the KVM node and checks the amount of VMs running via libvirt. It serves as a HA health-check for KVM nodes. One can enable (set to 'true') or disable it ('false'). If disabled then CloudStack ignores HA validation via this agent.",
+            true, ConfigKey.Scope.Cluster);
 }
