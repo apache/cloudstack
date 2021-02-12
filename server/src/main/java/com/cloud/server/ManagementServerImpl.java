@@ -1508,7 +1508,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         StoragePool srcVolumePool = _poolDao.findById(volume.getPoolId());
-        allPools = getAllStoragePoolCompatileWithVolumeSourceStoragePool(srcVolumePool);
+        allPools = getAllStoragePoolsCompatibleWithVolumeSourceStoragePool(srcVolumePool);
         if (vm != null) {
             suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, srcVolumePool);
         } else {
@@ -1546,23 +1546,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      *  <li>We also all storage available filtering by data center, pod and cluster as the current storage pool used by the given volume.</li>
      * </ul>
      */
-    private List<? extends StoragePool> getAllStoragePoolCompatileWithVolumeSourceStoragePool(StoragePool srcVolumePool) {
+    private List<? extends StoragePool> getAllStoragePoolsCompatibleWithVolumeSourceStoragePool(StoragePool srcVolumePool) {
         List<StoragePoolVO> storagePools = new ArrayList<>();
-        List<StoragePoolVO> clusterAndLocalStoragePools = _poolDao.listBy(srcVolumePool.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null);
-        if (CollectionUtils.isNotEmpty(clusterAndLocalStoragePools)) {
-            clusterAndLocalStoragePools.remove(srcVolumePool);
-            storagePools.addAll(clusterAndLocalStoragePools);
-        }
-        if (srcVolumePool.getClusterId() == null) {
-            // Return the pools as the above storage pools list would also contain zone wide pools when srcVolumePool is a zone wide pool
-            return storagePools;
+        // Storage pool with Zone Scope holds valid DataCenter Id only, Pod Id and Cluster Id are null
+        // Storage pool with Cluster/Host Scope holds valid DataCenter Id, Pod Id and Cluster Id
+        // Below methods call returns all the compatible pools with scope : ZONE, CLUSTER, HOST (as they are listed with Scope: null here)
+        List<StoragePoolVO> compatibleStoragePools = _poolDao.listBy(srcVolumePool.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null);
+        if (CollectionUtils.isNotEmpty(compatibleStoragePools)) {
+            compatibleStoragePools.remove(srcVolumePool);
+            storagePools.addAll(compatibleStoragePools);
         }
 
-        List<StoragePoolVO> zoneWideStoragePools = _poolDao.findZoneWideStoragePoolsByTags(srcVolumePool.getDataCenterId(), null);
-        if (CollectionUtils.isNotEmpty(zoneWideStoragePools)) {
-            zoneWideStoragePools.remove(srcVolumePool);
-            storagePools.addAll(zoneWideStoragePools);
-        }
         return storagePools;
     }
 
