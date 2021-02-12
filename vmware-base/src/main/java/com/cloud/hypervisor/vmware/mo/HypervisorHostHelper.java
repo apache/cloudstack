@@ -18,6 +18,7 @@ package com.cloud.hypervisor.vmware.mo;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URI;
@@ -28,6 +29,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -37,17 +39,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import com.vmware.vim25.ConcurrentAccessFaultMsg;
-import com.vmware.vim25.DuplicateNameFaultMsg;
-import com.vmware.vim25.FileFaultFaultMsg;
-import com.vmware.vim25.InsufficientResourcesFaultFaultMsg;
-import com.vmware.vim25.InvalidDatastoreFaultMsg;
-import com.vmware.vim25.InvalidNameFaultMsg;
-import com.vmware.vim25.InvalidStateFaultMsg;
-import com.vmware.vim25.OutOfBoundsFaultMsg;
-import com.vmware.vim25.RuntimeFaultFaultMsg;
-import com.vmware.vim25.TaskInProgressFaultMsg;
-import com.vmware.vim25.VmConfigFaultFaultMsg;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
@@ -80,19 +71,20 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.nicira.nvp.plugin.NiciraNvpApiVersion;
-import com.vmware.vim25.OvfCreateDescriptorParams;
-import com.vmware.vim25.OvfCreateDescriptorResult;
 import com.vmware.vim25.AlreadyExistsFaultMsg;
 import com.vmware.vim25.BoolPolicy;
-import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.ClusterConfigInfoEx;
-import com.vmware.vim25.DatacenterConfigInfo;
+import com.vmware.vim25.ConcurrentAccessFaultMsg;
+import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DVPortSetting;
 import com.vmware.vim25.DVPortgroupConfigInfo;
 import com.vmware.vim25.DVPortgroupConfigSpec;
 import com.vmware.vim25.DVSSecurityPolicy;
 import com.vmware.vim25.DVSTrafficShapingPolicy;
+import com.vmware.vim25.DatacenterConfigInfo;
+import com.vmware.vim25.DuplicateNameFaultMsg;
 import com.vmware.vim25.DynamicProperty;
+import com.vmware.vim25.FileFaultFaultMsg;
 import com.vmware.vim25.HostNetworkSecurityPolicy;
 import com.vmware.vim25.HostNetworkTrafficShapingPolicy;
 import com.vmware.vim25.HostPortGroup;
@@ -101,6 +93,10 @@ import com.vmware.vim25.HostVirtualSwitch;
 import com.vmware.vim25.HttpNfcLeaseDeviceUrl;
 import com.vmware.vim25.HttpNfcLeaseInfo;
 import com.vmware.vim25.HttpNfcLeaseState;
+import com.vmware.vim25.InsufficientResourcesFaultFaultMsg;
+import com.vmware.vim25.InvalidDatastoreFaultMsg;
+import com.vmware.vim25.InvalidNameFaultMsg;
+import com.vmware.vim25.InvalidStateFaultMsg;
 import com.vmware.vim25.LocalizedMethodFault;
 import com.vmware.vim25.LongPolicy;
 import com.vmware.vim25.ManagedObjectReference;
@@ -108,11 +104,16 @@ import com.vmware.vim25.MethodFault;
 import com.vmware.vim25.NumericRange;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.OptionValue;
+import com.vmware.vim25.OutOfBoundsFaultMsg;
+import com.vmware.vim25.OvfCreateDescriptorParams;
+import com.vmware.vim25.OvfCreateDescriptorResult;
 import com.vmware.vim25.OvfCreateImportSpecParams;
 import com.vmware.vim25.OvfCreateImportSpecResult;
-import com.vmware.vim25.OvfFileItem;
 import com.vmware.vim25.OvfFile;
+import com.vmware.vim25.OvfFileItem;
 import com.vmware.vim25.ParaVirtualSCSIController;
+import com.vmware.vim25.RuntimeFaultFaultMsg;
+import com.vmware.vim25.TaskInProgressFaultMsg;
 import com.vmware.vim25.VMwareDVSConfigSpec;
 import com.vmware.vim25.VMwareDVSPortSetting;
 import com.vmware.vim25.VMwareDVSPortgroupPolicy;
@@ -121,25 +122,24 @@ import com.vmware.vim25.VMwareDVSPvlanMapEntry;
 import com.vmware.vim25.VirtualBusLogicController;
 import com.vmware.vim25.VirtualController;
 import com.vmware.vim25.VirtualDevice;
-import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
+import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualIDEController;
 import com.vmware.vim25.VirtualLsiLogicController;
 import com.vmware.vim25.VirtualLsiLogicSASController;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
+import com.vmware.vim25.VirtualMachineImportSpec;
 import com.vmware.vim25.VirtualMachineVideoCard;
 import com.vmware.vim25.VirtualSCSIController;
 import com.vmware.vim25.VirtualSCSISharing;
-import com.vmware.vim25.VirtualMachineImportSpec;
+import com.vmware.vim25.VmConfigFaultFaultMsg;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchTrunkVlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanSpec;
-import java.io.FileWriter;
-import java.util.UUID;
 
 public class HypervisorHostHelper {
     private static final Logger s_logger = Logger.getLogger(HypervisorHostHelper.class);
@@ -152,6 +152,48 @@ public class HypervisorHostHelper {
     private static final String OVA_OPTION_KEY_BOOTDISK = "cloud.ova.bootdisk";
     public static final String VSPHERE_DATASTORE_BASE_FOLDER = "fcd";
     public static final String VSPHERE_DATASTORE_HIDDEN_FOLDER = ".hidden";
+
+    protected final static Map<String, Integer> apiVersionHardwareVersionMap;
+
+    static {
+        apiVersionHardwareVersionMap = new HashMap<String, Integer>();
+        apiVersionHardwareVersionMap.put("3.5", 4);
+        apiVersionHardwareVersionMap.put("3.6", 4);
+        apiVersionHardwareVersionMap.put("3.7", 4);
+        apiVersionHardwareVersionMap.put("3.8", 4);
+        apiVersionHardwareVersionMap.put("3.9", 4);
+        apiVersionHardwareVersionMap.put("4.0", 7);
+        apiVersionHardwareVersionMap.put("4.1", 7);
+        apiVersionHardwareVersionMap.put("4.2", 7);
+        apiVersionHardwareVersionMap.put("4.3", 7);
+        apiVersionHardwareVersionMap.put("4.4", 7);
+        apiVersionHardwareVersionMap.put("4.5", 7);
+        apiVersionHardwareVersionMap.put("4.6", 7);
+        apiVersionHardwareVersionMap.put("4.7", 7);
+        apiVersionHardwareVersionMap.put("4.8", 7);
+        apiVersionHardwareVersionMap.put("4.9", 7);
+        apiVersionHardwareVersionMap.put("5.0", 8);
+        apiVersionHardwareVersionMap.put("5.1", 9);
+        apiVersionHardwareVersionMap.put("5.2", 9);
+        apiVersionHardwareVersionMap.put("5.3", 9);
+        apiVersionHardwareVersionMap.put("5.4", 9);
+        apiVersionHardwareVersionMap.put("5.5", 10);
+        apiVersionHardwareVersionMap.put("5.6", 10);
+        apiVersionHardwareVersionMap.put("5.7", 10);
+        apiVersionHardwareVersionMap.put("5.8", 10);
+        apiVersionHardwareVersionMap.put("5.9", 10);
+        apiVersionHardwareVersionMap.put("6.0", 11);
+        apiVersionHardwareVersionMap.put("6.1", 11);
+        apiVersionHardwareVersionMap.put("6.2", 11);
+        apiVersionHardwareVersionMap.put("6.3", 11);
+        apiVersionHardwareVersionMap.put("6.4", 11);
+        apiVersionHardwareVersionMap.put("6.5", 13);
+        apiVersionHardwareVersionMap.put("6.6", 13);
+        apiVersionHardwareVersionMap.put("6.7", 14);
+        apiVersionHardwareVersionMap.put("6.8", 14);
+        apiVersionHardwareVersionMap.put("6.9", 14);
+        apiVersionHardwareVersionMap.put("7.0", 17);
+    }
 
     public static VirtualMachineMO findVmFromObjectContent(VmwareContext context, ObjectContent[] ocs, String name, String instanceNameCustomField) {
 
@@ -2210,5 +2252,19 @@ public class HypervisorHostHelper {
             // Adding another directory so vCentre doesn't remove the fcd directory when it's empty
             dsMo.makeDirectory(hiddenFolderPath, hyperHost.getHyperHostDatacenter());
         }
+    }
+
+    public static Integer getHostHardwareVersion(VmwareHypervisorHost host) {
+        Integer version = null;
+        HostMO hostMo = new HostMO(host.getContext(), host.getMor());
+        String hostApiVersion = "";
+        try {
+            hostApiVersion = hostMo.getHostAboutInfo().getApiVersion();
+        } catch (Exception ignored) {}
+        if (hostApiVersion == null) {
+            hostApiVersion = "";
+        }
+        version = apiVersionHardwareVersionMap.get(hostApiVersion);
+        return version;
     }
 }

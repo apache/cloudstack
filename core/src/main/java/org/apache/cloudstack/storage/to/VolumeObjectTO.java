@@ -19,7 +19,6 @@
 
 package org.apache.cloudstack.storage.to;
 
-import com.cloud.storage.MigrationOptions;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 import com.cloud.agent.api.to.DataObjectType;
@@ -27,6 +26,7 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOffering.DiskCacheMode;
+import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 
@@ -62,6 +62,7 @@ public class VolumeObjectTO implements DataTO {
     private Hypervisor.HypervisorType hypervisorType;
     private MigrationOptions migrationOptions;
     private boolean directDownload;
+    private String dataStoreUuid;
     private boolean deployAsIs;
     private String updatedDataStoreUUID;
     private String vSphereStoragePolicyId;
@@ -317,6 +318,14 @@ public class VolumeObjectTO implements DataTO {
 
     public boolean isDirectDownload() {
         return directDownload;
+    }
+
+    public String getDataStoreUuid() {
+        return dataStoreUuid;
+    }
+
+    public void setDataStoreUuid(String dataStoreUuid) {
+        this.dataStoreUuid = dataStoreUuid;
     }
 
     public boolean isDeployAsIs() {

@@ -24,6 +24,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.domain.dao.DomainDetailsDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
@@ -124,6 +125,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     private NetworkDomainDao _networkDomainDao;
     @Inject
     private ConfigurationManager _configMgr;
+    @Inject
+    private DomainDetailsDao _domainDetailsDao;
 
     @Inject
     MessageBus _messageBus;
@@ -333,6 +336,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                     s_logger.debug("Domain specific Virtual IP ranges " + " are successfully released as a part of domain id=" + domain.getId() + " cleanup.");
                 }
 
+                cleanupDomainDetails(domain.getId());
                 cleanupDomainOfferings(domain.getId());
                 CallContext.current().putContextParameter(Domain.class, domain.getUuid());
                 return true;
@@ -445,6 +449,10 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             throw e;
         }
         _messageBus.publish(_name, MESSAGE_REMOVE_DOMAIN_EVENT, PublishScope.LOCAL, domain);
+    }
+
+    protected void cleanupDomainDetails(Long domainId) {
+        _domainDetailsDao.deleteDetails(domainId);
     }
 
     protected void cleanupDomainOfferings(Long domainId) {
