@@ -33,17 +33,17 @@ _multiprocess_shared_ = True
 class TestSnapshotList(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
-	"""
-	Create the following domain tree and accounts that are reqiured for executing listSnapshot test cases:
-	Under ROOT - create 2 domaind D1 and D2
-	Under D1 - Create 2 subdomain D11 and D12
-	Under D11 - Create subdimain D111
-	
-	Under each of the domain create 1 admin user and couple of regular users.
+        """
+        Create the following domain tree and accounts that are reqiured for executing listSnapshot test cases:
+        Under ROOT - create 2 domaind D1 and D2
+        Under D1 - Create 2 subdomain D11 and D12
+        Under D11 - Create subdimain D111
 
-	As each of these users , deploy Virtual machines and take a snapshot of the ROOT volume.
+        Under each of the domain create 1 admin user and couple of regular users.
 
-	"""
+        As each of these users , deploy Virtual machines and take a snapshot of the ROOT volume.
+
+        """
         cls.testclient = super(TestSnapshotList, cls).getClsTestClient()
         cls.apiclient = cls.testclient.getApiClient()
         cls.testdata = cls.testClient.getParsedTestDataConfig()
@@ -56,12 +56,12 @@ class TestSnapshotList(cloudstackTestCase):
         cls.domain_2 = None
         cleanup = None
 
-	try:
-    	
+        try:
+
             # backup default apikey and secretkey
             cls.default_apikey = cls.apiclient.connection.apiKey
             cls.default_secretkey = cls.apiclient.connection.securityKey
-    	
+
             # Create domains 
             cls.domain_1 = Domain.create(
                                        cls.apiclient,
@@ -70,17 +70,17 @@ class TestSnapshotList(cloudstackTestCase):
             cls.domain_11 = Domain.create(
                                        cls.apiclient,
                                        cls.acldata["domain11"],
-    				   parentdomainid=cls.domain_1.id
+                                       parentdomainid=cls.domain_1.id
                                        )
             cls.domain_111 = Domain.create(
                                        cls.apiclient,
                                        cls.acldata["domain111"],
-    				   parentdomainid=cls.domain_11.id,
+                                       parentdomainid=cls.domain_11.id,
                                        )
             cls.domain_12 = Domain.create(
                                        cls.apiclient,
                                        cls.acldata["domain12"],
-    				   parentdomainid=cls.domain_1.id
+                                       parentdomainid=cls.domain_1.id
                                        )
             cls.domain_2 = Domain.create(
                                        cls.apiclient,
@@ -94,7 +94,7 @@ class TestSnapshotList(cloudstackTestCase):
                                 domainid=cls.domain_1.id
                                 )
     
-    	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d1)
+            user = cls.generateKeysForUser(cls.apiclient,cls.account_d1)
             cls.user_d1_apikey = user.apikey
             cls.user_d1_secretkey = user.secretkey
             
@@ -104,7 +104,7 @@ class TestSnapshotList(cloudstackTestCase):
                                 admin=False,
                                 domainid=cls.domain_1.id
                                 )        
-    	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d1a)
+            user = cls.generateKeysForUser(cls.apiclient,cls.account_d1a)
             cls.user_d1a_apikey = user.apikey
             cls.user_d1a_secretkey = user.secretkey
             
@@ -116,7 +116,7 @@ class TestSnapshotList(cloudstackTestCase):
                                 domainid=cls.domain_1.id
                                 )
     
-    	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d1b)
+            user = cls.generateKeysForUser(cls.apiclient,cls.account_d1b)
             cls.user_d1b_apikey = user.apikey
             cls.user_d1b_secretkey = user.secretkey
       
@@ -127,7 +127,7 @@ class TestSnapshotList(cloudstackTestCase):
                                 admin=True,
                                 domainid=cls.domain_11.id
                                 )        
-    	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d11)
+            user = cls.generateKeysForUser(cls.apiclient,cls.account_d11)
             cls.user_d11_apikey = user.apikey
             cls.user_d11_secretkey = user.secretkey
     
@@ -137,7 +137,7 @@ class TestSnapshotList(cloudstackTestCase):
                                 admin=False,
                                 domainid=cls.domain_11.id
                                 )        
-    	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d11a)
+            user = cls.generateKeysForUser(cls.apiclient,cls.account_d11a)
             cls.user_d11a_apikey = user.apikey
             cls.user_d11a_secretkey = user.secretkey
     
@@ -147,7 +147,7 @@ class TestSnapshotList(cloudstackTestCase):
                                 admin=False,
                                 domainid=cls.domain_11.id
                                 )  
-    	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d11b)
+            user = cls.generateKeysForUser(cls.apiclient,cls.account_d11b)
             cls.user_d11b_apikey = user.apikey
             cls.user_d11b_secretkey = user.secretkey
     
@@ -159,7 +159,7 @@ class TestSnapshotList(cloudstackTestCase):
                                 admin=False,
                                 domainid=cls.domain_111.id
                                 )        
-    	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d111a)
+            user = cls.generateKeysForUser(cls.apiclient,cls.account_d111a)
             cls.user_d111a_apikey = user.apikey
             cls.user_d111a_secretkey = user.secretkey
           
@@ -170,7 +170,7 @@ class TestSnapshotList(cloudstackTestCase):
                                 admin=False,
                                 domainid=cls.domain_12.id
                                 )        
-    	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d12a)
+            user = cls.generateKeysForUser(cls.apiclient,cls.account_d12a)
             cls.user_d12a_apikey = user.apikey
             cls.user_d12a_secretkey = user.secretkey
     
