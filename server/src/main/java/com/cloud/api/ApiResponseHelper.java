@@ -624,7 +624,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (vm != null) {
             vmSnapshotResponse.setVirtualMachineId(vm.getUuid());
             vmSnapshotResponse.setVirtualMachineName(Strings.isNullOrEmpty(vm.getDisplayName()) ? vm.getHostName() : vm.getDisplayName());
-            vmSnapshotResponse.setVirtualMachineName(vm.getHostName());
             vmSnapshotResponse.setHypervisor(vm.getHypervisorType());
             DataCenterVO datacenter = ApiDBUtils.findZoneById(vm.getDataCenterId());
             if (datacenter != null) {
