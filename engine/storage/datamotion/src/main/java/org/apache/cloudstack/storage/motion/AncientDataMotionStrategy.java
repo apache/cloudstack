@@ -23,6 +23,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.dao.DataCenterDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
@@ -85,6 +86,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     DataStoreManager dataStoreMgr;
     @Inject
     StorageCacheManager cacheMgr;
+
+    @Inject
+    DataCenterDao dataCenterDao;
 
     @Inject
     StorageManager storageManager;
@@ -219,7 +223,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             if (dataStoreTO != null && dataStoreTO instanceof PrimaryDataStoreTO){
                 PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) dataStoreTO;
                 primaryDataStoreTO.setFullCloneFlag(CapacityManager.VmwareCreateCloneFull.valueIn(primaryDataStoreTO.getId()));
-                primaryDataStoreTO.setDiskProvisioningStrictnessFlag(storageManager.DiskProvisioningStrictness.valueIn(primaryDataStoreTO.getId()));
+                StoragePool pool = (StoragePool)dataStoreMgr.getPrimaryDataStore(dataStoreTO.getUuid());
+                primaryDataStoreTO.setDiskProvisioningStrictnessFlag(storageManager.DiskProvisioningStrictness.valueIn(pool.getDataCenterId()));
             }
         }
         return dataTO;
