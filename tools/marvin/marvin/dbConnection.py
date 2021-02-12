@@ -17,11 +17,8 @@
 
 import mysql
 import contextlib
-from mysql import connector
 from mysql.connector import errors
-from contextlib import closing
 from marvin import cloudstackException
-import sys
 import os
 
 
@@ -50,7 +47,9 @@ class DbConnection(object):
             with contextlib.closing(conn.cursor(buffered=True)) as cursor:
                 cursor.execute(sql, params)
                 try:
-                    resultRow = cursor.fetchall()
+                    if cursor.rowcount > 0:
+                        # we have more than just the row count/success
+                        resultRow = cursor.fetchall()
                 except errors.InterfaceError:
                     # Raised on empty result - DML
                     resultRow = []
