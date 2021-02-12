@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -34,7 +34,7 @@ class OvmVolumeDecoder(json.JSONDecoder):
         setAttrFromDict(vol, 'size', deDict, long)
         setAttrFromDict(vol, 'poolUuid', deDict)
         return vol
-    
+
 class OvmVolumeEncoder(json.JSONEncoder):
     def default(self, obj):
         if not isinstance(obj, OvmVolume): raise Exception("%s is not instance of OvmVolume"%type(obj))
@@ -45,7 +45,7 @@ class OvmVolumeEncoder(json.JSONEncoder):
         safeDictSet(obj, dct, 'path')
         safeDictSet(obj, dct, 'size')
         return dct
-    
+
 def toOvmVolume(jStr):
     return json.loads(jStr, cls=OvmVolumeDecoder)
 
@@ -58,7 +58,7 @@ class OvmVolume(OvmObject):
     poolUuid = ''
     path = ''
     size = 0
-    
+
     @staticmethod
     def createDataDisk(poolUuid, size, isRoot):
         try:
@@ -75,7 +75,7 @@ class OvmVolume(OvmObject):
             freeSpace = pool._getSpaceinfoOfDir(path)
             if freeSpace < vol.size:
                 raise Exception("%s has not enough space (available:%s, required:%s"%(path, freeSpace, vol.size))
-            
+
             vol.uuid = get_uuid()
             vol.name = vol.uuid + '.raw'
             filePath = join(path, vol.name)
@@ -88,7 +88,7 @@ class OvmVolume(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmVolume.createDataDisk, errmsg)
             raise XmlRpcFault(toErrCode(OvmVolume, OvmVolume.createDataDisk, errmsg))
-        
+
     @staticmethod
     def createFromTemplate(poolUuid, templateUrl):
         try:
@@ -121,7 +121,7 @@ class OvmVolume(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmVolume.createFromTemplate, errmsg)
             raise XmlRpcFault(toErrCode(OvmVolume, OvmVolume.createFromTemplate), errmsg)
-    
+
     @staticmethod
     def destroy(poolUuid, path):
         try:
@@ -148,12 +148,11 @@ class OvmVolume(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmVolume.destroy, errmsg)
             raise XmlRpcFault(toErrCode(OvmVolume, OvmVolume.destroy), errmsg)
-        
-        
-                              
+
+
+
 if __name__ == "__main__":
     print OvmVolume.detachOrAttachIso(sys.argv[1], '', False)
-                              
-                              
-                              
-                              
+
+
+

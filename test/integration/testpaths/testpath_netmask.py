@@ -184,7 +184,7 @@ class TestCheckNetmask(cloudstackTestCase):
 
         self.assertNotEqual(len(netlist), 0,
                             "Check if list networks returned an empty list.")
- 
+
         cidr = netlist[0].cidr.split("/")[1]
         # Get netmask from CIDR
         netmask = ipv4_cidr_to_netmask(int(cidr))

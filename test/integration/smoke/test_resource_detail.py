@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -52,7 +52,7 @@ class TestResourceDetail(cloudstackTestCase):
                             domainid=domain.id
                             )
 
- 
+
         cls.disk_offering = DiskOffering.create(
                                     cls.apiclient,
                                     cls.services["disk_offering"]
@@ -91,11 +91,11 @@ class TestResourceDetail(cloudstackTestCase):
 
     @attr(tags = ["advanced", "xenserver"], required_hardware="false")
     def test_01_updatevolumedetail(self):
-        """Test volume detail 
+        """Test volume detail
         """
         # Validate the following
-      
-        
+
+
         #remove detail
         self.debug("Testing REMOVE volume detail Volume-ID: %s " % (
                                         self.volume.id
@@ -103,8 +103,8 @@ class TestResourceDetail(cloudstackTestCase):
         cmd = removeResourceDetail.removeResourceDetailCmd()
         cmd.resourcetype = "Volume"
         cmd.resourceid = self.volume.id
-        self.apiclient.removeResourceDetail(cmd)  
-        
+        self.apiclient.removeResourceDetail(cmd)
+
         listResourceDetailCmd = listResourceDetails.listResourceDetailsCmd()
         listResourceDetailCmd.resourceid = self.volume.id
         listResourceDetailCmd.resourcetype = "Volume"
@@ -112,7 +112,7 @@ class TestResourceDetail(cloudstackTestCase):
 
         self.assertEqual(listResourceDetailResponse, None, "Check if the list API \
                             returns an empty response")
-        
+
         #TODO - add detail. Map as input
 
         return

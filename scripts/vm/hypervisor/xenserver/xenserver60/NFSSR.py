@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -38,7 +38,7 @@ CAPABILITIES = ["SR_PROBE","SR_UPDATE", "SR_CACHING",
 CONFIGURATION = [ [ 'server', 'hostname or IP address of NFS server (required)' ], \
                   [ 'serverpath', 'path on remote server (required)' ] ]
 
-                  
+
 DRIVER_INFO = {
     'name': 'NFS VHD',
     'description': 'SR plugin which stores disks as VHD files on a remote NFS filesystem',
@@ -129,7 +129,7 @@ class NFSSR(FileSR.FileSR):
     def probe(self):
         # Verify NFS target and port
         util._testHost(self.dconf['server'], NFSPORT, 'NFSTarget')
-        
+
         self.validate_remotepath(True)
         self.check_server()
 
@@ -161,7 +161,7 @@ class NFSSR(FileSR.FileSR):
             raise xs_errors.XenError('NFSUnMount', opterr=exc.errstr)
 
         return super(NFSSR, self).detach(sr_uuid)
-        
+
 
     def create(self, sr_uuid, size):
         util._testHost(self.dconf['server'], NFSPORT, 'NFSTarget')
@@ -192,8 +192,8 @@ class NFSSR(FileSR.FileSR):
         #    except util.CommandException, inst:
         #        if inst.code != errno.EEXIST:
         #            self.detach(sr_uuid)
-        #            raise xs_errors.XenError('NFSCreate', 
-        #                opterr='remote directory creation error is %d' 
+        #            raise xs_errors.XenError('NFSCreate',
+        #                opterr='remote directory creation error is %d'
         #                % inst.code)
         self.detach(sr_uuid)
 
@@ -222,7 +222,7 @@ class NFSSR(FileSR.FileSR):
         if not loadLocked:
             return NFSFileVDI(self, uuid)
         return NFSFileVDI(self, uuid)
-    
+
     def _checkmount(self):
         return util.ioretry(lambda: util.pathexists(self.path)) \
                and util.ioretry(lambda: util.ismount(self.path))

@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -36,13 +36,13 @@ def get_domain(apiclient, services=None):
     if services:
         if "domainid" in services:
             cmd.id = services["domainid"]
-    
+
     domains = apiclient.listDomains(cmd)
-    
+
     if isinstance(domains, list):
         return domains[0]
     else:
-        raise Exception("Failed to find specified domain.") 
+        raise Exception("Failed to find specified domain.")
 
 def get_zone(apiclient, services=None):
     "Returns a default zone"
@@ -51,13 +51,13 @@ def get_zone(apiclient, services=None):
     if services:
         if "zoneid" in services:
             cmd.id = services["zoneid"]
-    
+
     zones = apiclient.listZones(cmd)
-    
+
     if isinstance(zones, list):
         return zones[0]
     else:
-        raise Exception("Failed to find specified zone.") 
+        raise Exception("Failed to find specified zone.")
 
 def get_pod(apiclient, zoneid, services=None):
     "Returns a default pod for specified zone"
@@ -68,13 +68,13 @@ def get_pod(apiclient, zoneid, services=None):
     if services:
         if "podid" in services:
             cmd.id = services["podid"]
-    
+
     pods = apiclient.listPods(cmd)
-    
+
     if isinstance(pods, list):
         return pods[0]
     else:
-        raise Exception("Exception: Failed to find specified pod.") 
+        raise Exception("Exception: Failed to find specified pod.")
 
 def get_template(apiclient, zoneid, ostypeid=12, services=None):
     "Returns a template"
@@ -92,9 +92,9 @@ def get_template(apiclient, zoneid, ostypeid=12, services=None):
     for template in list_templates:
         if template.ostypeid == ostypeid:
             return template
-        
+
     raise Exception("Exception: Failed to find template with OSTypeID: %s" %
-                                                                    ostypeid) 
+                                                                    ostypeid)
     return
 
 def download_systemplates_sec_storage(server, services):
@@ -185,7 +185,7 @@ def wait_for_ssvms(apiclient, zoneid, podid, interval=60):
 
 def download_builtin_templates(apiclient, zoneid, hypervisor, host, linklocalip, interval=60):
     """After setup wait till builtin templates are downloaded"""
-    
+
     # Change IPTABLES Rules
     result = get_process_status(
                                 host["ipaddress"],
@@ -203,10 +203,10 @@ def download_builtin_templates(apiclient, zoneid, hypervisor, host, linklocalip,
                                     zoneid=zoneid,
                                     templatefilter='self'
                                     )
-    
+
     if not isinstance(list_template_response, list):
         raise Exception("Failed to download BUILTIN templates")
-    
+
     # Ensure all BUILTIN templates are downloaded
     templateid = None
     for template in list_template_response:
@@ -227,16 +227,16 @@ def download_builtin_templates(apiclient, zoneid, hypervisor, host, linklocalip,
         # If template is ready,
         # template.status = Download Complete
         # Downloading - x% Downloaded
-        # Error - Any other string 
+        # Error - Any other string
         if template.status == 'Download Complete':
             break
-                
+
         elif 'Downloaded' in template.status:
             time.sleep(interval)
 
         elif 'Installing' not in template.status:
             raise Exception("ErrorInDownload")
-        
+
     return
 
 def update_resource_limit(apiclient, resourcetype, account=None, domainid=None,

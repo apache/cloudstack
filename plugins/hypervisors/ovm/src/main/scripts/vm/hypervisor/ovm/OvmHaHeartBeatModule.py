@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -34,7 +34,7 @@ class OvmHaHeartBeat(object):
     def __init__(self, mountPoint, ip):
         self.mountPoint = mountPoint
         self.ip = ip
-    
+
     def mark(self, file):
         timestamp = HEARTBEAT_TIMESTAMP_FORMAT % time.time()
         try:
@@ -44,7 +44,7 @@ class OvmHaHeartBeat(object):
         except Exception, e:
             errmsg = fmt_err_msg(e)
             logger.error(OvmHaHeartBeat.mark, errmsg)
-        
+
     def run(self):
         '''
         Constructor
@@ -56,11 +56,11 @@ class OvmHaHeartBeat(object):
         while True:
             self.mark(hearBeatFile)
             time.sleep(120)
-    
+
     @staticmethod
     def start(poolPath, ip):
         pidFile = join(PID_DIR, "heartbeat.pid")
-        
+
         def isLive():
             if exists(pidFile):
                 f = open(pidFile)
@@ -69,7 +69,7 @@ class OvmHaHeartBeat(object):
                 if isdir("/proc/%s" % pid):
                     return long(pid)
             return None
-        
+
         def stopOldHeartBeat(pid):
             os.kill(pid, signal.SIGTERM)
             time.sleep(5)
@@ -81,10 +81,10 @@ class OvmHaHeartBeat(object):
                 pid = isLive()
                 if pid != None:
                     raise Exception("Cannot stop old heartbeat process %s, setup heart beat failed"%pid)
-        
+
         def heartBeat(hb):
             hb.run()
-           
+
         def setupHeartBeat():
             hb = OvmHaHeartBeat(poolPath, ip)
             p = Process(target=heartBeat, args=(hb,))
@@ -96,10 +96,10 @@ class OvmHaHeartBeat(object):
             pidFd.write(str(pid))
             pidFd.close()
             logger.info(OvmHaHeartBeat.start, "Set up heart beat successfully, pid is %s" % pid)
-             
+
         pid = isLive()
         if pid != None:
             stopOldHeartBeat(pid)
-            
+
         setupHeartBeat()
-            
+

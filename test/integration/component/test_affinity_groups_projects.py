@@ -6,9 +6,9 @@
 #  to you under the Apache License, Version 2.0 (the
 #  "License"); you may not use this file except in compliance
 #  with the License.  You may obtain a copy of the License at
-# 
+#
 #    http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 #  Unless required by applicable law or agreed to in writing,
 #  software distributed under the License is distributed on an
 #  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -108,11 +108,11 @@ class TestCreateAffinityGroup(cloudstackTestCase):
           cls.zone.id,
           cls.services["ostype"]
        )
-       
+
        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
        cls.services["template"] = cls.template.id
        cls.services["zoneid"] = cls.zone.id
-       
+
        cls.domain_admin_account = Account.create(
           cls.api_client,
           cls.services["domain_admin_account"],
@@ -126,7 +126,7 @@ class TestCreateAffinityGroup(cloudstackTestCase):
           cls.api_client,
           cls.services["account"],
           domainid=cls.domain.id
-       )       
+       )
 
        cls.account_api_client = cls.testClient.getUserApiClient(cls.account.name, cls.domain.name, 0)
 
@@ -144,7 +144,7 @@ class TestCreateAffinityGroup(cloudstackTestCase):
           account=cls.domain_admin_account.name,
           domainid=cls.domain_admin_account.domainid
        )
-       
+
        cls.project2 = Project.create(
           cls.api_client,
           cls.services["project2"],
@@ -166,7 +166,7 @@ class TestCreateAffinityGroup(cloudstackTestCase):
           cls.services["service_offering"],
           domainid=cls.account.domainid
        )
-       
+
        cls._cleanup = []
        return
 
@@ -208,7 +208,7 @@ class TestCreateAffinityGroup(cloudstackTestCase):
           return AffinityGroup.create(api_client, aff_grp, None, None, projectid)
        except Exception as e:
           raise Exception("Error: Creation of Affinity Group failed : %s" % e)
-   
+
     @attr(tags=["simulator", "basic", "advanced"], required_hardware="false")
     def test_01_admin_create_aff_grp_for_project(self):
        """
@@ -222,7 +222,7 @@ class TestCreateAffinityGroup(cloudstackTestCase):
        self.assert_(list_aff_grps[0].id == aff_grp.id)
        self.assert_(list_aff_grps[0].projectid == self.project.id)
        self.cleanup.append(aff_grp)
- 
+
     @attr(tags=["simulator", "basic", "advanced"], required_hardware="false")
     def test_02_doadmin_create_aff_grp_for_project(self):
         """
@@ -235,7 +235,7 @@ class TestCreateAffinityGroup(cloudstackTestCase):
         self.assert_(list_aff_grps[0].id == aff_grp.id)
         self.assert_(list_aff_grps[0].projectid == self.project.id)
         self.cleanup.append(aff_grp)
- 
+
     @attr(tags=["vogxn", "simulator", "basic", "advanced"], required_hardware="false")
     def test_03_user_create_aff_grp_for_project(self):
         """
@@ -248,19 +248,19 @@ class TestCreateAffinityGroup(cloudstackTestCase):
         self.assert_(list_aff_grps[0].id == aff_grp.id)
         self.assert_(list_aff_grps[0].projectid == self.project.id)
         self.cleanup.append(aff_grp)
-  
+
     @attr(tags=["simulator", "basic", "advanced"], required_hardware="false")
     def test_4_user_create_aff_grp_existing_name_for_project(self):
         """
         Test create affinity group that exists (same name) for projects
         @return:
         """
-        
+
         failed_aff_grp = None
         aff_grp = self.create_aff_grp(api_client=self.account_api_client)
         with self.assertRaises(Exception):
            failed_aff_grp = self.create_aff_grp(api_client=self.account_api_client,aff_grp_name = aff_grp.name)
-        
+
         if failed_aff_grp:
             self.cleanup.append(failed_aff_grp)
         self.cleanup.append(aff_grp)
@@ -283,11 +283,11 @@ class TestListAffinityGroups(cloudstackTestCase):
           cls.zone.id,
           cls.services["ostype"]
        )
-       
+
        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
        cls.services["template"] = cls.template.id
        cls.services["zoneid"] = cls.zone.id
-       
+
        cls.domain_admin_account = Account.create(
           cls.api_client,
           cls.services["domain_admin_account"],
@@ -301,7 +301,7 @@ class TestListAffinityGroups(cloudstackTestCase):
           cls.api_client,
           cls.services["account"],
           domainid=cls.domain.id
-       )       
+       )
 
        cls.account_api_client = cls.testClient.getUserApiClient(cls.account.name, cls.domain.name, 0)
 
@@ -319,7 +319,7 @@ class TestListAffinityGroups(cloudstackTestCase):
           account=cls.domain_admin_account.name,
           domainid=cls.domain_admin_account.domainid
        )
-       
+
        cls.project2 = Project.create(
           cls.api_client,
           cls.services["project2"],
@@ -341,7 +341,7 @@ class TestListAffinityGroups(cloudstackTestCase):
           cls.services["service_offering"],
           domainid=cls.account.domainid
        )
-       
+
        cls._cleanup = []
        return
 
@@ -522,7 +522,7 @@ class TestListAffinityGroups(cloudstackTestCase):
         #Wait for expunge interval to cleanup VM
         wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
         self.cleanup.append(aff_grp)
- 
+
 class TestDeleteAffinityGroups(cloudstackTestCase):
 
     @classmethod
@@ -541,11 +541,11 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
           cls.zone.id,
           cls.services["ostype"]
        )
-       
+
        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
        cls.services["template"] = cls.template.id
        cls.services["zoneid"] = cls.zone.id
-       
+
        cls.domain_admin_account = Account.create(
           cls.api_client,
           cls.services["domain_admin_account"],
@@ -559,7 +559,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
           cls.api_client,
           cls.services["account"],
           domainid=cls.domain.id
-       )       
+       )
 
        cls.account_api_client = cls.testClient.getUserApiClient(cls.account.name, cls.domain.name, 0)
 
@@ -577,7 +577,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
           account=cls.domain_admin_account.name,
           domainid=cls.domain_admin_account.domainid
        )
-       
+
        cls.project2 = Project.create(
           cls.api_client,
           cls.services["project2"],
@@ -599,7 +599,7 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
           cls.services["service_offering"],
           domainid=cls.account.domainid
        )
-       
+
        cls._cleanup = []
        return
 
@@ -684,10 +684,10 @@ class TestDeleteAffinityGroups(cloudstackTestCase):
         aff_grp2 = self.create_aff_grp(self.account_api_client)
 
         aff_grp1.delete(self.account_api_client)
-        
+
         with self.assertRaises(Exception):
            list_aff_grps = AffinityGroup.list(self.api_client, id=aff_grp1.id)
-        
+
         self.cleanup.append(aff_grp2)
 
     @attr(tags=["simulator", "basic", "advanced"], required_hardware="false")
@@ -723,11 +723,11 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
           cls.zone.id,
           cls.services["ostype"]
        )
-       
+
        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
        cls.services["template"] = cls.template.id
        cls.services["zoneid"] = cls.zone.id
-       
+
        cls.domain_admin_account = Account.create(
           cls.api_client,
           cls.services["domain_admin_account"],
@@ -741,7 +741,7 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
           cls.api_client,
           cls.services["account"],
           domainid=cls.domain.id
-       )       
+       )
 
        cls.account_api_client = cls.testClient.getUserApiClient(cls.account.name, cls.domain.name, 0)
 
@@ -759,7 +759,7 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
           account=cls.domain_admin_account.name,
           domainid=cls.domain_admin_account.domainid
        )
-       
+
        cls.project2 = Project.create(
           cls.api_client,
           cls.services["project2"],
@@ -781,7 +781,7 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
           cls.services["service_offering"],
           domainid=cls.account.domainid
        )
-       
+
        cls._cleanup = []
        return
 
@@ -890,7 +890,7 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
         wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
         aff_grp1.delete(self.api_client)
         aff_grp2.delete(self.api_client)
-           
+
 
 class TestDeployVMAffinityGroups(cloudstackTestCase):
 
@@ -910,7 +910,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
           cls.zone.id,
           cls.services["ostype"]
        )
-       
+
        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
        cls.services["template"] = cls.template.id
        cls.services["zoneid"] = cls.zone.id
@@ -971,7 +971,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
           cls.services["service_offering"],
           domainid=cls.account.domainid
        )
-       
+
        return
 
     def setUp(self):
@@ -1073,9 +1073,9 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         vm_failed = None
         with self.assertRaises(Exception):
            vm_failed = self.create_vm_in_aff_grps(self.account_api_client,ag_list=[aff_grp.name])
-        
+
         self.assertEqual(len(hosts), len(vms), "Received %s and %s " % (hosts, vms))
-        
+
         if vm_failed:
            vm_failed.expunge(self.api_client)
 

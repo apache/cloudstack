@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -30,11 +30,11 @@ class TestSetupSuccess(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.apiClient = super(TestSetupSuccess, cls).getClsTestClient().getApiClient()
-        
+
         zones = listZones.listZonesCmd()
         cls.zones_list = cls.apiClient.listZones(zones)
         cls.retry = 50
-        
+
     def test_systemVmReady(self):
         """
         system VMs need to be ready and Running for each zone in cloudstack
@@ -54,7 +54,7 @@ class TestSetupSuccess(cloudstackTestCase):
                 retry = retry - 1
                 delay(60) #wait a minute for retry
             self.assertNotEqual(retry, 0, "system VMs not Running in zone %s"%z.name)
-    
+
     def test_templateBuiltInReady(self):
         """
         built-in templates CentOS to be ready
@@ -75,7 +75,7 @@ class TestSetupSuccess(cloudstackTestCase):
                 retry = retry - 1
                 delay(60) #wait a minute for retry
             self.assertNotEqual(retry, 0, "builtIn templates not ready in zone %s"%z.name)
-            
+
     @classmethod
     def tearDownClass(cls):
         pass

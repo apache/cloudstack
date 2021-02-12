@@ -79,7 +79,7 @@ class TestXDCCPInterop(cloudstackTestCase):
                cls.apiclient,
                type="Routing"
            )
-   
+
         if hosts is None:
                raise unittest.SkipTest(
                    "There are no hypervisor's available.Check list hosts response")
@@ -98,7 +98,7 @@ class TestXDCCPInterop(cloudstackTestCase):
             raise unittest.SkipTest("Interop is not supported on KVM")
 
         cls.uploadurl=cls.services["interop"][cls.uploadtemplateformat]["url"]
-  
+
         cls.xtemplate = get_template(
             cls.apiclient,
             cls.zone.id,
@@ -140,7 +140,7 @@ class TestXDCCPInterop(cloudstackTestCase):
             timeout = cls.services["vgpu"]["timeout"]
 
             while True:
-                time.sleep(cls.services["vgpu"]["sleep"]) 
+                time.sleep(cls.services["vgpu"]["sleep"])
                 list_template_response = Template.list(
                     cls.apiclient,
                     templatefilter=cls.services["templatefilter"],
@@ -182,7 +182,7 @@ class TestXDCCPInterop(cloudstackTestCase):
             cls.services["small"],
             accountid=cls.account.name,
             domainid=cls.account.domainid,
-            serviceofferingid=cls.service_offering.id,  
+            serviceofferingid=cls.service_offering.id,
             mode=cls.services['mode'],
             startvm="false"
         )
@@ -324,7 +324,7 @@ class TestXDCCPInterop(cloudstackTestCase):
         for zone1 in listallzones:
             if zone1.allocationstate=="Enabled":
                 zonesavailable=zonesavailable+1
- 
+
         if zonesavailable<1:
             self.fail("Check if zones are listed")
 
@@ -450,7 +450,7 @@ class TestXDCCPInterop(cloudstackTestCase):
     @attr(tags = ["devcloud", "advanced", "advancedns",  "basic", "sg"], required_hardware="true")
     def test_07_start_vm(self):
         """
-        Test Start Stopped Virtual Machine with volumes attached 
+        Test Start Stopped Virtual Machine with volumes attached
         """
 
         list_vm_response = VirtualMachine.list(
@@ -502,7 +502,7 @@ class TestXDCCPInterop(cloudstackTestCase):
         """
 
         vm_available=0
-        
+
         cmd = listVirtualMachines.listVirtualMachinesCmd()
         cmd.listall = True
         cmd.zoneid=self.zone.id
@@ -563,7 +563,7 @@ class TestXDCCPInterop(cloudstackTestCase):
     @attr(tags = ["devcloud", "advanced", "advancedns",  "basic", "sg"], required_hardware="true")
     def test_10_detach_volume(self):
         """
-        Test Detach Volume 
+        Test Detach Volume
         """
 
         list_volume_response1 = Volume.list(
@@ -1200,7 +1200,7 @@ class TestXDCCPInterop(cloudstackTestCase):
             self.skipTest("template creation from volume feature is not supported on %s" % self.hypervisor.lower())
 
         try:
-            
+
             noffering=NetworkOffering.list(
                      self.user_api_client,
                      name="DefaultIsolatedNetworkOfferingWithSourceNatService"

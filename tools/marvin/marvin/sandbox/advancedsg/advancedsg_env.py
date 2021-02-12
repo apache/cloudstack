@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,7 +17,7 @@
 # under the License.
 '''
 ############################################################
-# Experimental state of scripts 
+# Experimental state of scripts
 #    * Need to be reviewed
 #    * Only a sandbox
 ############################################################
@@ -46,11 +46,11 @@ def describeResources(config):
     z.name = 'Sandbox-%s'%(config.get('cloudstack', 'hypervisor'))
     z.networktype = 'Advanced'
     z.securitygroupenabled = 'true'
-    
+
     sgprovider = provider()
     sgprovider.broadcastdomainrange = 'ZONE'
     sgprovider.name = 'SecurityGroupProvider'
-    
+
     pn = physicalNetwork()
     pn.name = "Sandbox-pnet"
     pn.tags = ["cloud-simulator-pnet"]
@@ -71,7 +71,7 @@ def describeResources(config):
     v = iprange()
     v.gateway = config.get('cloudstack', 'guest.gateway')
     v.startip = config.get('cloudstack', 'guest.vlan.startip')
-    v.endip = config.get('cloudstack', 'guest.vlan.endip') 
+    v.endip = config.get('cloudstack', 'guest.vlan.endip')
     v.netmask = config.get('cloudstack', 'guest.netmask')
     v.vlan = config.get('cloudstack', 'guest.vlan')
     z.ipranges.append(v)

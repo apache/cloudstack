@@ -230,11 +230,11 @@ class TestVPCIpTablesPolicies(cloudstackTestCase):
             cls.services["account"],
             admin=True,
             domainid=cls.domain.id)
-        
+
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offering"])
-        
+
 
         cls.logger = logging.getLogger('TestVPCIpTablesPolicies')
         cls.stream_handler = logging.StreamHandler()
@@ -290,7 +290,7 @@ class TestVPCIpTablesPolicies(cloudstackTestCase):
     def test_01_single_VPC_iptables_policies(self):
         """ Test iptables default INPUT/FORWARD policies on VPC router """
         self.logger.debug("Starting test_01_single_VPC_iptables_policies")
-        
+
         routers = self.entity_manager.query_routers()
 
         self.assertEqual(
@@ -312,13 +312,13 @@ class TestVPCIpTablesPolicies(cloudstackTestCase):
                     isinstance(hosts, list),
                     True,
                     "Check for list hosts response return valid data")
-    
+
                 host = hosts[0]
                 host.user = self.hostConfig['username']
                 host.passwd = self.hostConfig['password']
                 host.port = self.services["configurableData"]["host"]["port"]
                 tables = [self.services["configurableData"]["input"], self.services["configurableData"]["forward"]]
-                
+
                 for table in tables:
                     result = None
                     if self.hypervisor.lower() in ('vmware', 'hyperv'):
@@ -344,10 +344,10 @@ class TestVPCIpTablesPolicies(cloudstackTestCase):
                                 "Provide a marvin config file with host\
                                         credentials to run %s" %
                                 self._testMethodName)
-        
+
                     self.logger.debug("iptables -L %s: %s" % (table, result))
                     res = str(result)
-                    
+
                     self.assertEqual(
                         res.count("DROP"),
                         1,
@@ -383,11 +383,11 @@ class TestRouterIpTablesPolicies(cloudstackTestCase):
             cls.services["account"],
             admin=True,
             domainid=cls.domain.id)
-        
+
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offering"])
-        
+
         cls.logger = logging.getLogger('TestRouterIpTablesPolicies')
         cls.stream_handler = logging.StreamHandler()
         cls.logger.setLevel(logging.DEBUG)
@@ -498,7 +498,7 @@ class EntityManager(object):
         self.networks = []
         self.routers = []
         self.ips = []
-    
+
     def set_cleanup(self, cleanup):
         self.cleanup = cleanup
 
@@ -541,7 +541,7 @@ class EntityManager(object):
         return nat_rule
 
     def check_ssh_into_vm(self, vm, public_ip):
-        self.logger.debug("Checking if we can SSH into VM=%s on public_ip=%s" % 
+        self.logger.debug("Checking if we can SSH into VM=%s on public_ip=%s" %
             (vm.name, public_ip.ipaddress.ipaddress))
         vm.ssh_client = None
         try:

@@ -132,7 +132,7 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
 
         self.physicalnetworkid = self.physicalnetwork.id
         self.existingvlan = self.physicalnetwork.vlan
-        
+
         if self.vlan == None:
             self.fail("Failed to set non contiguous vlan ids to test. Free some ids from \
                         from existing physical networks at extreme ends")

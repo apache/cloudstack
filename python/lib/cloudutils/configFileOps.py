@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,7 +27,7 @@ class configFileOps:
             self.op = op
             self.separator = separator
         def setState(self, state):
-            self.state = state 
+            self.state = state
         def getState(self):
             return self.state
 
@@ -35,18 +35,18 @@ class configFileOps:
         self.fileName = fileName
         self.entries = []
         self.backups = []
-        
+
         if cfg is not None:
             cfg.cfoHandlers.append(self)
 
     def addEntry(self, name, value, separator="="):
         e = self.entry(name, value, "add", separator)
         self.entries.append(e)
-    
+
     def rmEntry(self, name, value, separator="="):
         entry = self.entry(name, value, "rm", separator)
         self.entries.append(entry)
-    
+
     def getEntry(self, name, separator="="):
         try:
             ctx = open(self.fileName).read(-1)
@@ -74,7 +74,7 @@ class configFileOps:
                         matchString = "^\ *" + entry.name + "\ *=\ *" + entry.value
                     else:
                         matchString = "^\ *" + entry.name + "\ *" + entry.value
-                
+
                 match = re.match(matchString, line)
                 if match is not None:
                     if entry.op == "add" and entry.separator == "=":
@@ -88,9 +88,9 @@ class configFileOps:
                         entry.setState("set")
                         self.backups.append([line, None])
                         matched = True
-                        break  
-                    
-            if not matched: 
+                        break
+
+            if not matched:
                 newLines.append(line)
 
         for entry in self.entries:
@@ -102,7 +102,7 @@ class configFileOps:
                     entry.setState("set")
 
         fp.close()
-        
+
         open(self.fileName, "w").writelines(newLines)
 
     def replace_line(self, startswith,stanza,always_add=False):
@@ -126,18 +126,18 @@ class configFileOps:
         return self.replace_line(startswith,stanza,always_add=True)
 
     def add_lines(self, lines, addToBackup=True):
-        fp = open(self.fileName).read(-1) 
+        fp = open(self.fileName).read(-1)
         sh = re.escape(lines)
-        match = re.search(sh, fp, re.MULTILINE) 
+        match = re.search(sh, fp, re.MULTILINE)
         if match is not None:
             return
-    
+
         fp += lines
         open(self.fileName, "w").write(fp)
         self.backups.append([None, lines])
-        
+
     def replace_lines(self, src, dst, addToBackup=True):
-        fp = open(self.fileName).read(-1) 
+        fp = open(self.fileName).read(-1)
         sh = re.escape(src)
         if dst is None:
             dst = ""
@@ -168,7 +168,7 @@ class configFileOps:
                 newlines.append(line)
 
         open(self.fileName, "w").writelines(newlines)
-            
+
     def backup(self):
         for oldLine, newLine in self.backups:
             if newLine is None:

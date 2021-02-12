@@ -133,7 +133,7 @@ class TestDomainAccountProject(cloudstackTestCase):
 
         self.assertIsNone(list_domain_response[0].cpulimit, "'cpulimit' should not be included in response")
 
-        # Create account        
+        # Create account
         self.account = Account.create(
             self.apiclient,
             self.services["account"],

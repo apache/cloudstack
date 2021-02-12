@@ -90,7 +90,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.pod = get_pod(cls.apiclient, cls.zone.id)
 
-        if cls.uploadvolumeformat=="QCOW2" or cls.uploadvolumeformat=="VHD": 
+        if cls.uploadvolumeformat=="QCOW2" or cls.uploadvolumeformat=="VHD":
                 cls.extuploadurl=cls.testdata["configurableData"]["browser_upload_volume_extended"][cls.uploadvolumeformat]["url"]
         cls.account = Account.create(
             cls.apiclient,
@@ -106,7 +106,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                 raise unittest.SkipTest(
                     "Check for default cent OS template readiness ")
         cls.service_offering = ServiceOffering.create(
-            cls.apiclient, 
+            cls.apiclient,
             cls.testdata["service_offering"]
         )
         cls.disk_offering = DiskOffering.create(
@@ -202,7 +202,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         uploadfile = url.split('/')[-1]
         r = requests.get(url, stream=True)
         with open(uploadfile, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024): 
+            for chunk in r.iter_content(chunk_size=1024):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
                     f.flush()
@@ -214,7 +214,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
         print results.status_code
-        if results.status_code !=200: 
+        if results.status_code !=200:
             self.fail("Upload is not fine")
 
         self.validate_uploaded_volume(getuploadparamsresponce.id,'Uploaded')
@@ -288,7 +288,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         uploadfile = url.split('/')[-1]
         r = requests.get(url, stream=True)
         with open(uploadfile, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024): 
+            for chunk in r.iter_content(chunk_size=1024):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
                     f.flush()
@@ -300,7 +300,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
         print results.status_code
-        if results.status_code !=200: 
+        if results.status_code !=200:
             self.fail("Upload is not fine")
 
         self.validate_uploaded_volume(getuploadparamsresponce.id,'Uploaded')
@@ -365,7 +365,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             uploadfile = url.split('/')[-1]
             r = requests.get(url, stream=True)
             with open(uploadfile, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=1024): 
+                for chunk in r.iter_content(chunk_size=1024):
                     if chunk: # filter out keep-alive new chunks
                         f.write(chunk)
                         f.flush()
@@ -376,8 +376,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
             results = requests.post(posturl,files=files,headers=headers,verify=False)
 
-            self.debug(results.status_code) 
-            if results.status_code !=200: 
+            self.debug(results.status_code)
+            if results.status_code !=200:
                 self.fail("Upload is not fine")
 
             self.validate_uploaded_volume(getuploadparamsresponce.id,'UploadedAbandoned')
@@ -413,7 +413,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         uploadfile = url.split('/')[-1]
         r = requests.get(url, stream=True)
         with open(uploadfile, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=1024): 
+                for chunk in r.iter_content(chunk_size=1024):
                     if chunk: # filter out keep-alive new chunks
                         f.write(chunk)
                         f.flush()
@@ -426,7 +426,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         time.sleep(60)
 
         print results.status_code
-        if results.status_code == 200: 
+        if results.status_code == 200:
                 self.fail("Upload URL is allowed to reuse")
 
         config = Configurations.list(
@@ -529,7 +529,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         uploadfile = url.split('/')[-1]
         r = requests.get(url, stream=True)
         with open(uploadfile, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024): 
+            for chunk in r.iter_content(chunk_size=1024):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
                     f.flush()
@@ -548,7 +548,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         time.sleep(60)
 
         print results.status_code
-        if results.status_code !=200: 
+        if results.status_code !=200:
             self.fail("Upload is not fine")
 
         self.validate_uploaded_volume(getuploadparamsresponce.id,'Uploaded')
@@ -575,7 +575,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         uploadfile = url.split('/')[-1]
         r = requests.get(url, stream=True)
         with open(uploadfile, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024): 
+            for chunk in r.iter_content(chunk_size=1024):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
                     f.flush()
@@ -594,7 +594,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         time.sleep(60)
 
         print results.status_code
-        if results.status_code !=200: 
+        if results.status_code !=200:
             self.fail("Upload is not fine")
 
         self.validate_uploaded_volume(getuploadparamsresponce.id,'Uploaded')
@@ -912,7 +912,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             if "Unable to find a virtual machine with specified vmId" in str(ex):
                 success = True
 
-        if success == "True": 
+        if success == "True":
             self.debug("VM is already expunged")
             return
 
@@ -1334,7 +1334,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                         )
 
         list_zones_response = list_zones(self.apiclient)
-        
+
         self.assertEqual(
                             isinstance(list_zones_response, list),
                             True,
@@ -1389,13 +1389,13 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                             "Check list response returns a valid list"
                         )
             iprange = ipranges_response[0]
-            
+
             #Fetch corresponding Physical Network of SSVM's Zone
             listphyntwk = PhysicalNetwork.list(
                             self.apiclient,
                             zoneid=ssvm.zoneid
                             )
-            
+
             # Execute the following assertion in all zones except EIP-ELB Zones
             if not (self.zone.networktype.lower() == 'basic' and isinstance(NetScaler.list(self.apiclient,physicalnetworkid=listphyntwk[0].id), list) is True):
                 self.assertEqual(
@@ -1457,7 +1457,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd = stopSystemVm.stopSystemVmCmd()
         cmd.id = ssvm.id
         self.apiclient.stopSystemVm(cmd)
-        
+
         timeout = self.testdata["timeout"]
         while True:
             list_ssvm_response = list_ssvms(
@@ -1469,10 +1469,10 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                     break
             if timeout == 0:
                 raise Exception("List SSVM call failed!")
-            
+
             time.sleep(self.testdata["sleep"])
             timeout = timeout - 1
-        
+
         self.assertEqual(
                             isinstance(list_ssvm_response, list),
                             True,
@@ -1500,13 +1500,13 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                                         state='Running',
                                         zoneid=self.zone.id
                                         )
-    
+
         self.assertEqual(
                             isinstance(list_ssvm_response, list),
                             True,
                             "Check list response returns a valid list"
                         )
-        
+
         ssvm_response = list_ssvm_response[0]
 
         hosts = list_hosts(
@@ -1540,7 +1540,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                     break
             if timeout == 0:
                 raise Exception("List SSVM call failed!")
-            
+
             time.sleep(self.testdata["sleep"])
             timeout = timeout - 1
 
@@ -1603,7 +1603,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                     break
             if timeout == 0:
                 raise Exception("List SSVM call failed!")
-            
+
             time.sleep(self.testdata["sleep"])
             timeout = timeout - 1
 
@@ -1633,7 +1633,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                         True,
                         "Check whether SSVM has public IP field"
                         )
-        
+
         # Wait for the agent to be up
         self.waitForSystemVMAgent(ssvm_response.name)
 
@@ -1653,7 +1653,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         uploadfile = url.split('/')[-1]
         r = requests.get(url, stream=True)
         with open(uploadfile, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024): 
+            for chunk in r.iter_content(chunk_size=1024):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
                     f.flush()
@@ -1708,7 +1708,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         uploadfile = url.split('/')[-1]
         r = requests.get(url, stream=True)
         with open(uploadfile, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024): 
+            for chunk in r.iter_content(chunk_size=1024):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
                     f.flush()
@@ -1752,7 +1752,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         uploadfile = url.split('/')[-1]
         r = requests.get(url, stream=True)
         with open(uploadfile, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024): 
+            for chunk in r.iter_content(chunk_size=1024):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
                     f.flush()
@@ -1764,7 +1764,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
         print results.status_code
-        if results.status_code !=200: 
+        if results.status_code !=200:
             self.fail("Upload is not fine")
 
         self.validate_uploaded_volume(getuploadparamsresponce.id,'Uploaded')
@@ -1797,7 +1797,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         uploadfile = url.split('/')[-1]
         r = requests.get(url, stream=True)
         with open(uploadfile, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024): 
+            for chunk in r.iter_content(chunk_size=1024):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
                     f.flush()
@@ -1809,7 +1809,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
         print results.status_code
-        if results.status_code !=200: 
+        if results.status_code !=200:
             self.fail("Upload is not fine")
 
         self.validate_uploaded_volume(getuploadparamsresponce.id,'Uploaded')
@@ -1905,7 +1905,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         uploadfile = url.split('/')[-1]
         r = requests.get(url, stream=True)
         with open(uploadfile, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024): 
+            for chunk in r.iter_content(chunk_size=1024):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
                     f.flush()
@@ -1917,7 +1917,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
         print results.status_code
-        if results.status_code !=200: 
+        if results.status_code !=200:
             self.fail("Upload is not fine")
 
         self.validate_uploaded_volume(getuploadparamsresponce.id,'Uploaded')
@@ -1944,7 +1944,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         uploadfile = url.split('/')[-1]
         r = requests.get(url, stream=True)
         with open(uploadfile, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024): 
+            for chunk in r.iter_content(chunk_size=1024):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
                     f.flush()
@@ -1956,12 +1956,12 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
         print results.status_code
-        if results.status_code ==200: 
+        if results.status_code ==200:
             return("FAIL")
         return("PASS")
 
     def volume_migration(self,browseup_vol,vm1details):
-        
+
         pools = StoragePool.list(
             self.apiclient,
             zoneid=self.zone.id
@@ -2026,7 +2026,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_01_Browser_volume_Life_cycle_tpath(self):
         """
-        Test Browser_volume_Life_cycle - This includes upload volume,attach to a VM, write data ,Stop ,Start, Reboot,Reset  of a VM, detach,attach back to the VM, delete volumes  
+        Test Browser_volume_Life_cycle - This includes upload volume,attach to a VM, write data ,Stop ,Start, Reboot,Reset  of a VM, detach,attach back to the VM, delete volumes
         """
         try:
 
@@ -2219,7 +2219,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         Test SSVM_Life_Cycle_With_Browser_Volume_TPath - This includes SSVM life cycle followed by Browser volume upload operations
         """
         try:
-            
+
             self.debug("========================= Test 23: Stop and Start SSVM and Perform Browser based volume validations ========================= ")
 
             self.stop_ssvm()
@@ -2290,10 +2290,10 @@ class TestBrowseUploadVolume(cloudstackTestCase):
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_03_Browser_Upload_Volume_Global_Config_TPath(self):
         """
-        Test Browser_Upload_Volume_Global_Config limits 
+        Test Browser_Upload_Volume_Global_Config limits
         """
         try:
-            
+
             self.debug("========================= Test 26 Validate Storage.max.upload.size ========================= ")
             globalconfig_browse_up_vol=self.browse_upload_volume()
             self.validate_max_vol_size(globalconfig_browse_up_vol,"Uploaded")

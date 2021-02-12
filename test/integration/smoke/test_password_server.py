@@ -334,7 +334,7 @@ class TestIsolatedNetworksPasswdServer(cloudstackTestCase):
             'Active',
             "Check list port forwarding rules"
         )
-        
+
         nat_rules = list_nat_rules(
             self.apiclient,
             id=nat_rule2.id
@@ -349,7 +349,7 @@ class TestIsolatedNetworksPasswdServer(cloudstackTestCase):
             'Active',
             "Check list port forwarding rules"
         )
-        
+
         self.test_ssh_command(self.vm_1, nat_rule1, "natrule1")
         self.test_ssh_command(self.vm_2, nat_rule2, "natrule2")
 

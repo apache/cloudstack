@@ -1537,7 +1537,7 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
         self.dedbug("Trying to add isolated network to VM (both in basic zone,\
                     this operation should fail")
         with self.assertRaises(Exception) as e:
-            time.sleep(5) 
+            time.sleep(5)
             self.apiclient.addNicToVirtualMachine(cmd)
 	    self.debug("addNicToVirtualMachine API failed with exception: %s" % e.exception)
 
@@ -1570,7 +1570,7 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
                     insufficient permission")
 
         with self.assertRaises(Exception) as e:
-            time.sleep(5) 
+            time.sleep(5)
             api_client.addNicToVirtualMachine(cmd)
 	    self.debug("addNicToVirtualMachine API failed with exception: %s" % e.exception)
 

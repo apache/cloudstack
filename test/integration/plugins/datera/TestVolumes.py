@@ -339,7 +339,7 @@ class TestVolumes(cloudstackTestCase):
         2. Init Datera API connection
         3. Create ACS Primary storage
         4. Create ACS compute and disk offering.
-        5. Create ACS data disk without attaching to a VM 
+        5. Create ACS data disk without attaching to a VM
         """
         logger.info("Setting up Class")
 

@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,13 +20,13 @@
 
 import marvin
 from marvin.cloudstackTestCase import *
-from marvin.sshClient import SshClient 
+from marvin.sshClient import SshClient
 
 
 @UserName('demo', 'ROOT', '0')
 class TestSshDeployVm(cloudstackTestCase):
     """
-    This test deploys a virtual machine into a user account 
+    This test deploys a virtual machine into a user account
     using the small service offering and builtin template
     """
     def setUp(self):
@@ -49,7 +49,7 @@ class TestSshDeployVm(cloudstackTestCase):
         deploying on CloudStack. We will be assuming a single zone is available
         and is configured and all templates are Ready
 
-        The hardcoded values are used only for brevity. 
+        The hardcoded values are used only for brevity.
         """
         deployVmCmd = deployVirtualMachine.deployVirtualMachineCmd()
         deployVmCmd.zoneid = self.zone.uuid
@@ -82,7 +82,7 @@ class TestSshDeployVm(cloudstackTestCase):
         self.assertEqual(vm.state, "Running", "Check if VM has reached \
                          a state of running")
 
-        # SSH login and compare hostname        
+        # SSH login and compare hostname
         self.debug("Attempting to SSH into %s over %s of %s"%(nattedip, "22", vm.name))
         ssh_client = SshClient(nattedip, "22", "root", "password")
         stdout = ssh_client.execute("hostname")
@@ -122,7 +122,7 @@ class TestSshDeployVm(cloudstackTestCase):
             raise e
         finally:
             self.debug("Successfully programmed PF rule for :%s"%snatip)
-            return snatip        
+            return snatip
 
     def tearDown(self):
         self.testClient.close()

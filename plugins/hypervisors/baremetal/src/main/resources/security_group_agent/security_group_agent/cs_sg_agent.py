@@ -42,14 +42,14 @@ class IPSet(object):
     def __init__(self, setname, ips):
         self.ips = ips
         self.name = setname
-    
+
     def create(self):
         tmpname = str(uuid.uuid4()).replace('-', '')[0:30]
         sglib.ShellCmd('ipset -N %s %s' % (tmpname, self.IPSET_TYPE))()
         try:
             for ip in self.ips:
                 sglib.ShellCmd('ipset -A %s %s' % (tmpname, ip))()
-            
+
             try:
                 sglib.ShellCmd('ipset -N %s %s' % (self.name, self.IPSET_TYPE))()
                 cherrypy.log('created new ipset: %s' % self.name)
@@ -59,8 +59,8 @@ class IPSet(object):
             sglib.ShellCmd('ipset -W %s %s' % (tmpname, self.name))()
             sglib.ShellCmd('ipset -F %s' % tmpname)()
             sglib.ShellCmd('ipset -X %s' % tmpname)()
-            
-    @staticmethod 
+
+    @staticmethod
     def destroy_sets(sets_to_keep):
         sets = sglib.ShellCmd('ipset list')()
         for s in sets.split('\n'):
@@ -69,17 +69,17 @@ class IPSet(object):
                 if not set_name in sets_to_keep:
                     sglib.ShellCmd('ipset destroy %s' % set_name)()
                     cherrypy.log('destroyed unused ipset: %s' % set_name)
-        
+
 class SGAgent(object):
     def __init__(self):
         pass
-    
+
     def _self_list(self, obj):
         if isinstance(obj, types.ListType):
             return obj
         else:
             return [obj]
-        
+
     def set_rules(self, req):
         body = req.body
         doc = xmlobject.loads(body)
@@ -89,7 +89,7 @@ class SGAgent(object):
         vm_mac = doc.vmMac.text_
         sig = doc.signature.text_
         seq = doc.sequenceNumber.text_
-        
+
         def parse_rules(rules, lst):
             for i in self._self_list(rules):
                 r = SGRule()
@@ -100,21 +100,21 @@ class SGAgent(object):
                     for ip in self._self_list(i.ip):
                         r.allowed_ips.append(ip.text_)
                 lst.append(r)
-            
+
         i_rules = []
         if hasattr(doc, 'ingressRules'):
             parse_rules(doc.ingressRules, i_rules)
-            
+
         e_rules = []
         if hasattr(doc, 'egressRules'):
             parse_rules(doc.egressRules, e_rules)
-            
+
         def create_chain(name):
             try:
                 sglib.ShellCmd('iptables -F %s' % name)()
             except Exception:
                 sglib.ShellCmd('iptables -N %s' % name)()
-            
+
         def apply_rules(rules, chainname, direction, action, current_set_names):
             create_chain(chainname)
             for r in i_rules:
@@ -122,13 +122,13 @@ class SGAgent(object):
                 if '0.0.0.0/0' in r.allowed_ips:
                     allow_any = True
                     r.allowed_ips.remove('0.0.0.0/0')
-                
+
                 if r.allowed_ips:
                     setname = '_'.join([chainname, r.protocol, r.start_port, r.end_port])
                     ipset = IPSet(setname, r.allowed_ips)
                     ipset.create()
                     current_set_names.append(setname)
-                    
+
                     if r.protocol == 'all':
                         cmd = ['iptables -I', chainname, '-m state --state NEW -m set --set', setname, direction, '-j', action]
                         sglib.ShellCmd(' '.join(cmd))()
@@ -142,8 +142,8 @@ class SGAgent(object):
                             port_range = "any"
                         cmd = ['iptables', '-I', i_chain_name, '-p', 'icmp', '--icmp-type', port_range, '-m set --set', setname, direction, '-j', action]
                         sglib.ShellCmd(' '.join(cmd))()
-                        
-                    
+
+
                 if allow_any and r.protocol != 'all':
                     if r.protocol != 'icmp':
                         port_range = ":".join([r.start_port, r.end_port])
@@ -155,36 +155,36 @@ class SGAgent(object):
                             port_range = "any"
                         cmd = ['iptables', '-I', i_chain_name, '-p', 'icmp', '--icmp-type', port_range, '-j', action]
                         sglib.ShellCmd(' '.join(cmd))()
-        
+
         current_sets = []
         i_chain_name = vm_name + '-in'
         apply_rules(i_rules, i_chain_name, 'src', 'ACCEPT', current_sets)
         e_chain_name = vm_name + '-eg'
         apply_rules(e_rules, e_chain_name, 'dst', 'RETURN', current_sets)
-        
+
         if e_rules:
             sglib.ShellCmd('iptables -A %s -j RETURN' % e_chain_name)
         else:
             sglib.ShellCmd('iptables -A %s -j DROP' % e_chain_name)
-        
+
         sglib.ShellCmd('iptables -A %s -j DROP' % i_chain_name)
         IPSet.destroy_sets(current_sets)
-                
-        
+
+
     def echo(self, req):
         cherrypy.log("echo: I am alive")
-        
+
     def index(self):
         req = sglib.Request.from_cherrypy_request(cherrypy.request)
         cmd_name = req.headers['command']
-        
+
         if not hasattr(self, cmd_name):
-            raise ValueError("SecurityGroupAgent doesn't have a method called '%s'" % cmd_name)           
+            raise ValueError("SecurityGroupAgent doesn't have a method called '%s'" % cmd_name)
         method = getattr(self, cmd_name)
-        
+
         return method(req)
     index.exposed = True
-    
+
     @staticmethod
     def start():
         cherrypy.log.access_file = '/var/log/cs-securitygroup.log'
@@ -192,8 +192,8 @@ class SGAgent(object):
         cherrypy.server.socket_host = '0.0.0.0'
         cherrypy.server.socket_port = 9988
         cherrypy.quickstart(SGAgent())
-        
-    @staticmethod 
+
+    @staticmethod
     def stop():
         cherrypy.engine.exit()
 
@@ -204,16 +204,16 @@ class SGAgentDaemon(sglib.Daemon):
         self.is_stopped = False
         self.agent = SGAgent()
         sglib.Daemon.register_atexit_hook(self._do_stop)
-    
+
     def _do_stop(self):
         if self.is_stopped:
             return
         self.is_stopped = True
         self.agent.stop()
-    
+
     def run(self):
         self.agent.start()
-        
+
     def stop(self):
         self.agent.stop()
         super(SGAgentDaemon, self).stop()
@@ -223,7 +223,7 @@ def main():
     if len(sys.argv) != 2 or not sys.argv[1] in ['start', 'stop', 'restart']:
         print usage
         sys.exit(1)
-    
+
     cmd = sys.argv[1]
     agentdaemon = SGAgentDaemon()
     if cmd == 'start':
@@ -232,5 +232,5 @@ def main():
         agentdaemon.stop()
     else:
         agentdaemon.restart()
-        
+
     sys.exit(0)

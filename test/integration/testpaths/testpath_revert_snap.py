@@ -14,7 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-""" Test cases for Verifying revert snapshot 
+""" Test cases for Verifying revert snapshot
 """
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -59,7 +59,7 @@ class TestUnableToRevertSnapshot(cloudstackTestCase):
 
             if cls.hypervisor.lower() not in ['xenserver']:
                 cls.skiptest = True
-                return     
+                return
             # Create an account
             cls.account = Account.create(
                 cls.apiclient,
@@ -114,7 +114,7 @@ class TestUnableToRevertSnapshot(cloudstackTestCase):
 
         # 1. Deploy a VM.
         # 2. Take VM snapshot.
-        # 3. Verify that volume snapshot fails with error 
+        # 3. Verify that volume snapshot fails with error
                 can not create volume snapshot for VM with VM-snapshot
 
         """
@@ -143,9 +143,9 @@ class TestUnableToRevertSnapshot(cloudstackTestCase):
                 "Event list validation failed due to %s" %
 		volume_list_validation[2]
             )
- 
+
         root_volume = volumes_cluster_list[0]
-        
+
         #Step 2
         vm_snap = VmSnapshot.create(self.apiclient,
                 vm.id)

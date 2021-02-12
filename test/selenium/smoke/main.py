@@ -47,13 +47,13 @@ suite = unittest.TestSuite() # setup new test suite
 # Following logs admin user in and creates test account then logs admin user out and logs in as test to run tests.
 # You should leave this as is for all the tests.
 
-suite.addTest(unittest.makeSuite(login)) #Login Admin    
+suite.addTest(unittest.makeSuite(login)) #Login Admin
 
 time.sleep(5)
 suite.addTest(unittest.makeSuite(createAcc)) # Create an Account test. We will use test account for all our tests
 
 time.sleep(5)
-suite.addTest(unittest.makeSuite(logout)) #Logout Admin    
+suite.addTest(unittest.makeSuite(logout)) #Logout Admin
 
 time.sleep(5)
 suite.addTest(unittest.makeSuite(login_test)) # Login Test
@@ -96,17 +96,17 @@ suite.addTest(unittest.makeSuite(Compute_offering_Delete))
 # suite.addTest(unittest.makeSuite(destroyVM))
 
 # time.sleep(5)
-# suite.addTest(unittest.makeSuite(restoreVM)) 
+# suite.addTest(unittest.makeSuite(restoreVM))
 
 
 # time.sleep(5)
-# suite.addTest(unittest.makeSuite(Template_Add)) 
+# suite.addTest(unittest.makeSuite(Template_Add))
 
 # time.sleep(5)
-# suite.addTest(unittest.makeSuite(Template_Edit)) 
+# suite.addTest(unittest.makeSuite(Template_Edit))
 
 # time.sleep(5)
-# suite.addTest(unittest.makeSuite(Template_Delete)) 
+# suite.addTest(unittest.makeSuite(Template_Delete))
 
 
 ####################################################################################################
@@ -132,11 +132,11 @@ suite.addTest(unittest.makeSuite(tearAcc))  # Delete Account test
 runner = xmlrunner.XMLTestRunner(output='test-reports')
 
 #Comment following line for XML and uncomment for HTML
-#runner = HTMLTestRunner.HTMLTestRunner() 
+#runner = HTMLTestRunner.HTMLTestRunner()
 
 #header is required for displaying the website
 #Comment following line for XML and uncomment for HTML
-#print "Content-Type: text/html\n" 
+#print "Content-Type: text/html\n"
 
 # Leave following as is for either XML or HTML
 runner.run(suite)

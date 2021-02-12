@@ -124,7 +124,7 @@ class Services:
                 # Max networks allowed as per hypervisor
                 # Xenserver -> 5, VMWare -> 9
             },
- 
+
             "virtual_machine": {
                 "displayname": "Test VM",
                 "username": "root",

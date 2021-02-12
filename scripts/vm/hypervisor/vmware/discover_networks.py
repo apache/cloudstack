@@ -47,14 +47,14 @@ def get_clusters(content, cluster=None):
                 clusters.append(c)
                 hosts = c.host
                 for host in hosts:
-                    hostClusterNameDict[host.name] = c.name 
+                    hostClusterNameDict[host.name] = c.name
                 break
     else:
         for c in cluster_view.view:
             clusters.append(c)
             hosts = c.host
             for host in hosts:
-                hostClusterNameDict[host.name] = c.name 
+                hostClusterNameDict[host.name] = c.name
     cluster_view.Destroy()
     log_message('\t{} cluster(s) found'.format(len(clusters)))
     for c in clusters:
@@ -187,7 +187,7 @@ def add_network(portGroup, vlanId, isolatedPvlanType, isolatedPvlan, vSwitch, vm
             cluster = hostClusterNameDict[host]
         except KeyError:
             cluster = vmClusterName
-        
+
         network = {"portgroup": portGroup, "cluster": cluster, "host": host, "switch": vSwitch, "virtualmachines": vms}
         if vlanId != '':
             network["vlanid"] = vlanId
@@ -267,7 +267,7 @@ def main():
     content = serviceInstance.RetrieveContent()
     if args.cluster:
         clusters = get_clusters(content, args.cluster)
-    else:        
+    else:
         clusters = get_clusters(content)
     hosts = []
     if len(clusters) > 0:
