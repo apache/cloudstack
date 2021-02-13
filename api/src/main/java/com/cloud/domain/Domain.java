@@ -42,6 +42,8 @@ public interface Domain extends OwnedBy, Identity, InternalIdentity {
 
     void setName(String name);
 
+    Date getCreated();
+
     Date getRemoved();
 
     String getPath();
