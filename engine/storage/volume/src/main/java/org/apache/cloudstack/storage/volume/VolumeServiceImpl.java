@@ -1638,7 +1638,6 @@ public class VolumeServiceImpl implements VolumeService {
             this.destVolume = destVolume;
             this.future = future;
         }
-
     }
 
     protected AsyncCallFuture<VolumeApiResult> copyVolumeFromImageToPrimary(VolumeInfo srcVolume, DataStore destStore) {
@@ -1821,10 +1820,10 @@ public class VolumeServiceImpl implements VolumeService {
                 srcVolume.processEvent(Event.OperationFailed);
                 destroyVolume(destVolume.getId());
                 if (destVolume.getStoragePoolType() == StoragePoolType.PowerFlex) {
-                    if (canVolumeBeRemoved(destVolume.getId())) {
-                        s_logger.info("Volume " + destVolume.getId() + " is not referred anywhere, can be removed");
-                        volDao.remove(destVolume.getId());
-                    }
+                    s_logger.info("Dest volume " + destVolume.getId() + " can be removed");
+                    destVolume.processEvent(Event.ExpungeRequested);
+                    destVolume.processEvent(Event.OperationSuccessed);
+                    volDao.remove(destVolume.getId());
                     future.complete(res);
                     return null;
                 }
@@ -1839,10 +1838,10 @@ public class VolumeServiceImpl implements VolumeService {
                 try {
                     destroyVolume(srcVolume.getId());
                     if (srcVolume.getStoragePoolType() == StoragePoolType.PowerFlex) {
-                        if (canVolumeBeRemoved(srcVolume.getId())) {
-                            s_logger.info("Volume " + srcVolume.getId() + " is not referred anywhere, can be removed");
-                            volDao.remove(srcVolume.getId());
-                        }
+                        s_logger.info("Src volume " + srcVolume.getId() + " can be removed");
+                        srcVolume.processEvent(Event.ExpungeRequested);
+                        srcVolume.processEvent(Event.OperationSuccessed);
+                        volDao.remove(srcVolume.getId());
                         future.complete(res);
                         return null;
                     }
@@ -1866,6 +1865,21 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         return null;
+    }
+
+    private class CopyManagedVolumeContext<T> extends AsyncRpcContext<T> {
+        final VolumeInfo srcVolume;
+        final VolumeInfo destVolume;
+        final Host host;
+        final AsyncCallFuture<VolumeApiResult> future;
+
+        public CopyManagedVolumeContext(AsyncCompletionCallback<T> callback, AsyncCallFuture<VolumeApiResult> future, VolumeInfo srcVolume, VolumeInfo destVolume, Host host) {
+            super(callback);
+            this.srcVolume = srcVolume;
+            this.destVolume = destVolume;
+            this.host = host;
+            this.future = future;
+        }
     }
 
     private AsyncCallFuture<VolumeApiResult> copyManagedVolume(VolumeInfo srcVolume, DataStore destStore) {
@@ -1911,14 +1925,7 @@ public class VolumeServiceImpl implements VolumeService {
             // Refresh the volume info from the DB.
             destVolume = volFactory.getVolume(destVolume.getId(), destStore);
 
-            destVolume.processEvent(Event.CreateRequested);
-            srcVolume.processEvent(Event.MigrationRequested);
-
-            CopyVolumeContext<VolumeApiResult> context = new CopyVolumeContext<VolumeApiResult>(null, future, srcVolume, destVolume, destStore);
-            AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
-            caller.setCallback(caller.getTarget().copyManagedVolumeCallBack(null, null)).setContext(context);
-
-            PrimaryDataStore srcPrimaryDataStore = (PrimaryDataStore)  srcVolume.getDataStore();
+            PrimaryDataStore srcPrimaryDataStore = (PrimaryDataStore) srcVolume.getDataStore();
             if (srcPrimaryDataStore.isManaged()) {
                 Map<String, String> srcPrimaryDataStoreDetails = new HashMap<String, String>();
                 srcPrimaryDataStoreDetails.put(PrimaryDataStore.MANAGED, Boolean.TRUE.toString());
@@ -1945,14 +1952,14 @@ public class VolumeServiceImpl implements VolumeService {
 
             grantAccess(destVolume, hostWithPoolsAccess, destStore);
 
-            try {
-                motionSrv.copyAsync(srcVolume, destVolume, hostWithPoolsAccess, caller);
-            } finally {
-                if (srcPrimaryDataStore.isManaged()) {
-                    revokeAccess(srcVolume, hostWithPoolsAccess, srcVolume.getDataStore());
-                }
-                revokeAccess(destVolume, hostWithPoolsAccess, destStore);
-            }
+            destVolume.processEvent(Event.CreateRequested);
+            srcVolume.processEvent(Event.MigrationRequested);
+
+            CopyManagedVolumeContext<VolumeApiResult> context = new CopyManagedVolumeContext<VolumeApiResult>(null, future, srcVolume, destVolume, hostWithPoolsAccess);
+            AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().copyManagedVolumeCallBack(null, null)).setContext(context);
+
+            motionSrv.copyAsync(srcVolume, destVolume, hostWithPoolsAccess, caller);
         } catch (Exception e) {
             s_logger.error("Copy to managed volume failed due to: " + e);
             if(s_logger.isDebugEnabled()) {
@@ -1965,13 +1972,20 @@ public class VolumeServiceImpl implements VolumeService {
         return future;
     }
 
-    protected Void copyManagedVolumeCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CopyVolumeContext<VolumeApiResult> context) {
+    protected Void copyManagedVolumeCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CopyManagedVolumeContext<VolumeApiResult> context) {
         VolumeInfo srcVolume = context.srcVolume;
         VolumeInfo destVolume = context.destVolume;
+        Host host = context.host;
         CopyCommandResult result = callback.getResult();
         AsyncCallFuture<VolumeApiResult> future = context.future;
         VolumeApiResult res = new VolumeApiResult(destVolume);
+
         try {
+            if (srcVolume.getDataStore() != null && ((PrimaryDataStore) srcVolume.getDataStore()).isManaged()) {
+                revokeAccess(srcVolume, host, srcVolume.getDataStore());
+            }
+            revokeAccess(destVolume, host, destVolume.getDataStore());
+
             if (result.isFailed()) {
                 res.setResult(result.getResult());
                 destVolume.processEvent(Event.MigrationCopyFailed);
