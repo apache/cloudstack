@@ -723,10 +723,12 @@ class VirtualMachine:
             raise Exception(response[1])
         return
 
-    def reboot(self, apiclient):
+    def reboot(self, apiclient, forced=None):
         """Reboot the instance"""
         cmd = rebootVirtualMachine.rebootVirtualMachineCmd()
         cmd.id = self.id
+        if forced:
+            cmd.forced = forced
         apiclient.rebootVirtualMachine(cmd)
 
         response = self.getState(apiclient, VirtualMachine.RUNNING)
@@ -4436,10 +4438,12 @@ class Router:
         return apiclient.stopRouter(cmd)
 
     @classmethod
-    def reboot(cls, apiclient, id):
+    def reboot(cls, apiclient, id, forced=None):
         """Reboots the router"""
         cmd = rebootRouter.rebootRouterCmd()
         cmd.id = id
+        if forced:
+            cmd.forced = forced
         return apiclient.rebootRouter(cmd)
 
     @classmethod
