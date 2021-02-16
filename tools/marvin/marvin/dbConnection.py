@@ -47,7 +47,7 @@ class DbConnection(object):
             with contextlib.closing(conn.cursor(buffered=True)) as cursor:
                 cursor.execute(sql, params)
                 try:
-                    if cursor.rowcount > 0:
+                    if  sql.lower().startswith('select') and cursor.rowcount > 0:
                         # we have more than just the row count/success
                         resultRow = cursor.fetchall()
                 except errors.InterfaceError:
