@@ -1488,7 +1488,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         StoragePool srcVolumePool = _poolDao.findById(volume.getPoolId());
-        Cluster srcCluster = getVolumeSourceStoragePoolVmCluster(srcVolumePool, vm);
+        Cluster srcCluster = null;
+        if (vm != null) {
+            srcCluster = getVolumeSourceStoragePoolVmCluster(srcVolumePool, vm);
+        }
         allPools = getAllStoragePoolCompatibleWithVolumeSourceStoragePool(srcVolumePool,
                 ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat()),
                 srcCluster != null ? srcCluster.getId() : null);
