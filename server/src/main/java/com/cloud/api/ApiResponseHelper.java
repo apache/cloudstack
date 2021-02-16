@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -350,8 +352,6 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
-
 public class ApiResponseHelper implements ResponseGenerator {
 
     private static final Logger s_logger = Logger.getLogger(ApiResponseHelper.class);
@@ -425,6 +425,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         domainResponse.setDomainName(domain.getName());
         domainResponse.setId(domain.getUuid());
         domainResponse.setLevel(domain.getLevel());
+        domainResponse.setCreated(domain.getCreated());
         domainResponse.setNetworkDomain(domain.getNetworkDomain());
         Domain parentDomain = ApiDBUtils.findDomainById(domain.getParent());
         if (parentDomain != null) {
@@ -1398,6 +1399,11 @@ public class ApiResponseHelper implements ResponseGenerator {
                     vmResponse.setHostId(host.getUuid());
                     vmResponse.setHostName(host.getName());
                     vmResponse.setHypervisor(host.getHypervisorType().toString());
+                }
+            } else if (vm.getLastHostId() != null) {
+                Host lastHost = ApiDBUtils.findHostById(vm.getLastHostId());
+                if (lastHost != null) {
+                    vmResponse.setHypervisor(lastHost.getHypervisorType().toString());
                 }
             }
 

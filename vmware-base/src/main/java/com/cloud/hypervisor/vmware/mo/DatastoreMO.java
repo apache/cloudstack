@@ -16,6 +16,13 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.log4j.Logger;
+
 import com.cloud.exception.CloudException;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.Pair;
@@ -34,12 +41,6 @@ import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
-import org.apache.log4j.Logger;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class DatastoreMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(DatastoreMO.class);
@@ -459,6 +460,6 @@ public class DatastoreMO extends BaseMO {
 
     public String getDatastoreType() throws Exception {
         DatastoreSummary summary = _context.getVimClient().getDynamicProperty(getMor(), "summary");
-        return summary.getType();
+        return summary.getType() == null ? "" : summary.getType();
     }
 }
