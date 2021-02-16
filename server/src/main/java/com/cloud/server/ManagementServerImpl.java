@@ -1588,10 +1588,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         ExcludeList avoid = new ExcludeList();
         avoid.addPool(srcVolumePool.getId());
-
-        DataCenterDeployment plan = new DataCenterDeployment(volume.getDataCenterId(), srcVolumePool.getPodId(),
-                srcCluster != null ? srcCluster.getId() : null, srcCluster != null ? srcCluster.getPodId() : null,
-                null, null, null);
+        Long clusterId = null;
+        Long podId = null;
+        if (srcCluster != null) {
+            clusterId = srcCluster.getId();
+            podId = srcCluster.getPodId();
+        }
+        DataCenterDeployment plan = new DataCenterDeployment(volume.getDataCenterId(), podId, clusterId,
+                null, null, null, null);
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         // OfflineVmwareMigration: vm might be null here; deal!
         HypervisorType type = getHypervisorType(vm, srcVolumePool, profile);
