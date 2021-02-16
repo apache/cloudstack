@@ -1488,12 +1488,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         StoragePool srcVolumePool = _poolDao.findById(volume.getPoolId());
+        Cluster srcCluster = getVolumeSourceStoragePoolVmCluster(srcVolumePool, vm);
         allPools = getAllStoragePoolCompatibleWithVolumeSourceStoragePool(srcVolumePool,
                 ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat()),
-                vm);
+                srcCluster != null ? srcCluster.getId() : null);
         allPools.remove(srcVolumePool);
         if (vm != null) {
-            suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, srcVolumePool);
+            suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, srcVolumePool, srcCluster);
         } else {
             suitablePools = allPools;
         }
@@ -1522,20 +1523,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
-    /**
-     * This method looks for all storage pools that are compatible with the given volume.
-     * <ul>
-     *  <li>We will look for storage systems that are zone wide.</li>
-     *  <li>We also all storage available filtering by data center, pod and cluster as the current storage pool used by the given volume.</li>
-     * </ul>
-     */
-    private List<? extends StoragePool> getAllStoragePoolCompatibleWithVolumeSourceStoragePool(StoragePool srcVolumePool, HypervisorType hypervisorType, VirtualMachine vm) {
-        List<StoragePoolVO> storagePools = new ArrayList<>();
-        List<StoragePoolVO> zoneWideStoragePools = _poolDao.findZoneWideStoragePoolsByHypervisor(srcVolumePool.getDataCenterId(), hypervisorType);
-        if (CollectionUtils.isNotEmpty(zoneWideStoragePools)) {
-            storagePools.addAll(zoneWideStoragePools);
-        }
-        List<Long> clusterIds = new ArrayList<>();
+    private Cluster getVolumeSourceStoragePoolVmCluster(StoragePool srcVolumePool, VirtualMachine vm) {
+        Cluster cluster = null;
         Long clusterId = srcVolumePool.getClusterId();
         if (clusterId == null && vm != null && vm.getHostId() != null) {
             Long hostId = vm.getHostId();
@@ -1545,6 +1534,26 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             HostVO host = _hostDao.findById(hostId);
             clusterId = host.getClusterId();
         }
+        if (clusterId != null) {
+            cluster = _clusterDao.findById(clusterId);
+        }
+        return cluster;
+    }
+
+    /**
+     * This method looks for all storage pools that are compatible with the given volume.
+     * <ul>
+     *  <li>We will look for storage systems that are zone wide.</li>
+     *  <li>We also all storage available filtering by data center, pod and cluster as the current storage pool used by the given volume.</li>
+     * </ul>
+     */
+    private List<? extends StoragePool> getAllStoragePoolCompatibleWithVolumeSourceStoragePool(StoragePool srcVolumePool, HypervisorType hypervisorType, Long clusterId) {
+        List<StoragePoolVO> storagePools = new ArrayList<>();
+        List<StoragePoolVO> zoneWideStoragePools = _poolDao.findZoneWideStoragePoolsByHypervisor(srcVolumePool.getDataCenterId(), hypervisorType);
+        if (CollectionUtils.isNotEmpty(zoneWideStoragePools)) {
+            storagePools.addAll(zoneWideStoragePools);
+        }
+        List<Long> clusterIds = new ArrayList<>();
         if (clusterId == null) {
             List<ClusterVO> clusters = _clusterDao.listByDcHyType(srcVolumePool.getDataCenterId(), hypervisorType.toString());
             for (ClusterVO cluster : clusters) {
@@ -1569,7 +1578,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      *
      *  Side note: the idea behind this method is to provide power for administrators of manually overriding deployments defined by CloudStack.
      */
-    private List<StoragePool> findAllSuitableStoragePoolsForVm(final VolumeVO volume, VMInstanceVO vm, StoragePool srcVolumePool) {
+    private List<StoragePool> findAllSuitableStoragePoolsForVm(final VolumeVO volume, VMInstanceVO vm, StoragePool srcVolumePool, Cluster srcCluster) {
         List<StoragePool> suitablePools = new ArrayList<>();
 
         HostVO host = _hostDao.findById(vm.getHostId());
@@ -1580,7 +1589,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         ExcludeList avoid = new ExcludeList();
         avoid.addPool(srcVolumePool.getId());
 
-        DataCenterDeployment plan = new DataCenterDeployment(volume.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null, null, null);
+        DataCenterDeployment plan = new DataCenterDeployment(volume.getDataCenterId(), srcVolumePool.getPodId(),
+                srcCluster != null ? srcCluster.getId() : null, srcCluster != null ? srcCluster.getPodId() : null,
+                null, null, null);
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         // OfflineVmwareMigration: vm might be null here; deal!
         HypervisorType type = getHypervisorType(vm, srcVolumePool, profile);
