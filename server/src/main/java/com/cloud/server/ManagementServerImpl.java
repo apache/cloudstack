@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
@@ -572,6 +573,8 @@ import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.dao.StoragePoolJoinDao;
+import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -659,6 +662,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.VolumeVO;
@@ -788,6 +792,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private GuestOSHypervisorDao _guestOSHypervisorDao;
     @Inject
     private PrimaryDataStoreDao _poolDao;
+    @Inject
+    private StoragePoolJoinDao _poolJoinDao;
     @Inject
     private NetworkDao _networkDao;
     @Inject
@@ -1145,7 +1151,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<List<? extends Cluster>, Integer>(result.first(), result.second());
     }
 
-    private HypervisorType getHypervisorType(VMInstanceVO vm, StoragePool srcVolumePool, VirtualMachineProfile profile) {
+    private HypervisorType getHypervisorType(VMInstanceVO vm, StoragePool srcVolumePool) {
         HypervisorType type = null;
         if (vm == null) {
             StoragePoolVO poolVo = _poolDao.findById(srcVolumePool.getId());
@@ -1155,18 +1161,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     ClusterVO cluster = _clusterDao.findById(clusterId);
                     type = cluster.getHypervisorType();
                 }
-            } else if (ScopeType.ZONE.equals(poolVo.getScope())) {
-                Long zoneId = poolVo.getDataCenterId();
-                if (zoneId != null) {
-                    DataCenterVO dc = _dcDao.findById(zoneId);
-                }
             }
 
             if (null == type) {
                 type = srcVolumePool.getHypervisor();
             }
         } else {
-            type = profile.getHypervisorType();
+            type = vm.getHypervisorType();
         }
         return type;
     }
@@ -1488,18 +1489,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         StoragePool srcVolumePool = _poolDao.findById(volume.getPoolId());
-        Cluster srcCluster = null;
-        if (vm != null) {
-            srcCluster = getVolumeSourceStoragePoolVmCluster(srcVolumePool, vm);
-        }
-        allPools = getAllStoragePoolCompatibleWithVolumeSourceStoragePool(srcVolumePool,
-                ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat()),
-                srcCluster != null ? srcCluster.getId() : null);
+        HypervisorType hypervisorType = getHypervisorType(vm, srcVolumePool);
+        Pair<Host, List<Cluster>> hostClusterPair = getVolumeVmHostClusters(srcVolumePool, vm, hypervisorType);
+        Host vmHost = hostClusterPair.first();
+        List<Cluster> clusters = hostClusterPair.second();
+        allPools = getAllStoragePoolCompatibleWithVolumeSourceStoragePool(srcVolumePool, hypervisorType, clusters);
         allPools.remove(srcVolumePool);
         if (vm != null) {
-            suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, srcVolumePool, srcCluster);
+            suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, vmHost, srcVolumePool,
+                    CollectionUtils.isNotEmpty(clusters) ? clusters.get(0) : null, hypervisorType);
         } else {
-            suitablePools = allPools;
+            suitablePools = findAllSuitableStoragePoolsForDetachedVolume(volume, allPools);
         }
         List<StoragePool> avoidPools = new ArrayList<>();
         if (srcVolumePool.getParent() != 0L) {
@@ -1526,21 +1526,28 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
-    private Cluster getVolumeSourceStoragePoolVmCluster(StoragePool srcVolumePool, VirtualMachine vm) {
-        Cluster cluster = null;
+    private Pair<Host, List<Cluster>> getVolumeVmHostClusters(StoragePool srcVolumePool, VirtualMachine vm, HypervisorType hypervisorType) {
+        Host host = null;
+        List<Cluster> clusters = new ArrayList<>();
         Long clusterId = srcVolumePool.getClusterId();
-        if (clusterId == null && vm != null && vm.getHostId() != null) {
+        if (vm != null) {
             Long hostId = vm.getHostId();
             if (hostId == null) {
                 hostId = vm.getLastHostId();
             }
-            HostVO host = _hostDao.findById(hostId);
+            if (hostId != null) {
+                host = _hostDao.findById(hostId);
+            }
+        }
+        if (clusterId == null && host != null) {
             clusterId = host.getClusterId();
         }
-        if (clusterId != null) {
-            cluster = _clusterDao.findById(clusterId);
+        if (clusterId != null && vm != null) {
+            clusters.add(_clusterDao.findById(clusterId));
+        } else {
+            clusters.addAll(_clusterDao.listByDcHyType(srcVolumePool.getDataCenterId(), hypervisorType.toString()));
         }
-        return cluster;
+        return new Pair<>(host, clusters);
     }
 
     /**
@@ -1550,22 +1557,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      *  <li>We also all storage available filtering by data center, pod and cluster as the current storage pool used by the given volume.</li>
      * </ul>
      */
-    private List<? extends StoragePool> getAllStoragePoolCompatibleWithVolumeSourceStoragePool(StoragePool srcVolumePool, HypervisorType hypervisorType, Long clusterId) {
+    private List<? extends StoragePool> getAllStoragePoolCompatibleWithVolumeSourceStoragePool(StoragePool srcVolumePool, HypervisorType hypervisorType, List<Cluster> clusters) {
         List<StoragePoolVO> storagePools = new ArrayList<>();
         List<StoragePoolVO> zoneWideStoragePools = _poolDao.findZoneWideStoragePoolsByHypervisor(srcVolumePool.getDataCenterId(), hypervisorType);
         if (CollectionUtils.isNotEmpty(zoneWideStoragePools)) {
             storagePools.addAll(zoneWideStoragePools);
         }
-        List<Long> clusterIds = new ArrayList<>();
-        if (clusterId == null) {
-            List<ClusterVO> clusters = _clusterDao.listByDcHyType(srcVolumePool.getDataCenterId(), hypervisorType.toString());
-            for (ClusterVO cluster : clusters) {
-                clusterIds.add(cluster.getId());
-            }
-        } else {
-            clusterIds.add(clusterId);
-        }
-        if (CollectionUtils.isNotEmpty(clusterIds)) {
+        if (CollectionUtils.isNotEmpty(clusters)) {
+            List<Long> clusterIds = clusters.stream().map(Cluster::getId).collect(Collectors.toList());
             List<StoragePoolVO> clusterAndLocalStoragePools = _poolDao.findPoolsInClusters(clusterIds);
             if (CollectionUtils.isNotEmpty(clusterAndLocalStoragePools)) {
                 storagePools.addAll(clusterAndLocalStoragePools);
@@ -1581,14 +1580,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      *
      *  Side note: the idea behind this method is to provide power for administrators of manually overriding deployments defined by CloudStack.
      */
-    private List<StoragePool> findAllSuitableStoragePoolsForVm(final VolumeVO volume, VMInstanceVO vm, StoragePool srcVolumePool, Cluster srcCluster) {
+    private List<StoragePool> findAllSuitableStoragePoolsForVm(final VolumeVO volume, VMInstanceVO vm, Host vmHost, StoragePool srcVolumePool, Cluster srcCluster, HypervisorType hypervisorType) {
         List<StoragePool> suitablePools = new ArrayList<>();
-
-        HostVO host = _hostDao.findById(vm.getHostId());
-        if (host == null) {
-            host = _hostDao.findById(vm.getLastHostId());
-        }
-
         ExcludeList avoid = new ExcludeList();
         avoid.addPool(srcVolumePool.getId());
         Long clusterId = null;
@@ -1601,10 +1594,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 null, null, null, null);
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         // OfflineVmwareMigration: vm might be null here; deal!
-        HypervisorType type = getHypervisorType(vm, srcVolumePool, profile);
 
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, type);
+        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, hypervisorType);
 
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
             List<StoragePool> pools = allocator.allocateToPool(diskProfile, profile, plan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL, true);
@@ -1612,11 +1604,35 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 continue;
             }
             for (StoragePool pool : pools) {
-                boolean isLocalPoolSameHostAsSourcePool = pool.isLocal() && StringUtils.equals(host.getPrivateIpAddress(), pool.getHostAddress());
-                if (isLocalPoolSameHostAsSourcePool || pool.isShared()) {
+                boolean isLocalPoolSameHostAsVmHost = pool.isLocal() &&
+                        (vmHost == null || StringUtils.equals(vmHost.getPrivateIpAddress(), pool.getHostAddress()));
+                if (isLocalPoolSameHostAsVmHost || pool.isShared()) {
                     suitablePools.add(pool);
                 }
 
+            }
+        }
+        return suitablePools;
+    }
+
+    private List<StoragePool> findAllSuitableStoragePoolsForDetachedVolume(Volume volume, List<? extends StoragePool> allPools) {
+        List<StoragePool> suitablePools = new ArrayList<>();
+        if (CollectionUtils.isEmpty(allPools)) {
+            return  suitablePools;
+        }
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        List<String> tags = new ArrayList<>();
+        String[] tagsArray = diskOffering.getTagsArray();
+        if (tagsArray != null && tagsArray.length > 0) {
+            tags = Arrays.asList(tagsArray);
+        }
+        Long[] poolIds = allPools.stream().map(StoragePool::getId).toArray(Long[]::new);
+        List<StoragePoolJoinVO> pools = _poolJoinDao.searchByIds(poolIds);
+        for (StoragePoolJoinVO storagePool : pools) {
+            if (StoragePoolStatus.Up.equals(storagePool.getStatus()) &&
+                    (CollectionUtils.isEmpty(tags) || tags.contains(storagePool.getTag()))) {
+                Optional<? extends StoragePool> match = allPools.stream().filter(x -> x.getId() == storagePool.getId()).findFirst();
+                match.ifPresent(suitablePools::add);
             }
         }
         return suitablePools;
