@@ -303,3 +303,44 @@ from
         
 -- Update name for global configuration user.vm.readonly.ui.details
 Update configuration set name='user.vm.readonly.details' where name='user.vm.readonly.ui.details';
+
+-- PR#4699 Create a temporary table to use as a list of new guest_os to insert.
+CREATE TEMPORARY TABLE temp_new_guest_os_to_insert (name varchar(50));
+
+-- PR#4699 Populate the temporary table with the new guest_os to insert.
+INSERT INTO temp_new_guest_os_to_insert (name)
+VALUES
+('Ubuntu 20.04 LTS'),
+('Ubuntu 21.04'),
+('pfSense 2.4'),
+('OpenBSD 6.7'),
+('OpenBSD 6.8'),
+('AlmaLinux 8.3');
+
+-- PR#4699 Insert the new guest_os if they do not already exists in the table.
+INSERT  INTO cloud.guest_os (uuid, category_id, display_name, created, is_user_defined) 
+SELECT 	UUID(), '1', new_guest_os.name, now(), '0'
+FROM    temp_new_guest_os_to_insert AS new_guest_os
+WHERE 	NOT EXISTS (SELECT  1 
+                    FROM    cloud.guest_os
+                    WHERE   cloud.guest_os.category_id = 1
+                    AND     cloud.guest_os.is_user_defined = 0
+                    AND     cloud.guest_os.display_name = new_guest_os.name);	
+
+-- PR#4699 Insert the new guest_os_hypervisor if they do not already exists in the table.					
+INSERT  INTO cloud.guest_os_hypervisor (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) 
+SELECT 	UUID(), 'KVM', 'default', new_guest_os.name, guest_os.id, now(), 0
+FROM 	temp_new_guest_os_to_insert AS new_guest_os
+INNER 	JOIN cloud.guest_os AS guest_os ON (guest_os.category_id = 1
+                                        AND guest_os.is_user_defined = 0
+                                        AND guest_os.display_name = new_guest_os.name)
+WHERE 	NOT EXISTS (SELECT  1 
+                    FROM    cloud.guest_os_hypervisor AS hypervisor
+                    WHERE   hypervisor.hypervisor_type = 'KVM'					
+                    AND     hypervisor.hypervisor_version = 'default'
+                    AND     hypervisor.guest_os_id = guest_os.id
+                    AND     hypervisor.guest_os_name = new_guest_os.name);
+
+-- PR#4699 Drop temporary table after use it.
+DROP TEMPORARY TABLE temp_new_guest_os_to_insert;
+
