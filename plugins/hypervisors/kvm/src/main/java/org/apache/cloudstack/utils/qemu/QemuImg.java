@@ -244,7 +244,7 @@ public class QemuImg {
 
         script.add("convert");
         Long version  = LibvirtConnection.getConnection().getVersion();
-        if (version > 2009000) {
+        if (version >= 2010000) {
             script.add("-U");
         }
 
@@ -353,7 +353,7 @@ public class QemuImg {
         final Script s = new Script(_qemuImgPath);
         s.add("info");
         Long version  = LibvirtConnection.getConnection().getVersion();
-        if (version > 2009000) {
+        if (version >= 2010000) {
             s.add("-U");
         }
         s.add(file.getFileName());
