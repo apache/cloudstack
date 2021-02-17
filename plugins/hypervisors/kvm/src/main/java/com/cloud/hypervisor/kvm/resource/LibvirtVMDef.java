@@ -725,7 +725,7 @@ public class LibvirtVMDef {
             } else if(devId >= 2) {
                 devId += 2;
             }
-            return (DiskBus.SATA == bus) ? "sdb" : "hd" + getDevLabelSuffix(devId);
+            return (DiskBus.SATA == bus) ? "sd" + getDevLabelSuffix(devId) : "hd" + getDevLabelSuffix(devId);
 
         }
 
@@ -784,6 +784,16 @@ public class LibvirtVMDef {
             _bus = DiskBus.IDE;
         }
 
+        public void defISODisk(String volPath, boolean isUefiEnabled) {
+            _diskType = DiskType.FILE;
+            _deviceType = DeviceType.CDROM;
+            _sourcePath = volPath;
+            _bus = isUefiEnabled ? DiskBus.SATA : DiskBus.IDE;
+            _diskLabel = getDevLabel(3, _bus, true);
+            _diskFmtType = DiskFmtType.RAW;
+            _diskCacheMode = DiskCacheMode.NONE;
+        }
+
         public void defISODisk(String volPath, Integer devId) {
             if (devId == null) {
                 defISODisk(volPath);
@@ -798,20 +808,15 @@ public class LibvirtVMDef {
             }
         }
 
-        public void defISODisk(String volPath, Integer devId,boolean isSecure, boolean isWindowOs) {
+        public void defISODisk(String volPath, Integer devId,boolean isSecure) {
             if (!isSecure) {
                 defISODisk(volPath, devId);
             } else {
                 _diskType = DiskType.FILE;
                 _deviceType = DeviceType.CDROM;
                 _sourcePath = volPath;
-                if (isWindowOs) {
-                    _diskLabel = getDevLabel(devId, DiskBus.SATA, true);
-                    _bus = DiskBus.SATA;
-                } else {
-                    _diskLabel = getDevLabel(devId, DiskBus.SCSI, true);
-                    _bus = DiskBus.SCSI;
-                }
+                _diskLabel = getDevLabel(devId, DiskBus.SATA, true);
+                _bus = DiskBus.SATA;
                 _diskFmtType = DiskFmtType.RAW;
                 _diskCacheMode = DiskCacheMode.NONE;
 
