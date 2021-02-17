@@ -1816,7 +1816,9 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     continue;
                 }
 
-                copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
+                if (srcVolumeInfo.getTemplateId() != null) {
+                    copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
+                }
 
                 VolumeVO destVolume = duplicateVolumeOnAnotherStorage(srcVolume, destStoragePool);
                 VolumeInfo destVolumeInfo = _volumeDataFactory.getVolume(destVolume.getId(), destDataStore);
