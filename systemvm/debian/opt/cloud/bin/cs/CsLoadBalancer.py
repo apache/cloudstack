@@ -54,7 +54,7 @@ class CsLoadBalancer(CsDataBag):
             # Verify new haproxy config before haproxy restart/reload
             haproxy_err = self._verify_haproxy_config(HAPROXY_CONF_T)
             if haproxy_err:
-                raise Exception("haproxy config is invalid with error \n%s" % haproxy_err);
+                raise Exception("haproxy config is invalid with error \n%s" % haproxy_err)
 
             CsHelper.copy(HAPROXY_CONF_T, HAPROXY_CONF_P)
 
