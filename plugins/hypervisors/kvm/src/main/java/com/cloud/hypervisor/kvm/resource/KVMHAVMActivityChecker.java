@@ -52,11 +52,14 @@ public class KVMHAVMActivityChecker extends KVMHABase implements Callable<Boolea
         cmd.add("-t", String.valueOf(String.valueOf(System.currentTimeMillis() / 1000)));
         cmd.add("-d", String.valueOf(suspectTimeInSeconds));
         OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+
         String result = cmd.execute(parser);
-        LOG.debug("KVMHAVMActivityChecker pool: " + nfsStoragePool._poolIp);
-        LOG.debug("KVMHAVMActivityChecker result: " + result);
-        LOG.debug("KVMHAVMActivityChecker parser: " + parser.getLine());
-        if (result == null && parser.getLine().contains("DEAD")) {
+        String parsedLine = parser.getLine();
+
+        LOG.debug(String.format("Checking HB with KVMHAVMActivityChecker [{command=\"%s\", result: \"%s\", log: \"%s\", pool: \"%s\"}].", cmd.toString(), result, parsedLine, nfsStoragePool._poolIp));
+
+        if (result == null && parsedLine.contains("DEAD")) {
+            LOG.warn(String.format("Checking HB with KVMHAVMActivityChecker command [%s] returned [%s]. It is [%s]. It may cause a shutdown of host IP [%s].", cmd.toString(), result, parsedLine, hostIP));
             return false;
         } else {
             return true;
