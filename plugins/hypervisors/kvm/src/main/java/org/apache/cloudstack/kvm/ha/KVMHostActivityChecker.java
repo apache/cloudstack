@@ -73,7 +73,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
             //Re-throwing the exception to avoid poluting the 'HACheckerException' already thrown
             throw e;
         } catch (Exception e){
-            String message = String.format("Operation timed out, probably the host [%s] is not reachable.", r.getId());
+            String message = String.format("Operation timed out, probably the %s is not reachable.", r.toString());
             LOG.warn(message, e);
             throw new HACheckerException(message, e);
         }
@@ -92,22 +92,22 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         Status neighbourStatus = Status.Unknown;
         final CheckOnHostCommand cmd = new CheckOnHostCommand(agent);
         try {
-            LOG.debug(String.format("Checking host [%s] status...", agent.getId()));
+            LOG.debug(String.format("Checking %s status...", agent.toString()));
             Answer answer = agentMgr.easySend(agent.getId(), cmd);
             if (answer != null) {
                 hostStatus = answer.getResult() ? Status.Down : Status.Up;
-                LOG.debug(String.format("Host [%s] has the status [%s].", agent.getId(), hostStatus));
+                LOG.debug(String.format("%s has the status [%s].", agent.toString(), hostStatus));
 
                 if ( hostStatus == Status.Up ){
                     return true;
                 }
             }
             else {
-                LOG.debug(String.format("Setting host [%s] to \"Disconnected\" status.", agent.getId()));
+                LOG.debug(String.format("Setting %s to \"Disconnected\" status.", agent.toString()));
                 hostStatus = Status.Disconnected;
             }
         } catch (Exception e) {
-            LOG.warn(String.format("Failed to send command CheckOnHostCommand to host [%s].", agent.getId()), e);
+            LOG.warn(String.format("Failed to send command CheckOnHostCommand to %s.", agent.toString()), e);
         }
 
         List<HostVO> neighbors = resourceManager.listHostsInClusterByStatus(agent.getClusterId(), Status.Up);
@@ -117,22 +117,22 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
             }
 
             try {
-                LOG.debug(String.format("Investigating host [%s] via neighbouring host [%s].", agent.getId(), neighbor.getId()));
+                LOG.debug(String.format("Investigating %s via neighbouring %s.", agent.toString(), neighbor.toString()));
 
                 Answer answer = agentMgr.easySend(neighbor.getId(), cmd);
                 if (answer != null) {
                     neighbourStatus = answer.getResult() ? Status.Down : Status.Up;
 
-                    LOG.debug(String.format("Neighbouring host [%s] returned status [%s] for the investigated host [%s].", neighbor.getId(), neighbourStatus, agent.getId()));
+                    LOG.debug(String.format("Neighbouring %s returned status [%s] for the investigated %s.", neighbor.toString(), neighbourStatus, agent.toString()));
 
                     if (neighbourStatus == Status.Up) {
                         break;
                     }
                 } else {
-                    LOG.debug(String.format("Neighbouring host [%s] is Disconnected.", neighbor.getId()));
+                    LOG.debug(String.format("Neighbouring %s is Disconnected.", neighbor.toString()));
                 }
             } catch (Exception e) {
-                LOG.warn(String.format("Failed to send command CheckOnHostCommand to host [%s].", neighbor.getId()), e);
+                LOG.warn(String.format("Failed to send command CheckOnHostCommand to %s.", neighbor.toString()), e);
             }
         }
         if (neighbourStatus == Status.Up && (hostStatus == Status.Disconnected || hostStatus == Status.Down)) {
@@ -142,7 +142,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
             hostStatus = Status.Down;
         }
 
-        LOG.debug(String.format("Host [%s] has the status [%s].", agent.getId(), hostStatus));
+        LOG.debug(String.format("%s has the status [%s].", agent.toString(), hostStatus));
 
         return hostStatus == Status.Up;
     }
@@ -156,7 +156,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         for (StoragePool pool : poolVolMap.keySet()) {
             activityStatus = verifyActivityOfStorageOnHost(poolVolMap, pool, agent, suspectTime, activityStatus);
             if (!activityStatus) {
-                LOG.warn(String.format("It seems that the storage pool [%s] does not have activity on host [%s].", pool.getId(), agent.getId()));
+                LOG.warn(String.format("It seems that the storage pool [%s] does not have activity on %s.", pool.getId(), agent.toString()));
                 break;
             }
         }
@@ -168,20 +168,20 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         List<Volume> volume_list = poolVolMap.get(pool);
         final CheckVMActivityOnStoragePoolCommand cmd = new CheckVMActivityOnStoragePoolCommand(agent, pool, volume_list, suspectTime);
 
-        LOG.debug(String.format("Checking VM activity for host [%s] on storage pool [%s].", agent.getId(), pool.getId()));
+        LOG.debug(String.format("Checking VM activity for %s on storage pool [%s].", agent.toString(), pool.getId()));
         try {
             Answer answer = storageManager.sendToPool(pool, getNeighbors(agent), cmd);
 
             if (answer != null) {
                 activityStatus = !answer.getResult();
-                LOG.debug(String.format("Resource [%s] %s activity on storage pool [%s]", agent.getId(), activityStatus ? "has" : "does not have", pool.getId()));
+                LOG.debug(String.format("%s %s activity on storage pool [%s]", agent.toString(), activityStatus ? "has" : "does not have", pool.getId()));
             } else {
-                String message = String.format("Did not get a valid response for VM activity check for host [%s] on storage pool [%s].", agent.getId(), pool.getId());
+                String message = String.format("Did not get a valid response for VM activity check for %s on storage pool [%s].", agent.toString(), pool.getId());
                 LOG.debug(message);
                 throw new IllegalStateException(message);
             }
         } catch (StorageUnavailableException e){
-            String message = String.format("Storage [%s] is unavailable to do the check, probably the host [%s] is not reachable.", pool.getId(), agent.getId());
+            String message = String.format("Storage [%s] is unavailable to do the check, probably the %s is not reachable.", pool.getId(), agent.toString());
             LOG.warn(message, e);
             throw new HACheckerException(message, e);
         }
