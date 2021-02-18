@@ -437,7 +437,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             "Timeout(in milliseconds) that kvm heartbeat to write to storage",
             true, ConfigKey.Scope.Global);
     public static final ConfigKey<String> KvmHeartBeatFailureAction = new ConfigKey<>("Advanced", String.class, KVM_HEARTBEAT_FAILURE_ACTION, "hardreset",
-            "The action for heartbeat write failures on KVM host. The valid value are 'hardreset' (default), 'stopagent', 'destroyvms'",
+            "The action for heartbeat write failures on KVM host. The valid value are 'hardreset' (default), 'noaction', 'stopagent', 'destroyvms'",
             true, ConfigKey.Scope.Global);
 
     private static final String IOPS_READ_RATE = "IOPS Read";
@@ -911,7 +911,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (KvmHeartBeatFailureAction.key().equalsIgnoreCase(name)) {
-            List<String> kvmHeartBeatFailureActions = Arrays.asList("hardreset", "destroyvms", "stopagent");
+            List<String> kvmHeartBeatFailureActions = Arrays.asList("hardreset", "noaction", "destroyvms", "stopagent");
             if (value == null || ! kvmHeartBeatFailureActions.contains(value.toLowerCase())) {
                 final String msg = "Possible values for " + name + " are - " + Arrays.toString(kvmHeartBeatFailureActions.toArray());
                 s_logger.error(msg);
