@@ -40,7 +40,6 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmDetailConstants;
@@ -139,10 +138,6 @@ class VmwareVmImplementer {
                     LOGGER.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
                     details.put(VmDetailConstants.NIC_ADAPTER, VirtualEthernetCardType.E1000.toString());
                 }
-            }
-            if(vm.getVirtualMachine() instanceof VMInstanceVO){
-                VMInstanceVO vmInstanceVO =(VMInstanceVO) vm.getVirtualMachine();
-                to.setEnableDynamicallyScaleVm(vmInstanceVO.isDynamicallyScalable());
             }
         }
 

@@ -1969,6 +1969,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 vmConfigSpec.setCpuHotAddEnabled(vmMo.isCpuHotAddSupported(guestOsId) && vmSpec.isEnableDynamicallyScaleVm());
             }
 
+            if(!vmMo.isMemoryHotAddSupported(guestOsId) && vmSpec.isEnableDynamicallyScaleVm()){
+                s_logger.warn("hotadd is not supported, dynamic scaling feature can not be applied " + vmInternalCSName);
+            }
+
             configNestedHVSupport(vmMo, vmSpec, vmConfigSpec);
 
             //
