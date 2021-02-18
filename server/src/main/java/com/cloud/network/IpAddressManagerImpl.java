@@ -32,6 +32,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -850,10 +851,16 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     errorMessage.append(", network id=" + guestNetworkId);
                 }
                 sc.setJoinParameters("vlan", "type", vlanUse);
-
+                String routerIpAddress = null;
+                if (network != null) {
+                    NetworkDetailVO routerIpDetail = _networkDetailsDao.findDetail(network.getId(), ApiConstants.ROUTER_IP);
+                    routerIpAddress = routerIpDetail != null ? routerIpDetail.getValue() : null;
+                }
                 if (requestedIp != null) {
                     sc.addAnd("address", SearchCriteria.Op.EQ, requestedIp);
                     errorMessage.append(": requested ip " + requestedIp + " is not available");
+                } else if (routerIpAddress != null) {
+                    sc.addAnd("address", Op.NEQ, routerIpAddress);
                 }
 
                 boolean ascOrder = ! forSystemVms;
@@ -1729,7 +1736,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                             s_logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId()
                                     + " as a part of createVlanIpRange process");
                             guestNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName()
-                                    + "-network", null, null, null, false, null, owner, null, physicalNetwork, zoneId, ACLType.Account, null, null, null, null, true, null, null, null);
+                                    + "-network", null, null, null, false, null, owner, null, physicalNetwork, zoneId, ACLType.Account, null, null, null, null, true, null, null, null, null, null);
                             if (guestNetwork == null) {
                                 s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
                                 throw new CloudRuntimeException("Failed to create a Guest Isolated Networks with SourceNAT "
@@ -2104,7 +2111,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientAddressCapacityException {
                 //This method allocates direct ip for the Shared network in Advance zones
                 boolean ipv4 = false;
-
                 if (network.getGateway() != null) {
                     if (nic.getIPv4Address() == null) {
                         PublicIp ip = null;

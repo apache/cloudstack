@@ -1029,6 +1029,46 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
+    private void validateRouterIps(String routerIp, String routerIpv6, String startIp, String endIp, String gateway,
+                                   String netmask, String startIpv6, String endIpv6, String ip6Cidr) {
+        if (isNotBlank(routerIp)) {
+            if (startIp != null && endIp == null) {
+                endIp = startIp;
+            }
+            if (!NetUtils.isValidIp4(routerIp)) {
+                throw new CloudRuntimeException("Router IPv4 IP provided is of incorrect format");
+            }
+            if (isNotBlank(startIp) && isNotBlank(endIp)) {
+                if (!NetUtils.isIpInRange(routerIp, startIp, endIp)) {
+                    throw new CloudRuntimeException("Router IPv4 IP provided is not within the specified range: " + startIp + " - " + endIp);
+                }
+            } else {
+                String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
+                if (!NetUtils.isIpWithInCidrRange(routerIp, cidr)) {
+                    throw new CloudRuntimeException("Router IP provided in not within the network range");
+                }
+            }
+        }
+        if (isNotBlank(routerIpv6)) {
+            if (startIpv6 != null && endIpv6 == null) {
+                endIpv6 = startIpv6;
+            }
+            if (!NetUtils.isValidIp6(routerIpv6)) {
+                throw new CloudRuntimeException("Router IPv6 address provided is of incorrect format");
+            }
+            if (isNotBlank(startIpv6) && isNotBlank(endIpv6)) {
+                String ipv6Range = startIpv6 + "-" + endIpv6;
+                if (!NetUtils.isIp6InRange(routerIpv6, ipv6Range)) {
+                    throw new CloudRuntimeException("Router IPv6 address provided is not within the specified range: " + startIpv6 + " - " + endIpv6);
+                }
+            } else {
+                if (!NetUtils.isIp6InNetwork(routerIpv6, ip6Cidr)) {
+                    throw new CloudRuntimeException("Router IPv6 address provided is not with the network range");
+                }
+            }
+        }
+    }
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_CREATE, eventDescription = "creating network")
@@ -1042,10 +1082,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String vlanId = null;
         boolean bypassVlanOverlapCheck = false;
         boolean hideIpAddressUsage = false;
+        String routerIp = null;
+        String routerIpv6 = null;
         if (cmd instanceof CreateNetworkCmdByAdmin) {
             vlanId = ((CreateNetworkCmdByAdmin)cmd).getVlan();
             bypassVlanOverlapCheck = ((CreateNetworkCmdByAdmin)cmd).getBypassVlanOverlapCheck();
             hideIpAddressUsage = ((CreateNetworkCmdByAdmin)cmd).getHideIpAddressUsage();
+            routerIp = ((CreateNetworkCmdByAdmin)cmd).getRouterIp();
+            routerIpv6 = ((CreateNetworkCmdByAdmin)cmd).getRouterIpv6();
         }
 
         String name = cmd.getNetworkName();
@@ -1148,6 +1192,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         // Only Admin can create Shared networks
         if ((ntwkOff.getGuestType() == GuestType.Shared) && !_accountMgr.isAdmin(caller.getId())) {
             throw new InvalidParameterValueException("Only Admins can create network with guest type " + GuestType.Shared);
+        }
+
+        if (ntwkOff.getGuestType() != GuestType.Shared && (isNotBlank(routerIp) || isNotBlank(routerIpv6))) {
+            throw new InvalidParameterValueException("Router IP can be specified only for Shared networks");
+        }
+
+        if (ntwkOff.getGuestType() == GuestType.Shared && !_networkModel.isProviderForNetworkOffering(Provider.VirtualRouter, networkOfferingId)
+                && (isNotBlank(routerIp) || isNotBlank(routerIpv6))) {
+            throw new InvalidParameterValueException("Virtual Router is not a supported provider for the Shared network, hence router ip should not be provided");
         }
 
         // Check if the network is domain specific
@@ -1279,6 +1332,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
 
+        validateRouterIps(routerIp, routerIpv6, startIP, endIP, gateway, netmask, startIPv6, endIPv6, ip6Cidr);
+
         if (isNotBlank(isolatedPvlan) && (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() == GuestType.Isolated)) {
             throw new InvalidParameterValueException("Can only support create Private VLAN network with advanced shared or L2 network!");
         }
@@ -1365,7 +1420,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zoneId,
                 domainId, isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, secondaryVlanId, privateVlanType, ntwkOff, pNtwk, aclType, owner, cidr, createVlan,
-                externalId);
+                externalId, routerIp, routerIpv6);
 
         if (hideIpAddressUsage) {
             _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), Network.hideIpAddressUsage, String.valueOf(hideIpAddressUsage), false));
@@ -1445,7 +1500,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                   final Boolean bypassVlanOverlapCheck, final String name, final String displayText, final Account caller, final Long physicalNetworkId, final Long zoneId, final Long domainId,
                                   final boolean isDomainSpecific, final Boolean subdomainAccessFinal, final Long vpcId, final String startIPv6, final String endIPv6, final String ip6Gateway, final String ip6Cidr,
                                   final Boolean displayNetwork, final Long aclId, final String isolatedPvlan, final PVlanType isolatedPvlanType, final NetworkOfferingVO ntwkOff, final PhysicalNetwork pNtwk, final ACLType aclType, final Account ownerFinal,
-                                  final String cidr, final boolean createVlan, final String externalId) throws InsufficientCapacityException, ResourceAllocationException {
+                                  final String cidr, final boolean createVlan, final String externalId, String routerIp, String routerIpv6) throws InsufficientCapacityException, ResourceAllocationException {
         try {
             Network network = Transaction.execute(new TransactionCallbackWithException<Network, Exception>() {
                 @Override
@@ -1500,7 +1555,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                         }
 
                         network = _networkMgr.createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, bypassVlanOverlapCheck, networkDomain, owner, sharedDomainId, pNtwk,
-                                zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, isolatedPvlanType, externalId);
+                                zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, isolatedPvlanType, externalId, routerIp, routerIpv6);
                     }
 
                     if (_accountMgr.isRootAdmin(caller.getId()) && createVlan && network != null) {
