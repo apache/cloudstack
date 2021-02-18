@@ -171,6 +171,11 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
                 // Perform action if can't write to heartbeat file.
                 // This will raise an alert on the mgmt server
                 s_logger.warn("write heartbeat failed: " + result);
+                if (HeartBeatAction.NOACTION.equals(s_heartBeatFailureAction)) {
+                    s_logger.warn("No action will be performed on storage pool: " + primaryStoragePool._poolUUID);
+                    _storagePoolCheckStatus.remove(primaryStoragePool._poolUUID);
+                    return true;
+                }
 
                 performAction(primaryStoragePool);
                 _storagePoolCheckStatus.put(primaryStoragePool._poolUUID, STATUS_TERMINATED);

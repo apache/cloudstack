@@ -45,6 +45,7 @@ public class KVMHABase {
     public enum HeartBeatAction {
         HARDRESET("hardreset", "-c"),
         DESTROYVMS("destroyvms", "-d"),
+        NOACTION("noaction", "-n"),
         STOPAGENT("stopagent", "-s");
 
         String _action;
