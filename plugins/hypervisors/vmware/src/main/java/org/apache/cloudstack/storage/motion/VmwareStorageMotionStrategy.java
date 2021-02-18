@@ -26,6 +26,20 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateWithStorageAnswer;
@@ -53,18 +67,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 @Component
 public class VmwareStorageMotionStrategy implements DataMotionStrategy {
@@ -88,9 +90,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         if (isOnVmware(srcData, destData)
                 && isOnPrimary(srcData, destData)
                 && isVolumesOnly(srcData, destData)
-                && isDettached(srcData)
-                && isIntraCluster(srcData, destData)
-                && isStoreScopeEqual(srcData, destData)) {
+                && isDettached(srcData)) {
             if (s_logger.isDebugEnabled()) {
                 String msg = String.format("%s can handle the request because %d(%s) and %d(%s) share the VMware cluster %s (== %s)"
                         , this.getClass()
@@ -188,20 +188,42 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
             throw new UnsupportedOperationException();
         }
         StoragePool sourcePool = (StoragePool) srcData.getDataStore();
+        ScopeType sourceScopeType = srcData.getDataStore().getScope().getScopeType();
         StoragePool targetPool = (StoragePool) destData.getDataStore();
+        ScopeType targetScopeType = destData.getDataStore().getScope().getScopeType();
+        Long hostId = null;
+        String hostGuidInTargetCluster = null;
+        if (ScopeType.CLUSTER.equals(sourceScopeType)) {
+            // Find Volume source cluster and select any Vmware hypervisor host to attach worker VM
+            hostId = findSuitableHostIdForWorkerVmPlacement(sourcePool.getClusterId());
+            if (hostId == null) {
+                throw new CloudRuntimeException("Offline Migration failed, unable to find suitable host for worker VM placement in the cluster of storage pool: " + sourcePool.getName());
+            }
+            if (ScopeType.CLUSTER.equals(targetScopeType) && !sourcePool.getClusterId().equals(targetPool.getClusterId())) {
+                // Without host vMotion might fail between non-shared storages with error similar to,
+                // https://kb.vmware.com/s/article/1003795
+                List<HostVO> hosts = hostDao.findHypervisorHostInCluster(targetPool.getClusterId());
+                if (CollectionUtils.isNotEmpty(hosts)) {
+                    hostGuidInTargetCluster = hosts.get(0).getGuid();
+                }
+                if (hostGuidInTargetCluster == null) {
+                    throw new CloudRuntimeException("Offline Migration failed, unable to find suitable target host for worker VM placement while migrating between storage pools of different cluster without shared storages");
+                }
+            }
+        } else if (ScopeType.CLUSTER.equals(targetScopeType)) {
+            hostId = findSuitableHostIdForWorkerVmPlacement(targetPool.getClusterId());
+            if (hostId == null) {
+                throw new CloudRuntimeException("Offline Migration failed, unable to find suitable host for worker VM placement in the cluster of storage pool: " + targetPool.getName());
+            }
+        }
         MigrateVolumeCommand cmd = new MigrateVolumeCommand(srcData.getId()
                 , srcData.getTO().getPath()
                 , sourcePool
-                , targetPool);
+                , targetPool
+                , hostGuidInTargetCluster);
         // OfflineVmwareMigration: should be ((StoragePool)srcData.getDataStore()).getHypervisor() but that is NULL, so hardcoding
         Answer answer;
-        ScopeType scopeType = srcData.getDataStore().getScope().getScopeType();
-        if (ScopeType.CLUSTER == scopeType) {
-            // Find Volume source cluster and select any Vmware hypervisor host to attach worker VM
-            Long hostId = findSuitableHostIdForWorkerVmPlacement(sourcePool.getClusterId());
-            if (hostId == null) {
-                throw new CloudRuntimeException("Offline Migration failed, unable to find suitable host for worker VM placement in cluster: " + sourcePool.getName());
-            }
+        if (hostId != null) {
             answer = agentMgr.easySend(hostId, cmd);
         } else {
             answer = agentMgr.sendTo(sourcePool.getDataCenterId(), HypervisorType.VMware, cmd);

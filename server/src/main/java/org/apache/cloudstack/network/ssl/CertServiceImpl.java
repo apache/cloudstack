@@ -169,14 +169,14 @@ public class CertServiceImpl implements CertService {
         final List<LoadBalancerCertMapVO> lbCertRule = _lbCertDao.listByCertId(certId);
 
         if (lbCertRule != null && !lbCertRule.isEmpty()) {
-            String lbUuids = "";
+            StringBuilder lbNames = new StringBuilder();
 
             for (final LoadBalancerCertMapVO rule : lbCertRule) {
                 final LoadBalancerVO lb = _entityMgr.findById(LoadBalancerVO.class, rule.getLbId());
-                lbUuids += " " + lb.getUuid();
+                lbNames.append(lb.getName()).append(" ");
             }
 
-            throw new CloudRuntimeException("Certificate in use by a loadbalancer(s)" + lbUuids);
+            throw new CloudRuntimeException("Certificate in use by a loadbalancer(s) " + lbNames.toString());
         }
 
         _sslCertDao.remove(certId);
@@ -311,9 +311,8 @@ public class CertServiceImpl implements CertService {
             {
                 response.setProjectId(project.getUuid());
                 response.setProjectName(project.getName());
-            } else {
-                response.setAccountName(account.getAccountName());
             }
+            response.setAccountName(account.getAccountName());
         } else {
             response.setAccountName(account.getAccountName());
         }

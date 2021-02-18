@@ -124,7 +124,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
                 isVMDeployedWithUefi = true;
             }
         }
-        s_logger.info(" Guest VM is requested with Cusotm[UEFI] Boot Type "+ isVMDeployedWithUefi);
+        s_logger.info(" Guest VM is requested with Custom[UEFI] Boot Type "+ isVMDeployedWithUefi);
 
 
         if (type == Host.Type.Storage) {

@@ -40,7 +40,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.Storage;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -657,6 +656,7 @@ import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -1257,15 +1257,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
+        String srcHostVersion = srcHost.getHypervisorVersion();
+        if (HypervisorType.KVM.equals(srcHost.getHypervisorType()) && srcHostVersion == null) {
+            srcHostVersion = "";
+        }
 
         // Check if the vm can be migrated with storage.
         boolean canMigrateWithStorage = false;
 
-        if (vm.getType() == VirtualMachine.Type.User) {
-            final HypervisorCapabilitiesVO capabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(srcHost.getHypervisorType(), srcHost.getHypervisorVersion());
-            if (capabilities != null) {
-                canMigrateWithStorage = capabilities.isStorageMotionSupported();
-            }
+        if (VirtualMachine.Type.User.equals(vm.getType()) || HypervisorType.VMware.equals(vm.getHypervisorType())) {
+            canMigrateWithStorage = Boolean.TRUE.equals(_hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion));
         }
 
         // Check if the vm is using any disks on local storage.
@@ -1292,8 +1293,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
         DataCenterDeployment plan = null;
         if (canMigrateWithStorage) {
-            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null, null, null, keyword,
-                null, null, srcHost.getHypervisorType(), srcHost.getHypervisorVersion(), srcHost.getId());
+            Long podId = !VirtualMachine.Type.User.equals(vm.getType()) ? srcHost.getPodId() : null;
+            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), podId, null, null, keyword,
+                null, null, srcHost.getHypervisorType(), null, srcHost.getId());
             allHosts = allHostsPair.first();
             hostsForMigrationWithStorage = new ArrayList<>(allHosts);
 
@@ -1303,6 +1305,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
                 for (Iterator<HostVO> iterator = hostsForMigrationWithStorage.iterator(); iterator.hasNext();) {
                     final Host host = iterator.next();
+                    String hostVersion = host.getHypervisorVersion();
+                    if (HypervisorType.KVM.equals(host.getHypervisorType()) && hostVersion == null) {
+                        hostVersion = "";
+                    }
 
                     if (volClusterId != null) {
                         if (storagePool.isLocal() || !host.getClusterId().equals(volClusterId) || usesLocal) {
@@ -1314,7 +1320,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                                 // source volume.
                                 iterator.remove();
                             } else {
-                                if (hasSuitablePoolsForVolume(volume, host, vmProfile)) {
+                                boolean hostSupportsStorageMigration = false;
+                                if ((srcHostVersion != null && srcHostVersion.equals(hostVersion)) ||
+                                        Boolean.TRUE.equals(_hypervisorCapabilitiesDao.isStorageMotionSupported(host.getHypervisorType(), hostVersion))) {
+                                    hostSupportsStorageMigration = true;
+                                }
+                                if (hostSupportsStorageMigration && hasSuitablePoolsForVolume(volume, host, vmProfile)) {
                                     requiresStorageMotion.put(host, true);
                                 } else {
                                     iterator.remove();
@@ -1334,7 +1345,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 }
             }
 
-            plan = new DataCenterDeployment(srcHost.getDataCenterId(), null, null, null, null, null);
+            plan = new DataCenterDeployment(srcHost.getDataCenterId(), podId, null, null, null, null);
         } else {
             final Long cluster = srcHost.getClusterId();
             if (s_logger.isDebugEnabled()) {

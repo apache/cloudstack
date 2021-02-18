@@ -54,6 +54,9 @@ public class AccountVO implements Account {
     @Enumerated(value = EnumType.STRING)
     private State state;
 
+    @Column(name = GenericDao.CREATED_COLUMN)
+    private Date created;
+
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
@@ -166,6 +169,11 @@ public class AccountVO implements Account {
 
     public void setState(State state) {
         this.state = state;
+    }
+
+    @Override
+    public Date getCreated() {
+        return created;
     }
 
     @Override

@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.engine.orchestration;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -80,6 +82,7 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -152,7 +155,6 @@ import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.VmWorkTakeVolumeSnapshot;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.UserVmDao;
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import static com.cloud.storage.resource.StorageProcessor.REQUEST_TEMPLATE_RELOAD;
 
@@ -1193,35 +1195,32 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @Override
-    public boolean storageMigration(VirtualMachineProfile vm, StoragePool destPool) throws StorageUnavailableException {
-        List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
-        List<Volume> volumesNeedToMigrate = new ArrayList<Volume>();
-
-        for (VolumeVO volume : vols) {
+    public boolean storageMigration(VirtualMachineProfile vm, Map<Volume, StoragePool> volumeToPool) throws StorageUnavailableException {
+        Map<Volume, StoragePool> volumeStoragePoolMap = new HashMap<>();
+        for (Map.Entry<Volume, StoragePool> entry : volumeToPool.entrySet()) {
+            Volume volume = entry.getKey();
+            StoragePool pool = entry.getValue();
             if (volume.getState() != Volume.State.Ready) {
                 s_logger.debug("volume: " + volume.getId() + " is in " + volume.getState() + " state");
                 throw new CloudRuntimeException("volume: " + volume.getId() + " is in " + volume.getState() + " state");
             }
 
-            if (volume.getPoolId() == destPool.getId()) {
-                s_logger.debug("volume: " + volume.getId() + " is on the same storage pool: " + destPool.getId());
+            if (volume.getPoolId() == pool.getId()) {
+                s_logger.debug("volume: " + volume.getId() + " is on the same storage pool: " + pool.getId());
                 continue;
             }
-
-            volumesNeedToMigrate.add(volume);
+            volumeStoragePoolMap.put(volume, volumeToPool.get(volume));
         }
 
-        if (volumesNeedToMigrate.isEmpty()) {
+        if (MapUtils.isEmpty(volumeStoragePoolMap)) {
             s_logger.debug("No volume need to be migrated");
             return true;
         }
-
-        // OfflineVmwareMigration: in case we can (vmware?) don't itterate over volumes but tell the hypervisor to do the thing
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Offline vm migration was not done up the stack in VirtualMachineManager so trying here.");
         }
-        for (Volume vol : volumesNeedToMigrate) {
-            Volume result = migrateVolume(vol, destPool);
+        for (Map.Entry<Volume, StoragePool> entry : volumeStoragePoolMap.entrySet()) {
+            Volume result = migrateVolume(entry.getKey(), entry.getValue());
             if (result == null) {
                 return false;
             }

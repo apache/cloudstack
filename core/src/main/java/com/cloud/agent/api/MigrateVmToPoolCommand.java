@@ -18,9 +18,11 @@
 //
 package com.cloud.agent.api;
 
-import com.cloud.agent.api.to.VolumeTO;
+import java.util.List;
 
-import java.util.Collection;
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.utils.Pair;
 
 /**
  * used to tell the agent to migrate a vm to a different primary storage pool.
@@ -28,10 +30,10 @@ import java.util.Collection;
  *
  */
 public class MigrateVmToPoolCommand extends Command {
-    private Collection<VolumeTO> volumes;
     private String vmName;
-    private String destinationPool;
     private boolean executeInSequence = false;
+    private List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerAsList;
+    private String hostGuidInTargetCluster;
 
     protected MigrateVmToPoolCommand() {
     }
@@ -39,27 +41,28 @@ public class MigrateVmToPoolCommand extends Command {
     /**
      *
      * @param vmName the name of the VM to migrate
-     * @param volumes used to supply feedback on vmware generated names
-     * @param destinationPool the primary storage pool to migrate the VM to
+     * @param volumeToFilerTo the volume to primary storage pool map to migrate the VM to
+     * @param hostGuidInTargetCluster GUID of host in target cluster when migrating across clusters
      * @param executeInSequence
      */
-    public MigrateVmToPoolCommand(String vmName, Collection<VolumeTO> volumes, String destinationPool, boolean executeInSequence) {
+    public MigrateVmToPoolCommand(String vmName, List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerTo,
+                                  String hostGuidInTargetCluster, boolean executeInSequence) {
         this.vmName = vmName;
-        this.volumes = volumes;
-        this.destinationPool = destinationPool;
+        this.hostGuidInTargetCluster = hostGuidInTargetCluster;
+        this.volumeToFilerAsList = volumeToFilerTo;
         this.executeInSequence = executeInSequence;
-    }
-
-    public Collection<VolumeTO> getVolumes() {
-        return volumes;
-    }
-
-    public String getDestinationPool() {
-        return destinationPool;
     }
 
     public String getVmName() {
         return vmName;
+    }
+
+    public List<Pair<VolumeTO, StorageFilerTO>> getVolumeToFilerAsList() {
+        return volumeToFilerAsList;
+    }
+
+    public String getHostGuidInTargetCluster() {
+        return hostGuidInTargetCluster;
     }
 
     @Override
