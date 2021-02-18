@@ -677,7 +677,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             long destPoolId = destStore.getId();
 
             final ScaleIOGatewayClient client = getScaleIOClient(srcPoolId);
-            final String srcVolumeId = ScaleIOUtil.getVolumePath(((VolumeInfo) srcData).getPath());
+            final String srcVolumePath = ((VolumeInfo) srcData).getPath();
+            final String srcVolumeId = ScaleIOUtil.getVolumePath(srcVolumePath);
             final StoragePoolVO destStoragePool = storagePoolDao.findById(destPoolId);
             final String destStoragePoolId = destStoragePool.getPath();
             int migrationTimeout = StorageManager.KvmStorageOfflineMigrationWait.value();
@@ -685,13 +686,20 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             if (migrateStatus) {
                 String newVolumeName = String.format("%s-%s-%s-%s", ScaleIOUtil.VOLUME_PREFIX, destData.getId(),
                         destStoragePool.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
-                client.renameVolume(srcVolumeId, newVolumeName);
+                boolean renamed = client.renameVolume(srcVolumeId, newVolumeName);
 
                 if (srcData.getId() != destData.getId()) {
                     VolumeVO destVolume = volumeDao.findById(destData.getId());
-                    String newVolumePath = ScaleIOUtil.updatedPathWithVolumeName(srcVolumeId, newVolumeName);
-                    destVolume.set_iScsiName(newVolumePath);
-                    destVolume.setPath(newVolumePath);
+                    // Volume Id in the PowerFlex/ScaleIO pool remains the same after the migration
+                    // Update PowerFlex volume name only after it is renamed, to maintain the consistency
+                    if (renamed) {
+                        String newVolumePath = ScaleIOUtil.updatedPathWithVolumeName(srcVolumeId, newVolumeName);
+                        destVolume.set_iScsiName(newVolumePath);
+                        destVolume.setPath(newVolumePath);
+                    } else {
+                        destVolume.set_iScsiName(srcVolumePath);
+                        destVolume.setPath(srcVolumePath);
+                    }
                     volumeDao.update(destData.getId(), destVolume);
 
                     VolumeVO srcVolume = volumeDao.findById(srcData.getId());
@@ -719,10 +727,14 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                         String snapshotVolumeId = ScaleIOUtil.getVolumePath(snapshotStore.getInstallPath());
                         String newSnapshotName = String.format("%s-%s-%s-%s", ScaleIOUtil.SNAPSHOT_PREFIX, snapshot.getId(),
                                 destStoragePool.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
-                        client.renameVolume(snapshotVolumeId, newSnapshotName);
+                        renamed = client.renameVolume(snapshotVolumeId, newSnapshotName);
 
                         snapshotStore.setDataStoreId(destPoolId);
-                        snapshotStore.setInstallPath(ScaleIOUtil.updatedPathWithVolumeName(snapshotVolumeId, newSnapshotName));
+                        // Snapshot Id in the PowerFlex/ScaleIO pool remains the same after the migration
+                        // Update PowerFlex snapshot name only after it is renamed, to maintain the consistency
+                        if (renamed) {
+                            snapshotStore.setInstallPath(ScaleIOUtil.updatedPathWithVolumeName(snapshotVolumeId, newSnapshotName));
+                        }
                         snapshotDataStoreDao.update(snapshotStore.getId(), snapshotStore);
                     }
                 }

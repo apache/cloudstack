@@ -376,7 +376,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             checkResponseOK(response);
             return true;
         } catch (final IOException e) {
-            LOG.error("Failed to rename PowerFlex volume due to:", e);
+            LOG.error("Failed to rename PowerFlex volume due to: ", e);
             checkResponseTimeOut(e);
         } finally {
             if (response != null) {
@@ -786,7 +786,6 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         Preconditions.checkArgument(!Strings.isNullOrEmpty(destPoolId), "dest pool id cannot be null");
         Preconditions.checkArgument(timeoutInSecs > 0, "timeout must be greater than 0");
 
-        HttpResponse response = null;
         try {
             Volume volume = getVolume(srcVolumeId);
             if (volume == null || Strings.isNullOrEmpty(volume.getVtreeId())) {
@@ -798,10 +797,21 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             LOG.debug("Migrating the volume: " + srcVolumeId + " on the src pool: " + srcPoolId + " to the dest pool: " + destPoolId +
                     " in the same PowerFlex cluster");
 
-            response = post(
-                    "/instances/Volume::" + srcVolumeId + "/action/migrateVTree",
-                    String.format("{\"destSPId\":\"%s\"}", destPoolId));
-            checkResponseOK(response);
+            HttpResponse response = null;
+            try {
+                response = post(
+                        "/instances/Volume::" + srcVolumeId + "/action/migrateVTree",
+                        String.format("{\"destSPId\":\"%s\"}", destPoolId));
+                checkResponseOK(response);
+            } catch (final IOException e) {
+                LOG.error("Unable to migrate PowerFlex volume due to: ", e);
+                checkResponseTimeOut(e);
+                throw e;
+            } finally {
+                if (response != null) {
+                    EntityUtils.consumeQuietly(response.getEntity());
+                }
+            }
 
             LOG.debug("Wait until the migration is complete for the volume: " + srcVolumeId);
             long migrationStartTime = System.currentTimeMillis();
@@ -844,28 +854,27 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
                     }
                 }
             }
-        } catch (final IOException e) {
-            LOG.error("Failed to migrate PowerFlex volume due to:", e);
-            checkResponseTimeOut(e);
-        } finally {
-            if (response != null) {
-                EntityUtils.consumeQuietly(response.getEntity());
-            }
+        } catch (final Exception e) {
+            LOG.error("Failed to migrate PowerFlex volume due to: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to migrate PowerFlex volume due to: " + e.getMessage());
         }
+
         LOG.debug("Migration failed for the volume: " + srcVolumeId);
         return false;
     }
 
-    private boolean waitForVolumeMigrationToComplete(final String volumeTreeId, int waitTimeInSec) {
+    private boolean waitForVolumeMigrationToComplete(final String volumeTreeId, int waitTimeoutInSecs) {
         LOG.debug("Waiting for the migration to complete for the volume-tree " + volumeTreeId);
         if (Strings.isNullOrEmpty(volumeTreeId)) {
             LOG.warn("Invalid volume-tree id, unable to check the migration status of the volume-tree " + volumeTreeId);
             return false;
         }
 
-        while (waitTimeInSec > 0) {
+        int delayTimeInSecs = 3;
+        while (waitTimeoutInSecs > 0) {
             try {
-                Thread.sleep(1000); // Try every sec and return after migration is complete
+                // Wait and try after few secs (reduce no. of client API calls to check the migration status) and return after migration is complete
+                Thread.sleep(delayTimeInSecs * 1000);
 
                 VTreeMigrationInfo.MigrationStatus migrationStatus = getVolumeTreeMigrationStatus(volumeTreeId);
                 if (migrationStatus != null && migrationStatus == VTreeMigrationInfo.MigrationStatus.NotInMigration) {
@@ -876,7 +885,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
                 LOG.warn("Exception while checking for migration status of the volume-tree: " + volumeTreeId + " - " + ex.getLocalizedMessage());
                 // don't do anything
             } finally {
-                waitTimeInSec--;
+                waitTimeoutInSecs = waitTimeoutInSecs - delayTimeInSecs;
             }
         }
 
@@ -925,10 +934,10 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             pauseVolumeMigration(srcVolumeId, true); // Pause forcefully
             // Wait few secs for volume migration to change to Paused state
             boolean paused = false;
-            int retryCount = 5;
+            int retryCount = 3;
             while (retryCount > 0) {
                 try {
-                    Thread.sleep(1000); // Try every sec
+                    Thread.sleep(3000); // Try after few secs
                     migrationStatus = getVolumeTreeMigrationStatus(volume.getVtreeId()); // Get updated migration status
                     if (migrationStatus != null && migrationStatus == VTreeMigrationInfo.MigrationStatus.Paused) {
                         LOG.debug("Migration for the volume: " + srcVolumeId + " paused");
