@@ -551,15 +551,23 @@ public class ConsoleProxy {
                         !param.getClientHostPassword().equals(viewer.getClientHostPassword()))
                     throw new AuthenticationException("Cannot use the existing viewer " + viewer + ": bad sid");
 
-                if (!viewer.isFrontEndAlive()) {
-                    s_logger.info("Initializing new novnc client as novnc view object is not alive: " + viewer);
+                try {
                     authenticationExternally(param);
-                    viewer.initClient(param);
-                    reportLoadChange = true;
-                } else {
-                    s_logger.info("Rejecting new novnc client as novnc viewer object is still alive: " + viewer);
+                } catch (Exception e) {
+                    s_logger.error("Authencation failed for param: " + param);
                     return null;
                 }
+                s_logger.info("Initializing new novnc client and disconnecting existing session");
+                try {
+                    ((ConsoleProxyNoVncClient)viewer).getSession().disconnect();
+                } catch (IOException e) {
+                    s_logger.error("Exception while disconnect session of novnc viewer object: " + viewer, e);
+                }
+                removeViewer(viewer);
+                viewer = new ConsoleProxyNoVncClient(session);
+                viewer.initClient(param);
+                connectionMap.put(clientKey, viewer);
+                reportLoadChange = true;
             }
 
             if (reportLoadChange) {
