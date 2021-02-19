@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -349,8 +351,7 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+import com.google.common.base.Strings;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
@@ -621,11 +622,13 @@ public class ApiResponseHelper implements ResponseGenerator {
         vmSnapshotResponse.setDisplayName(vmSnapshot.getDisplayName());
         UserVm vm = ApiDBUtils.findUserVmById(vmSnapshot.getVmId());
         if (vm != null) {
-            vmSnapshotResponse.setVirtualMachineid(vm.getUuid());
+            vmSnapshotResponse.setVirtualMachineId(vm.getUuid());
+            vmSnapshotResponse.setVirtualMachineName(Strings.isNullOrEmpty(vm.getDisplayName()) ? vm.getHostName() : vm.getDisplayName());
             vmSnapshotResponse.setHypervisor(vm.getHypervisorType());
             DataCenterVO datacenter = ApiDBUtils.findZoneById(vm.getDataCenterId());
             if (datacenter != null) {
                 vmSnapshotResponse.setZoneId(datacenter.getUuid());
+                vmSnapshotResponse.setZoneName(datacenter.getName());
             }
         }
         if (vmSnapshot.getParent() != null) {
