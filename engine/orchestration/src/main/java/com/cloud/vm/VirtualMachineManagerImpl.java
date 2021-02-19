@@ -4221,14 +4221,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final Host fromHost = _hostDao.findById(srcHostId);
         Host srcHost = _hostDao.findById(srcHostId);
         if (fromHost == null) {
-            s_logger.info("Unable to find host to migrate from: " + srcHost.getName());
-            throw new CloudRuntimeException("Unable to find host to migrate from: " + srcHost.getName());
+            String logMessageUnableToFindHost = String.format("Unable to find host to migrate from host %s.", srcHost);
+            s_logger.info(logMessageUnableToFindHost);
+            throw new CloudRuntimeException(logMessageUnableToFindHost);
         }
 
         Host dstHost = _hostDao.findById(dstHostId);
         if (fromHost.getClusterId().longValue() != dest.getCluster().getId()) {
-            s_logger.info("Source and destination host are not in same cluster, unable to migrate to host: " + dstHost.getName());
-            throw new CloudRuntimeException("Source and destination host are not in same cluster, unable to migrate to host: " + dest.getHost().getName());
+            String logMessageHostsOnDifferentCluster = String.format("Source and destination host are not in same cluster, unable to migrate to host %s", srcHost);
+            s_logger.info(logMessageHostsOnDifferentCluster);
+            throw new CloudRuntimeException(logMessageHostsOnDifferentCluster);
         }
 
         final VirtualMachineGuru vmGuru = getVmGuru(vm);
@@ -4341,13 +4343,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     try {
                         _agentMgr.send(srcHostId, new Commands(cleanup(vm.getInstanceName())), null);
                     } catch (final AgentUnavailableException e) {
-                        s_logger.error("AgentUnavailableException while cleanup on source host: " + srcHost.getName());
+                        s_logger.error(String.format("AgentUnavailableException while cleanup on source host: %s", srcHost));
                     }
                     cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true);
                     throw new CloudRuntimeException("Unable to complete migration for " + vm);
                 }
             } catch (final OperationTimedoutException e) {
-                s_logger.debug("Error while checking the vm " + vm + " on host " + dstHost.getName(), e);
+                s_logger.debug("Error while checking the vm " + vm + " on host " + dstHost, e);
             }
 
             migrated = true;
@@ -4356,7 +4358,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 s_logger.info("Migration was unsuccessful.  Cleaning up: " + vm);
 
                 _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(),
-                        "Unable to migrate vm " + vm.getInstanceName() + " from host " + fromHost.getName() + " in zone " + dest.getDataCenter().getName() + " and pod " +
+                        "Unable to migrate vm " + vm.getInstanceName() + " from host " + fromHost + " in zone " + dest.getDataCenter().getName() + " and pod " +
                                 dest.getPod().getName(), "Migrate Command failed.  Please check logs.");
                 try {
                     _agentMgr.send(dstHostId, new Commands(cleanup(vm.getInstanceName())), null);

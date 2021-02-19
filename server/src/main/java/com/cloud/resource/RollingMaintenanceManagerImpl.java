@@ -395,7 +395,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
      * @throws AgentUnavailableException
      */
     private void putHostIntoMaintenance(Host host) throws InterruptedException, AgentUnavailableException {
-        s_logger.debug("Trying to set the host " + host.getName() + " into maintenance");
+        s_logger.debug("Trying to set the host " + host + " into maintenance");
         PrepareForMaintenanceCmd cmd = new PrepareForMaintenanceCmd();
         cmd.setId(host.getId());
         resourceManager.maintain(cmd);
@@ -439,7 +439,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
      */
     private boolean isMaintenanceStageAvoided(Host host, Map<Long, String> hostsToAvoidMaintenance, List<HostSkipped> hostsSkipped) {
         if (hostsToAvoidMaintenance.containsKey(host.getId())) {
-            s_logger.debug("Host " + host.getName() + " is not being put into maintenance, skipping it");
+            s_logger.debug("Host " + host + " is not being put into maintenance, skipping it");
             HostSkipped hostSkipped = new HostSkipped(host, hostsToAvoidMaintenance.get(host.getId()));
             hostsSkipped.add(hostSkipped);
             return true;
@@ -468,7 +468,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
             return new Ternary<>(true, false, result.second());
         }
         if (result.third() && !hostsToAvoidMaintenance.containsKey(host.getId())) {
-            s_logger.debug("Host " + host.getName() + " added to the avoid maintenance set");
+            s_logger.debug("Host " + host + " added to the avoid maintenance set");
             hostsToAvoidMaintenance.put(host.getId(), "Pre-maintenance stage set to avoid maintenance");
         }
         return new Ternary<>(false, false, result.second());
@@ -491,7 +491,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
             RollingMaintenanceAnswer answer = (RollingMaintenanceAnswer) agentManager.send(host.getId(), new RollingMaintenanceCommand(true));
             return answer.isMaintenaceScriptDefined();
         } catch (AgentUnavailableException | OperationTimedoutException e) {
-            String msg = "Could not check for maintenance script on host " + host.getName() + " due to: " + e.getMessage();
+            String msg = "Could not check for maintenance script on host " + host + " due to: " + e.getMessage();
             s_logger.error(msg, e);
             return false;
         }
@@ -537,7 +537,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
                 answer = agentManager.send(host.getId(), cmd);
             } catch (AgentUnavailableException | OperationTimedoutException e) {
                 // Agent may be restarted on the scripts - continue polling until it is up
-                String msg = "Cannot send command to host: " + host.getName() + ", waiting " + pingInterval + "ms - " + e.getMessage();
+                String msg = "Cannot send command to host " + host + ", waiting " + pingInterval + "ms - " + e.getMessage();
                 s_logger.warn(msg);
                 cmd.setStarted(true);
                 Thread.sleep(pingInterval);
@@ -571,7 +571,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         for (Host host : hosts) {
             Ternary<Boolean, String, Boolean> result = performStageOnHost(host, Stage.PreFlight, timeout, payload, forced);
             if (result.third() && !hostsToAvoidMaintenance.containsKey(host.getId())) {
-                s_logger.debug("Host " + host.getName() + " added to the avoid maintenance set");
+                s_logger.debug("Host " + host + " added to the avoid maintenance set");
                 hostsToAvoidMaintenance.put(host.getId(), "Pre-flight stage set to avoid maintenance");
             }
         }
@@ -655,7 +655,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
             sucessfullyCheckedVmMigrations++;
         }
         if (sucessfullyCheckedVmMigrations != vmsRunning.size()) {
-            return new Pair<>(false, "Host " + host.getName() + " cannot enter maintenance mode as capacity check failed for hosts in cluster " + cluster.getUuid());
+            return new Pair<>(false, "Host " + host + " cannot enter maintenance mode as capacity check failed for hosts in cluster " + cluster.getUuid());
         }
         return new Pair<>(true, "OK");
     }

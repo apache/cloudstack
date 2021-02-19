@@ -920,8 +920,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
       Host lastHost = _hostDao.findById(vm.getLastHostId());
       Host oldHost = _hostDao.findById(oldHostId);
       Host newHost = _hostDao.findById(vm.getHostId());
-      s_logger.debug("VM state transitted from :" + oldState + " to " + newState + " with event: " + event + "vm's original host: " + lastHost.getName() +
-              " new host id: " + newHost.getName() + " host before state transition: " + oldHost.getName());
+      s_logger.debug("VM state transited from :" + oldState + " to " + newState + " with event: " + event + "vm's original host: " + lastHost +
+              ", new host: " + newHost + ", host before state transition: " + oldHost);
 
       if (oldState == State.Starting) {
         if (newState != State.Running) {
