@@ -395,7 +395,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
      * @throws AgentUnavailableException
      */
     private void putHostIntoMaintenance(Host host) throws InterruptedException, AgentUnavailableException {
-        s_logger.debug("Trying to set the host " + host + " into maintenance");
+        s_logger.debug("Trying to set " + host + " into maintenance");
         PrepareForMaintenanceCmd cmd = new PrepareForMaintenanceCmd();
         cmd.setId(host.getId());
         resourceManager.maintain(cmd);
@@ -439,7 +439,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
      */
     private boolean isMaintenanceStageAvoided(Host host, Map<Long, String> hostsToAvoidMaintenance, List<HostSkipped> hostsSkipped) {
         if (hostsToAvoidMaintenance.containsKey(host.getId())) {
-            s_logger.debug("Host " + host + " is not being put into maintenance, skipping it");
+            s_logger.debug(host + " is not being put into maintenance, skipping it");
             HostSkipped hostSkipped = new HostSkipped(host, hostsToAvoidMaintenance.get(host.getId()));
             hostsSkipped.add(hostSkipped);
             return true;
@@ -468,7 +468,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
             return new Ternary<>(true, false, result.second());
         }
         if (result.third() && !hostsToAvoidMaintenance.containsKey(host.getId())) {
-            s_logger.debug("Host " + host + " added to the avoid maintenance set");
+            s_logger.debug(host + " added to the avoid maintenance set");
             hostsToAvoidMaintenance.put(host.getId(), "Pre-maintenance stage set to avoid maintenance");
         }
         return new Ternary<>(false, false, result.second());
@@ -571,7 +571,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         for (Host host : hosts) {
             Ternary<Boolean, String, Boolean> result = performStageOnHost(host, Stage.PreFlight, timeout, payload, forced);
             if (result.third() && !hostsToAvoidMaintenance.containsKey(host.getId())) {
-                s_logger.debug("Host " + host + " added to the avoid maintenance set");
+                s_logger.debug(host + " added to the avoid maintenance set");
                 hostsToAvoidMaintenance.put(host.getId(), "Pre-flight stage set to avoid maintenance");
             }
         }
@@ -616,7 +616,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
             ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(runningVM.getServiceOfferingId());
             for (Host hostInCluster : hostsInCluster) {
                 if (!checkHostTags(hostTags, hostTagsDao.gethostTags(hostInCluster.getId()), serviceOffering.getHostTag())) {
-                    s_logger.debug("Host tags mismatch between host " + host.getUuid() + " and host " + hostInCluster.getUuid() +
+                    s_logger.debug("Host tags mismatch between " + host + " and " + hostInCluster +
                             ". Skipping it from the capacity check");
                     continue;
                 }
@@ -627,7 +627,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
                     affinityChecks = affinityChecks && affinityProcessor.check(vmProfile, deployDestination);
                 }
                 if (!affinityChecks) {
-                    s_logger.debug("Affinity check failed between host " + host.getUuid() + " and host " + hostInCluster.getUuid() +
+                    s_logger.debug("Affinity check failed between " + host + " and " + hostInCluster +
                             ". Skipping it from the capacity check");
                     continue;
                 }
@@ -647,15 +647,14 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
                 }
             }
             if (!canMigrateVm) {
-                String msg = "VM " + runningVM.getUuid() + " cannot be migrated away from host " + host.getUuid() +
-                        " to any other host in the cluster";
+                String msg = "VM " + runningVM.getUuid() + " cannot be migrated away from " + host + "to any other host in the cluster";
                 s_logger.error(msg);
                 return new Pair<>(false, msg);
             }
             sucessfullyCheckedVmMigrations++;
         }
         if (sucessfullyCheckedVmMigrations != vmsRunning.size()) {
-            return new Pair<>(false, "Host " + host + " cannot enter maintenance mode as capacity check failed for hosts in cluster " + cluster.getUuid());
+            return new Pair<>(false, host + " cannot enter maintenance mode as capacity check failed for hosts in cluster " + cluster.getUuid());
         }
         return new Pair<>(true, "OK");
     }

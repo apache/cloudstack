@@ -189,7 +189,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
             if (sentCount != null && sentCount <= 0) {
                 boolean concurrentUpdateResult = hostAlertCache.asMap().replace(host.getId(), sentCount, sentCount+1L);
                 if (concurrentUpdateResult) {
-                    final String subject = String.format("Out-of-band management auth-error detected for host %s in cluster [id: %d] and zone [id: %d].", host, host.getClusterId(), host.getDataCenterId());
+                    final String subject = String.format("Out-of-band management auth-error detected for %s in cluster [id: %d] and zone [id: %d].", host, host.getClusterId(), host.getDataCenterId());
                     LOG.error(subject + ": " + message);
                     alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_OOBM_AUTH_ERROR, host.getDataCenterId(), host.getPodId(), subject, message);
                 }
@@ -203,11 +203,12 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
             return false;
         }
         OutOfBandManagement.PowerState currentPowerState = outOfBandManagementHost.getPowerState();
+        Host host = hostDao.findById(outOfBandManagementHost.getHostId());
         try {
             OutOfBandManagement.PowerState newPowerState = OutOfBandManagement.PowerState.getStateMachine().getNextState(currentPowerState, event);
             boolean result = OutOfBandManagement.PowerState.getStateMachine().transitTo(outOfBandManagementHost, event, null, outOfBandManagementDao);
             if (result) {
-                final String message = String.format("Transitioned out-of-band management power state from:%s to:%s due to event:%s for the host id:%d", currentPowerState, newPowerState, event, outOfBandManagementHost.getHostId());
+                final String message = String.format("Transitioned out-of-band management power state from %s to %s due to event: %s for %d", currentPowerState, newPowerState, event, host);
                 LOG.debug(message);
                 if (newPowerState == OutOfBandManagement.PowerState.Unknown) {
                     ActionEventUtils.onActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(), Domain.ROOT_DOMAIN,
@@ -216,7 +217,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
             }
             return result;
         } catch (NoTransitionException ignored) {
-            LOG.trace(String.format("Unable to transition out-of-band management power state for host id=%s for the event=%s and current power state=%s", outOfBandManagementHost.getHostId(), event, currentPowerState));
+            LOG.trace(String.format("Unable to transition out-of-band management power state for %s for the event: %s and current power state: %s", host, event, currentPowerState));
         }
         return false;
     }
@@ -437,13 +438,13 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
     public OutOfBandManagementResponse changePassword(final Host host, final String newPassword) {
         checkOutOfBandManagementEnabledByZoneClusterHost(host);
         if (Strings.isNullOrEmpty(newPassword)) {
-            throw new CloudRuntimeException(String.format("Cannot change out-of-band management password as provided new-password is null or empty for host %s.", host));
+            throw new CloudRuntimeException(String.format("Cannot change out-of-band management password as provided new-password is null or empty for %s.", host));
         }
 
         final OutOfBandManagement outOfBandManagementConfig = outOfBandManagementDao.findByHost(host.getId());
         final ImmutableMap<OutOfBandManagement.Option, String> options = getOptions(outOfBandManagementConfig);
         if (!(options.containsKey(OutOfBandManagement.Option.PASSWORD) && !Strings.isNullOrEmpty(options.get(OutOfBandManagement.Option.PASSWORD)))) {
-            throw new CloudRuntimeException(String.format("Cannot change out-of-band management password as we've no previously configured password for host %s.", host));
+            throw new CloudRuntimeException(String.format("Cannot change out-of-band management password as we've no previously configured password for %s.", host));
         }
         final OutOfBandManagementDriver driver = getDriver(outOfBandManagementConfig);
         final OutOfBandManagementDriverChangePasswordCommand changePasswordCmd = new OutOfBandManagementDriverChangePasswordCommand(options, ActionTimeout.valueIn(host.getClusterId()), newPassword);
@@ -456,7 +457,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
                 boolean result = outOfBandManagementDao.update(updatedOutOfBandManagementConfig.getId(), (OutOfBandManagementVO) updatedOutOfBandManagementConfig);
 
                 if (!result) {
-                    throw new CloudRuntimeException(String.format("Failed to change out-of-band management password for host (%s) in the database.", host.getName()));
+                    throw new CloudRuntimeException(String.format("Failed to change out-of-band management password for host (%s) in the database.", host));
                 }
 
                 final OutOfBandManagementDriverResponse driverResponse;
@@ -567,7 +568,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
                     } else if (outOfBandManagementHost.getPowerState() != OutOfBandManagement.PowerState.Disabled) {
                         if (transitionPowerStateToDisabled(Collections.singletonList(host))) {
                             if (LOG.isDebugEnabled()) {
-                                LOG.debug("Out-of-band management was disabled in zone/cluster/host, disabled power state for host: " + host);
+                                LOG.debug("Out-of-band management was disabled in zone/cluster/host, disabled power state for " + host);
                             }
                         }
                     }
