@@ -824,11 +824,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     if (vlanDbIds == null || vlanDbIds.contains(nonDedicatedVlan.getId()))
                         nonDedicatedVlanDbIds.add(nonDedicatedVlan.getId());
                 }
-                if (dedicatedVlanDbIds != null && !dedicatedVlanDbIds.isEmpty()) {
+                if (!dedicatedVlanDbIds.isEmpty()) {
                     fetchFromDedicatedRange = true;
                     sc.setParameters("vlanId", dedicatedVlanDbIds.toArray());
                     errorMessage.append(", vlanId id=" + Arrays.toString(dedicatedVlanDbIds.toArray()));
-                } else if (nonDedicatedVlanDbIds != null && !nonDedicatedVlanDbIds.isEmpty()) {
+                } else if (!nonDedicatedVlanDbIds.isEmpty()) {
                     sc.setParameters("vlanId", nonDedicatedVlanDbIds.toArray());
                     errorMessage.append(", vlanId id=" + Arrays.toString(nonDedicatedVlanDbIds.toArray()));
                 } else {
@@ -877,7 +877,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 if (addrs.size() == 0 && fetchFromDedicatedRange) {
                     // Verify if account is allowed to acquire IPs from the system
                     boolean useSystemIps = UseSystemPublicIps.valueIn(owner.getId());
-                    if (useSystemIps && nonDedicatedVlanDbIds != null && !nonDedicatedVlanDbIds.isEmpty()) {
+                    if (useSystemIps && !nonDedicatedVlanDbIds.isEmpty()) {
                         fetchFromDedicatedRange = false;
                         sc.setParameters("vlanId", nonDedicatedVlanDbIds.toArray());
                         errorMessage.append(", vlanId id=" + Arrays.toString(nonDedicatedVlanDbIds.toArray()));
@@ -1106,6 +1106,10 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         return success;
     }
 
+    private String generateErrorMessageForOperationOnDisabledZone(String operation, DataCenter zone) {
+        return String.format("Cannot %s, Zone [id: %d, uuid: %s, name: %s] is currently disabled.", operation, zone.getId(), zone.getUuid(), zone.getName());
+    }
+
     @DB
     @Override
     public AcquirePodIpCmdResponse allocatePodIp(String zoneId, String podId) throws ConcurrentOperationException, ResourceAllocationException {
@@ -1113,8 +1117,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         DataCenter zone = _entityMgr.findByUuid(DataCenter.class, zoneId);
         Account caller = CallContext.current().getCallingAccount();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
-            ResourceAllocationException ex = new ResourceAllocationException("Cannot perform this operation, " + "Zone is currently disabled" + "zoneId=" + zone.getUuid(),
-                    ResourceType.network);
+            ResourceAllocationException ex = new ResourceAllocationException(generateErrorMessageForOperationOnDisabledZone("allocate Pod IP addresses", zone), ResourceType.network);
             throw ex;
         }
 
@@ -1124,7 +1127,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         HostPodVO podvo = null;
         podvo = _hpDao.findByUuid(podId);
         if (podvo == null)
-            throw new ResourceAllocationException("No sush pod exists", ResourceType.network);
+            throw new ResourceAllocationException("No such pod exists", ResourceType.network);
 
         vo = _privateIPAddressDao.takeIpAddress(zone.getId(), podvo.getId(), 0, caller.getId() + "", false);
         if(vo == null)
@@ -1163,7 +1166,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         DataCenter zone = _entityMgr.findById(DataCenter.class, ipVO.getDataCenterId());
         Account caller = CallContext.current().getCallingAccount();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
-            throw new CloudRuntimeException("Cannot perform this operation, " + "Zone is currently disabled" + "zoneId=" + ipVO.getDataCenterId());
+            throw new CloudRuntimeException(generateErrorMessageForOperationOnDisabledZone("release Pod IP", zone));
         }
         try {
             _privateIPAddressDao.releasePodIpAddress(id);
@@ -1183,7 +1186,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
             // zone is of type DataCenter. See DataCenterVO.java.
-            PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation, " + "Zone is currently disabled");
+            PermissionDeniedException ex = new PermissionDeniedException(generateErrorMessageForOperationOnDisabledZone("allocate IP addresses", zone));
             ex.addProxyObject(zone.getUuid(), "zoneId");
             throw ex;
         }
@@ -1367,7 +1370,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
 
         if (ipToAssoc.getAssociatedWithNetworkId() != null) {
-            s_logger.debug("IP " + ipToAssoc + " is already assocaited with network id" + networkId);
+            s_logger.debug("IP " + ipToAssoc + " is already associated with network id" + networkId);
             return ipToAssoc;
         }
 
@@ -1445,7 +1448,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                         s_logger.warn("Failed to associate ip address, so releasing ip from the database " + ip);
                         _ipAddressDao.markAsUnavailable(ip.getId());
                         if (!applyIpAssociations(network, true)) {
-                            // if fail to apply ip assciations again, unassign ip address without updating resource
+                            // if fail to apply ip associations again, unassign ip address without updating resource
                             // count and generating usage event as there is no need to keep it in the db
                             _ipAddressDao.unassignIpAddress(ip.getId());
                         }
