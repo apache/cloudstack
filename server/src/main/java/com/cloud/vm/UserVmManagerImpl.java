@@ -3888,7 +3888,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 // * verify that there are no duplicates
                 if (hostNames.contains(hostName)) {
                     throw new InvalidParameterValueException("The vm with hostName " + hostName + " already exists in the network domain: " + ntwkDomain.getKey() + "; network="
-                            + _networkModel.getNetwork(ntwkId).getName());
+                            + (_networkModel.getNetwork(ntwkId) != null) ? _networkModel.getNetwork(ntwkId).getName()) : "<unknown>";
                 }
             }
         }
