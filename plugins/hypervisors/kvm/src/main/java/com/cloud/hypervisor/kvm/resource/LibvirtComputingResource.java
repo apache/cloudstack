@@ -56,6 +56,9 @@ import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.KVMHostInfo;
 import org.apache.cloudstack.utils.linux.MemStat;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.collections.MapUtils;
@@ -2528,6 +2531,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 volPath = physicalDisk.getPath();
             }
 
+            if (volume.getType() != Volume.Type.ISO
+                    && physicalDisk != null && physicalDisk.getFormat() == PhysicalDiskFormat.QCOW2
+                    && (pool.getType() == StoragePoolType.NetworkFilesystem
+                    || pool.getType() == StoragePoolType.SharedMountPoint
+                    || pool.getType() == StoragePoolType.Filesystem
+                    || pool.getType() == StoragePoolType.Gluster)) {
+                setBackingFileFormat(physicalDisk.getPath());
+            }
+
             // check for disk activity, if detected we should exit because vm is running elsewhere
             if (_diskActivityCheckEnabled && physicalDisk != null && physicalDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
                 s_logger.debug("Checking physical disk file at path " + volPath + " for disk activity to ensure vm is not running elsewhere");
@@ -4265,4 +4277,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             cmd.setTopology(numCoresPerSocket, vcpus / numCoresPerSocket);
         }
     }
+
+    public void setBackingFileFormat(String volPath) {
+        final int timeout = 0;
+        QemuImgFile file = new QemuImgFile(volPath);
+        QemuImg qemu = new QemuImg(timeout);
+        try{
+            Map<String, String> info = qemu.info(file);
+            String backingFilePath = info.get(new String("backing_file"));
+            String backingFileFormat = info.get(new String("backing_file_format"));
+            if (org.apache.commons.lang.StringUtils.isEmpty(backingFileFormat)) {
+                s_logger.info("Setting backing file format of " + volPath);
+                QemuImgFile backingFile = new QemuImgFile(backingFilePath);
+                Map<String, String> backingFileinfo = qemu.info(backingFile);
+                String backingFileFmt = backingFileinfo.get(new String("file_format"));
+                qemu.rebase(file, backingFile, backingFileFmt, false);
+            }
+        } catch (QemuImgException e) {
+            s_logger.error("Failed to set backing file format of " + volPath + " due to : " + e.getMessage());
+        }
+    }
+
 }
