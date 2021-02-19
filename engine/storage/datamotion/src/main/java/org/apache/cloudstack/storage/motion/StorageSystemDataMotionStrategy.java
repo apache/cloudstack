@@ -574,6 +574,14 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         }
     }
 
+    private void verifyFormatWithPoolType(ImageFormat imageFormat, StoragePoolType poolType) {
+        if (imageFormat != ImageFormat.VHD && imageFormat != ImageFormat.OVA && imageFormat != ImageFormat.QCOW2 &&
+                !(imageFormat == ImageFormat.RAW && StoragePoolType.PowerFlex == poolType)) {
+            throw new CloudRuntimeException("Only the following image types are currently supported: " +
+                    ImageFormat.VHD.toString() + ", " + ImageFormat.OVA.toString() + ", " + ImageFormat.QCOW2.toString() + ", and " + ImageFormat.RAW.toString() + "(for PowerFlex)");
+        }
+    }
+
     private void verifyFormat(ImageFormat imageFormat) {
         if (imageFormat != ImageFormat.VHD && imageFormat != ImageFormat.OVA && imageFormat != ImageFormat.QCOW2) {
             throw new CloudRuntimeException("Only the following image types are currently supported: " +
@@ -585,8 +593,9 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         long volumeId = snapshotInfo.getVolumeId();
 
         VolumeVO volumeVO = _volumeDao.findByIdIncludingRemoved(volumeId);
+        StoragePoolVO storagePoolVO = _storagePoolDao.findById(volumeVO.getPoolId());
 
-        verifyFormat(volumeVO.getFormat());
+        verifyFormatWithPoolType(volumeVO.getFormat(), storagePoolVO.getPoolType());
     }
 
     private boolean usingBackendSnapshotFor(SnapshotInfo snapshotInfo) {
@@ -917,6 +926,11 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             boolean keepGrantedAccess = false;
 
             DataStore srcDataStore = snapshotInfo.getDataStore();
+            StoragePoolVO storagePoolVO = _storagePoolDao.findById(srcDataStore.getId());
+
+            if (HypervisorType.KVM.equals(snapshotInfo.getHypervisorType()) && storagePoolVO.getPoolType() == StoragePoolType.PowerFlex) {
+                usingBackendSnapshot = false;
+            }
 
             if (usingBackendSnapshot) {
                 createVolumeFromSnapshot(snapshotInfo);
@@ -1310,7 +1324,13 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             Preconditions.checkArgument(volumeInfo != null, "Passing 'null' to volumeInfo of " +
                             "handleCreateVolumeFromTemplateBothOnStorageSystem is not supported.");
 
-            verifyFormat(templateInfo.getFormat());
+            DataStore dataStore = volumeInfo.getDataStore();
+            if (dataStore.getRole() == DataStoreRole.Primary) {
+                StoragePoolVO storagePoolVO = _storagePoolDao.findById(dataStore.getId());
+                verifyFormatWithPoolType(templateInfo.getFormat(), storagePoolVO.getPoolType());
+            } else {
+                verifyFormat(templateInfo.getFormat());
+            }
 
             HostVO hostVO = null;
 
@@ -2305,7 +2325,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         CopyCmdAnswer copyCmdAnswer = null;
 
         try {
-            if (!ImageFormat.QCOW2.equals(volumeInfo.getFormat())) {
+            StoragePoolVO storagePoolVO = _storagePoolDao.findById(volumeInfo.getPoolId());
+            if (!ImageFormat.QCOW2.equals(volumeInfo.getFormat()) && !(ImageFormat.RAW.equals(volumeInfo.getFormat()) && StoragePoolType.PowerFlex == storagePoolVO.getPoolType())) {
                 throw new CloudRuntimeException("When using managed storage, you can only create a template from a volume on KVM currently.");
             }
 
@@ -2321,7 +2342,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             try {
                 handleQualityOfServiceForVolumeMigration(volumeInfo, PrimaryDataStoreDriver.QualityOfServiceState.MIGRATION);
 
-                if (srcVolumeDetached) {
+                if (srcVolumeDetached || StoragePoolType.PowerFlex == storagePoolVO.getPoolType()) {
                     _volumeService.grantAccess(volumeInfo, hostVO, srcDataStore);
                 }
 
@@ -2353,7 +2374,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 throw new CloudRuntimeException(msg + ex.getMessage(), ex);
             }
             finally {
-                if (srcVolumeDetached) {
+                if (srcVolumeDetached || StoragePoolType.PowerFlex == storagePoolVO.getPoolType()) {
                     try {
                         _volumeService.revokeAccess(volumeInfo, hostVO, srcDataStore);
                     }
@@ -2448,7 +2469,12 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
         long snapshotId = snapshotInfo.getId();
 
-        snapshotDetails.put(DiskTO.IQN, getSnapshotProperty(snapshotId, DiskTO.IQN));
+        if (storagePoolVO.getPoolType() == StoragePoolType.PowerFlex) {
+            snapshotDetails.put(DiskTO.IQN, snapshotInfo.getPath());
+        } else {
+            snapshotDetails.put(DiskTO.IQN, getSnapshotProperty(snapshotId, DiskTO.IQN));
+        }
+
         snapshotDetails.put(DiskTO.VOLUME_SIZE, String.valueOf(snapshotInfo.getSize()));
         snapshotDetails.put(DiskTO.SCSI_NAA_DEVICE_ID, getSnapshotProperty(snapshotId, DiskTO.SCSI_NAA_DEVICE_ID));
 

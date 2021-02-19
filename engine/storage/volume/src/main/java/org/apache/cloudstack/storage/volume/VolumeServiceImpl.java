@@ -64,6 +64,8 @@ import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
@@ -126,6 +128,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
+import com.google.common.base.Strings;
 
 @Component
 public class VolumeServiceImpl implements VolumeService {
@@ -165,6 +168,8 @@ public class VolumeServiceImpl implements VolumeService {
     @Inject
     private PrimaryDataStoreDao storagePoolDao;
     @Inject
+    private StoragePoolDetailsDao _storagePoolDetailsDao;
+    @Inject
     private HostDetailsDao hostDetailsDao;
     @Inject
     private ManagementService mgr;
@@ -176,6 +181,8 @@ public class VolumeServiceImpl implements VolumeService {
     private TemplateDataFactory tmplFactory;
     @Inject
     private VolumeOrchestrationService _volumeMgr;
+    @Inject
+    private StorageManager _storageMgr;
 
     private final static String SNAPSHOT_ID = "SNAPSHOT_ID";
 
@@ -1589,6 +1596,8 @@ public class VolumeServiceImpl implements VolumeService {
         // part  here to make sure the credentials do not get stored in the db unencrypted.
         if (pool.getPoolType() == StoragePoolType.SMB && folder != null && folder.contains("?")) {
             folder = folder.substring(0, folder.indexOf("?"));
+        } else  if (pool.getPoolType() == StoragePoolType.PowerFlex) {
+            folder = volume.getFolder();
         }
 
         VolumeVO newVol = new VolumeVO(volume);
@@ -1598,6 +1607,7 @@ public class VolumeServiceImpl implements VolumeService {
         newVol.setFolder(folder);
         newVol.setPodId(pool.getPodId());
         newVol.setPoolId(pool.getId());
+        newVol.setPoolType(pool.getPoolType());
         newVol.setLastPoolId(lastPoolId);
         newVol.setPodId(pool.getPodId());
         return volDao.persist(newVol);
@@ -1614,7 +1624,6 @@ public class VolumeServiceImpl implements VolumeService {
             this.destVolume = destVolume;
             this.future = future;
         }
-
     }
 
     protected AsyncCallFuture<VolumeApiResult> copyVolumeFromImageToPrimary(VolumeInfo srcVolume, DataStore destStore) {
@@ -1724,8 +1733,8 @@ public class VolumeServiceImpl implements VolumeService {
 
     @Override
     public AsyncCallFuture<VolumeApiResult> copyVolume(VolumeInfo srcVolume, DataStore destStore) {
+        DataStore srcStore = srcVolume.getDataStore();
         if (s_logger.isDebugEnabled()) {
-            DataStore srcStore = srcVolume.getDataStore();
             String srcRole = (srcStore != null && srcStore.getRole() != null ? srcVolume.getDataStore().getRole().toString() : "<unknown role>");
 
             String msg = String.format("copying %s(id=%d, role=%s) to %s (id=%d, role=%s)"
@@ -1744,6 +1753,11 @@ public class VolumeServiceImpl implements VolumeService {
 
         if (destStore.getRole() == DataStoreRole.Image) {
             return copyVolumeFromPrimaryToImage(srcVolume, destStore);
+        }
+
+        if (srcStore.getRole() == DataStoreRole.Primary && destStore.getRole() == DataStoreRole.Primary && ((PrimaryDataStore) destStore).isManaged() &&
+                requiresNewManagedVolumeInDestStore((PrimaryDataStore) srcStore, (PrimaryDataStore) destStore)) {
+            return copyManagedVolume(srcVolume, destStore);
         }
 
         // OfflineVmwareMigration: aren't we missing secondary to secondary in this logic?
@@ -1791,6 +1805,14 @@ public class VolumeServiceImpl implements VolumeService {
                 destVolume.processEvent(Event.MigrationCopyFailed);
                 srcVolume.processEvent(Event.OperationFailed);
                 destroyVolume(destVolume.getId());
+                if (destVolume.getStoragePoolType() == StoragePoolType.PowerFlex) {
+                    s_logger.info("Dest volume " + destVolume.getId() + " can be removed");
+                    destVolume.processEvent(Event.ExpungeRequested);
+                    destVolume.processEvent(Event.OperationSuccessed);
+                    volDao.remove(destVolume.getId());
+                    future.complete(res);
+                    return null;
+                }
                 destVolume = volFactory.getVolume(destVolume.getId());
                 AsyncCallFuture<VolumeApiResult> destroyFuture = expungeVolumeAsync(destVolume);
                 destroyFuture.get();
@@ -1801,6 +1823,14 @@ public class VolumeServiceImpl implements VolumeService {
                 volDao.updateUuid(srcVolume.getId(), destVolume.getId());
                 try {
                     destroyVolume(srcVolume.getId());
+                    if (srcVolume.getStoragePoolType() == StoragePoolType.PowerFlex) {
+                        s_logger.info("Src volume " + srcVolume.getId() + " can be removed");
+                        srcVolume.processEvent(Event.ExpungeRequested);
+                        srcVolume.processEvent(Event.OperationSuccessed);
+                        volDao.remove(srcVolume.getId());
+                        future.complete(res);
+                        return null;
+                    }
                     srcVolume = volFactory.getVolume(srcVolume.getId());
                     AsyncCallFuture<VolumeApiResult> destroyFuture = expungeVolumeAsync(srcVolume);
                     // If volume destroy fails, this could be because of vdi is still in use state, so wait and retry.
@@ -1821,6 +1851,213 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         return null;
+    }
+
+    private class CopyManagedVolumeContext<T> extends AsyncRpcContext<T> {
+        final VolumeInfo srcVolume;
+        final VolumeInfo destVolume;
+        final Host host;
+        final AsyncCallFuture<VolumeApiResult> future;
+
+        public CopyManagedVolumeContext(AsyncCompletionCallback<T> callback, AsyncCallFuture<VolumeApiResult> future, VolumeInfo srcVolume, VolumeInfo destVolume, Host host) {
+            super(callback);
+            this.srcVolume = srcVolume;
+            this.destVolume = destVolume;
+            this.host = host;
+            this.future = future;
+        }
+    }
+
+    private AsyncCallFuture<VolumeApiResult> copyManagedVolume(VolumeInfo srcVolume, DataStore destStore) {
+        AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
+        VolumeApiResult res = new VolumeApiResult(srcVolume);
+        try {
+            if (!snapshotMgr.canOperateOnVolume(srcVolume)) {
+                s_logger.debug("There are snapshots creating for this volume, can not move this volume");
+                res.setResult("There are snapshots creating for this volume, can not move this volume");
+                future.complete(res);
+                return future;
+            }
+
+            if (snapshotMgr.backedUpSnapshotsExistsForVolume(srcVolume)) {
+                s_logger.debug("There are backed up snapshots for this volume, can not move.");
+                res.setResult("[UNSUPPORTED] There are backed up snapshots for this volume, can not move. Please try again after removing them.");
+                future.complete(res);
+                return future;
+            }
+
+            List<Long> poolIds = new ArrayList<Long>();
+            poolIds.add(srcVolume.getPoolId());
+            poolIds.add(destStore.getId());
+
+            Host hostWithPoolsAccess = _storageMgr.findUpAndEnabledHostWithAccessToStoragePools(poolIds);
+            if (hostWithPoolsAccess == null) {
+                s_logger.debug("No host(s) available with pool access, can not move this volume");
+                res.setResult("No host(s) available with pool access, can not move this volume");
+                future.complete(res);
+                return future;
+            }
+
+            VolumeVO destVol = duplicateVolumeOnAnotherStorage(srcVolume, (StoragePool)destStore);
+            VolumeInfo destVolume = volFactory.getVolume(destVol.getId(), destStore);
+
+            // Create a volume on managed storage.
+            AsyncCallFuture<VolumeApiResult> createVolumeFuture = createVolumeAsync(destVolume, destStore);
+            VolumeApiResult createVolumeResult = createVolumeFuture.get();
+            if (createVolumeResult.isFailed()) {
+                throw new CloudRuntimeException("Creation of a dest volume failed: " + createVolumeResult.getResult());
+            }
+
+            // Refresh the volume info from the DB.
+            destVolume = volFactory.getVolume(destVolume.getId(), destStore);
+
+            PrimaryDataStore srcPrimaryDataStore = (PrimaryDataStore) srcVolume.getDataStore();
+            if (srcPrimaryDataStore.isManaged()) {
+                Map<String, String> srcPrimaryDataStoreDetails = new HashMap<String, String>();
+                srcPrimaryDataStoreDetails.put(PrimaryDataStore.MANAGED, Boolean.TRUE.toString());
+                srcPrimaryDataStoreDetails.put(PrimaryDataStore.STORAGE_HOST, srcPrimaryDataStore.getHostAddress());
+                srcPrimaryDataStoreDetails.put(PrimaryDataStore.STORAGE_PORT, String.valueOf(srcPrimaryDataStore.getPort()));
+                srcPrimaryDataStoreDetails.put(PrimaryDataStore.MANAGED_STORE_TARGET, srcVolume.get_iScsiName());
+                srcPrimaryDataStoreDetails.put(PrimaryDataStore.MANAGED_STORE_TARGET_ROOT_VOLUME, srcVolume.getName());
+                srcPrimaryDataStoreDetails.put(PrimaryDataStore.VOLUME_SIZE, String.valueOf(srcVolume.getSize()));
+                srcPrimaryDataStoreDetails.put(StorageManager.STORAGE_POOL_DISK_WAIT.toString(), String.valueOf(StorageManager.STORAGE_POOL_DISK_WAIT.valueIn(srcPrimaryDataStore.getId())));
+                srcPrimaryDataStore.setDetails(srcPrimaryDataStoreDetails);
+                grantAccess(srcVolume, hostWithPoolsAccess, srcVolume.getDataStore());
+            }
+
+            PrimaryDataStore destPrimaryDataStore = (PrimaryDataStore) destStore;
+            Map<String, String> destPrimaryDataStoreDetails = new HashMap<String, String>();
+            destPrimaryDataStoreDetails.put(PrimaryDataStore.MANAGED, Boolean.TRUE.toString());
+            destPrimaryDataStoreDetails.put(PrimaryDataStore.STORAGE_HOST, destPrimaryDataStore.getHostAddress());
+            destPrimaryDataStoreDetails.put(PrimaryDataStore.STORAGE_PORT, String.valueOf(destPrimaryDataStore.getPort()));
+            destPrimaryDataStoreDetails.put(PrimaryDataStore.MANAGED_STORE_TARGET, destVolume.get_iScsiName());
+            destPrimaryDataStoreDetails.put(PrimaryDataStore.MANAGED_STORE_TARGET_ROOT_VOLUME, destVolume.getName());
+            destPrimaryDataStoreDetails.put(PrimaryDataStore.VOLUME_SIZE, String.valueOf(destVolume.getSize()));
+            destPrimaryDataStoreDetails.put(StorageManager.STORAGE_POOL_DISK_WAIT.toString(), String.valueOf(StorageManager.STORAGE_POOL_DISK_WAIT.valueIn(destPrimaryDataStore.getId())));
+            destPrimaryDataStore.setDetails(destPrimaryDataStoreDetails);
+
+            grantAccess(destVolume, hostWithPoolsAccess, destStore);
+
+            destVolume.processEvent(Event.CreateRequested);
+            srcVolume.processEvent(Event.MigrationRequested);
+
+            CopyManagedVolumeContext<VolumeApiResult> context = new CopyManagedVolumeContext<VolumeApiResult>(null, future, srcVolume, destVolume, hostWithPoolsAccess);
+            AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().copyManagedVolumeCallBack(null, null)).setContext(context);
+
+            motionSrv.copyAsync(srcVolume, destVolume, hostWithPoolsAccess, caller);
+        } catch (Exception e) {
+            s_logger.error("Copy to managed volume failed due to: " + e);
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Copy to managed volume failed.", e);
+            }
+            res.setResult(e.toString());
+            future.complete(res);
+        }
+
+        return future;
+    }
+
+    protected Void copyManagedVolumeCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CopyManagedVolumeContext<VolumeApiResult> context) {
+        VolumeInfo srcVolume = context.srcVolume;
+        VolumeInfo destVolume = context.destVolume;
+        Host host = context.host;
+        CopyCommandResult result = callback.getResult();
+        AsyncCallFuture<VolumeApiResult> future = context.future;
+        VolumeApiResult res = new VolumeApiResult(destVolume);
+
+        try {
+            if (srcVolume.getDataStore() != null && ((PrimaryDataStore) srcVolume.getDataStore()).isManaged()) {
+                revokeAccess(srcVolume, host, srcVolume.getDataStore());
+            }
+            revokeAccess(destVolume, host, destVolume.getDataStore());
+
+            if (result.isFailed()) {
+                res.setResult(result.getResult());
+                destVolume.processEvent(Event.MigrationCopyFailed);
+                srcVolume.processEvent(Event.OperationFailed);
+                try {
+                    destroyVolume(destVolume.getId());
+                    destVolume = volFactory.getVolume(destVolume.getId());
+                    AsyncCallFuture<VolumeApiResult> destVolumeDestroyFuture = expungeVolumeAsync(destVolume);
+                    destVolumeDestroyFuture.get();
+                    // If dest managed volume destroy fails, wait and retry.
+                    if (destVolumeDestroyFuture.get().isFailed()) {
+                        Thread.sleep(5 * 1000);
+                        destVolumeDestroyFuture = expungeVolumeAsync(destVolume);
+                        destVolumeDestroyFuture.get();
+                    }
+                    future.complete(res);
+                } catch (Exception e) {
+                    s_logger.debug("failed to clean up managed volume on storage", e);
+                }
+            } else {
+                srcVolume.processEvent(Event.OperationSuccessed);
+                destVolume.processEvent(Event.MigrationCopySucceeded, result.getAnswer());
+                volDao.updateUuid(srcVolume.getId(), destVolume.getId());
+                try {
+                    destroyVolume(srcVolume.getId());
+                    srcVolume = volFactory.getVolume(srcVolume.getId());
+                    AsyncCallFuture<VolumeApiResult> srcVolumeDestroyFuture = expungeVolumeAsync(srcVolume);
+                    // If src volume destroy fails, wait and retry.
+                    if (srcVolumeDestroyFuture.get().isFailed()) {
+                        Thread.sleep(5 * 1000);
+                        srcVolumeDestroyFuture = expungeVolumeAsync(srcVolume);
+                        srcVolumeDestroyFuture.get();
+                    }
+                    future.complete(res);
+                } catch (Exception e) {
+                    s_logger.debug("failed to clean up volume on storage", e);
+                }
+            }
+        } catch (Exception e) {
+            s_logger.debug("Failed to process copy managed volume callback", e);
+            res.setResult(e.toString());
+            future.complete(res);
+        }
+
+        return null;
+    }
+
+    private boolean requiresNewManagedVolumeInDestStore(PrimaryDataStore srcDataStore, PrimaryDataStore destDataStore) {
+        if (srcDataStore == null || destDataStore == null) {
+            s_logger.warn("Unable to check for new volume, either src or dest pool is null");
+            return false;
+        }
+
+        if (srcDataStore.getPoolType() == StoragePoolType.PowerFlex && destDataStore.getPoolType() == StoragePoolType.PowerFlex) {
+            if (srcDataStore.getId() == destDataStore.getId()) {
+                return false;
+            }
+
+            final String STORAGE_POOL_SYSTEM_ID = "powerflex.storagepool.system.id";
+            String srcPoolSystemId = null;
+            StoragePoolDetailVO srcPoolSystemIdDetail = _storagePoolDetailsDao.findDetail(srcDataStore.getId(), STORAGE_POOL_SYSTEM_ID);
+            if (srcPoolSystemIdDetail != null) {
+                srcPoolSystemId = srcPoolSystemIdDetail.getValue();
+            }
+
+            String destPoolSystemId = null;
+            StoragePoolDetailVO destPoolSystemIdDetail = _storagePoolDetailsDao.findDetail(destDataStore.getId(), STORAGE_POOL_SYSTEM_ID);
+            if (destPoolSystemIdDetail != null) {
+                destPoolSystemId = destPoolSystemIdDetail.getValue();
+            }
+
+            if (Strings.isNullOrEmpty(srcPoolSystemId) || Strings.isNullOrEmpty(destPoolSystemId)) {
+                s_logger.warn("PowerFlex src pool: " + srcDataStore.getId() + " or dest pool: " + destDataStore.getId() +
+                        " storage instance details are not available");
+                return false;
+            }
+
+            if (!srcPoolSystemId.equals(destPoolSystemId)) {
+                s_logger.debug("PowerFlex src pool: " + srcDataStore.getId() + " and dest pool: "  + destDataStore.getId() +
+                        " belongs to different storage instances, create new managed volume");
+                return true;
+            }
+        }
+
+        // New volume not required for all other cases (address any cases required in future)
+        return false;
     }
 
     private class MigrateVolumeContext<T> extends AsyncRpcContext<T> {
@@ -1858,7 +2095,7 @@ public class VolumeServiceImpl implements VolumeService {
             caller.setCallback(caller.getTarget().migrateVolumeCallBack(null, null)).setContext(context);
             motionSrv.copyAsync(srcVolume, destVolume, caller);
         } catch (Exception e) {
-            s_logger.debug("Failed to copy volume", e);
+            s_logger.debug("Failed to migrate volume", e);
             res.setResult(e.toString());
             future.complete(res);
         }
@@ -1877,6 +2114,10 @@ public class VolumeServiceImpl implements VolumeService {
                 future.complete(res);
             } else {
                 srcVolume.processEvent(Event.OperationSuccessed);
+                if (srcVolume.getStoragePoolType() == StoragePoolType.PowerFlex) {
+                    future.complete(res);
+                    return null;
+                }
                 snapshotMgr.cleanupSnapshotsByVolume(srcVolume.getId());
                 future.complete(res);
             }

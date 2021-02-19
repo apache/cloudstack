@@ -186,6 +186,8 @@ public interface StorageManager extends StorageService {
 
     StoragePoolVO findLocalStorageOnHost(long hostId);
 
+    Host findUpAndEnabledHostWithAccessToStoragePools(List<Long> poolIds);
+
     List<StoragePoolHostVO> findStoragePoolsConnectedToHost(long hostId);
 
     boolean canHostAccessStoragePool(Host host, StoragePool pool);
@@ -230,7 +232,9 @@ public interface StorageManager extends StorageService {
      */
     boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool, Long clusterId);
 
-    boolean storagePoolHasEnoughSpaceForResize(StoragePool pool, long currentSize, long newSiz);
+    boolean storagePoolHasEnoughSpaceForResize(StoragePool pool, long currentSize, long newSize);
+
+    boolean storagePoolCompatibleWithVolumePool(StoragePool pool, Volume volume);
 
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 

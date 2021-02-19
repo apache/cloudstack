@@ -1726,9 +1726,23 @@
                     },
                     restart: {
                         label: 'instances.actions.reboot.label',
+                        addRow: 'false',
+                        createForm: {
+                            title: 'label.action.reboot.instance',
+                            desc: 'message.action.reboot.instance',
+                            fields: {
+                                forced: {
+                                    label: 'force.reboot',
+                                    isBoolean: true,
+                                    isChecked: false
+                                }
+                            }
+                        },
                         action: function(args) {
+                            var array1 = [];
+                            array1.push("&forced=" + (args.data.forced == "on"));
                             $.ajax({
-                                url: createURL("rebootVirtualMachine&id=" + args.context.vpcTierInstances[0].id),
+                                url: createURL("rebootVirtualMachine&id=" + args.context.vpcTierInstances[0].id + array1.join("")),
                                 dataType: "json",
                                 async: true,
                                 success: function(json) {

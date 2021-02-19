@@ -1792,6 +1792,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (caps != null) {
                 boolean quiescevm = Boolean.parseBoolean(caps.get(DataStoreCapabilities.VOLUME_SNAPSHOT_QUIESCEVM.toString()));
                 vr.setNeedQuiescevm(quiescevm);
+
+                boolean supportsStorageSnapshot = Boolean.parseBoolean(caps.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString()));
+                vr.setSupportsStorageSnapshot(supportsStorageSnapshot);
             }
         }
         response.setResponses(volumeResponses, result.second());

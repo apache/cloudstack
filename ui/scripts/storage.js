@@ -945,7 +945,13 @@
                                         },
                                         asyncBackup: {
                                             label: 'label.async.backup',
-                                            isBoolean: true
+                                            isBoolean: true,
+                                            isHidden: function(args) {
+                                                if (args.context.volumes[0].supportsstoragesnapshot == true)
+                                                    return true;
+                                                else
+                                                    return false;
+                                            }
                                         },
                                         tags: {
                                             label: 'label.tags',

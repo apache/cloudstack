@@ -207,12 +207,16 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             return false;
         }
 
+        Volume volume = volumeDao.findById(dskCh.getVolumeId());
+        if(!storageMgr.storagePoolCompatibleWithVolumePool(pool, volume)) {
+            return false;
+        }
+
         if (pool.isManaged() && !storageUtil.managedStoragePoolCanScale(pool, plan.getClusterId(), plan.getHostId())) {
             return false;
         }
 
         // check capacity
-        Volume volume = volumeDao.findById(dskCh.getVolumeId());
         List<Volume> requestVolumes = new ArrayList<>();
         requestVolumes.add(volume);
         return storageMgr.storagePoolHasEnoughIops(requestVolumes, pool) && storageMgr.storagePoolHasEnoughSpace(requestVolumes, pool, plan.getClusterId());

@@ -44,6 +44,8 @@ import org.apache.cloudstack.storage.datastore.api.SnapshotDefs;
 import org.apache.cloudstack.storage.datastore.api.SnapshotGroup;
 import org.apache.cloudstack.storage.datastore.api.StoragePool;
 import org.apache.cloudstack.storage.datastore.api.StoragePoolStatistics;
+import org.apache.cloudstack.storage.datastore.api.VTree;
+import org.apache.cloudstack.storage.datastore.api.VTreeMigrationInfo;
 import org.apache.cloudstack.storage.datastore.api.Volume;
 import org.apache.cloudstack.storage.datastore.api.VolumeStatistics;
 import org.apache.cloudstack.utils.security.SSLUtils;
@@ -359,6 +361,29 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean renameVolume(final String volumeId, final String newName) {
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(volumeId), "Volume id cannot be null");
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(newName), "New name for volume cannot be null");
+
+        HttpResponse response = null;
+        try {
+            response = post(
+                    "/instances/Volume::" + volumeId + "/action/setVolumeName",
+                    String.format("{\"newName\":\"%s\"}", newName));
+            checkResponseOK(response);
+            return true;
+        } catch (final IOException e) {
+            LOG.error("Failed to rename PowerFlex volume due to: ", e);
+            checkResponseTimeOut(e);
+        } finally {
+            if (response != null) {
+                EntityUtils.consumeQuietly(response.getEntity());
+            }
+        }
+        return false;
     }
 
     @Override
@@ -746,6 +771,226 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             return true;
         } catch (final IOException e) {
             LOG.error("Failed to delete PowerFlex volume due to:", e);
+            checkResponseTimeOut(e);
+        } finally {
+            if (response != null) {
+                EntityUtils.consumeQuietly(response.getEntity());
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean migrateVolume(final String srcVolumeId, final String destPoolId, final int timeoutInSecs) {
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(srcVolumeId), "src volume id cannot be null");
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(destPoolId), "dest pool id cannot be null");
+        Preconditions.checkArgument(timeoutInSecs > 0, "timeout must be greater than 0");
+
+        try {
+            Volume volume = getVolume(srcVolumeId);
+            if (volume == null || Strings.isNullOrEmpty(volume.getVtreeId())) {
+                LOG.warn("Couldn't find the volume(-tree), can not migrate the volume " + srcVolumeId);
+                return false;
+            }
+
+            String srcPoolId = volume.getStoragePoolId();
+            LOG.debug("Migrating the volume: " + srcVolumeId + " on the src pool: " + srcPoolId + " to the dest pool: " + destPoolId +
+                    " in the same PowerFlex cluster");
+
+            HttpResponse response = null;
+            try {
+                response = post(
+                        "/instances/Volume::" + srcVolumeId + "/action/migrateVTree",
+                        String.format("{\"destSPId\":\"%s\"}", destPoolId));
+                checkResponseOK(response);
+            } catch (final IOException e) {
+                LOG.error("Unable to migrate PowerFlex volume due to: ", e);
+                checkResponseTimeOut(e);
+                throw e;
+            } finally {
+                if (response != null) {
+                    EntityUtils.consumeQuietly(response.getEntity());
+                }
+            }
+
+            LOG.debug("Wait until the migration is complete for the volume: " + srcVolumeId);
+            long migrationStartTime = System.currentTimeMillis();
+            boolean status = waitForVolumeMigrationToComplete(volume.getVtreeId(), timeoutInSecs);
+
+            // Check volume storage pool and migration status
+            // volume, v-tree, snapshot ids remains same after the migration
+            volume = getVolume(srcVolumeId);
+            if (volume == null || volume.getStoragePoolId() == null) {
+                LOG.warn("Couldn't get the volume: " + srcVolumeId + " details after migration");
+                return status;
+            } else {
+                String volumeOnPoolId = volume.getStoragePoolId();
+                // confirm whether the volume is on the dest storage pool or not
+                if (status && destPoolId.equalsIgnoreCase(volumeOnPoolId)) {
+                    LOG.debug("Migration success for the volume: " + srcVolumeId);
+                    return true;
+                } else {
+                    try {
+                        // Check and pause any migration activity on the volume
+                        status = false;
+                        VTreeMigrationInfo.MigrationStatus migrationStatus = getVolumeTreeMigrationStatus(volume.getVtreeId());
+                        if (migrationStatus != null && migrationStatus != VTreeMigrationInfo.MigrationStatus.NotInMigration) {
+                            long timeElapsedInSecs = (System.currentTimeMillis() - migrationStartTime) / 1000;
+                            int timeRemainingInSecs = (int) (timeoutInSecs - timeElapsedInSecs);
+                            if (timeRemainingInSecs > (timeoutInSecs / 2)) {
+                                // Try to pause gracefully (continue the migration) if atleast half of the time is remaining
+                                pauseVolumeMigration(srcVolumeId, false);
+                                status = waitForVolumeMigrationToComplete(volume.getVtreeId(), timeRemainingInSecs);
+                            }
+                        }
+
+                        if (!status) {
+                            rollbackVolumeMigration(srcVolumeId);
+                        }
+
+                        return status;
+                    } catch (Exception ex) {
+                        LOG.warn("Exception on pause/rollback migration of the volume: " + srcVolumeId + " - " + ex.getLocalizedMessage());
+                    }
+                }
+            }
+        } catch (final Exception e) {
+            LOG.error("Failed to migrate PowerFlex volume due to: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to migrate PowerFlex volume due to: " + e.getMessage());
+        }
+
+        LOG.debug("Migration failed for the volume: " + srcVolumeId);
+        return false;
+    }
+
+    private boolean waitForVolumeMigrationToComplete(final String volumeTreeId, int waitTimeoutInSecs) {
+        LOG.debug("Waiting for the migration to complete for the volume-tree " + volumeTreeId);
+        if (Strings.isNullOrEmpty(volumeTreeId)) {
+            LOG.warn("Invalid volume-tree id, unable to check the migration status of the volume-tree " + volumeTreeId);
+            return false;
+        }
+
+        int delayTimeInSecs = 3;
+        while (waitTimeoutInSecs > 0) {
+            try {
+                // Wait and try after few secs (reduce no. of client API calls to check the migration status) and return after migration is complete
+                Thread.sleep(delayTimeInSecs * 1000);
+
+                VTreeMigrationInfo.MigrationStatus migrationStatus = getVolumeTreeMigrationStatus(volumeTreeId);
+                if (migrationStatus != null && migrationStatus == VTreeMigrationInfo.MigrationStatus.NotInMigration) {
+                    LOG.debug("Migration completed for the volume-tree " + volumeTreeId);
+                    return true;
+                }
+            } catch (Exception ex) {
+                LOG.warn("Exception while checking for migration status of the volume-tree: " + volumeTreeId + " - " + ex.getLocalizedMessage());
+                // don't do anything
+            } finally {
+                waitTimeoutInSecs = waitTimeoutInSecs - delayTimeInSecs;
+            }
+        }
+
+        LOG.debug("Unable to complete the migration for the volume-tree " + volumeTreeId);
+        return false;
+    }
+
+    private VTreeMigrationInfo.MigrationStatus getVolumeTreeMigrationStatus(final String volumeTreeId) {
+        if (Strings.isNullOrEmpty(volumeTreeId)) {
+            LOG.warn("Invalid volume-tree id, unable to get the migration status of the volume-tree " + volumeTreeId);
+            return null;
+        }
+
+        HttpResponse response = null;
+        try {
+            response = get("/instances/VTree::" + volumeTreeId);
+            checkResponseOK(response);
+            ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            VTree volumeTree = mapper.readValue(response.getEntity().getContent(), VTree.class);
+            if (volumeTree != null && volumeTree.getVTreeMigrationInfo() != null) {
+                return volumeTree.getVTreeMigrationInfo().getMigrationStatus();
+            }
+        } catch (final IOException e) {
+            LOG.error("Failed to migrate PowerFlex volume due to:", e);
+            checkResponseTimeOut(e);
+        } finally {
+            if (response != null) {
+                EntityUtils.consumeQuietly(response.getEntity());
+            }
+        }
+        return null;
+    }
+
+    private boolean rollbackVolumeMigration(final String srcVolumeId) {
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(srcVolumeId), "src volume id cannot be null");
+
+        HttpResponse response = null;
+        try {
+            Volume volume = getVolume(srcVolumeId);
+            VTreeMigrationInfo.MigrationStatus migrationStatus = getVolumeTreeMigrationStatus(volume.getVtreeId());
+            if (migrationStatus != null && migrationStatus == VTreeMigrationInfo.MigrationStatus.NotInMigration) {
+                LOG.debug("Volume: " + srcVolumeId + " is not migrating, no need to rollback");
+                return true;
+            }
+
+            pauseVolumeMigration(srcVolumeId, true); // Pause forcefully
+            // Wait few secs for volume migration to change to Paused state
+            boolean paused = false;
+            int retryCount = 3;
+            while (retryCount > 0) {
+                try {
+                    Thread.sleep(3000); // Try after few secs
+                    migrationStatus = getVolumeTreeMigrationStatus(volume.getVtreeId()); // Get updated migration status
+                    if (migrationStatus != null && migrationStatus == VTreeMigrationInfo.MigrationStatus.Paused) {
+                        LOG.debug("Migration for the volume: " + srcVolumeId + " paused");
+                        paused = true;
+                        break;
+                    }
+                } catch (Exception ex) {
+                    LOG.warn("Exception while checking for migration pause status of the volume: " + srcVolumeId + " - " + ex.getLocalizedMessage());
+                    // don't do anything
+                } finally {
+                    retryCount--;
+                }
+            }
+
+            if (paused) {
+                // Rollback migration to the src pool (should be quick)
+                response = post(
+                        "/instances/Volume::" + srcVolumeId + "/action/migrateVTree",
+                        String.format("{\"destSPId\":\"%s\"}", volume.getStoragePoolId()));
+                checkResponseOK(response);
+                return true;
+            } else {
+                LOG.warn("Migration for the volume: " + srcVolumeId + " didn't pause, couldn't rollback");
+            }
+        } catch (final IOException e) {
+            LOG.error("Failed to rollback volume migration due to: ", e);
+            checkResponseTimeOut(e);
+        } finally {
+            if (response != null) {
+                EntityUtils.consumeQuietly(response.getEntity());
+            }
+        }
+        return false;
+    }
+
+    private boolean pauseVolumeMigration(final String volumeId, final boolean forced) {
+        if (Strings.isNullOrEmpty(volumeId)) {
+            LOG.warn("Invalid Volume Id, Unable to pause migration of the volume " + volumeId);
+            return false;
+        }
+
+        HttpResponse response = null;
+        try {
+            // When paused gracefully, all data currently being moved is allowed to complete the migration.
+            // When paused forcefully, migration of unfinished data is aborted and data is left at the source, if possible.
+            // Pausing forcefully carries a potential risk to data.
+            response = post(
+                    "/instances/Volume::" + volumeId + "/action/pauseVTreeMigration",
+                    String.format("{\"pauseType\":\"%s\"}", forced ? "Forcefully" : "Gracefully"));
+            checkResponseOK(response);
+            return true;
+        } catch (final IOException e) {
+            LOG.error("Failed to pause migration of the volume due to: ", e);
             checkResponseTimeOut(e);
         } finally {
             if (response != null) {

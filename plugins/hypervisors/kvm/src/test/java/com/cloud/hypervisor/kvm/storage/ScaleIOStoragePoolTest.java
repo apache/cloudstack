@@ -100,7 +100,7 @@ public class ScaleIOStoragePoolTest {
     }
 
     public void testGetPhysicalDiskWithWildcardFileFilter() throws Exception {
-        final String volumePath = "6c3362b500000001";
+        final String volumePath = "6c3362b500000001:vol-139-3d2c-12f0";
         final String systemId = "218ce1797566a00f";
 
         File dir = PowerMockito.mock(File.class);
@@ -108,7 +108,8 @@ public class ScaleIOStoragePoolTest {
 
         // TODO: Mock file in dir
         File[] files = new File[1];
-        String diskFilePath = ScaleIOUtil.DISK_PATH + File.separator + ScaleIOUtil.DISK_NAME_PREFIX + systemId + "-" + volumePath;
+        String volumeId = ScaleIOUtil.getVolumePath(volumePath);
+        String diskFilePath = ScaleIOUtil.DISK_PATH + File.separator + ScaleIOUtil.DISK_NAME_PREFIX + systemId + "-" + volumeId;
         files[0] = new File(diskFilePath);
         PowerMockito.when(dir.listFiles(any(FileFilter.class))).thenReturn(files);
 
@@ -118,10 +119,11 @@ public class ScaleIOStoragePoolTest {
 
     @Test
     public void testGetPhysicalDiskWithSystemId() throws Exception {
-        final String volumePath = "6c3362b500000001";
+        final String volumePath = "6c3362b500000001:vol-139-3d2c-12f0";
+        final String volumeId = ScaleIOUtil.getVolumePath(volumePath);
         final String systemId = "218ce1797566a00f";
         PowerMockito.mockStatic(ScaleIOUtil.class);
-        when(ScaleIOUtil.getSystemIdForVolume(volumePath)).thenReturn(systemId);
+        when(ScaleIOUtil.getSystemIdForVolume(volumeId)).thenReturn(systemId);
 
         // TODO: Mock file exists
         File file = PowerMockito.mock(File.class);
@@ -134,9 +136,10 @@ public class ScaleIOStoragePoolTest {
 
     @Test
     public void testConnectPhysicalDisk() {
-        final String volumePath = "6c3362b500000001";
+        final String volumePath = "6c3362b500000001:vol-139-3d2c-12f0";
+        final String volumeId = ScaleIOUtil.getVolumePath(volumePath);
         final String systemId = "218ce1797566a00f";
-        final String diskFilePath = ScaleIOUtil.DISK_PATH + File.separator + ScaleIOUtil.DISK_NAME_PREFIX + systemId + "-" + volumePath;
+        final String diskFilePath = ScaleIOUtil.DISK_PATH + File.separator + ScaleIOUtil.DISK_NAME_PREFIX + systemId + "-" + volumeId;
         KVMPhysicalDisk disk = new KVMPhysicalDisk(diskFilePath, volumePath, pool);
         disk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
         disk.setSize(8192);
@@ -144,7 +147,7 @@ public class ScaleIOStoragePoolTest {
 
         assertEquals(disk.getPath(), "/dev/disk/by-id/emc-vol-218ce1797566a00f-6c3362b500000001");
 
-        when(adapter.getPhysicalDisk(volumePath, pool)).thenReturn(disk);
+        when(adapter.getPhysicalDisk(volumeId, pool)).thenReturn(disk);
 
         final boolean result = adapter.connectPhysicalDisk(volumePath, pool, null);
         assertTrue(result);

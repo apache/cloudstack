@@ -1389,6 +1389,15 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     @Override
+    public boolean backedUpSnapshotsExistsForVolume(Volume volume) {
+        List<SnapshotVO> snapshots = _snapshotDao.listByStatus(volume.getId(), Snapshot.State.BackedUp);
+        if (snapshots.size() > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public void cleanupSnapshotsByVolume(Long volumeId) {
         List<SnapshotInfo> infos = snapshotFactory.getSnapshots(volumeId, DataStoreRole.Primary);
         for (SnapshotInfo info : infos) {

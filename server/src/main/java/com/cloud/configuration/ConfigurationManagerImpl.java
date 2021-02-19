@@ -2833,7 +2833,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return _serviceOfferingDetailsDao.findZoneIds(serviceOfferingId);
     }
 
-    protected DiskOfferingVO createDiskOffering(final Long userId, final List<Long> domainIds, final List<Long> zoneIds, final String name, final String description, final String provisioningType,
+    protected DiskOfferingVO    createDiskOffering(final Long userId, final List<Long> domainIds, final List<Long> zoneIds, final String name, final String description, final String provisioningType,
                                                 final Long numGibibytes, String tags, boolean isCustomized, final boolean localStorageRequired,
                                                 final boolean isDisplayOfferingEnabled, final Boolean isCustomizedIops, Long minIops, Long maxIops,
                                                 Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,

@@ -137,6 +137,91 @@
       return action;
     };
 
+    var vmRestartAction = function(args) {
+        var action = {
+            messages: {
+                confirm: function(args) {
+                    return 'message.action.reboot.instance';
+                },
+                notification: function(args) {
+                    return 'label.action.reboot.instance';
+                },
+                complete: function(args) {
+                    if (args.password != null && args.password.length > 0)
+                        return _l('message.password.has.been.reset.to') + ' ' + args.password;
+                    else
+                        return null;
+                }
+            },
+            label: 'label.action.reboot.instance',
+            compactLabel: 'label.reboot',
+            addRow: 'false',
+            createForm: {
+                title: 'notification.reboot.instance',
+                desc: 'message.action.reboot.instance',
+                fields: {
+                    forced: {
+                        label: 'force.reboot',
+                        isBoolean: true,
+                        isChecked: false
+                    }
+                }
+            },
+            action: function(args) {
+                var instances = args.context.instances;
+                var skippedInstances = 0;
+                $(instances).each(function(index, instance) {
+                    if (instance.state === 'Stopped' || instance.state === 'Stopping') {
+                        skippedInstances++;
+                    } else {
+                        var data = {
+                            id: instance.id,
+                            forced: (args.data.forced == "on")
+                        };
+                        $.ajax({
+                            url: createURL("rebootVirtualMachine"),
+                            data: data,
+                            dataType: "json",
+                            async: true,
+                            success: function(json) {
+                                var jid = json.rebootvirtualmachineresponse.jobid;
+                                args.response.success({
+                                    _custom: {
+                                        jobId: jid,
+                                        getUpdatedItem: function(json) {
+                                            return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                        },
+                                        getActionFilter: function() {
+                                            return vmActionfilter;
+                                        }
+                                    }
+                                });
+                            },
+                            error: function(json) {
+                              args.response.error(parseXMLHttpResponse(json));
+                            }
+                        });
+                    }
+                });
+                if (skippedInstances === instances.length) {
+                    args.response.error();
+                }
+            },
+            notification: {
+                poll: pollAsyncJobResult
+            }
+        };
+
+        if (args && args.listView) {
+            $.extend(action, {
+                isHeader: true,
+                isMultiSelectAction: true
+            });
+        }
+
+        return action;
+    };
+
     var vmStopAction = function(args) {
         var action = {
             messages: {
@@ -1112,48 +1197,7 @@
                         }
                     },
                     stop: vmStopAction(),
-                    restart: {
-                        label: 'label.action.reboot.instance',
-                        compactLabel: 'label.reboot',
-                        action: function(args) {
-                            $.ajax({
-                                url: createURL("rebootVirtualMachine&id=" + args.context.instances[0].id),
-                                dataType: "json",
-                                async: true,
-                                success: function(json) {
-                                    var jid = json.rebootvirtualmachineresponse.jobid;
-                                    args.response.success({
-                                        _custom: {
-                                            jobId: jid,
-                                            getUpdatedItem: function(json) {
-                                                return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                                            },
-                                            getActionFilter: function() {
-                                                return vmActionfilter;
-                                            }
-                                        }
-                                    });
-                                }
-                            });
-                        },
-                        messages: {
-                            confirm: function(args) {
-                                return 'message.action.reboot.instance';
-                            },
-                            notification: function(args) {
-                                return 'label.action.reboot.instance';
-                            },
-                            complete: function(args) {
-                                if (args.password != null && args.password.length > 0)
-                                    return _l('message.password.has.been.reset.to') + ' ' + args.password;
-                                else
-                                    return null;
-                            }
-                        },
-                        notification: {
-                            poll: pollAsyncJobResult
-                        }
-                    },
+                    restart: vmRestartAction(),
                     snapshot: vmSnapshotAction(),
                     storageSnapshot: {
                       messages: {
@@ -1219,7 +1263,18 @@
                           },
                           asyncBackup: {
                             label: 'label.async.backup',
-                            isBoolean: true
+                            isBoolean: true,
+                            dependsOn: 'volume',
+                            isHidden: function(args) {
+                                var selectedVolumeId = $('div[role=dialog] form .form-item[rel=volume] select').val();
+                                for (var i = 0; i < args.context.volumes.length; i++) {
+                                    var volume = args.context.volumes[i];
+                                    if (volume.id === selectedVolumeId) {
+                                        return volume.supportsstoragesnapshot === true;
+                                    }
+                                }
+                                return false;
+                            }
                           }
                         }
                       },

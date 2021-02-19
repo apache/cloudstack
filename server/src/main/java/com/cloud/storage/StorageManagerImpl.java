@@ -1711,6 +1711,38 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
+    public Host findUpAndEnabledHostWithAccessToStoragePools(List<Long> poolIds) {
+        List<Long> hostIds = _storagePoolHostDao.findHostsConnectedToPools(poolIds);
+        if (hostIds.isEmpty()) {
+            return null;
+        }
+
+        for (Long hostId : hostIds) {
+            Host host = _hostDao.findById(hostId);
+            if (canHostAccessStoragePools(host, poolIds)) {
+                return host;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean canHostAccessStoragePools(Host host, List<Long> poolIds) {
+        if (poolIds == null || poolIds.isEmpty()) {
+            return false;
+        }
+
+        for (Long poolId : poolIds) {
+            StoragePool pool = _storagePoolDao.findById(poolId);
+            if (!canHostAccessStoragePool(host, pool)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    @Override
     @DB
     public List<StoragePoolHostVO> findStoragePoolsConnectedToHost(long hostId) {
         return _storagePoolHostDao.listByHostId(hostId);
@@ -2093,6 +2125,36 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         return tmpl.getSize();
+    }
+
+    @Override
+    public boolean storagePoolCompatibleWithVolumePool(StoragePool pool, Volume volume) {
+        if (pool == null || volume == null) {
+            return false;
+        }
+
+        if (volume.getPoolId() == null) {
+            // Volume is not allocated to any pool. Not possible to check compatibility with other pool, let it try
+            return true;
+        }
+
+        StoragePool volumePool = _storagePoolDao.findById(volume.getPoolId());
+        if (volumePool == null) {
+            // Volume pool doesn't exist. Not possible to check compatibility with other pool, let it try
+            return true;
+        }
+
+        if (volume.getState() == Volume.State.Ready) {
+            if (volumePool.getPoolType() == Storage.StoragePoolType.PowerFlex && pool.getPoolType() != Storage.StoragePoolType.PowerFlex) {
+                return false;
+            } else if (volumePool.getPoolType() != Storage.StoragePoolType.PowerFlex && pool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+
+        return true;
     }
 
     @Override

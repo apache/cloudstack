@@ -1878,6 +1878,10 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
         return url;
     }
 
+    function powerflexURL(gateway, username, password, storagepool) {
+        var url = "powerflex://" + username + ":" + password + "@" + gateway + "/" + storagepool;
+        return url;
+    }
 
     //VM Instance
 

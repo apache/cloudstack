@@ -734,6 +734,22 @@ cloudStack.docs = {
         desc: 'In iSCSI, this is the LUN number. For example, 3.',
         externalLink: ''
     },
+    helpPrimaryStoragePowerFlexGateway: {
+        desc: 'The address of PowerFlex Gateway host',
+        externalLink: ''
+    },
+    helpPrimaryStoragePowerFlexGatewayUsername: {
+        desc: 'Username of PowerFlex Gateway for API access',
+        externalLink: ''
+    },
+    helpPrimaryStoragePowerFlexGatewayPassword: {
+        desc: 'Password of PowerFlex Gateway for API access',
+        externalLink: ''
+    },
+    helpPrimaryStoragePowerFlexStoragePool: {
+        desc: 'Storage pool on PowerFlex',
+        externalLink: ''
+    },
     helpPrimaryStorageRBDMonitor: {
         desc: 'The address of a Ceph monitor. Can also be a Round Robin DNS record',
         externalLink: ''

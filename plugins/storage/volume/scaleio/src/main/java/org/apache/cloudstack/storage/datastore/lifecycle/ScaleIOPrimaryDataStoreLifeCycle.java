@@ -131,12 +131,36 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
     public DataStore initialize(Map<String, Object> dsInfos) {
         String url = (String) dsInfos.get("url");
         Long zoneId = (Long) dsInfos.get("zoneId");
+        Long podId = (Long)dsInfos.get("podId");
+        Long clusterId = (Long)dsInfos.get("clusterId");
         String dataStoreName = (String) dsInfos.get("name");
         String providerName = (String) dsInfos.get("providerName");
         Long capacityBytes = (Long)dsInfos.get("capacityBytes");
         Long capacityIops = (Long)dsInfos.get("capacityIops");
         String tags = (String)dsInfos.get("tags");
         Map<String, String> details = (Map<String, String>) dsInfos.get("details");
+
+        if (zoneId == null) {
+            throw new CloudRuntimeException("Zone Id must be specified.");
+        }
+
+        PrimaryDataStoreParameters parameters = new PrimaryDataStoreParameters();
+        if (clusterId != null) {
+            // Primary datastore is cluster-wide, check and set the podId and clusterId parameters
+            if (podId == null) {
+                throw new CloudRuntimeException("Pod Id must also be specified when the Cluster Id is specified for Cluster-wide primary storage.");
+            }
+
+            Hypervisor.HypervisorType hypervisorType = getHypervisorTypeForCluster(clusterId);
+            if (!isSupportedHypervisorType(hypervisorType)) {
+                throw new CloudRuntimeException("Unsupported hypervisor type: " + hypervisorType.toString());
+            }
+
+            parameters.setPodId(podId);
+            parameters.setClusterId(clusterId);
+        } else if (podId != null) {
+            throw new CloudRuntimeException("Cluster Id must also be specified when the Pod Id is specified for Cluster-wide primary storage.");
+        }
 
         URI uri = null;
         try {
@@ -188,7 +212,6 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
         final org.apache.cloudstack.storage.datastore.api.StoragePool scaleIOPool = this.findStoragePool(gatewayApiURL,
                 gatewayUsername, gatewayPassword, storagePoolName);
 
-        PrimaryDataStoreParameters parameters = new PrimaryDataStoreParameters();
         parameters.setZoneId(zoneId);
         parameters.setName(dataStoreName);
         parameters.setProviderName(providerName);
@@ -412,6 +435,15 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
         } catch (Throwable e) {
             throw new CloudRuntimeException("Failed to update the storage pool" + e);
         }
+    }
+
+    private Hypervisor.HypervisorType getHypervisorTypeForCluster(long clusterId) {
+        ClusterVO cluster = clusterDao.findById(clusterId);
+        if (cluster == null) {
+            throw new CloudRuntimeException("Unable to locate the specified cluster: " + clusterId);
+        }
+
+        return cluster.getHypervisorType();
     }
 
     private static boolean isSupportedHypervisorType(Hypervisor.HypervisorType hypervisorType) {

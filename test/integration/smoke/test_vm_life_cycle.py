@@ -485,6 +485,40 @@ class TestVMLifeCycle(cloudstackTestCase):
         return
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_04_reboot_vm_forced(self):
+        """Test Force Reboot Virtual Machine
+        """
+
+        try:
+            self.debug("Force rebooting VM - ID: %s" % self.virtual_machine.id)
+            self.small_virtual_machine.reboot(self.apiclient, forced=True)
+        except Exception as e:
+            self.fail("Failed to force reboot VM: %s" % e)
+
+        list_vm_response = VirtualMachine.list(
+            self.apiclient,
+            id=self.small_virtual_machine.id
+        )
+        self.assertEqual(
+            isinstance(list_vm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+
+        self.assertNotEqual(
+            len(list_vm_response),
+            0,
+            "Check VM available in List Virtual Machines"
+        )
+
+        self.assertEqual(
+            list_vm_response[0].state,
+            "Running",
+            "Check virtual machine is in running state"
+        )
+        return
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_06_destroy_vm(self):
         """Test destroy Virtual Machine
         """

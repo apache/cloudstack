@@ -1471,7 +1471,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         StoragePool srcVolumePool = _poolDao.findById(volume.getPoolId());
-        allPools = getAllStoragePoolCompatileWithVolumeSourceStoragePool(srcVolumePool);
+        allPools = getAllStoragePoolsCompatibleWithVolumeSourceStoragePool(srcVolumePool);
         allPools.remove(srcVolumePool);
         if (vm != null) {
             suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, srcVolumePool);
@@ -1489,16 +1489,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      *  <li>We also all storage available filtering by data center, pod and cluster as the current storage pool used by the given volume.</li>
      * </ul>
      */
-    private List<? extends StoragePool> getAllStoragePoolCompatileWithVolumeSourceStoragePool(StoragePool srcVolumePool) {
+    private List<? extends StoragePool> getAllStoragePoolsCompatibleWithVolumeSourceStoragePool(StoragePool srcVolumePool) {
         List<StoragePoolVO> storagePools = new ArrayList<>();
-        List<StoragePoolVO> zoneWideStoragePools = _poolDao.findZoneWideStoragePoolsByTags(srcVolumePool.getDataCenterId(), null);
-        if (CollectionUtils.isNotEmpty(zoneWideStoragePools)) {
-            storagePools.addAll(zoneWideStoragePools);
+        // Storage pool with Zone Scope holds valid DataCenter Id only, Pod Id and Cluster Id are null
+        // Storage pool with Cluster/Host Scope holds valid DataCenter Id, Pod Id and Cluster Id
+        // Below methods call returns all the compatible pools with scope : ZONE, CLUSTER, HOST (as they are listed with Scope: null here)
+        List<StoragePoolVO> compatibleStoragePools = _poolDao.listBy(srcVolumePool.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null);
+        if (CollectionUtils.isNotEmpty(compatibleStoragePools)) {
+            compatibleStoragePools.remove(srcVolumePool);
+            storagePools.addAll(compatibleStoragePools);
         }
-        List<StoragePoolVO> clusterAndLocalStoragePools = _poolDao.listBy(srcVolumePool.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null);
-        if (CollectionUtils.isNotEmpty(clusterAndLocalStoragePools)) {
-            storagePools.addAll(clusterAndLocalStoragePools);
-        }
+
         return storagePools;
     }
 
@@ -1540,7 +1541,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (isLocalPoolSameHostAsSourcePool || pool.isShared()) {
                     suitablePools.add(pool);
                 }
-
             }
         }
         return suitablePools;
@@ -2389,6 +2389,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private ConsoleProxyVO rebootConsoleProxy(final long instanceId) {
         _consoleProxyMgr.rebootProxy(instanceId);
         return _consoleProxyDao.findById(instanceId);
+    }
+
+    private ConsoleProxyVO forceRebootConsoleProxy(final VMInstanceVO systemVm)  throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        _itMgr.advanceStop(systemVm.getUuid(), false);
+        return _consoleProxyMgr.startProxy(systemVm.getId(), true);
     }
 
     protected ConsoleProxyVO destroyConsoleProxy(final long instanceId) {
@@ -3262,6 +3267,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return _secStorageVmDao.findById(instanceId);
     }
 
+    private SecondaryStorageVmVO forceRebootSecondaryStorageVm(final VMInstanceVO systemVm)  throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        _itMgr.advanceStop(systemVm.getUuid(), false);
+        return _secStorageVmMgr.startSecStorageVm(systemVm.getId());
+    }
+
     protected SecondaryStorageVmVO destroySecondaryStorageVm(final long instanceId) {
         final SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(instanceId);
         if (_secStorageVmMgr.destroySecStorageVm(instanceId)) {
@@ -3416,12 +3426,24 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw ex;
         }
 
-        if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)) {
-            ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy Vm");
-            return rebootConsoleProxy(cmd.getId());
-        } else {
-            ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_SSVM_REBOOT, "rebooting secondary storage Vm");
-            return rebootSecondaryStorageVm(cmd.getId());
+        try {
+            if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)) {
+                ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy Vm");
+                if (cmd.isForced()) {
+                    return forceRebootConsoleProxy(systemVm);
+                }
+                return rebootConsoleProxy(cmd.getId());
+            } else {
+                ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_SSVM_REBOOT, "rebooting secondary storage Vm");
+                if (cmd.isForced()) {
+                    return forceRebootSecondaryStorageVm(systemVm);
+                }
+                return rebootSecondaryStorageVm(cmd.getId());
+            }
+        } catch (final ResourceUnavailableException e) {
+            throw new CloudRuntimeException("Unable to reboot " + systemVm, e);
+        } catch (final OperationTimedoutException e) {
+            throw new CloudRuntimeException("Operation timed out - Unable to reboot " + systemVm, e);
         }
     }
 

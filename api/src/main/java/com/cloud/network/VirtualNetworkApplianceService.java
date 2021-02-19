@@ -44,7 +44,7 @@ public interface VirtualNetworkApplianceService {
      *            the command specifying router's id
      * @return router if successful
      */
-    VirtualRouter rebootRouter(long routerId, boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    VirtualRouter rebootRouter(long routerId, boolean reprogramNetwork, boolean forced) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     VirtualRouter upgradeRouter(UpgradeRouterCmd cmd);
 

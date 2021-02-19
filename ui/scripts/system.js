@@ -3793,6 +3793,17 @@
 
                                             restart: {
                                                 label: 'label.action.reboot.router',
+                                                createForm: {
+                                                    title: 'label.action.reboot.router',
+                                                    desc: 'message.action.reboot.router',
+                                                    fields: {
+                                                        forced: {
+                                                             label: 'force.reboot',
+                                                             isBoolean: true,
+                                                             isChecked: false
+                                                        }
+                                                    }
+                                                },
                                                 messages: {
                                                     confirm: function (args) {
                                                         return 'message.action.reboot.router';
@@ -3802,8 +3813,10 @@
                                                     }
                                                 },
                                                 action: function (args) {
+                                                     var array1 =[];
+                                                     array1.push("&forced=" + (args.data.forced == "on"));
                                                     $.ajax({
-                                                        url: createURL('rebootRouter&id=' + args.context.routers[0].id),
+                                                        url: createURL('rebootRouter&id=' + args.context.routers[0].id + array1.join("")),
                                                         dataType: 'json',
                                                         async: true,
                                                         success: function (json) {
@@ -8809,6 +8822,17 @@
 
                                                     restart: {
                                                         label: 'label.action.reboot.systemvm',
+                                                        createForm: {
+                                                            title: 'label.action.reboot.systemvm',
+                                                            desc: 'message.action.reboot.systemvm',
+                                                            fields: {
+                                                                forced: {
+                                                                     label: 'force.reboot',
+                                                                     isBoolean: true,
+                                                                     isChecked: false
+                                                                }
+                                                            }
+                                                        },
                                                         messages: {
                                                             confirm: function (args) {
                                                                 return 'message.action.reboot.systemvm';
@@ -8818,8 +8842,10 @@
                                                             }
                                                         },
                                                         action: function (args) {
+                                                            var array1 =[];
+                                                            array1.push("&forced=" + (args.data.forced == "on"));
                                                             $.ajax({
-                                                                url: createURL('rebootSystemVm&id=' + args.context.systemVMs[0].id),
+                                                                url: createURL('rebootSystemVm&id=' + args.context.systemVMs[0].id + array1.join("")),
                                                                 dataType: 'json',
                                                                 async: true,
                                                                 success: function (json) {
@@ -10340,6 +10366,17 @@
 
                                     restart: {
                                         label: 'label.action.reboot.router',
+                                        createForm: {
+                                            title: 'label.action.reboot.router',
+                                            desc: 'message.action.reboot.router',
+                                            fields: {
+                                                forced: {
+                                                     label: 'force.reboot',
+                                                     isBoolean: true,
+                                                     isChecked: false
+                                                }
+                                            }
+                                        },
                                         messages: {
                                             confirm: function (args) {
                                                 return 'message.action.reboot.router';
@@ -10349,8 +10386,10 @@
                                             }
                                         },
                                         action: function (args) {
+                                            var array1 =[];
+                                            array1.push("&forced=" + (args.data.forced == "on"));
                                             $.ajax({
-                                                url: createURL('rebootRouter&id=' + args.context.routers[0].id),
+                                                url: createURL('rebootRouter&id=' + args.context.routers[0].id + array1.join("")),
                                                 dataType: 'json',
                                                 async: true,
                                                 success: function (json) {
@@ -11826,6 +11865,17 @@
 
                             restart: {
                                 label: 'label.action.reboot.systemvm',
+                                createForm: {
+                                    title: 'label.action.reboot.systemvm',
+                                    desc: 'message.action.reboot.systemvm',
+                                    fields: {
+                                        forced: {
+                                             label: 'force.reboot',
+                                             isBoolean: true,
+                                             isChecked: false
+                                        }
+                                    }
+                                },
                                 messages: {
                                     confirm: function (args) {
                                         return 'message.action.reboot.systemvm';
@@ -11835,8 +11885,10 @@
                                     }
                                 },
                                 action: function (args) {
+                                    var array1 =[];
+                                    array1.push("&forced=" + (args.data.forced == "on"));
                                     $.ajax({
-                                        url: createURL('rebootSystemVm&id=' + args.context.systemVMs[0].id),
+                                        url: createURL('rebootSystemVm&id=' + args.context.systemVMs[0].id + array1.join("")),
                                         dataType: 'json',
                                         async: true,
                                         success: function (json) {
@@ -19128,6 +19180,7 @@
                                     },
                                     provider: {
                                         label: 'label.provider',
+                                        dependsOn: 'protocol',
                                         validation: {
                                             required: true
                                         },
@@ -19135,6 +19188,8 @@
                                             var data = args.context.providers ?
                                                 { id: args.context.providers[0].id } :
                                                 {};
+
+                                            var items =[];
 
                                             $.ajax({
                                                 url: createURL('listStorageProviders'),
@@ -19146,10 +19201,19 @@
 
                                                     args.response.success({
                                                         data: $.map(providers, function (provider) {
-                                                            return {
-                                                                id: provider.name,
-                                                                description: provider.name
-                                                            };
+                                                            if (args.protocol != "custom") {
+                                                                if (provider.name != "PowerFlex") {
+                                                                    return {
+                                                                        id: provider.name,
+                                                                        description: provider.name
+                                                                    };
+                                                                }
+                                                            } else {
+                                                                return {
+                                                                    id: provider.name,
+                                                                    description: provider.name
+                                                                };
+                                                            }
                                                         })
                                                     });
                                                 }
@@ -19163,11 +19227,31 @@
                                                     $form.find('.form-item[rel=capacityIops]').hide();
                                                     $form.find('.form-item[rel=capacityBytes]').hide();
                                                     $form.find('.form-item[rel=url]').hide();
+
+                                                    $form.find('.form-item[rel=powerflexGateway]').hide();
+                                                    $form.find('.form-item[rel=powerflexGatewayUsername]').hide();;
+                                                    $form.find('.form-item[rel=powerflexGatewayPassword]').hide();;
+                                                    $form.find('.form-item[rel=powerflexStoragePool]').hide();;
+                                                } else if (scope == 'PowerFlex') {
+                                                    $form.find('.form-item[rel=isManaged]').hide();
+                                                    $form.find('.form-item[rel=capacityIops]').hide();
+                                                    $form.find('.form-item[rel=capacityBytes]').hide();
+                                                    $form.find('.form-item[rel=url]').hide();
+
+                                                    $form.find('.form-item[rel=powerflexGateway]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=powerflexGatewayUsername]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=powerflexGatewayPassword]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=powerflexStoragePool]').css('display', 'inline-block');
                                                 } else {
                                                     $form.find('.form-item[rel=isManaged]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=capacityIops]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=capacityBytes]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=url]').css('display', 'inline-block');
+
+                                                    $form.find('.form-item[rel=powerflexGateway]').hide();
+                                                    $form.find('.form-item[rel=powerflexGatewayUsername]').hide();;
+                                                    $form.find('.form-item[rel=powerflexGatewayPassword]').hide();;
+                                                    $form.find('.form-item[rel=powerflexStoragePool]').hide();;
                                                 }
                                             }
                                         )
@@ -19312,6 +19396,41 @@
                                         isHidden: true
                                     },
 
+                                    // PowerFlex/ScaleIO
+                                    powerflexGateway: {
+                                        label: 'label.powerflex.gateway',
+                                        docID: 'helpPrimaryStoragePowerFlexGateway',
+                                        validation: {
+                                            required: true
+                                        },
+                                        isHidden: true
+                                    },
+                                    powerflexGatewayUsername: {
+                                        label: 'label.powerflex.gateway.username',
+                                        docID: 'helpPrimaryStoragePowerFlexGatewayUsername',
+                                        validation: {
+                                            required: true
+                                        },
+                                        isHidden: true
+                                    },
+                                    powerflexGatewayPassword: {
+                                        label: 'label.powerflex.gateway.password',
+                                        docID: 'helpPrimaryStoragePowerFlexGatewayPassword',
+                                        isPassword: true,
+                                        validation: {
+                                            required: true
+                                        },
+                                        isHidden: true
+                                    },
+                                    powerflexStoragePool: {
+                                        label: 'label.powerflex.storage.pool',
+                                        docID: 'helpPrimaryStoragePowerFlexStoragePool',
+                                        validation: {
+                                            required: true
+                                        },
+                                        isHidden: true
+                                    },
+
                                     //always appear (begin)
                                     storageTags: {
                                         label: 'label.storage.tags',
@@ -19450,9 +19569,16 @@
                                     }
 
                                     array1.push("&url=" + encodeURIComponent(url));
-                                }
-                                else
-                                {
+                                } else if (args.data.provider == "PowerFlex") {
+                                    var url = null;
+                                    var gateway = args.data.powerflexGateway;
+                                    var gwusername = encodeURIComponent(args.data.powerflexGatewayUsername);
+                                    var gwpassword = encodeURIComponent(args.data.powerflexGatewayPassword);
+                                    var storagepool = encodeURIComponent(args.data.powerflexStoragePool);
+                                    url = powerflexURL(gateway, gwusername, gwpassword, storagepool);
+
+                                    array1.push("&url=" + encodeURIComponent(url));
+                                } else {
                                     array1.push("&managed=" + (args.data.isManaged == "on").toString());
 
                                     if (args.data.capacityBytes != null && args.data.capacityBytes.length > 0)
