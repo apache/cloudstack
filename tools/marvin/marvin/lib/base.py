@@ -610,7 +610,7 @@ class VirtualMachine:
             cmd.hostid = hostid
 
         if "userdata" in services:
-            cmd.userdata = base64.urlsafe_b64encode(services["userdata"])
+            cmd.userdata = base64.urlsafe_b64encode(services["userdata"].encode()).decode()
 
         if "dhcpoptionsnetworklist" in services:
             cmd.dhcpoptionsnetworklist = services["dhcpoptionsnetworklist"]
