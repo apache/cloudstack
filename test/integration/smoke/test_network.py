@@ -1862,6 +1862,7 @@ class TestSharedNetwork(cloudstackTestCase):
         # Create Network Offering
         cls.services["shared_network_offering"]["specifyVlan"] = "True"
         cls.services["shared_network_offering"]["specifyIpRanges"] = "True"
+        cls.hv = cls.testClient.getHypervisorInfo()
         cls.shared_network_offering = NetworkOffering.create(cls.apiclient, cls.services["shared_network_offering"],
                                                              conservemode=False)
 
@@ -1884,6 +1885,7 @@ class TestSharedNetwork(cloudstackTestCase):
                                             zoneid=cls.zone.id)
         cls._cleanup = [
             cls.service_offering,
+            cls.shared_network,
             cls.shared_network_offering
         ]
         return
@@ -1960,6 +1962,8 @@ class TestSharedNetwork(cloudstackTestCase):
 
     @attr(tags=["advanced", "shared"])
     def test_01_deployVMInSharedNetwork(self):
+        if self.hv.lower() == 'simulator':
+            self.skipTest("Hypervisor is simulator - skipping Test..")
         try:
             self.virtual_machine = VirtualMachine.create(self.apiclient, self.services["virtual_machine"],
                                                          networkids=[self.shared_network.id],
@@ -1993,6 +1997,8 @@ class TestSharedNetwork(cloudstackTestCase):
 
     @attr(tags=["advanced", "shared"])
     def test_02_verifyRouterIpAfterNetworkRestart(self):
+        if self.hv.lower() == 'simulator':
+            self.skipTest("Hypervisor is simulator - skipping Test..")
         routerIp = self.services["shared_network"]["routerip"]
         self.debug("restarting network with cleanup")
         try:
@@ -2018,12 +2024,14 @@ class TestSharedNetwork(cloudstackTestCase):
 
     @attr(tags=["advanced", "shared"])
     def test_03_destroySharedNetwork(self):
+        if self.hv.lower() == 'simulator':
+            self.skipTest("Hypervisor is simulator - skipping Test..")
         routerIp = self.services["shared_network"]["routerip"]
         try:
             self.shared_network.delete(self.apiclient)
         except Exception as e:
             self.fail("Failed to destroy the shared network")
-
+        self._cleanup.remove(self.shared_network)
         self.debug("Fetch the placeholder record for the router")
         nic_ip_address = self.dbclient.execute(
             "select ip4_address from nics where strategy='Placeholder' and ip4_address = '%s' and removed is NOT NULL;" % routerIp);
