@@ -63,7 +63,7 @@ class TestUsageEvents(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super(TestUsageEvents,self).tearDownClass()
+        super(TestUsageEvents,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
