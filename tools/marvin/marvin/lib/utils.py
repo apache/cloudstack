@@ -340,7 +340,6 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
     snapshotPath = str(qresultset[0][0]) + snapshot_extensions[str(hypervisor).lower()]
 
     nfsurl = secondaryStore.url
-    from urllib2 import urlparse
     parse_url = urllib.parse.urlsplit(nfsurl, scheme='nfs')
     host, path = str(parse_url.netloc), str(parse_url.path)
 
