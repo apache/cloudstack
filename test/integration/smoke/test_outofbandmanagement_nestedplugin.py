@@ -56,7 +56,7 @@ class MockedCloudStackServer(BaseHTTPRequestHandler):
         self.end_headers()
 
         json = "{\"listvirtualmachinesresponse\":{\"count\":1,\"virtualmachine\":[{\"id\":\"some-uuid\",\"name\":\"test-vm\",\"state\":\"%s\"}]}}" % state
-        self.wfile.write(json)
+        self.wfile.write(json.encode())
 
     def log_message(self, format, *args):
         return
