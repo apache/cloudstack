@@ -83,6 +83,8 @@
       centered
       width="auto">
       <CreateVlanIpRange
+        :resource="resource"
+        @refresh-data="fetchData"
         @close-action="showCreateForm = false" />
     </a-modal>
   </div>
@@ -172,8 +174,6 @@ export default {
       }).finally(() => {
         this.fetchLoading = false
       })
-    },
-    addIpRange () {
     },
     removeIpRange (id) {
       api('deleteVlanIpRange', { id: id }).then(json => {
