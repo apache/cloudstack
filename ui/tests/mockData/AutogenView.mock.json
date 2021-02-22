@@ -1,0 +1,198 @@
+{
+  "messages": {
+    "en": {
+      "labelname": "test-name-en",
+      "displaytext": "description-en",
+      "label.column1": "column1-en",
+      "label.column2": "column2-en",
+      "label.column3": "column3-en",
+      "label.id": "uuid-en",
+      "label.name": "name-en",
+      "label.domainid": "domain-en",
+      "label.self": "self-en",
+      "label.all": "all-en",
+      "label.tags": "tags-en",
+      "label.account": "account-en",
+      "label.domainids": "domainids-en",
+      "label.keypair": "keypair-en",
+      "label.filterby": "filterby-en",
+      "label.refresh": "refresh-en",
+      "message.error.required.input": "required-en",
+      "message.error.select": "select-en",
+      "label.search": "search-en",
+      "label.quota.configuration": "quota-configuration-en",
+      "label.quota.value": "quota-value-en",
+      "label.quota.tariff.effectivedate": "quota-effectivedate-en",
+      "label.confirmpassword": "confirmpassword-en",
+      "label.confirmpassword.description": "confirmpassword-description-en",
+      "label.open.documentation": "open",
+      "label.metrics": "metrics",
+      "label.showing": "Showing",
+      "label.of": "of",
+      "label.items": "items",
+      "label.page": "page",
+      "label.view.console": "view-console-en",
+      "error.fetching.async.job.result": "Error encountered while fetching async job result",
+      "label.cancel": "cancel",
+      "label.ok": "ok"
+    },
+    "de": {
+      "labelname": "test-name-de",
+      "displaytext": "description-de",
+      "label.column1": "column1-de",
+      "label.column2": "column2-de",
+      "label.column3": "column3-de",
+      "label.id": "uuid-de",
+      "label.name": "name-de",
+      "label.domainid": "domain-de",
+      "label.self": "self-de",
+      "label.all": "all-de",
+      "label.tags": "tags-de",
+      "label.account": "account-de",
+      "label.domainids": "domainids-de",
+      "label.keypair": "keypair-de",
+      "label.filterby": "filterby-de",
+      "label.refresh": "refresh-de",
+      "message.error.required.input": "required-de",
+      "message.error.select": "select-de",
+      "label.search": "search-de",
+      "label.quota.configuration": "quota-configuration-de",
+      "label.quota.value": "quota-value-de",
+      "label.quota.tariff.effectivedate": "quota-effectivedate-de",
+      "label.confirmpassword": "confirmpassword-de",
+      "label.confirmpassword.description": "confirmpassword-description-de",
+      "label.open.documentation": "open",
+      "label.metrics": "metrics",
+      "label.showing": "Showing",
+      "label.of": "of",
+      "label.items": "items",
+      "label.page": "page",
+      "label.view.console": "view-console-de",
+      "error.fetching.async.job.result": "Error encountered while fetching async job result",
+      "label.cancel": "cancel",
+      "label.ok": "ok"
+    }
+  },
+  "apis": {
+    "testApiNameCase1": {
+      "params": {},
+      "response": []
+    },
+    "testApiNameCase2": {
+      "params": {},
+      "response": []
+    },
+    "testApiNameCase3": {
+      "params": {},
+      "response": []
+    },
+    "testApiNameCase4": {
+      "params": {},
+      "response": [
+        {
+          "name": "column2",
+          "type": "string"
+        },
+        {
+          "name": "column1",
+          "type": "string"
+        },
+        {
+          "name": "column3",
+          "type": "string"
+        }
+      ]
+    },
+    "testApiNameCase5": {
+      "params": [
+        {
+          "name": "column2",
+          "type": "string"
+        },
+        {
+          "name": "column1",
+          "type": "string"
+        },
+        {
+          "name": "column3",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "id",
+          "type": "string"
+        }
+      ],
+      "response": []
+    },
+    "testApiNameCase6": {
+      "params": [
+        {
+          "name": "id",
+          "type": "uuid"
+        },
+        {
+          "name": "tags",
+          "type": "list"
+        },
+        {
+          "name": "column1",
+          "type": "list"
+        },
+        {
+          "name": "column2",
+          "type": "string"
+        },
+        {
+          "name": "account",
+          "type": "string"
+        },
+        {
+          "name": "confirmpassword",
+          "type": "string"
+        }
+      ],
+      "response": []
+    },
+    "listTemplates": {
+      "params": {},
+      "response": []
+    },
+    "listIsos": {
+      "params": {},
+      "response": []
+    },
+    "listRoles": {
+      "params": {},
+      "response": []
+    },
+    "listHosts": {
+      "params": {},
+      "response": []
+    },
+    "listTestApiNames": {
+      "params": {},
+      "response": []
+    },
+    "createAccount": {
+      "params": {},
+      "response": []
+    },
+    "addAccountToProject": {
+      "params": {},
+      "response": []
+    },
+    "quotaEmailTemplateList": {
+      "params": {},
+      "response": []
+    }
+  },
+  "info": {
+    "roletype": "Normal",
+    "account": "test-account",
+    "domainid": "test-domain-id"
+  }
+}

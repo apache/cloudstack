@@ -740,6 +740,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
      *      - The requested exact PVLAN pair exists
      *      - The requested secondary VLAN ID is secondary VLAN ID of an existing PVLAN pair
      *      - The requested secondary VLAN ID is primary VLAN ID of an existing PVLAN pair
+     *      - The requested primary VLAN ID is secondary VLAN ID of an existing PVLAN pair
      */
     protected boolean isNetworkOverlappingRequestedPvlan(Integer existingPrimaryVlan, Integer existingSecondaryVlan, Network.PVlanType existingPvlanType,
                                                          Integer requestedPrimaryVlan, Integer requestedSecondaryVlan, Network.PVlanType requestedPvlanType) {
@@ -749,6 +750,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         }
         boolean exactMatch = existingPrimaryVlan.equals(requestedPrimaryVlan) && existingSecondaryVlan.equals(requestedSecondaryVlan);
         boolean secondaryVlanUsed = requestedPvlanType != Network.PVlanType.Promiscuous && requestedSecondaryVlan.equals(existingPrimaryVlan) || requestedSecondaryVlan.equals(existingSecondaryVlan);
+        boolean primaryVlanUsed = existingPvlanType != Network.PVlanType.Promiscuous && requestedPrimaryVlan.equals(existingSecondaryVlan);
         boolean isolatedMax = false;
         boolean promiscuousMax = false;
         if (requestedPvlanType == Network.PVlanType.Isolated && existingPrimaryVlan.equals(requestedPrimaryVlan) && existingPvlanType.equals(Network.PVlanType.Isolated)) {
@@ -756,7 +758,12 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         } else if (requestedPvlanType == Network.PVlanType.Promiscuous && existingPrimaryVlan.equals(requestedPrimaryVlan) && existingPvlanType == Network.PVlanType.Promiscuous) {
             promiscuousMax = true;
         }
-        return exactMatch || secondaryVlanUsed || isolatedMax || promiscuousMax;
+        return exactMatch || secondaryVlanUsed || primaryVlanUsed || isolatedMax || promiscuousMax;
+    }
+
+    // True when a VLAN ID overlaps with an existing PVLAN primary or secondary ID
+    protected boolean isNetworkOverlappingRequestedPvlan(Integer existingPrimaryVlan, Integer existingSecondaryVlan, Integer requestedVlan) {
+        return requestedVlan.equals(existingPrimaryVlan) || requestedVlan.equals(existingSecondaryVlan);
     }
 
     protected Network.PVlanType getNetworkPvlanType(long networkId, List<Integer> existingPvlan) {
@@ -768,6 +775,38 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
             existingPvlanType = existingPvlan.get(0).equals(existingPvlan.get(1)) ? Network.PVlanType.Promiscuous : Network.PVlanType.Isolated;
         }
         return existingPvlanType;
+    }
+
+    @Override
+    public List<NetworkVO> listByPhysicalNetworkPvlan(long physicalNetworkId, String broadcastUri) {
+        final URI searchUri = BroadcastDomainType.fromString(broadcastUri);
+        if (!searchUri.getScheme().equalsIgnoreCase("vlan")) {
+            throw new CloudRuntimeException("VLAN requested but URI is not in the expected format: " + searchUri.toString());
+        }
+        final String searchRange = BroadcastDomainType.getValue(searchUri);
+        final List<Integer> searchVlans = UriUtils.expandVlanUri(searchRange);
+        final List<NetworkVO> overlappingNetworks = new ArrayList<>();
+
+        final SearchCriteria<NetworkVO> sc = PhysicalNetworkSearch.create();
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
+
+        for (final NetworkVO network : listBy(sc)) {
+            if (network.getBroadcastUri() == null || !network.getBroadcastUri().getScheme().equalsIgnoreCase("pvlan")) {
+                continue;
+            }
+            // Ensure existing and proposed VLAN don't overlap
+            final String networkVlanRange = BroadcastDomainType.getValue(network.getBroadcastUri());
+            if (networkVlanRange == null || networkVlanRange.isEmpty()) {
+                continue;
+            }
+            List<Integer> existingPvlan = UriUtils.expandPvlanUri(networkVlanRange);
+            if (isNetworkOverlappingRequestedPvlan(existingPvlan.get(0), existingPvlan.get(1), searchVlans.get(0))) {
+                overlappingNetworks.add(network);
+                break;
+            }
+        }
+
+        return overlappingNetworks;
     }
 
     @Override

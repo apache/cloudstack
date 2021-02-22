@@ -177,6 +177,11 @@ public class CheckNetworkAnswerTest {
             public boolean isManaged() { return false; }
 
             @Override
+            public Long getParent() {
+                return 0L;
+            }
+
+            @Override
             public Long getPodId() {
                 return 0L;
             }

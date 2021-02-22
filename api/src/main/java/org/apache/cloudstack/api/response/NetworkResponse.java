@@ -190,6 +190,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @Param(description = "VPC the network belongs to")
     private String vpcId;
 
+    @SerializedName(ApiConstants.VPC_NAME)
+    @Param(description = "Name of the VPC to which this network belongs", since = "4.15")
+    private String vpcName;
+
     @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY)
     @Param(description = "list networks available for vm deployment")
     private Boolean canUseForDeploy;
@@ -221,6 +225,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.ACL_ID)
     @Param(description = "ACL Id associated with the VPC network")
     private String aclId;
+
+    @SerializedName(ApiConstants.ACL_NAME)
+    @Param(description = "ACL name associated with the VPC network")
+    private String aclName;
 
     @SerializedName(ApiConstants.STRECHED_L2_SUBNET)
     @Param(description = "true if network can span multiple zones", since = "4.4")
@@ -439,6 +447,14 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.aclId = aclId;
     }
 
+    public String getAclName() {
+        return aclName;
+    }
+
+    public void setAclName(String aclName) {
+        this.aclName = aclName;
+    }
+
     public void setStrechedL2Subnet(Boolean strechedL2Subnet) {
         this.strechedL2Subnet = strechedL2Subnet;
     }
@@ -457,5 +473,13 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     public void setRedundantRouter(Boolean redundantRouter) {
         this.redundantRouter = redundantRouter;
+    }
+
+    public String getVpcName() {
+        return vpcName;
+    }
+
+    public void setVpcName(String vpcName) {
+        this.vpcName = vpcName;
     }
 }

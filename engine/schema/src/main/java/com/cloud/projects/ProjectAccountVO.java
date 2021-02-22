@@ -46,6 +46,9 @@ public class ProjectAccountVO implements ProjectAccount, InternalIdentity {
     @Column(name = "account_id")
     private long accountId;
 
+    @Column(name="user_id")
+    private Long userId;
+
     @Column(name = "account_role")
     @Enumerated(value = EnumType.STRING)
     private Role accountRole = Role.Regular;
@@ -53,17 +56,26 @@ public class ProjectAccountVO implements ProjectAccount, InternalIdentity {
     @Column(name = "project_account_id")
     long projectAccountId;
 
+    @Column(name = "project_role_id")
+    private Long projectRoleId;
+
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
     protected ProjectAccountVO() {
     }
 
-    public ProjectAccountVO(Project project, long accountId, Role accountRole) {
+    public ProjectAccountVO(Project project, long accountId, Role accountRole, Long userId, Long projectRoleId) {
         this.accountId = accountId;
-        this.accountRole = accountRole;
+        if (accountRole != null) {
+            this.accountRole = accountRole;
+        } else {
+            this.accountRole = Role.Regular;
+        }
         this.projectId = project.getId();
         this.projectAccountId = project.getProjectAccountId();
+        this.userId = userId;
+        this.projectRoleId = projectRoleId;
     }
 
     @Override
@@ -82,6 +94,13 @@ public class ProjectAccountVO implements ProjectAccount, InternalIdentity {
     }
 
     @Override
+    public Long getUserId() { return userId; }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    @Override
     public Role getAccountRole() {
         return accountRole;
     }
@@ -90,6 +109,13 @@ public class ProjectAccountVO implements ProjectAccount, InternalIdentity {
     public long getProjectAccountId() {
         return projectAccountId;
     }
+
+    public void setProjectRoleId(Long projectRoleId) {
+        this.projectRoleId = projectRoleId;
+    }
+
+    @Override
+    public Long getProjectRoleId() { return projectRoleId; }
 
     public void setAccountRole(Role accountRole) {
         this.accountRole = accountRole;

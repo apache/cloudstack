@@ -297,7 +297,7 @@ public class DownloadListener implements Listener {
         }*/
         else if (cmd instanceof StartupSecondaryStorageCommand) {
             try{
-                List<DataStore> imageStores = _storeMgr.getImageStoresByScope(new ZoneScope(agent.getDataCenterId()));
+                List<DataStore> imageStores = _storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(agent.getDataCenterId()));
                 for (DataStore store : imageStores) {
                     _volumeSrv.handleVolumeSync(store);
                     _imageSrv.handleTemplateSync(store);

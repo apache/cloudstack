@@ -189,7 +189,6 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     public Integer countAllByRole(final Role role) {
         final SearchCriteria<DomainRouterVO> sc = createSearchCriteria();
         sc.addAnd("role", SearchCriteria.Op.EQ, role);
-        sc.addAnd("removed", Op.NULL);
         return getCount(sc);
     }
 

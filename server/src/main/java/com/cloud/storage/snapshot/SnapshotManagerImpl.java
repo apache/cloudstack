@@ -311,7 +311,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         if (snapshotStrategy == null) {
             s_logger.error("Unable to find snaphot strategy to handle snapshot with id '" + snapshotId + "'");
-            return null;
+            String errorMsg = String.format("Revert snapshot command failed for snapshot with id %d, because this command is supported only for KVM hypervisor", snapshotId);
+            throw new CloudRuntimeException(errorMsg);
         }
 
         boolean result = snapshotStrategy.revertSnapshot(snapshotInfo);
@@ -464,7 +465,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
         SnapshotInfo snapshotInfo = this.snapshotFactory.getSnapshot(snapshotId, store);
         snapshotInfo = (SnapshotInfo)store.create(snapshotInfo);
-        SnapshotDataStoreVO snapshotOnPrimaryStore = this._snapshotStoreDao.findBySnapshot(snapshot.getId(), store.getRole());
+        SnapshotDataStoreVO snapshotOnPrimaryStore = this._snapshotStoreDao.findByStoreSnapshot(store.getRole(), store.getId(), snapshot.getId());
         snapshotOnPrimaryStore.setState(ObjectInDataStoreStateMachine.State.Ready);
         snapshotOnPrimaryStore.setInstallPath(vmSnapshot.getName());
         _snapshotStoreDao.update(snapshotOnPrimaryStore.getId(), snapshotOnPrimaryStore);
@@ -1106,7 +1107,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             if (hosts != null && !hosts.isEmpty()) {
                 HostVO host = hosts.get(0);
                 if (!hostSupportSnapsthotForVolume(host, volume)) {
-                    throw new CloudRuntimeException("KVM Snapshot is not supported: " + host.getId());
+                    throw new CloudRuntimeException(
+                            "KVM Snapshot is not supported for Running VMs. It is disabled by default due to a possible volume corruption in certain cases. To enable it set global settings kvm.snapshot.enabled to True. See the documentation for more details.");
                 }
             }
         }

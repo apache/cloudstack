@@ -161,6 +161,13 @@ public class PrimaryDataStoreHelper {
         pool.setScope(ScopeType.CLUSTER);
         pool.setStatus(StoragePoolStatus.Up);
         this.dataStoreDao.update(pool.getId(), pool);
+        if(pool.getPoolType() == StoragePoolType.DatastoreCluster && pool.getParent() == 0) {
+            List<StoragePoolVO> childDatastores = dataStoreDao.listChildStoragePoolsInDatastoreCluster(pool.getId());
+            for (StoragePoolVO child : childDatastores) {
+                child.setScope(ScopeType.CLUSTER);
+                this.dataStoreDao.update(child.getId(), child);
+            }
+        }
         return dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Primary);
     }
 
@@ -178,6 +185,13 @@ public class PrimaryDataStoreHelper {
         pool.setHypervisor(hypervisor);
         pool.setStatus(StoragePoolStatus.Up);
         this.dataStoreDao.update(pool.getId(), pool);
+        if(pool.getPoolType() == StoragePoolType.DatastoreCluster && pool.getParent() == 0) {
+            List<StoragePoolVO> childDatastores = dataStoreDao.listChildStoragePoolsInDatastoreCluster(pool.getId());
+            for (StoragePoolVO child : childDatastores) {
+                child.setScope(ScopeType.ZONE);
+                this.dataStoreDao.update(child.getId(), child);
+            }
+        }
         return dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Primary);
     }
 

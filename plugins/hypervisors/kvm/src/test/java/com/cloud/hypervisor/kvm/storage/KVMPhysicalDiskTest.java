@@ -25,7 +25,7 @@ public class KVMPhysicalDiskTest extends TestCase {
 
     public void testRBDStringBuilder() {
         assertEquals(KVMPhysicalDisk.RBDStringBuilder("ceph-monitor", 8000, "admin", "supersecret", "volume1"),
-                     "rbd:volume1:mon_host=ceph-monitor\\\\:8000:auth_supported=cephx:id=admin:key=supersecret:rbd_default_format=2:client_mount_timeout=30");
+                     "rbd:volume1:mon_host=ceph-monitor\\:8000:auth_supported=cephx:id=admin:key=supersecret:rbd_default_format=2:client_mount_timeout=30");
     }
 
     public void testAttributes() {

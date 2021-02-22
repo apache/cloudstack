@@ -66,6 +66,7 @@ public interface NetworkModel {
     String VM_ID_FILE = "vm-id";
     String PUBLIC_KEYS_FILE = "public-keys";
     String CLOUD_IDENTIFIER_FILE = "cloud-identifier";
+    String HYPERVISOR_HOST_NAME_FILE = "hypervisor-host-name";
     int CONFIGDATA_DIR = 0;
     int CONFIGDATA_FILE = 1;
     int CONFIGDATA_CONTENT = 2;
@@ -313,7 +314,7 @@ public interface NetworkModel {
     boolean getNetworkEgressDefaultPolicy(Long networkId);
 
     List<String[]> generateVmData(String userData, String serviceOffering, long datacenterId,
-                                  String vmName, String vmHostName, long vmId, String vmUuid, String guestIpAddress, String publicKey, String password, Boolean isWindows);
+                                  String vmName, String vmHostName, long vmId, String vmUuid, String guestIpAddress, String publicKey, String password, Boolean isWindows, String hostname);
 
     String getValidNetworkCidr(Network guestNetwork);
 

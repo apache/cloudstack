@@ -210,7 +210,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
                               domainid=self.child_do_admin_2.domainid)
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="true")
     def test_01_change_service_offering(self):
         """Test Deploy VM with specified RAM & verify the usage"""
 

@@ -580,10 +580,10 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#expungeNics(com.cloud.vm.VirtualMachineProfile)
+     * @see com.cloud.network.NetworkManager#removeNics(com.cloud.vm.VirtualMachineProfile)
      */
     @Override
-    public void expungeNics(VirtualMachineProfile vm) {
+    public void removeNics(VirtualMachineProfile vm) {
         // TODO Auto-generated method stub
 
     }
@@ -941,6 +941,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public void setHypervisorHostname(VirtualMachineProfile vm, DeployDestination dest, boolean migrationSuccessful) {
+        return;
+    }
+
+    @Override
     public void prepareNicForMigration(VirtualMachineProfile vm, DeployDestination dest) {
         // TODO Auto-generated method stub
 
@@ -985,7 +990,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public Pair<NicProfile, Integer> importNic(String macAddress, int deviceId, Network network, Boolean isDefaultNic, VirtualMachine vm, IpAddresses ipAddresses) {
+    public Pair<NicProfile, Integer> importNic(String macAddress, int deviceId, Network network, Boolean isDefaultNic, VirtualMachine vm, IpAddresses ipAddresses, boolean forced) {
         return null;
+    }
+
+    @Override
+    public void unmanageNics(VirtualMachineProfile vm) {
     }
 }

@@ -79,6 +79,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final Logger s_logger = Logger.getLogger(DateraPrimaryDataStoreDriver.class);
     private static final int s_lockTimeInSeconds = 300;
@@ -616,7 +618,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 usedSpaceBytes += templatePoolRef.getTemplateSize();
             }
         }
-        s_logger.debug("usedSpaceBytes: " + String.valueOf(usedSpaceBytes));
+        s_logger.debug("usedSpaceBytes: " + toHumanReadableSize(usedSpaceBytes));
 
         return usedSpaceBytes;
     }
@@ -657,7 +659,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 hypervisorSnapshotReserve = Math.max(hypervisorSnapshotReserve, s_lowestHypervisorSnapshotReserve);
                 volumeSize += volumeSize * (hypervisorSnapshotReserve / 100f);
             }
-            s_logger.debug("Volume size:" + String.valueOf(volumeSize));
+            s_logger.debug("Volume size: " + toHumanReadableSize(volumeSize));
             break;
 
         case TEMPLATE:
@@ -670,7 +672,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             } else {
                 volumeSize = (long) (templateSize + templateSize * (s_lowestHypervisorSnapshotReserve / 100f));
             }
-            s_logger.debug("Template volume size:" + String.valueOf(volumeSize));
+            s_logger.debug("Template volume size:" + toHumanReadableSize(volumeSize));
 
             break;
         }
@@ -953,7 +955,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         } else if (dataType == DataObjectType.TEMPLATE) {
             s_logger.debug("Clone volume from a template");
 
-            VMTemplateStoragePoolVO templatePoolRef = tmpltPoolDao.findByPoolTemplate(storagePoolId, dataObjectId);
+            VMTemplateStoragePoolVO templatePoolRef = tmpltPoolDao.findByPoolTemplate(storagePoolId, dataObjectId, null);
 
             if (templatePoolRef != null) {
                 baseAppInstanceName = templatePoolRef.getLocalDownloadPath();
@@ -1091,7 +1093,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             long templateSizeBytes = getDataObjectSizeIncludingHypervisorSnapshotReserve(templateInfo,
                     storagePoolDao.findById(storagePoolId));
 
-            s_logger.debug("cached VM template sizeBytes: " + String.valueOf(templateSizeBytes));
+            s_logger.debug("cached VM template sizeBytes: " + toHumanReadableSize(templateSizeBytes));
 
             int templateSizeGib = DateraUtil.bytesToGib(templateSizeBytes);
 
@@ -1112,7 +1114,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             iqn = appInstance.getIqn();
 
             VMTemplateStoragePoolVO templatePoolRef = tmpltPoolDao.findByPoolTemplate(storagePoolId,
-                    templateInfo.getId());
+                    templateInfo.getId(), null);
 
             templatePoolRef.setInstallPath(DateraUtil.generateIqnPath(iqn));
             templatePoolRef.setLocalDownloadPath(appInstance.getName());
@@ -1503,7 +1505,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             DateraUtil.deleteAppInstance(conn, appInstanceName);
 
             VMTemplateStoragePoolVO templatePoolRef = tmpltPoolDao.findByPoolTemplate(storagePoolId,
-                    templateInfo.getId());
+                    templateInfo.getId(), null);
 
             tmpltPoolDao.remove(templatePoolRef.getId());
 

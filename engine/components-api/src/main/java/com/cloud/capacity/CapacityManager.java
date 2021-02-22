@@ -16,10 +16,13 @@
 // under the License.
 package com.cloud.capacity;
 
+import java.util.Map;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.host.Host;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.vm.VirtualMachine;
 
@@ -73,9 +76,9 @@ public interface CapacityManager {
                     "If set to true, creates VMs as full clones on ESX hypervisor",
                     true,
                     ConfigKey.Scope.StoragePool);
-    static final ConfigKey<Integer> ImageStoreNFSVersion =
-            new ConfigKey<Integer>(
-                    Integer.class,
+    static final ConfigKey<String> ImageStoreNFSVersion =
+            new ConfigKey<String>(
+                    String.class,
                     "secstorage.nfs.version",
                     "Advanced",
                     null,
@@ -98,6 +101,8 @@ public interface CapacityManager {
         boolean considerReservedCapacity);
 
     void updateCapacityForHost(Host host);
+
+    void updateCapacityForHost(Host host, Map<Long, ServiceOfferingVO> offeringsMap);
 
     /**
      * @param pool storage pool

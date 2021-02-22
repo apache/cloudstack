@@ -32,6 +32,7 @@ from marvin.cloudstackAPI import (restartVPC)
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (Account,
                              createVlanIpRange,
+                             Configurations,
                              FireWallRule,
                              Host,
                              listVlanIpRanges,
@@ -52,7 +53,8 @@ from marvin.lib.base import (Account,
                              Hypervisor, Template)
 from marvin.lib.common import (get_domain,
                                get_template,
-                               get_zone, get_test_template)
+                               get_zone, get_test_template,
+                               is_config_suitable)
 from marvin.lib.utils import random_gen
 # Import System Modules
 from nose.plugins.attrib import attr
@@ -530,6 +532,24 @@ class ConfigDriveUtils:
                     "local-hostname.txt",
                     "local-ipv4.txt",
                     "public-ipv4.txt"]
+        # Verify hostname if the appropriate settings are true
+        configs = Configurations.list(
+            self.api_client,
+            name="global.allow.expose.host.hostname",
+            listall=True
+        )
+        exposeHypevisorHostnameGS = configs[0].value
+
+        configs = Configurations.list(
+            self.api_client,
+            name="account.allow.expose.host.hostname",
+            listall=True
+        )
+
+        exposeHypevisorHostnameAcc = configs[0].value
+
+        if exposeHypevisorHostnameGS == 'true' and exposeHypevisorHostnameAcc == 'true':
+            vm_files.append("hypervisor-host-name.txt")
 
         def get_name(vm_file):
             return "{} metadata".format(
@@ -537,9 +557,9 @@ class ConfigDriveUtils:
             )
 
         metadata = {vm_file:
-                    self._get_config_drive_data(ssh,
-                                                metadata_dir + vm_file,
-                                                get_name(vm_file))
+                        self._get_config_drive_data(ssh,
+                                                    metadata_dir + vm_file,
+                                                    get_name(vm_file))
                     for vm_file in vm_files}
 
         self.assertEqual(
@@ -571,6 +591,18 @@ class ConfigDriveUtils:
             "Service offering inside metadata does not match "
             "with the instance offering"
         )
+
+        if exposeHypevisorHostnameGS == 'true' and exposeHypevisorHostnameAcc == 'true':
+            hostname = vm.hostname
+
+            self.debug("Verifying hypervisor hostname of the VM: %s" % vm.name)
+            self.assertEqual(
+                str(metadata["hypervisor-host-name.txt"]),
+                hostname,
+                "Hostname in the metadata file does not match the host "
+                "on which the VM is spawned"
+            )
+
         return
 
     def _verify_openstack_metadata(self, ssh, mount_path):
@@ -753,7 +785,8 @@ class ConfigDriveUtils:
         self.create_StaticNatRule_For_VM(vm, public_ip, network)
 
         # Verification
-        self.validate_StaticNat_rule_For_VM(public_ip, network, vm)
+
+        # self.validate_StaticNat_rule_For_VM(public_ip, network, vm)
 
         if not self.vpc:
             fw_rule = self.create_FirewallRule(public_ip,
@@ -1090,12 +1123,12 @@ class ConfigDriveUtils:
                     self.fail("Failed to decrypt new password")
             except ImportError:
                 # No pycrypto, fallback to openssl
-                cmd = ["echo " +  password_ +
+                cmd = ["echo " + password_ +
                        " | base64 -d"
                        " | openssl rsautl -decrypt -inkey "
                        + self.keypair.private_key_file
                        + " 2> /dev/null"
-                ]
+                       ]
 
                 new_password = subprocess.check_output(cmd, shell=True)
                 self.debug("Decrypted password %s" % new_password)
@@ -1314,6 +1347,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
                                           isstaticnat=static_nat,
                                           listall=True
                                           )
+        self.debug("PUBLIC IP = " + public_ips[0])
         self.assertEqual(isinstance(public_ips, list), True,
                          "List public IP for network should return a "
                          "valid list"
@@ -1675,6 +1709,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         else:
             self.debug("No host available for migration. "
                        "Test requires at-least 2 hosts")
+        return host
 
     # create_NetworkAclList - Creates network ACL list in the given VPC
     def create_NetworkAclList(self, name, description, vpc):
@@ -2258,3 +2293,242 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
             keypair=self.keypair.name)
         self.delete(vm1, expunge=True)
         self.delete(shared_network.network)
+
+    @attr(tags=["advanced", "isonw"], required_hardware="true")
+    def test_configdrive_isolated_network_hypervisor_hostname_exposed(self):
+        """Test Configdrive as provider for isolated Networks
+           to provide userdata and password reset functionality
+        """
+
+        # 1. Given a ConfigDrive provider and a network offering
+        #    which has userdata provided ConfigDrive, create
+        #    an Isolated network using that network offering.
+        #    Verify network is successfully created and in the Allocated state
+        #    Set the "global.allow.expose.host.hostname" and "account.allow.expose.host.hostname" flags to true
+        #    to enable viewing hypevisor host name in the metadata file
+        #    Deploy VM in the network created, verify metadata in the configdrive
+        #    my mounting the configdrive ISO and verify the respective files
+        #
+        # 2. Create another Isolated network and plug NIC of the VM to this network
+        #    make it the default NIC, verify the metadata file contents.
+        #
+        # 3. Remove the default NIC, reboot the VM and verify the metadata file contents
+        #
+        # 4. Restart network without cleanup and verify the metadata file contents
+        #
+        # 5. Restart the network with cleanup and verify the metadata file contents
+        # 6. Migrate the VM to another host and verify the metadata file contents
+        # 10. Delete all the created objects (cleanup).
+
+        self.debug("+++ Preparation Scenario: "
+                   "creating an Isolated networks with "
+                   "config drive when config drive provider is "
+                   "enabled.")
+
+        self.given_config_drive_provider_is("Enabled")
+        self.given_a_network_offering_with_configdrive()
+
+        create_network1 = self.when_I_create_a_network_with_that_offering()
+        self.then_the_network_is_successfully_created(create_network1)
+        self.then_the_network_has(create_network1, state="Allocated")
+
+        network1 = create_network1.network
+
+        # Update global setting for "allow.expose.host.hostname"
+        Configurations.update(self.api_client,
+                              name="global.allow.expose.host.hostname",
+                              value="true"
+                              )
+
+        # Update Account level setting
+        Configurations.update(self.api_client,
+                              name="account.allow.expose.host.hostname",
+                              value="true"
+                              )
+
+        # Verify that the above mentioned settings are set to true before proceeding
+        if not is_config_suitable(
+                apiclient=self.api_client,
+                name='global.allow.expose.host.hostname',
+                value='true'):
+            self.skipTest('global.allow.expose.host.hostname should be true. skipping')
+
+        if not is_config_suitable(
+                apiclient=self.api_client,
+                name='account.allow.expose.host.hostname',
+                value='true'):
+            self.skipTest('Account level setting account.allow.expose.host.hostname should be true. skipping')
+
+        self.debug("+++Deploy VM in the created Isolated network "
+                   "with user data provider as configdrive")
+
+        vm1 = self.when_I_deploy_a_vm(network1)
+
+        public_ip_1 = self.when_I_create_a_static_nat_ip_to(vm1, network1)
+
+        self.then_vr_is_as_expected(network1)
+        self.then_config_drive_is_as_expected(
+            vm1, public_ip_1,
+            metadata=True)
+
+
+        # =====================================================================
+        # Network restart tests
+        # =====================================================================
+
+        self.debug("+++ Scenario: "
+                   "verify config drive after restart Isolated network without"
+                   " cleanup...")
+        self.when_I_restart_the_network_with(network1, cleanup=False)
+        self.then_config_drive_is_as_expected(vm1, public_ip_1, metadata=True)
+
+        # =====================================================================
+        self.debug("+++ Scenario: "
+                   "verify config drive after restart Isolated network with"
+                   " cleanup...")
+        self.when_I_restart_the_network_with(network1, cleanup=True)
+        self.then_config_drive_is_as_expected(vm1, public_ip_1, metadata=True)
+
+        # =====================================================================
+        self.debug("+++ Scenario: "
+                   "verify vm metadata after migrate")
+        host = self.migrate_VM(vm1)
+        vm1.hostname = host.name
+        self.then_config_drive_is_as_expected(vm1, public_ip_1, metadata=True)
+
+        # Reset configuration values to default values i.e., false
+        Configurations.update(self.api_client,
+                              name="global.allow.expose.host.hostname",
+                              value="false"
+                              )
+
+        # Update Account level setting
+        Configurations.update(self.api_client,
+                              name="account.allow.expose.host.hostname",
+                              value="false"
+                              )
+
+        self.delete(vm1, expunge=True)
+        self.delete(network1)
+
+    @attr(tags=["advanced", "vpc"], required_hardware="true")
+    def test_configdrive_vpc_network_verify_metadata(self):
+        """Test Configdrive for VPC Networks
+           choose user data with configDrive as service provider
+           and test vmdata functionality using ConfigDrive
+        """
+
+        # 1. Given ConfigDrive provider is enabled in zone
+        #    And a network offering for VPC which has
+        #      user data provided by ConfigDrive
+        #    And a VPC
+        #    When I create an VPC Tier in the VPC  using that network offering
+        #    Then the network is successfully created,
+        #    And is in the "Allocated" state.
+
+        # 2. When I deploy a VM in the created VPC tier with user data,
+        #    Then the network state is changed to "Implemented"
+        #    And the VM is successfully deployed and is in the "Running" state
+
+        # 3. And the user data in the ConfigDrive device is as expected
+        # 4. Verify various scenarios and check the data in configdriveIso
+        # 5. Delete all the created objects (cleanup).
+
+        self.debug("+++ Preparation Scenario: "
+                   "Create a tier with config drive "
+                   "when config drive provider is enabled.")
+
+        self.given_a_vpc()
+        self.given_config_drive_provider_is("Enabled")
+        self.given_a_network_offering_for_vpc_with_configdrive()
+        create_network1 = self.when_I_create_a_vpc_tier_with_that_offering(
+            gateway='10.1.1.1')
+        self.then_the_network_is_successfully_created(create_network1)
+        self.then_the_network_has(create_network1, state="Implemented")
+
+        network1 = create_network1.network
+
+        # Update global setting for "allow.expose.host.hostname"
+        Configurations.update(self.api_client,
+                              name="global.allow.expose.host.hostname",
+                              value="true"
+                              )
+
+        # Update Account level setting
+        Configurations.update(self.api_client,
+                              name="account.allow.expose.host.hostname",
+                              value="true"
+                              )
+
+        # Verify that the above mentioned settings are set to true before proceeding
+        if not is_config_suitable(
+                apiclient=self.api_client,
+                name='global.allow.expose.host.hostname',
+                value='true'):
+            self.skipTest('global.allow.expose.host.hostname should be true. skipping')
+
+        if not is_config_suitable(
+                apiclient=self.api_client,
+                name='account.allow.expose.host.hostname',
+                value='true'):
+            self.skipTest('Account level setting account.allow.expose.host.hostname should be true. skipping')
+
+        # =====================================================================
+        self.debug("+++ Scenario: "
+                   "Deploy VM in the Tier 1 with user data")
+        vm = self.when_I_deploy_a_vm(network1)
+        public_ip_1 = self.when_I_create_a_static_nat_ip_to(vm, network1)
+
+        self.then_config_drive_is_as_expected(vm, public_ip_1, metadata=True)
+
+        # =====================================================================
+        # Network restart tests
+        # =====================================================================
+
+        self.debug("+++ Scenario: "
+                   "verify config drive after Restart VPC with cleanup...")
+        self.when_I_restart_the_vpc_with(cleanup=True)
+        self.then_config_drive_is_as_expected(vm, public_ip_1,
+                                              metadata=True, reconnect=False)
+
+        # =====================================================================
+        self.debug("+++ Scenario: "
+                   "verify config drive after Restart VPC without cleanup...")
+        self.when_I_restart_the_network_with(network1, cleanup=False)
+        self.then_config_drive_is_as_expected(vm, public_ip_1,
+                                              metadata=True, reconnect=False)
+
+        # =====================================================================
+        self.debug("+++ Scenario: "
+                   "verify config drive after restart tier with cleanup...")
+        self.when_I_restart_the_network_with(network1, cleanup=True)
+        self.then_config_drive_is_as_expected(vm, public_ip_1,
+                                              metadata=True, reconnect=False)
+
+        # =====================================================================
+        self.debug("+++ Scenario: "
+                   "validate vm metadata after reboot")
+        vm.reboot(self.api_client)
+        self.then_config_drive_is_as_expected(vm, public_ip_1, metadata=True)
+
+        # =====================================================================
+        self.debug("+++ Scenario: "
+                   "validate updated userdata after migrate")
+        host = self.migrate_VM(vm)
+        vm.hostname = host.name
+        self.then_config_drive_is_as_expected(vm, public_ip_1, metadata=True)
+
+        # Reset configuration values to default values i.e., false
+        Configurations.update(self.api_client,
+                              name="global.allow.expose.host.hostname",
+                              value="false"
+                              )
+
+        # Update Account level setting
+        Configurations.update(self.api_client,
+                              name="account.allow.expose.host.hostname",
+                              value="false"
+                              )
+
+        self.delete(vm, expunge=True)
+        self.delete(network1)

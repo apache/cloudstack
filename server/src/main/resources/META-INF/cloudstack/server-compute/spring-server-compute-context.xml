@@ -35,6 +35,6 @@
         <property name="name" value="LXCGuru" />
     </bean>
 
-    <bean id="vmImportService" class="org.apache.cloudstack.vm.VmImportManagerImpl" />
+    <bean id="vmImportService" class="org.apache.cloudstack.vm.UnmanagedVMsManagerImpl" />
 
 </beans>

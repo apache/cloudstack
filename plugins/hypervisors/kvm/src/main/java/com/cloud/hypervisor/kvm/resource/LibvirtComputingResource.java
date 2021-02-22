@@ -56,11 +56,15 @@ import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.KVMHostInfo;
 import org.apache.cloudstack.utils.linux.MemStat;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.Duration;
@@ -74,7 +78,6 @@ import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 import org.libvirt.MemoryStatistic;
 import org.libvirt.Network;
-import org.libvirt.NodeInfo;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -798,14 +801,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find the router_proxy.sh");
         }
 
-        _ovsPvlanDhcpHostPath = Script.findScript(networkScriptsDir, "ovs-pvlan-dhcp-host.sh");
+        _ovsPvlanDhcpHostPath = Script.findScript(networkScriptsDir, "ovs-pvlan-kvm-dhcp-host.sh");
         if (_ovsPvlanDhcpHostPath == null) {
-            throw new ConfigurationException("Unable to find the ovs-pvlan-dhcp-host.sh");
+            throw new ConfigurationException("Unable to find the ovs-pvlan-kvm-dhcp-host.sh");
         }
 
-        _ovsPvlanVmPath = Script.findScript(networkScriptsDir, "ovs-pvlan-vm.sh");
+        _ovsPvlanVmPath = Script.findScript(networkScriptsDir, "ovs-pvlan-kvm-vm.sh");
         if (_ovsPvlanVmPath == null) {
-            throw new ConfigurationException("Unable to find the ovs-pvlan-vm.sh");
+            throw new ConfigurationException("Unable to find the ovs-pvlan-kvm-vm.sh");
         }
 
         String value = (String)params.get("developer");
@@ -1156,9 +1159,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         storageProcessor.configure(name, params);
         storageHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
 
-        IscsiStorageCleanupMonitor isciCleanupMonitor = new IscsiStorageCleanupMonitor();
-        final Thread cleanupMonitor = new Thread(isciCleanupMonitor);
-        cleanupMonitor.start();
+        Boolean _iscsiCleanUpEnabled = Boolean.parseBoolean((String)params.get("iscsi.session.cleanup.enabled"));
+
+        if (BooleanUtils.isTrue(_iscsiCleanUpEnabled)) {
+            IscsiStorageCleanupMonitor isciCleanupMonitor = new IscsiStorageCleanupMonitor();
+            final Thread cleanupMonitor = new Thread(isciCleanupMonitor);
+            cleanupMonitor.start();
+        } else {
+            s_logger.info("iscsi session clean up is disabled");
+        }
 
         return true;
     }
@@ -2241,8 +2250,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (MapUtils.isNotEmpty(customParams) && customParams.containsKey(GuestDef.BootType.UEFI.toString())) {
             guest.setBootType(GuestDef.BootType.UEFI);
             guest.setBootMode(GuestDef.BootMode.LEGACY);
+            guest.setMachineType("q35");
             if (StringUtils.isNotBlank(customParams.get(GuestDef.BootType.UEFI.toString())) && "secure".equalsIgnoreCase(customParams.get(GuestDef.BootType.UEFI.toString()))) {
-                guest.setMachineType("q35");
                 guest.setBootMode(GuestDef.BootMode.SECURE); // setting to secure mode
             }
         }
@@ -2296,14 +2305,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (vmTO.getType() == VirtualMachine.Type.User) {
                 cmd.setFeatures(_cpuFeatures);
             }
-            // multi cores per socket, for larger core configs
-            if (vcpus % 6 == 0) {
-                final int sockets = vcpus / 6;
-                cmd.setTopology(6, sockets);
-            } else if (vcpus % 4 == 0) {
-                final int sockets = vcpus / 4;
-                cmd.setTopology(4, sockets);
-            }
+            setCpuTopology(cmd, vcpus, vmTO.getDetails());
             vm.addComp(cmd);
         }
 
@@ -2527,6 +2529,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             String volPath = null;
             if (physicalDisk != null) {
                 volPath = physicalDisk.getPath();
+            }
+
+            if (volume.getType() != Volume.Type.ISO
+                    && physicalDisk != null && physicalDisk.getFormat() == PhysicalDiskFormat.QCOW2
+                    && (pool.getType() == StoragePoolType.NetworkFilesystem
+                    || pool.getType() == StoragePoolType.SharedMountPoint
+                    || pool.getType() == StoragePoolType.Filesystem
+                    || pool.getType() == StoragePoolType.Gluster)) {
+                setBackingFileFormat(physicalDisk.getPath());
             }
 
             // check for disk activity, if detected we should exit because vm is running elsewhere
@@ -3620,8 +3631,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 elapsedTime = now.getTimeInMillis() - oldStats._timestamp.getTimeInMillis();
                 double utilization = (info.cpuTime - oldStats._usedTime) / ((double)elapsedTime * 1000000);
 
-                final NodeInfo node = conn.nodeInfo();
-                utilization = utilization / node.cpus;
+                utilization = utilization / info.nrVirtCpu;
                 if (utilization > 0) {
                     stats.setCPUUtilization(utilization * 100);
                 }
@@ -4225,4 +4235,47 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         return false;
     }
+
+    private void setCpuTopology(CpuModeDef cmd, int vcpus, Map<String, String> details) {
+        // multi cores per socket, for larger core configs
+        int numCoresPerSocket = -1;
+        if (details != null) {
+            final String coresPerSocket = details.get(VmDetailConstants.CPU_CORE_PER_SOCKET);
+            final int intCoresPerSocket = NumbersUtil.parseInt(coresPerSocket, numCoresPerSocket);
+            if (intCoresPerSocket > 0 && vcpus % intCoresPerSocket == 0) {
+                numCoresPerSocket = intCoresPerSocket;
+            }
+        }
+        if (numCoresPerSocket <= 0) {
+            if (vcpus % 6 == 0) {
+                numCoresPerSocket = 6;
+            } else if (vcpus % 4 == 0) {
+                numCoresPerSocket = 4;
+            }
+        }
+        if (numCoresPerSocket > 0) {
+            cmd.setTopology(numCoresPerSocket, vcpus / numCoresPerSocket);
+        }
+    }
+
+    public void setBackingFileFormat(String volPath) {
+        final int timeout = 0;
+        QemuImgFile file = new QemuImgFile(volPath);
+        QemuImg qemu = new QemuImg(timeout);
+        try{
+            Map<String, String> info = qemu.info(file);
+            String backingFilePath = info.get(new String("backing_file"));
+            String backingFileFormat = info.get(new String("backing_file_format"));
+            if (org.apache.commons.lang.StringUtils.isEmpty(backingFileFormat)) {
+                s_logger.info("Setting backing file format of " + volPath);
+                QemuImgFile backingFile = new QemuImgFile(backingFilePath);
+                Map<String, String> backingFileinfo = qemu.info(backingFile);
+                String backingFileFmt = backingFileinfo.get(new String("file_format"));
+                qemu.rebase(file, backingFile, backingFileFmt, false);
+            }
+        } catch (QemuImgException e) {
+            s_logger.error("Failed to set backing file format of " + volPath + " due to : " + e.getMessage());
+        }
+    }
+
 }

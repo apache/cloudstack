@@ -66,6 +66,8 @@ public interface TemplateDataStoreDao extends GenericDao<TemplateDataStoreVO, Lo
 
     List<TemplateDataStoreVO> listByTemplate(long templateId);
 
+    List<TemplateDataStoreVO> listByTemplateNotBypassed(long templateId);
+
     TemplateDataStoreVO findByTemplateZoneReady(long templateId, Long zoneId);
 
     void duplicateCacheRecordsOnRegionStore(long storeId);
@@ -89,4 +91,6 @@ public interface TemplateDataStoreDao extends GenericDao<TemplateDataStoreVO, Lo
     TemplateDataStoreVO getReadyBypassedTemplate(long templateId);
 
     boolean isTemplateMarkedForDirectDownload(long templateId);
+
+    List<TemplateDataStoreVO> listTemplateDownloadUrlsByStoreId(long storeId);
 }
