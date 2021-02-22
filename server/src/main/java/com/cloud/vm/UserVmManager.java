@@ -96,7 +96,7 @@ public interface UserVmManager extends UserVmService {
 
     void removeInstanceFromInstanceGroup(long vmId);
 
-    boolean isVMUsingLocalStorage(long vmId);
+    boolean isVMUsingLocalStorage(VMInstanceVO vm);
 
     boolean expunge(UserVmVO vm, long callerUserId, Account caller);
 

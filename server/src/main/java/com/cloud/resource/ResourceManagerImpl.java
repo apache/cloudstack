@@ -1293,11 +1293,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 } else if (HypervisorType.LXC.equals(host.getHypervisorType()) && VirtualMachine.Type.User.equals(vm.getType())){
                     //Migration is not supported for LXC Vms. Schedule restart instead.
                     _haMgr.scheduleRestart(vm, false);
-                } else if (userVmManager.isVMUsingLocalStorage(vm.getId())) {
+                } else if (userVmManager.isVMUsingLocalStorage(vm)) {
                     if (isMaintenanceLocalStrategyStopping()) {
                         _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
                     } else if (isMaintenanceLocalStrategyMigrating()) {
-                        migrateAwayVmWithVolume(host, vm);
+                        migrateAwayVmWithVolumes(host, vm);
                     }
                 } else {
                     s_logger.info("Maintenance: scheduling migration of VM " + vm.getUuid() + " from host " + host.getUuid());
@@ -1311,7 +1311,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     /**
      * Looks for Hosts able to allocate the VM and migrates the VM with its volume.
      */
-    private void migrateAwayVmWithVolume(HostVO host, VMInstanceVO vm) {
+    private void migrateAwayVmWithVolumes(HostVO host, VMInstanceVO vm) {
         final DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null, null);
         ServiceOfferingVO offeringVO = serviceOfferingDao.findById(vm.getServiceOfferingId());
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, offeringVO, null, null);

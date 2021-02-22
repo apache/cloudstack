@@ -5775,10 +5775,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     }
 
-    public boolean isVMUsingLocalStorage(long vmId) {
+    public boolean isVMUsingLocalStorage(VMInstanceVO vm) {
         boolean usesLocalStorage = false;
 
-        List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
+        List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
         for (VolumeVO vol : volumes) {
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
             if (diskOffering.isUseLocalStorage()) {
@@ -5828,7 +5828,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (!isOnSupportedHypevisorForMigration(vm)) {
-            s_logger.error(vm + " is not XenServer/VMware/KVM/Ovm/Hyperv, cannot migrate this VM form hypervisor type " + vm.getHypervisorType());
+            s_logger.error(vm + " is not XenServer/VMware/KVM/Ovm/Hyperv, cannot migrate this VM from hypervisor type " + vm.getHypervisorType());
             throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support XenServer/VMware/KVM/Ovm/Hyperv/Ovm3 only");
         }
 
@@ -5836,7 +5836,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unsupported Hypervisor Type for User VM migration, we support XenServer/VMware/KVM/Ovm/Hyperv/Ovm3 only");
         }
 
-        if (isVMUsingLocalStorage(vm.getId())) {
+        if (isVMUsingLocalStorage(vm)) {
             s_logger.error(vm + " is using Local Storage, cannot migrate this VM.");
             throw new InvalidParameterValueException("Unsupported operation, VM uses Local storage, cannot migrate");
         }
@@ -6258,7 +6258,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         List<VolumeVO> vmVolumes = _volsDao.findUsableVolumesForInstance(vm.getId());
         Map<Long, Long> volToPoolObjectMap = new HashMap<Long, Long>();
-
         if (!isVMUsingLocalStorage(vm) && MapUtils.isEmpty(volumeToPool)
             && (destinationHost.getClusterId().equals(srcHost.getClusterId()) || isVmVolumesOnZoneWideStore(vm))){
             // If volumes do not have to be migrated
