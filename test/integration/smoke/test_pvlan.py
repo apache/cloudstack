@@ -74,5 +74,5 @@ class TestPVLAN(cloudstackTestCase):
         createNetworkCmd.startipv6="fc00:1234::10"
         createNetworkCmd.endipv6="fc00:1234::20"
         err = 0
-        with helper.assertRaises(CloudstackAPIException):
+        with self.assertRaises(CloudstackAPIException):
             self.apiClient.createNetwork(createNetworkCmd)
