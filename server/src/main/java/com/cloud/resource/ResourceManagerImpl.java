@@ -1295,7 +1295,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     _haMgr.scheduleRestart(vm, false);
                 } else if (userVmManager.isVMUsingLocalStorage(vm)) {
                     if (isMaintenanceLocalStrategyStopping()) {
-                        _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
+                        _haMgr.scheduleStop(vm, hostId, WorkType.Stop);
                     } else if (isMaintenanceLocalStrategyMigrating()) {
                         migrateAwayVmWithVolumes(host, vm);
                     }
