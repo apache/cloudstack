@@ -224,7 +224,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 userVmResponse.setDiskIOWrite((long)vmStats.getDiskWriteIOs());
                 long totalMemory = (long)vmStats.getMemoryKBs();
                 long freeMemory = (long)vmStats.getIntFreeMemoryKBs();
-                long correctedFreeMemory = freeMemory > totalMemory ? 0 : freeMemory;
+                long correctedFreeMemory = freeMemory >= totalMemory ? 0 : freeMemory;
                 userVmResponse.setMemoryKBs(totalMemory);
                 userVmResponse.setMemoryIntFreeKBs(correctedFreeMemory);
                 userVmResponse.setMemoryTargetKBs((long)vmStats.getTargetMemoryKBs());
