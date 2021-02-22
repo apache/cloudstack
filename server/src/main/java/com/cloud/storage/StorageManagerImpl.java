@@ -2780,6 +2780,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return imageStoreVO;
     }
 
+    /**
+     *
+     * @param poolId - Storage pool id for pool to update - if null all supported pools are updated.
+     * @param failOnChecks - If true, throw an error if pool type and state checks fail.
+     */
     @Override
     public void updateStorageCapabilities(Long poolId, boolean failOnChecks) {
         List<StoragePoolVO> pools = new ArrayList<>();
