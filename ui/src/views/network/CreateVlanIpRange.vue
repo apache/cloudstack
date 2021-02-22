@@ -49,46 +49,52 @@
               }]"
               :placeholder="apiParams.netmask.description"/>
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.startipv4') }}
-              <a-tooltip :title="apiParams.startip.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
-            <a-input
-              v-decorator="['startip', {
-                rules: [
-                  { required: true, message: $t('message.error.startip') },
-                  {
-                    validator: checkIpFormat,
-                    ipV4: true,
-                    message: $t('message.error.ipv4.address')
-                  }
-                ]
-              }]"
-              :placeholder="apiParams.startip.description"/>
-          </a-form-item>
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.endipv4') }}
-              <a-tooltip :title="apiParams.endip.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
-            <a-input
-              v-decorator="['endip', {
-                rules: [
-                  { required: true, message: $t('message.error.endip') },
-                  {
-                    validator: checkIpFormat,
-                    ipV4: true,
-                    message: $t('message.error.ipv4.address')
-                  }
-                ]
-              }]"
-              :placeholder="apiParams.endip.description"/>
-          </a-form-item>
+          <a-row :gutter="12">
+            <a-col :md="12" lg="12">
+              <a-form-item>
+                <span slot="label">
+                  {{ $t('label.startipv4') }}
+                  <a-tooltip :title="apiParams.startip.description">
+                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  </a-tooltip>
+                </span>
+                <a-input
+                  v-decorator="['startip', {
+                    rules: [
+                      { required: true, message: $t('message.error.startip') },
+                      {
+                        validator: checkIpFormat,
+                        ipV4: true,
+                        message: $t('message.error.ipv4.address')
+                      }
+                    ]
+                  }]"
+                  :placeholder="apiParams.startip.description"/>
+              </a-form-item>
+            </a-col>
+            <a-col :md="12" :lg="12">
+              <a-form-item>
+                <span slot="label">
+                  {{ $t('label.endipv4') }}
+                  <a-tooltip :title="apiParams.endip.description">
+                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  </a-tooltip>
+                </span>
+                <a-input
+                  v-decorator="['endip', {
+                    rules: [
+                      { required: true, message: $t('message.error.endip') },
+                      {
+                        validator: checkIpFormat,
+                        ipV4: true,
+                        message: $t('message.error.ipv4.address')
+                      }
+                    ]
+                  }]"
+                  :placeholder="apiParams.endip.description"/>
+              </a-form-item>
+            </a-col>
+          </a-row>
           <a-form-item>
             <span slot="label">
               {{ $t('label.ip6cidr') }}
@@ -111,44 +117,50 @@
               v-decorator="['ip6gateway']"
               :placeholder="apiParams.ip6gateway.description"/>
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.startipv6') }}
-              <a-tooltip :title="apiParams.startipv6.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
-            <a-input
-              v-decorator="['startipv6', {
-                rules: [
-                  {
-                    validator: checkIpFormat,
-                    ipV6: true,
-                    message: $t('message.error.ipv6.address')
-                  }
-                ]
-              }]"
-              :placeholder="apiParams.startipv6.description"/>
-          </a-form-item>
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.endipv6') }}
-              <a-tooltip :title="apiParams.endipv6.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
-            <a-input
-              v-decorator="['endipv6', {
-                rules: [
-                  {
-                    validator: checkIpFormat,
-                    ipV6: true,
-                    message: $t('message.error.ipv6.address')
-                  }
-                ]
-              }]"
-              :placeholder="apiParams.endip.description"/>
-          </a-form-item>
+          <a-row :gutter="12">
+            <a-col :md="12" :lg="12">
+              <a-form-item>
+                <span slot="label">
+                  {{ $t('label.startipv6') }}
+                  <a-tooltip :title="apiParams.startipv6.description">
+                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  </a-tooltip>
+                </span>
+                <a-input
+                  v-decorator="['startipv6', {
+                    rules: [
+                      {
+                        validator: checkIpFormat,
+                        ipV6: true,
+                        message: $t('message.error.ipv6.address')
+                      }
+                    ]
+                  }]"
+                  :placeholder="apiParams.startipv6.description"/>
+              </a-form-item>
+            </a-col>
+            <a-col :md="12" :lg="12">
+              <a-form-item>
+                <span slot="label">
+                  {{ $t('label.endipv6') }}
+                  <a-tooltip :title="apiParams.endipv6.description">
+                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  </a-tooltip>
+                </span>
+                <a-input
+                  v-decorator="['endipv6', {
+                    rules: [
+                      {
+                        validator: checkIpFormat,
+                        ipV6: true,
+                        message: $t('message.error.ipv6.address')
+                      }
+                    ]
+                  }]"
+                  :placeholder="apiParams.endip.description"/>
+              </a-form-item>
+            </a-col>
+          </a-row>
           <div :span="24" class="action-button">
             <a-button
               :loading="loading"
