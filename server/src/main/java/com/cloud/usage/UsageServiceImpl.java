@@ -216,6 +216,31 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             s_logger.debug("Account details not available. Using userContext accountId: " + accountId);
         }
 
+        // Check if a domain admin is allowed to access the requested account info.
+        if (_accountService.isDomainAdmin(caller.getId()) && accountId != null){
+            long accountDomainId = _accountDao.getDomainIdForGivenAccountId(accountId);
+            long callerDomainId = caller.getDomainId();
+            boolean matchFound = false;
+
+            if (callerDomainId == accountDomainId) {
+                matchFound = true;
+            } else {
+                // Check if the account is in a child domain of this domain admin.
+                List<DomainVO> childDomains = _domainDao.findAllChildren(_domainDao.findById(caller.getDomainId()).getPath(), caller.getDomainId());
+
+                for (DomainVO domainVO: childDomains) {
+                    if (accountDomainId == domainVO.getId()) {
+                        matchFound = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!matchFound){
+                throw new PermissionDeniedException("Domain admins may only retrieve usage records for accounts in their own domain.");
+            }
+        }
+
         Date startDate = cmd.getStartDate();
         Date endDate = cmd.getEndDate();
         if (startDate.after(endDate)) {
@@ -238,7 +263,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
         }
 
-        if (isDomainAdmin) {
+        if (isDomainAdmin && !cmd.isRecursive()) {
             SearchCriteria<DomainVO> sdc = _domainDao.createSearchCriteria();
             sdc.addOr("path", SearchCriteria.Op.LIKE, _domainDao.findById(caller.getDomainId()).getPath() + "%");
             List<DomainVO> domains = _domainDao.search(sdc, null);
