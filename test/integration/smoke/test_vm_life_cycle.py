@@ -964,7 +964,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
     def waitUntilHostInState(self, hostId, state="Up", interval=5, retries=20):
         while retries > -1:
-            print(("Waiting for host: %s to be %s. %s retries left." % (hostId, state, retries)))
+            print("Waiting for host: %s to be %s. %s retries left." % (hostId, state, retries))
             time.sleep(interval)
             host = Host.list(
                 self.apiclient,
@@ -976,7 +976,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
                     retries = retries - 1
                     continue
             else:
-                print(("Host %s now showing as %s" % (hostId, state)))
+                print("Host %s now showing as %s" % (hostId, state))
                 return
 
     def unsecure_host(self, host):
@@ -988,7 +988,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
                       service libvirtd restart && \
                       sleep 30 && \
                       service cloudstack-agent restart")
-        print(("Unsecuring Host: %s" % (host.name)))
+        print("Unsecuring Host: %s" % (host.name))
         self.waitUntilHostInState(hostId=host.id, state="Up")
         self.check_connection(host=host, secured='false')
         return host
@@ -1001,7 +1001,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
             self.apiclient.provisionCertificate(cmd)
 
         for host in self.hosts:
-            print(("Securing Host %s" % host.name))
+            print("Securing Host %s" % host.name)
             self.waitUntilHostInState(hostId=host.id, state="Up")
             self.check_connection(secured='true', host=host)
 
