@@ -2141,7 +2141,6 @@ describe('Views > AutogenView.vue', () => {
                 { name: 'id', type: 'uuid' }
               ],
               paramFields: [
-                { name: 'id', type: 'uuid', description: '', required: false }
               ],
               mapping: {}
             },
@@ -2191,8 +2190,7 @@ describe('Views > AutogenView.vue', () => {
                 { name: 'id', type: 'uuid' }
               ],
               paramFields: [
-                { name: 'name', type: 'string', description: '', required: false },
-                { name: 'id', type: 'uuid', description: '', required: false }
+                { name: 'name', type: 'string', description: '', required: false }
               ],
               mapping: {}
             },
@@ -2259,6 +2257,7 @@ describe('Views > AutogenView.vue', () => {
         spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
+          wrapper.vm.form.getFieldDecorator('column1', { initialValue: null })
           const event = document.createEvent('Event')
           wrapper.vm.execSubmit(event)
 
