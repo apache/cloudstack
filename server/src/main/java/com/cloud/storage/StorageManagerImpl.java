@@ -2857,6 +2857,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 } else {
                     if (answer != null && !answer.getResult()) {
                         s_logger.error("Failed to update storage pool capabilities: " + answer.getDetails());
+                        if (failOnChecks) {
+                            throw new CloudRuntimeException(answer.getDetails());
+                        }
                     }
                 }
             }
