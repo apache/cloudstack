@@ -2854,6 +2854,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         hardwareAccelerationSupported.setValue(answer.getPoolDetails().get(Storage.Capability.HARDWARE_ACCELERATION.toString()));
                         _storagePoolDetailsDao.update(hardwareAccelerationSupported.getId(), hardwareAccelerationSupported);
                     }
+                } else {
+                    if (answer != null && !answer.getResult()) {
+                        s_logger.error("Failed to update storage pool capabilities: " + answer.getDetails());
+                    }
                 }
             }
         }

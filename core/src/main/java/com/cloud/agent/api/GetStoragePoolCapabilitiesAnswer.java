@@ -28,6 +28,14 @@ public class GetStoragePoolCapabilitiesAnswer extends Answer {
         poolDetails = new HashMap<>();
     }
 
+    public void setResult(boolean result){
+        this.result = result;
+    }
+
+    public void setDetails(String details){
+        this.details = details;
+    }
+
     public Map<String, String> getPoolDetails() {
         return poolDetails;
     }

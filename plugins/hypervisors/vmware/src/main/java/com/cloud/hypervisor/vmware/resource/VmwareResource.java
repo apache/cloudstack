@@ -5080,6 +5080,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             Map<String, String> poolDetails = answer.getPoolDetails();
             poolDetails.put(Storage.Capability.HARDWARE_ACCELERATION.toString(), String.valueOf(hardwareAccelerationSupportForDataStore));
             answer.setPoolDetails(poolDetails);
+            answer.setResult(true);
 
             return answer;
         } catch (Throwable e) {
@@ -5092,8 +5093,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             String msg = "GetStoragePoolCapabilitiesCommand failed due to " + VmwareHelper.getExceptionMessage(e);
 
             s_logger.error(msg, e);
-
-            return new Answer(cmd, false, msg);
+            GetStoragePoolCapabilitiesAnswer answer = new GetStoragePoolCapabilitiesAnswer(cmd);
+            answer.setResult(false);
+            answer.setDetails(msg);
+            return answer;
         }
     }
 
