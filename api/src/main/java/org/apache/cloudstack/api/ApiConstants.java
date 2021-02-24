@@ -339,6 +339,7 @@ public class ApiConstants {
     public static final String SNAPSHOT_POLICY_ID = "snapshotpolicyid";
     public static final String SNAPSHOT_TYPE = "snapshottype";
     public static final String SNAPSHOT_QUIESCEVM = "quiescevm";
+    public static final String SUPPORTS_STORAGE_SNAPSHOT = "supportsstoragesnapshot";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
     public static final String START_DATE = "startdate";
     public static final String START_ID = "startid";
@@ -833,6 +834,8 @@ public class ApiConstants {
     public static final String CROSS_ZONES = "crossZones";
     public static final String TEMPLATETYPE = "templatetype";
     public static final String SOURCETEMPLATEID = "sourcetemplateid";
+
+    public static final String POOL_TYPE ="pooltype";
 
     public enum BootType {
         UEFI, BIOS;

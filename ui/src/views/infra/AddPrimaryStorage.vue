@@ -202,13 +202,13 @@
           </span>
           <a-select
             v-decorator="['provider', { initialValue: providerSelected, rules: [{ required: true, message: `${$t('label.required')}`}] }]"
-            @change="val => this.providerSelected = val">
+            @change="updateProviderAndProtocol">
             <a-select-option :value="provider" v-for="(provider,idx) in providers" :key="idx">
               {{ provider }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <div v-if="this.providerSelected !== 'DefaultPrimary'">
+        <div v-if="this.providerSelected !== 'DefaultPrimary' && this.providerSelected !== 'PowerFlex'">
           <a-form-item>
             <span slot="label">
               {{ $t('label.ismanaged') }}
@@ -246,6 +246,44 @@
               </a-tooltip>
             </span>
             <a-input v-decorator="['url']" />
+          </a-form-item>
+        </div>
+        <div v-if="this.providerSelected === 'PowerFlex'">
+          <a-form-item>
+            <span slot="label">
+              {{ $t('label.powerflex.gateway') }}
+              <a-tooltip :title="$t('label.powerflex.gateway')">
+                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              </a-tooltip>
+            </span>
+            <a-input v-decorator="['powerflexGateway', { rules: [{ required: true, message: `${$t('label.required')}` }] }]"/>
+          </a-form-item>
+          <a-form-item>
+            <span slot="label">
+              {{ $t('label.powerflex.gateway.username') }}
+              <a-tooltip :title="$t('label.powerflex.gateway.username')">
+                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              </a-tooltip>
+            </span>
+            <a-input v-decorator="['powerflexGatewayUsername', { rules: [{ required: true, message: `${$t('label.required')}` }] }]"/>
+          </a-form-item>
+          <a-form-item>
+            <span slot="label">
+              {{ $t('label.powerflex.gateway.password') }}
+              <a-tooltip :title="$t('label.powerflex.gateway.password')">
+                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              </a-tooltip>
+            </span>
+            <a-input-password v-decorator="['powerflexGatewayPassword', { rules: [{ required: true, message: `${$t('label.required')}` }] }]"/>
+          </a-form-item>
+          <a-form-item>
+            <span slot="label">
+              {{ $t('label.powerflex.storage.pool') }}
+              <a-tooltip :title="$t('label.powerflex.storage.pool')">
+                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              </a-tooltip>
+            </span>
+            <a-input v-decorator="['powerflexStoragePool', { rules: [{ required: true, message: `${$t('label.required')}` }] }]"/>
           </a-form-item>
         </div>
         <div v-if="this.protocolSelected === 'RBD'">
@@ -557,6 +595,23 @@ export default {
       }
       return url
     },
+    powerflexURL (gateway, username, password, pool) {
+      var url = 'powerflex://' + encodeURIComponent(username) + ':' + encodeURIComponent(password) + '@' +
+       gateway + '/' + encodeURIComponent(pool)
+      return url
+    },
+    updateProviderAndProtocol (value) {
+      if (value === 'PowerFlex') {
+        this.protocols = ['custom']
+        this.protocolSelected = 'custom'
+        this.form.setFieldsValue({
+          protocol: 'custom'
+        })
+      } else {
+        this.fetchHypervisor(null)
+      }
+      this.providerSelected = value
+    },
     closeModal () {
       this.$parent.$parent.close()
     },
@@ -649,7 +704,7 @@ export default {
           url = this.iscsiURL(server, iqn, lun)
         }
         params.url = url
-        if (values.provider !== 'DefaultPrimary') {
+        if (values.provider !== 'DefaultPrimary' && values.provider !== 'PowerFlex') {
           if (values.managed) {
             params.managed = true
           } else {
@@ -665,6 +720,12 @@ export default {
             params.url = values.url
           }
         }
+
+        if (values.provider === 'PowerFlex') {
+          params.url = this.powerflexURL(values.powerflexGateway, values.powerflexGatewayUsername,
+            values.powerflexGatewayPassword, values.powerflexStoragePool)
+        }
+
         if (this.selectedTags.length > 0) {
           params.tags = this.selectedTags.join()
         }

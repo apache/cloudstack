@@ -310,6 +310,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "Guest vm Boot Type")
     private String bootType;
 
+    @SerializedName(ApiConstants.POOL_TYPE)
+    @Param(description = "the pool type of the virtual machine", since = "4.16")
+    private String poolType;
+
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
         nics = new LinkedHashSet<NicResponse>();
@@ -901,4 +905,8 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     public String getBootMode() { return bootMode; }
 
     public void setBootMode(String bootMode) { this.bootMode = bootMode; }
+
+    public String getPoolType() { return poolType; }
+
+    public void setPoolType(String poolType) { this.poolType = poolType; }
 }

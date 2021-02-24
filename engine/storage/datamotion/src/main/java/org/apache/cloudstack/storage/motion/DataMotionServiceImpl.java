@@ -61,10 +61,10 @@ public class DataMotionServiceImpl implements DataMotionService {
         }
 
         if (srcData.getDataStore().getDriver().canCopy(srcData, destData)) {
-            srcData.getDataStore().getDriver().copyAsync(srcData, destData, callback);
+            srcData.getDataStore().getDriver().copyAsync(srcData, destData, destHost, callback);
             return;
         } else if (destData.getDataStore().getDriver().canCopy(srcData, destData)) {
-            destData.getDataStore().getDriver().copyAsync(srcData, destData, callback);
+            destData.getDataStore().getDriver().copyAsync(srcData, destData, destHost, callback);
             return;
         }
 

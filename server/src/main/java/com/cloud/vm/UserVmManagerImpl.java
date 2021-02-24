@@ -512,7 +512,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     private UserVmDeployAsIsDetailsDao userVmDeployAsIsDetailsDao;
     @Inject
-    private StorageManager storageMgr;
+    private StorageManager _storageManager;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -2019,14 +2019,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (!CollectionUtils.isEmpty(volumeLocators)) {
 
                 GetVolumeStatsCommand cmd = new GetVolumeStatsCommand(poolType, poolUuid, volumeLocators);
+                Answer answer = null;
 
-                if (timeout > 0) {
-                    cmd.setWait(timeout/1000);
+                if (poolType == StoragePoolType.PowerFlex) {
+                    // Get volume stats from the pool directly instead of sending cmd to host
+                    // Added support for ScaleIO/PowerFlex pool only
+                    answer = _storageManager.getVolumeStats(storagePool, cmd);
+                } else {
+                    if (timeout > 0) {
+                        cmd.setWait(timeout/1000);
+                    }
+
+                    answer = _agentMgr.easySend(neighbor.getId(), cmd);
                 }
 
-                Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
-
-                if (answer instanceof GetVolumeStatsAnswer){
+                if (answer != null && answer instanceof GetVolumeStatsAnswer){
                     GetVolumeStatsAnswer volstats = (GetVolumeStatsAnswer)answer;
                     if (volstats.getVolumeStats() != null) {
                         volumeStatsByUuid.putAll(volstats.getVolumeStats());
@@ -4982,6 +4989,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             destinationHost = _hostDao.findById(hostId);
             if (destinationHost == null) {
                 throw new InvalidParameterValueException("Unable to find the host to deploy the VM, host id=" + hostId);
+            } else if (destinationHost.getResourceState() != ResourceState.Enabled || destinationHost.getStatus() != Status.Up ) {
+                throw new InvalidParameterValueException("Unable to deploy the VM as the host: " + destinationHost.getName() + " is not in the right state");
             }
         }
         return destinationHost;
@@ -5249,8 +5258,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
         }
 
-        Long templateId = cmd.getTemplateId();
-
         if (!serviceOffering.isDynamic()) {
             for(String detail: cmd.getDetails().keySet()) {
                 if(detail.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) || detail.equalsIgnoreCase(VmDetailConstants.CPU_SPEED) || detail.equalsIgnoreCase(VmDetailConstants.MEMORY)) {
@@ -5258,6 +5265,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
         }
+
+        Long templateId = cmd.getTemplateId();
 
         VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
         // Make sure a valid template ID was specified
@@ -5293,6 +5302,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (MapUtils.isNotEmpty(userVmNetworkMap)) {
             networkIds = new ArrayList<>(userVmNetworkMap.values());
         }
+
+        Account caller = CallContext.current().getCallingAccount();
+        Long callerId = caller.getId();
+
+        boolean isRootAdmin = _accountService.isRootAdmin(callerId);
+
+        Long hostId = cmd.getHostId();
+        getDestinationHost(hostId, isRootAdmin);
 
         String ipAddress = cmd.getIpAddress();
         String ip6Address = cmd.getIp6Address();
@@ -5344,8 +5361,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // Add extraConfig to user_vm_details table
-        Account caller = CallContext.current().getCallingAccount();
-        Long callerId = caller.getId();
         String extraConfig = cmd.getExtraConfig();
         if (StringUtils.isNotBlank(extraConfig)) {
             if (EnableAdditionalVmConfig.valueIn(callerId)) {
@@ -6295,7 +6310,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
                 if (hypervisorType.equals(HypervisorType.VMware)) {
                     try {
-                        boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolComplaintWithStoragePolicy(Arrays.asList(volume), pool);
+                        boolean isStoragePoolStoragepolicyComplaince = _storageManager.isStoragePoolComplaintWithStoragePolicy(Arrays.asList(volume), pool);
                         if (!isStoragePoolStoragepolicyComplaince) {
                             throw new CloudRuntimeException(String.format("Storage pool %s is not storage policy compliance with the volume %s", pool.getUuid(), volume.getUuid()));
                         }

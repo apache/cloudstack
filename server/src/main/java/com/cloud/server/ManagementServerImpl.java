@@ -29,10 +29,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+
+
 import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
@@ -729,6 +732,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "6", "Specifies the length of a randomly generated password", false);
     static final ConfigKey<Integer> sshKeyLength = new ConfigKey<Integer>("Advanced", Integer.class, "ssh.key.length", "2048", "Specifies custom SSH key length (bit)", true, ConfigKey.Scope.Global);
     static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<Boolean>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
+    public static final ConfigKey<String> customCsIdentifier = new ConfigKey<String>("Advanced", String.class, "custom.cs.identifier", UUID.randomUUID().toString().split("-")[0].substring(4), "Custom identifier for the cloudstack installation", true, ConfigKey.Scope.Global);
 
     @Inject
     public AccountManager _accountMgr;
@@ -1335,6 +1339,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     } else {
                         if (storagePool.isManaged()) {
                             if (srcHost.getClusterId() != host.getClusterId()) {
+                                if (storagePool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
+                                    // No need of new volume creation for zone wide PowerFlex/ScaleIO pool
+                                    // Simply, changing volume access to host should work: grant access on dest host and revoke access on source host
+                                    continue;
+                                }
                                 // If the volume's storage pool is managed and at the zone level, then we still have to perform a storage migration
                                 // because we need to create a new target volume and copy the contents of the source volume into it before deleting
                                 // the source volume.
@@ -1499,8 +1508,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         StoragePool srcVolumePool = _poolDao.findById(volume.getPoolId());
-        allPools = getAllStoragePoolCompatileWithVolumeSourceStoragePool(srcVolumePool);
-        allPools.remove(srcVolumePool);
+        allPools = getAllStoragePoolsCompatibleWithVolumeSourceStoragePool(srcVolumePool);
         if (vm != null) {
             suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, srcVolumePool);
         } else {
@@ -1538,16 +1546,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      *  <li>We also all storage available filtering by data center, pod and cluster as the current storage pool used by the given volume.</li>
      * </ul>
      */
-    private List<? extends StoragePool> getAllStoragePoolCompatileWithVolumeSourceStoragePool(StoragePool srcVolumePool) {
+    private List<? extends StoragePool> getAllStoragePoolsCompatibleWithVolumeSourceStoragePool(StoragePool srcVolumePool) {
         List<StoragePoolVO> storagePools = new ArrayList<>();
-        List<StoragePoolVO> zoneWideStoragePools = _poolDao.findZoneWideStoragePoolsByTags(srcVolumePool.getDataCenterId(), null);
-        if (CollectionUtils.isNotEmpty(zoneWideStoragePools)) {
-            storagePools.addAll(zoneWideStoragePools);
+        // Storage pool with Zone Scope holds valid DataCenter Id only, Pod Id and Cluster Id are null
+        // Storage pool with Cluster/Host Scope holds valid DataCenter Id, Pod Id and Cluster Id
+        // Below methods call returns all the compatible pools with scope : ZONE, CLUSTER, HOST (as they are listed with Scope: null here)
+        List<StoragePoolVO> compatibleStoragePools = _poolDao.listBy(srcVolumePool.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null);
+        if (CollectionUtils.isNotEmpty(compatibleStoragePools)) {
+            compatibleStoragePools.remove(srcVolumePool);
+            storagePools.addAll(compatibleStoragePools);
         }
-        List<StoragePoolVO> clusterAndLocalStoragePools = _poolDao.listBy(srcVolumePool.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null);
-        if (CollectionUtils.isNotEmpty(clusterAndLocalStoragePools)) {
-            storagePools.addAll(clusterAndLocalStoragePools);
-        }
+
         return storagePools;
     }
 
@@ -1589,7 +1598,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (isLocalPoolSameHostAsSourcePool || pool.isShared()) {
                     suitablePools.add(pool);
                 }
-
             }
         }
         return suitablePools;
@@ -3236,7 +3244,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength, humanReadableSizes};
+        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
