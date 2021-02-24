@@ -187,7 +187,7 @@ class TestHAKVM(cloudstackTestCase):
     def waitUntilHostInState(self, state="Available", interval=3):
         def checkForState(expectedState):
             response = self.getHost(self.host.id)
-            print(("checkForState:: expected=%s, actual=%s" % (state, response.hostha)))
+            print("checkForState:: expected=%s, actual=%s" % (state, response.hostha))
             return response.hostha.hastate == expectedState, None
 
         res, _ = wait_until(interval, 200, checkForState, state)
