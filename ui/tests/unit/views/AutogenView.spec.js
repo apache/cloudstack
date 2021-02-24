@@ -1077,7 +1077,7 @@ describe('Views > AutogenView.vue', () => {
             api: 'testApiNameCase5'
           })
 
-          expect(wrapper.vm.currentAction.params).toMatch([
+          expect(wrapper.vm.currentAction.params).toEqual([
             { name: 'column1', type: 'string' },
             { name: 'column2', type: 'string' },
             { name: 'column3', type: 'string' },
