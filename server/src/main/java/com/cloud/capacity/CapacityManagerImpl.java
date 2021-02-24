@@ -585,9 +585,19 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         // if the storage pool is managed, the used bytes can be larger than the sum of the sizes of all of the non-destroyed volumes
         // in this case, call getUsedBytes(StoragePoolVO)
         if (pool.isManaged()) {
-            return getUsedBytes(pool);
-        }
-        else {
+            totalAllocatedSize = getUsedBytes(pool);
+
+            if (templateForVmCreation != null) {
+                VMTemplateStoragePoolVO templatePoolVO = _templatePoolDao.findByPoolTemplate(pool.getId(), templateForVmCreation.getId(), null);
+                if (templatePoolVO == null) {
+                    // template is not installed in the pool, consider the template size for allocation
+                    long templateForVmCreationSize = templateForVmCreation.getSize() != null ? templateForVmCreation.getSize() : 0;
+                    totalAllocatedSize += templateForVmCreationSize;
+                }
+            }
+
+            return totalAllocatedSize;
+        } else {
             // Get size for all the non-destroyed volumes.
             Pair<Long, Long> sizes = _volumeDao.getNonDestroyedCountAndTotalByPool(pool.getId());
 
@@ -629,7 +639,12 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         for (ServiceOfferingVO offering : offerings) {
             offeringsMap.put(offering.getId(), offering);
         }
+        updateCapacityForHost(host, offeringsMap);
+    }
 
+    @DB
+    @Override
+    public void updateCapacityForHost(final Host host, final Map<Long, ServiceOfferingVO> offeringsMap) {
         long usedCpuCore = 0;
         long reservedCpuCore = 0;
         long usedCpu = 0;
@@ -666,6 +681,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 ramOvercommitRatio = Float.parseFloat(vmDetailRam);
             }
             ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
+            if (so == null) {
+                so = _offeringsDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
+            }
             if (so.isDynamic()) {
                 usedMemory +=
                     ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.memory.name())) * 1024L * 1024L) / ramOvercommitRatio) *
@@ -705,6 +723,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 }
                 ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
                 Map<String, String> vmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
+                if (so == null) {
+                    so = _offeringsDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
+                }
                 if (so.isDynamic()) {
                     reservedMemory +=
                         ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.memory.name())) * 1024L * 1024L) / ramOvercommitRatio) *

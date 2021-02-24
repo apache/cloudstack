@@ -545,6 +545,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 if (tmpltStoreRef != null) {
                     if (tmpltStoreRef.getDownloadState() == com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
                         tmpltStore = (ImageStoreEntity)store;
+                        if (tmpltStoreRef.getExtractUrl() != null) {
+                            return tmpltStoreRef.getExtractUrl();
+                        }
                         break;
                     }
                 }
@@ -2104,6 +2107,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
             if (templateType != null && cmd.isRoutingType() != null && (TemplateType.ROUTING.equals(templateType) != cmd.isRoutingType())) {
                 throw new InvalidParameterValueException("Please specify a valid templatetype (consistent with isrouting parameter).");
+            }
+            if (templateType != null && (templateType == TemplateType.SYSTEM || templateType == TemplateType.BUILTIN) && !template.isCrossZones()) {
+                throw new InvalidParameterValueException("System and Builtin templates must be cross zone");
             }
         }
 

@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -349,8 +351,7 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+import com.google.common.base.Strings;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
@@ -425,6 +426,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         domainResponse.setDomainName(domain.getName());
         domainResponse.setId(domain.getUuid());
         domainResponse.setLevel(domain.getLevel());
+        domainResponse.setCreated(domain.getCreated());
         domainResponse.setNetworkDomain(domain.getNetworkDomain());
         Domain parentDomain = ApiDBUtils.findDomainById(domain.getParent());
         if (parentDomain != null) {
@@ -621,11 +623,13 @@ public class ApiResponseHelper implements ResponseGenerator {
         vmSnapshotResponse.setDisplayName(vmSnapshot.getDisplayName());
         UserVm vm = ApiDBUtils.findUserVmById(vmSnapshot.getVmId());
         if (vm != null) {
-            vmSnapshotResponse.setVirtualMachineid(vm.getUuid());
+            vmSnapshotResponse.setVirtualMachineId(vm.getUuid());
+            vmSnapshotResponse.setVirtualMachineName(Strings.isNullOrEmpty(vm.getDisplayName()) ? vm.getHostName() : vm.getDisplayName());
             vmSnapshotResponse.setHypervisor(vm.getHypervisorType());
             DataCenterVO datacenter = ApiDBUtils.findZoneById(vm.getDataCenterId());
             if (datacenter != null) {
                 vmSnapshotResponse.setZoneId(datacenter.getUuid());
+                vmSnapshotResponse.setZoneName(datacenter.getName());
             }
         }
         if (vmSnapshot.getParent() != null) {
@@ -1398,6 +1402,11 @@ public class ApiResponseHelper implements ResponseGenerator {
                     vmResponse.setHostId(host.getUuid());
                     vmResponse.setHostName(host.getName());
                     vmResponse.setHypervisor(host.getHypervisorType().toString());
+                }
+            } else if (vm.getLastHostId() != null) {
+                Host lastHost = ApiDBUtils.findHostById(vm.getLastHostId());
+                if (lastHost != null) {
+                    vmResponse.setHypervisor(lastHost.getHypervisorType().toString());
                 }
             }
 
@@ -2262,6 +2271,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             Vpc vpc = ApiDBUtils.findVpcById(network.getVpcId());
             if (vpc != null) {
                 response.setVpcId(vpc.getUuid());
+                response.setVpcName(vpc.getName());
             }
         }
         response.setCanUseForDeploy(ApiDBUtils.canUseForDeploy(network));
@@ -2544,6 +2554,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         DataCenter zone = ApiDBUtils.findZoneById(result.getDataCenterId());
         if (zone != null) {
             response.setZoneId(zone.getUuid());
+            response.setZoneName(zone.getName());
         }
         response.setNetworkSpeed(result.getSpeed());
         response.setVlan(result.getVnetString());
@@ -3470,8 +3481,15 @@ public class ApiResponseHelper implements ResponseGenerator {
                 network = _entityMgr.findByIdIncludingRemoved(NetworkVO.class, usageRecord.getNetworkId().toString());
                 if (network != null) {
                     resourceType = ResourceObjectType.Network;
-                    resourceId = network.getId();
-                    usageRecResponse.setNetworkId(network.getUuid());
+                    if (network.getTrafficType() == TrafficType.Public) {
+                        VirtualRouter router = ApiDBUtils.findDomainRouterById(usageRecord.getUsageId());
+                        Vpc vpc = ApiDBUtils.findVpcByIdIncludingRemoved(router.getVpcId());
+                        usageRecResponse.setVpcId(vpc.getUuid());
+                        resourceId = vpc.getId();
+                    } else {
+                        usageRecResponse.setNetworkId(network.getUuid());
+                        resourceId = network.getId();
+                    }
                     usageRecResponse.setResourceName(network.getName());
                 }
             }

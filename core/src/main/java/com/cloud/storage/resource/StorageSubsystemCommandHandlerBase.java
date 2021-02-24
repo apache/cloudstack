@@ -99,10 +99,13 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             //copy volume from image cache to primary
             return processor.copyVolumeFromImageCacheToPrimary(cmd);
         } else if (srcData.getObjectType() == DataObjectType.VOLUME && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
-            if (destData.getObjectType() == DataObjectType.VOLUME && srcData instanceof VolumeObjectTO && ((VolumeObjectTO)srcData).isDirectDownload()) {
-                return processor.copyVolumeFromPrimaryToPrimary(cmd);
-            } else if (destData.getObjectType() == DataObjectType.VOLUME) {
-                return processor.copyVolumeFromPrimaryToSecondary(cmd);
+            if (destData.getObjectType() == DataObjectType.VOLUME) {
+                if ((srcData instanceof VolumeObjectTO && ((VolumeObjectTO)srcData).isDirectDownload()) ||
+                        destData.getDataStore().getRole() == DataStoreRole.Primary) {
+                    return processor.copyVolumeFromPrimaryToPrimary(cmd);
+                } else {
+                    return processor.copyVolumeFromPrimaryToSecondary(cmd);
+                }
             } else if (destData.getObjectType() == DataObjectType.TEMPLATE) {
                 return processor.createTemplateFromVolume(cmd);
             }

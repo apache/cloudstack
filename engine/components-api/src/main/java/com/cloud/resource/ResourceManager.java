@@ -21,6 +21,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.VgpuTypesInfo;
@@ -38,8 +41,6 @@ import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState.Event;
 import com.cloud.utils.fsm.NoTransitionException;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
 
 /**
  * ResourceManager manages how physical resources are organized within the
@@ -204,7 +205,7 @@ public interface ResourceManager extends ResourceService, Configurable {
      */
     HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUStatistics(HostVO host);
 
-    HostVO findOneRandomRunningHostByHypervisor(HypervisorType type);
+    HostVO findOneRandomRunningHostByHypervisor(HypervisorType type, Long dcId);
 
     boolean cancelMaintenance(final long hostId);
 }

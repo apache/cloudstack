@@ -20,7 +20,7 @@
 FROM ubuntu:18.04
 
 MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
-LABEL Vendor="Apache.org" License="ApacheV2" Version="4.15.0.0-SNAPSHOT"
+LABEL Vendor="Apache.org" License="ApacheV2" Version="4.16.0.0-SNAPSHOT"
 
 ARG DEBIAN_FRONTEND=noninteractive
 

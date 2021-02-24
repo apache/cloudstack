@@ -452,4 +452,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     String getExternalId();
 
     PVlanType getPvlanType();
+
+    String getRouterIp();
+
+    String getRouterIpv6();
 }

@@ -48,14 +48,9 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
     @Inject
     private CapacityDao capacityDao;
 
-
     @Override
     protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
         LOGGER.debug("ZoneWideStoragePoolAllocator to find storage pool");
-
-        if (dskCh.useLocalStorage()) {
-            return null;
-        }
 
         if (LOGGER.isTraceEnabled()) {
             // Log the pools details that are ignored because they are in disabled state
@@ -92,7 +87,6 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
             avoid.addPool(pool.getId());
         }
 
-
         for (StoragePoolVO storage : storagePools) {
             if (suitablePools.size() == returnUpTo) {
                 break;
@@ -113,7 +107,6 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
     private boolean canAddStoragePoolToAvoidSet(StoragePoolVO storagePoolVO) {
         return !ScopeType.ZONE.equals(storagePoolVO.getScope()) || !storagePoolVO.isManaged();
     }
-
 
     @Override
     protected List<StoragePool> reorderPoolsByCapacity(DeploymentPlan plan,

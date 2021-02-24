@@ -25,6 +25,7 @@ import org.apache.cloudstack.storage.command.CommandResult;
 
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.host.Host;
 
 public interface DataStoreDriver {
     Map<String, String> getCapabilities();
@@ -37,7 +38,9 @@ public interface DataStoreDriver {
 
     void deleteAsync(DataStore store, DataObject data, AsyncCompletionCallback<CommandResult> callback);
 
-    void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback);
+    void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback);
+
+    void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback);
 
     boolean canCopy(DataObject srcData, DataObject destData);
 

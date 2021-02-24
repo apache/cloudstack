@@ -1063,33 +1063,46 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+    public SR findPatchIsoSR(final Connection conn) throws XmlRpcException, XenAPIException {
+        Set<SR> srs = SR.getByNameLabel(conn, "XenServer Tools");
+        if (srs.size() != 1) {
+            s_logger.debug("Failed to find SR by name 'XenServer Tools', will try to find 'XCP-ng Tools' SR");
+            srs = SR.getByNameLabel(conn, "XCP-ng Tools");
+        }
+        if (srs.size() != 1) {
+            s_logger.debug("Failed to find SR by name 'XenServer Tools' or 'XCP-ng Tools', will try to find 'Citrix Hypervisor' SR");
+            srs = SR.getByNameLabel(conn, "Citrix Hypervisor Tools");
+        }
+        if (srs.size() != 1) {
+            throw new CloudRuntimeException("There are " + srs.size() + " SRs with name XenServer Tools or XCP-ng Tools or Citrix Hypervisor Tools");
+        }
+        final SR sr = srs.iterator().next();
+        sr.scan(conn);
+        return sr;
+    }
+
+    public VDI findPatchIsoVDI(final Connection conn, final SR sr) throws XmlRpcException, XenAPIException {
+        if (sr == null) {
+            return null;
+        }
+        final SR.Record srr = sr.getRecord(conn);
+        for (final VDI vdi : srr.VDIs) {
+            final VDI.Record vdir = vdi.getRecord(conn);
+            if (vdir.nameLabel.contains("systemvm.iso")) {
+                return vdi;
+            }
+        }
+        return null;
+    }
+
     public VBD createPatchVbd(final Connection conn, final String vmName, final VM vm) throws XmlRpcException, XenAPIException {
 
         if (_host.getSystemvmisouuid() == null) {
-            Set<SR> srs = SR.getByNameLabel(conn, "XenServer Tools");
-            if (srs.size() != 1) {
-                s_logger.debug("Failed to find SR by name 'XenServer Tools', will try to find 'XCP-ng Tools' SR");
-                srs = SR.getByNameLabel(conn, "XCP-ng Tools");
-            }
-            if (srs.size() != 1) {
-                s_logger.debug("Failed to find SR by name 'XenServer Tools' or 'XCP-ng Tools', will try to find 'Citrix Hypervisor' SR");
-                srs = SR.getByNameLabel(conn, "Citrix Hypervisor Tools");
-            }
-            if (srs.size() != 1) {
-                throw new CloudRuntimeException("There are " + srs.size() + " SRs with name XenServer Tools or XCP-ng Tools or Citrix Hypervisor Tools");
-            }
-            final SR sr = srs.iterator().next();
-            sr.scan(conn);
-
-            final SR.Record srr = sr.getRecord(conn);
-
+            final SR sr = findPatchIsoSR(conn);
             if (_host.getSystemvmisouuid() == null) {
-                for (final VDI vdi : srr.VDIs) {
-                    final VDI.Record vdir = vdi.getRecord(conn);
-                    if (vdir.nameLabel.contains("systemvm.iso")) {
-                        _host.setSystemvmisouuid(vdir.uuid);
-                        break;
-                    }
+                final VDI vdi = findPatchIsoVDI(conn, sr);
+                if (vdi != null) {
+                    _host.setSystemvmisouuid(vdi.getRecord(conn).uuid);
                 }
             }
             if (_host.getSystemvmisouuid() == null) {
@@ -1489,24 +1502,33 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return result;
     }
 
-    public void destroyPatchVbd(final Connection conn, final String vmName) throws XmlRpcException, XenAPIException {
-        try {
-            if (!vmName.startsWith("r-") && !vmName.startsWith("s-") && !vmName.startsWith("v-")) {
-                return;
-            }
-            final Set<VM> vms = VM.getByNameLabel(conn, vmName);
-            for (final VM vm : vms) {
+    public void destroyPatchVbd(final Connection conn, final Set<VM> vms) throws XmlRpcException, XenAPIException {
+        final SR sr = findPatchIsoSR(conn);
+        final VDI patchVDI = findPatchIsoVDI(conn, sr);
+        for (final VM vm : vms) {
+            final String vmName = vm.getNameLabel(conn);
+            try {
+                if (!vmName.startsWith("r-") && !vmName.startsWith("s-") && !vmName.startsWith("v-")) {
+                    return;
+                }
                 final Set<VBD> vbds = vm.getVBDs(conn);
                 for (final VBD vbd : vbds) {
-                    if (vbd.getType(conn) == Types.VbdType.CD) {
-                        vbd.eject(conn);
+                    if (Types.VbdType.CD.equals(vbd.getType(conn))) {
+                        if (!vbd.getEmpty(conn)) {
+                            vbd.eject(conn);
+                        }
+                        // Workaround for any file descriptor caching issue
+                        if (patchVDI != null) {
+                            vbd.insert(conn, patchVDI);
+                            vbd.eject(conn);
+                        }
                         vbd.destroy(conn);
                         break;
                     }
                 }
+            } catch (final Exception e) {
+                s_logger.debug("Cannot destroy CD-ROM device for VM " + vmName + " due to " + e.toString(), e);
             }
-        } catch (final Exception e) {
-            s_logger.debug("Cannot destory CD-ROM device for VM " + vmName + " due to " + e.toString(), e);
         }
     }
 

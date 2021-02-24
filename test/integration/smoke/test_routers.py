@@ -69,16 +69,20 @@ class TestRouterServices(cloudstackTestCase):
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
+        cls._cleanup = []
+
         # Create an account, network, VM and IP addresses
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.vm_1 = VirtualMachine.create(
             cls.apiclient,
             cls.services["virtual_machine"],
@@ -87,30 +91,20 @@ class TestRouterServices(cloudstackTestCase):
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id
         )
-        cls.cleanup = [
-            cls.account,
-            cls.service_offering
-        ]
+        cls._cleanup.append(cls.vm_1)
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cls.apiclient = super(
-                TestRouterServices,
-                cls
-            ).getClsTestClient().getApiClient()
-            # Clean up, terminate the created templates
-            cleanup_resources(cls.apiclient, cls.cleanup)
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestRouterServices, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.hypervisor = self.testClient.getHypervisorInfo()
-        return
+        self.cleanup = []
+
+    def tearDown(self):
+        super(TestRouterServices, self).tearDown()
 
     @attr(tags=["advanced", "basic", "sg", "smoke"], required_hardware="true")
     def test_01_router_internal_basic(self):

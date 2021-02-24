@@ -29,6 +29,8 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.manager.Commands;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -38,6 +40,9 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
@@ -50,6 +55,9 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDao;
+
+import org.apache.cloudstack.network.topology.NetworkTopology;
+import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 
 public class NicPlugInOutRules extends RuleApplier {
 
@@ -75,6 +83,28 @@ public class NicPlugInOutRules extends RuleApplier {
 
         NetworkModel networkModel = visitor.getVirtualNetworkApplianceFactory().getNetworkModel();
         VirtualMachineManager itMgr = visitor.getVirtualNetworkApplianceFactory().getItMgr();
+        NicDao nicDao = visitor.getVirtualNetworkApplianceFactory().getNicDao();
+
+        // de-associate IPs before unplugging nics
+        if (!nicsToUnplug.isEmpty()) {
+            NetworkTopologyContext networkTopologyContext = visitor.getVirtualNetworkApplianceFactory().getNetworkTopologyContext();
+            final DataCenterDao dcDao = visitor.getVirtualNetworkApplianceFactory().getDcDao();
+            final DataCenterVO dcVO = dcDao.findById(router.getDataCenterId());
+            final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            final String typeString = "vpc ip association before unplugging nics";
+            final boolean isPodLevelException = false;
+            final boolean failWhenDisconnect = false;
+            final Long podId = null;
+            final VpcIpAssociationRules ipAssociationRules = new VpcIpAssociationRules(_network, _ipAddresses);
+            final boolean result = networkTopology.applyRules(_network, router, typeString, isPodLevelException, podId, failWhenDisconnect,
+                    new RuleApplierWrapper<RuleApplier>(ipAssociationRules));
+            if (!result) {
+                s_logger.warn("Failed to de-associate IPs before unplugging nics");
+                return false;
+            }
+        }
+
         // 1) Unplug the nics
         for (Entry<String, PublicIpAddress> entry : nicsToUnplug.entrySet()) {
             Network publicNtwk = null;
@@ -159,6 +189,9 @@ public class NicPlugInOutRules extends RuleApplier {
 
         VpcManager vpcMgr = visitor.getVirtualNetworkApplianceFactory().getVpcMgr();
         NicDao nicDao = visitor.getVirtualNetworkApplianceFactory().getNicDao();
+        IPAddressDao ipAddressDao = visitor.getVirtualNetworkApplianceFactory().getIpAddressDao();
+        FirewallRulesDao rulesDao = visitor.getVirtualNetworkApplianceFactory().getFirewallRulesDao();
+
         // find out nics to unplug
         for (PublicIpAddress ip : _ipAddresses) {
             long publicNtwkId = ip.getNetworkId();
@@ -170,10 +203,26 @@ public class NicPlugInOutRules extends RuleApplier {
             }
 
             if (ip.getState() == IpAddress.State.Releasing) {
-                Nic nic = nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, _router.getId(), ip.getAddress().addr());
+                NicVO nic = nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, _router.getId(), ip.getAddress().addr());
                 if (nic != null) {
-                    nicsToUnplug.put(ip.getVlanTag(), ip);
-                    s_logger.debug("Need to unplug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + " in public network id =" + publicNtwkId);
+                    final List<IPAddressVO> allIps = ipAddressDao.listByAssociatedVpc(ip.getVpcId(), null);
+                    boolean ipUpdated = false;
+                    for (IPAddressVO allIp : allIps) {
+                        if (allIp.getId() != ip.getId() && allIp.getVlanId() == ip.getVlanId()
+                                && (allIp.isSourceNat()
+                                || rulesDao.countRulesByIpIdAndState(allIp.getId(), FirewallRule.State.Active) > 0
+                                || (allIp.isOneToOneNat() && allIp.getRuleState() == null))) {
+                            s_logger.debug("Updating the nic " + nic + " with new ip address " + allIp.getAddress().addr());
+                            nic.setIPv4Address(allIp.getAddress().addr());
+                            nicDao.update(nic.getId(), nic);
+                            ipUpdated = true;
+                            break;
+                        }
+                    }
+                    if (!ipUpdated) {
+                        nicsToUnplug.put(ip.getVlanTag(), ip);
+                        s_logger.debug("Need to unplug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + " in public network id =" + publicNtwkId);
+                    }
                 }
             }
         }

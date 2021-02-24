@@ -46,6 +46,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,6 +101,7 @@ import com.cloud.agent.api.ComputeChecksumCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
+import com.cloud.agent.api.HandleConfigDriveIsoAnswer;
 import com.cloud.agent.api.HandleConfigDriveIsoCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingStorageCommand;
@@ -138,6 +140,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
@@ -319,7 +322,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private Answer execute(HandleConfigDriveIsoCommand cmd) {
         if (cmd.isCreate()) {
             if (cmd.getIsoData() == null) {
-                return new Answer(cmd, false, "Invalid config drive ISO data");
+                return new HandleConfigDriveIsoAnswer(cmd, "Invalid config drive ISO data");
             }
             String nfsMountPoint = getRootDir(cmd.getDestStore().getUrl(), _nfsVersion);
             File isoFile = new File(nfsMountPoint, cmd.getIsoFile());
@@ -332,7 +335,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 File tmpIsoFile = ConfigDriveBuilder.base64StringToFile(cmd.getIsoData(), tempDir.toAbsolutePath().toString(), cmd.getIsoFile());
                 copyLocalToNfs(tmpIsoFile, new File(cmd.getIsoFile()), cmd.getDestStore());
             } catch (IOException | ConfigurationException e) {
-                return new Answer(cmd, false, "Failed due to exception: " + e.getMessage());
+                return new HandleConfigDriveIsoAnswer(cmd, "Failed due to exception: " + e.getMessage());
             } finally {
                 try {
                     if (tempDir != null) {
@@ -342,7 +345,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     s_logger.warn("Failed to delete ConfigDrive temporary directory: " + tempDir.toString(), ioe);
                 }
             }
-            return new Answer(cmd, true, "Successfully saved config drive at secondary storage");
+            return new HandleConfigDriveIsoAnswer(cmd, NetworkElement.Location.SECONDARY, "Successfully saved config drive at secondary storage");
         } else {
             DataStoreTO dstore = cmd.getDestStore();
             if (dstore instanceof NfsTO) {
@@ -353,11 +356,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 try {
                     Files.deleteIfExists(tmpltPath.toPath());
                 } catch (IOException e) {
-                    return new Answer(cmd, e);
+                    return new HandleConfigDriveIsoAnswer(cmd, e);
                 }
-                return new Answer(cmd);
+                return new HandleConfigDriveIsoAnswer(cmd);
             } else {
-                return new Answer(cmd, false, "Not implemented yet");
+                return new HandleConfigDriveIsoAnswer(cmd, "Not implemented yet");
             }
         }
     }
@@ -1313,6 +1316,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     srcDir = new File(srcFile.getParent());
                 } else if (!srcFile.isDirectory()) {
                     srcDir = new File(srcFile.getParent());
+                } else if (srcFile.isDirectory() && Arrays.stream(srcData.getPath().split(File.separator)).count() == 4) {
+                    destFile = new File(destFile.getPath(), srcFile.getName());
                 }
                 File destDir = null;
                 if (destFile.isFile()) {
@@ -2275,6 +2280,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 answer.setInstallPath(uploadEntity.getTmpltPath());
                 answer.setPhysicalSize(uploadEntity.getPhysicalSize());
                 answer.setDownloadPercent(100);
+                answer.setGuestOsInfo(uploadEntity.getGuestOsInfo());
+                answer.setMinimumHardwareVersion(uploadEntity.getMinimumHardwareVersion());
                 uploadEntityStateMap.remove(entityUuid);
                 return answer;
             } else if (uploadEntity.getUploadState() == UploadEntity.Status.IN_PROGRESS) {
@@ -2689,8 +2696,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (_inSystemVM) {
             _localgw = (String)params.get("localgw");
             if (_localgw != null) { // can only happen inside service vm
-                String mgmtHost = (String)params.get("host");
-                addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
+                String mgmtHosts = (String)params.get("host");
+                for (final String mgmtHost : mgmtHosts.split(",")) {
+                    addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
+                }
 
                 String internalDns1 = (String)params.get("internaldns1");
                 if (internalDns1 == null) {
@@ -3408,6 +3417,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 loc.addFormat(info);
                 uploadEntity.setVirtualSize(info.virtualSize);
                 uploadEntity.setPhysicalSize(info.size);
+                if (info.ovfInformationTO != null) {
+                    if (info.ovfInformationTO.getGuestOsInfo() != null) {
+                        uploadEntity.setGuestOsInfo(info.ovfInformationTO.getGuestOsInfo());
+                    }
+                    if (info.ovfInformationTO.getHardwareSection() != null) {
+                        uploadEntity.setMinimumHardwareVersion(info.ovfInformationTO.getHardwareSection().getMinimiumHardwareVersion());
+                    }
+                }
                 break;
             }
         }

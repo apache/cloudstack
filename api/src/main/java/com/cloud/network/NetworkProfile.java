@@ -319,4 +319,14 @@ public class NetworkProfile implements Network {
         return null;
     }
 
+    @Override
+    public String getRouterIp() {
+        return null;
+    }
+
+    @Override
+    public String getRouterIpv6() {
+        return null;
+    }
+
 }
