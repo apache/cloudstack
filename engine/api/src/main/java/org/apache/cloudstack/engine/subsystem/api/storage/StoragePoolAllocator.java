@@ -51,7 +51,7 @@ public interface StoragePoolAllocator extends Adapter {
      * @param ExcludeList
      *            avoid
      * @param int returnUpTo (use -1 to return all possible pools)
-     * @param boolean bypassStorageTypeCheck
+     * @param boolean bypassStorageTypeCheck allows bypassing useLocalStorage check for provided DiskProfile when true
      * @return List<StoragePool> List of storage pools that are suitable for the
      *         VM
      **/
