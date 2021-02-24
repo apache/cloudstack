@@ -96,7 +96,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
             "If we set this to 'true', a minimum memory (memory/ mem.overprovisioning.factor) will be set to the VM, independent of using a scalable service offering or not.", true, ConfigKey.Scope.Cluster);
 
     static final ConfigKey<Boolean> VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.min.cpu.speed.equals.cpu.speed.divided.by.cpu.overprovisioning.factor", "true",
-            "If we set this to 'true', a minimum cpu speed (cpu speed/ cpu.overprovisioning.factor) will be setted to the VM, independent of using a scalable service offering or not.", true, ConfigKey.Scope.Cluster);
+            "If we set this to 'true', a minimum CPU speed (cpu speed/ cpu.overprovisioning.factor) will be set on the VM, independent of using a scalable service offering or not.", true, ConfigKey.Scope.Cluster);
 
     @Override
     public NicTO toNicTO(NicProfile profile) {
