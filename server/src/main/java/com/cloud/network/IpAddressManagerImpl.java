@@ -762,6 +762,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     public PublicIp assignSourceNatPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem, boolean forSystemVms)
         throws InsufficientAddressCapacityException {
+        IPAddressVO networkPublicIp = _ipAddressDao.findByIpAndNetworkIdAndDcId(networkId, dcId, requestedIp);
+        if(networkPublicIp != null)
+            return null;
         IPAddressVO ipAddressVO = _ipAddressDao.findByIpAndDcId(dcId, requestedIp);
         if (ipAddressVO.getState() != State.Free) {
             throw new InsufficientAddressCapacityException("can not assign to this network", Network.class, networkId);

@@ -117,6 +117,9 @@ public class TungstenApi {
         boolean shared, String ipPrefix, int ipPrefixLen, String gateway, boolean dhcpEnable, List<String> dnsServers,
         String allocationStart, String allocationEnd, boolean ipFromStart, boolean isManagementNetwork) {
         try {
+            VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, uuid);
+            if(virtualNetwork != null)
+                return virtualNetwork;
             Project project = (Project) apiConnector.findById(Project.class, parent);
             NetworkIpam networkIpam = getDefaultProjectNetworkIpam(project);
             IpamSubnetType ipamSubnetType = new IpamSubnetType();
@@ -131,7 +134,7 @@ public class TungstenApi {
 
             VnSubnetsType vnSubnetsType = new VnSubnetsType();
             vnSubnetsType.addIpamSubnets(ipamSubnetType);
-            VirtualNetwork virtualNetwork = new VirtualNetwork();
+            virtualNetwork = new VirtualNetwork();
             if (uuid != null) {
                 virtualNetwork.setUuid(uuid);
             }
