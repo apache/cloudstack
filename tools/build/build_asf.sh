@@ -150,10 +150,10 @@ else
 fi
 
 echo 'md5'
-gpg -v --print-md MD5 apache-cloudstack-$version-src.tar.bz2 > apache-cloudstack-$version-src.tar.bz2.md5
+md5sum apache-cloudstack-$version-src.tar.bz2 > apache-cloudstack-$version-src.tar.bz2.md5
 
 echo 'sha512'
-gpg -v --print-md SHA512 apache-cloudstack-$version-src.tar.bz2 > apache-cloudstack-$version-src.tar.bz2.sha512
+sha512sum apache-cloudstack-$version-src.tar.bz2 > apache-cloudstack-$version-src.tar.bz2.sha512
 
 echo 'verify'
 gpg -v --verify apache-cloudstack-$version-src.tar.bz2.asc apache-cloudstack-$version-src.tar.bz2
