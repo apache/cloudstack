@@ -1078,11 +1078,11 @@ describe('Views > AutogenView.vue', () => {
           })
 
           expect(wrapper.vm.currentAction.params).toEqual([
-            { name: 'id', type: 'string' },
-            { name: 'name', type: 'string' },
             { name: 'column1', type: 'string' },
             { name: 'column2', type: 'string' },
-            { name: 'column3', type: 'string' }
+            { name: 'column3', type: 'string' },
+            { name: 'name', type: 'string' },
+            { name: 'id', type: 'string' }
           ])
           expect(wrapper.vm.currentAction.paramFields).toEqual([])
           expect(wrapper.vm.showAction).toBeTruthy()
@@ -1127,11 +1127,11 @@ describe('Views > AutogenView.vue', () => {
           })
 
           expect(wrapper.vm.currentAction.params).toEqual([
-            { name: 'id', type: 'string' },
-            { name: 'name', type: 'string' },
             { name: 'column1', type: 'string' },
             { name: 'column2', type: 'string' },
-            { name: 'column3', type: 'string' }
+            { name: 'column3', type: 'string' },
+            { name: 'name', type: 'string' },
+            { name: 'id', type: 'string' }
           ])
           expect(wrapper.vm.currentAction.paramFields).toEqual([
             { name: 'id', type: 'string' },
