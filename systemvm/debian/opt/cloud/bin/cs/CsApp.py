@@ -16,8 +16,9 @@
 # specific language governing permissions and limitations
 # under the License.
 import os
-from CsFile import CsFile
-import CsHelper
+from .CsFile import CsFile
+from .CsProcess import CsProcess
+from . import CsHelper
 
 
 class CsApp:

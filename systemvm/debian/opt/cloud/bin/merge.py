@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -155,7 +155,7 @@ class updateDataBag:
         dp['nw_type'] = 'guest'
         qf = QueueFile()
         qf.load({'ip_address': [dp], 'type': 'ips'})
-        if 'domain_name' not in d.keys() or d['domain_name'] == '':
+        if 'domain_name' not in list(d.keys()) or d['domain_name'] == '':
             d['domain_name'] = "cloudnine.internal"
         return cs_guestnetwork.merge(dbag, d)
 
@@ -246,7 +246,7 @@ class updateDataBag:
     def process_ipaliases(self, dbag):
         nic_dev = None
         # Should be a way to deal with this better
-        for intf, data in dbag.items():
+        for intf, data in list(dbag.items()):
             if intf == 'id':
                 continue
             elif any([net['nw_type'] == 'guest' for net in data]):

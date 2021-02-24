@@ -14,12 +14,12 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import CsHelper
+from . import CsHelper
 import logging
 import os
-from netaddr import *
+from ipaddress import ip_address
 from random import randint
-from CsGuestNetwork import CsGuestNetwork
+from .CsGuestNetwork import CsGuestNetwork
 from cs.CsDatabag import CsDataBag
 from cs.CsFile import CsFile
 
@@ -207,7 +207,7 @@ class CsDhcp(CsDataBag):
                                                                             entry['ipv4_address'],
                                                                             entry['host_name']))
 
-        i = IPAddress(entry['ipv4_address'])
+        i = ip_address(entry['ipv4_address'])
         # Calculate the device
         for v in self.devinfo:
             if i > v['network'].network and i < v['network'].broadcast:

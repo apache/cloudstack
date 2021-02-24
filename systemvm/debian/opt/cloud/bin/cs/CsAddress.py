@@ -16,14 +16,14 @@
 # specific language governing permissions and limitations
 # under the License.
 import logging
-from netaddr import IPAddress, IPNetwork
+from ipaddress import *
 import subprocess
 import time
-import CsHelper
-from CsDatabag import CsDataBag
-from CsApp import CsApache, CsDnsmasq, CsPasswdSvc
-from CsRoute import CsRoute
-from CsRule import CsRule
+from . import CsHelper
+from .CsDatabag import CsDataBag
+from .CsApp import CsApache, CsDnsmasq, CsPasswdSvc
+from .CsRoute import CsRoute
+from .CsRule import CsRule
 
 VRRP_TYPES = ['guest']
 
@@ -148,8 +148,8 @@ class CsInterface:
             return self.config.cmdline().get_guest_gw()
 
     def ip_in_subnet(self, ip):
-        ipo = IPAddress(ip)
-        net = IPNetwork("%s/%s" % (self.get_ip(), self.get_size()))
+        ipo = ip_address(ip)
+        net = ip_network("%s/%s" % (self.get_ip(), self.get_size()))
         return ipo in net
 
     def get_gateway_cidr(self):
@@ -496,7 +496,7 @@ class CsIP:
                                 "-A POSTROUTING -o %s -j SNAT --to-source %s" %
                                 (self.dev, self.address['public_ip'])])
             if self.get_gateway() == self.get_ip_address():
-                for inf, addresses in self.config.address().dbag.iteritems():
+                for inf, addresses in list(self.config.address().dbag.items()):
                     if not inf.startswith("eth"):
                         continue
                     for address in addresses:
@@ -562,7 +562,7 @@ class CsIP:
             if self.config.is_vpc():
                 if self.get_type() in ["public"] and "gateway" in self.address and self.address["gateway"] and self.address["gateway"] != "None":
                     route.add_route(self.dev, self.address["gateway"])
-                    for inf, addresses in self.config.address().dbag.iteritems():
+                    for inf, addresses in list(self.config.address().dbag.items()):
                         if not inf.startswith("eth"):
                             continue
                         for address in addresses:
@@ -636,7 +636,7 @@ class CsIP:
                 self.iplist[cidr] = self.dev
 
     def configured(self):
-        if self.address['cidr'] in self.iplist.keys():
+        if self.address['cidr'] in list(self.iplist.keys()):
             return True
         return False
 
@@ -665,7 +665,7 @@ class CsIP:
         return self.dev
 
     def hasIP(self, ip):
-        return ip in self.address.values()
+        return ip in list(self.address.values())
 
     def arpPing(self):
         cmd = "arping -c 1 -I %s -A -U -s %s %s" % (
@@ -676,7 +676,7 @@ class CsIP:
 
     # Delete any ips that are configured but not in the bag
     def compare(self, bag):
-        if len(self.iplist) > 0 and (self.dev not in bag.keys() or len(bag[self.dev]) == 0):
+        if len(self.iplist) > 0 and (self.dev not in list(bag.keys()) or len(bag[self.dev]) == 0):
             # Remove all IPs on this device
             logging.info(
                 "Will remove all configured addresses on device %s", self.dev)
@@ -687,13 +687,13 @@ class CsIP:
         # This condition should not really happen but did :)
         # It means an apache file got orphaned after a guest network address
         # was deleted
-        if len(self.iplist) == 0 and (self.dev not in bag.keys() or len(bag[self.dev]) == 0):
+        if len(self.iplist) == 0 and (self.dev not in list(bag.keys()) or len(bag[self.dev]) == 0):
             app = CsApache(self)
             app.remove()
 
         for ip in self.iplist:
             found = False
-            if self.dev in bag.keys():
+            if self.dev in list(bag.keys()):
                 for address in bag[self.dev]:
                     self.setAddress(address)
                     if (self.hasIP(ip) or self.is_guest_gateway(address, ip)) and address["add"]:
@@ -726,7 +726,7 @@ class CsIP:
         remove = []
         if ip == "all":
             logging.info("Removing addresses from device %s", self.dev)
-            remove = self.iplist.keys()
+            remove = list(self.iplist.keys())
         else:
             remove.append(ip)
         for ip in remove:
