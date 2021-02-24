@@ -357,12 +357,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.apiclient = super(TestVMLifeCycle, cls).getClsTestClient().getApiClient()
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestVMLifeCycle, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -788,8 +783,9 @@ class TestVMLifeCycle(cloudstackTestCase):
                 break
             if str(res).find("mount: unknown filesystem type 'iso9660'") != -1:
                 iso_unsupported = True
-                self.debug("Test template does not supports iso9660 filesystem. Proceeding with test without mounting.")
-                print("Test template does not supports iso9660 filesystem. Proceeding with test without mounting.")
+                log_msg = "Test template does not supports iso9660 filesystem. Proceeding with test without mounting."
+                self.debug(log_msg)
+                print(log_msg)
                 break
         else:
             self.fail("No mount points matched. Mount was unsuccessful")
@@ -933,11 +929,15 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.apiclient = super(TestSecuredVmMigration, cls).getClsTestClient().getApiClient()
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        if cls.hypervisor.lower() in ["kvm"]:
+            cls.hosts = Host.list(
+                cls.apiclient,
+                zoneid=cls.zone.id,
+                type='Routing',
+                hypervisor='KVM')
+            for cls.host in cls.hosts:
+                TestSecuredVmMigration.secure_host(cls.host)
+            super(TestSecuredVmMigration, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -951,7 +951,8 @@ class TestSecuredVmMigration(cloudstackTestCase):
             self.apiclient,
             zoneid=self.zone.id,
             type='Routing',
-            hypervisor='KVM')
+            hypervisor='KVM',
+            state='Up')
 
         if len(self.hosts) < 2:
             self.skipTest("Requires at least two hosts for performing migration related tests")
@@ -962,10 +963,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
     def tearDown(self):
         self.secure_all_hosts()
         self.updateConfiguration("ca.plugin.root.auth.strictness", "true")
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestSecuredVmMigration, self).tearDown()
 
     def get_target_host(self, secured, virtualmachineid):
         target_hosts = Host.listForMigration(self.apiclient,
@@ -983,8 +981,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
         if protocol not in resp[0]:
             cloudstackTestCase.fail(self, "Libvirt listen protocol expected: '" + protocol + "\n"
-                                                                                             "does not match actual: " +
-                                    resp[0])
+                                    "does not match actual: " + resp[0])
 
     def migrate_and_check(self, vm, src_host, dest_host, proto='tls'):
         """
@@ -997,7 +994,6 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
     def waitUntilHostInState(self, hostId, state="Up", interval=5, retries=20):
         while retries > -1:
-            print("Waiting for host: %s to be %s. %s retries left." % (hostId, state, retries))
             time.sleep(interval)
             host = Host.list(
                 self.apiclient,
@@ -1015,12 +1011,17 @@ class TestSecuredVmMigration(cloudstackTestCase):
     def unsecure_host(self, host):
         SshClient(host.ipaddress, port=22, user=self.hostConfig["username"], passwd=self.hostConfig["password"]) \
             .execute("rm -f /etc/cloudstack/agent/cloud* && \
+                      service cloudstack-agent stop ; \
+                      service libvirtd stop ; \
+                      service libvirt-bin stop ; \
                       sed -i 's/listen_tls.*/listen_tls=0/g' /etc/libvirt/libvirtd.conf && \
                       sed -i 's/listen_tcp.*/listen_tcp=1/g' /etc/libvirt/libvirtd.conf && \
                       sed -i '/.*_file=.*/d' /etc/libvirt/libvirtd.conf && \
-                      service libvirtd restart && \
-                      sleep 30 && \
-                      service cloudstack-agent restart")
+                      service libvirtd start ; \
+                      service libvirt-bin start ; \
+                      sleep 30 ; \
+                      service cloudstack-agent start")
+        time.sleep(30)
         print("Unsecuring Host: %s" % (host.name))
         self.waitUntilHostInState(hostId=host.id, state="Up")
         self.check_connection(host=host, secured='false')
