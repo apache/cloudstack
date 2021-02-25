@@ -114,7 +114,6 @@ echo -e "\nInstalling some python packages: "
 for ((i=0;i<$RETRY_COUNT;i++))
 do
   python3 -m pip install --user --upgrade urllib3 lxml paramiko nose texttable ipmisim pyopenssl pycrypto mock flask netaddr pylint pycodestyle six astroid > /tmp/piplog
-  python2 -m pip install --user --upgrade pylint pycodestyle >> /tmp/piplog
   if [[ $? -eq 0 ]]; then
     echo -e "\npython packages installed successfully"
     break;
