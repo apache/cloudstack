@@ -56,7 +56,7 @@ export default {
       }, {
         name: 'guest.ip.range',
         component: () => import('@/views/network/GuestIpRanges.vue'),
-        show: (record) => { return 'listVlanIpRanges' in store.getters.apis && (record.type !== 'Isolated' || record.service.filter(x => x.name === 'SourceNat').count === 0) }
+        show: (record) => { return 'listVlanIpRanges' in store.getters.apis && (record.type === 'Shared' || (record.service && record.service.filter(x => x.name === 'SourceNat').count === 0)) }
       }],
       actions: [
         {

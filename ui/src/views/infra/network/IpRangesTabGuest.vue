@@ -34,6 +34,15 @@
       :rowKey="record => record.id"
       :pagination="false"
     >
+      <template slot="name" slot-scope="text, item">
+        <router-link
+          v-if="item.type==='Shared' ||
+            (item.service && item.service.filter(x => x.name === 'SourceNat').count === 0)"
+          :to="{ path: '/guestnetwork/' + item.id, query: { tab: 'guest.ip.range' } }">
+          {{ text }}
+        </router-link>
+        <div v-else>{{ text }}</div>
+      </template>
     </a-table>
     <a-pagination
       class="row-element pagination"
@@ -98,7 +107,8 @@ export default {
       columns: [
         {
           title: this.$t('label.name'),
-          dataIndex: 'name'
+          dataIndex: 'name',
+          scopedSlots: { customRender: 'name' }
         },
         {
           title: this.$t('label.type'),
