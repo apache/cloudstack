@@ -35,13 +35,9 @@
       :pagination="false"
     >
       <template slot="name" slot-scope="text, item">
-        <router-link
-          v-if="item.type==='Shared' ||
-            (item.service && item.service.filter(x => x.name === 'SourceNat').count === 0)"
-          :to="{ path: '/guestnetwork/' + item.id, query: { tab: 'guest.ip.range' } }">
+        <router-link :to="{ path: '/guestnetwork/' + item.id }">
           {{ text }}
         </router-link>
-        <div v-else>{{ text }}</div>
       </template>
     </a-table>
     <a-pagination
