@@ -376,6 +376,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         tmpltTypeHyperSearch2.and("templateType", tmpltTypeHyperSearch2.entity().getTemplateType(), SearchCriteria.Op.EQ);
         tmpltTypeHyperSearch2.and("hypervisorType", tmpltTypeHyperSearch2.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         tmpltTypeHyperSearch2.and("templateName", tmpltTypeHyperSearch2.entity().getName(), SearchCriteria.Op.EQ);
+        tmpltTypeHyperSearch2.and("state", tmpltTypeHyperSearch2.entity().getState(), SearchCriteria.Op.EQ);
 
         tmpltTypeSearch = createSearchBuilder();
         tmpltTypeSearch.and("state", tmpltTypeSearch.entity().getState(), SearchCriteria.Op.EQ);
@@ -897,6 +898,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         SearchCriteria<VMTemplateVO> sc = tmpltTypeHyperSearch2.create();
         sc.setParameters("templateType", TemplateType.ROUTING);
         sc.setParameters("hypervisorType", hType);
+        sc.setParameters("state", VirtualMachineTemplate.State.Active.toString());
         if (templateName != null) {
             sc.setParameters("templateName", templateName);
         }
@@ -911,6 +913,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             sc = tmpltTypeHyperSearch2.create();
             sc.setParameters("templateType", TemplateType.SYSTEM);
             sc.setParameters("hypervisorType", hType);
+            sc.setParameters("state", VirtualMachineTemplate.State.Active.toString());
             if (templateName != null) {
                 sc.setParameters("templateName", templateName);
             }
