@@ -30,7 +30,7 @@
 
       <a-table
         size="small"
-        style="overflow-y: auto"
+        style="overflow-y: auto; width: 100%;"
         :columns="columns"
         :dataSource="ipranges"
         :rowKey="item => item.id"
