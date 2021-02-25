@@ -97,7 +97,7 @@ class updateDataBag:
             self.db.setKey("forwardingrules")
         else:
             self.db.setKey(self.qFile.type)
-        dbag = self.db.load()
+        self.db.load()
         logging.info("Command of type %s received", self.qFile.type)
 
         if self.qFile.type == 'ips':
