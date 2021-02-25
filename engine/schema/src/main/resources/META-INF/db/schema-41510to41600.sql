@@ -337,9 +337,9 @@ BEGIN
 END
 
 -- PR#4699 Call procedure `ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` to add new data to guest_os and guest_os_hypervisor.
-CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Ubuntu 20.04 LTS', 'KVM', 'default', 'Ubuntu 20.04 LTS');
-CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Ubuntu 21.04', 'KVM', 'default', 'Ubuntu 21.04');
-CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'pfSense 2.4', 'KVM', 'default', 'pfSense 2.4');
-CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'OpenBSD 6.7', 'KVM', 'default', 'OpenBSD 6.7');
-CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'OpenBSD 6.8', 'KVM', 'default', 'OpenBSD 6.8');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (10, 'Ubuntu 20.04 LTS', 'KVM', 'default', 'Ubuntu 20.04 LTS');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (10, 'Ubuntu 21.04', 'KVM', 'default', 'Ubuntu 21.04');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (9, 'pfSense 2.4', 'KVM', 'default', 'pfSense 2.4');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (9, 'OpenBSD 6.7', 'KVM', 'default', 'OpenBSD 6.7');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (9, 'OpenBSD 6.8', 'KVM', 'default', 'OpenBSD 6.8');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'AlmaLinux 8.3', 'KVM', 'default', 'AlmaLinux 8.3');
