@@ -54,7 +54,7 @@ def merge(dbag, ip):
     ip['broadcast'] = str(ipo.broadcast_address)
     ip['cidr'] = str(ipo.network_address) + '/' + str(ipo.prefixlen)
     ip['size'] = str(ipo.prefixlen)
-    ip['network'] = str(ipo.ip_network)
+    ip['network'] = str(ipo.compressed)
     if 'nw_type' not in list(ip.keys()):
         ip['nw_type'] = 'public'
     else:

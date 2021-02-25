@@ -16,7 +16,7 @@
 #under the License.
 
 import subprocess
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import hmac
 import hashlib
 import base64
@@ -131,10 +131,10 @@ class Server(object):
             "mac": mac
         }
 
-        request = zip(reqs.keys(), reqs.values())
+        request = list(zip(list(reqs.keys()), list(reqs.values())))
         request.sort(key=lambda x: str.lower(x[0]))
-        hashStr = "&".join(["=".join([str.lower(r[0]), str.lower(urllib.quote_plus(str(r[1]))).replace("+", "%20").replace('=', '%3d')]) for r in request])
-        sig = urllib.quote_plus(base64.encodestring(hmac.new(secretkey, hashStr, hashlib.sha1).digest()).strip())
+        hashStr = "&".join(["=".join([str.lower(r[0]), str.lower(urllib.parse.quote_plus(str(r[1]))).replace("+", "%20").replace('=', '%3d')]) for r in request])
+        sig = urllib.parse.quote_plus(base64.encodebytes(hmac.new(secretkey, hashStr, hashlib.sha1).digest()).strip())
         return sig
 
     def notify_provisioning_done(self, mac):
