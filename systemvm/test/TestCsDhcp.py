@@ -16,7 +16,7 @@
 # under the License.
 
 import unittest
-import mock
+from unittest import mock
 from cs.CsDhcp import CsDhcp
 from cs import CsHelper
 import merge
