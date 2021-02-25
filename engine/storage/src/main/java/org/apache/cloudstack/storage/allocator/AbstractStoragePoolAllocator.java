@@ -188,13 +188,13 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         // Hardware accelerated pools are preferred for thick disks
         if (dskCh != null && !dskCh.getProvisioningType().equals(Storage.ProvisioningType.THIN) &&
                 !storageMgr.DiskProvisioningStrictness.valueIn(plan.getDataCenterId())) {
-            pools = reorderPoolsByDiskProvisioningType(pools, dskCh);
+            pools = reorderPoolsByDiskProvisioningType(pools);
         }
 
         return pools;
     }
 
-    private List<StoragePool> reorderPoolsByDiskProvisioningType(List<StoragePool> pools, DiskProfile dskCh) {
+    private List<StoragePool> reorderPoolsByDiskProvisioningType(List<StoragePool> pools) {
         List<StoragePool> reorderedPools = new ArrayList<>();
         for (StoragePool pool: pools) {
             StoragePoolDetailVO hardwareAcceleration = storagePoolDetailsDao.findDetail(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString());
