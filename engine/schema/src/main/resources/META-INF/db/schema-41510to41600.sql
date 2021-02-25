@@ -334,7 +334,7 @@ BEGIN
 	                    AND     hypervisor_version = guest_os_hypervisor_hypervisor_version
 	                    AND     hypervisor.guest_os_id = guest_os.id
 	                    AND     hypervisor.guest_os_name = guest_os_hypervisor_guest_os_name);    
-END;
+END
 
 -- PR#4699 Call procedure `ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` to add new data to guest_os and guest_os_hypervisor.
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Ubuntu 20.04 LTS', 'KVM', 'default', 'Ubuntu 20.04 LTS');
