@@ -247,7 +247,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
     private void createTemplateWithinZone(Long zId, TemplateProfile profile, VMTemplateVO template) {
         // find all eligible image stores for this zone scope
-        List<DataStore> imageStores = storeMgr.getImageStoresByScope(new ZoneScope(zId));
+        List<DataStore> imageStores = storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(zId));
         if (imageStores == null || imageStores.size() == 0) {
             throw new CloudRuntimeException("Unable to find image store to download template " + profile.getTemplate());
         }
@@ -314,7 +314,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     zoneId = profile.getZoneIdList().get(0);
 
                 // find all eligible image stores for this zone scope
-                List<DataStore> imageStores = storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+                List<DataStore> imageStores = storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(zoneId));
                 if (imageStores == null || imageStores.size() == 0) {
                     throw new CloudRuntimeException("Unable to find image store to download template " + profile.getTemplate());
                 }
