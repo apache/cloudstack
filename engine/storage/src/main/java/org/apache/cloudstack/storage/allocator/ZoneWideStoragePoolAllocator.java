@@ -50,10 +50,10 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
 
 
     @Override
-    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
         LOGGER.debug("ZoneWideStoragePoolAllocator to find storage pool");
 
-        if (dskCh.useLocalStorage()) {
+        if (!bypassStorageTypeCheck && dskCh.useLocalStorage()) {
             return null;
         }
 
