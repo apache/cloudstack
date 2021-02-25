@@ -1123,12 +1123,6 @@ public class VolumeServiceImpl implements VolumeService {
             // Refresh the volume info from the DB.
             volumeInfo = volFactory.getVolume(volumeInfo.getId(), destPrimaryDataStore);
 
-            volumeInfo.processEvent(Event.CreateRequested);
-            CreateVolumeFromBaseImageContext<VolumeApiResult> context = new CreateVolumeFromBaseImageContext<>(null, volumeInfo, destPrimaryDataStore, srcTemplateOnPrimary, future, null, null);
-            AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
-            caller.setCallback(caller.getTarget().createVolumeFromBaseManagedImageCallBack(null, null));
-            caller.setContext(context);
-
             Map<String, String> details = new HashMap<String, String>();
             details.put(PrimaryDataStore.MANAGED, Boolean.TRUE.toString());
             details.put(PrimaryDataStore.STORAGE_HOST, destPrimaryDataStore.getHostAddress());
@@ -1140,6 +1134,13 @@ public class VolumeServiceImpl implements VolumeService {
             destPrimaryDataStore.setDetails(details);
 
             grantAccess(volumeInfo, destHost, destPrimaryDataStore);
+
+            volumeInfo.processEvent(Event.CreateRequested);
+
+            CreateVolumeFromBaseImageContext<VolumeApiResult> context = new CreateVolumeFromBaseImageContext<>(null, volumeInfo, destPrimaryDataStore, srcTemplateOnPrimary, future, null, null);
+            AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().createVolumeFromBaseManagedImageCallBack(null, null));
+            caller.setContext(context);
 
             try {
                 motionSrv.copyAsync(srcTemplateOnPrimary, volumeInfo, destHost, caller);
@@ -1919,6 +1920,11 @@ public class VolumeServiceImpl implements VolumeService {
             AsyncCallFuture<VolumeApiResult> createVolumeFuture = createVolumeAsync(destVolume, destStore);
             VolumeApiResult createVolumeResult = createVolumeFuture.get();
             if (createVolumeResult.isFailed()) {
+                s_logger.debug("Failed to create dest volume " + destVolume.getId() + ", volume can be removed");
+                destroyVolume(destVolume.getId());
+                destVolume.processEvent(Event.ExpungeRequested);
+                destVolume.processEvent(Event.OperationSuccessed);
+                volDao.remove(destVolume.getId());
                 throw new CloudRuntimeException("Creation of a dest volume failed: " + createVolumeResult.getResult());
             }
 
