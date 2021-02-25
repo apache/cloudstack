@@ -158,6 +158,12 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         return ans.getTemplateSize();
     }
 
+    private void checkZoneImageStores(final List<Long> zoneIdList) {
+        if (zoneIdList != null && CollectionUtils.isEmpty(storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(zoneIdList.get(0))))) {
+            throw new InvalidParameterValueException("Failed to find a writable secondary storage in the specified zone.");
+        }
+    }
+
     @Override
     public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException {
         TemplateProfile profile = super.prepare(cmd);
@@ -614,29 +620,17 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     public TemplateProfile prepareDelete(DeleteTemplateCmd cmd) {
         TemplateProfile profile = super.prepareDelete(cmd);
         VMTemplateVO template = profile.getTemplate();
-        List<Long> zoneIdList = profile.getZoneIdList();
-
         if (template.getTemplateType() == TemplateType.SYSTEM) {
             throw new InvalidParameterValueException("The DomR template cannot be deleted.");
         }
-
-        if (zoneIdList != null && CollectionUtils.isEmpty(storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(zoneIdList.get(0))))) {
-            throw new InvalidParameterValueException("Failed to find a writable secondary storage in the specified zone.");
-        }
-
+        checkZoneImageStores(profile.getZoneIdList());
         return profile;
     }
 
     @Override
     public TemplateProfile prepareDelete(DeleteIsoCmd cmd) {
         TemplateProfile profile = super.prepareDelete(cmd);
-        List<Long> zoneIdList = profile.getZoneIdList();
-
-        if (zoneIdList != null &&
-                (storeMgr.getImageStoreWithFreeCapacity(zoneIdList.get(0)) == null)) {
-            throw new InvalidParameterValueException("Failed to find a secondary storage in the specified zone.");
-        }
-
+        checkZoneImageStores(profile.getZoneIdList());
         return profile;
     }
 }
