@@ -100,7 +100,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Override
     public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
         List<StoragePool> pools = select(dskCh, vmProfile, plan, avoid, returnUpTo, bypassStorageTypeCheck);
-        return reorderPools(pools, vmProfile, plan);
+        return reorderPools(pools, vmProfile, plan, dskCh);
     }
 
     protected List<StoragePool> reorderPoolsByCapacity(DeploymentPlan plan,
@@ -167,7 +167,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     }
 
     @Override
-    public List<StoragePool> reorderPools(List<StoragePool> pools, VirtualMachineProfile vmProfile, DeploymentPlan plan) {
+    public List<StoragePool> reorderPools(List<StoragePool> pools, VirtualMachineProfile vmProfile, DeploymentPlan plan, DiskProfile dskCh) {
         if (pools == null) {
             return null;
         }
@@ -184,7 +184,30 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         } else if(allocationAlgorithm.equals("firstfitleastconsumed")){
             pools = reorderPoolsByCapacity(plan, pools);
         }
+
+        // Hardware accelerated pools are preferred for thick disks
+        if (dskCh != null && !dskCh.getProvisioningType().equals(Storage.ProvisioningType.THIN) &&
+                !storageMgr.DiskProvisioningStrictness.valueIn(plan.getDataCenterId())) {
+            pools = reorderPoolsByDiskProvisioningType(pools, dskCh);
+        }
+
         return pools;
+    }
+
+    private List<StoragePool> reorderPoolsByDiskProvisioningType(List<StoragePool> pools, DiskProfile dskCh) {
+        List<StoragePool> reorderedPools = new ArrayList<>();
+        for (StoragePool pool: pools) {
+            StoragePoolDetailVO hardwareAcceleration = storagePoolDetailsDao.findDetail(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString());
+            if (pool.getPoolType() == Storage.StoragePoolType.NetworkFilesystem &&
+                    (hardwareAcceleration == null || !hardwareAcceleration.getValue().equals("true"))) {
+                // add to the bottom of the list
+                reorderedPools.add(pool);
+            } else {
+                // add to the top of the list
+                reorderedPools.add(0, pool);
+            }
+        }
+        return reorderedPools;
     }
 
     protected boolean filter(ExcludeList avoid, StoragePool pool, DiskProfile dskCh, DeploymentPlan plan) {
