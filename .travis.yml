@@ -25,7 +25,7 @@ jdk:
   - openjdk11
 
 python:
-  - "3.9"
+  - "3.8"
 
 node_js:
   - 12
