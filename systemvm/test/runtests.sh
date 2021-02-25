@@ -33,6 +33,7 @@ fi
 echo "Running pylint to check systemvm/python code for errors"
 python --version
 pyenv versions
+pylint --version
 pylint --disable=R,C,W *.py
 pylint --disable=R,C,W `find ../debian -name \*.py`
 if [ $? -gt 0 ]
