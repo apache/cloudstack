@@ -225,7 +225,7 @@ class CsRedundant(object):
             except socket.error as e:
                 error_code = e.args[0]
                 error_string = e.args[1]
-                print("Process already running (%d:%s). Exiting" % (error_code, error_string))
+                print(f"Process already running ({error_code}:{error_string}). Exiting")
                 logging.info("Master is already running, waiting")
                 sleep(time_between)
 
