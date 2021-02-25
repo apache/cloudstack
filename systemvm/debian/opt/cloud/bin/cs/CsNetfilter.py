@@ -28,7 +28,7 @@ class CsChain(object):
         self.count = {}
 
     def add(self, table, chain):
-         if table not in list(self.chain.keys()):
+        if table not in list(self.chain.keys()):
             self.chain.setdefault(table, []).append(chain)
         else:
             self.chain[table].append(chain)

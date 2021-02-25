@@ -53,10 +53,10 @@ def main():
         releaseFile = "/etc/cloudstack-release"
         found = getFirstLine(releaseFile)
         if found is None:
-            print("Release version not yet setup at " + releaseFile +\
+            print("Release version not yet setup at " + releaseFile +
                   ", skipping.")
         elif expected != found:
-            print("Template Version mismatch. Expected: " + \
+            print("Template Version mismatch. Expected: " +
                   expected + ", found: " + found)
             templateVersionMatches = False
 
@@ -65,10 +65,10 @@ def main():
         sigFile = "/var/cache/cloud/cloud-scripts-signature"
         found = getFirstLine(sigFile)
         if found is None:
-            print("Scripts signature is not yet setup at " + sigFile +\
+            print("Scripts signature is not yet setup at " + sigFile +
                   ", skipping")
         if expected != found:
-            print("Scripts Version mismatch. Expected: " + \
+            print("Scripts Version mismatch. Expected: " +
                   expected + ", found: " + found)
             scriptVersionMatches = False
 
