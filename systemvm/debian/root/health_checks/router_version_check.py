@@ -68,8 +68,8 @@ def main():
             print("Scripts signature is not yet setup at " + sigFile +
                   ", skipping")
         if expected != found:
-            print("Scripts Version mismatch. Expected: " + expected +
-                  ", found: " + found)
+            print("Scripts Version mismatch. Expected: " +
+                  expected + ", found: " + found)
             scriptVersionMatches = False
 
     if templateVersionMatches and scriptVersionMatches:
