@@ -159,7 +159,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     }
 
     private void checkZoneImageStores(final List<Long> zoneIdList) {
-        if (zoneIdList != null && CollectionUtils.isEmpty(storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(zoneIdList.get(0))))) {
+        if (zoneIdList != null && CollectionUtils.isEmpty(storeMgr.getImageStoresByScope(new ZoneScope(zoneIdList.get(0))))) {
             throw new InvalidParameterValueException("Failed to find a writable secondary storage in the specified zone.");
         }
     }
