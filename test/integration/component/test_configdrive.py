@@ -1000,7 +1000,7 @@ class ConfigDriveUtils:
         :rtype: str
         """
         self.debug("Updating userdata for VM - %s" % vm.name)
-        updated_user_data = base64.encodestring(new_user_data)
+        updated_user_data = base64.encodestring(new_user_data.encode()).decode()
         with self.stopped_vm(vm):
             vm.update(self.api_client, userdata=updated_user_data)
 
