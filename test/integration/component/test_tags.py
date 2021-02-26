@@ -2990,7 +2990,7 @@ class TestResourceTags(cloudstackTestCase):
                                 
         return
 
-    @attr(tags=["advanced", "basic", "bla"], required_hardware="false")
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_33_duplicate_vm_tag(self):
         """
          Test creation of a duplicate tag on UserVM and verify error return.
@@ -3024,6 +3024,7 @@ class TestResourceTags(cloudstackTestCase):
             )
         except Exception as e:
             # verify e.message
+            print(f"=== exception caught === {type(e)}")
             strerror = ""
             if hasattr(e,'message'):
                 strerror = e.__getattribute__('message')
