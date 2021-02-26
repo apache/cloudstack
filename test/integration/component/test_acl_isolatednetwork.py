@@ -578,10 +578,6 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.acldata["network"]["displayname"] = "d1a_d11a"
 
         try:
-            self.debug("When user tries to create network for users in other domain %s" % e)
-            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.UNABLE_TO_LIST_NETWORK_ACCOUNT):
-                self.fail("Error message validation failed when User tries to create network for users not in his domain ")
-
             network = Network.create(
                 self.apiclient,
                 self.acldata["network"],
@@ -591,7 +587,6 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 domainid=self.account_d11a.domainid
             )
             self.fail("User is allowed to create network for users not in his domain ")
-
         except Exception as e:
             self.debug("When user tries to create network for users in other domain %s" % e)
             if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.UNABLE_TO_LIST_NETWORK_ACCOUNT):
