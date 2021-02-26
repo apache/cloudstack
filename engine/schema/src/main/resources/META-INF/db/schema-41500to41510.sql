@@ -34,6 +34,8 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_vers
 -- Add support for NeoKylin Linux Server 7 for Xenserver 8.1.0
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (334, UUID(), 9, 'NeoKylin Linux Server 7', now());
 INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '8.1.0', 'NeoKylin Linux Server 7', 332, now(), 0);
+-- Add support for Debian Buster 10 for CentOS 8
+INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '8.1.0', 'CentOS 8', 297, now(), 0);
 -- Add support for Debian Buster 10 for Xenserver 8.1.0
 INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '8.1.0', 'Debian Buster 10', 292, now(), 0);
 INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '8.1.0', 'Debian Buster 10', 293, now(), 0);
