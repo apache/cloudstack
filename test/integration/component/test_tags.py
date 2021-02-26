@@ -2990,7 +2990,7 @@ class TestResourceTags(cloudstackTestCase):
                                 
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="false")
+    @attr(tags=["advanced", "basic", "bla"], required_hardware="false")
     def test_33_duplicate_vm_tag(self):
         """
          Test creation of a duplicate tag on UserVM and verify error return.
@@ -3024,7 +3024,12 @@ class TestResourceTags(cloudstackTestCase):
             )
         except Exception as e:
             # verify e.message
-            assert "tag scope33 already on UserVm with id" in e.message, \
+            strerror = ""
+            if hasattr(e,'message'):
+                strerror = e.__getattribute__('message')
+            else:
+                strerror = e.args
+            assert "tag scope33 already on UserVm with id" in str(strerror), \
                 "neat error message missing from error result"
             pass
 
