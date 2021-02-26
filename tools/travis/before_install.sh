@@ -109,6 +109,12 @@ echo "<settings>
   </mirrors>
 </settings>" > ~/.m2/settings.xml
 
+echo -e "\nChecking PIP Version: "
+python3 -m pip --version
+echo -e "\nUpgrading PIP if necessary: "
+python3 -m pip install --upgrade pip
+python3 -m pip --version
+
 echo -e "\nInstalling some python packages: "
 
 for ((i=0;i<$RETRY_COUNT;i++))
