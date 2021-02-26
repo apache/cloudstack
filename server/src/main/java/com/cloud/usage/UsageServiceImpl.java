@@ -26,6 +26,7 @@ import java.util.TimeZone;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.domain.Domain;
 import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
@@ -201,7 +202,8 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         }
 
         boolean isAdmin = false;
-        boolean isDomainAdmin = false;
+        boolean isDomainAdmin = _accountService.isDomainAdmin(caller.getId());
+        boolean isNormalUser = _accountService.isNormalUser(caller.getId());
 
         //If accountId couldn't be found using accountName and domainId, get it from userContext
         if (accountId == null) {
@@ -210,34 +212,42 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             //If account_id or account_name is explicitly mentioned, list records for the specified account only even if the caller is of type admin
             if (_accountService.isRootAdmin(caller.getId())) {
                 isAdmin = true;
-            } else if (_accountService.isDomainAdmin(caller.getId())) {
-                isDomainAdmin = true;
             }
             s_logger.debug("Account details not available. Using userContext accountId: " + accountId);
         }
 
-        // Check if a domain admin is allowed to access the requested account info.
-        if (_accountService.isDomainAdmin(caller.getId()) && accountId != null){
-            long accountDomainId = _accountDao.getDomainIdForGivenAccountId(accountId);
-            long callerDomainId = caller.getDomainId();
-            boolean matchFound = false;
-
-            if (callerDomainId == accountDomainId) {
-                matchFound = true;
+        // Check if a domain admin is allowed to access the requested domain id
+        if (isDomainAdmin) {
+            if (domainId != null) {
+                Account callerAccount = _accountService.getAccount(caller.getId());
+                Domain domain = _domainDao.findById(domainId);
+                _accountService.checkAccess(callerAccount, domain);
             } else {
-                // Check if the account is in a child domain of this domain admin.
-                List<DomainVO> childDomains = _domainDao.findAllChildren(_domainDao.findById(caller.getDomainId()).getPath(), caller.getDomainId());
-
-                for (DomainVO domainVO: childDomains) {
-                    if (accountDomainId == domainVO.getId()) {
-                        matchFound = true;
-                        break;
-                    }
-                }
+                // Domain admins can only access their own domain's usage records.
+                // Set the domain if not specified.
+                domainId = caller.getDomainId();
             }
 
-            if (!matchFound){
-                throw new PermissionDeniedException("Domain admins may only retrieve usage records for accounts in their own domain.");
+            // Check if a domain admin is allowed to access the requested account info.
+            Account account = _accountService.getAccount(accountId);
+            Domain domain = _domainDao.findById(caller.getDomainId());
+            _accountService.checkAccess(account, domain);
+        }
+
+        // By default users do not have access to this API.
+        // Adding checks here in case someone changes the default access.
+        if (isNormalUser) {
+            // A user can only access their own account records
+            if (caller.getId() != accountId) {
+                throw new PermissionDeniedException("Users are only allowed to list usage records for their own account.");
+            }
+            // Users cannot get recursive records
+            if (cmd.isRecursive()) {
+                throw new PermissionDeniedException("Users are not allowed to list usage records recursively.");
+            }
+            // Users cannot get domain records
+            if (cmd.getDomainId() != null) {
+                throw new PermissionDeniedException("Users are not allowed to list usage records for a domain");
             }
         }
 
@@ -259,32 +269,23 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
 
         SearchCriteria<UsageVO> sc = _usageDao.createSearchCriteria();
 
-        if (accountId != -1 && accountId != Account.ACCOUNT_ID_SYSTEM && !isAdmin && !isDomainAdmin) {
+        if (accountId != -1 && accountId != Account.ACCOUNT_ID_SYSTEM && !isAdmin && !cmd.isRecursive()) {
             sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
         }
 
-        if (isDomainAdmin && !cmd.isRecursive()) {
-            SearchCriteria<DomainVO> sdc = _domainDao.createSearchCriteria();
-            sdc.addOr("path", SearchCriteria.Op.LIKE, _domainDao.findById(caller.getDomainId()).getPath() + "%");
-            List<DomainVO> domains = _domainDao.search(sdc, null);
-            List<Long> domainIds = new ArrayList<Long>();
-            for (DomainVO domain : domains)
-                domainIds.add(domain.getId());
-            sc.addAnd("domainId", SearchCriteria.Op.IN, domainIds.toArray());
-        }
-
-        if (cmd.isRecursive() && domainId != null){
-            SearchCriteria<DomainVO> sdc = _domainDao.createSearchCriteria();
-            sdc.addOr("path", SearchCriteria.Op.LIKE, _domainDao.findById(domainId).getPath() + "%");
-            List<DomainVO> domains = _domainDao.search(sdc, null);
-            List<Long> domainIds = new ArrayList<Long>();
-            for (DomainVO domain : domains)
-                domainIds.add(domain.getId());
-            sc.addAnd("domainId", SearchCriteria.Op.IN, domainIds.toArray());
-        }
-
-        if (!cmd.isRecursive() && domainId != null) {
-            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        if (domainId != null) {
+            if (cmd.isRecursive()) {
+                SearchCriteria<DomainVO> sdc = _domainDao.createSearchCriteria();
+                sdc.addOr("path", SearchCriteria.Op.LIKE, _domainDao.findById(domainId).getPath() + "%");
+                List<DomainVO> domains = _domainDao.search(sdc, null);
+                List<Long> domainIds = new ArrayList<Long>();
+                for (DomainVO domain : domains) {
+                    domainIds.add(domain.getId());
+                }
+                sc.addAnd("domainId", SearchCriteria.Op.IN, domainIds.toArray());
+            } else {
+                sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+            }
         }
 
         if (usageType != null) {
