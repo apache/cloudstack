@@ -1057,7 +1057,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                         }
                     }
                 } catch (final Exception ex) {
-                    s_logger.debug("Failed to delete snapshots on primary", ex);
+                    s_logger.error("Failed to delete snapshots on primary", ex);
                 }
             }
 

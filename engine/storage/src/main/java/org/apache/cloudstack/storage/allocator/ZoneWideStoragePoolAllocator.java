@@ -49,8 +49,12 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
     private CapacityDao capacityDao;
 
     @Override
-    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
         LOGGER.debug("ZoneWideStoragePoolAllocator to find storage pool");
+
+        if (!bypassStorageTypeCheck && dskCh.useLocalStorage()) {
+            return null;
+        }
 
         if (LOGGER.isTraceEnabled()) {
             // Log the pools details that are ignored because they are in disabled state
