@@ -111,7 +111,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         """
 
 
-        self.userdata=base64.b64encode(self.userdata)
+        self.userdata=base64.encodestring(self.userdata)
         self.services["virtual_machine"]["userdata"] = self.userdata
 
         deployVmResponse = VirtualMachine.create(
