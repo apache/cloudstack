@@ -126,7 +126,7 @@ class TestDeployVmWithUserDataMultiNic(cloudstackTestCase):
         """Test userdata update when non default nic is without userdata for deploy and update
         """
 
-        self.userdata = base64.encodestring(self.userdata)
+        self.userdata = base64.encodestring(self.userdata.encode()).decode()
 
         network1 = Network.create(
             self.apiclient,

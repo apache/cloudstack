@@ -110,8 +110,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         """Test userdata as POST, size > 2k
         """
 
-
-        self.userdata=base64.encodestring(self.userdata)
+        self.userdata = base64.encodestring(self.userdata.encode()).decode()
         self.services["virtual_machine"]["userdata"] = self.userdata
 
         deployVmResponse = VirtualMachine.create(
