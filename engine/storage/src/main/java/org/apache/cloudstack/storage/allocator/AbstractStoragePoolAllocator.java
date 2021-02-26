@@ -185,29 +185,33 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             pools = reorderPoolsByCapacity(plan, pools);
         }
 
-        // Hardware accelerated pools are preferred for thick disks
-        if (dskCh != null && !dskCh.getProvisioningType().equals(Storage.ProvisioningType.THIN) &&
+        if (vmProfile.getHypervisorType() == HypervisorType.VMware &&
                 !storageMgr.DiskProvisioningStrictness.valueIn(plan.getDataCenterId())) {
-            pools = reorderPoolsByDiskProvisioningType(pools);
+            pools = reorderPoolsByDiskProvisioningType(pools, dskCh);
         }
 
         return pools;
     }
 
-    private List<StoragePool> reorderPoolsByDiskProvisioningType(List<StoragePool> pools) {
-        List<StoragePool> reorderedPools = new ArrayList<>();
-        for (StoragePool pool: pools) {
-            StoragePoolDetailVO hardwareAcceleration = storagePoolDetailsDao.findDetail(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString());
-            if (pool.getPoolType() == Storage.StoragePoolType.NetworkFilesystem &&
-                    (hardwareAcceleration == null || !hardwareAcceleration.getValue().equals("true"))) {
-                // add to the bottom of the list
-                reorderedPools.add(pool);
-            } else {
-                // add to the top of the list
-                reorderedPools.add(0, pool);
+    private List<StoragePool> reorderPoolsByDiskProvisioningType(List<StoragePool> pools, DiskProfile diskProfile) {
+        if (diskProfile != null && !diskProfile.getProvisioningType().equals(Storage.ProvisioningType.THIN)) {
+            List<StoragePool> reorderedPools = new ArrayList<>();
+            int preferredIndex = 0;
+            for (StoragePool pool : pools) {
+                StoragePoolDetailVO hardwareAcceleration = storagePoolDetailsDao.findDetail(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString());
+                if (pool.getPoolType() == Storage.StoragePoolType.NetworkFilesystem &&
+                        (hardwareAcceleration == null || !hardwareAcceleration.getValue().equals("true"))) {
+                    // add to the bottom of the list
+                    reorderedPools.add(pool);
+                } else {
+                    // add to the top of the list
+                    reorderedPools.add(preferredIndex++, pool);
+                }
             }
+            return reorderedPools;
+        } else {
+            return pools;
         }
-        return reorderedPools;
     }
 
     protected boolean filter(ExcludeList avoid, StoragePool pool, DiskProfile dskCh, DeploymentPlan plan) {
