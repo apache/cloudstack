@@ -231,7 +231,25 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             // Check if a domain admin is allowed to access the requested account info.
             Account account = _accountService.getAccount(accountId);
             Domain domain = _domainDao.findById(caller.getDomainId());
-            _accountService.checkAccess(account, domain);
+            boolean matchFound = false;
+
+            if (account.getDomainId() == domainId) {
+                matchFound = true;
+            } else {
+
+                // Check if the account is in a child domain of this domain admin.
+                List<DomainVO> childDomains = _domainDao.findAllChildren(_domainDao.findById(domainId).getPath(), domainId);
+
+                for (DomainVO domainVO : childDomains) {
+                    if (account.getDomainId() == domainVO.getId()) {
+                        matchFound = true;
+                        break;
+                    }
+                }
+            }
+            if (!matchFound) {
+                    throw new PermissionDeniedException("Domain admins may only retrieve usage records for accounts in their own domain and child domains.");
+            }
         }
 
         // By default users do not have access to this API.
@@ -269,7 +287,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
 
         SearchCriteria<UsageVO> sc = _usageDao.createSearchCriteria();
 
-        if (accountId != -1 && accountId != Account.ACCOUNT_ID_SYSTEM && !isAdmin && !cmd.isRecursive()) {
+        if (accountId != -1 && accountId != Account.ACCOUNT_ID_SYSTEM && !isAdmin) {
             sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
         }
 
