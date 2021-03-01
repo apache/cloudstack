@@ -208,7 +208,7 @@ public abstract class AgentHookBase implements AgentHook {
 
             cmd = new StartConsoleProxyAgentHttpHandlerCommand(ksBits, storePassword);
             cmd.setEncryptorPassword(getEncryptorPassword());
-            cmd.setIsSourceIpCheckEnabled(ConsoleProxyManager.NoVncConsoleSourceIpCheckEnabled.value());
+            cmd.setIsSourceIpCheckEnabled(Boolean.parseBoolean(_configDao.getValue(ConsoleProxyManager.NoVncConsoleSourceIpCheckEnabled.key())));
 
             HostVO consoleProxyHost = findConsoleProxyHost(startupCmd);
 

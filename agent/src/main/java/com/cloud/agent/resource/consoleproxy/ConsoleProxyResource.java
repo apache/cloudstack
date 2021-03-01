@@ -358,6 +358,8 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
                 Class<?> consoleProxyClazz = Class.forName("com.cloud.consoleproxy.ConsoleProxy");
                 Method methodSetup = consoleProxyClazz.getMethod("setEncryptorPassword", String.class);
                 methodSetup.invoke(null, encryptorPassword);
+                methodSetup = consoleProxyClazz.getMethod("setIsSourceIpCheckEnabled", Boolean.class);
+                methodSetup.invoke(null, isSourceIpCheckEnabled);
             } catch (SecurityException e) {
                 s_logger.error("Unable to launch console proxy due to SecurityException", e);
                 System.exit(ExitStatus.Error.value());

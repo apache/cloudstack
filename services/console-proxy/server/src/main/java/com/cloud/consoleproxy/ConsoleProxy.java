@@ -528,6 +528,10 @@ public class ConsoleProxy {
         encryptorPassword = password;
     }
 
+    public static void setIsSourceIpCheckEnabled(Boolean isEnabled) {
+        isSourceIpCheckEnabled = isEnabled;
+    }
+
     static class ThreadExecutor implements Executor {
         @Override
         public void execute(Runnable r) {
