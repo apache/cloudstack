@@ -55,6 +55,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -2330,7 +2331,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             configBasicExtraOption(extraOptions, vmSpec);
 
             if (deployAsIs) {
-                setDeployAsIsProperties(vmMo, deployAsIsInfo, vmConfigSpec);
+                setDeployAsIsProperties(vmMo, deployAsIsInfo, vmConfigSpec, hyperHost);
             }
 
             configNvpExtraOption(extraOptions, vmSpec, nicUuidToDvSwitchUuid);
@@ -2557,12 +2558,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
      * Set OVF properties (if available)
      */
     private void setDeployAsIsProperties(VirtualMachineMO vmMo, DeployAsIsInfoTO deployAsIsInfo,
-                                         VirtualMachineConfigSpec vmConfigSpec) throws Exception {
-        if (deployAsIsInfo != null) {
+                                         VirtualMachineConfigSpec vmConfigSpec, VmwareHypervisorHost hyperHost) throws Exception {
+        if (deployAsIsInfo != null && MapUtils.isNotEmpty(deployAsIsInfo.getProperties())) {
             Map<String, String> properties = deployAsIsInfo.getProperties();
             VmConfigInfo vAppConfig = vmMo.getConfigInfo().getVAppConfig();
             s_logger.info("Copying OVF properties to the values the user provided");
-            setVAppPropertiesToConfigSpec(vAppConfig, properties, vmConfigSpec);
+            setVAppPropertiesToConfigSpec(vAppConfig, properties, vmConfigSpec, hyperHost);
         }
     }
 
@@ -2654,13 +2655,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     /**
      * Set the ovf section spec from existing vApp configuration
      */
-    protected List<VAppOvfSectionSpec> copyVAppConfigOvfSectionFromOVF(VmConfigInfo vAppConfig) {
+    protected List<VAppOvfSectionSpec> copyVAppConfigOvfSectionFromOVF(VmConfigInfo vAppConfig, boolean useEdit) {
         List<VAppOvfSectionInfo> ovfSection = vAppConfig.getOvfSection();
         List<VAppOvfSectionSpec> specs = new ArrayList<>();
         for (VAppOvfSectionInfo info : ovfSection) {
             VAppOvfSectionSpec spec = new VAppOvfSectionSpec();
             spec.setInfo(info);
-            spec.setOperation(ArrayUpdateOperation.ADD);
+            spec.setOperation(useEdit ? ArrayUpdateOperation.EDIT : ArrayUpdateOperation.ADD);
             specs.add(spec);
         }
         return specs;
@@ -2688,7 +2689,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     /**
      * Set the properties section from existing vApp configuration and values set on ovfProperties
      */
-    protected List<VAppPropertySpec> copyVAppConfigPropertySectionFromOVF(VmConfigInfo vAppConfig, Map<String, String> ovfProperties) {
+    protected List<VAppPropertySpec> copyVAppConfigPropertySectionFromOVF(VmConfigInfo vAppConfig, Map<String, String> ovfProperties,
+                                                                          boolean useEdit) {
         List<VAppPropertyInfo> productFromOvf = vAppConfig.getProperty();
         List<VAppPropertySpec> specs = new ArrayList<>();
         for (VAppPropertyInfo info : productFromOvf) {
@@ -2696,9 +2698,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (ovfProperties.containsKey(info.getId())) {
                 String value = ovfProperties.get(info.getId());
                 info.setValue(value);
+                s_logger.info("Setting OVF property ID = " + info.getId() + " VALUE = " + value);
             }
             spec.setInfo(info);
-            spec.setOperation(ArrayUpdateOperation.ADD);
+            spec.setOperation(useEdit ? ArrayUpdateOperation.EDIT : ArrayUpdateOperation.ADD);
             specs.add(spec);
         }
         return specs;
@@ -2707,13 +2710,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     /**
      * Set the product section spec from existing vApp configuration
      */
-    protected List<VAppProductSpec> copyVAppConfigProductSectionFromOVF(VmConfigInfo vAppConfig) {
+    protected List<VAppProductSpec> copyVAppConfigProductSectionFromOVF(VmConfigInfo vAppConfig, boolean useEdit) {
         List<VAppProductInfo> productFromOvf = vAppConfig.getProduct();
         List<VAppProductSpec> specs = new ArrayList<>();
         for (VAppProductInfo info : productFromOvf) {
             VAppProductSpec spec = new VAppProductSpec();
             spec.setInfo(info);
-            spec.setOperation(ArrayUpdateOperation.ADD);
+            s_logger.info("Procuct info KEY " + info.getKey());
+            spec.setOperation(useEdit ? ArrayUpdateOperation.EDIT : ArrayUpdateOperation.ADD);
             specs.add(spec);
         }
         return specs;
@@ -2725,16 +2729,19 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
      */
     protected void setVAppPropertiesToConfigSpec(VmConfigInfo vAppConfig,
                                                  Map<String, String> ovfProperties,
-                                                 VirtualMachineConfigSpec vmConfig) throws Exception {
+                                                 VirtualMachineConfigSpec vmConfig, VmwareHypervisorHost hyperHost) throws Exception {
         VmConfigSpec vmConfigSpec = new VmConfigSpec();
         vmConfigSpec.getEula().addAll(vAppConfig.getEula());
         vmConfigSpec.setInstallBootStopDelay(vAppConfig.getInstallBootStopDelay());
         vmConfigSpec.setInstallBootRequired(vAppConfig.isInstallBootRequired());
         vmConfigSpec.setIpAssignment(vAppConfig.getIpAssignment());
         vmConfigSpec.getOvfEnvironmentTransport().addAll(vAppConfig.getOvfEnvironmentTransport());
-        vmConfigSpec.getProduct().addAll(copyVAppConfigProductSectionFromOVF(vAppConfig));
-        vmConfigSpec.getProperty().addAll(copyVAppConfigPropertySectionFromOVF(vAppConfig, ovfProperties));
-        vmConfigSpec.getOvfSection().addAll(copyVAppConfigOvfSectionFromOVF(vAppConfig));
+
+        // For backward compatibility, prior to Vmware 6.5 use EDIT operation instead of ADD
+        boolean useEditOperation = hyperHost.getContext().getServiceContent().getAbout().getApiVersion().compareTo("6.5") < 1;
+        vmConfigSpec.getProduct().addAll(copyVAppConfigProductSectionFromOVF(vAppConfig, useEditOperation));
+        vmConfigSpec.getProperty().addAll(copyVAppConfigPropertySectionFromOVF(vAppConfig, ovfProperties, useEditOperation));
+        vmConfigSpec.getOvfSection().addAll(copyVAppConfigOvfSectionFromOVF(vAppConfig, useEditOperation));
         vmConfig.setVAppConfig(vmConfigSpec);
     }
 
