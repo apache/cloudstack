@@ -75,9 +75,14 @@
         </a-select>
       </div>
 
-      <a-button type="primary" class="submit-btn" @click="submitData">
-        {{ $t('label.submit') }}
-      </a-button>
+      <div class="submit-btn">
+        <a-button @click="closeAction">
+          {{ $t('label.cancel') }}
+        </a-button>
+        <a-button type="primary" @click="submitData">
+          {{ $t('label.submit') }}
+        </a-button>
+      </div>
 
     </div>
 
@@ -181,6 +186,9 @@ export default {
       this.selectedAccount = null
       this.fetchNetworks()
     },
+    closeAction () {
+      this.$emit('close-action')
+    },
     submitData () {
       let variableKey = ''
       let variableValue = ''
@@ -247,6 +255,10 @@ export default {
   .submit-btn {
     margin-top: 10px;
     align-self: flex-end;
+
+    button {
+      margin-left: 10px;
+    }
   }
 
   .required {
