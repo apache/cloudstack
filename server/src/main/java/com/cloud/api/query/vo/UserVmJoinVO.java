@@ -276,6 +276,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "nic_uuid")
     private String nicUuid;
 
+    @Column(name = "nic_device_id")
+    private Integer nicDeviceId = null;
+
     @Column(name = "is_default_nic")
     private boolean isDefaultNic;
 
@@ -666,6 +669,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public long getNicId() {
         return nicId;
+    }
+
+    public Integer getNicDeviceId() {
+        return nicDeviceId;
     }
 
     public boolean isDefaultNic() {
