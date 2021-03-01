@@ -321,9 +321,9 @@ BEGIN
 	WHERE 	not exists( SELECT  1 
 	                    FROM    cloud.guest_os
 	                    WHERE   cloud.guest_os.category_id = guest_os_category_id
-	                    AND     cloud.guest_os.display_name = guest_os_display_name);	
+	                    AND     cloud.guest_os.display_name = guest_os_display_name)	
 						
-	INSERT  INTO cloud.guest_os_hypervisor (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created) 
+;	INSERT  INTO cloud.guest_os_hypervisor (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created) 
 	SELECT 	UUID(), guest_os_hypervisor_hypervisor_type, guest_os_hypervisor_hypervisor_version, guest_os_hypervisor_guest_os_name, guest_os.id, now()
 	FROM 	cloud.guest_os
 	WHERE 	guest_os.category_id = guest_os_category_id
@@ -333,8 +333,8 @@ BEGIN
 	                    WHERE   hypervisor_type = guest_os_hypervisor_hypervisor_type			
 	                    AND     hypervisor_version = guest_os_hypervisor_hypervisor_version
 	                    AND     hypervisor.guest_os_id = guest_os.id
-	                    AND     hypervisor.guest_os_name = guest_os_hypervisor_guest_os_name);    
-END
+	                    AND     hypervisor.guest_os_name = guest_os_hypervisor_guest_os_name)    
+;END;
 
 -- PR#4699 Call procedure `ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` to add new data to guest_os and guest_os_hypervisor.
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (10, 'Ubuntu 20.04 LTS', 'KVM', 'default', 'Ubuntu 20.04 LTS');
