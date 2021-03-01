@@ -286,7 +286,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
 
         SearchCriteria<UsageVO> sc = _usageDao.createSearchCriteria();
 
-        if (accountId != -1 && accountId != Account.ACCOUNT_ID_SYSTEM && !isAdmin) {
+        if (accountId != -1 && accountId != Account.ACCOUNT_ID_SYSTEM && !isAdmin && !cmd.isRecursive()) {
             sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
         }
 
