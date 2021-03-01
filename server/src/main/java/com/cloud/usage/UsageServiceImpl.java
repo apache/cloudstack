@@ -230,7 +230,6 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
 
             // Check if a domain admin is allowed to access the requested account info.
             Account account = _accountService.getAccount(accountId);
-            Domain domain = _domainDao.findById(caller.getDomainId());
             boolean matchFound = false;
 
             if (account.getDomainId() == domainId) {
