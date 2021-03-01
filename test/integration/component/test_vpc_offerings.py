@@ -170,6 +170,7 @@ class TestVPCOffering(cloudstackTestCase):
 
         cls.testClient = super(TestVPCOffering, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
+        cls._cleanup = []
 
         cls.services = Services().services
         # Get Zone, Domain and templates
@@ -187,9 +188,7 @@ class TestVPCOffering(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
-        cls._cleanup = [
-            cls.service_offering,
-        ]
+        cls._cleanup.append(cls.service_offering)
         return
 
     @classmethod
@@ -300,6 +299,7 @@ class TestVPCOffering(cloudstackTestCase):
             self.apiclient,
             self.services["vpc_offering"]
         )
+        self.cleanup.append(vpc_off)
 
         self.validate_vpc_offering(vpc_off)
 
@@ -316,6 +316,7 @@ class TestVPCOffering(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid
         )
+        self.cleanup.append(vpc)
         self.validate_vpc_network(vpc)
 
         self.network_offering = NetworkOffering.create(
@@ -323,6 +324,7 @@ class TestVPCOffering(cloudstackTestCase):
             self.services["network_offering"],
             conservemode=False
         )
+        self.cleanup.append(self.network_offering)
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
 
@@ -344,6 +346,7 @@ class TestVPCOffering(cloudstackTestCase):
             gateway=gateway,
             vpcid=vpc.id
         )
+        self.cleanup.append(network)
         self.logger.debug("Created network with ID: %s" % network.id)
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
@@ -354,6 +357,7 @@ class TestVPCOffering(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             networkids=[str(network.id)]
         )
+        self.cleanup.append(virtual_machine)
         self.logger.debug("Deployed VM in network: %s" % network.id)
 
         self.logger.debug("Associating public IP for network: %s" % network.name)
@@ -365,6 +369,7 @@ class TestVPCOffering(cloudstackTestCase):
             networkid=network.id,
             vpcid=vpc.id
         )
+        self.cleanup.append(public_ip)
         self.logger.debug("Associated %s with network %s" % (
             public_ip.ipaddress.ipaddress,
             network.id
@@ -382,6 +387,7 @@ class TestVPCOffering(cloudstackTestCase):
             vpcid=vpc.id,
             domainid=self.account.domainid
         )
+        self.cleanup.append(lb_rule)
 
         self.logger.debug("Associating public IP for network: %s" % vpc.name)
         public_ip_2 = PublicIPAddress.create(
@@ -392,6 +398,7 @@ class TestVPCOffering(cloudstackTestCase):
             networkid=network.id,
             vpcid=vpc.id
         )
+        self.cleanup.append(public_ip_2)
         self.logger.debug("Associated %s with network %s" % (
             public_ip_2.ipaddress.ipaddress,
             network.id
@@ -406,6 +413,7 @@ class TestVPCOffering(cloudstackTestCase):
             networkid=network.id,
             vpcid=vpc.id
         )
+        self.cleanup.append(nat_rule)
 
         self.logger.debug("Adding NetwrokACl rules to make PF and LB accessible")
         networkacl_1 = NetworkACL.create(
@@ -414,6 +422,7 @@ class TestVPCOffering(cloudstackTestCase):
             services=self.services["natrule"],
             traffictype='Ingress'
         )
+        self.cleanup.append(networkacl_1)
 
         networkacl_2 = NetworkACL.create(
             self.apiclient,
@@ -421,6 +430,7 @@ class TestVPCOffering(cloudstackTestCase):
             services=self.services["lbrule"],
             traffictype='Ingress'
         )
+        self.cleanup.append(networkacl_2)
         self.logger.debug("Checking if we can SSH into VM?")
         try:
             virtual_machine.get_ssh_client(
@@ -440,6 +450,7 @@ class TestVPCOffering(cloudstackTestCase):
             networkid=network.id,
             vpcid=vpc.id
         )
+        self.cleanup.append(public_ip_3)
         self.logger.debug("Associated %s with network %s" % (
             public_ip_3.ipaddress.ipaddress,
             network.id
@@ -515,21 +526,20 @@ class TestVPCOffering(cloudstackTestCase):
             self.services["network_offering"],
             conservemode=False
         )
+        self.cleanup.append(self.network_offering)
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self.cleanup.append(self.network_offering)
 
         vpc_off = VpcOffering.create(
             self.apiclient,
             self.services["vpc_offering"]
         )
+        self.cleanup.append(vpc_off)
 
         self.validate_vpc_offering(vpc_off)
 
         self.logger.debug("Enabling the VPC offering created")
         vpc_off.update(self.apiclient, state='Enabled')
-
-        self.cleanup.append(vpc_off)
 
         self.logger.debug("creating a VPC network in the account: %s" %
                           self.account.name)
@@ -541,8 +551,8 @@ class TestVPCOffering(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid
         )
-        self.validate_vpc_network(vpc)
         self.cleanup.append(vpc)
+        self.validate_vpc_network(vpc)
 
         gateway = vpc.cidr.split('/')[0]
         # Split the cidr to retrieve gateway
@@ -562,8 +572,8 @@ class TestVPCOffering(cloudstackTestCase):
             gateway=gateway,
             vpcid=vpc.id
         )
-        self.logger.debug("Created network with ID: %s" % network.id)
         self.cleanup.append(network)
+        self.logger.debug("Created network with ID: %s" % network.id)
 
         self.logger.debug("Deploying virtual machines in network: %s" % vpc.name)
         # Spawn an instance in that network
@@ -575,8 +585,8 @@ class TestVPCOffering(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             networkids=[str(network.id)]
         )
-        self.logger.debug("Deployed VM in network: %s" % network.id)
         self.cleanup.append(virtual_machine)
+        self.logger.debug("Deployed VM in network: %s" % network.id)
 
         self.logger.debug("Associating public IP for network: %s" % network.name)
         public_ip = PublicIPAddress.create(
@@ -587,6 +597,7 @@ class TestVPCOffering(cloudstackTestCase):
             networkid=network.id,
             vpcid=vpc.id
         )
+        self.cleanup.append(public_ip)
         self.logger.debug("Associated %s with network %s" % (
             public_ip.ipaddress.ipaddress,
             vpc.id
@@ -638,20 +649,20 @@ class TestVPCOffering(cloudstackTestCase):
             self.services["network_offering"],
             conservemode=False
         )
+        self.cleanup.append(self.network_offering)
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self.cleanup.append(self.network_offering)
 
         vpc_off = VpcOffering.create(
             self.apiclient,
             self.services["vpc_offering"]
         )
+        self.cleanup.append(vpc_off)
 
         self.validate_vpc_offering(vpc_off)
 
         self.logger.debug("Enabling the VPC offering created")
         vpc_off.update(self.apiclient, state='Enabled')
-        self.cleanup.append(vpc_off)
 
         self.logger.debug("creating a VPC network in the account: %s" %
                           self.account.name)
@@ -663,8 +674,8 @@ class TestVPCOffering(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid
         )
-        self.validate_vpc_network(vpc)
         self.cleanup.append(vpc)
+        self.validate_vpc_network(vpc)
 
         gateway = vpc.cidr.split('/')[0]
         # Split the cidr to retrieve gateway
@@ -684,8 +695,8 @@ class TestVPCOffering(cloudstackTestCase):
             gateway=gateway,
             vpcid=vpc.id
         )
-        self.logger.debug("Created network with ID: %s" % network.id)
         self.cleanup.append(network)
+        self.logger.debug("Created network with ID: %s" % network.id)
 
         self.logger.debug("Deploying virtual machines in network: %s" % vpc.name)
         # Spawn an instance in that network
@@ -697,8 +708,8 @@ class TestVPCOffering(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             networkids=[str(network.id)]
         )
-        self.logger.debug("Deployed VM in network: %s" % network.id)
         self.cleanup.append(virtual_machine)
+        self.logger.debug("Deployed VM in network: %s" % network.id)
 
         self.logger.debug("Associating public IP for network: %s" % network.name)
         public_ip = PublicIPAddress.create(
@@ -709,6 +720,7 @@ class TestVPCOffering(cloudstackTestCase):
             networkid=network.id,
             vpcid=vpc.id
         )
+        self.cleanup.append(public_ip)
         self.logger.debug("Associated %s with network %s" % (
             public_ip.ipaddress.ipaddress,
             network.id
@@ -762,20 +774,20 @@ class TestVPCOffering(cloudstackTestCase):
             self.services["network_offering"],
             conservemode=False
         )
+        self.cleanup.append(self.network_offering)
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
-        self.cleanup.append(self.network_offering)
 
         vpc_off = VpcOffering.create(
             self.apiclient,
             self.services["vpc_offering"]
         )
+        self.cleanup.append(vpc_off)
 
         self.validate_vpc_offering(vpc_off)
 
         self.logger.debug("Enabling the VPC offering created")
         vpc_off.update(self.apiclient, state='Enabled')
-        self.cleanup.append(vpc_off)
 
         self.logger.debug("creating a VPC network in the account: %s" %
                           self.account.name)
@@ -787,8 +799,8 @@ class TestVPCOffering(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid
         )
-        self.validate_vpc_network(vpc)
         self.cleanup.append(vpc)
+        self.validate_vpc_network(vpc)
 
         gateway = vpc.cidr.split('/')[0]
         # Split the cidr to retrieve gateway
@@ -808,8 +820,8 @@ class TestVPCOffering(cloudstackTestCase):
             gateway=gateway,
             vpcid=vpc.id
         )
-        self.logger.debug("Deploying virtual machines in network: %s" % vpc.name)
         self.cleanup.append(network)
+        self.logger.debug("Deploying virtual machines in network: %s" % vpc.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
@@ -820,8 +832,8 @@ class TestVPCOffering(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             networkids=[str(network.id)]
         )
-        self.logger.debug("Deployed VM in network: %s" % network.id)
         self.cleanup.append(virtual_machine)
+        self.logger.debug("Deployed VM in network: %s" % network.id)
 
         self.logger.debug("Associating public IP for network: %s" % network.name)
         public_ip = PublicIPAddress.create(
@@ -874,9 +886,9 @@ class TestVPCOffering(cloudstackTestCase):
                 self.apiclient,
                 self.services["vpc_offering"]
             )
+            self.cleanup.append(vpc_off)
             self.validate_vpc_offering(vpc_off)
             # Appending to cleanup to delete after test
-            self.cleanup.append(vpc_off)
         except Exception as e:
             self.fail("Failed to create the VPC offering - %s" % e)
         return
@@ -931,6 +943,7 @@ class TestVPCOffering(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid
         )
+        self.cleanup.append(vpc)
         self.validate_vpc_network(vpc)
 
         self.logger.debug("Updating name & display text of the vpc offering created")
@@ -1165,6 +1178,7 @@ class TestVPCOffering(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid
         )
+        self.cleanup.append(vpc)
         self.logger.debug("Validating Redundant VPC Nw creation")
         self.validate_vpc_network(vpc)
 

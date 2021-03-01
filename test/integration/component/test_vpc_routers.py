@@ -218,10 +218,12 @@ class TestVPCRoutersBasic(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.vpc_off = VpcOffering.create(
             cls.api_client,
             cls.services["vpc_offering"]
         )
+        cls._cleanup.append(cls.vpc_off)
         cls.vpc_off.update(cls.api_client, state='Enabled')
         cls.account = Account.create(
             cls.api_client,
@@ -229,8 +231,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
             admin=True,
             domainid=cls.domain.id
         )
-        cls._cleanup = [cls.account]
-        cls._cleanup.append(cls.vpc_off)
+        cls._cleanup.append(cls.account)
         cls.vpc_off.update(cls.api_client, state='Enabled')
 
         cls.services["vpc"]["cidr"] = '10.1.1.1/16'
@@ -242,8 +243,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
             account=cls.account.name,
             domainid=cls.account.domainid
         )
-
-        cls._cleanup.append(cls.service_offering)
+        cls._cleanup.append(cls.vpc)
         return
 
     @classmethod
@@ -626,7 +626,6 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls._cleanup = []
         cls.testClient = super(TestVPCRouterOneNetwork, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
         cls.hypervisor = cls.testClient.getHypervisorInfo()
@@ -676,6 +675,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
             account=cls.account.name,
             domainid=cls.account.domainid
         )
+        cls._cleanup.append(cls.vpc)
 
         private_gateway = PrivateGateway.create(
             cls.api_client,
@@ -685,6 +685,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
             vlan=678,
             vpcid=cls.vpc.id
         )
+        cls._cleanup.append(private_gateway)
         cls.gateways = PrivateGateway.list(
             cls.api_client,
             id=private_gateway.id,
@@ -701,6 +702,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
             id=static_route.id,
             listall=True
         )
+        cls._cleanup.append(static_route)
 
         cls.nw_off = NetworkOffering.create(
             cls.api_client,
@@ -722,6 +724,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
             gateway='10.1.1.1',
             vpcid=cls.vpc.id
         )
+        cls._cleanup.append(cls.network_1)
 
         # Spawn an instance in that network
         vm_1 = VirtualMachine.create(
@@ -732,6 +735,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
             serviceofferingid=cls.service_offering.id,
             networkids=[str(cls.network_1.id)]
         )
+        cls._cleanup.append(vm_1)
         vm_2 = VirtualMachine.create(
             cls.api_client,
             cls.services["virtual_machine"],
@@ -740,6 +744,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
             serviceofferingid=cls.service_offering.id,
             networkids=[str(cls.network_1.id)]
         )
+        cls._cleanup.append(vm_2)
 
         # Spawn an instance in that network
         vm_3 = VirtualMachine.create(
@@ -750,6 +755,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
             serviceofferingid=cls.service_offering.id,
             networkids=[str(cls.network_1.id)]
         )
+        cls._cleanup.append(vm_3)
 
         VirtualMachine.list(
             cls.api_client,
@@ -766,6 +772,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
             networkid=cls.network_1.id,
             vpcid=cls.vpc.id
         )
+        cls._cleanup.append(public_ip_1)
 
         NATRule.create(
             cls.api_client,
@@ -792,6 +799,8 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
             networkid=cls.network_1.id,
             vpcid=cls.vpc.id
         )
+        cls._cleanup.append(public_ip_2)
+
         try:
             StaticNATRule.enable(
                 cls.api_client,
@@ -819,6 +828,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
             networkid=cls.network_1.id,
             vpcid=cls.vpc.id
         )
+        cls._cleanup.append(public_ip_3)
 
         lb_rule = LoadBalancerRule.create(
             cls.api_client,
