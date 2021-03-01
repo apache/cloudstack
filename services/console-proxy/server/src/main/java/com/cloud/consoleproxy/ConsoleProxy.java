@@ -57,6 +57,7 @@ public class ConsoleProxy {
     // dynamically changing to customer supplied certificate)
     public static byte[] ksBits;
     public static String ksPassword;
+    public static Boolean isSourceIpCheckEnabled;
 
     public static Method authMethod;
     public static Method reportMethod;
@@ -232,7 +233,7 @@ public class ConsoleProxy {
         }
     }
 
-    public static void startWithContext(Properties conf, Object context, byte[] ksBits, String ksPassword, String password) {
+    public static void startWithContext(Properties conf, Object context, byte[] ksBits, String ksPassword, String password, Boolean isSourceIpCheckEnabled) {
         setEncryptorPassword(password);
         configLog4j();
         Logger.setFactory(new ConsoleProxyLoggerFactory());
@@ -248,6 +249,7 @@ public class ConsoleProxy {
         ConsoleProxy.context = context;
         ConsoleProxy.ksBits = ksBits;
         ConsoleProxy.ksPassword = ksPassword;
+        ConsoleProxy.isSourceIpCheckEnabled = isSourceIpCheckEnabled;
         try {
             final ClassLoader loader = Thread.currentThread().getContextClassLoader();
             Class<?> contextClazz = loader.loadClass("com.cloud.agent.resource.consoleproxy.ConsoleProxyResource");

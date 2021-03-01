@@ -87,6 +87,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
         String hypervHost = queryMap.get("hypervHost");
         String username = queryMap.get("username");
         String password = queryMap.get("password");
+        String sourceIP = queryMap.get("sourceIP");
 
         if (tag == null)
             tag = "";
@@ -111,6 +112,15 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
                 s_logger.warn("Invalid number parameter in query string: " + ajaxSessionIdStr);
                 throw new IllegalArgumentException(e);
             }
+        }
+
+        // Verify source IP
+        String sessionSourceIP = session.getRemoteAddress().getAddress().getHostAddress();
+        s_logger.info("Get websocket connection request from remote IP : " + sessionSourceIP);
+        if (ConsoleProxy.isSourceIpCheckEnabled && (sessionSourceIP == null || ! sessionSourceIP.equals(sourceIP))) {
+            s_logger.warn("Failed to access console as the source IP to request the console is " + sourceIP);
+            session.disconnect();
+            return;
         }
 
         try {

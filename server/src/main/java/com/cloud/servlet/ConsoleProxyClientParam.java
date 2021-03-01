@@ -33,6 +33,8 @@ public class ConsoleProxyClientParam {
     private String username;
     private String password;
 
+    private String sourceIP;
+
     public ConsoleProxyClientParam() {
         clientHostPort = 0;
     }
@@ -139,5 +141,13 @@ public class ConsoleProxyClientParam {
 
     public String getPassword() {
         return password;
+    }
+
+    public String getSourceIP() {
+        return sourceIP;
+    }
+
+    public void setSourceIP(String sourceIP) {
+        this.sourceIP = sourceIP;
     }
 }
