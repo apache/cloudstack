@@ -20,7 +20,7 @@
     <a-row :gutter="12">
       <a-col :md="24" :lg="24">
         <a-form-item :label="$t('label.templatesubject')">
-          <a-textarea v-model="formModel.templatesubject" />
+          <a-textarea v-model="formModel.templatesubject" autoFocus />
         </a-form-item>
       </a-col>
     </a-row>

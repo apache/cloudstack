@@ -20,7 +20,7 @@
     <div class="form">
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.zonenamelabel') }}</div>
-        <a-select v-model="zoneId" @change="fetchPods">
+        <a-select v-model="zoneId" @change="fetchPods" autoFocus>
           <a-select-option
             v-for="zone in zonesList"
             :value="zone.id"
@@ -216,35 +216,11 @@ export default {
 
       if (this.hypervisor === 'VMware') {
         this.clustertype = 'ExternalManaged'
-        if ((this.host === null || this.host.length === 0) &&
-          (this.dataCenter === null || this.dataCenter.length === 0)) {
-          api('listVmwareDcs', {
-            zoneid: this.zoneId
-          }).then(response => {
-            var vmwaredcs = response.listvmwaredcsresponse.VMwareDC
-            if (vmwaredcs !== null) {
-              this.host = vmwaredcs[0].vcenter
-              this.dataCenter = vmwaredcs[0].name
-            }
-            this.addCluster()
-          }).catch(error => {
-            this.$notification.error({
-              message: `${this.$t('label.error')} ${error.response.status}`,
-              description: error.response.data.listvmwaredcsresponse.errortext,
-              duration: 0
-            })
-          })
-          return
-        }
-      }
-      this.addCluster()
-    },
-    addCluster () {
-      if (this.hypervisor === 'VMware') {
         const clusternameVal = this.clustername
         this.url = `http://${this.host}/${this.dataCenter}/${clusternameVal}`
         this.clustername = `${this.host}/${this.dataCenter}/${clusternameVal}`
       }
+
       this.loading = true
       this.parentToggleLoading()
       api('addCluster', {}, 'POST', {

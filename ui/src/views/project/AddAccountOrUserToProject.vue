@@ -31,7 +31,8 @@
             </span>
             <a-input
               v-decorator="['account']"
-              :placeholder="apiParams.addAccountToProject.account.description"/>
+              :placeholder="apiParams.addAccountToProject.account.description"
+              autoFocus />
           </a-form-item>
           <a-form-item>
             <span slot="label">

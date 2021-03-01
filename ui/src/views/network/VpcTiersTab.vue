@@ -164,7 +164,8 @@
           <a-form-item :label="$t('label.name')">
             <a-input
               :placeholder="$t('label.unique.name.tier')"
-              v-decorator="['name',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
+              v-decorator="['name',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+              autoFocus></a-input>
           </a-form-item>
           <a-form-item :label="$t('label.networkofferingid')">
             <a-select

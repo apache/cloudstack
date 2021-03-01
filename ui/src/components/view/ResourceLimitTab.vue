@@ -34,6 +34,7 @@
           v-decorator="[item.resourcetype, {
             initialValue: item.max
           }]"
+          :autoFocus="index === 0"
         />
       </a-form-item>
       <div class="card-footer">

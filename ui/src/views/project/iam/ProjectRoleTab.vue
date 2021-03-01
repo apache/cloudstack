@@ -119,7 +119,9 @@
             @submit="createProjectRole"
             layout="vertical">
             <a-form-item :label="$t('label.name')">
-              <a-input v-decorator="[ 'name', { rules: [{ required: true, message: 'Please provide input' }] }]"></a-input>
+              <a-input
+                v-decorator="[ 'name', { rules: [{ required: true, message: 'Please provide input' }] }]"
+                autoFocus></a-input>
             </a-form-item>
             <a-form-item :label="$t('label.description')">
               <a-input v-decorator="[ 'description' ]"></a-input>

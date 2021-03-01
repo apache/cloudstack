@@ -35,7 +35,7 @@
             :beforeUpload="beforeUpload"
             v-decorator="['file', {
               rules: [{ required: true, message: `${this.$t('message.error.required.input')}`}]
-            }]">
+            }]" >
             <p class="ant-upload-drag-icon">
               <a-icon type="cloud-upload" />
             </p>
@@ -55,7 +55,8 @@
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.volume.name') }]
             }]"
-            :placeholder="$t('label.volumename')" />
+            :placeholder="$t('label.volumename')"
+            autoFocus />
         </a-form-item>
         <a-form-item>
           <span slot="label">

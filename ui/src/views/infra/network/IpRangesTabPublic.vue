@@ -121,7 +121,7 @@
         </div>
         <div>
           <div class="list__label">{{ $t('label.domain') }}:</div>
-          <a-select v-model="addAccount.domain">
+          <a-select v-model="addAccount.domain" autoFocus>
             <a-select-option
               v-for="domain in domains"
               :key="domain.id"

@@ -21,7 +21,10 @@
     <div class="modal-form">
       <div v-if="storagePools.length > 0">
         <p class="modal-form__label">{{ $t('label.storagepool') }}</p>
-        <a-select v-model="selectedStoragePool" style="width: 100%;">
+        <a-select
+          v-model="selectedStoragePool"
+          style="width: 100%;"
+          :autoFocus="storagePools.length > 0">
           <a-select-option v-for="(storagePool, index) in storagePools" :value="storagePool.id" :key="index">
             {{ storagePool.name }} <span v-if="resource.virtualmachineid">{{ storagePool.suitableformigration ? `(${$t('label.suitable')})` : `(${$t('label.not.suitable')})` }}</span>
           </a-select-option>

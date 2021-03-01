@@ -27,7 +27,7 @@
 
       <div class="form__item">
         <p class="form__label">{{ $t('label.accounttype') }}</p>
-        <a-select v-model="selectedAccountType" defaultValue="account">
+        <a-select v-model="selectedAccountType" defaultValue="account" autoFocus>
           <a-select-option :value="$t('label.account')">{{ $t('label.account') }}</a-select-option>
           <a-select-option :value="$t('label.project')">{{ $t('label.project') }}</a-select-option>
         </a-select>

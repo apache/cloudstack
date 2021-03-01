@@ -24,11 +24,16 @@
         layout="vertical">
 
         <a-form-item :label="$t('label.ispublic')" v-show="this.isAdmin()">
-          <a-switch v-decorator="['ispublic', { initialValue: this.offeringIsPublic }]" :checked="this.offeringIsPublic" @change="val => { this.offeringIsPublic = val }" />
+          <a-switch
+            v-decorator="['ispublic', { initialValue: this.offeringIsPublic }]"
+            :checked="this.offeringIsPublic"
+            @change="val => { this.offeringIsPublic = val }"
+            :autoFocus="this.isAdmin()"/>
         </a-form-item>
 
         <a-form-item :label="$t('label.domainid')" v-if="!this.offeringIsPublic">
           <a-select
+            :autoFocus="!this.isAdmin() && !this.offeringIsPublic"
             mode="multiple"
             v-decorator="['domainid', {
               rules: [
@@ -54,6 +59,7 @@
 
         <a-form-item :label="$t('label.zoneid')">
           <a-select
+            :autoFocus="!this.isAdmin() && this.offeringIsPublic"
             id="zone-selection"
             mode="multiple"
             v-decorator="['zoneid', {

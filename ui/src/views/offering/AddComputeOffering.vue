@@ -30,6 +30,7 @@
             </a-tooltip>
           </span>
           <a-input
+            autoFocus
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
@@ -1051,9 +1052,6 @@ export default {
         }
         if ('isvolatile' in values && values.isvolatile !== undefined) {
           params.isvolatile = values.isvolatile === true
-        }
-        if ('systemvmtype' in values && values.systemvmtype !== undefined) {
-          params.systemvmtype = values.systemvmtype
         }
         if (values.ispublic !== true) {
           var domainIndexes = values.domainid

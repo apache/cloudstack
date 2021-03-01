@@ -50,7 +50,8 @@
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
-            :placeholder="importRoleApiParams.name.description" />
+            :placeholder="importRoleApiParams.name.description"
+            autoFocus />
         </a-form-item>
 
         <a-form-item :label="$t('label.description')">
