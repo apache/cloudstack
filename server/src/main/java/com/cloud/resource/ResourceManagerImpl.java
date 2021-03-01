@@ -1294,9 +1294,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     //Migration is not supported for LXC Vms. Schedule restart instead.
                     _haMgr.scheduleRestart(vm, false);
                 } else if (userVmManager.isVMUsingLocalStorage(vm)) {
-                    if (isMaintenanceLocalStrategyStopping()) {
+                    if (isMaintenanceLocalStrategyStop()) {
                         _haMgr.scheduleStop(vm, hostId, WorkType.Stop);
-                    } else if (isMaintenanceLocalStrategyMigrating()) {
+                    } else if (isMaintenanceLocalStrategyForceStop()) {
+                        _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
+                    } else if (isMaintenanceLocalStrategyMigrate()) {
                         migrateAwayVmWithVolumes(host, vm);
                     }
                 } else {
@@ -1374,7 +1376,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         if (_storageMgr.isLocalStorageActiveOnHost(host.getId())) {
-            if(!isMaintenanceLocalStrategyMigrating() || !isMaintenanceLocalStrategyStopping()) {
+            if(!isMaintenanceLocalStrategyMigrate() || !isMaintenanceLocalStrategyStop()) {
                 throw new CloudRuntimeException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
             }
         }
@@ -1406,18 +1408,25 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
     }
 
-    protected boolean isMaintenanceLocalStrategyMigrating() {
+    protected boolean isMaintenanceLocalStrategyMigrate() {
         if(org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value())) {
             return false;
         }
-        return HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(State.Migrating.toString().toLowerCase());
+        return HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(WorkType.Migration.toString().toLowerCase());
     }
 
-    protected boolean isMaintenanceLocalStrategyStopping() {
+    protected boolean isMaintenanceLocalStrategyStop() {
         if(org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value())) {
             return false;
         }
-        return HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(State.Stopping.toString().toLowerCase());
+        return HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(WorkType.Stop.toString().toLowerCase());
+    }
+
+    protected boolean isMaintenanceLocalStrategyForceStop() {
+        if(org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value())) {
+            return false;
+        }
+        return HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(WorkType.ForceStop.toString().toLowerCase());
     }
 
     /**
