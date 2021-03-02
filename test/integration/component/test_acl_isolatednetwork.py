@@ -1091,6 +1091,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             networkofferingid=isolated_network_offering_id,
             zoneid=zone.id
         )
+        cls._cleanup.append(network)
         return network
 
     @staticmethod
