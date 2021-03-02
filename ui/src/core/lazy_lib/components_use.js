@@ -114,6 +114,7 @@ Vue.use(Tree)
 Vue.use(Calendar)
 Vue.use(Slider)
 Vue.use(AutoComplete)
+Vue.use(Descriptions)
 
 Vue.prototype.$confirm = Modal.confirm
 Vue.prototype.$message = message
