@@ -1218,6 +1218,15 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
         if self.hypervisor.lower() not in ["vmware"]:
             self.skipTest("VM Migration with Volumes is not supported on other than VMware")
 
+        self.hosts = Host.list(
+            self.apiclient,
+            zoneid=self.zone.id,
+            type='Routing',
+            hypervisor='KVM')
+
+        if len(self.hosts) < 2:
+            self.skipTest("Requires at least two hosts for performing migration related tests")
+
     def tearDown(self):
         super(TestMigrateVMwithVolume,self).tearDown()
 
@@ -1423,7 +1432,6 @@ class TestKVMLiveMigration(cloudstackTestCase):
 
         if len(self.hosts) < 2:
             self.skipTest("Requires at least two hosts for performing migration related tests")
-
 
         for host in self.hosts:
             print(f"=== setup() === Host.OS = {host.details['Host.OS']}")
