@@ -27,7 +27,7 @@
       :form="form"
       @submit="handleSubmit">
       <a-form-item
-        v-for="(field, index) in this.fields"
+        v-for="(field, index) in fields"
         :key="index"
         :label="$t(field.title)"
         v-if="isDisplayInput(field.display)"
@@ -251,11 +251,10 @@ export default {
     min-height: 200px;
     text-align: center;
     vertical-align: center;
-    padding-top: 16px;
-    padding-top: 16px;
     margin-top: 8px;
     max-height: 300px;
     overflow-y: auto;
+    padding: 16px 20px 0;
 
     /deep/.has-error {
       .ant-form-explain {
