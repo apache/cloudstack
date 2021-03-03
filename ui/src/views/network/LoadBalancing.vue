@@ -1023,6 +1023,10 @@ export default {
       this.vms = []
       this.addVmModalLoading = true
       const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
+      if (!networkId) {
+        this.addVmModalLoading = false
+        return
+      }
       api('listVirtualMachines', {
         listAll: true,
         keyword: this.searchQuery,
