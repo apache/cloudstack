@@ -57,7 +57,6 @@ public interface ResourceManager extends ResourceService, Configurable {
             "Defines the strategy towards VMs with volumes on local storage when putting a host in maintenance. "
                     + "The default strategy is 'Error', preventing maintenance in such a case. "
                     + "Choose 'Migration' strategy to migrate away VMs running on local storage. "
-                    + "To stop VMs, choose 'Stop' strategy. "
                     + "To force-stop VMs, choose 'ForceStop' strategy",
             true, ConfigKey.Scope.Global);
 
