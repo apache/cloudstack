@@ -494,7 +494,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced", "intervlan", "bla"], required_hardware="true")
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_03_migrate_router_after_creating_vpc(self):
         """ Test migration of router to another host after creating VPC """
         self.hypervisor = self.testClient.getHypervisorInfo()
