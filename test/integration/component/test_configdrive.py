@@ -19,44 +19,46 @@
     and password reset functionality with
     ConfigDrive
 """
+
+# Import Local Modules
+from marvin.cloudstackAPI import (restartVPC)
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.base import (
+    Account,
+    createVlanIpRange,
+    Configurations,
+    FireWallRule,
+    Host,
+    listVlanIpRanges,
+    Network,
+    NetworkACL,
+    NetworkACLList,
+    NetworkOffering,
+    NetworkServiceProvider,
+    PublicIPAddress,
+    Router,
+    ServiceOffering,
+    createSSHKeyPair,
+    deleteSSHKeyPair,
+    StaticNATRule,
+    VirtualMachine,
+    VPC,
+    VpcOffering,
+    Hypervisor, Template)
+from marvin.lib.common import (
+    get_domain,
+    get_zone, get_test_template,
+    is_config_suitable)
+from marvin.lib.utils import random_gen
+
+# Import System Modules
 import base64
 import os
 import socket
-# Import Local Modules
 import subprocess
 import tempfile
-from contextlib import contextmanager
-
 import time
-from marvin.cloudstackAPI import (restartVPC)
-from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.base import (Account,
-                             createVlanIpRange,
-                             Configurations,
-                             FireWallRule,
-                             Host,
-                             listVlanIpRanges,
-                             Network,
-                             NetworkACL,
-                             NetworkACLList,
-                             NetworkOffering,
-                             NetworkServiceProvider,
-                             PublicIPAddress,
-                             Router,
-                             ServiceOffering,
-                             createSSHKeyPair,
-                             deleteSSHKeyPair,
-                             StaticNATRule,
-                             VirtualMachine,
-                             VPC,
-                             VpcOffering,
-                             Hypervisor, Template)
-from marvin.lib.common import (get_domain,
-                               get_template,
-                               get_zone, get_test_template,
-                               is_config_suitable)
-from marvin.lib.utils import random_gen
-# Import System Modules
+from contextlib import contextmanager
 from nose.plugins.attrib import attr
 from retry import retry
 
@@ -2370,7 +2372,6 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         self.then_config_drive_is_as_expected(
             vm1, public_ip_1,
             metadata=True)
-
 
         # =====================================================================
         # Network restart tests
