@@ -1299,10 +1299,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     } else if (isMaintenanceLocalStrategyMigrate()) {
                         migrateAwayVmWithVolumes(host, vm);
                     } else if (!isMaintenanceLocalStrategyDefault()){
-                        String.format(
+                        String logMessage = String.format(
                                 "Unsupported host.maintenance.local.storage.strategy: %s. Please set a strategy according to the global settings description: "
                                         + "'Error', 'Migration', or 'ForceStop'.",
                                 HOST_MAINTENANCE_LOCAL_STRATEGY.value().toString());
+
+                        s_logger.warn(logMessage);
                     }
                 } else {
                     s_logger.info("Maintenance: scheduling migration of VM " + vm.getUuid() + " from host " + host.getUuid());
