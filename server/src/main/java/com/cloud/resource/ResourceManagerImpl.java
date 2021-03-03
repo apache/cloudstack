@@ -1298,6 +1298,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
                     } else if (isMaintenanceLocalStrategyMigrate()) {
                         migrateAwayVmWithVolumes(host, vm);
+                    } else if (!isMaintenanceLocalStrategyDefault()){
+                        String.format(
+                                "Unsupported host.maintenance.local.storage.strategy: %s. Please set a strategy according to the global settings description: "
+                                        + "'Error', 'Migration', or 'ForceStop'.",
+                                HOST_MAINTENANCE_LOCAL_STRATEGY.value().toString());
                     }
                 } else {
                     s_logger.info("Maintenance: scheduling migration of VM " + vm.getUuid() + " from host " + host.getUuid());
@@ -1407,11 +1412,28 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     protected boolean isMaintenanceLocalStrategyMigrate() {
-        return WorkType.Migration.toString().toLowerCase().equals(HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase());
+        if(org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value())) {
+            return false;
+        }
+        return HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(WorkType.Migration.toString().toLowerCase());
     }
 
     protected boolean isMaintenanceLocalStrategyForceStop() {
-        return WorkType.ForceStop.toString().toLowerCase().equals(HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase());
+        if(org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value())) {
+            return false;
+        }
+        return HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(WorkType.ForceStop.toString().toLowerCase());
+    }
+
+    /**
+     * Returns true if the host.maintenance.local.storage.strategy is the Default: "Error", blank, empty, or null.
+     */
+    protected boolean isMaintenanceLocalStrategyDefault() {
+        if (org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value())
+                || HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(State.Error.toString().toLowerCase())) {
+            return true;
+        }
+        return false;
     }
 
     /**
