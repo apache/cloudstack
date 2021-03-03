@@ -323,6 +323,10 @@
           :value="localstorageenabledforsystemvm"
         />
       </a-form-item>
+
+      <div class="submit-btn">
+        <a-button html-type="submit" @click="handleSubmit"></a-button>
+      </div>
     </a-form>
     <div class="form-action">
       <a-button
@@ -331,7 +335,7 @@
         v-if="!isFixError">
         {{ $t('label.previous') }}
       </a-button>
-      <a-button type="primary" @click="handleSubmit" class="button-next">
+      <a-button type="primary" html-type="submit" @click="handleSubmit" class="button-next">
         {{ $t('label.next') }}
       </a-button>
     </div>

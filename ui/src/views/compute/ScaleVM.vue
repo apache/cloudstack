@@ -191,13 +191,4 @@ export default {
     width: 50vw;
   }
 }
-
-.action-button {
-  margin-top: 10px;
-  text-align: right;
-
-  button {
-    margin-right: 5px;
-  }
-}
 </style>

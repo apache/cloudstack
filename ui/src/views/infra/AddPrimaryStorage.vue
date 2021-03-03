@@ -18,7 +18,7 @@
 <template>
   <div class="form-layout">
     <a-spin :spinning="loading">
-      <a-form :form="form" layout="vertical">
+      <a-form :form="form" layout="vertical" @submit="handleSubmit">
         <a-form-item>
           <span slot="label">
             {{ $t('label.scope') }}
@@ -288,11 +288,12 @@
             <a-select-option v-for="tag in storageTags" :key="tag.name">{{ tag.name }}</a-select-option>
           </a-select>
         </a-form-item>
+
+        <div :span="24" class="action-button">
+          <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" html-type="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        </div>
       </a-form>
-      <div class="actions">
-        <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
-      </div>
     </a-spin>
   </div>
 </template>
@@ -694,16 +695,6 @@ export default {
   width: 80vw;
   @media (min-width: 1000px) {
     width: 500px;
-  }
-}
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 20px;
-  button {
-    &:not(:last-child) {
-      margin-right: 10px;
-    }
   }
 }
 </style>

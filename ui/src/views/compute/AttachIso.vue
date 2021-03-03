@@ -19,7 +19,8 @@
     <a-spin :spinning="loading">
       <a-form
         :form="form"
-        layout="vertical">
+        layout="vertical"
+        @submit="handleSubmit">
         <a-form-item :label="$t('label.iso.name')">
           <a-select
             :loading="loading"
@@ -36,7 +37,11 @@
       </a-form>
       <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button
+          htmlType="submit"
+          :loading="loading"
+          type="primary"
+          @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-spin>
   </div>
@@ -157,12 +162,5 @@ export default {
 
 .form {
   margin: 10px 0;
-}
-
-.action-button {
-  text-align: right;
-  button {
-    margin-right: 5px;
-  }
 }
 </style>

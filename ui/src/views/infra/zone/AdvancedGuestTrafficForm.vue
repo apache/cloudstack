@@ -67,6 +67,10 @@
             style="width: 100%;"
           />
         </a-form-item>
+
+        <div class="submit-btn">
+          <a-button html-type="submit" @click="handleSubmit"></a-button>
+        </div>
       </a-form-item>
     </a-form>
     <div class="form-action">

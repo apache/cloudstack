@@ -17,10 +17,12 @@
 
 <template>
   <a-spin :spinning="componentLoading">
-    <div class="new-route">
-      <a-input v-model="newRoute" icon="plus" :placeholder="$t('label.cidr.destination.network')"></a-input>
-      <a-button type="primary" :disabled="!('createStaticRoute' in $store.getters.apis)" @click="handleAdd">{{ $t('label.add.route') }}</a-button>
-    </div>
+    <a-form @submit="handleAdd">
+      <div class="new-route">
+        <a-input v-model="newRoute" icon="plus" :placeholder="$t('label.cidr.destination.network')"></a-input>
+        <a-button type="primary" html-type="submit" :disabled="!('createStaticRoute' in $store.getters.apis)" @click="handleAdd">{{ $t('label.add.route') }}</a-button>
+      </div>
+    </a-form>
 
     <div class="list">
       <div v-for="(route, index) in routes" :key="index" class="list__item">
@@ -35,7 +37,12 @@
       </div>
     </div>
 
-    <a-modal title="Edit Tags" v-model="tagsModalVisible" :footer="null" :maskClosable="false">
+    <a-modal
+      :title="$t('label.edit.tags')"
+      v-model="tagsModalVisible"
+      :footer="null"
+      :closable="true"
+      :maskClosable="false">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>

@@ -101,26 +101,30 @@
       :visible="showAcquireIp"
       :title="$t('label.acquire.new.ip')"
       :closable="true"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
-      @cancel="onCloseModal"
-      @ok="acquireIpAddress"
+      :footer="null"
       centered
       width="450px">
-      <a-spin :spinning="acquireLoading">
-        <a-alert :message="$t('message.action.acquire.ip')" type="warning" />
-        <a-form-item :label="$t('label.ipaddress')">
-          <a-select
-            autoFocus
-            style="width: 100%;"
-            showSearch
-            v-model="acquireIp">
-            <a-select-option
-              v-for="ip in listPublicIpAddress"
-              :key="ip.ipaddress">{{ ip.ipaddress }}</a-select-option>
-          </a-select>
-        </a-form-item>
-      </a-spin>
+      <a-form @submit="acquireIpAddress">
+        <a-spin :spinning="acquireLoading">
+          <a-alert :message="$t('message.action.acquire.ip')" type="warning" />
+          <a-form-item :label="$t('label.ipaddress')">
+            <a-select
+              autoFocus
+              style="width: 100%;"
+              showSearch
+              v-model="acquireIp">
+              <a-select-option
+                v-for="ip in listPublicIpAddress"
+                :key="ip.ipaddress">{{ ip.ipaddress }}</a-select-option>
+            </a-select>
+          </a-form-item>
+
+          <div :span="24" class="action-button">
+            <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" htmlType="submit" @click="acquireIpAddress">{{ $t('label.ok') }}</a-button>
+          </div>
+        </a-spin>
+      </a-form>
     </a-modal>
   </div>
 </template>

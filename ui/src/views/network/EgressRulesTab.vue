@@ -18,7 +18,7 @@
 <template>
   <div>
     <div>
-      <div class="form">
+      <a-form class="form" @submit="addRule">
         <div class="form__item">
           <div class="form__label">{{ $t('label.sourcecidr') }}</div>
           <a-input v-model="newRule.cidrlist" autoFocus></a-input>
@@ -53,9 +53,14 @@
           <a-input v-model="newRule.icmpcode"></a-input>
         </div>
         <div class="form__item">
-          <a-button :disabled="!('createEgressFirewallRule' in $store.getters.apis)" type="primary" icon="plus" @click="addRule">{{ $t('label.add') }}</a-button>
+          <a-button
+            :disabled="!('createEgressFirewallRule' in $store.getters.apis)"
+            html-type="submit"
+            type="primary"
+            icon="plus"
+            @click="addRule">{{ $t('label.add') }}</a-button>
         </div>
-      </div>
+      </a-form>
     </div>
 
     <a-divider/>

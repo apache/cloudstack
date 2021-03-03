@@ -38,9 +38,9 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <div class="card-footer">
+      <div class="action-button">
         <a-button @click="handleClose">{{ $t('label.close') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <a-button :loading="loading" html-type="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
@@ -127,13 +127,6 @@ export default {
 
   @media (min-width: 700px) {
     width: 40vw;
-  }
-}
-.card-footer {
-  text-align: right;
-
-  button + button {
-    margin-left: 8px;
   }
 }
 </style>

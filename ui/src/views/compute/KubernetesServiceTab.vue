@@ -398,13 +398,4 @@ export default {
     margin-top: 20px;
     overflow-y: auto;
   }
-
-  .action-button {
-    margin-top: 10px;
-    text-align: right;
-
-    button {
-      margin-right: 5px;
-    }
-  }
 </style>

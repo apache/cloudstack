@@ -17,7 +17,7 @@
 
 <template>
   <div class="form-layout">
-    <a-form layout="vertical" :form="form">
+    <a-form layout="vertical" :form="form" @submit="handleSubmit">
       <a-form-item :label="$t('label.volume')">
         <a-select
           allowClear
@@ -50,7 +50,7 @@
       </a-form-item>
       <div :span="24" class="action-button">
         <a-button :loading="loading || actionLoading" @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading || actionLoading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading || actionLoading" htmlType="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
@@ -179,15 +179,6 @@ export default {
 
   @media (min-width: 500px) {
     width: 400px;
-  }
-
-  .action-button {
-    text-align: right;
-    margin-top: 20px;
-
-    button {
-      margin-right: 5px;
-    }
   }
 }
 </style>

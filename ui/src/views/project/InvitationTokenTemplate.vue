@@ -39,10 +39,10 @@
             :placeholder="apiParams.token.description"
           />
         </a-form-item>
-        <div class="card-footer">
-          <!-- ToDo extract as component -->
+
+        <div :span="24" class="action-button">
           <a-button @click="() => $emit('close-action')">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button :loading="loading" html-type="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -123,13 +123,5 @@ export default {
 <style lang="less" scoped>
 .row-project-invitation {
   min-width: 450px;
-}
-
-.card-footer {
-  text-align: right;
-
-  button + button {
-    margin-left: 8px;
-  }
 }
 </style>

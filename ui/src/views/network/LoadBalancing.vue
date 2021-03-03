@@ -17,7 +17,7 @@
 
 <template>
   <div>
-    <div>
+    <a-form @submit="handleOpenAddVMModal">
       <div class="form">
         <div class="form__item" ref="newRuleName">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.name') }}</div>
@@ -54,12 +54,16 @@
         </div>
         <div class="form__item">
           <div class="form__label" style="white-space: nowrap;">{{ $t('label.add.vms') }}</div>
-          <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleOpenAddVMModal">
+          <a-button
+            :disabled="!('createLoadBalancerRule' in $store.getters.apis)"
+            type="primary"
+            html-type="submit"
+            @click="handleOpenAddVMModal">
             {{ $t('label.add') }}
           </a-button>
         </div>
       </div>
-    </div>
+    </a-form>
 
     <a-divider />
 
@@ -259,33 +263,41 @@
       v-model="editRuleModalVisible"
       :afterClose="closeModal"
       :maskClosable="false"
-      @ok="handleSubmitEditForm">
+      :closable="true"
+      :footer="null">
       <span v-show="editRuleModalLoading" class="modal-loading">
         <a-icon type="loading"></a-icon>
       </span>
 
-      <div class="edit-rule" v-if="selectedRule">
-        <div class="edit-rule__item">
-          <p class="edit-rule__label">{{ $t('label.name') }}</p>
-          <a-input autoFocus v-model="editRuleDetails.name" />
+      <a-form @submit="handleSubmitEditForm">
+        <div class="edit-rule" v-if="selectedRule">
+          <div class="edit-rule__item">
+            <p class="edit-rule__label">{{ $t('label.name') }}</p>
+            <a-input autoFocus v-model="editRuleDetails.name" />
+          </div>
+          <div class="edit-rule__item">
+            <p class="edit-rule__label">{{ $t('label.algorithm') }}</p>
+            <a-select v-model="editRuleDetails.algorithm">
+              <a-select-option value="roundrobin">{{ $t('label.lb.algorithm.roundrobin') }}</a-select-option>
+              <a-select-option value="leastconn">{{ $t('label.lb.algorithm.leastconn') }}</a-select-option>
+              <a-select-option value="source">{{ $t('label.lb.algorithm.source') }}</a-select-option>
+            </a-select>
+          </div>
+          <div class="edit-rule__item">
+            <p class="edit-rule__label">{{ $t('label.protocol') }}</p>
+            <a-select v-model="editRuleDetails.protocol">
+              <a-select-option value="tcp-proxy">{{ $t('label.tcp.proxy') }}</a-select-option>
+              <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
+              <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
+            </a-select>
+          </div>
         </div>
-        <div class="edit-rule__item">
-          <p class="edit-rule__label">{{ $t('label.algorithm') }}</p>
-          <a-select v-model="editRuleDetails.algorithm">
-            <a-select-option value="roundrobin">{{ $t('label.lb.algorithm.roundrobin') }}</a-select-option>
-            <a-select-option value="leastconn">{{ $t('label.lb.algorithm.leastconn') }}</a-select-option>
-            <a-select-option value="source">{{ $t('label.lb.algorithm.source') }}</a-select-option>
-          </a-select>
+
+        <div :span="24" class="action-button">
+          <a-button @click="() => editRuleModalVisible = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" htmlType="submit" @click="handleSubmitEditForm">{{ $t('label.ok') }}</a-button>
         </div>
-        <div class="edit-rule__item">
-          <p class="edit-rule__label">{{ $t('label.protocol') }}</p>
-          <a-select v-model="editRuleDetails.protocol">
-            <a-select-option value="tcp-proxy">{{ $t('label.tcp.proxy') }}</a-select-option>
-            <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
-            <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
-          </a-select>
-        </div>
-      </div>
+      </a-form>
     </a-modal>
 
     <a-modal
@@ -554,7 +566,7 @@ export default {
         vpcid: this.resource.vpcid
       }).then(json => {
         this.tiers.data = json.listnetworksresponse.network || []
-        this.selectedTier = this.tiers.data && this.tiers.data[0].id ? this.tiers.data[0].id : null
+        this.selectedTier = this.tiers.data.length > 0 && this.tiers.data[0].id ? this.tiers.data[0].id : null
         this.$forceUpdate()
       }).catch(error => {
         this.$notifyError(error)

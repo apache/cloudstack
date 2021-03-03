@@ -224,6 +224,10 @@ export default {
       overflow-x: auto;
       padding: 10px 0;
     }
+
+    /deep/.submit-btn {
+      display: none;
+    }
   }
 
   /deep/.ant-form-text {

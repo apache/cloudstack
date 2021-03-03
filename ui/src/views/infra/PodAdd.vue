@@ -17,8 +17,7 @@
 
 <template>
   <a-spin :spinning="loading">
-    <a-form :form="form" layout="vertical" class="form">
-
+    <a-form :form="form" layout="vertical" class="form" @submit="handleSubmit">
       <a-form-item class="form__item" :label="$t('label.zone')">
         <a-select
           v-decorator="['zoneid', {
@@ -100,11 +99,10 @@
 
       <a-divider></a-divider>
 
-      <div class="actions">
+      <div :span="24" class="action-button">
         <a-button @click="() => this.$parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
-        <a-button @click="handleSubmit" type="primary">{{ $t('label.ok') }}</a-button>
+        <a-button @click="handleSubmit" html-type="submit" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
-
     </a-form>
   </a-spin>
 </template>

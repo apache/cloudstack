@@ -170,6 +170,7 @@
             </a-button>
             <a-button
               :loading="loading"
+              html-type="submit"
               type="primary"
               @click="handleSubmit">
               {{ this.$t('label.ok') }}
@@ -273,14 +274,6 @@ export default {
 
   @media (min-width: 500px) {
     width: 450px;
-  }
-}
-
-.action-button {
-  text-align: right;
-
-  button {
-    margin-right: 5px;
   }
 }
 </style>
