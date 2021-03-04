@@ -1303,8 +1303,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                                 "Unsupported host.maintenance.local.storage.strategy: %s. Please set a strategy according to the global settings description: "
                                         + "'Error', 'Migration', or 'ForceStop'.",
                                 HOST_MAINTENANCE_LOCAL_STRATEGY.value().toString());
-
-                        s_logger.warn(logMessage);
+                        s_logger.error(logMessage);
+                        throw new CloudRuntimeException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
                     }
                 } else {
                     s_logger.info("Maintenance: scheduling migration of VM " + vm.getUuid() + " from host " + host.getUuid());
@@ -1381,7 +1381,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         if (_storageMgr.isLocalStorageActiveOnHost(host.getId())) {
-            if(!isMaintenanceLocalStrategyMigrate() || !isMaintenanceLocalStrategyForceStop()) {
+            if(!isMaintenanceLocalStrategyMigrate() && !isMaintenanceLocalStrategyForceStop()) {
                 throw new CloudRuntimeException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
             }
         }
