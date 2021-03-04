@@ -185,7 +185,7 @@ def destroy_network_rules_for_nic(vm_name, vm_ip, vm_mac, vif, sec_ips):
         logging.debug("Ignoring failure to delete ebtable rules for vm: " + vm_name)
 
 def get_bridge_physdev(brname):
-    physdev = execute("bridge -o link show | awk '/master %s / && !/^[0-9]+: vnet/ {print $2}' | head -1" % brname)
+    physdev = execute("bridge -o link show | awk '/master %s / && !/^[0-9]+: vnet/ {print $2}' | head -1 | cut -d ':' -f1" % brname)
     return physdev.strip()
 
 
