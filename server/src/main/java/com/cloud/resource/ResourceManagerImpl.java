@@ -1431,7 +1431,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      * Returns true if the host.maintenance.local.storage.strategy is the Default: "Error", blank, empty, or null.
      */
     protected boolean isMaintenanceLocalStrategyDefault() {
-        if (org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value())
+        if (org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value().toString())
                 || HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(State.Error.toString().toLowerCase())) {
             return true;
         }
