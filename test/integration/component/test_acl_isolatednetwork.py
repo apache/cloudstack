@@ -40,7 +40,6 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-
         """
         Create the following domain tree and accounts that are reqiured for executing Test cases relating to access checks for createNetwork(), deploying VM in an isolated network and restartNetwork():
         Under ROOT - create 2 domaind D1 and D2
@@ -62,36 +61,41 @@ class TestIsolatedNetwork(cloudstackTestCase):
         cls.domain_2 = None
         cls._cleanup = []
 
-        try:
-            # backup default apikey and secretkey
-            cls.default_apikey = cls.apiclient.connection.apiKey
-            cls.default_secretkey = cls.apiclient.connection.securityKey
+        # backup default apikey and secretkey
+        cls.default_apikey = cls.apiclient.connection.apiKey
+        cls.default_secretkey = cls.apiclient.connection.securityKey
 
+        try:
             # Create domains
             cls.domain_1 = Domain.create(
                 cls.apiclient,
                 cls.acldata["domain1"]
             )
+            cls._cleanup.append(cls.domain_1)
 
             cls.domain_11 = Domain.create(
                 cls.apiclient,
                 cls.acldata["domain11"],
                 parentdomainid=cls.domain_1.id
             )
+            cls._cleanup.append(cls.domain_11)
             cls.domain_111 = Domain.create(
                 cls.apiclient,
                 cls.acldata["domain111"],
                 parentdomainid=cls.domain_11.id,
             )
+            cls._cleanup.append(cls.domain_111)
             cls.domain_12 = Domain.create(
                 cls.apiclient,
                 cls.acldata["domain12"],
                 parentdomainid=cls.domain_1.id
             )
+            cls._cleanup.append(cls.domain_12)
             cls.domain_2 = Domain.create(
                 cls.apiclient,
                 cls.acldata["domain2"]
             )
+            cls._cleanup.append(cls.domain_2)
             # Create  1 admin account and 2 user accounts for doamin_1
             cls.account_d1 = Account.create(
                 cls.apiclient,
@@ -99,6 +103,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 admin=True,
                 domainid=cls.domain_1.id
             )
+            cls._cleanup.append(cls.account_d1)
 
             user = cls.generateKeysForUser(cls.apiclient, cls.account_d1)
             cls.user_d1_apikey = user.apikey
@@ -110,6 +115,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 admin=False,
                 domainid=cls.domain_1.id
             )
+            cls._cleanup.append(cls.account_d1a)
             user = cls.generateKeysForUser(cls.apiclient, cls.account_d1a)
             cls.user_d1a_apikey = user.apikey
             cls.user_d1a_secretkey = user.secretkey
@@ -120,7 +126,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 admin=False,
                 domainid=cls.domain_1.id
             )
-
+            cls._cleanup.append(cls.account_d1b)
             user = cls.generateKeysForUser(cls.apiclient, cls.account_d1b)
             cls.user_d1b_apikey = user.apikey
             cls.user_d1b_secretkey = user.secretkey
@@ -132,6 +138,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 admin=True,
                 domainid=cls.domain_11.id
             )
+            cls._cleanup.append(cls.account_d11)
             user = cls.generateKeysForUser(cls.apiclient, cls.account_d11)
             cls.user_d11_apikey = user.apikey
             cls.user_d11_secretkey = user.secretkey
@@ -142,6 +149,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 admin=False,
                 domainid=cls.domain_11.id
             )
+            cls._cleanup.append(cls.account_d11a)
             user = cls.generateKeysForUser(cls.apiclient, cls.account_d11a)
             cls.user_d11a_apikey = user.apikey
             cls.user_d11a_secretkey = user.secretkey
@@ -152,6 +160,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 admin=False,
                 domainid=cls.domain_11.id
             )
+            cls._cleanup.append(cls.account_d11b)
             user = cls.generateKeysForUser(cls.apiclient, cls.account_d11b)
             cls.user_d11b_apikey = user.apikey
             cls.user_d11b_secretkey = user.secretkey
@@ -164,6 +173,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 admin=True,
                 domainid=cls.domain_111.id
             )
+            cls._cleanup.append(cls.account_d111)
             user = cls.generateKeysForUser(cls.apiclient, cls.account_d111)
             cls.user_d111_apikey = user.apikey
             cls.user_d111_secretkey = user.secretkey
@@ -174,6 +184,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 admin=False,
                 domainid=cls.domain_111.id
             )
+            cls._cleanup.append(cls.account_d111a)
             user = cls.generateKeysForUser(cls.apiclient, cls.account_d111a)
             cls.user_d111a_apikey = user.apikey
             cls.user_d111a_secretkey = user.secretkey
@@ -184,6 +195,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 admin=False,
                 domainid=cls.domain_111.id
             )
+            cls._cleanup.append(cls.account_d111b)
             user = cls.generateKeysForUser(cls.apiclient, cls.account_d111b)
             cls.user_d111b_apikey = user.apikey
             cls.user_d111b_secretkey = user.secretkey
@@ -195,6 +207,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 admin=False,
                 domainid=cls.domain_12.id
             )
+            cls._cleanup.append(cls.account_d12a)
             user = cls.generateKeysForUser(cls.apiclient, cls.account_d12a)
             cls.user_d12a_apikey = user.apikey
             cls.user_d12a_secretkey = user.secretkey
@@ -205,7 +218,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 admin=False,
                 domainid=cls.domain_12.id
             )
-
+            cls._cleanup.append(cls.account_d12b)
             user = cls.generateKeysForUser(cls.apiclient, cls.account_d12b)
             cls.user_d12b_apikey = user.apikey
             cls.user_d12b_secretkey = user.secretkey
@@ -218,7 +231,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 admin=False,
                 domainid=cls.domain_2.id
             )
-
+            cls._cleanup.append(cls.account_d2a)
             user = cls.generateKeysForUser(cls.apiclient, cls.account_d2a)
             cls.user_d2a_apikey = user.apikey
             cls.user_d2a_secretkey = user.secretkey
@@ -231,7 +244,6 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 admin=False,
             )
             cls._cleanup.append(cls.account_roota)
-
             user = cls.generateKeysForUser(cls.apiclient, cls.account_roota)
             cls.user_roota_apikey = user.apikey
             cls.user_roota_secretkey = user.secretkey
@@ -242,7 +254,6 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 admin=True,
             )
             cls._cleanup.append(cls.account_root)
-
             user = cls.generateKeysForUser(cls.apiclient, cls.account_root)
             cls.user_root_apikey = user.apikey
             cls.user_root_secretkey = user.secretkey
@@ -325,37 +336,33 @@ class TestIsolatedNetwork(cloudstackTestCase):
             cls.createVM(cls.apiclient, cls.zone.id, cls.service_offering.id, cls.template.id, cls.network_d2a.id)
 
         except Exception as e:
-            cls.domain_1.delete(cls.apiclient, cleanup="true")
-            cls.domain_2.delete(cls.apiclient, cleanup="true")
-            super(TestIsolatedNetwork,cls).tearDownClass()
+            cls.tearDownClass()
             raise Exception("Failed to create the setup required to execute the test cases: %s" % e)
 
     @classmethod
     def tearDownClass(cls):
-        # TODO more cleanup could be done in this class and in a more elegant way
-        cls.apiclient = super(TestIsolatedNetwork, cls).getClsTestClient().getApiClient()
+        # set the keys to root admin and clean up
         cls.apiclient.connection.apiKey = cls.default_apikey
         cls.apiclient.connection.securityKey = cls.default_secretkey
-        cls.domain_1.delete(cls.apiclient, cleanup="true")
-        cls.domain_2.delete(cls.apiclient, cleanup="true")
         super(TestIsolatedNetwork,cls).tearDownClass()
         return
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
 
     def tearDown(self):
         # restore back default apikey and secretkey
         self.apiclient.connection.apiKey = self.default_apikey
         self.apiclient.connection.securityKey = self.default_secretkey
+        super(TestIsolatedNetwork,self).tearDown()
         return
 
     ## Test cases relating to createNetwork as admin user
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_01_createNetwork_admin(self):
-
         """
         # Validate that Admin should be able to create network for himslef
         """
@@ -370,7 +377,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             networkofferingid=self.isolated_network_offering_id,
             zoneid=self.zone.id
         )
-
+        self.cleanup.append(network)
         self.assertEqual(network.state.lower() == ALLOCATED.lower(),
                          True,
                          "Admin User is not able to create a network for himself")
@@ -393,7 +400,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             accountid=self.account_roota.name,
             domainid=self.account_roota.domainid
         )
-
+        self.cleanup.append(network)
         self.assertEqual(network.state.lower() == ALLOCATED.lower(),
                          True,
                          "Admin User is not able to create a network for other users in his domain")
@@ -417,7 +424,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             accountid=self.account_d11a.name,
             domainid=self.account_d11a.domainid
         )
-
+        self.cleanup.append(network)
         self.assertEqual(network.state.lower() == ALLOCATED.lower(),
                          True,
                          "Admin User is not able to create a network for for other users in other domain")
@@ -441,7 +448,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             networkofferingid=self.isolated_network_offering_id,
             zoneid=self.zone.id
         )
-
+        self.cleanup.append(network)
         self.assertEqual(network.state.lower() == ALLOCATED.lower(),
                          True,
                          "Domain admin User is not able to create a network for himself")
@@ -465,7 +472,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             accountid=self.account_d1a.name,
             domainid=self.account_d1a.domainid
         )
-
+        self.cleanup.append(network)
         self.assertEqual(network.state.lower() == ALLOCATED.lower(),
                          True,
                          "Domain admin User is not able to create a network for other users in his domain")
@@ -489,7 +496,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             accountid=self.account_d11a.name,
             domainid=self.account_d11a.domainid
         )
-
+        self.cleanup.append(network)
         self.assertEqual(network.state.lower() == ALLOCATED.lower(),
                          True,
                          "Domain admin User is not able to create a network for other users in his sub domain")
@@ -513,6 +520,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 accountid=self.account_d2a.name,
                 domainid=self.account_d2a.domainid
             )
+            self.cleanup.append(network)
             self.fail("Domain admin is allowed to create network for users not in his domain ")
         except Exception as e:
             self.debug("When Domain admin tries to create network for users in his sub domain %s" % e)
@@ -537,6 +545,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             networkofferingid=self.isolated_network_offering_id,
             zoneid=self.zone.id
         )
+        self.cleanup.append(network)
 
         self.assertEqual(network.state.lower() == ALLOCATED.lower(),
                          True,
@@ -561,6 +570,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 accountid=self.account_d1b.name,
                 domainid=self.account_d1b.domainid
             )
+            self.cleanup.append(network)
             self.fail("User is allowed to create network for other users in his domain ")
         except Exception as e:
             self.debug("When user tries to create network for users in his domain %s" % e)
@@ -586,6 +596,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 accountid=self.account_d11a.name,
                 domainid=self.account_d11a.domainid
             )
+            self.cleanup.append(network)
             self.fail("User is allowed to create network for users not in his domain ")
         except Exception as e:
             self.debug("When user tries to create network for users in other domain %s" % e)
@@ -611,6 +622,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             templateid=self.template.id,
             networkids=self.network_root.id
         )
+        self.cleanup.append(vm)
 
         self.assertEqual(vm.state.lower() == RUNNING.lower(),
                          True,
@@ -635,7 +647,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             accountid=self.account_roota.name,
             domainid=self.account_roota.domainid
         )
-
+        self.cleanup.append(vm)
         self.assertEqual(vm.state.lower() == RUNNING.lower() and vm.account == self.account_roota.name and vm.domainid == self.account_roota.domainid,
                          True,
                          "Admin User is not able to deploy VM for users in his domain")
@@ -659,7 +671,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             accountid=self.account_d2a.name,
             domainid=self.account_d2a.domainid
         )
-
+        self.cleanup.append(vm)
         self.assertEqual(vm.state.lower() == RUNNING.lower() and vm.account == self.account_d2a.name and vm.domainid == self.account_d2a.domainid,
                          True,
                          "Admin User is not able to deploy VM for users users in other domain")
@@ -683,6 +695,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 accountid=self.account_d11a.name,
                 domainid=self.account_d11a.domainid
             )
+            self.cleanup.append(vm)
             self.fail("Admin is allowed to deploy VM for a user in a network that does not belong to the user ")
         except Exception as e:
             self.debug("When admin tries to deploy vm for users in network that does not belong to the user %s" % e)
@@ -708,6 +721,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             templateid=self.template.id,
             networkids=self.network_d1.id,
         )
+        self.cleanup.append(vm)
 
         self.assertEqual(vm.state.lower() == RUNNING.lower(),
                          True,
@@ -732,6 +746,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             accountid=self.account_d1a.name,
             domainid=self.account_d1a.domainid
         )
+        self.cleanup.append(vm)
         self.assertEqual(vm.state.lower() == RUNNING.lower() and vm.account == self.account_d1a.name and vm.domainid == self.account_d1a.domainid,
                          True,
                          "Domain admin User is not able to deploy VM for other users in his domain")
@@ -755,6 +770,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             accountid=self.account_d11a.name,
             domainid=self.account_d11a.domainid
         )
+        self.cleanup.append(vm)
         self.assertEqual(vm.state.lower() == RUNNING.lower() and vm.account == self.account_d11a.name and vm.domainid == self.account_d11a.domainid,
                          True,
                          "Domain admin User is not able to deploy vm for himself")
@@ -779,6 +795,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 accountid=self.account_d2a.name,
                 domainid=self.account_d2a.domainid
             )
+            self.cleanup.append(vm)
             self.fail("Domain admin is allowed to deploy vm for users not in hos domain ")
         except Exception as e:
             self.debug("When Domain admin tries to deploy vm for users in his sub domain %s" % e)
@@ -804,6 +821,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 accountid=self.account_d11a.name,
                 domainid=self.account_d11a.domainid
             )
+            self.cleanup.append(vm)
             self.fail("Domain admin is allowed to deploy vm for users in a network that does not belong to him ")
         except Exception as e:
             self.debug("When domain admin tries to deploy vm for users in network that does not belong to the user %s" % e)
@@ -829,6 +847,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             templateid=self.template.id,
             networkids=self.network_d1a.id,
         )
+        self.cleanup.append(vm)
         self.assertEqual(vm.state.lower() == RUNNING.lower(),
                          True,
                          "User is not able to deploy vm for himself")
@@ -853,6 +872,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 accountid=self.account_d1b.name,
                 domainid=self.account_d1b.domainid
             )
+            self.cleanup.append(vm)
             self.fail("Regular user is allowed to deploy vm for other users in his domain ")
         except Exception as e:
             self.debug("When user tries to deploy vm for users in his domain %s" % e)
@@ -879,6 +899,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 accountid=self.account_d2a.name,
                 domainid=self.account_d2a.domainid
             )
+            self.cleanup.append(vm)
             self.fail("Regular user is allowed to deploy vm for users not in his domain ")
         except Exception as e:
             self.debug("When user tries to deploy vm for users n different domain %s" % e)
@@ -902,6 +923,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 templateid=self.template.id,
                 networkids=self.network_d11b.id,
             )
+            self.cleanup.append(vm)
             self.fail("User is allowed to deploy VM  in a network that does not belong to him ")
         except Exception as e:
             self.debug("When user tries to deploy vm in a  network that does not belong to him %s" % e)
@@ -1071,8 +1093,8 @@ class TestIsolatedNetwork(cloudstackTestCase):
             user.id
         ))
 
-    @staticmethod
-    def createNetwork(apiclient, account, isolated_network_offering_id, zone):
+    @classmethod
+    def createNetwork(cls, apiclient, account, isolated_network_offering_id, zone):
         network = {
             "name": "Network-",
             "displaytext": "Network-",
@@ -1094,8 +1116,8 @@ class TestIsolatedNetwork(cloudstackTestCase):
         cls._cleanup.append(network)
         return network
 
-    @staticmethod
-    def createVM(apiclient, zoneId, serviceOfferingId, templateId, networkId):
+    @classmethod
+    def createVM(cls, apiclient, zoneId, serviceOfferingId, templateId, networkId):
         vmData = {"name": "prereq", "dispayname": "prereq"}
 
         vm = VirtualMachine.create(
@@ -1106,5 +1128,5 @@ class TestIsolatedNetwork(cloudstackTestCase):
             templateid=templateId,
             networkids=networkId
         )
-
+        cls._cleanup.append(vm)
         return vm
