@@ -86,6 +86,7 @@ import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
+import com.cloud.hypervisor.vmware.mo.VirtualDiskManagerMO;
 import com.cloud.hypervisor.vmware.resource.VmwareResource;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
@@ -954,9 +955,30 @@ public class VmwareStorageProcessor implements StorageProcessor {
             String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.VMWARE, !_fullCloneFlag);
             String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, !_fullCloneFlag);
 
-            for (int i=0; i<vmwareLayoutFilePair.length; i++) {
-                dsMo.moveDatastoreFile(vmwareLayoutFilePair[i], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[i], dcMo.getMor(), true);
+            String sourceDiskPath = vmwareLayoutFilePair[0];
+            boolean clonedFileFound = false;
+            try {
+                if (dsMo.folderExists(dsMo.getDatastoreRootPath(), vmdkName) && dsMo.fileExists(sourceDiskPath)) {
+                    clonedFileFound = true;
+                }
+            } catch (Exception e) {
+                s_logger.trace("Encountered exception while searching for file: " + sourceDiskPath);
             }
+            if (!clonedFileFound) {
+                s_logger.debug("After clone, unable to find VMDK file: " + sourceDiskPath + " in symlink folder");
+                String diskPathFromVmConfiguration = getDiskPathFromVmConfiguration(vmMo, vmdkFileBaseName);
+                if (StringUtils.isNotEmpty(diskPathFromVmConfiguration)) {
+                    sourceDiskPath = diskPathFromVmConfiguration;
+                }
+            } else {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("After VM clone, found VMDK file at: " + sourceDiskPath);
+                }
+            }
+            String legacyCloudStackLayoutFilePath = legacyCloudStackLayoutFilePair[0];
+            s_logger.debug("Moving virtual disk from " + sourceDiskPath + " to " + legacyCloudStackLayoutFilePath);
+            VirtualDiskManagerMO virtDiskMgrMo = new VirtualDiskManagerMO(context, context.getServiceContent().getVirtualDiskManager());
+            virtDiskMgrMo.moveVirtualDisk(sourceDiskPath, dcMo.getMor(), legacyCloudStackLayoutFilePath, dcMo.getMor(), false);
 
             s_logger.info("detach disks from volume-wrapper VM " + vmdkName);
             vmMo.detachAllDisks();
@@ -990,7 +1012,19 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
         }
     }
-
+    private String getDiskPathFromVmConfiguration(VirtualMachineMO vmMo, String vmdkBaseName) throws Exception {
+        VirtualDisk[] disks = vmMo.getAllDiskDevice();
+        String srcDiskPath = "";
+        if (disks != null) {
+            for (VirtualDisk disk : disks) {
+                DatastoreFile dsVmdkFile = vmMo.getVmdkFileName(disk);
+                if (dsVmdkFile.getFileBaseName().startsWith(vmdkBaseName)) {
+                    return dsVmdkFile.getPath();
+                }
+            }
+        }
+        return srcDiskPath;
+    }
     private void createLinkedOrFullClone(TemplateObjectTO template, VolumeObjectTO volume, DatacenterMO dcMo, VirtualMachineMO vmMo, ManagedObjectReference morDatastore,
                                          DatastoreMO dsMo, String cloneName, ManagedObjectReference morPool) throws Exception {
         if (template.getSize() != null) {

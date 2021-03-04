@@ -447,6 +447,16 @@ public class VirtualMachineMO extends BaseMO {
         return false;
     }
 
+    public DatastoreFile getVmdkFileName(VirtualDisk disk) throws Exception {
+        DatastoreFile dsBackingFile = null;
+        VirtualDeviceBackingInfo backingInfo = disk.getBacking();
+        if (backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
+            VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo)backingInfo;
+            dsBackingFile = new DatastoreFile(diskBackingInfo.getFileName());
+        }
+        return dsBackingFile;
+    }
+
     public boolean changeHost(VirtualMachineRelocateSpec relocateSpec) throws Exception {
         ManagedObjectReference morTask = _context.getService().relocateVMTask(_mor, relocateSpec, VirtualMachineMovePriority.DEFAULT_PRIORITY);
         boolean result = _context.getVimClient().waitForTask(morTask);

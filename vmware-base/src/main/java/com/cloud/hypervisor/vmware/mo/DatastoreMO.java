@@ -148,7 +148,7 @@ public class DatastoreMO extends BaseMO {
         }
     }
 
-    String getDatastoreRootPath() throws Exception {
+    public String getDatastoreRootPath() throws Exception {
         return String.format("[%s]", getName());
     }
 
