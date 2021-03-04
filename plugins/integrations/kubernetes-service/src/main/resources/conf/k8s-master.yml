@@ -204,7 +204,7 @@ write-files:
         fi
         retval=0
         set +e
-        kubeadm init --token {{ k8s_master.cluster.token }} {{ k8s_master.cluster.initargs }}
+        kubeadm init --token {{ k8s_master.cluster.token }} --token-ttl 0 {{ k8s_master.cluster.initargs }}
         retval=$?
         set -e
         if [ $retval -eq 0 ]; then
