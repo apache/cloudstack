@@ -1324,7 +1324,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             s_logger.warn("Unable to destroy uploaded template " + template.getUuid() + ". Error details: " + th.getMessage());
                         }
                     }
-                    List<VMTemplateVO> vmTemplateVOS = _templateDao.listNotRemovedTemplatesByStates(VirtualMachineTemplate.State.Inactive);
+                    List<VMTemplateVO> vmTemplateVOS = _templateDao.listUnRemovedTemplatesByStates(VirtualMachineTemplate.State.Inactive);
                     for (VMTemplateVO template: vmTemplateVOS) {
                         template.setRemoved(new Date());
                         _templateDao.update(template.getId(), template);

@@ -942,7 +942,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
-     public List<VMTemplateVO> listNotRemovedTemplatesByStates(VirtualMachineTemplate.State ...states) {
+     public List<VMTemplateVO> listUnRemovedTemplatesByStates(VirtualMachineTemplate.State ...states) {
         SearchCriteria<VMTemplateVO> sc = ActiveTmpltSearch.create();
         sc.setParameters("state", (Object[]) states);
         return listBy(sc);
