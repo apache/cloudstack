@@ -535,12 +535,14 @@ class libvirtConfigRedhat(serviceCfgBase):
             cfo = configFileOps("/etc/sysconfig/libvirtd", self)
             if distro in (CentOS6,RHEL6):
                 cfo.addEntry("export CGROUP_DAEMON", "'cpu:/virt'")
-            libvirtVersion = bash("virsh --version")
-            if not libvirtVersion.isSuccess() or libvirtVersion.getStdout() == "":
-                raise CloudRuntimeException("Libvirt not installed!")
-            if StrictVersion(str(libvirtVersion.getStdout())) <= StrictVersion('5.6'):
-                cfo.addEntry("LIBVIRTD_ARGS", "-l")
-                cfo.save()
+            cfo.addEntry("LIBVIRTD_ARGS", "-l")
+            cfo.save()
+            if os.path.exists("/lib/systemd/system/libvirtd.socket"):
+                bash("/bin/systemctl mask libvirtd.socket");
+                bash("/bin/systemctl mask libvirtd-ro.socket");
+                bash("/bin/systemctl mask libvirtd-admin.socket");
+                bash("/bin/systemctl mask libvirtd-tls.socket");
+                bash("/bin/systemctl mask libvirtd-tcp.socket");
 
             filename = "/etc/libvirt/qemu.conf"
 
