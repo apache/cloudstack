@@ -22,6 +22,8 @@ import re
 from .configFileOps import configFileOps
 import os
 import shutil
+from distutils.version import StrictVersion
+
 
 # exit() error constants
 Unknown = 0
@@ -533,8 +535,12 @@ class libvirtConfigRedhat(serviceCfgBase):
             cfo = configFileOps("/etc/sysconfig/libvirtd", self)
             if distro in (CentOS6,RHEL6):
                 cfo.addEntry("export CGROUP_DAEMON", "'cpu:/virt'")
-            cfo.addEntry("LIBVIRTD_ARGS", "-l")
-            cfo.save()
+            libvirtVersion = bash("virsh --version")
+            if not libvirtVersion.isSuccess() or libvirtVersion.getStdout() == "":
+                raise CloudRuntimeException("Libvirt not installed!")
+            if StrictVersion(str(libvirtVersion.getStdout())) <= StrictVersion('5.6'):
+                cfo.addEntry("LIBVIRTD_ARGS", "-l")
+                cfo.save()
 
             filename = "/etc/libvirt/qemu.conf"
 
