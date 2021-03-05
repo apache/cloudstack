@@ -94,7 +94,7 @@ public abstract class BaseListCmd extends BaseCmd implements IBaseListCmd {
         if (pageSizeInt != null) {
             defaultPageSize = pageSizeInt.longValue();
         }
-        if (defaultPageSize.longValue() == s_pageSizeUnlimited) {
+        if (defaultPageSize!= null && defaultPageSize.longValue() == s_pageSizeUnlimited) {
             defaultPageSize = null;
         }
 

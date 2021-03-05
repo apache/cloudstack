@@ -26,13 +26,13 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 @APICommand(name = UpdateStorageCapabilitiesCmd.APINAME, description = "Syncs capabilities of storage pools",
-        responseObject = SuccessResponse.class,
+        responseObject = StoragePoolResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.16.0")
 public class UpdateStorageCapabilitiesCmd extends BaseCmd {
     public static final String APINAME = "updateStorageCapabilities";
@@ -64,17 +64,14 @@ public class UpdateStorageCapabilitiesCmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        try {
-            _storageService.updateStorageCapabilities(poolId, poolId != null);
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            response.setSuccess(true);
-            this.setResponseObject(response);
-        } catch (Exception e) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            response.setSuccess(false);
-            this.setResponseObject(response);
-            LOG.error(e);
+        _storageService.updateStorageCapabilities(poolId, poolId != null);
+        ListStoragePoolsCmd listStoragePoolCmd = new ListStoragePoolsCmd();
+        if (poolId != null){
+            listStoragePoolCmd.setId(poolId);
         }
+        ListResponse<StoragePoolResponse> response = _queryService.searchForStoragePools(listStoragePoolCmd);
+        response.setResponseName(getCommandName());
+        this.setResponseObject(response);
     }
 
     @Override
