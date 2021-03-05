@@ -22,8 +22,6 @@ import re
 from .configFileOps import configFileOps
 import os
 import shutil
-from distutils.version import StrictVersion
-
 
 # exit() error constants
 Unknown = 0
