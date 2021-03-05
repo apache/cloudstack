@@ -306,6 +306,7 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSHypervisor;
+import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
@@ -315,6 +316,8 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.storage.snapshot.SnapshotSchedule;
@@ -394,6 +397,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     private VMSnapshotDao vmSnapshotDao;
     @Inject
     private BackupOfferingDao backupOfferingDao;
+    @Inject
+    private GuestOSCategoryDao _guestOsCategoryDao;
+    @Inject
+    private GuestOSDao _guestOsDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -3395,7 +3402,16 @@ public class ApiResponseHelper implements ResponseGenerator {
                 resourceType = ResourceTag.ResourceObjectType.UserVm;
                 usageRecResponse.setUsageId(vm.getUuid());
                 resourceId = vm.getId();
-                usageRecResponse.setOsTypeId(vm.getGuestOSId());
+                final GuestOS guestOS = _guestOsDao.findById(vm.getGuestOSId());
+                if (guestOS != null) {
+                    usageRecResponse.setOsTypeId(guestOS.getUuid());
+                    usageRecResponse.setOsDisplayName(guestOS.getDisplayName());
+                    final GuestOsCategory guestOsCategory = _guestOsCategoryDao.findById(guestOS.getCategoryId());
+                    if (guestOsCategory != null) {
+                        usageRecResponse.setOsCategoryId(guestOsCategory.getUuid());
+                        usageRecResponse.setOsCategoryName(guestOsCategory.getName());
+                    }
+                }
             }
             //Hypervisor Type
             usageRecResponse.setType(usageRecord.getType());
