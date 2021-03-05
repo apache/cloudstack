@@ -149,9 +149,6 @@ else
   gpg -v --default-key $certid --armor --output apache-cloudstack-$version-src.tar.bz2.asc --detach-sig apache-cloudstack-$version-src.tar.bz2
 fi
 
-echo 'md5'
-md5sum apache-cloudstack-$version-src.tar.bz2 > apache-cloudstack-$version-src.tar.bz2.md5
-
 echo 'sha512'
 sha512sum apache-cloudstack-$version-src.tar.bz2 > apache-cloudstack-$version-src.tar.bz2.sha512
 
@@ -184,11 +181,9 @@ if [ "$committosvn" == "yes" ]; then
   fi
   cp $outputdir/apache-cloudstack-$version-src.tar.bz2 .
   cp $outputdir/apache-cloudstack-$version-src.tar.bz2.asc .
-  cp $outputdir/apache-cloudstack-$version-src.tar.bz2.md5 .
   cp $outputdir/apache-cloudstack-$version-src.tar.bz2.sha512 .
   svn add apache-cloudstack-$version-src.tar.bz2
   svn add apache-cloudstack-$version-src.tar.bz2.asc
-  svn add apache-cloudstack-$version-src.tar.bz2.md5
   svn add apache-cloudstack-$version-src.tar.bz2.sha512
   svn commit -m "Committing release candidate artifacts for $version to dist/dev/cloudstack in preparation for release vote"
 fi
