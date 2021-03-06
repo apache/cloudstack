@@ -456,6 +456,10 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             throw new InvalidParameterValueException("Please specify a valid template.");
         }
 
+        if (template.getState() == VirtualMachineTemplate.State.NotUploaded || template.getState() == VirtualMachineTemplate.State.UploadInProgress) {
+            throw new InvalidParameterValueException("The template is either getting uploaded or it may be initiated shortly, please wait for it to be completed");
+        }
+
         return new TemplateProfile(userId, template, zoneId);
     }
 
@@ -493,6 +497,10 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         if (template.getFormat() != ImageFormat.ISO) {
             throw new InvalidParameterValueException("Please specify a valid iso.");
+        }
+
+        if (template.getState() == VirtualMachineTemplate.State.NotUploaded || template.getState() == VirtualMachineTemplate.State.UploadInProgress) {
+            throw new InvalidParameterValueException("The iso is either getting uploaded or it may be initiated shortly, please wait for it to be completed");
         }
 
         return new TemplateProfile(userId, template, zoneId);
