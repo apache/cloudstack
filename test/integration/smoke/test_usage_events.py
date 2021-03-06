@@ -87,7 +87,7 @@ class TestUsageEvents(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced, basic"], required_hardware="true")
+    @attr(tags=["advanced, basic", "deploy-vm", "usage"], required_hardware="true")
     def test_01_positive_tests_usage(self):
         """ Check events in usage_events table when VM creation fails
 

@@ -167,7 +167,7 @@ class TestBrowseUploadTemplate(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "templates"], required_hardware="false")
     def test_browser_upload_template_incomplete(self):
         """
         Test browser based incomplete template upload, followed by SSVM destroy. Template should go to UploadAbandoned state and get cleaned up.

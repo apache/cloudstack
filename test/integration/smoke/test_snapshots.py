@@ -126,7 +126,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         return
 
     @skipTestIf("hypervisorNotSupported")
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke", "quick-test"], required_hardware="true")
     def test_01_snapshot_root_disk(self):
         """Test Snapshot Root Disk
         """

@@ -117,7 +117,7 @@ class TestPrimaryResourceLimitsVolume(cloudstackTestCase):
         return [PASS, None]
 
     # @data(USER_ACCOUNT)
-    @attr(tags=["advanced","basic"], required_hardware="true")
+    @attr(tags=["advanced","basic", "storage"], required_hardware="true")
     def test_attach_volume_exceeding_primary_limits(self):
         """
         # do

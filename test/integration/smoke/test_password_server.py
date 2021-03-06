@@ -236,7 +236,7 @@ class TestIsolatedNetworksPasswdServer(cloudstackTestCase):
 
         self.assertTrue(vm.nic[0].ipaddress in result, "Password file is empty or doesn't exist!")
 
-    @attr(tags=["advanced", "advancedns", "ssh"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "ssh", "deploy-vm"], required_hardware="true")
     def test_isolate_network_password_server(self):
         """Check the password file in the Router VM"""
 

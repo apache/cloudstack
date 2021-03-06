@@ -194,7 +194,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
             return [FAIL, e, None]
         return [PASS, None, users]
 
-    @attr(tags=["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice", "storage"], required_hardware="false")
     def test_01_multiple_domains_primary_storage_limits(self):
         """Test primary storage limit of domain and its sub-domains
 
@@ -341,7 +341,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
         self.assertTrue(result[2], "Resource count does not match")
         return
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced", "storage"], required_hardware="false")
     def test_02_multiple_domains_primary_storage_limits(self):
         """Test primary storage counts in multiple child domains
         # Steps
@@ -423,7 +423,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
                 self.fail("Failure: %s" % e)
             return
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced", "storage"], required_hardware="false")
     def test_03_multiple_domains_multiple_volumes(self):
         """Test primary storage counts in multiple child domains
         # Steps
@@ -536,7 +536,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
                 self.fail("Failure: %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "storage"], required_hardware="true")
     def test_04_create_template_snapshot(self):
         """Test create snapshot and templates from volume
 
@@ -637,7 +637,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
                 self.fail("Failed with exception : %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced", "storage"], required_hardware="false")
     def test_05_assign_virtual_machine_different_domain(self):
         """Test assign virtual machine to account belonging to different domain
 
@@ -704,7 +704,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
             self.fail("Failed with exception: %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced", "storage"], required_hardware="false")
     def test_06_destroy_recover_vm(self):
         """Test primary storage counts while destroying and recovering VM
         # Steps

@@ -209,7 +209,7 @@ class TestListIdsParams(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "deploy-vm"], required_hardware="false")
     def test_01_list_volumes(self):
         """Test listing Volumes using 'ids' parameter
         """
@@ -230,7 +230,7 @@ class TestListIdsParams(cloudstackTestCase):
             "ListVolumes response expected 3 Volumes, received %s" % len(list_volume_response)
         )
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "deploy-vm"], required_hardware="false")
     def test_02_list_templates(self):
         """Test listing Templates using 'ids' parameter
         """
@@ -253,7 +253,7 @@ class TestListIdsParams(cloudstackTestCase):
             "ListTemplates response expected 3 Templates, received %s" % len(list_template_response)
         )
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "deploy-vm"], required_hardware="false")
     def test_03_list_snapshots(self):
         """Test listing Snapshots using 'ids' parameter
         """

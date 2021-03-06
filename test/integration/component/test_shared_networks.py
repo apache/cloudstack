@@ -208,7 +208,7 @@ class TestSharedNetworks(cloudstackTestCase):
             return True
         return False
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "networks"], required_hardware="false")
     def test_sharedNetworkOffering_01(self):
         """  Test shared network Offering 01 """
 
@@ -350,7 +350,7 @@ class TestSharedNetworks(cloudstackTestCase):
             "NetworkOffering created and enabled: %s" %
             self.shared_network_offering.id)
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "networks"], required_hardware="false")
     def test_sharedNetworkOffering_02(self):
         """ Test Shared Network Offering 02 """
 
@@ -446,7 +446,7 @@ class TestSharedNetworks(cloudstackTestCase):
                  in advance mode and shared guest type. Exception: %s" %
                 e)
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "networks"], required_hardware="false")
     def test_sharedNetworkOffering_03(self):
         """ Test Shared Network Offering 03 """
 
@@ -543,7 +543,7 @@ class TestSharedNetworks(cloudstackTestCase):
                  ranges as False in advance mode and with shared guest type.\
                  Exception : %s" % e)
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "networks"], required_hardware="false")
     def test_createSharedNetwork_All(self):
         """ Test Shared Network ALL  """
 
@@ -842,7 +842,7 @@ class TestSharedNetworks(cloudstackTestCase):
                 "Virtual machine ip should be from the ip range assigned to\
                 network created.")
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "networks"], required_hardware="false")
     def test_createSharedNetwork_accountSpecific(self):
         """ Test Shared Network with scope account """
 
@@ -1115,7 +1115,7 @@ class TestSharedNetworks(cloudstackTestCase):
                 "Virtual machine ip should be from the ip range assigned\
                  to network created.")
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "networks"], required_hardware="false")
     def test_createSharedNetwork_domainSpecific(self):
         """ Test Shared Network with scope domain """
 
@@ -1492,7 +1492,7 @@ class TestSharedNetworks(cloudstackTestCase):
                 "Virtual machine ip should be from the ip range assigne\
                  to network created.")
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "networks"], required_hardware="false")
     def test_createSharedNetwork_projectSpecific(self):
         """ Test Shared Network with scope project  """
 
@@ -1788,7 +1788,7 @@ class TestSharedNetworks(cloudstackTestCase):
     @unittest.skip(
         "skipped - This is a redundant case and also this\
                 is causing issue for rest fo the cases ")
-    @attr(tags=["advanced", "advancedns", "NA"])
+    @attr(tags=["advanced", "advancedns", "NA", "networks"])
     def test_createSharedNetwork_usedVlan(self):
         """ Test Shared Network with used vlan 01 """
 
@@ -1945,7 +1945,7 @@ class TestSharedNetworks(cloudstackTestCase):
                 "Network creation failed because the valn id being used by\
                  another network. Exception: %s" % e)
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "networks"], required_hardware="false")
     def test_createSharedNetwork_usedVlan2(self):
         """ Test Shared Network with used vlan 02 """
 
@@ -2152,7 +2152,7 @@ class TestSharedNetworks(cloudstackTestCase):
                 "Network creation failed because the valn id being used by\
                  another network. Exception: %s" % e)
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "networks"], required_hardware="false")
     def test_deployVM_multipleSharedNetwork(self):
         """ Test Vm deployment with multiple shared networks """
 
@@ -2429,7 +2429,7 @@ class TestSharedNetworks(cloudstackTestCase):
             is not None,
             "ip should be assigned to running virtual machine")
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "networks"], required_hardware="true")
     def test_deployVM_isolatedAndShared(self):
         """ Test VM deployment in shared and isolated networks """
 
@@ -2798,7 +2798,7 @@ class TestSharedNetworks(cloudstackTestCase):
                 (self.isolated_network_admin_account_virtual_machine.ipaddress,
                     e))
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "networks"], required_hardware="false")
     def test_networkWithsubdomainaccessTrue(self):
         """ Test Shared Network with subdomainaccess=True """
 
@@ -2937,7 +2937,7 @@ class TestSharedNetworks(cloudstackTestCase):
                 "Network creation failed because subdomainaccess parameter was\
                  passed when scope was account.")
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "networks"], required_hardware="false")
     def test_networkWithsubdomainaccessFalse(self):
         """ Test shared Network with subdomainaccess=False """
 
@@ -3076,7 +3076,7 @@ class TestSharedNetworks(cloudstackTestCase):
                 "Network creation failed because subdomainaccess parameter\
                         was passed when scope was account.")
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced", "networks"], required_hardware="false")
     def test_escalation_ES1621(self):
         """
         @summary: ES1621:Allow creating shared networks with overlapping
@@ -3271,7 +3271,7 @@ class TestSharedNetworks(cloudstackTestCase):
         return
 
     @data(True, False)
-    @attr(tags=["advanced", "advancedns", "dvs"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "dvs", "networks"], required_hardware="false")
     def test_restart_network(self, cleanup):
         """ Test restart shared Network
 
@@ -3362,7 +3362,7 @@ class TestSharedNetworks(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced", "advancedns", "dvs"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "dvs", "networks"], required_hardware="false")
     def test_reboot_router(self):
         """Test reboot router
 
@@ -3459,7 +3459,7 @@ class TestSharedNetworks(cloudstackTestCase):
                     or in stopped state")
         return
 
-    @attr(tags=["advanced", "advancedns", "dvs"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "dvs", "networks"], required_hardware="false")
     def test_stop_start_router(self):
         """Test stop and start router
 
@@ -3556,7 +3556,7 @@ class TestSharedNetworks(cloudstackTestCase):
             self.fail(exceptionMessage)
         return
 
-    @attr(tags=["advanced", "advancedns", "dvs"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "dvs", "networks"], required_hardware="false")
     def test_acquire_ip(self):
         """Test acquire IP in shared network
 
@@ -3675,7 +3675,7 @@ class TestSharedNetworks(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["dvs"], required_hardware="true")
+    @attr(tags=["dvs", "networks"], required_hardware="true")
     def test_guest_traffic_port_groups_shared_network(self):
         """ Verify vcenter port groups are created for shared network
 

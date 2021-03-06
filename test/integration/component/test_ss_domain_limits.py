@@ -148,7 +148,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
             return [FAIL, e, None]
         return [PASS, None, users]
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "storage"], required_hardware="true")
     def test_01_multiple_domains_secondary_storage_limits(self):
         """Test secondary storage limit of domain and its sub-domains
 
@@ -261,7 +261,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
         self.assertTrue(result[2], "Resource count does not match")
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "storage"], required_hardware="true")
     def test_02_multiple_domains_secondary_storage_counts(self):
         """Test secondary storage counts in multiple child domains
         # Steps
@@ -325,7 +325,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
                 self.fail("Failed to get zone list: %s" % e)
 	    return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "storage"], required_hardware="true")
     def test_03_copy_template(self):
         """Test secondary storage counts in multiple child domains
         # Steps
@@ -485,7 +485,7 @@ class TestDeleteAccount(cloudstackTestCase):
             return [FAIL, e, None]
         return [PASS, None, users]
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "storage"], required_hardware="true")
     def test_04_create_template_delete_account(self):
         """Test secondary storage limit of domain and its sub-domains
 

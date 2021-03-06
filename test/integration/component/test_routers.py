@@ -125,7 +125,7 @@ class TestRouterServices(cloudstackTestCase):
         self.cleanup = []
         return
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced", "routers"], required_hardware="false")
     def test_01_AdvancedZoneRouterServices(self):
         """Test advanced zone router services
         """
@@ -277,7 +277,7 @@ class TestRouterServices(cloudstackTestCase):
         return
 
     @attr(configuration="network.gc")
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced", "routers"], required_hardware="false")
     def test_02_NetworkGarbageCollection(self):
         """Test network garbage collection
         """
@@ -457,7 +457,7 @@ class TestRouterServices(cloudstackTestCase):
         self.cleanup.append(self.vm_2)
         return
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced", "routers"], required_hardware="false")
     def test_03_RouterStartOnVmDeploy(self):
         """Test router start on VM deploy
         """
@@ -736,7 +736,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
         self.cleanup = []
         return
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "routers"], required_hardware="true")
     def test_01_RouterStopCreatePF(self):
         """Test router stop create port forwarding
         """
@@ -953,7 +953,7 @@ class TestRouterStopCreateLB(cloudstackTestCase):
         self.cleanup = []
         return
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "routers"], required_hardware="true")
     def test_01_RouterStopCreateLB(self):
         """Test router stop create Load balancing
         """
@@ -1171,7 +1171,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         self.cleanup = []
         return
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "routers"], required_hardware="true")
     def test_01_RouterStopCreateFW(self):
         """Test router stop create Firewall rule
         """

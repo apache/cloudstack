@@ -105,7 +105,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         self.hypervisor = self.testClient.getHypervisorInfo()
 
 
-    @attr(tags=["simulator", "devcloud", "basic", "advanced"], required_hardware="true")
+    @attr(tags=["simulator", "devcloud", "basic", "advanced", "deploy-vm"], required_hardware="true")
     def test_deployvm_userdata_post(self):
         """Test userdata as POST, size > 2k
         """

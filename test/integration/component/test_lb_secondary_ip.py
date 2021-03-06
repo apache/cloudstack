@@ -165,7 +165,7 @@ class TestAssignLBRule(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice", "networks"], required_hardware="false")
     def test_01_lb_rule_for_primary_ip(self):
         """Create LB rule for primary IP
 
@@ -218,7 +218,7 @@ class TestAssignLBRule(cloudstackTestCase):
         self.assertEqual(lb_rule.id, lbrules[0].id, "LB rules does not match")
         return
 
-    @attr(tags=["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice", "networks"], required_hardware="false")
     def test_02_lb_rule_for_primary_ip(self):
         """Create LB rule for secondary IP
 
@@ -271,7 +271,7 @@ class TestAssignLBRule(cloudstackTestCase):
         self.assertEqual(lb_rule.id, lbrules[0].id, "LB rules does not match")
         return
 
-    @attr(tags=["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice", "networks"], required_hardware="false")
     def test_03_lb_rule_for_primary_and_secondary_ip(self):
         """Create LB rule for primary and secondary IP
 
@@ -328,7 +328,7 @@ class TestAssignLBRule(cloudstackTestCase):
         self.assertEqual(lb_rule.id, lbrules[0].id, "LB rules does not match")
         return
 
-    @attr(tags=["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice", "networks"], required_hardware="false")
     def test_04_lb_rule_primary_secondary_multiple_vms(self):
         """Create LB rule for primary and secondary IPs of multiple VMs
 
@@ -492,7 +492,7 @@ class TestFailureScenarios(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice", "networks"], required_hardware="false")
     def test_05_lb_rule_wrong_vm_id(self):
         """Try to assign LB rule to secondary IP by giving wrong vm id
 
@@ -530,7 +530,7 @@ class TestFailureScenarios(cloudstackTestCase):
                            vmidipmap=vmidipmap)
         return
 
-    @attr(tags=["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice", "networks"], required_hardware="false")
     def test_06_lb_rule_wrong_vm_ip(self):
         """Try to assign LB rule to secondary IP by giving wrong ip
 
@@ -569,7 +569,7 @@ class TestFailureScenarios(cloudstackTestCase):
         return
 
     @unittest.skip("Failing-WIP")
-    @attr(tags=["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice", "networks"], required_hardware="false")
     def test_07_lb_rule_used_ip(self):
         """Try to assign secondary IP to lb rule which is already assigned to another
            LB rule
@@ -632,7 +632,7 @@ class TestFailureScenarios(cloudstackTestCase):
                             vmidipmap=vmidipmap)
         return
 
-    @attr(tags=["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice", "networks"], required_hardware="false")
     def test_08_lb_rule_remove_used_ip(self):
         """Try to remove secondary IP with load balancer rule configured for it
 
@@ -755,7 +755,7 @@ class TestListLBRuleInstances(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice", "networks"], required_hardware="false")
     def test_09_lbvmips_true(self):
         """List load balancer instances by passing lbvmips flag True
 
@@ -812,7 +812,7 @@ class TestListLBRuleInstances(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "selfservice"], required_hardware="false")
+    @attr(tags=["advanced", "selfservice", "networks"], required_hardware="false")
     def test_10_lbvmips_false(self):
         """List load balancer instances by passing lbvmips flag False
 
@@ -1014,7 +1014,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_11_ssh_to_secondary_ip(self):
         """SSH to VM using LB rule assigned to secondary IP of VM
 
@@ -1046,7 +1046,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
         return
 
     @unittest.skip("Failing-WIP")
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_12_ssh_to_primary_secondary_ip(self):
         """SSH to VM using LB rule assigned to primary and secondary IP of VM
 
@@ -1092,7 +1092,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
                       )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_13_delete_lb_rule(self):
         """SSH to VM after deleting LB rule
 
@@ -1134,7 +1134,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
                       )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_14_remove_lb_rule_secondary_ip(self):
         """ssh to vm after removing secondary ip from load balancer rule
 
@@ -1185,7 +1185,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
             self.fail("Exception during SSH : %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_15_remove_lb_rule_primary_ip(self):
         """ssh to vm after removing secondary ip from load balancer rule
 
@@ -1236,7 +1236,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
             self.fail("Exception during SSH : %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_16_delete_vm_from_lb_rule(self):
         """ssh to vm after removing secondary ip from load balancer rule
 
@@ -1287,7 +1287,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
                       )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_20_destroy_recover_vm(self):
         """Verify LB rules after destroying and recovering VM
 
@@ -1339,7 +1339,7 @@ class TestLbRuleFunctioning(cloudstackTestCase):
                           with secondary ip assigned to lb rule")
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_21_modify_lb_rule_algorithm(self):
         """Verify LB rule functioning with different algorithm
 
@@ -1527,7 +1527,7 @@ class TestNetworkOperations(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_17_restart_router(self):
         """Verify LB rules after restarting router VM
 
@@ -1593,7 +1593,7 @@ class TestNetworkOperations(cloudstackTestCase):
             self.fail("Exception during SSH : %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_18_restart_network_cleanup_true(self):
         """Verfy LB rules after restarting the network with cleanup flag set to True
 
@@ -1653,7 +1653,7 @@ class TestNetworkOperations(cloudstackTestCase):
             self.fail("Exception during SSH : %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_19_restart_network_cleanup_false(self):
         """Verfy LB rules after restarting the network with cleanup flag set to False
 
@@ -1713,7 +1713,7 @@ class TestNetworkOperations(cloudstackTestCase):
             self.fail("Exception during SSH : %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "networks"], required_hardware="true")
     def test_22_network_gc(self):
         """Verify LB rule functioning to secondary IP after network GC
 
@@ -1901,7 +1901,7 @@ class TestExternalLoadBalancer(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advancedns", "provisioning"], required_hardware="true")
+    @attr(tags=["advancedns", "provisioning", "networks"], required_hardware="true")
     def test_23_lb_rule_functioning_with_netscaler(self):
         """Verify LB rule functioning for secondary IP with LB handled
            through Netscaler device

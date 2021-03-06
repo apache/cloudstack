@@ -129,7 +129,7 @@ class TestPortForwarding(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "smoke", "networks"], required_hardware="true")
     def test_port_forwarding_on_ip_from_non_src_nat_ip_range(self):
         """Test for port forwarding on a IP which is in pubic IP range different
            from public IP range that has source NAT IP associated with network
@@ -288,7 +288,7 @@ class TestStaticNat(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "smoke", "networks"], required_hardware="true")
     def test_static_nat_on_ip_from_non_src_nat_ip_range(self):
         """Test for static nat on a IP which is in pubic IP range different
            from public IP range that has source NAT IP associated with network
@@ -450,7 +450,7 @@ class TestRouting(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "smoke", "networks"], required_hardware="true")
     def test_routing_tables(self):
         """Test routing table in case we have IP associated with a network which is in
             different pubic IP range from that of public IP range that has source NAT IP.
@@ -708,7 +708,7 @@ class TestIptables(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "smoke", "networks"], required_hardware="true")
     def test_iptable_rules(self):
         """Test iptable rules in case we have IP associated with a network which is in
             different pubic IP range from that of public IP range that has source NAT IP.
@@ -1032,7 +1032,7 @@ class TestVPCPortForwarding(cloudstackTestCase):
         except:
                 self.fail('Unable to create VM in a Network=%s' % network.name)
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced", "intervlan", "networks"], required_hardware="true")
     def test_network_services_VPC_CreatePF(self):
         """ Test Create VPC PF rules on acquired public ip when VpcVirtualRouter is Running
         """
@@ -1270,7 +1270,7 @@ class TestVPCStaticNat(cloudstackTestCase):
                 self.fail("Failed to enable static NAT on IP: %s - %s" % (
                                                     public_ip.ipaddress.ipaddress, e))
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced", "intervlan", "networks"], required_hardware="true")
     def test_network_services_VPC_CreatePF(self):
         """ Test Create VPC PF rules on acquired public ip when VpcVirtualRouter is Running
         """

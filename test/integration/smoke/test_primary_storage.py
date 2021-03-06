@@ -62,7 +62,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "quick-test"], required_hardware="false")
     def test_01_primary_storage_nfs(self):
         """Test primary storage pools - XEN, KVM, VMWare. Not Supported for hyperv
         """
@@ -502,7 +502,7 @@ class TestStorageTags(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
-    @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg", "deploy-vm", "storage"], required_hardware="false")
     @skipTestIf("hypervisorNotSupported")
     def test_01_deploy_vms_storage_tags(self):
         """Test Deploy VMS using different Service Offerings with Storage Tags
@@ -590,7 +590,8 @@ class TestStorageTags(cloudstackTestCase):
         self.assertEquals(1, len(pool_tags), "Check storage tags size")
         self.assertEquals(tag, pool_tags[0].name, "Check storage tag on storage pool")
 
-    @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+
+    @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg", "quick-test", "storage"], required_hardware="false")
     @skipTestIf("hypervisorNotSupported")
     def test_02_edit_primary_storage_tags(self):
         """ Test Edit Storage Tags
@@ -626,7 +627,8 @@ class TestStorageTags(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    
+    @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg", "deploy-vm", "storage"], required_hardware="false")
     @skipTestIf("hypervisorNotSupported")
     def test_03_migration_options_storage_tags(self):
         """ Test Volume migration options for Storage Pools with different Storage Tags

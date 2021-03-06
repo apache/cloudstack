@@ -129,7 +129,7 @@ class TestProjectsVolumeLimits(cloudstackTestCase):
             return [FAIL, e]
         return [PASS, None]
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "storage"], required_hardware="true")
     def test_01_register_template_with_project(self):
         """Test register template
         # Validate the following:
@@ -194,7 +194,7 @@ class TestProjectsVolumeLimits(cloudstackTestCase):
         self.assertEqual(response[0], PASS, response[1])
         return
 
-    @attr(tags = ["advanced"], required_hardware="true")
+    @attr(tags = ["advanced", "storage"], required_hardware="true")
     def test_02_register_iso(self):
         """Test register iso
         Steps and validations:

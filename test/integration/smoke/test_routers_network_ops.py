@@ -154,7 +154,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "ssh", "routers", "networks"], required_hardware="true")
     def test_01_RVR_Network_FW_PF_SSH_default_routes_egress_true(self):
         """ Test redundant router internals """
         self.logger.debug("Starting test_01_RVR_Network_FW_PF_SSH_default_routes_egress_true...")
@@ -319,7 +319,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "ssh", "routers", "networks"], required_hardware="true")
     def test_02_RVR_Network_FW_PF_SSH_default_routes_egress_false(self):
         """ Test redundant router internals """
         self.logger.debug("Starting test_02_RVR_Network_FW_PF_SSH_default_routes_egress_false...")
@@ -492,7 +492,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "ssh", "routers", "networks"], required_hardware="true")
     def test_03_RVR_Network_check_router_state(self):
         """ Test redundant router internals """
         self.logger.debug("Starting test_03_RVR_Network_check_router_state...")
@@ -716,7 +716,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "ssh", "routers", "networks"], required_hardware="true")
     def test_01_isolate_network_FW_PF_default_routes_egress_true(self):
         """ Test redundant router internals """
         self.logger.debug("Starting test_01_isolate_network_FW_PF_default_routes_egress_true...")
@@ -872,7 +872,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "ssh", "routers", "networks"], required_hardware="true")
     def test_02_isolate_network_FW_PF_default_routes_egress_false(self):
         """ Test redundant router internals """
         self.logger.debug("Starting test_02_isolate_network_FW_PF_default_routes_egress_false...")

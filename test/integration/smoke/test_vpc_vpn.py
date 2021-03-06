@@ -248,7 +248,7 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "deploy-vm", "vpc"], required_hardware="true")
     def test_01_vpc_remote_access_vpn(self):
         """Test Remote Access VPN in VPC"""
 
@@ -521,7 +521,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
 
         return vpc_off
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "deploy-vm", "vpc"], required_hardware="true")
     def test_01_vpc_site2site_vpn(self):
         """Test Site 2 Site VPN Across VPCs"""
         self.logger.debug("Starting test: test_01_vpc_site2site_vpn")
@@ -891,7 +891,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         vm.public_port = int(public_port)
         return nat_rule
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "deploy-vm", "vpc"], required_hardware="true")
     def test_01_redundant_vpc_site2site_vpn(self):
         """Test Site 2 Site VPN Across redundant VPCs"""
         self.logger.debug("Starting test: test_02_redundant_vpc_site2site_vpn")

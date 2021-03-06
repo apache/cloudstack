@@ -343,7 +343,7 @@ class TestSharedNetwork(cloudstackTestCase):
 
 ## Test cases relating to deploying Virtual Machine in shared network with scope=all
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_all_domainuser(self):
         """
         Validate that regular user in a domain is allowed to deploy VM in a shared network created with scope="all"
@@ -369,7 +369,7 @@ class TestSharedNetwork(cloudstackTestCase):
                     "User in a domain under ROOT failed to deploy VM in a shared network with scope=all")
 
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_all_domainadminuser(self):
         """
         Validate that regular user in "ROOT" domain is allowed to deploy VM in a shared network created with scope="all"
@@ -396,7 +396,7 @@ class TestSharedNetwork(cloudstackTestCase):
                     "Admin User in a domain under ROOT failed to deploy VM in a shared network with scope=all")
 
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_all_subdomainuser(self):
         """
         Validate that regular user in any subdomain is allowed to deploy VM in a shared network created with scope="all"
@@ -421,7 +421,7 @@ class TestSharedNetwork(cloudstackTestCase):
                     True,
                     "User in a domain under ROOT failed to deploy VM in a shared network with scope=all")
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_all_subdomainadminuser(self):
         """
         Validate that regular user in a subdomain under ROOT is allowed to deploy VM in a shared network created with scope="all"
@@ -447,7 +447,7 @@ class TestSharedNetwork(cloudstackTestCase):
                     "Admin User in a domain under ROOT failed to deploy VM in a shared network with scope=all")
 
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_all_ROOTuser(self):
         """
         Validate that regular user in ROOT domain is allowed to deploy VM in a shared network created with scope="all"
@@ -472,7 +472,7 @@ class TestSharedNetwork(cloudstackTestCase):
                     True,
                     "User in ROOT domain failed to deploy VM in a shared network with scope=all")
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_all_ROOTadmin(self):
         """
         Validate that admin user in ROOT domain is allowed to deploy VM in a shared network created with scope="all"
@@ -498,7 +498,7 @@ class TestSharedNetwork(cloudstackTestCase):
 
 ## Test cases relating to deploying Virtual Machine in shared network with scope=Domain and no subdomain access
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_domain_nosubdomainaccess_domainuser(self):
         """
         Validate that regular user in a domain is allowed to deploy VM in a shared network created with scope="domain" and no subdomain access
@@ -525,7 +525,7 @@ class TestSharedNetwork(cloudstackTestCase):
                     "User in a domain that has a shared network with no subdomain access failed to deploy VM in a shared network with scope=domain with no subdomain access")
 
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_domain_nosubdomainaccess_domainadminuser(self):
         """
         Validate that admin user in a domain is allowed to deploy VM in a shared network created with scope="domain" and no subdomain access
@@ -551,7 +551,7 @@ class TestSharedNetwork(cloudstackTestCase):
                     True,
                     "Admin User in a  domain that has a shared network with no subdomain access failed to deploy VM in a shared network with scope=domain with no subdomain access")
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_domain_nosubdomainaccess_subdomainuser(self):
         """
         Validate that regular user in a subdomain is NOT allowed to deploy VM in a shared network created with scope="domain" and no subdomain access
@@ -578,7 +578,7 @@ class TestSharedNetwork(cloudstackTestCase):
                 if not CloudstackAclException.verifyMsginException(e,CloudstackAclException.NOT_AVAILABLE_IN_DOMAIN):
                     self.fail("Error message validation failed when Subdomain user tries to deploy VM in a shared network with scope=domain with no subdomain access")
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_domain_nosubdomainaccess_subdomainadminuser(self):
         """
         Validate that admin user in a subdomain is NOT allowed to deploy VM in a shared network created with scope="domain" and no subdomain access
@@ -607,7 +607,7 @@ class TestSharedNetwork(cloudstackTestCase):
 
 
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_domain_nosubdomainaccess_parentdomainuser(self):
         """
         Validate that user in the parent domain is NOT allowed to deploy VM in a shared network created with scope="domain" and no subdomain access
@@ -635,7 +635,7 @@ class TestSharedNetwork(cloudstackTestCase):
                     self.fail("Error message validation failed when Parent domain user tries to deploy VM in a shared network with scope=domain with no subdomain access")
 
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_domain_nosubdomainaccess_parentdomainadminuser(self):
         """
         Validate that admin user in the parent domain is NOT allowed to deploy VM in a shared network created with scope="domain" and no subdomain access
@@ -664,7 +664,7 @@ class TestSharedNetwork(cloudstackTestCase):
 
 
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_domain_nosubdomainaccess_ROOTuser(self):
         """
         Validate that user in ROOT domain is NOT allowed to deploy VM in a shared network created with scope="domain" and no subdomain access
@@ -693,7 +693,7 @@ class TestSharedNetwork(cloudstackTestCase):
 
 
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_domain_nosubdomainaccess_ROOTadmin(self):
         """
         Validate that admin in ROOT domain is NOT allowed to deploy VM in a shared network created with scope="domain" and no subdomain access 
@@ -724,7 +724,7 @@ class TestSharedNetwork(cloudstackTestCase):
 
 ## Test cases relating to deploying Virtual Machine in shared network with scope=Domain and with subdomain access
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_domain_withsubdomainaccess_domainuser(self):
         """
         Validate that regular user in a domain is allowed to deploy VM in a shared network created with scope="domain" and  with subdomain access for the domain
@@ -751,7 +751,7 @@ class TestSharedNetwork(cloudstackTestCase):
                     "User in a domain that has a shared network with subdomain access failed to deploy VM in a shared network with scope=domain with no subdomain access")
 
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_domain_withsubdomainaccess_domainadminuser(self):
         """
         Validate that admin user in a domain is allowed to deploy VM in a shared network created with scope="domain" and  with subdomain access for the domain
@@ -777,7 +777,7 @@ class TestSharedNetwork(cloudstackTestCase):
                     True,
                     "Admin User in a  domain that has a shared network with subdomain access failed to deploy VM in a shared network with scope=domain with no subdomain access")
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_domain_withsubdomainaccess_subdomainuser(self):
         """
         Validate that regular user in a subdomain is allowed to deploy VM in a shared network created with scope="domain" and  with subdomain access  for the parent domain
@@ -802,7 +802,7 @@ class TestSharedNetwork(cloudstackTestCase):
                     True,
                     "User in a subdomain that has a shared network with subdomain access failed to deploy VM in a shared network with scope=domain with no subdomain access")
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_domain_withsubdomainaccess_subdomainadminuser(self):
         """
         Validate that an admin user in a subdomain is allowed to deploy VM in a shared network created with scope="domain" and  with subdomain access for the parent domain
@@ -827,7 +827,7 @@ class TestSharedNetwork(cloudstackTestCase):
                     True,
                     "Admin User in a subdomain that has a shared network with subdomain access failed to deploy VM in a shared network with scope=domain with no subdomain access")
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_domain_withsubdomainaccess_parentdomainuser(self):
         """
         Validate that regular user in a parent domain is NOT allowed to deploy VM in a shared network created with scope="domain" and  with subdomain access for the domain
@@ -855,7 +855,7 @@ class TestSharedNetwork(cloudstackTestCase):
                     self.fail("Error message validation failed when Parent domain's user tries to deploy VM in a shared network with scope=domain with subdomain access ")
 
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_domain_withsubdomainaccess_parentdomainadminuser(self):
         """
         Validate that admin user in a parent domain is NOT allowed to deploy VM in a shared network created with scope="domain" and  with subdomain access for any domain
@@ -884,7 +884,7 @@ class TestSharedNetwork(cloudstackTestCase):
 
 
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_domain_withsubdomainaccess_ROOTuser(self):
         """
         Validate that regular user in ROOT domain is NOT allowed to deploy VM in a shared network created with scope="domain" and  with subdomain access for any domain
@@ -912,7 +912,7 @@ class TestSharedNetwork(cloudstackTestCase):
                     self.fail("Error message validation failed when ROOT domain's user tries to deploy VM in a shared network with scope=domain with subdomain access")
 
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_domain_withsubdomainaccess_ROOTadmin(self):
         """
         Validate that admin user in ROOT domain is NOT allowed to deploy VM in a shared network created with scope="domain" and  with subdomain access for any domain
@@ -943,7 +943,7 @@ class TestSharedNetwork(cloudstackTestCase):
 
 ## Test cases relating to deploying Virtual Machine in shared network with scope=account
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_account_domainuser(self):
         """
         Validate that any other user in same domain is NOT allowed to deploy VM in a shared network created with scope="account" for an account
@@ -972,7 +972,7 @@ class TestSharedNetwork(cloudstackTestCase):
 
 
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_account_domainadminuser(self):
         """
         Validate that an admin user under the same domain but belonging to a different account is allowed to deploy VM in a shared network created with scope="account" for an account
@@ -1000,7 +1000,7 @@ class TestSharedNetwork(cloudstackTestCase):
                     self.fail("Error message validation failed when User from same domain but different account tries to deploy VM in a shared network with scope=account")
 
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_account_user(self):
         """
         Validate that regular user in the account is allowed to deploy VM in a shared network created with scope="account" for an account
@@ -1026,7 +1026,7 @@ class TestSharedNetwork(cloudstackTestCase):
                     True,
                     "User in the account that has a shared network with scope=account failed to deploy a VM in this shared network")
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_account_differentdomain(self):
         """
         Validate that regular user from a domain different from that of the account is NOT allowed to deploy VM in a shared network created with scope="account" for an account
@@ -1055,7 +1055,7 @@ class TestSharedNetwork(cloudstackTestCase):
 
 
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_account_ROOTuser(self):
         """
         Validate that user in ROOT domain is NOT allowed to deploy VM in a shared network created with scope="account" for an account
@@ -1083,7 +1083,7 @@ class TestSharedNetwork(cloudstackTestCase):
                     self.fail("Error message validation failed when ROOT domain's  user tries to deploy VM in a shared network with scope=account ")
 
 
-    @attr("simulator_only",tags=["advanced"],required_hardware="false")
+    @attr("simulator_only",tags=["advanced", "networks"],required_hardware="false")
     def test_deployVM_in_sharedNetwork_scope_account_ROOTadmin(self):
         """
         Validate that admin user in ROOT domain is NOT allowed to deploy VM in a shared network created with scope="account" for an account

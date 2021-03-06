@@ -238,7 +238,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced", "service-offerings"], required_hardware="false")
     def test_01_network_off_without_conserve_mode(self):
         """Test Network offering with Conserve mode off and VR - All services
         """
@@ -483,7 +483,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                             )
         return
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced", "service-offerings"], required_hardware="false")
     def test_02_network_off_with_conserve_mode(self):
         """Test Network offering with Conserve mode ON and VR - All services
         """
@@ -750,7 +750,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                             )
         return
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced", "service-offerings"], required_hardware="false")
     def test_03_network_off_CS5332(self):
         """
         @Desc: Test Network offering with Custom system offering for VR
@@ -864,7 +864,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
         self.debug("Deployed VM in network: %s" % self.network.id)
         return
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced", "service-offerings"], required_hardware="false")
     def test_04_network_without_domain_CS19303(self):
         """
         @Desc: Errors editing a network without a network domain specified
@@ -983,7 +983,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advancedns"], required_hardware="true")
+    @attr(tags=["advancedns", "service-offerings"], required_hardware="true")
     def test_01_nwupgrade_netscaler_conserve_on(self):
         """Test Nw upgrade to netscaler lb service and conserve mode ON
         """
@@ -1183,7 +1183,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advancedns"], required_hardware="true")
+    @attr(tags=["advancedns", "service-offerings"], required_hardware="true")
     def test_02_nwupgrade_netscaler_conserve_off(self):
         """Test Nw upgrade to netscaler lb service and conserve mode OFF
         """
@@ -1402,7 +1402,7 @@ class TestNOWithOnlySourceNAT(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "service-offerings"], required_hardware="false")
     def test_create_network_with_snat(self):
         """Test to create a network with SourceNAT service only"""
 

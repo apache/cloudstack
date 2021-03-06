@@ -70,7 +70,7 @@ class TestCustomDiskOfferingWithSize(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["basic", "advanced"], required_hardware="false")
+    @attr(tags=["basic", "advanced", "service-offerings"], required_hardware="false")
     def test_create_custom_disk_offering_with_size(self):
         """ Create custom disk offerign with size
             1.   Create custom disk offering with size.

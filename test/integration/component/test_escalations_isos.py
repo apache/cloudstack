@@ -135,7 +135,7 @@ class TestIsos(cloudstackTestCase):
                                                                                           ))
         return return_flag
 
-    @attr(tags=["advanced", "basic"], required_hardware="true")
+    @attr(tags=["advanced", "basic", "templates"], required_hardware="true")
     def test_01_list_isos_pagination(self):
         """
         @Desc: Test to List ISO's pagination
@@ -289,7 +289,7 @@ class TestIsos(cloudstackTestCase):
         del self.services["iso"]["zoneid"]
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="true")
+    @attr(tags=["advanced", "basic", "templates"], required_hardware="true")
     def test_02_download_iso(self):
         """
         @Desc: Test to Download ISO
@@ -404,7 +404,7 @@ class TestIsos(cloudstackTestCase):
         del self.services["iso"]["isextractable"]
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="true")
+    @attr(tags=["advanced", "basic", "templates"], required_hardware="true")
     def test_03_edit_iso_details(self):
         """
         @Desc: Test to Edit ISO name, displaytext, OSType
@@ -588,7 +588,7 @@ class TestIsos(cloudstackTestCase):
         del self.services["iso"]["zoneid"]
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="true")
+    @attr(tags=["advanced", "basic", "templates"], required_hardware="true")
     def test_04_copy_iso(self):
         """
         @Desc: Test to copy ISO from one zone to another

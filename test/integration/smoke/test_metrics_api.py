@@ -67,7 +67,7 @@ class TestMetrics(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "quick-test"], required_hardware="false")
     def test_list_hosts_metrics(self):
 
         cmd = listHostsMetrics.listHostsMetricsCmd()
@@ -94,7 +94,7 @@ class TestMetrics(cloudstackTestCase):
         self.assertTrue(hasattr(cluster_metric, 'memoryused'))
         self.assertTrue(hasattr(cluster_metric, 'memorymaxdeviation'))
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "quick-test"], required_hardware="false")
     def test_list_zones_metrics(self):
         cmd = listZonesMetrics.listZonesMetricsCmd()
         cmd.id = self.zone.id
@@ -138,7 +138,7 @@ class TestMetrics(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "storage"], required_hardware="false")
     def test_list_pstorage_metrics(self):
         #list StoragePools
         sp = self.apiclient.listStoragePools(listStoragePools.listStoragePoolsCmd())[0]

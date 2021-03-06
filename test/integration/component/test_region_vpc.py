@@ -305,7 +305,7 @@ class TestRegionVpcOffering(cloudstackTestCase):
         self.debug("VPC network created successfully - %s" % network.name)
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "routers", "networks"])
     def test_01_create_vpc_offering_with_regionlevelvpc_service_capability(self):
         """ Test create VPC offering
         """
@@ -325,7 +325,7 @@ class TestRegionVpcOffering(cloudstackTestCase):
         self.validate_vpc_offering(vpc_off)
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "routers", "networks"])
     def test_02_create_vpc_from_offering_with_regionlevelvpc_service_capability(self):
         """ Test create VPC offering
         """
@@ -360,7 +360,7 @@ class TestRegionVpcOffering(cloudstackTestCase):
             self.fail("Failed to delete VPC network - %s" % e)
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "routers", "networks"])
     def test_03_deploy_vms_in_vpc_with_regionlevelvpc(self):
         """Test deploy virtual machines in VPC networks"""
 

@@ -125,7 +125,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["sg"])
+    @attr(tags=["sg", "networks"])
     def test_01_add_ip_same_cidr(self):
         """Test add guest ip range in the existing cidr
         """
@@ -176,7 +176,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
         self.verify_vlan_range(new_vlan2_res, self.services["vlan_ip_range"])
         return
 
-    @attr(tags=["sg"])
+    @attr(tags=["sg", "networks"])
     def test_02_add_ip_diff_cidr(self):
         """Test add ip range in a new cidr
 
@@ -214,7 +214,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
         self.verify_vlan_range(new_vlan_res, self.services["vlan_ip_range"])
         return
 
-    @attr(tags=["sg"])
+    @attr(tags=["sg", "networks"])
     def test_03_del_ip_range(self):
         """Test delete ip range
 
@@ -264,7 +264,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
                 msg="Failed to delete IP range")
         return
 
-    @attr(tags=["sg"])
+    @attr(tags=["sg", "networks"])
     def test_04_add_noncontiguous_ip_range(self):
         """Test adding non-contiguous ip range in existing cidr
 
@@ -319,7 +319,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
         self.verify_vlan_range(new_vlan_res, self.services["vlan_ip_range"])
         return
 
-    @attr(tags=["sg"])
+    @attr(tags=["sg", "networks"])
     def test_05_add_overlapped_ip_range(self):
         """Test adding overlapped ip range in existing cidr
 
@@ -384,7 +384,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
                     guest traffic, but it allowed")
         return
 
-    @attr(tags=["sg"])
+    @attr(tags=["sg", "networks"])
     def test_06_add_ip_range_overlapped_with_two_ranges(self):
         """Test adding overlapped ip range with two existing cidr
 
@@ -458,7 +458,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
                     traffic, but it allowed")
         return
 
-    @attr(tags=["sg"])
+    @attr(tags=["sg", "networks"])
     def test_07_add_iprange_superset(self):
         """Test adding ip range superset to existing CIDR
 
@@ -522,7 +522,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
             "CS should not allow adding ip range superset to existing CIDR")
         return
 
-    @attr(tags=["sg"])
+    @attr(tags=["sg", "networks"])
     def test_08_add_iprange_subset(self):
         """Test adding ip range subset to existing CIDR
 

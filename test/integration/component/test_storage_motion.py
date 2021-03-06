@@ -150,7 +150,7 @@ class TestStorageMotion(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(tags=["advanced", "basic", "multicluster", "storagemotion", "xenserver"], required_hardware="true")
+    @attr(tags=["advanced", "basic", "multicluster", "storagemotion", "xenserver", "storage"], required_hardware="true")
     def test_01_migrate_vm_with_volume(self):
         """Test migrate virtual machine with its volumes
         """
@@ -231,7 +231,7 @@ class TestStorageMotion(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "basic", "multipool", "storagemotion", "xenserver"], required_hardware="false")
+    @attr(tags=["advanced", "basic", "multipool", "storagemotion", "xenserver", "storage"], required_hardware="false")
     def test_02_migrate_volume(self):
         """Test migrate volume of a running vm
         """

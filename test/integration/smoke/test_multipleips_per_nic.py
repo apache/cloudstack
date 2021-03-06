@@ -123,7 +123,7 @@ class TestDeployVM(cloudstackTestCase):
             msg="VM is not in Running state"
         )
 
-    @attr(tags = ['advanced',  'basic'], required_hardware="false")
+    @attr(tags = ['advanced',  'basic', 'deploy-vm', "routers"], required_hardware="false")
     def test_nic_secondaryip_add_remove(self):
     #TODO: SIMENH: add verification
         list_vms = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)
