@@ -65,7 +65,8 @@ import {
   Tree,
   Calendar,
   Slider,
-  AutoComplete
+  AutoComplete,
+  Collapse
 } from 'ant-design-vue'
 
 Vue.use(ConfigProvider)
@@ -114,6 +115,7 @@ Vue.use(Tree)
 Vue.use(Calendar)
 Vue.use(Slider)
 Vue.use(AutoComplete)
+Vue.use(Collapse)
 
 Vue.prototype.$confirm = Modal.confirm
 Vue.prototype.$message = message
