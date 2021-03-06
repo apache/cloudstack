@@ -87,6 +87,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
         String hypervHost = queryMap.get("hypervHost");
         String username = queryMap.get("username");
         String password = queryMap.get("password");
+        String sourceIP = queryMap.get("sourceIP");
 
         if (tag == null)
             tag = "";
@@ -113,6 +114,10 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             }
         }
 
+        if (! checkSessionSourceIp(session, sourceIP)) {
+            return;
+        }
+
         try {
             ConsoleProxyClientParam param = new ConsoleProxyClientParam();
             param.setClientHostAddress(host);
@@ -135,6 +140,18 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
                 session.disconnect();
             }
         }
+    }
+
+    private boolean checkSessionSourceIp(final Session session, final String sourceIP) throws IOException {
+        // Verify source IP
+        String sessionSourceIP = session.getRemoteAddress().getAddress().getHostAddress();
+        s_logger.info("Get websocket connection request from remote IP : " + sessionSourceIP);
+        if (ConsoleProxy.isSourceIpCheckEnabled && (sessionSourceIP == null || ! sessionSourceIP.equals(sourceIP))) {
+            s_logger.warn("Failed to access console as the source IP to request the console is " + sourceIP);
+            session.disconnect();
+            return false;
+        }
+        return true;
     }
 
     @OnWebSocketClose
