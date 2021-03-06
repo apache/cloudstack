@@ -47,7 +47,8 @@ export default {
       label: 'label.action.reboot.systemvm',
       message: 'message.action.reboot.systemvm',
       dataView: true,
-      show: (record) => { return record.state === 'Running' }
+      show: (record) => { return record.state === 'Running' },
+      args: ['forced']
     },
     {
       api: 'scaleSystemVm',

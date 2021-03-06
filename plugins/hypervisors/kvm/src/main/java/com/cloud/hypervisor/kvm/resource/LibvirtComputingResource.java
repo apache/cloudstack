@@ -134,7 +134,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestResourceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InputDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.GuestNetType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
@@ -3228,33 +3227,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String msg = null;
         try {
             dm = conn.domainLookupByName(vmName);
-            // Get XML Dump including the secure information such as VNC password
-            // By passing 1, or VIR_DOMAIN_XML_SECURE flag
-            // https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainXMLFlags
-            String vmDef = dm.getXMLDesc(1);
-            final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
-            parser.parseDomainXML(vmDef);
-            for (final InterfaceDef nic : parser.getInterfaces()) {
-                if (nic.getNetType() == GuestNetType.BRIDGE && nic.getBrName().startsWith("cloudVirBr")) {
-                    try {
-                        final int vnetId = Integer.parseInt(nic.getBrName().replaceFirst("cloudVirBr", ""));
-                        final String pifName = getPif(_guestBridgeName);
-                        final String newBrName = "br" + pifName + "-" + vnetId;
-                        vmDef = vmDef.replace("'" + nic.getBrName() + "'", "'" + newBrName + "'");
-                        s_logger.debug("VM bridge name is changed from " + nic.getBrName() + " to " + newBrName);
-                    } catch (final NumberFormatException e) {
-                        continue;
-                    }
-                }
-            }
-            s_logger.debug(vmDef);
-            msg = stopVM(conn, vmName, false);
-            msg = startVM(conn, vmName, vmDef);
+            // Perform ACPI based reboot
+            // https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainReboot
+            // https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainRebootFlagValues
+            // Send ACPI event to Reboot
+            dm.reboot(0x1);
             return null;
         } catch (final LibvirtException e) {
-            s_logger.warn("Failed to create vm", e);
-            msg = e.getMessage();
-        } catch (final InternalErrorException e) {
             s_logger.warn("Failed to create vm", e);
             msg = e.getMessage();
         } finally {

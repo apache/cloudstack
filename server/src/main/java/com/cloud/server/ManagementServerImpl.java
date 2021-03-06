@@ -2502,7 +2502,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     private ConsoleProxyVO stopConsoleProxy(final VMInstanceVO systemVm, final boolean isForced) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
-
         _itMgr.advanceStop(systemVm.getUuid(), isForced);
         return _consoleProxyDao.findById(systemVm.getId());
     }
@@ -2510,6 +2509,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private ConsoleProxyVO rebootConsoleProxy(final long instanceId) {
         _consoleProxyMgr.rebootProxy(instanceId);
         return _consoleProxyDao.findById(instanceId);
+    }
+
+    private ConsoleProxyVO forceRebootConsoleProxy(final VMInstanceVO systemVm)  throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        _itMgr.advanceStop(systemVm.getUuid(), false);
+        return _consoleProxyMgr.startProxy(systemVm.getId(), true);
     }
 
     protected ConsoleProxyVO destroyConsoleProxy(final long instanceId) {
@@ -3401,6 +3405,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return _secStorageVmDao.findById(instanceId);
     }
 
+    private SecondaryStorageVmVO forceRebootSecondaryStorageVm(final VMInstanceVO systemVm)  throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        _itMgr.advanceStop(systemVm.getUuid(), false);
+        return _secStorageVmMgr.startSecStorageVm(systemVm.getId());
+    }
+
     protected SecondaryStorageVmVO destroySecondaryStorageVm(final long instanceId) {
         final SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(instanceId);
         cleanupDownloadUrlsInZone(secStorageVm.getDataCenterId());
@@ -3570,12 +3579,24 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw ex;
         }
 
-        if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)) {
-            ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy Vm");
-            return rebootConsoleProxy(cmd.getId());
-        } else {
-            ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_SSVM_REBOOT, "rebooting secondary storage Vm");
-            return rebootSecondaryStorageVm(cmd.getId());
+        try {
+            if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)) {
+                ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy Vm");
+                if (cmd.isForced()) {
+                    return forceRebootConsoleProxy(systemVm);
+                }
+                return rebootConsoleProxy(cmd.getId());
+            } else {
+                ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_SSVM_REBOOT, "rebooting secondary storage Vm");
+                if (cmd.isForced()) {
+                    return forceRebootSecondaryStorageVm(systemVm);
+                }
+                return rebootSecondaryStorageVm(cmd.getId());
+            }
+        } catch (final ResourceUnavailableException e) {
+            throw new CloudRuntimeException("Unable to reboot " + systemVm, e);
+        } catch (final OperationTimedoutException e) {
+            throw new CloudRuntimeException("Operation timed out - Unable to reboot " + systemVm, e);
         }
     }
 

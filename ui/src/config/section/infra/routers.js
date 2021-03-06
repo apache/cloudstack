@@ -66,6 +66,7 @@ export default {
       label: 'label.action.reboot.router',
       message: 'message.action.reboot.router',
       dataView: true,
+      args: ['forced'],
       hidden: (record) => { return record.state === 'Running' }
     },
     {
