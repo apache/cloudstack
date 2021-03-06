@@ -86,7 +86,7 @@ export default {
           icon: 'sync',
           label: 'label.restart.network',
           dataView: true,
-          args: ['cleanup', 'makeredundant'],
+          args: ['cleanup'],
           show: (record) => record.type !== 'L2'
         },
         {
