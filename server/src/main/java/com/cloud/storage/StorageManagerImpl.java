@@ -2797,12 +2797,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (failOnChecks) {
                 throw new CloudRuntimeException("Storage capabilities update only supported on NFS storage mounted.");
             }
+            return;
         }
 
         if (pool.getStatus() != StoragePoolStatus.Initialized && pool.getStatus() != StoragePoolStatus.Up) {
             if (failOnChecks){
                 throw new CloudRuntimeException("Primary storage is not in the right state to update capabilities");
             }
+            return;
         }
 
         HypervisorType hypervisor = pool.getHypervisor();
@@ -2818,6 +2820,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (failOnChecks) {
                 throw new CloudRuntimeException("Storage capabilities update only supported on VMWare.");
             }
+            return;
         }
 
         // find the host
