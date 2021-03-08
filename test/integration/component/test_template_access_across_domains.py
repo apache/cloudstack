@@ -187,7 +187,6 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
         # Step 1
         self.update_restrict_template_configuration(self.domain1.id, "true")
         self.update_restrict_template_configuration(self.domain2.id, "true")
-
         self.validate_uploaded_template(self.apiclient, self.template1.id)
 
         # Step 2

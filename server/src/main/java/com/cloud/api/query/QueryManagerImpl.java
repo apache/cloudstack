@@ -232,6 +232,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate.State;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
@@ -3667,6 +3668,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 _accountMgr.checkAccess(caller, null, false, template);
             } else if (template.isPublicTemplate()) {
                 _accountMgr.checkAccess(caller, null, false, template);
+            } else if (template.isPublicTemplate()) {
+                _accountMgr.checkAccess(caller, null, false, template);
             }
 
             // if templateId is specified, then we will just use the id to
@@ -3771,7 +3774,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 sc.addAnd("publicTemplate", SearchCriteria.Op.SC, scc);
             } else if (templateFilter == TemplateFilter.all && caller.getType() != Account.Type.ADMIN) {
                 SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
-                scc.addOr("publicTemplate", SearchCriteria.Op.SC, scc2);
+                scc.addOr("publicTemplate", SearchCriteria.Op.SC, scc);
 
                 if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {
                     if (domainId != null) {
