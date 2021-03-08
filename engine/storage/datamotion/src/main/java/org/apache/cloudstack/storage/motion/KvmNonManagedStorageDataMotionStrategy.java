@@ -217,8 +217,10 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
                 if (copyCommandAnswer != null && copyCommandAnswer.getResult()) {
                     updateTemplateReferenceIfSuccessfulCopy(srcVolumeInfo, srcStoragePool, destTemplateInfo, destDataStore);
                 }
+                return;
             }
         }
+        LOGGER.debug(String.format("Skipping 'copy template to target filesystem storage before migration' due to the template [%s] already exist on the storage pool [%s].", srcVolumeInfo.getTemplateId(), destStoragePool.getId()));
     }
 
     /**
