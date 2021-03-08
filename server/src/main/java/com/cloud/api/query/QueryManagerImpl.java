@@ -232,6 +232,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate.State;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
@@ -3567,21 +3568,48 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         List<Long> permittedAccountIds = new ArrayList<Long>();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject, listAll, false);
+        Long domainId = domainIdRecursiveListProject.first();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         List<Account> permittedAccounts = new ArrayList<Account>();
         for (Long accountId : permittedAccountIds) {
             permittedAccounts.add(_accountMgr.getAccount(accountId));
         }
 
-        boolean showDomr = ((templateFilter != TemplateFilter.selfexecutable) && (templateFilter != TemplateFilter.featured));
+        boolean showDomr = ((templateFilter != TemplateFilter.selfexecutable) && (templateFilter != TemplateFilter.featured) && _accountMgr.isRootAdmin(caller.getId()));
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
         return searchForTemplatesInternal(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType,
-                showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl, cmd.getIds(), parentTemplateId, cmd.getShowUnique());
+                showDomr, cmd.listInReadyState(), permittedAccounts, caller, domainId, listProjectResourcesCriteria, tags, showRemovedTmpl, cmd.getIds(), parentTemplateId, cmd.getShowUnique());
+    }
+
+    private DomainVO getDomainOf(TemplateFilter templateFilter, Account account ) {
+        boolean publicTemplates = (templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community || templateFilter == TemplateFilter.executable);
+
+        // get all parent domain ID's all the way till root domain
+        //if template filter is featured, or community, all child domains should be included in search
+        if (publicTemplates)
+            return _domainDao.findById(Domain.ROOT_DOMAIN);
+        else
+            return _domainDao.findById(account.getDomainId());
+    }
+
+    private ArrayList<Long> getChildDomainIds(boolean isAdmin, TemplateFilter templateFilter, DomainVO domainTreeNode ){
+        boolean publicTemplates = (templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community || templateFilter == TemplateFilter.executable);
+        ArrayList<Long> domainIds = new ArrayList<>();
+
+        // get all child domain ID's
+        if (isAdmin || publicTemplates) {
+            List<DomainVO> allChildDomains = _domainDao.findAllChildren(domainTreeNode.getPath(), domainTreeNode.getId());
+            for (DomainVO childDomain : allChildDomains) {
+                domainIds.add(childDomain.getId());
+            }
+        }
+
+        return domainIds;
     }
 
     private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long pageSize,
-            Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller,
+            Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller, Long domainId,
             ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags, boolean showRemovedTmpl, List<Long> ids, Long parentTemplateId, Boolean showUnique) {
 
         // check if zone is configured, if not, just return empty list
@@ -3608,6 +3636,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         }
         SearchCriteria<TemplateJoinVO> sc = sb.create();
+
+        boolean restrictPublicTemplatesToDomain = TemplateManager.RestrictPublicTemplateAccessToDomain.value();
 
         // verify templateId parameter and specially handle it
         if (templateId != null) {
@@ -3636,6 +3666,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             // if template is not public, perform permission check here
             else if (!template.isPublicTemplate() && caller.getType() != Account.Type.ADMIN) {
                 _accountMgr.checkAccess(caller, null, false, template);
+            } else if (template.isPublicTemplate()) {
+                _accountMgr.checkAccess(caller, null, false, template);
             }
 
             // if templateId is specified, then we will just use the id to
@@ -3646,6 +3678,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             DomainVO domain = null;
             if (!permittedAccounts.isEmpty()) {
                 domain = _domainDao.findById(permittedAccounts.get(0).getDomainId());
+            } else if (restrictPublicTemplatesToDomain && domainId != null) {
+                domain = _domainDao.findById(domainId);
             } else {
                 domain = _domainDao.findById(Domain.ROOT_DOMAIN);
             }
@@ -3670,16 +3704,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (!permittedAccounts.isEmpty()) {
                 for (Account account : permittedAccounts) {
                     permittedAccountIds.add(account.getId());
-                    boolean publicTemplates = (templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community);
 
-                    // get all parent domain ID's all the way till root domain
-                    DomainVO domainTreeNode = null;
-                    //if template filter is featured, or community, all child domains should be included in search
-                    if (publicTemplates) {
-                        domainTreeNode = _domainDao.findById(Domain.ROOT_DOMAIN);
+                    DomainVO domainTreeNode = domain;
 
-                    } else {
-                        domainTreeNode = _domainDao.findById(account.getDomainId());
+                    if(! restrictPublicTemplatesToDomain) {
+                        domainTreeNode = getDomainOf(templateFilter, account);
                     }
                     relatedDomainIds.add(domainTreeNode.getId());
                     while (domainTreeNode.getParent() != null) {
@@ -3687,14 +3716,22 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                         relatedDomainIds.add(domainTreeNode.getId());
                     }
 
-                    // get all child domain ID's
-                    if (_accountMgr.isAdmin(account.getId()) || publicTemplates) {
-                        List<DomainVO> allChildDomains = _domainDao.findAllChildren(domainTreeNode.getPath(), domainTreeNode.getId());
-                        for (DomainVO childDomain : allChildDomains) {
-                            relatedDomainIds.add(childDomain.getId());
-                        }
+                    boolean isAdmin = _accountMgr.isAdmin(account.getId());
+                    if(! restrictPublicTemplatesToDomain) {
+                        relatedDomainIds.addAll(getChildDomainIds(isAdmin, templateFilter, domainTreeNode));
+                    } else if (isAdmin) {
+                        relatedDomainIds.addAll(getChildDomainIds(isAdmin, templateFilter, domain));
                     }
                 }
+            } else if (restrictPublicTemplatesToDomain && domainId != null) {
+                // templatefilter=all or domainid is passed, called by root admin/domain admin
+                DomainVO domainTreeNode = domain;
+                relatedDomainIds.add(domainTreeNode.getId());
+                while (domainTreeNode.getParent() != null) {
+                    domainTreeNode = _domainDao.findById(domainTreeNode.getParent());
+                    relatedDomainIds.add(domainTreeNode.getId());
+                }
+                relatedDomainIds.addAll(getChildDomainIds(true, templateFilter, domain));
             }
 
             // control different template filters
@@ -3719,18 +3756,30 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 // only show templates shared by others
                 sc.addAnd("sharedAccountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
             } else if (templateFilter == TemplateFilter.executable) {
+                SearchCriteria<TemplateJoinVO> scc2 = _templateJoinDao.createSearchCriteria();
+                scc2.addAnd("publicTemplate", SearchCriteria.Op.EQ, true);
+                if (restrictPublicTemplatesToDomain) {
+                    SearchCriteria<TemplateJoinVO> scc3 = _templateJoinDao.createSearchCriteria();
+                    scc3.addOr("domainId", SearchCriteria.Op.IN, relatedDomainIds.toArray());
+                    scc3.addOr("domainId", SearchCriteria.Op.NULL);
+                    scc2.addAnd("domainId", SearchCriteria.Op.SC, scc3);
+                }
                 SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
-                scc.addOr("publicTemplate", SearchCriteria.Op.EQ, true);
+                scc.addOr("publicTemplate", SearchCriteria.Op.SC, scc2);
                 if (!permittedAccounts.isEmpty()) {
                     scc.addOr("accountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
                 }
                 sc.addAnd("publicTemplate", SearchCriteria.Op.SC, scc);
             } else if (templateFilter == TemplateFilter.all && caller.getType() != Account.Type.ADMIN) {
                 SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
-                scc.addOr("publicTemplate", SearchCriteria.Op.EQ, true);
+                scc.addOr("publicTemplate", SearchCriteria.Op.SC, scc2);
 
                 if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {
-                    scc.addOr("domainPath", SearchCriteria.Op.LIKE, _domainDao.findById(caller.getDomainId()).getPath() + "%");
+                    if (domainId != null) {
+                        scc.addOr("domainPath", SearchCriteria.Op.LIKE, _domainDao.findById(domainId).getPath() + "%");
+                    } else {
+                        scc.addOr("domainPath", SearchCriteria.Op.LIKE, _domainDao.findById(caller.getDomainId()).getPath() + "%");
+                    }
                 } else {
                     if (!permittedAccounts.isEmpty()) {
                         scc.addOr("accountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
@@ -3741,13 +3790,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
-        return templateChecks(isIso, hypers, tags, name, keyword, hyperType, onlyReady, bootable, zoneId, showDomr,
+        return templateChecks(isIso, hypers, tags, name, keyword, hyperType, onlyReady, bootable, zoneId, showDomr, domainId,
                 showRemovedTmpl, parentTemplateId, showUnique, searchFilter, sc);
 
     }
 
     private Pair<List<TemplateJoinVO>, Integer> templateChecks(boolean isIso, List<HypervisorType> hypers, Map<String, String> tags, String name, String keyword,
-                                                               HypervisorType hyperType, boolean onlyReady, Boolean bootable, Long zoneId, boolean showDomr,
+                                                               HypervisorType hyperType, boolean onlyReady, Boolean bootable, Long zoneId, boolean showDomr, Long domainId,
                                                                boolean showRemovedTmpl, Long parentTemplateId, Boolean showUnique,
                                                                Filter searchFilter, SearchCriteria<TemplateJoinVO> sc) {
         if (!isIso) {
@@ -3808,7 +3857,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("state", SearchCriteria.Op.SC, readySc);
         }
 
-        if (!showDomr) {
+        if (!showDomr || domainId != null) {
             // excluding system template
             sc.addAnd("templateType", SearchCriteria.Op.NEQ, Storage.TemplateType.SYSTEM);
         }
@@ -3909,6 +3958,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         List<Long> permittedAccountIds = new ArrayList<Long>();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject, listAll, false);
+        Long domainId = domainIdRecursiveListProject.first();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         List<Account> permittedAccounts = new ArrayList<Account>();
         for (Long accountId : permittedAccountIds) {
@@ -3918,7 +3968,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
         return searchForTemplatesInternal(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(),
-                hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedISO, null, null, cmd.getShowUnique());
+                hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller, domainId, listProjectResourcesCriteria, tags, showRemovedISO, null, null, cmd.getShowUnique());
     }
 
     @Override

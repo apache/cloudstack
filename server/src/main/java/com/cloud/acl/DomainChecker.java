@@ -55,6 +55,7 @@ import com.cloud.projects.dao.ProjectDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.dao.LaunchPermissionDao;
+import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
@@ -165,6 +166,16 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                         // For projects check if the caller account can access the project account
                         if (owner.getType() != Account.Type.PROJECT || !(_projectMgr.canAccessProjectAccount(caller, owner.getId()))) {
                             throw new PermissionDeniedException("Domain Admin and regular users can modify only their own Public templates");
+                        }
+                    }
+                } else if (TemplateManager.RestrictPublicTemplateAccessToDomain.value() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) { // public template can be used by other accounts in the same domain or in sub-domains, and domain admin of parent domains
+                    if (caller.getDomainId() != owner.getDomainId() && !_domainDao.isChildDomain(owner.getDomainId(), caller.getDomainId())) {
+                        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                            throw new PermissionDeniedException(caller + "is not allowed to access the template " + template);
+                        } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+                            if (!_domainDao.isChildDomain(caller.getDomainId(), owner.getDomainId())) {
+                                throw new PermissionDeniedException(caller + "is not allowed to access the template " + template);
+                            }
                         }
                     }
                 }
