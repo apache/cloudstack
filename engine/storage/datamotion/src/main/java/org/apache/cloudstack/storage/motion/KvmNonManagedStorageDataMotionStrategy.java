@@ -195,7 +195,10 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
     @Override
     protected void copyTemplateToTargetFilesystemStorageIfNeeded(VolumeInfo srcVolumeInfo, StoragePool srcStoragePool, DataStore destDataStore, StoragePool destStoragePool,
             Host destHost) {
-        VMTemplateStoragePoolVO sourceVolumeTemplateStoragePoolVO = vmTemplatePoolDao.findByPoolTemplate(destStoragePool.getId(), srcVolumeInfo.getTemplateId(), null);
+        VMTemplateStoragePoolVO sourceVolumeTemplateStoragePoolVO = null;
+        if (srcVolumeInfo != null && srcVolumeInfo.getTemplateId() != null) {
+            sourceVolumeTemplateStoragePoolVO = vmTemplatePoolDao.findByPoolTemplate(destStoragePool.getId(), srcVolumeInfo.getTemplateId(), null);
+        }
         if (sourceVolumeTemplateStoragePoolVO == null && destStoragePool.getPoolType() == StoragePoolType.Filesystem) {
             DataStore sourceTemplateDataStore = dataStoreManagerImpl.getRandomImageStore(srcVolumeInfo.getDataCenterId());
             if (sourceTemplateDataStore != null) {
