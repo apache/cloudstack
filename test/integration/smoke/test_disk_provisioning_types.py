@@ -22,7 +22,6 @@ from marvin.codes import FAILED
 from marvin.lib.common import list_disk_offering, get_zone, get_suitable_test_template, get_domain
 from marvin.cloudstackAPI import listStoragePools, updateStorageCapabilities
 from nose.plugins.attrib import attr
-import json
 
 
 class TestDiskProvisioningTypes(cloudstackTestCase):
