@@ -322,6 +322,10 @@
           :value="localstorageenabledforsystemvm"
         />
       </a-form-item>
+
+      <div class="submit-btn">
+        <a-button html-type="submit" @click="handleSubmit"></a-button>
+      </div>
     </a-form>
     <div class="form-action">
       <a-button

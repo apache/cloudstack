@@ -131,9 +131,9 @@
               </a-form-item>
             </div>
 
-            <div class="card-footer">
+            <div class="action-button">
               <a-button @click="handleClose">{{ $t('label.close') }}</a-button>
-              <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.add') }}</a-button>
+              <a-button :loading="loading" html-type="submit" type="primary" @click="handleSubmit">{{ $t('label.add') }}</a-button>
             </div>
           </a-form>
         </a-card>
@@ -467,14 +467,6 @@ export default {
 
   @media (min-width: 1000px) {
     width: 900px;
-  }
-}
-
-.card-footer {
-  text-align: right;
-
-  button + button {
-    margin-left: 8px;
   }
 }
 

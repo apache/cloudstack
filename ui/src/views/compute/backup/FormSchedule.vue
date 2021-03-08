@@ -136,6 +136,7 @@
               {{ this.$t('label.cancel') }}
             </a-button>
             <a-button
+              htmlType="submit"
               :loading="actionLoading"
               type="primary"
               @click="handleSubmit">
@@ -314,14 +315,5 @@ export default {
 
 .form {
   margin: 10px 0;
-}
-
-.action-button {
-  margin-top: 20px;
-  text-align: right;
-
-  button {
-    margin-right: 5px;
-  }
 }
 </style>

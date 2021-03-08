@@ -96,7 +96,12 @@
       </draggable>
     </div>
 
-    <a-modal :title="$t('label.edit.tags')" v-model="tagsModalVisible" :footer="null" :maskClosable="false">
+    <a-modal
+      v-if="tagsModalVisible"
+      :title="$t('label.edit.tags')"
+      v-model="tagsModalVisible"
+      :footer="null"
+      :maskClosable="false">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>
@@ -130,7 +135,13 @@
       </div>
 
     </a-modal>
-    <a-modal :title="ruleModalTitle" :maskClosable="false" v-model="ruleModalVisible" @ok="handleRuleModalForm">
+    <a-modal
+      v-if="ruleModalVisible"
+      :title="ruleModalTitle"
+      :closable="true"
+      :maskClosable="false"
+      :footer="null"
+      v-model="ruleModalVisible">
       <a-form :form="ruleForm" @submit="handleRuleModalForm">
         <a-form-item :label="$t('label.number')">
           <a-input-number style="width: 100%" v-decorator="['number']" />
@@ -188,6 +199,11 @@
             :autosize="{ minRows: 2 }"
             :placeholder="$t('label.acl.reason.description')" />
         </a-form-item>
+
+        <div :span="24" class="action-button">
+          <a-button @click="() => { ruleModalVisible = false } ">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" htmlType="submit" @click="handleRuleModalForm">{{ $t('label.ok') }}</a-button>
+        </div>
       </a-form>
     </a-modal>
   </a-spin>

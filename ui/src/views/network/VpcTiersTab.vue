@@ -158,7 +158,8 @@
       v-model="showCreateNetworkModal"
       :title="$t('label.add.new.tier')"
       :maskClosable="false"
-      @ok="handleAddNetworkSubmit">
+      :closable="true"
+      :footer="null">
       <a-spin :spinning="modalLoading">
         <a-form @submit.prevent="handleAddNetworkSubmit" :form="form">
           <a-form-item :label="$t('label.name')">
@@ -195,6 +196,11 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+
+          <div :span="24" class="action-button">
+            <a-button @click="showCreateNetworkModal = false">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" htmlType="submit" @click="handleAddNetworkSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-spin>
     </a-modal>
@@ -203,7 +209,8 @@
       v-model="showAddInternalLB"
       :title="$t('label.add.internal.lb')"
       :maskClosable="false"
-      @ok="handleAddInternalLBSubmit">
+      :closable="true"
+      :footer="null">
       <a-spin :spinning="modalLoading">
         <a-form @submit.prevent="handleAddInternalLBSubmit" :form="form">
           <a-form-item :label="$t('label.name')">
@@ -242,6 +249,11 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+
+          <div :span="24" class="action-button">
+            <a-button @click="showAddInternalLB = false">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" htmlType="submit" @click="handleAddInternalLBSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-spin>
     </a-modal>

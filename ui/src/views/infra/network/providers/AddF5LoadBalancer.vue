@@ -106,7 +106,7 @@
       </a-row>
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="onCloseAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading" html-type="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
@@ -306,16 +306,3 @@ export default {
   }
 }
 </script>
-
-<style scoped lang="less">
-.form-layout {
-  .action-button {
-    text-align: right;
-    margin-top: 20px;
-
-    button {
-      margin-right: 5px;
-    }
-  }
-}
-</style>

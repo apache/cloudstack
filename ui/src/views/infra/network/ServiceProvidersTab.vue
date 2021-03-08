@@ -46,9 +46,7 @@
           :visible="showFormAction"
           :closable="true"
           :maskClosable="false"
-          :cancelText="$t('label.cancel')"
           style="top: 20px;"
-          @cancel="onCloseAction"
           :confirmLoading="actionLoading"
           :footer="null"
           centered>
@@ -63,17 +61,15 @@
         :title="$t(currentAction.label)"
         :visible="showFormAction"
         :confirmLoading="actionLoading"
+        :closable="true"
         :maskClosable="false"
-        :okText="$t('label.ok')"
-        :cancelText="$t('label.cancel')"
         style="top: 20px;"
-        @ok="handleSubmit"
-        @cancel="onCloseAction"
         centered
       >
         <a-form
           :form="form"
-          layout="vertical">
+          layout="vertical"
+          @submit="handleSubmit">
           <a-form-item
             v-for="(field, index) in currentAction.fieldParams"
             :key="index"
@@ -129,6 +125,11 @@
                 :placeholder="field.description" />
             </span>
           </a-form-item>
+
+          <div :span="24" class="action-button">
+            <a-button @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" htmlType="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-modal>
     </div>

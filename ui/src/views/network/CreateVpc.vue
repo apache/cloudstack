@@ -19,7 +19,8 @@
     <a-spin :spinning="loading">
       <a-form
         :form="form"
-        layout="vertical">
+        layout="vertical"
+        @submit="handleSubmit">
         <a-form-item>
           <span slot="label">
             {{ $t('label.name') }}
@@ -115,11 +116,12 @@
           </span>
           <a-switch v-decorator="['start', {initialValue: true}]" defaultChecked />
         </a-form-item>
+
+        <div :span="24" class="action-button">
+          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+          <a-button :loading="loading" html-type="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        </div>
       </a-form>
-      <div :span="24" class="action-button">
-        <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
-      </div>
     </a-spin>
   </div>
 </template>
@@ -243,12 +245,5 @@ export default {
 
 .form {
   margin: 10px 0;
-}
-
-.action-button {
-  text-align: right;
-  button {
-    margin-right: 5px;
-  }
 }
 </style>

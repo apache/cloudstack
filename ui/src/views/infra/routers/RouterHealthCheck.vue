@@ -44,10 +44,7 @@
         :visible="showGetHealthChecksForm"
         :closable="true"
         :maskClosable="false"
-        :okText="$t('label.ok')"
-        :cancelText="$t('label.cancel')"
-        @ok="handleGetHealthChecksSubmit"
-        @cancel="onCloseGetHealthChecksForm"
+        :footer="null"
         centered>
         <a-spin :spinning="loading">
           <a-form
@@ -65,6 +62,11 @@
                 v-decorator="[$t('performfreshchecks')]"
                 :placeholder="apiParams.performfreshchecks.description" />
             </a-form-item>
+
+            <div :span="24" class="action-button">
+              <a-button @click="onCloseGetHealthChecksForm">{{ $t('label.cancel') }}</a-button>
+              <a-button type="primary" htmlType="submit" @click="handleGetHealthChecksSubmit">{{ $t('label.ok') }}</a-button>
+            </div>
           </a-form>
         </a-spin>
       </a-modal>

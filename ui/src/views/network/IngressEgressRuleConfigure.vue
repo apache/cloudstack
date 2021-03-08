@@ -18,7 +18,7 @@
 <template>
   <div>
 
-    <div>
+    <a-form @submit="handleAddRule">
       <div style="margin-bottom: 20px;">
         <div class="form__label">{{ $t('label.add.by') }}:</div>
         <a-radio-group @change="resetAllRules" v-model="addType">
@@ -73,10 +73,14 @@
           </div>
         </template>
         <div class="form__item" style="flex: 0">
-          <a-button :disabled="!('authorizeSecurityGroupInress' in $store.getters.apis) && !('authorizeSecurityGroupEgress' in $store.getters.apis)" type="primary" @click="handleAddRule">{{ $t('label.add') }}</a-button>
+          <a-button
+            :disabled="!('authorizeSecurityGroupInress' in $store.getters.apis) && !('authorizeSecurityGroupEgress' in $store.getters.apis)"
+            type="primary"
+            html-type="submit"
+            @click="handleAddRule">{{ $t('label.add') }}</a-button>
         </div>
       </div>
-    </div>
+    </a-form>
 
     <a-table
       size="small"

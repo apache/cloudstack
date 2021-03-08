@@ -63,6 +63,7 @@
       v-model="modal"
       :title="$t('label.dedicate.vlan.vni.range')"
       :maskClosable="false"
+      :footer="null"
       @ok="handleSubmit">
       <a-spin :spinning="formLoading">
         <a-form
@@ -74,6 +75,7 @@
               v-decorator="['range', {
                 rules: [{ required: true, message: `${$t('label.required')}` }]
               }]"
+              autoFocus
             ></a-input>
           </a-form-item>
 
@@ -124,6 +126,11 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+
+          <div :span="24" class="action-button">
+            <a-button @click="modal = false">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" htmlType="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-spin>
     </a-modal>

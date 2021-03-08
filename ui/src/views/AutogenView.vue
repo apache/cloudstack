@@ -124,11 +124,8 @@
         :visible="showAction"
         :closable="true"
         :maskClosable="false"
-        :okText="$t('label.ok')"
-        :cancelText="$t('label.cancel')"
+        :footer="null"
         style="top: 20px;"
-        @ok="handleSubmit"
-        @cancel="closeAction"
         :confirmLoading="actionLoading"
         centered
       >
@@ -290,6 +287,11 @@
                   :placeholder="field.description" />
               </span>
             </a-form-item>
+
+            <div :span="24" class="action-button">
+              <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+              <a-button type="primary" htmlType="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+            </div>
           </a-form>
         </a-spin>
       </a-modal>

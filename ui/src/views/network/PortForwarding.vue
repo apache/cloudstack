@@ -17,7 +17,7 @@
 
 <template>
   <div>
-    <div>
+    <a-form @submit="openAddVMModal">
       <div class="form">
         <div class="form__item">
           <div class="form__label">{{ $t('label.privateport') }}</div>
@@ -64,10 +64,14 @@
         </div>
         <div class="form__item" style="margin-left: auto;">
           <div class="form__label">{{ $t('label.add.vm') }}</div>
-          <a-button :disabled="!('createPortForwardingRule' in $store.getters.apis)" type="primary" @click="openAddVMModal">{{ $t('label.add') }}</a-button>
+          <a-button
+            :disabled="!('createPortForwardingRule' in $store.getters.apis)"
+            type="primary"
+            html-type="submit"
+            @click="openAddVMModal">{{ $t('label.add') }}</a-button>
         </div>
       </div>
-    </div>
+    </a-form>
 
     <a-divider/>
 
@@ -133,17 +137,24 @@
         <a-icon type="loading"></a-icon>
       </span>
 
-      <div class="add-tags">
+      <a-form :form="newTagsForm" class="add-tags" @submit="handleAddTag">
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.key') }}</p>
-          <a-input v-model="newTag.key"></a-input>
+          <a-form-item>
+            <a-input
+              autoFocus
+              v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
+          </a-form-item>
         </div>
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.value') }}</p>
-          <a-input v-model="newTag.value"></a-input>
+          <a-form-item>
+            <a-input v-decorator="['value', { rules: [{ required: true, message: this.$t('message.specifiy.tag.value')}] }]" />
+          </a-form-item>
         </div>
-        <a-button type="primary" @click="() => handleAddTag()">{{ $t('label.add') }}</a-button>
-      </div>
+
+        <a-button type="primary" html-type="submit" @click="handleAddTag">{{ $t('label.add') }}</a-button>
+      </a-form>
 
       <a-divider></a-divider>
 
@@ -279,10 +290,6 @@ export default {
       selectedRule: null,
       selectedTier: null,
       tags: [],
-      newTag: {
-        key: null,
-        value: null
-      },
       tagsModalLoading: false,
       addVmModalVisible: false,
       addVmModalLoading: false,
@@ -361,7 +368,8 @@ export default {
       vmPage: 1,
       vmPageSize: 10,
       vmCount: 0,
-      searchQuery: null
+      searchQuery: null,
+      newTagsForm: this.$form.createForm(this)
     }
   },
   mounted () {
@@ -488,8 +496,7 @@ export default {
       this.newRule.virtualmachineid = null
     },
     resetTagInputs () {
-      this.newTag.key = null
-      this.newTag.value = null
+      this.newTagsForm.resetFields()
     },
     closeModal () {
       this.selectedRule = null
@@ -520,38 +527,46 @@ export default {
         this.closeModal()
       })
     },
-    handleAddTag () {
+    handleAddTag (e) {
       this.tagsModalLoading = true
-      api('createTags', {
-        'tags[0].key': this.newTag.key,
-        'tags[0].value': this.newTag.value,
-        resourceIds: this.selectedRule,
-        resourceType: 'PortForwardingRule'
-      }).then(response => {
-        this.$pollJob({
-          jobId: response.createtagsresponse.jobid,
-          successMessage: this.$t('message.success.add.tag'),
-          successMethod: () => {
-            this.parentFetchData()
-            this.parentToggleLoading()
-            this.openTagsModal(this.selectedRule)
-          },
-          errorMessage: this.$t('message.add.tag.failed'),
-          errorMethod: () => {
-            this.parentFetchData()
-            this.parentToggleLoading()
-            this.closeModal()
-          },
-          loadingMessage: this.$t('message.add.tag.processing'),
-          catchMessage: this.$t('error.fetching.async.job.result'),
-          catchMethod: () => {
-            this.parentFetchData()
-            this.parentToggleLoading()
-            this.closeModal()
-          }
+      e.preventDefault()
+      this.newTagsForm.validateFields((err, values) => {
+        if (err) {
+          this.tagsModalLoading = false
+          return
+        }
+
+        api('createTags', {
+          'tags[0].key': values.key,
+          'tags[0].value': values.value,
+          resourceIds: this.selectedRule,
+          resourceType: 'PortForwardingRule'
+        }).then(response => {
+          this.$pollJob({
+            jobId: response.createtagsresponse.jobid,
+            successMessage: this.$t('message.success.add.tag'),
+            successMethod: () => {
+              this.parentFetchData()
+              this.parentToggleLoading()
+              this.openTagsModal(this.selectedRule)
+            },
+            errorMessage: this.$t('message.add.tag.failed'),
+            errorMethod: () => {
+              this.parentFetchData()
+              this.parentToggleLoading()
+              this.closeModal()
+            },
+            loadingMessage: this.$t('message.add.tag.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            catchMethod: () => {
+              this.parentFetchData()
+              this.parentToggleLoading()
+              this.closeModal()
+            }
+          })
+        }).catch(error => {
+          this.$notifyError(error)
         })
-      }).catch(error => {
-        this.$notifyError(error)
       })
     },
     handleDeleteTag (tag) {

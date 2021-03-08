@@ -79,33 +79,8 @@
             </a-form-item>
             <div :span="24" class="action-button">
               <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-              <a-button type="primary" @click="updateProjectRole" :loading="loading">{{ $t('label.ok') }}</a-button>
+              <a-button type="primary" html-type="submit" @click="updateProjectRole" :loading="loading">{{ $t('label.ok') }}</a-button>
             </div>
-            <span slot="action" slot-scope="text, record">
-              <a-tooltip placement="top">
-                <template slot="title">
-                  {{ $t('label.update.project.role') }}
-                </template>
-                <a-button
-                  type="default"
-                  shape="circle"
-                  icon="edit"
-                  size="small"
-                  style="margin:10px"
-                  @click="openUpdateModal(record)" />
-              </a-tooltip>
-              <a-tooltip placement="top">
-                <template slot="title">
-                  {{ $t('label.remove.project.role') }}
-                </template>
-                <a-button
-                  type="danger"
-                  shape="circle"
-                  icon="delete"
-                  size="small"
-                  @click="deleteProjectRole(record)"/>
-              </a-tooltip>
-            </span>
           </a-form>
         </a-modal>
         <a-modal
@@ -126,7 +101,7 @@
             </a-form-item>
             <div :span="24" class="action-button">
               <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-              <a-button type="primary" @click="createProjectRole" :loading="loading">{{ $t('label.ok') }}</a-button>
+              <a-button type="primary" html-type="submit" @click="createProjectRole" :loading="loading">{{ $t('label.ok') }}</a-button>
             </div>
           </a-form>
         </a-modal>
@@ -308,11 +283,3 @@ export default {
   }
 }
 </script>
-<style lang="scss" scoped>
-.action-button {
-    text-align: right;
-    button {
-      margin-right: 5px;
-    }
-  }
-</style>

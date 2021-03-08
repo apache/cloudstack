@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="loading">
-    <div class="form">
+    <a-form class="form" @submit="handleSubmitForm">
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.zonenamelabel') }}</div>
         <a-select v-model="zoneId" @change="fetchPods">
@@ -96,12 +96,11 @@
 
       <a-divider></a-divider>
 
-      <div class="actions">
+      <div :span="24" class="action-button">
         <a-button @click="() => this.$parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
-        <a-button @click="handleSubmitForm" type="primary">{{ $t('label.ok') }}</a-button>
+        <a-button type="primary" htmlType="submit" @click="handleSubmitForm">{{ $t('label.ok') }}</a-button>
       </div>
-
-    </div>
+    </a-form>
   </a-spin>
 </template>
 
@@ -245,6 +244,7 @@ export default {
         this.url = `http://${this.host}/${this.dataCenter}/${clusternameVal}`
         this.clustername = `${this.host}/${this.dataCenter}/${clusternameVal}`
       }
+
       this.loading = true
       this.parentToggleLoading()
       api('addCluster', {}, 'POST', {
@@ -351,17 +351,6 @@ export default {
 
       @media (min-width: 760px) {
         width: 400px;
-      }
-    }
-  }
-
-  .actions {
-    display: flex;
-    justify-content: flex-end;
-
-    button {
-      &:not(:last-child) {
-        margin-right: 10px;
       }
     }
   }

@@ -79,10 +79,7 @@
       :visible="showCopyActionForm"
       :closable="true"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
-      @ok="handleCopyIsoSubmit"
-      @cancel="onCloseCopyForm"
+      :footer="null"
       :confirmLoading="copyLoading"
       centered>
       <a-spin :spinning="copyLoading">
@@ -114,6 +111,11 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+
+          <div :span="24" class="action-button">
+            <a-button @click="onCloseCopyForm">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" htmlType="submit" @click="handleCopyIsoSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-spin>
     </a-modal>

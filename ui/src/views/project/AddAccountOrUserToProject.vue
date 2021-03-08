@@ -79,7 +79,7 @@
           </a-form-item>
           <div :span="24" class="action-button">
             <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-            <a-button type="primary" @click="addAccountToProject" :loading="loading">{{ $t('label.ok') }}</a-button>
+            <a-button type="primary" html-type="submit" @click="addAccountToProject" :loading="loading">{{ $t('label.ok') }}</a-button>
           </div>
         </a-form>
       </a-tab-pane>
@@ -146,7 +146,7 @@
           </a-form-item>
           <div :span="24" class="action-button">
             <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-            <a-button type="primary" @click="addUserToProject" :loading="loading">{{ $t('label.ok') }}</a-button>
+            <a-button type="primary" html-type="submit" @click="addUserToProject" :loading="loading">{{ $t('label.ok') }}</a-button>
           </div>
         </a-form>
       </a-tab-pane>
@@ -324,13 +324,6 @@ export default {
 
     @media (min-width: 600px) {
       width: 450px;
-    }
-  }
-.action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

@@ -424,7 +424,7 @@
       </a-form>
       <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading" type="primary" html-type="submit" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-spin>
   </div>
@@ -670,14 +670,6 @@ export default {
 
     @media (min-width: 800px) {
       width: 430px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

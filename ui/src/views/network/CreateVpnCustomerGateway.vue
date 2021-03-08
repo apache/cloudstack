@@ -16,7 +16,7 @@
 // under the License.
 <template>
   <div>
-    <a-form class="form-layout" :form="form" layout="vertical">
+    <a-form class="form-layout" :form="form" layout="vertical" @submit="handleSubmit">
       <a-form-item>
         <span slot="label">
           {{ $t('label.name') }}
@@ -232,11 +232,11 @@
             },
           ]"/>
       </a-form-item>
-      <div class="actions">
+      <div class="action-button">
         <a-button @click="closeModal">
           {{ $t('label.cancel') }}
         </a-button>
-        <a-button type="primary" @click="handleSubmit">
+        <a-button type="primary" html-type="submit" @click="handleSubmit">
           {{ $t('label.ok') }}
         </a-button>
       </div>
@@ -356,16 +356,5 @@ export default {
 <style lang="scss" scoped>
 .form-layout {
   width: 500px;
-}
-
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 20px;
-  button {
-    &:not(:last-child) {
-      margin-right: 10px;
-    }
-  }
 }
 </style>
