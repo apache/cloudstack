@@ -36,11 +36,11 @@
             :loadData="onLoadData"
             :expandAction="false"
             :showIcon="true"
-            :defaultSelectedKeys="defaultSelected"
+            :selectedKeys="defaultSelected"
             :checkStrictly="true"
             @select="onSelect"
             @expand="onExpand"
-            :defaultExpandedKeys="arrExpand">
+            :expandedKeys="arrExpand">
             <a-icon slot="parent" type="folder" />
             <a-icon slot="leaf" type="block" />
           </a-tree>
@@ -146,6 +146,7 @@ export default {
       oldSearchQuery: '',
       searchQuery: '',
       arrExpand: [],
+      domainStore: {},
       rootKey: ''
     }
   },
@@ -153,6 +154,7 @@ export default {
     this.metaName = this.$route.meta.name
     this.apiList = this.$route.meta.permission[0] ? this.$route.meta.permission[0] : ''
     this.apiChildren = this.$route.meta.permission[1] ? this.$route.meta.permission[1] : ''
+    this.domainStore = store.getters.domainStore
   },
   watch: {
     loading () {
@@ -213,6 +215,40 @@ export default {
       }
 
       this.reloadTreeData(newData)
+    },
+    treeVerticalData () {
+      if (!this.domainStore.isExpand) {
+        return
+      }
+      if (this.domainStore.expands && this.domainStore.expands.length > 0) {
+        for (let i = 0; i < this.domainStore.expands.length; i++) {
+          const expandKey = this.domainStore.expands[i]
+          if (this.arrExpand.includes(expandKey)) {
+            continue
+          }
+          const keyVisible = this.treeVerticalData.findIndex(item => item.key === expandKey)
+          if (keyVisible > -1) this.arrExpand.push(expandKey)
+        }
+      }
+
+      if (this.domainStore.selected) {
+        this.selectedTreeKey = this.domainStore.selected
+        this.defaultSelected = [this.selectedTreeKey]
+
+        const resource = this.treeVerticalData.filter(item => item.id === this.selectedTreeKey)
+        if (resource.length > 0) {
+          this.resource = resource[0]
+          this.$emit('change-resource', this.resource)
+        } else {
+          const rootResource = this.treeVerticalData[0]
+          if (rootResource) {
+            this.resource = rootResource
+            this.selectedTreeKey = this.resource.key
+            this.defaultSelected = [this.selectedTreeKey]
+            this.$emit('change-resource', this.resource)
+          }
+        }
+      }
     }
   },
   methods: {
@@ -273,10 +309,21 @@ export default {
         this.selectedTreeKey = selectedKeys[0]
       }
 
+      this.defaultSelected = []
+      this.defaultSelected.push(this.selectedTreeKey)
+
+      this.domainStore.expands = this.arrExpand
+      this.domainStore.selected = this.selectedTreeKey
+      store.dispatch('SetDomainStore', this.domainStore)
+
       this.getDetailResource(this.selectedTreeKey)
     },
     onExpand (treeExpand) {
       this.arrExpand = treeExpand
+      this.domainStore.isExpand = true
+      this.domainStore.expands = this.arrExpand
+      this.domainStore.selected = this.selectedTreeKey
+      store.dispatch('SetDomainStore', this.domainStore)
     },
     onSearch (value) {
       if (this.searchQuery === '' && this.oldSearchQuery === '') {
@@ -303,6 +350,8 @@ export default {
       this.arrExpand = []
       this.treeViewData = []
       this.loadingSearch = true
+      this.domainStore = {}
+      store.dispatch('SetDomainStore', this.domainStore)
 
       api(this.apiList, params).then(json => {
         const listDomains = this.getResponseJsonData(json)

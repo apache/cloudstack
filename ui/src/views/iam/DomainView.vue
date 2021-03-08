@@ -132,6 +132,7 @@ export default {
     next()
   },
   beforeRouteLeave (to, from, next) {
+    this.updateDomainStoreWhenLeave()
     next()
   },
   watch: {
@@ -311,6 +312,9 @@ export default {
     },
     updateActionData (data) {
       this.actionData.push(data)
+    },
+    updateDomainStoreWhenLeave () {
+      store.dispatch('SetDomainStore', {})
     }
   }
 }

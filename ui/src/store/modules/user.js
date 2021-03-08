@@ -24,7 +24,7 @@ import router from '@/router'
 import store from '@/store'
 import { login, logout, api } from '@/api'
 import { i18n } from '@/locales'
-import { ACCESS_TOKEN, CURRENT_PROJECT, DEFAULT_THEME, APIS, ASYNC_JOB_IDS, ZONES, TIMEZONE_OFFSET, USE_BROWSER_TIMEZONE } from '@/store/mutation-types'
+import { ACCESS_TOKEN, CURRENT_PROJECT, DEFAULT_THEME, APIS, ASYNC_JOB_IDS, ZONES, TIMEZONE_OFFSET, USE_BROWSER_TIMEZONE, DOMAIN_STORE } from '@/store/mutation-types'
 
 const user = {
   state: {
@@ -40,7 +40,8 @@ const user = {
     cloudian: {},
     zones: {},
     timezoneoffset: 0.0,
-    usebrowsertimezone: false
+    usebrowsertimezone: false,
+    domainStore: {}
   },
 
   mutations: {
@@ -91,6 +92,10 @@ const user = {
     SET_ZONES: (state, zones) => {
       state.zones = zones
       Vue.ls.set(ZONES, zones)
+    },
+    SET_DOMAIN_STORE (state, domainStore) {
+      state.domainStore = domainStore
+      Vue.ls.set(DOMAIN_STORE, domainStore)
     }
   },
 
@@ -142,7 +147,10 @@ const user = {
         const cachedZones = Vue.ls.get(ZONES, [])
         const cachedTimezoneOffset = Vue.ls.get(TIMEZONE_OFFSET, 0.0)
         const cachedUseBrowserTimezone = Vue.ls.get(USE_BROWSER_TIMEZONE, false)
+        const domainStore = Vue.ls.get(DOMAIN_STORE, {})
         const hasAuth = Object.keys(cachedApis).length > 0
+
+        commit('SET_DOMAIN_STORE', domainStore)
         if (hasAuth) {
           console.log('Login detected, using cached APIs')
           commit('SET_ZONES', cachedZones)
@@ -304,6 +312,10 @@ const user = {
           reject(error)
         })
       })
+    },
+
+    SetDomainStore ({ commit }, domainStore) {
+      commit('SET_DOMAIN_STORE', domainStore)
     }
   }
 }
