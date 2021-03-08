@@ -2431,7 +2431,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                         StoragePoolVO pool = _storagePoolDao.findPoolByUUID(poolResponse.getId());
                         StoragePoolDetailVO detail = _storagePoolDetailsDao.findDetail(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString());
                         if (detail != null) {
-                            caps.put(DataStoreCapabilities.HARDWARE_ACCELERATION.toString(), detail.getValue());
+                            caps.put(Storage.Capability.HARDWARE_ACCELERATION.toString(), detail.getValue());
                         }
                     }
                     poolResponse.setCaps(caps);

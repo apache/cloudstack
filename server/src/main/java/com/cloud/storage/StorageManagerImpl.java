@@ -2781,8 +2781,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     /**
-     *
-     * @param poolId - Storage pool id for pool to update - if null all supported pools are updated.
+     * @param poolId - Storage pool id for pool to update.
      * @param failOnChecks - If true, throw an error if pool type and state checks fail.
      */
     @Override

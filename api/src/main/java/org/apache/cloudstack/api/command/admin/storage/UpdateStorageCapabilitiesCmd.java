@@ -42,7 +42,7 @@ public class UpdateStorageCapabilitiesCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = false, description = "Storage pool id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = true, description = "Storage pool id")
     private Long poolId;
 
     /////////////////////////////////////////////////////
@@ -64,14 +64,12 @@ public class UpdateStorageCapabilitiesCmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        _storageService.updateStorageCapabilities(poolId, poolId != null);
+        _storageService.updateStorageCapabilities(poolId, true);
         ListStoragePoolsCmd listStoragePoolCmd = new ListStoragePoolsCmd();
-        if (poolId != null){
-            listStoragePoolCmd.setId(poolId);
-        }
-        ListResponse<StoragePoolResponse> response = _queryService.searchForStoragePools(listStoragePoolCmd);
-        response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        listStoragePoolCmd.setId(poolId);
+        ListResponse<StoragePoolResponse> listResponse = _queryService.searchForStoragePools(listStoragePoolCmd);
+        listResponse.setResponseName(getCommandName());
+        this.setResponseObject(listResponse);
     }
 
     @Override

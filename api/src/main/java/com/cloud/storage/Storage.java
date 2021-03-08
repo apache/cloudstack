@@ -77,7 +77,7 @@ public class Storage {
     }
 
     public static enum Capability {
-        HARDWARE_ACCELERATION("hardwareAcceleration");
+        HARDWARE_ACCELERATION("HARDWARE_ACCELERATION");
 
         private final String capability;
 

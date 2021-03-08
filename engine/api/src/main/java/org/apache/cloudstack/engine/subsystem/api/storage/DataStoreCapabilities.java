@@ -44,5 +44,4 @@ public enum DataStoreCapabilities {
     /**
      * indicates that this driver supports hardware acceleration
      */
-    HARDWARE_ACCELERATION
 }

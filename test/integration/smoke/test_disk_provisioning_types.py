@@ -22,6 +22,7 @@ from marvin.codes import FAILED
 from marvin.lib.common import list_disk_offering, get_zone, get_suitable_test_template, get_domain
 from marvin.cloudstackAPI import listStoragePools, updateStorageCapabilities
 from nose.plugins.attrib import attr
+import json
 
 
 class TestDiskProvisioningTypes(cloudstackTestCase):
@@ -91,15 +92,18 @@ class TestDiskProvisioningTypes(cloudstackTestCase):
     def test_05_update_cmd(self):
         cmd = listStoragePools.listStoragePoolsCmd()
         storagePools = self.apiclient.listStoragePools(cmd)
-        pool = storagePools[0]
-        cmd = updateStorageCapabilities.updateStorageCapabilitiesCmd()
-        cmd.id = pool.id
-        response = self.apiclient.updateStorageCapabilities(cmd)
-        self.assertEqual(
-            response['success'],
-            True,
-            "Check Updated storage pool capabilities"
-        )
+
+        for pool in storagePools:
+            if pool.type == 'NetworkFilesystem':
+                cmd = updateStorageCapabilities.updateStorageCapabilitiesCmd()
+                cmd.id = pool.id
+                response = self.apiclient.updateStorageCapabilities(cmd)
+                acceleration = getattr(response[0].storagecapabilities, "HARDWARE_ACCELERATION")
+                self.assertNotEqual(
+                    acceleration,
+                    None,
+                    "Check Updated storage pool capabilities"
+                )
 
     def runner(self, provisioning_type):
         self.services["disk_offering"]['provisioningtype'] = provisioning_type
