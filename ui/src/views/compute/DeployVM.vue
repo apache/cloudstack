@@ -41,6 +41,7 @@
                         :options="zoneSelectOptions"
                         @change="onSelectZoneId"
                         :loading="loading.zones"
+                        autoFocus
                       ></a-select>
                     </a-form-item>
                     <a-form-item
@@ -477,6 +478,7 @@
                       v-if="vm.templateid && ['KVM', 'VMware'].includes(hypervisor) && !template.deployasis">
                       <a-form-item :label="$t('label.boottype')">
                         <a-select
+                          :autoFocus="vm.templateid && ['KVM', 'VMware'].includes(hypervisor) && !template.deployasis"
                           v-decorator="['boottype']"
                           @change="fetchBootModes"
                         >

@@ -28,6 +28,7 @@
 
       <span slot="offering" slot-scope="text, record">
         <a-select
+          autoFocus
           v-if="validOfferings[record.id] && validOfferings[record.id].length > 0"
           @change="updateOffering($event, record.id)"
           :defaultValue="validOfferings[record.id][0].id">

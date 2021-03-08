@@ -25,6 +25,7 @@
       </div>
       <a-form-item :label="$t('label.virtualmachineid')">
         <a-select
+          autoFocus
           v-decorator="['virtualmachineid', {
             rules: [{ required: true, message: $t('message.error.select') }]
           }]"

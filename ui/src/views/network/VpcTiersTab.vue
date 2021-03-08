@@ -164,7 +164,8 @@
           <a-form-item :label="$t('label.name')">
             <a-input
               :placeholder="$t('label.unique.name.tier')"
-              v-decorator="['name',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
+              v-decorator="['name',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+              autoFocus></a-input>
           </a-form-item>
           <a-form-item :label="$t('label.networkofferingid')">
             <a-select
@@ -208,6 +209,7 @@
         <a-form @submit.prevent="handleAddInternalLBSubmit" :form="form">
           <a-form-item :label="$t('label.name')">
             <a-input
+              autoFocus
               :placeholder="$t('label.internallb.name.description')"
               v-decorator="['name', { rules: [{ required: true, message: $t('message.error.internallb.name')}] }]"/>
           </a-form-item>
