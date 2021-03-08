@@ -40,8 +40,5 @@ public enum DataStoreCapabilities {
     /**
      * indicates that this driver supports reverting a volume to a snapshot state
      */
-    CAN_REVERT_VOLUME_TO_SNAPSHOT,
-    /**
-     * indicates that this driver supports hardware acceleration
-     */
+    CAN_REVERT_VOLUME_TO_SNAPSHOT
 }
