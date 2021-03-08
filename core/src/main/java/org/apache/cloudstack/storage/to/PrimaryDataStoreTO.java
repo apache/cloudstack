@@ -19,12 +19,13 @@
 
 package org.apache.cloudstack.storage.to;
 
+import java.util.Map;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.StoragePoolType;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
-
-import java.util.Map;
 
 public class PrimaryDataStoreTO implements DataStoreTO {
     public static final String MANAGED = PrimaryDataStore.MANAGED;
@@ -39,7 +40,7 @@ public class PrimaryDataStoreTO implements DataStoreTO {
     public static final String REMOVE_AFTER_COPY = PrimaryDataStore.REMOVE_AFTER_COPY;
     public static final String VOLUME_SIZE = PrimaryDataStore.VOLUME_SIZE;
 
-    private final String uuid;
+    private String uuid;
     private final String name;
     private String type;
     private final long id;
@@ -73,6 +74,10 @@ public class PrimaryDataStoreTO implements DataStoreTO {
     @Override
     public String getUuid() {
         return this.uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     @Override

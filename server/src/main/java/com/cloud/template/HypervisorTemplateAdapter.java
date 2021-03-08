@@ -16,10 +16,7 @@
 // under the License.
 package com.cloud.template;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.host.HostVO;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.resource.ResourceManager;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -30,25 +27,23 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 
 import com.cloud.configuration.Config;
+import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
 import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
-import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
-import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
-import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.log4j.Logger;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
@@ -62,10 +57,15 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
@@ -74,11 +74,11 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.org.Grouping;
+import com.cloud.resource.ResourceManager;
 import com.cloud.server.StatsCollector;
-import com.cloud.template.VirtualMachineTemplate.State;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
@@ -89,6 +89,9 @@ import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.download.DownloadMonitor;
+import com.cloud.template.VirtualMachineTemplate.State;
+import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -126,6 +129,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     ResourceManager resourceManager;
     @Inject
     VMTemplateDao templateDao;
+    @Inject
+    private VMTemplateDetailsDao templateDetailsDao;
+    @Inject
+    private TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
 
     @Override
     public String getName() {
@@ -136,12 +143,23 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
      * Validate on random running KVM host that URL is reachable
      * @param url url
      */
-    private Long performDirectDownloadUrlValidation(final String url) {
-        HostVO host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM);
+    private Long performDirectDownloadUrlValidation(final String format, final String url, final List<Long> zoneIds) {
+        HostVO host = null;
+        if (zoneIds != null && !zoneIds.isEmpty()) {
+            for (Long zoneId : zoneIds) {
+                host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, zoneId);
+                if (host != null) {
+                    break;
+                }
+            }
+        } else {
+            host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, null);
+        }
+
         if (host == null) {
             throw new CloudRuntimeException("Couldn't find a host to validate URL " + url);
         }
-        CheckUrlCommand cmd = new CheckUrlCommand(url);
+        CheckUrlCommand cmd = new CheckUrlCommand(format, url);
         s_logger.debug("Performing URL " + url + " validation on host " + host.getId());
         Answer answer = _agentMgr.easySend(host.getId(), cmd);
         if (answer == null || !answer.getResult()) {
@@ -158,7 +176,12 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         UriUtils.validateUrl(ImageFormat.ISO.getFileExtension(), url);
         if (cmd.isDirectDownload()) {
             DigestHelper.validateChecksumString(cmd.getChecksum());
-            Long templateSize = performDirectDownloadUrlValidation(url);
+            List<Long> zoneIds = null;
+            if (cmd.getZoneId() != null) {
+                zoneIds =  new ArrayList<>();
+                zoneIds.add(cmd.getZoneId());
+            }
+            Long templateSize = performDirectDownloadUrlValidation(ImageFormat.ISO.getFileExtension(), url, zoneIds);
             profile.setSize(templateSize);
         }
         profile.setUrl(url);
@@ -183,7 +206,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         UriUtils.validateUrl(cmd.getFormat(), url);
         if (cmd.isDirectDownload()) {
             DigestHelper.validateChecksumString(cmd.getChecksum());
-            Long templateSize = performDirectDownloadUrlValidation(url);
+            Long templateSize = performDirectDownloadUrlValidation(cmd.getFormat(), url, cmd.getZoneIds());
             profile.setSize(templateSize);
         }
         profile.setUrl(url);
@@ -241,7 +264,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
     private void createTemplateWithinZone(Long zId, TemplateProfile profile, VMTemplateVO template) {
         // find all eligible image stores for this zone scope
-        List<DataStore> imageStores = storeMgr.getImageStoresByScope(new ZoneScope(zId));
+        List<DataStore> imageStores = storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(zId));
         if (imageStores == null || imageStores.size() == 0) {
             throw new CloudRuntimeException("Unable to find image store to download template " + profile.getTemplate());
         }
@@ -308,7 +331,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     zoneId = profile.getZoneIdList().get(0);
 
                 // find all eligible image stores for this zone scope
-                List<DataStore> imageStores = storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+                List<DataStore> imageStores = storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(zoneId));
                 if (imageStores == null || imageStores.size() == 0) {
                     throw new CloudRuntimeException("Unable to find image store to download template " + profile.getTemplate());
                 }
@@ -577,6 +600,14 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             // find all eligible image stores for this template
             List<DataStore> iStores = templateMgr.getImageStoreByTemplate(template.getId(), null);
             if (iStores == null || iStores.size() == 0) {
+                // remove any references from template_zone_ref
+                List<VMTemplateZoneVO> templateZones = templateZoneDao.listByTemplateId(template.getId());
+                if (templateZones != null) {
+                    for (VMTemplateZoneVO templateZone : templateZones) {
+                        templateZoneDao.remove(templateZone.getId());
+                    }
+                }
+
                 // Mark template as Inactive.
                 template.setState(VirtualMachineTemplate.State.Inactive);
                 _tmpltDao.update(template.getId(), template);
@@ -592,9 +623,14 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             Pair<Class<?>, Long> tmplt = new Pair<Class<?>, Long>(VirtualMachineTemplate.class, template.getId());
             _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, tmplt);
 
+            // Remove template details
+            templateDetailsDao.removeDetails(template.getId());
+
+            // Remove deploy-as-is details (if any)
+            templateDeployAsIsDetailsDao.removeDetails(template.getId());
+
         }
         return success;
-
     }
 
     @Override

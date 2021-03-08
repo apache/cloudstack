@@ -18,36 +18,12 @@
  */
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.agent.api.ValidateVcenterDetailsCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.StorageConflictException;
@@ -77,6 +53,28 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     private static final Logger s_logger = Logger.getLogger(CloudStackPrimaryDataStoreLifeCycleImpl.class);
@@ -133,6 +131,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         Long zoneId = (Long)dsInfos.get("zoneId");
         String url = (String)dsInfos.get("url");
         String providerName = (String)dsInfos.get("providerName");
+        HypervisorType hypervisorType = (HypervisorType)dsInfos.get("hypervisorType");
         if (clusterId != null && podId == null) {
             throw new InvalidParameterValueException("Cluster id requires pod id");
         }
@@ -250,7 +249,18 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             parameters.setPath(hostPath.replaceFirst("/", ""));
             parameters.setUserInfo(userInfo);
         } else if (scheme.equalsIgnoreCase("PreSetup")) {
+            if (HypervisorType.VMware.equals(hypervisorType)) {
+                validateVcenterDetails(zoneId, podId, clusterId,storageHost);
+            }
             parameters.setType(StoragePoolType.PreSetup);
+            parameters.setHost(storageHost);
+            parameters.setPort(0);
+            parameters.setPath(hostPath);
+        } else if (scheme.equalsIgnoreCase("DatastoreCluster")) {
+            if (HypervisorType.VMware.equals(hypervisorType)) {
+                validateVcenterDetails(zoneId, podId, clusterId,storageHost);
+            }
+            parameters.setType(StoragePoolType.DatastoreCluster);
             parameters.setHost(storageHost);
             parameters.setPort(0);
             parameters.setPath(hostPath);
@@ -327,7 +337,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             uuid = (String)existingUuid;
         } else if (scheme.equalsIgnoreCase("sharedmountpoint") || scheme.equalsIgnoreCase("clvm")) {
             uuid = UUID.randomUUID().toString();
-        } else if (scheme.equalsIgnoreCase("PreSetup")) {
+        } else if ("PreSetup".equalsIgnoreCase(scheme) && !HypervisorType.VMware.equals(hypervisorType)) {
             uuid = hostPath.replace("/", "");
         } else {
             uuid = UUID.nameUUIDFromBytes((storageHost + hostPath).getBytes()).toString();
@@ -353,12 +363,39 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         return dataStoreHelper.createPrimaryDataStore(parameters);
     }
 
+    private void validateVcenterDetails(Long zoneId, Long podId, Long clusterId, String storageHost) {
+
+        List<HostVO> allHosts =
+                _resourceMgr.listAllUpHosts(Host.Type.Routing, clusterId, podId, zoneId);
+        if (allHosts.isEmpty()) {
+            throw new CloudRuntimeException("No host up to associate a storage pool with in zone: " + zoneId + " pod: " + podId + " cluster: " + clusterId);
+        }
+
+        boolean success = false;
+        for (HostVO h : allHosts) {
+            ValidateVcenterDetailsCommand cmd = new ValidateVcenterDetailsCommand(storageHost);
+            final Answer answer = agentMgr.easySend(h.getId(), cmd);
+            if (answer != null && answer.getResult()) {
+                s_logger.info("Successfully validated vCenter details provided");
+                return;
+            } else {
+                if (answer != null) {
+                    throw new InvalidParameterValueException("Provided vCenter server details does not match with the existing vCenter in zone id: " + zoneId);
+                } else {
+                    String msg = "Can not validate vCenter through host " + h.getId() + " due to ValidateVcenterDetailsCommand returns null";
+                    s_logger.warn(msg);
+                }
+            }
+        }
+        throw new CloudRuntimeException("Could not validate vCenter details through any of the hosts with in zone: " + zoneId + ", pod: " + podId + ", cluster: " + clusterId);
+    }
+
     protected boolean createStoragePool(long hostId, StoragePool pool) {
         s_logger.debug("creating pool " + pool.getName() + " on  host " + hostId);
 
         if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem &&
                 pool.getPoolType() != StoragePoolType.IscsiLUN && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS &&
-                pool.getPoolType() != StoragePoolType.SharedMountPoint && pool.getPoolType() != StoragePoolType.PreSetup && pool.getPoolType() != StoragePoolType.OCFS2 &&
+                pool.getPoolType() != StoragePoolType.SharedMountPoint && pool.getPoolType() != StoragePoolType.PreSetup && pool.getPoolType() != StoragePoolType.DatastoreCluster && pool.getPoolType() != StoragePoolType.OCFS2 &&
                 pool.getPoolType() != StoragePoolType.RBD && pool.getPoolType() != StoragePoolType.CLVM && pool.getPoolType() != StoragePoolType.SMB &&
                 pool.getPoolType() != StoragePoolType.Gluster) {
             s_logger.warn(" Doesn't support storage pool type " + pool.getPoolType());

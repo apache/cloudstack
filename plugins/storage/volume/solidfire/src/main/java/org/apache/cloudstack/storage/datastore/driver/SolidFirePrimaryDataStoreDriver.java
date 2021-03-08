@@ -82,6 +82,7 @@ import com.cloud.user.AccountDetailVO;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Preconditions;
@@ -709,7 +710,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             sfVolumeId = Long.parseLong(snapshotDetails.getValue());
         } else if (dataObjectType == DataObjectType.TEMPLATE) {
             // get the cached template on this storage
-            VMTemplateStoragePoolVO templatePoolRef = vmTemplatePoolDao.findByPoolTemplate(storagePoolId, dataObjectId);
+            VMTemplateStoragePoolVO templatePoolRef = vmTemplatePoolDao.findByPoolTemplate(storagePoolId, dataObjectId, null);
 
             if (templatePoolRef != null) {
                 sfVolumeId = Long.parseLong(templatePoolRef.getLocalDownloadPath());
@@ -827,6 +828,11 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
         throw new UnsupportedOperationException();
     }
 
@@ -1135,7 +1141,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         String iqn = sfVolume.getIqn();
 
-        VMTemplateStoragePoolVO templatePoolRef = vmTemplatePoolDao.findByPoolTemplate(storagePoolId, templateInfo.getId());
+        VMTemplateStoragePoolVO templatePoolRef = vmTemplatePoolDao.findByPoolTemplate(storagePoolId, templateInfo.getId(), null);
 
         templatePoolRef.setInstallPath(iqn);
         templatePoolRef.setLocalDownloadPath(Long.toString(sfVolume.getId()));
@@ -1587,5 +1593,30 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         return lstSnapshots2;
+    }
+
+    @Override
+    public boolean canProvideStorageStats() {
+        return false;
+    }
+
+    @Override
+    public Pair<Long, Long> getStorageStats(StoragePool storagePool) {
+        return null;
+    }
+
+    @Override
+    public boolean canProvideVolumeStats() {
+        return false;
+    }
+
+    @Override
+    public Pair<Long, Long> getVolumeStats(StoragePool storagePool, String volumeId) {
+        return null;
+    }
+
+    @Override
+    public boolean canHostAccessStoragePool(Host host, StoragePool pool) {
+        return true;
     }
 }

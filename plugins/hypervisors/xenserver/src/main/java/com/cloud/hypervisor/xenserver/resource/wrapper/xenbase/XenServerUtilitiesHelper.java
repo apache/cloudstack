@@ -45,6 +45,6 @@ public class XenServerUtilitiesHelper {
     }
 
     public static boolean isXenServerToolsSR(final String label) {
-        return !Strings.isNullOrEmpty(label) && (label.startsWith("XenServer Tools") || label.startsWith("XCP-ng Tools"));
+        return !Strings.isNullOrEmpty(label) && (label.startsWith("XenServer Tools") || label.startsWith("Citrix Hypervisor Tools") || label.startsWith("XCP-ng Tools"));
     }
 }

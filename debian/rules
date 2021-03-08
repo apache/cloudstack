@@ -93,6 +93,20 @@ override_dh_auto_install:
 	install -m0644 packaging/systemd/$(PACKAGE)-management.service debian/$(PACKAGE)-management/lib/systemd/system/$(PACKAGE)-management.service
 	install -m0644 packaging/systemd/$(PACKAGE)-management.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-management
 
+	# cloudstack-ui
+	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/ui
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-ui
+	cd ui && npm install && npm run build && cd ..
+	cp -r ui/dist/config.json $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/ui/
+	cp -r ui/dist/* $(DESTDIR)/usr/share/$(PACKAGE)-ui/
+	rm -f $(DESTDIR)/usr/share/$(PACKAGE)-ui/config.json
+	ln -s /$(SYSCONFDIR)/$(PACKAGE)/ui/config.json $(DESTDIR)/usr/share/$(PACKAGE)-ui/config.json
+	# copy ui to cloudstack-management
+	cp -r ui/dist/config.json $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/
+	cp -r ui/dist/* $(DESTDIR)/usr/share/$(PACKAGE)-management/webapp/
+	rm -f $(DESTDIR)/usr/share/$(PACKAGE)-management/webapp/config.json
+	ln -s /$(SYSCONFDIR)/$(PACKAGE)/management/config.json $(DESTDIR)/usr/share/$(PACKAGE)-management/webapp/config.json
+
 	# cloudstack-common
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-common
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts

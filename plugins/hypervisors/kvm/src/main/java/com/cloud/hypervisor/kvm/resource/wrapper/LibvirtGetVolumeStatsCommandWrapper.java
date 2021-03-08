@@ -50,7 +50,12 @@ public final class LibvirtGetVolumeStatsCommandWrapper extends CommandWrapper<Ge
             StoragePoolType poolType = cmd.getPoolType();
             HashMap<String, VolumeStatsEntry> statEntry = new HashMap<String, VolumeStatsEntry>();
             for (String volumeUuid : cmd.getVolumeUuids()) {
-                statEntry.put(volumeUuid, getVolumeStat(libvirtComputingResource, conn, volumeUuid, storeUuid, poolType));
+                VolumeStatsEntry volumeStatsEntry = getVolumeStat(libvirtComputingResource, conn, volumeUuid, storeUuid, poolType);
+                if (volumeStatsEntry == null) {
+                    String msg = "Can't get disk stats as pool or disk details unavailable for volume: " + volumeUuid + " on the storage pool: " + storeUuid;
+                    return new GetVolumeStatsAnswer(cmd, msg, null);
+                }
+                statEntry.put(volumeUuid, volumeStatsEntry);
             }
             return new GetVolumeStatsAnswer(cmd, "", statEntry);
         } catch (LibvirtException | CloudRuntimeException e) {
@@ -58,10 +63,17 @@ public final class LibvirtGetVolumeStatsCommandWrapper extends CommandWrapper<Ge
         }
     }
 
-
     private VolumeStatsEntry getVolumeStat(final LibvirtComputingResource libvirtComputingResource, final Connect conn, final String volumeUuid, final String storeUuid, final StoragePoolType poolType) throws LibvirtException {
         KVMStoragePool sourceKVMPool = libvirtComputingResource.getStoragePoolMgr().getStoragePool(poolType, storeUuid);
+        if (sourceKVMPool == null) {
+            return null;
+        }
+
         KVMPhysicalDisk sourceKVMVolume = sourceKVMPool.getPhysicalDisk(volumeUuid);
+        if (sourceKVMVolume == null) {
+            return null;
+        }
+
         return new VolumeStatsEntry(volumeUuid, sourceKVMVolume.getSize(), sourceKVMVolume.getVirtualSize());
     }
 }

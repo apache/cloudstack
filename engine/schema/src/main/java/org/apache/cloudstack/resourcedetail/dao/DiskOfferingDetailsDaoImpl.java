@@ -56,4 +56,14 @@ public class DiskOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<DiskOffer
         }
         return zoneIds;
     }
+
+    @Override
+    public String getDetail(Long diskOfferingId, String key) {
+        String detailValue = null;
+        DiskOfferingDetailVO diskOfferingDetail = findDetail(diskOfferingId, key);
+        if (diskOfferingDetail != null) {
+            detailValue = diskOfferingDetail.getValue();
+        }
+        return detailValue;
+    }
 }

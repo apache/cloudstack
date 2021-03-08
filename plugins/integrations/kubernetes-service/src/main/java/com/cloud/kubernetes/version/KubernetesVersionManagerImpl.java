@@ -181,10 +181,10 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             throw new IllegalArgumentException(String.format("Invalid version comparision with versions %s, %s", v1, v2));
         }
         if(!isSemanticVersion(v1)) {
-            throw new IllegalArgumentException(String.format("Invalid version format, %s", v1));
+            throw new IllegalArgumentException(String.format("Invalid version format, %s. Semantic version should be specified in MAJOR.MINOR.PATCH format", v1));
         }
         if(!isSemanticVersion(v2)) {
-            throw new IllegalArgumentException(String.format("Invalid version format, %s", v2));
+            throw new IllegalArgumentException(String.format("Invalid version format, %s. Semantic version should be specified in MAJOR.MINOR.PATCH format", v2));
         }
         String[] thisParts = v1.split("\\.");
         String[] thatParts = v2.split("\\.");
@@ -287,10 +287,10 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         final Integer minimumCpu = cmd.getMinimumCpu();
         final Integer minimumRamSize = cmd.getMinimumRamSize();
         if (minimumCpu == null || minimumCpu < KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_CPU) {
-            throw new InvalidParameterValueException(String.format("Invalid value for %s parameter", ApiConstants.MIN_CPU_NUMBER));
+            throw new InvalidParameterValueException(String.format("Invalid value for %s parameter. Minimum %d vCPUs required.", ApiConstants.MIN_CPU_NUMBER, KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_CPU));
         }
         if (minimumRamSize == null || minimumRamSize < KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE) {
-            throw new InvalidParameterValueException(String.format("Invalid value for %s parameter", ApiConstants.MIN_MEMORY));
+            throw new InvalidParameterValueException(String.format("Invalid value for %s parameter. Minimum %dMB memory required", ApiConstants.MIN_MEMORY, KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE));
         }
         if (compareSemanticVersions(semanticVersion, MIN_KUBERNETES_VERSION) < 0) {
             throw new InvalidParameterValueException(String.format("New supported Kubernetes version cannot be added as %s is minimum version supported by Kubernetes Service", MIN_KUBERNETES_VERSION));

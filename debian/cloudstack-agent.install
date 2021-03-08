@@ -24,5 +24,6 @@
 /usr/bin/cloudstack-setup-agent
 /usr/bin/cloudstack-ssh
 /usr/bin/cloudstack-agent-upgrade
+/usr/bin/cloudstack-guest-tool
 /usr/share/cloudstack-agent/lib/*
 /usr/share/cloudstack-agent/plugins

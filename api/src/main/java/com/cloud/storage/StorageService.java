@@ -102,4 +102,6 @@ public interface StorageService {
      */
     ImageStore migrateToObjectStore(String name, String url, String providerName, Map<String, String> details) throws DiscoveryException;
 
+    ImageStore updateImageStoreStatus(Long id, Boolean readonly);
+
 }

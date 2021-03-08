@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -55,15 +56,15 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     private String roleName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "id of the Domain the account belongs too")
+    @Param(description = "id of the Domain the account belongs to")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "name of the Domain the account belongs too")
+    @Param(description = "name of the Domain the account belongs to")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "name of the Domain the account belongs too", since = "4.13")
+    @Param(description = "path of the Domain the account belongs to", since = "4.13")
     private String domainPath;
 
     @SerializedName(ApiConstants.DEFAULT_ZONE_ID)
@@ -238,6 +239,10 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "true if the account requires cleanup")
     private Boolean cleanupRequired;
 
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description="the date when this account was created")
+    private Date created;
+
     @SerializedName("user")
     @Param(description = "the list of users associated with account", responseObject = UserResponse.class)
     private List<UserResponse> users;
@@ -396,6 +401,10 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
     }
 
     public void setCleanupRequired(Boolean cleanupRequired) {

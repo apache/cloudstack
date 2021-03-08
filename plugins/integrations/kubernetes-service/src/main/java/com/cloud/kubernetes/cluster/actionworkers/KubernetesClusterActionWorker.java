@@ -237,7 +237,7 @@ public class KubernetesClusterActionWorker {
         }
         List<KubernetesClusterVmMapVO> clusterVMs = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         if (CollectionUtils.isEmpty(clusterVMs)) {
-            LOGGER.warn(String.format("Unable to retrieve VMs for Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
+            LOGGER.warn(String.format("Unable to retrieve VMs for Kubernetes cluster : %s", kubernetesCluster.getName()));
             return null;
         }
         List<Long> vmIds = new ArrayList<>();
@@ -265,13 +265,13 @@ public class KubernetesClusterActionWorker {
         }
         Network network = networkDao.findById(kubernetesCluster.getNetworkId());
         if (network == null) {
-            LOGGER.warn(String.format("Network for Kubernetes cluster ID: %s cannot be found", kubernetesCluster.getUuid()));
+            LOGGER.warn(String.format("Network for Kubernetes cluster : %s cannot be found", kubernetesCluster.getName()));
             return new Pair<>(null, port);
         }
         if (Network.GuestType.Isolated.equals(network.getGuestType())) {
             List<? extends IpAddress> addresses = networkModel.listPublicIpsAssignedToGuestNtwk(network.getId(), true);
             if (CollectionUtils.isEmpty(addresses)) {
-                LOGGER.warn(String.format("No public IP addresses found for network ID: %s, Kubernetes cluster ID: %s", network.getUuid(), kubernetesCluster.getUuid()));
+                LOGGER.warn(String.format("No public IP addresses found for network : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
                 return new Pair<>(null, port);
             }
             for (IpAddress address : addresses) {
@@ -279,18 +279,18 @@ public class KubernetesClusterActionWorker {
                     return new Pair<>(address.getAddress().addr(), port);
                 }
             }
-            LOGGER.warn(String.format("No source NAT IP addresses found for network ID: %s, Kubernetes cluster ID: %s", network.getUuid(), kubernetesCluster.getUuid()));
+            LOGGER.warn(String.format("No source NAT IP addresses found for network : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
             return new Pair<>(null, port);
         } else if (Network.GuestType.Shared.equals(network.getGuestType())) {
             port = 22;
             masterVm = fetchMasterVmIfMissing(masterVm);
             if (masterVm == null) {
-                LOGGER.warn(String.format("Unable to retrieve master VM for Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
+                LOGGER.warn(String.format("Unable to retrieve master VM for Kubernetes cluster : %s", kubernetesCluster.getName()));
                 return new Pair<>(null, port);
             }
             return new Pair<>(masterVm.getPrivateIpAddress(), port);
         }
-        LOGGER.warn(String.format("Unable to retrieve server IP address for Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
+        LOGGER.warn(String.format("Unable to retrieve server IP address for Kubernetes cluster : %s", kubernetesCluster.getName()));
         return  new Pair<>(null, port);
     }
 
@@ -305,26 +305,26 @@ public class KubernetesClusterActionWorker {
             failedEvent = KubernetesCluster.Event.CreateFailed;
         }
         if (version == null) {
-            logTransitStateAndThrow(Level.ERROR, String .format("Unable to find Kubernetes version for cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), failedEvent);
+            logTransitStateAndThrow(Level.ERROR, String .format("Unable to find Kubernetes version for cluster : %s", kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent);
         }
         VMTemplateVO iso = templateDao.findById(version.getIsoId());
         if (iso == null) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster ID: %s. Binaries ISO not found.",  kubernetesCluster.getUuid()), kubernetesCluster.getId(), failedEvent);
+            logTransitStateAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster : %s. Binaries ISO not found.",  kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent);
         }
         if (!iso.getFormat().equals(Storage.ImageFormat.ISO)) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster ID: %s. Invalid Binaries ISO.",  kubernetesCluster.getUuid()), kubernetesCluster.getId(), failedEvent);
+            logTransitStateAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster : %s. Invalid Binaries ISO.",  kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent);
         }
         if (!iso.getState().equals(VirtualMachineTemplate.State.Active)) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster ID: %s. Binaries ISO not active.",  kubernetesCluster.getUuid()), kubernetesCluster.getId(), failedEvent);
+            logTransitStateAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster : %s. Binaries ISO not active.",  kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent);
         }
         for (UserVm vm : clusterVMs) {
             try {
                 templateService.attachIso(iso.getId(), vm.getId());
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(String.format("Attached binaries ISO for VM: %s in cluster: %s", vm.getUuid(), kubernetesCluster.getName()));
+                    LOGGER.info(String.format("Attached binaries ISO for VM : %s in cluster: %s", vm.getDisplayName(), kubernetesCluster.getName()));
                 }
             } catch (CloudRuntimeException ex) {
-                logTransitStateAndThrow(Level.ERROR, String.format("Failed to attach binaries ISO for VM: %s in the Kubernetes cluster name: %s", vm.getDisplayName(), kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent, ex);
+                logTransitStateAndThrow(Level.ERROR, String.format("Failed to attach binaries ISO for VM : %s in the Kubernetes cluster name: %s", vm.getDisplayName(), kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent, ex);
             }
         }
     }
@@ -339,15 +339,15 @@ public class KubernetesClusterActionWorker {
             try {
                 result = templateService.detachIso(vm.getId());
             } catch (CloudRuntimeException ex) {
-                LOGGER.warn(String.format("Failed to detach binaries ISO from VM ID: %s in the Kubernetes cluster ID: %s ", vm.getUuid(), kubernetesCluster.getUuid()), ex);
+                LOGGER.warn(String.format("Failed to detach binaries ISO from VM : %s in the Kubernetes cluster : %s ", vm.getDisplayName(), kubernetesCluster.getName()), ex);
             }
             if (result) {
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(String.format("Detached Kubernetes binaries from VM ID: %s in the Kubernetes cluster ID: %s", vm.getUuid(), kubernetesCluster.getUuid()));
+                    LOGGER.info(String.format("Detached Kubernetes binaries from VM : %s in the Kubernetes cluster : %s", vm.getDisplayName(), kubernetesCluster.getName()));
                 }
                 continue;
             }
-            LOGGER.warn(String.format("Failed to detach binaries ISO from VM ID: %s in the Kubernetes cluster ID: %s ", vm.getUuid(), kubernetesCluster.getUuid()));
+            LOGGER.warn(String.format("Failed to detach binaries ISO from VM : %s in the Kubernetes cluster : %s ", vm.getDisplayName(), kubernetesCluster.getName()));
         }
     }
 
@@ -375,7 +375,8 @@ public class KubernetesClusterActionWorker {
         try {
             return _stateMachine.transitTo(kubernetesCluster, e, null, kubernetesClusterDao);
         } catch (NoTransitionException nte) {
-            LOGGER.warn(String.format("Failed to transition state of the Kubernetes cluster ID: %s in state %s on event %s", kubernetesCluster.getUuid(), kubernetesCluster.getState().toString(), e.toString()), nte);
+            LOGGER.warn(String.format("Failed to transition state of the Kubernetes cluster : %s in state %s on event %s",
+                kubernetesCluster.getName(), kubernetesCluster.getState().toString(), e.toString()), nte);
             return false;
         }
     }

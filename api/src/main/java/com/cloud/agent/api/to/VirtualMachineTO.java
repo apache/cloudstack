@@ -20,10 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
-import com.cloud.agent.api.LogLevel;
-import com.cloud.agent.api.storage.OVFPropertyTO;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
-import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 
@@ -76,13 +74,13 @@ public class VirtualMachineTO {
     String configDriveLabel = null;
     String configDriveIsoRootFolder = null;
     String configDriveIsoFile = null;
+    NetworkElement.Location configDriveLocation = NetworkElement.Location.SECONDARY;
 
     Double cpuQuotaPercentage = null;
 
     Map<String, String> guestOsDetails = new HashMap<String, String>();
     Map<String, String> extraConfig = new HashMap<>();
-    @LogLevel(LogLevel.Log4jLevel.Off)
-    Pair<String, List<OVFPropertyTO>> ovfProperties;
+    DeployAsIsInfoTO deployAsIsInfo;
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
             String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
@@ -353,6 +351,18 @@ public class VirtualMachineTO {
         this.configDriveIsoFile = configDriveIsoFile;
     }
 
+    public boolean isConfigDriveOnHostCache() {
+        return (this.configDriveLocation == NetworkElement.Location.HOST);
+    }
+
+    public NetworkElement.Location getConfigDriveLocation() {
+        return configDriveLocation;
+    }
+
+    public void setConfigDriveLocation(NetworkElement.Location configDriveLocation) {
+        this.configDriveLocation = configDriveLocation;
+    }
+
     public Map<String, String> getGuestOsDetails() {
         return guestOsDetails;
     }
@@ -376,13 +386,6 @@ public class VirtualMachineTO {
         return extraConfig;
     }
 
-    public Pair<String, List<OVFPropertyTO>> getOvfProperties() {
-        return ovfProperties;
-    }
-
-    public void setOvfProperties(Pair<String, List<OVFPropertyTO>> ovfProperties) {
-        this.ovfProperties = ovfProperties;
-    }
     public String getBootType() {
         return bootType;
     }
@@ -401,5 +404,13 @@ public class VirtualMachineTO {
 
     public void setEnterHardwareSetup(boolean enterHardwareSetup) {
         this.enterHardwareSetup = enterHardwareSetup;
+    }
+
+    public DeployAsIsInfoTO getDeployAsIsInfo() {
+        return deployAsIsInfo;
+    }
+
+    public void setDeployAsIsInfo(DeployAsIsInfoTO deployAsIsInfo) {
+        this.deployAsIsInfo = deployAsIsInfo;
     }
 }

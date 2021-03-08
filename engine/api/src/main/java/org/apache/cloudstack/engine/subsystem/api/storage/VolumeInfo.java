@@ -22,6 +22,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.DiskOffering.DiskCacheMode;
 import com.cloud.storage.MigrationOptions;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.vm.VirtualMachine;
 
@@ -34,6 +35,8 @@ public interface VolumeInfo extends DataObject, Volume {
     Object getpayload();
 
     HypervisorType getHypervisorType();
+
+    Storage.StoragePoolType getStoragePoolType();
 
     Long getLastPoolId();
 
@@ -83,4 +86,10 @@ public interface VolumeInfo extends DataObject, Volume {
     boolean isDirectDownload();
 
     void setDirectDownload(boolean directDownload);
+
+    boolean isDeployAsIs();
+
+    String getDeployAsIsConfiguration();
+
+    public String getvSphereStoragePolicyId();
 }

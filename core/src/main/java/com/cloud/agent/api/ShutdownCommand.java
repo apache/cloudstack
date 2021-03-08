@@ -30,6 +30,7 @@ public class ShutdownCommand extends Command {
 
     private String reason;
     private String detail;
+    private boolean removeHost;
 
     protected ShutdownCommand() {
         super();
@@ -41,6 +42,13 @@ public class ShutdownCommand extends Command {
         this.detail = detail;
     }
 
+    public ShutdownCommand(String reason, String detail, boolean removeHost) {
+        super();
+        this.reason = reason;
+        this.detail = detail;
+        this.removeHost = removeHost;
+    }
+
     /**
      * @return return the reason the agent shutdown.  If Unknown, call getDetail() for any details.
      */
@@ -50,6 +58,10 @@ public class ShutdownCommand extends Command {
 
     public String getDetail() {
         return detail;
+    }
+
+    public boolean isRemoveHost() {
+        return removeHost;
     }
 
     @Override

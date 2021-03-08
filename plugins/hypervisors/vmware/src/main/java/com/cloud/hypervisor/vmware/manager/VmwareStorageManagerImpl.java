@@ -343,8 +343,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                     if (vmMo == null) {
                         dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
 
-                        workerVMName = hostService.getWorkerName(context, cmd, 0);
-                        vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVMName);
+                        workerVMName = hostService.getWorkerName(context, cmd, 0, dsMo);
+                        vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVMName, null);
 
                         if (vmMo == null) {
                             throw new Exception("Failed to find the newly create or relocated VM. vmName: " + workerVMName);
@@ -362,7 +362,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 }
 
                 snapshotBackupUuid = backupSnapshotToSecondaryStorage(vmMo, accountId, volumeId, cmd.getVolumePath(), snapshotUuid, secondaryStorageUrl, prevSnapshotUuid,
-                        prevBackupUuid, hostService.getWorkerName(context, cmd, 1), cmd.getNfsVersion());
+                        prevBackupUuid, hostService.getWorkerName(context, cmd, 1, dsMo), cmd.getNfsVersion());
 
                 success = (snapshotBackupUuid != null);
                 if (success) {
@@ -428,7 +428,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
 
             Ternary<String, Long, Long> result = createTemplateFromVolume(vmMo, accountId, templateId, cmd.getUniqueName(), secondaryStoragePoolURL, volumePath,
-                    hostService.getWorkerName(context, cmd, 0), cmd.getNfsVersion());
+                    hostService.getWorkerName(context, cmd, 0, null), cmd.getNfsVersion());
 
             return new CreatePrivateTemplateAnswer(cmd, true, null, result.first(), result.third(), result.second(), cmd.getUniqueName(), ImageFormat.OVA);
 
@@ -486,13 +486,13 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             Pair<String, String> result;
             if (cmd.toSecondaryStorage()) {
                 result = copyVolumeToSecStorage(hostService, hyperHost, cmd, vmName, volumeId, cmd.getPool().getUuid(), volumePath, secondaryStorageURL,
-                        hostService.getWorkerName(context, cmd, 0), cmd.getNfsVersion());
+                        hostService.getWorkerName(context, cmd, 0, null), cmd.getNfsVersion());
             } else {
                 StorageFilerTO poolTO = cmd.getPool();
 
                 ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, poolTO.getUuid());
                 if (morDatastore == null) {
-                    morDatastore = hyperHost.mountDatastore(false, poolTO.getHost(), 0, poolTO.getPath(), poolTO.getUuid().replace("-", ""));
+                    morDatastore = hyperHost.mountDatastore(false, poolTO.getHost(), 0, poolTO.getPath(), poolTO.getUuid().replace("-", ""), true);
 
                     if (morDatastore == null) {
                         throw new Exception("Unable to mount storage pool on host. storeUrl: " + poolTO.getHost() + ":/" + poolTO.getPath());
@@ -591,7 +591,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         }
 
         String vmName = templateUuid;
-        hyperHost.importVmFromOVF(srcFileName, vmName, datastoreMo, "thin");
+        hyperHost.importVmFromOVF(srcFileName, vmName, datastoreMo, "thin", null);
 
         VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
         if (vmMo == null) {
@@ -647,7 +647,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
 
             // 4 MB is the minimum requirement for VM memory in VMware
-            vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
+            vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), null);
             clonedVm = vmMo.getRunningHost().findVmOnHyperHost(workerVmName);
             if (clonedVm == null) {
                 String msg = "Unable to create dummy VM to export volume. volume path: " + volumePath;
@@ -912,7 +912,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
         VirtualMachineMO clonedVm = null;
         try {
-            hyperHost.importVmFromOVF(srcOVFFileName, newVolumeName, primaryDsMo, "thin");
+            hyperHost.importVmFromOVF(srcOVFFileName, newVolumeName, primaryDsMo, "thin", null);
             clonedVm = hyperHost.findVmOnHyperHost(newVolumeName);
             if (clonedVm == null) {
                 throw new Exception("Unable to create container VM for volume creation");
@@ -965,7 +965,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             if (clonedWorkerVMNeeded) {
                 // 4 MB is the minimum requirement for VM memory in VMware
-                vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
+                vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), null);
                 clonedVm = vmMo.getRunningHost().findVmOnHyperHost(workerVmName);
                 if (clonedVm == null) {
                     String msg = "Unable to create dummy VM to export volume. volume path: " + volumePath;
@@ -1008,7 +1008,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             if (vmMo == null) {
                 // create a dummy worker vm for attaching the volume
                 DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
-                workerVm = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVmName);
+                workerVm = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVmName, null);
 
                 if (workerVm == null) {
                     String msg = "Unable to create worker VM to execute CopyVolumeCommand";
@@ -1025,7 +1025,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 vmMo.createSnapshot(exportName, "Temporary snapshot for copy-volume command", false, false);
             }
 
-            exportVolumeToSecondaryStorage(vmMo, volumePath, secStorageUrl, "volumes/" + volumeFolder, exportName, hostService.getWorkerName(hyperHost.getContext(), cmd, 1),
+            exportVolumeToSecondaryStorage(vmMo, volumePath, secStorageUrl, "volumes/" + volumeFolder, exportName, hostService.getWorkerName(hyperHost.getContext(), cmd, 1, null),
                     nfsVersion, clonedWorkerVMNeeded);
             return new Pair<String, String>(volumeFolder, exportName);
 

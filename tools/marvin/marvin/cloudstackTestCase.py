@@ -16,7 +16,7 @@
 # under the License.
 
 import unittest
-from marvin.lib.utils import verifyElementInList
+from marvin.lib.utils import verifyElementInList, cleanup_resources
 from marvin.codes import PASS
 
 
@@ -56,3 +56,22 @@ class cloudstackTestCase(unittest.case.TestCase):
     @classmethod
     def getClsConfig(cls):
         return cls.config
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            if hasattr(cls,'_cleanup'):
+                if hasattr(cls,'apiclient'):
+                    cleanup_resources(cls.apiclient, reversed(cls._cleanup))
+                elif hasattr(cls,'api_client'):
+                    cleanup_resources(cls.api_client, reversed(cls._cleanup))
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+
+    def tearDown(self):
+        try:
+            if hasattr(self,'apiclient') and hasattr(self,'cleanup'):
+                cleanup_resources(self.apiclient, reversed(self.cleanup))
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return

@@ -420,6 +420,19 @@ public class Agent implements HandlerFactory, IAgentControl {
         }
     }
 
+    /**
+     * Cleanup agent zone properties.
+     *
+     * Unset zone, cluster and pod values so that host is not added back
+     * when service is restarted. This will be set to proper values
+     * when host is added back
+     */
+    protected void cleanupAgentZoneProperties() {
+        _shell.setPersistentProperty(null, "zone", "");
+        _shell.setPersistentProperty(null, "cluster", "");
+        _shell.setPersistentProperty(null, "pod", "");
+    }
+
     public synchronized void lockStartupTask(final Link link) {
         _startup = new StartupTask(link);
         _timer.schedule(_startup, _startupWait);
@@ -603,6 +616,9 @@ public class Agent implements HandlerFactory, IAgentControl {
                         final ShutdownCommand shutdown = (ShutdownCommand)cmd;
                         s_logger.debug("Received shutdownCommand, due to: " + shutdown.getReason());
                         cancelTasks();
+                        if (shutdown.isRemoveHost()) {
+                            cleanupAgentZoneProperties();
+                        }
                         _reconnectAllowed = false;
                         answer = new Answer(cmd, true, null);
                     } else if (cmd instanceof ReadyCommand && ((ReadyCommand)cmd).getDetails() != null) {

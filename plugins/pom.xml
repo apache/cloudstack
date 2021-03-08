@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.15.0.0-SNAPSHOT</version>
+        <version>4.16.0.0-SNAPSHOT</version>
     </parent>
     <build>
         <plugins>
@@ -121,6 +121,7 @@
         <module>storage/volume/nexenta</module>
         <module>storage/volume/sample</module>
         <module>storage/volume/solidfire</module>
+        <module>storage/volume/scaleio</module>
 
         <module>storage-allocators/random</module>
 

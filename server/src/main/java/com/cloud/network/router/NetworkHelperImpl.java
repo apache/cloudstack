@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
 
@@ -71,6 +72,9 @@ import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
+import com.cloud.network.dao.RouterHealthCheckResultDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter.RedundantState;
@@ -156,6 +160,10 @@ public class NetworkHelperImpl implements NetworkHelper {
     ConfigurationDao _configDao;
     @Inject
     VpcVirtualNetworkApplianceManager _vpcRouterMgr;
+    @Inject
+    NetworkDetailsDao networkDetailsDao;
+    @Inject
+    RouterHealthCheckResultDao _routerHealthCheckResultDao;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -254,6 +262,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         _accountMgr.checkAccess(caller, null, true, router);
 
         _itMgr.expunge(router.getUuid());
+        _routerHealthCheckResultDao.expungeHealthChecks(router.getId());
         _routerDao.remove(router.getId());
         return router;
     }
@@ -710,21 +719,27 @@ public class NetworkHelperImpl implements NetworkHelper {
         if (guestNetwork != null) {
             s_logger.debug("Adding nic for Virtual Router in Guest network " + guestNetwork);
             String defaultNetworkStartIp = null, defaultNetworkStartIpv6 = null;
+            final Nic placeholder = _networkModel.getPlaceholderNicForRouter(guestNetwork, routerDeploymentDefinition.getPodId());
             if (!routerDeploymentDefinition.isPublicNetwork()) {
-                final Nic placeholder = _networkModel.getPlaceholderNicForRouter(guestNetwork, routerDeploymentDefinition.getPodId());
                 if (guestNetwork.getCidr() != null) {
                     if (placeholder != null && placeholder.getIPv4Address() != null) {
                         s_logger.debug("Requesting ipv4 address " + placeholder.getIPv4Address() + " stored in placeholder nic for the network "
                                 + guestNetwork);
                         defaultNetworkStartIp = placeholder.getIPv4Address();
                     } else {
-                        final String startIp = _networkModel.getStartIpAddress(guestNetwork.getId());
-                        if (startIp != null
-                                && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
-                            defaultNetworkStartIp = startIp;
-                        } else if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("First ipv4 " + startIp + " in network id=" + guestNetwork.getId()
-                                    + " is already allocated, can't use it for domain router; will get random ip address from the range");
+                        NetworkDetailVO routerIpDetail = networkDetailsDao.findDetail(guestNetwork.getId(), ApiConstants.ROUTER_IP);
+                        String routerIp = routerIpDetail != null ? routerIpDetail.getValue() : null;
+                        if (routerIp != null) {
+                            defaultNetworkStartIp = routerIp;
+                        } else {
+                            final String startIp = _networkModel.getStartIpAddress(guestNetwork.getId());
+                            if (startIp != null
+                                    && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
+                                defaultNetworkStartIp = startIp;
+                            } else if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("First ipv4 " + startIp + " in network id=" + guestNetwork.getId()
+                                        + " is already allocated, can't use it for domain router; will get random ip address from the range");
+                            }
                         }
                     }
                 }
@@ -735,15 +750,24 @@ public class NetworkHelperImpl implements NetworkHelper {
                                 + guestNetwork);
                         defaultNetworkStartIpv6 = placeholder.getIPv6Address();
                     } else {
-                        final String startIpv6 = _networkModel.getStartIpv6Address(guestNetwork.getId());
-                        if (startIpv6 != null && _ipv6Dao.findByNetworkIdAndIp(guestNetwork.getId(), startIpv6) == null) {
-                            defaultNetworkStartIpv6 = startIpv6;
-                        } else if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("First ipv6 " + startIpv6 + " in network id=" + guestNetwork.getId()
-                                    + " is already allocated, can't use it for domain router; will get random ipv6 address from the range");
+                        NetworkDetailVO routerIpDetail = networkDetailsDao.findDetail(guestNetwork.getId(), ApiConstants.ROUTER_IPV6);
+                        String routerIpv6 = routerIpDetail != null ? routerIpDetail.getValue() : null;
+                        if (routerIpv6 != null) {
+                            defaultNetworkStartIpv6 = routerIpv6;
+                        } else {
+                            final String startIpv6 = _networkModel.getStartIpv6Address(guestNetwork.getId());
+                            if (startIpv6 != null && _ipv6Dao.findByNetworkIdAndIp(guestNetwork.getId(), startIpv6) == null) {
+                                defaultNetworkStartIpv6 = startIpv6;
+                            } else if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("First ipv6 " + startIpv6 + " in network id=" + guestNetwork.getId()
+                                        + " is already allocated, can't use it for domain router; will get random ipv6 address from the range");
+                            }
                         }
                     }
                 }
+            } else if (placeholder != null) {
+                // Remove placeholder nic if router has public network
+                _nicDao.remove(placeholder.getId());
             }
 
             final NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp, defaultNetworkStartIpv6);
@@ -792,6 +816,13 @@ public class NetworkHelperImpl implements NetworkHelper {
         if (rule.getSourcePortStart() == haproxy_stats_port) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Can't create LB on port "+ haproxy_stats_port +", haproxy is listening for  LB stats on this port");
+            }
+            return false;
+        }
+        String lbProtocol = rule.getLbProtocol();
+        if (lbProtocol != null && lbProtocol.toLowerCase().equals(NetUtils.UDP_PROTO)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Can't create LB rule as haproxy does not support udp");
             }
             return false;
         }

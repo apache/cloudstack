@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.storage.dao;
 
-
+import com.cloud.utils.db.QueryBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.GuestOSCategoryVO;
@@ -29,4 +30,10 @@ public class GuestOSCategoryDaoImpl extends GenericDaoBase<GuestOSCategoryVO, Lo
 
     }
 
+    @Override
+    public GuestOSCategoryVO findByCategoryName(String categoryName) {
+        final QueryBuilder<GuestOSCategoryVO> sc = QueryBuilder.create(GuestOSCategoryVO.class);
+        sc.and(sc.entity().getName(), SearchCriteria.Op.EQ, categoryName);
+        return sc.find();
+    }
 }

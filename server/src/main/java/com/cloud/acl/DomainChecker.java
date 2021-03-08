@@ -61,6 +61,7 @@ import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class DomainChecker extends AdapterBase implements SecurityChecker {
@@ -106,6 +107,11 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         if (caller.getState() != Account.State.enabled) {
             throw new PermissionDeniedException(caller + " is disabled.");
         }
+
+        if (domain == null) {
+            throw new PermissionDeniedException(String.format("Provided domain is NULL, cannot check access for account [uuid=%s, name=%s]", caller.getUuid(), caller.getAccountName()));
+        }
+
         long domainId = domain.getId();
 
         if (_accountService.isNormalUser(caller.getId())) {
@@ -194,6 +200,9 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     private boolean checkOperationPermitted(Account caller, ControlledEntity entity) {
         User user = CallContext.current().getCallingUser();
         Project project = projectDao.findByProjectAccountId(entity.getAccountId());
+        if (project == null) {
+            throw new CloudRuntimeException("Unable to find project to which the entity belongs to");
+        }
         ProjectAccount projectUser = _projectAccountDao.findByProjectIdUserId(project.getId(), user.getAccountId(), user.getId());
         String apiCommandName = CallContext.current().getApiName();
 

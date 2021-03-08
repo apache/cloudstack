@@ -60,7 +60,7 @@ alter table `cloud`.`disk_offering` add `iops_read_rate_max_length` bigint(20) d
 alter table `cloud`.`disk_offering` add `iops_write_rate_max` bigint(20) default null after `iops_write_rate`;
 alter table `cloud`.`disk_offering` add `iops_write_rate_max_length` bigint(20) default null after `iops_write_rate_max`;
 
-ALTER VIEW `cloud`.`disk_offering_view` AS
+CREATE OR REPLACE VIEW `cloud`.`disk_offering_view` AS
     SELECT
         `disk_offering`.`id` AS `id`,
         `disk_offering`.`uuid` AS `uuid`,
@@ -105,7 +105,7 @@ ALTER VIEW `cloud`.`disk_offering_view` AS
         (`disk_offering`.`state` = 'ACTIVE');
 
 
-ALTER VIEW `cloud`.`service_offering_view` AS
+CREATE OR REPLACE VIEW `cloud`.`service_offering_view` AS
     SELECT
         `service_offering`.`id` AS `id`,
         `disk_offering`.`uuid` AS `uuid`,

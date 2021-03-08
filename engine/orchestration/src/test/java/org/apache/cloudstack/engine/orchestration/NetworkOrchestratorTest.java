@@ -22,12 +22,15 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
@@ -483,4 +486,74 @@ public class NetworkOrchestratorTest extends TestCase {
         verify(testOrchastrator._nicDao, never()).remove(nicId);
     }
 
+    public void encodeVlanIdIntoBroadcastUriTestVxlan() {
+        encodeVlanIdIntoBroadcastUriPrepareAndTest("123", "VXLAN", "vxlan", "vxlan://123");
+    }
+
+    @Test
+    public void encodeVlanIdIntoBroadcastUriTestVlan() {
+        encodeVlanIdIntoBroadcastUriPrepareAndTest("123", "VLAN", "vlan", "vlan://123");
+    }
+
+    @Test
+    public void encodeVlanIdIntoBroadcastUriTestEmpty() {
+        encodeVlanIdIntoBroadcastUriPrepareAndTest("123", "", "vlan", "vlan://123");
+    }
+
+    @Test
+    public void encodeVlanIdIntoBroadcastUriTestNull() {
+        encodeVlanIdIntoBroadcastUriPrepareAndTest("123", null, "vlan", "vlan://123");
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void encodeVlanIdIntoBroadcastUriTestEmptyVlanId() {
+        encodeVlanIdIntoBroadcastUriPrepareAndTest("", "vxlan", "vlan", "vlan://123");
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void encodeVlanIdIntoBroadcastUriTestNullVlanId() {
+        encodeVlanIdIntoBroadcastUriPrepareAndTest(null, "vlan", "vlan", "vlan://123");
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void encodeVlanIdIntoBroadcastUriTestBlankVlanId() {
+        encodeVlanIdIntoBroadcastUriPrepareAndTest(" ", "vlan", "vlan", "vlan://123");
+    }
+
+    @Test
+    public void encodeVlanIdIntoBroadcastUriTestNullVlanIdWithSchema() {
+        encodeVlanIdIntoBroadcastUriPrepareAndTest("vlan://123", "vlan", "vlan", "vlan://123");
+    }
+
+    @Test
+    public void encodeVlanIdIntoBroadcastUriTestNullVlanIdWithSchemaIsolationVxlan() {
+        encodeVlanIdIntoBroadcastUriPrepareAndTest("vlan://123", "vxlan", "vlan", "vlan://123");
+    }
+
+    @Test
+    public void encodeVlanIdIntoBroadcastUriTestNullVxlanIdWithSchema() {
+        encodeVlanIdIntoBroadcastUriPrepareAndTest("vxlan://123", "vxlan", "vxlan", "vxlan://123");
+    }
+
+    @Test
+    public void encodeVlanIdIntoBroadcastUriTestNullVxlanIdWithSchemaIsolationVlan() {
+        encodeVlanIdIntoBroadcastUriPrepareAndTest("vxlan://123", "vlan", "vxlan", "vxlan://123");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void encodeVlanIdIntoBroadcastUriTestNullNetwork() {
+        URI resultUri = testOrchastrator.encodeVlanIdIntoBroadcastUri("vxlan://123", null);
+    }
+
+    private void encodeVlanIdIntoBroadcastUriPrepareAndTest(String vlanId, String isolationMethod, String expectedIsolation, String expectedUri) {
+        PhysicalNetworkVO physicalNetwork = new PhysicalNetworkVO();
+        List<String> isolationMethods = new ArrayList<>();
+        isolationMethods.add(isolationMethod);
+        physicalNetwork.setIsolationMethods(isolationMethods);
+
+        URI resultUri = testOrchastrator.encodeVlanIdIntoBroadcastUri(vlanId, physicalNetwork);
+
+        Assert.assertEquals(expectedIsolation, resultUri.getScheme());
+        Assert.assertEquals(expectedUri, resultUri.toString());
+    }
 }

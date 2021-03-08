@@ -70,6 +70,7 @@ import com.cloud.projects.Project;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSHypervisor;
+import com.cloud.storage.ImageStore;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -103,6 +104,7 @@ public class EventTypes {
     public static final String EVENT_VM_EXPUNGE = "VM.EXPUNGE";
     public static final String EVENT_VM_IMPORT = "VM.IMPORT";
     public static final String EVENT_VM_UNMANAGE = "VM.UNMANAGE";
+    public static final String EVENT_VM_RECOVER = "VM.RECOVER";
 
     // Domain Router
     public static final String EVENT_ROUTER_CREATE = "ROUTER.CREATE";
@@ -239,6 +241,7 @@ public class EventTypes {
     public static final String EVENT_TEMPLATE_EXTRACT = "TEMPLATE.EXTRACT";
     public static final String EVENT_TEMPLATE_UPLOAD = "TEMPLATE.UPLOAD";
     public static final String EVENT_TEMPLATE_CLEANUP = "TEMPLATE.CLEANUP";
+    public static final String EVENT_FILE_MIGRATE = "FILE.MIGRATE";
 
     // Volume Events
     public static final String EVENT_VOLUME_CREATE = "VOLUME.CREATE";
@@ -328,6 +331,8 @@ public class EventTypes {
     public static final String EVENT_STORAGE_IP_RANGE_CREATE = "STORAGE.IP.RANGE.CREATE";
     public static final String EVENT_STORAGE_IP_RANGE_DELETE = "STORAGE.IP.RANGE.DELETE";
     public static final String EVENT_STORAGE_IP_RANGE_UPDATE = "STORAGE.IP.RANGE.UPDATE";
+
+    public static final String EVENT_IMAGE_STORE_DATA_MIGRATE = "IMAGE.STORE.MIGRATE.DATA";
 
     // Configuration Table
     public static final String EVENT_CONFIGURATION_VALUE_EDIT = "CONFIGURATION.VALUE.EDIT";
@@ -614,6 +619,9 @@ public class EventTypes {
     public static final String EVENT_CLUSTER_ROLLING_MAINTENANCE = "CLUSTER.ROLLING.MAINTENANCE";
     public static final String EVENT_POD_ROLLING_MAINTENANCE = "POD.ROLLING.MAINTENANCE";
     public static final String EVENT_ZONE_ROLLING_MAINTENANCE = "ZONE.ROLLING.MAINTENANCE";
+
+    // Storage Policies
+    public static final String EVENT_IMPORT_VCENTER_STORAGE_POLICIES = "IMPORT.VCENTER.STORAGE.POLICIES";
 
     static {
 
@@ -1021,6 +1029,10 @@ public class EventTypes {
         entityEventDetails.put(EVENT_POD_ROLLING_MAINTENANCE, PodResponse.class);
         entityEventDetails.put(EVENT_CLUSTER_ROLLING_MAINTENANCE, ClusterResponse.class);
         entityEventDetails.put(EVENT_HOST_ROLLING_MAINTENANCE, HostResponse.class);
+
+        entityEventDetails.put(EVENT_IMPORT_VCENTER_STORAGE_POLICIES, "StoragePolicies");
+
+        entityEventDetails.put(EVENT_IMAGE_STORE_DATA_MIGRATE, ImageStore.class);
     }
 
     public static String getEntityForEvent(String eventName) {

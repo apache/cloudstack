@@ -86,8 +86,8 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
     @Parameter(name = ApiConstants.OS_TYPE_ID,
                type = CommandType.UUID,
                entityType = GuestOSResponse.class,
-               required = true,
-               description = "the ID of the OS Type that best represents the OS of this template.")
+               required = false,
+               description = "the ID of the OS Type that best represents the OS of this template. Not applicable with VMware, as we honour what is defined in the template")
     private Long osTypeId;
 
     @Parameter(name = ApiConstants.PASSWORD_ENABLED,
@@ -274,6 +274,10 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
         return directDownload == null ? false : directDownload;
     }
 
+    public Boolean isDeployAsIs() {
+        return hypervisor != null && hypervisor.equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString());
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -335,6 +339,10 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
         if (isDirectDownload() && !getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.KVM.toString())) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Parameter directdownload is only allowed for KVM templates");
+        }
+
+        if (!getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString()) && osTypeId == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please provide a guest OS type");
         }
     }
 }

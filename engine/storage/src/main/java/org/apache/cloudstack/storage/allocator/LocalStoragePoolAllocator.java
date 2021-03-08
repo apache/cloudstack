@@ -60,10 +60,10 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
     ConfigurationDao _configDao;
 
     @Override
-    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
         s_logger.debug("LocalStoragePoolAllocator trying to find storage pool to fit the vm");
 
-        if (!dskCh.useLocalStorage()) {
+        if (!bypassStorageTypeCheck && !dskCh.useLocalStorage()) {
             return null;
         }
 

@@ -19,7 +19,6 @@ from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import Account, VirtualMachine, ServiceOffering, Host, Cluster
 from marvin.lib.common import get_zone, get_domain, get_test_template
-from marvin.lib.utils import cleanup_resources
 from nose.plugins.attrib import attr
 
 class TestDeployVmWithVariedPlanners(cloudstackTestCase):
@@ -57,9 +56,8 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
         )
         cls.hosts = Host.list(cls.apiclient, type='Routing')
         cls.clusters = Cluster.list(cls.apiclient)
-        cls.cleanup = [
-            cls.account
-        ]
+        cls._cleanup = []
+        cls._cleanup.append(cls.account)
 
     @attr(tags=["advanced", "basic", "sg"], required_hardware="false")
     def test_deployvm_firstfit(self):
@@ -230,7 +228,4 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestDeployVmWithVariedPlanners,cls).tearDownClass()

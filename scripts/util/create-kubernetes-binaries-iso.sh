@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -16,9 +16,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
+set -e
+
 if [ $# -lt 6 ]; then
-    echo "Invalid input. Valid usage: ./create-kubernetes-binaries-iso.sh OUTPUT_PATH KUBERNETES_VERSION CNI_VERSION CRICTL_VERSION WEAVENET_NETWORK_YAML_CONFIG DASHBOARD_YAML_CONFIG"
-    echo "eg: ./create-kubernetes-binaries-iso.sh ./ 1.11.4 0.7.1 1.11.1 https://github.com/weaveworks/weave/releases/download/latest_release/weave-daemonset-k8s-1.11.yaml https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.0/src/deploy/recommended/kubernetes-dashboard.yaml"
+    echo "Invalid input. Valid usage: ./create-kubernetes-binaries-iso.sh OUTPUT_PATH KUBERNETES_VERSION CNI_VERSION CRICTL_VERSION WEAVENET_NETWORK_YAML_CONFIG DASHBOARD_YAML_CONFIG BUILD_NAME"
+    echo "eg: ./create-kubernetes-binaries-iso.sh ./ 1.11.4 0.7.1 1.11.1 https://github.com/weaveworks/weave/releases/download/latest_release/weave-daemonset-k8s-1.11.yaml https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.0/src/deploy/recommended/kubernetes-dashboard.yaml setup-v1.11.4"
     exit 1
 fi
 
@@ -28,12 +30,17 @@ start_dir="$PWD"
 iso_dir="/tmp/iso"
 working_dir="${iso_dir}/"
 mkdir -p "${working_dir}"
+build_name="${7}.iso"
+[ -z "${build_name}" ] && build_name="setup-${RELEASE}.iso"
 
 CNI_VERSION="v${3}"
 echo "Downloading CNI ${CNI_VERSION}..."
 cni_dir="${working_dir}/cni/"
 mkdir -p "${cni_dir}"
-curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-amd64.tgz"
+cni_status_code=$(curl -L  --write-out "%{http_code}\n" "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-amd64.tgz")
+if [[ ${cni_status_code} -eq 404 ]] ; then
+  curl -L  --write-out "%{http_code}\n" "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-amd64.tgz"
+fi
 
 CRICTL_VERSION="v${4}"
 echo "Downloading CRI tools ${CRICTL_VERSION}..."
@@ -50,7 +57,7 @@ kubeadm_file_permissions=`stat --format '%a' kubeadm`
 chmod +x kubeadm
 
 echo "Downloading kubelet.service ${RELEASE}..."
-cd $start_dir
+cd "${start_dir}"
 kubelet_service_file="${working_dir}/kubelet.service"
 touch "${kubelet_service_file}"
 curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > ${kubelet_service_file}
@@ -86,7 +93,15 @@ if [ $? -ne 0 ]; then
     fi
 fi
 mkdir -p "${working_dir}/docker"
-output=`${k8s_dir}/kubeadm config images list`
+output=`${k8s_dir}/kubeadm config images list --kubernetes-version=${RELEASE}`
+
+# Don't forget about the yaml images !
+for i in ${network_conf_file} ${dashboard_conf_file}
+do
+  images=`grep "image:" $i | cut -d ':' -f2- | tr -d ' ' | tr -d "'"`
+  output=`printf "%s\n" ${output} ${images}`
+done
+
 while read -r line; do
     echo "Downloading docker image $line ---"
     sudo docker pull "$line"
@@ -96,11 +111,11 @@ while read -r line; do
 done <<< "$output"
 
 echo "Restore kubeadm permissions..."
-if [ "${kubeadm_file_permissions}" -eq "" ]; then
+if [ -z "${kubeadm_file_permissions}" ]; then
     kubeadm_file_permissions=644
 fi
 chmod ${kubeadm_file_permissions} "${working_dir}/k8s/kubeadm"
 
-mkisofs -o "${output_dir}/setup-${RELEASE}.iso" -J -R -l "${iso_dir}"
+mkisofs -o "${output_dir}/${build_name}" -J -R -l "${iso_dir}"
 
 rm -rf "${iso_dir}"

@@ -129,7 +129,7 @@ public interface NetworkOrchestrationService {
 
     void cleanupNics(VirtualMachineProfile vm);
 
-    void expungeNics(VirtualMachineProfile vm);
+    void removeNics(VirtualMachineProfile vm);
 
     List<NicProfile> getNicProfiles(VirtualMachine vm);
 
@@ -182,7 +182,7 @@ public interface NetworkOrchestrationService {
 
     Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, boolean bypassVlanOverlapCheck, String networkDomain, Account owner,
                                Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr,
-                               Boolean displayNetworkEnabled, String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
+                               Boolean displayNetworkEnabled, String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId, String routerIp, String routerIpv6) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     UserDataServiceProvider getPasswordResetProvider(Network network);
 

@@ -1755,7 +1755,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { NoVncConsoleDefault };
+        return new ConfigKey<?>[] { NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled };
     }
 
 }

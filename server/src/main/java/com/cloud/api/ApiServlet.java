@@ -218,7 +218,7 @@ public class ApiServlet extends HttpServlet {
                     try {
                         responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, req, resp);
                         if (session != null && session.getAttribute(ApiConstants.SESSIONKEY) != null) {
-                            resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly;Path=/", ApiConstants.SESSIONKEY, session.getAttribute(ApiConstants.SESSIONKEY)));
+                            resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly", ApiConstants.SESSIONKEY, session.getAttribute(ApiConstants.SESSIONKEY)));
                         }
                     } catch (ServerApiException e) {
                         httpResponseCode = e.getErrorCode().getHttpCode();
@@ -389,7 +389,7 @@ public class ApiServlet extends HttpServlet {
     }
 
     //This method will try to get login IP of user even if servlet is behind reverseProxy or loadBalancer
-    static InetAddress getClientAddress(final HttpServletRequest request) throws UnknownHostException {
+    public static InetAddress getClientAddress(final HttpServletRequest request) throws UnknownHostException {
         for(final String header : s_clientAddressHeaders) {
             final String ip = getCorrectIPAddress(request.getHeader(header));
             if (ip != null) {

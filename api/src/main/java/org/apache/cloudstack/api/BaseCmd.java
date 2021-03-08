@@ -40,6 +40,7 @@ import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.apache.cloudstack.query.QueryService;
+import org.apache.cloudstack.storage.ImageStoreService;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.log4j.Logger;
 
@@ -130,6 +131,8 @@ public abstract class BaseCmd {
     public NetworkService _networkService;
     @Inject
     public TemplateApiService _templateService;
+    @Inject
+    public ImageStoreService _imageStoreService;
     @Inject
     public SecurityGroupService _securityGroupService;
     @Inject
