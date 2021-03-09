@@ -129,9 +129,9 @@ def generate_retrieved_files_txt(zip_file, files_found, files_not_found):
     try:
         with open(output_file, 'wb', 0) as man:
             for i in files_found:
-                man.write(i + '\n')
+                man.write(i + b'\n')
             for j in files_not_found:
-                man.write(j + 'File Not Found!!\n')
+                man.write(j + b' File Not Found!!\n')
         zip_file.write(output_file, output_file)
     finally:
         cleanup_cmd = "rm -f %s" % output_file
