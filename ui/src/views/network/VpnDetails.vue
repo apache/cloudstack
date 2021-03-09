@@ -32,7 +32,9 @@
       :footer="null"
       oncancel="disableVpn = false"
       :title="$t('label.disable.vpn')"
-      :maskClosable="false">
+      :closable="true"
+      :maskClosable="false"
+      @cancel="disableVpn = false">
       <p>{{ $t('message.disable.vpn') }}</p>
 
       <a-divider></a-divider>
@@ -54,7 +56,9 @@
       :footer="null"
       onCancel="enableVpn = false"
       :title="$t('label.enable.vpn')"
-      :maskClosable="false">
+      :maskClosable="false"
+      :closable="true"
+      @cancel="enableVpn = false">
       <p>{{ $t('message.enable.vpn') }}</p>
 
       <a-divider></a-divider>

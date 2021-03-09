@@ -49,6 +49,7 @@
           style="top: 20px;"
           :confirmLoading="actionLoading"
           :footer="null"
+          @cancel="showFormAction = false"
           centered>
           <component
             :is="currentAction.component"
@@ -63,6 +64,7 @@
         :confirmLoading="actionLoading"
         :closable="true"
         :maskClosable="false"
+        @cancel="onCloseAction"
         style="top: 20px;"
         centered
       >

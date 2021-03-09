@@ -111,7 +111,8 @@
       :footer="null"
       :closable="true"
       :afterClose="closeModal"
-      :maskClosable="false">
+      :maskClosable="false"
+      @cancel="tagsModalVisible = false">
       <a-form :form="newTagsForm" @submit="handleAddTag">
         <div class="add-tags">
           <div class="add-tags__input">

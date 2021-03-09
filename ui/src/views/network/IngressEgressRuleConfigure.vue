@@ -122,8 +122,10 @@
       :title="$t('label.edit.tags')"
       v-model="tagsModalVisible"
       :footer="null"
+      :closable="true"
       :afterClose="closeModal"
-      :maskClosable="false">
+      :maskClosable="false"
+      @cancel="tagsModalVisible = false">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>

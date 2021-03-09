@@ -131,8 +131,10 @@
       :title="$t('label.edit.tags')"
       v-model="tagsModalVisible"
       :footer="null"
+      :closable="true"
       :maskClosable="false"
-      :afterClose="closeModal">
+      :afterClose="closeModal"
+      @cancel="tagsModalVisible = false">
       <span v-show="tagsModalLoading" class="tags-modal-loading">
         <a-icon type="loading"></a-icon>
       </span>
@@ -172,12 +174,10 @@
     <a-modal
       :title="$t('label.add.vm')"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
+      :closable="true"
       v-model="addVmModalVisible"
       class="vm-modal"
       width="60vw"
-      @ok="addRule"
       :okButtonProps="{ props:
         {disabled: newRule.virtualmachineid === null } }"
       @cancel="closeModal"
@@ -252,6 +252,10 @@
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
           </template>
         </a-pagination>
+      </div>
+      <div :span="24" class="action-button">
+        <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
+        <a-button type="primary" htmlType="submit" @click="addRule">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
   </div>

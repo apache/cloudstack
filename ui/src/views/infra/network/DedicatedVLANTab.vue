@@ -64,7 +64,7 @@
       :title="$t('label.dedicate.vlan.vni.range')"
       :maskClosable="false"
       :footer="null"
-      @ok="handleSubmit">
+      @cancel="modal = false">
       <a-spin :spinning="formLoading">
         <a-form
           :form="form"

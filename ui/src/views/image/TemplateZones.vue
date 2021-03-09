@@ -73,6 +73,7 @@
       :maskClosable="false"
       :footer="null"
       :confirmLoading="copyLoading"
+      @cancel="onCloseModal"
       centered>
       <a-spin :spinning="copyLoading">
         <a-form
@@ -117,9 +118,7 @@
       :visible="showDeleteTemplate"
       :closable="true"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
-      @ok="deleteTemplate"
+      :footer="null"
       @cancel="onCloseModal"
       :confirmLoading="deleteLoading"
       centered>
@@ -128,6 +127,10 @@
         <a-form-item :label="$t('label.isforced')" style="margin-bottom: 0;">
           <a-switch v-model="forcedDelete"></a-switch>
         </a-form-item>
+        <div :span="24" class="action-button">
+          <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" htmlType="submit" @click="deleteTemplate">{{ $t('label.ok') }}</a-button>
+        </div>
       </a-spin>
     </a-modal>
   </div>

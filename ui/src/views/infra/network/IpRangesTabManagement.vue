@@ -72,7 +72,8 @@
       v-model="addIpRangeModal"
       :title="$t('label.add.ip.range')"
       :maskClosable="false"
-      :footer="null">
+      :footer="null"
+      @cancel="addIpRangeModal = false">
       <a-form
         :form="form"
         @submit="handleAddIpRange"

@@ -45,6 +45,7 @@
         :closable="true"
         :maskClosable="false"
         :footer="null"
+        @cancel="onCloseGetHealthChecksForm"
         centered>
         <a-spin :spinning="loading">
           <a-form

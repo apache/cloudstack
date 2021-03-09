@@ -147,9 +147,11 @@
       :title="$t('label.edit.tags')"
       v-model="tagsModalVisible"
       :footer="null"
+      :closable="true"
       :afterClose="closeModal"
       :maskClosable="false"
-      class="tags-modal">
+      class="tags-modal"
+      @cancel="tagsModalVisible = false">
       <span v-show="tagsModalLoading" class="modal-loading">
         <a-icon type="loading"></a-icon>
       </span>
@@ -189,7 +191,9 @@
       :footer="null"
       :afterClose="closeModal"
       :maskClosable="false"
-      :okButtonProps="{ props: {htmlType: 'submit'}}">
+      :closable="true"
+      :okButtonProps="{ props: {htmlType: 'submit'}}"
+      @cancel="stickinessModalVisible = false">
 
       <span v-show="stickinessModalLoading" class="modal-loading">
         <a-icon type="loading"></a-icon>
@@ -252,7 +256,11 @@
         <a-form-item :label="$t('label.sticky.expire')" v-show="stickinessPolicyMethod === 'SourceBased'">
           <a-input v-decorator="['expire']" />
         </a-form-item>
-        <a-button type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
+
+        <div :span="24" class="action-button">
+          <a-button @click="stickinessModalVisible = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" html-type="submit" @submit="handleSubmitStickinessForm">{{ $t('label.ok') }}</a-button>
+        </div>
       </a-form>
     </a-modal>
 
@@ -262,7 +270,8 @@
       :afterClose="closeModal"
       :maskClosable="false"
       :closable="true"
-      :footer="null">
+      :footer="null"
+      @cancel="editRuleModalVisible = false">
       <span v-show="editRuleModalLoading" class="modal-loading">
         <a-icon type="loading"></a-icon>
       </span>
@@ -301,12 +310,10 @@
     <a-modal
       :title="$t('label.add.vms')"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
+      :closable="true"
       v-model="addVmModalVisible"
       class="vm-modal"
       width="60vw"
-      @ok="handleAddNewRule"
       :okButtonProps="{ props:
         {disabled: newRule.virtualmachineid === [] } }"
       @cancel="closeModal"
@@ -384,6 +391,10 @@
         </a-pagination>
       </div>
 
+      <div :span="24" class="action-button">
+        <a-button @click="clo">{{ $t('label.cancel') }}</a-button>
+        <a-button type="primary" htmlType="submit" @click="handleAddNewRule">{{ $t('label.ok') }}</a-button>
+      </div>
     </a-modal>
 
   </div>

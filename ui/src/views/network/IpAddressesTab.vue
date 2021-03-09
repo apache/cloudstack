@@ -101,6 +101,7 @@
       :title="$t('label.acquire.new.ip')"
       :closable="true"
       :footer="null"
+      @cancel="onCloseModal"
       centered
       width="450px">
       <a-form @submit="acquireIpAddress">

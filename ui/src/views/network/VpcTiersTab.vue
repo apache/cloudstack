@@ -159,7 +159,8 @@
       :title="$t('label.add.new.tier')"
       :maskClosable="false"
       :closable="true"
-      :footer="null">
+      :footer="null"
+      @cancel="showCreateNetworkModal = false">
       <a-spin :spinning="modalLoading">
         <a-form @submit.prevent="handleAddNetworkSubmit" :form="form">
           <a-form-item :label="$t('label.name')">
@@ -210,7 +211,8 @@
       :title="$t('label.add.internal.lb')"
       :maskClosable="false"
       :closable="true"
-      :footer="null">
+      :footer="null"
+      @cancel="showAddInternalLB = false">
       <a-spin :spinning="modalLoading">
         <a-form @submit.prevent="handleAddInternalLBSubmit" :form="form">
           <a-form-item :label="$t('label.name')">

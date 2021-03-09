@@ -127,6 +127,7 @@
         :footer="null"
         style="top: 20px;"
         :confirmLoading="actionLoading"
+        @cancel="closeAction"
         centered
       >
         <span slot="title">

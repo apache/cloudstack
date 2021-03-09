@@ -101,7 +101,9 @@
       :title="$t('label.edit.tags')"
       v-model="tagsModalVisible"
       :footer="null"
-      :maskClosable="false">
+      :closable="true"
+      :maskClosable="false"
+      @cancel="tagsModalVisible = false">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>
@@ -141,7 +143,8 @@
       :closable="true"
       :maskClosable="false"
       :footer="null"
-      v-model="ruleModalVisible">
+      v-model="ruleModalVisible"
+      @cancel="ruleModalVisible = false">
       <a-form :form="ruleForm" @submit="handleRuleModalForm">
         <a-form-item :label="$t('label.number')">
           <a-input-number style="width: 100%" v-decorator="['number']" />

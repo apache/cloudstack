@@ -26,6 +26,7 @@
     :maskClosable="false"
     :visible="showAction"
     :footer="null"
+    @cancel="onClose"
   >
     <a-form
       :form="form"

@@ -74,7 +74,8 @@
           :title="$t('label.add.acl.list')"
           :footer="null"
           :maskClosable="false"
-          :closable="true">
+          :closable="true"
+          @cancel="modals.networkAcl = fetchAclList">
           <a-form @submit.prevent="handleNetworkAclFormSubmit" :form="networkAclForm">
             <a-form-item :label="$t('label.add.list.name')">
               <a-input v-decorator="['name', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
@@ -133,7 +134,8 @@
           :title="$t('label.add.new.gateway')"
           :maskClosable="false"
           :closable="true"
-          :footer="null">
+          :footer="null"
+          @cancel="modals.gateway = false">
           <a-spin :spinning="modals.gatewayLoading">
             <p>{{ $t('message.add.new.gateway.to.vpc') }}</p>
             <a-form @submit.prevent="handleGatewayFormSubmit" :form="gatewayForm">
@@ -264,7 +266,8 @@
           :title="$t('label.create.vpn.connection')"
           :maskClosable="false"
           :closable="true"
-          :footer="null">
+          :footer="null"
+          @cancel="modals.vpnConnection = false">
           <a-spin :spinning="modals.vpnConnectionLoading">
             <a-form @submit.prevent="handleVpnConnectionFormSubmit" :form="vpnConnectionForm">
               <a-form-item :label="$t('label.vpncustomergatewayid')">

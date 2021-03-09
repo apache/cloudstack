@@ -91,7 +91,8 @@
       v-model="accountModal"
       v-if="selectedItem"
       :maskClosable="false"
-      :footer="null">
+      :footer="null"
+      @cancel="accountModal = false">
       <div>
         <div style="margin-bottom: 10px;">
           <div class="list__label">{{ $t('label.account') }}</div>
@@ -117,7 +118,8 @@
       :maskClosable="false"
       v-model="addAccountModal"
       :title="$t('label.add.account')"
-      :footer="null">
+      :footer="null"
+      @cancel="addAccountModal = false">
       <a-form @submit="handleAddAccount">
         <a-spin :spinning="domainsLoading">
           <div style="margin-bottom: 10px;">
@@ -147,7 +149,8 @@
       v-model="addIpRangeModal"
       :title="$t('label.add.ip.range')"
       :maskClosable="false"
-      :footer="null">
+      :footer="null"
+      @cancel="addIpRangeModal = false">
       <a-form
         :form="form"
         @submit="handleAddIpRange"

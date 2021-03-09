@@ -63,6 +63,7 @@
       :closable="true"
       :maskClosable="false"
       :footer="null"
+      @cancel="showCreateForm = false"
       centered
       width="auto">
       <CreateNetwork :resource="{ zoneid: resource.zoneid }"/>

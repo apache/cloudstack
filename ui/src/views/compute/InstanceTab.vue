@@ -158,6 +158,7 @@
       :visible="showAddNetworkModal"
       :title="$t('label.network.addvm')"
       :maskClosable="false"
+      :closable="true"
       :footer="null"
       @cancel="closeModals">
       {{ $t('message.network.addvm.desc') }}
@@ -193,6 +194,7 @@
       :visible="showUpdateIpModal"
       :title="$t('label.change.ipaddress')"
       :maskClosable="false"
+      :closable="true"
       :footer="null"
       @cancel="closeModals"
     >
@@ -234,6 +236,7 @@
       :footer="null"
       :closable="false"
       class="wide-modal"
+      @cancel="closeModals"
     >
       <p>
         {{ $t('message.network.secondaryip') }}

@@ -66,7 +66,9 @@
           v-model="editModalVisible"
           :footer="null"
           :afterClose="closeAction"
-          :maskClosable="false">
+          :maskClosable="false"
+          :closable="true"
+          @cancel="closeAction">
           <a-form
             :form="form"
             @submit="updateProjectRole"
@@ -88,7 +90,9 @@
           v-model="createModalVisible"
           :footer="null"
           :afterClose="closeAction"
-          :maskClosable="false">
+          :maskClosable="false"
+          :closable="true"
+          @cancel="closeAction">
           <a-form
             :form="form"
             @submit="createProjectRole"

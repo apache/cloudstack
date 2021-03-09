@@ -42,7 +42,8 @@
       v-model="tagsModalVisible"
       :footer="null"
       :closable="true"
-      :maskClosable="false">
+      :maskClosable="false"
+      @cancel="tagsModalVisible = false">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>

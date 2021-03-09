@@ -81,6 +81,7 @@
       :maskClosable="false"
       :footer="null"
       :confirmLoading="copyLoading"
+      @cancel="onCloseCopyForm"
       centered>
       <a-spin :spinning="copyLoading">
         <a-form
