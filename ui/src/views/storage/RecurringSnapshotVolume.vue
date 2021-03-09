@@ -61,7 +61,7 @@ export default {
       dataSource: []
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

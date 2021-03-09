@@ -38,8 +38,6 @@ public class Test {
             //pool.registerServer("192.168.105.155", Pool.ServerType.UTILITY);
             //pool.registerServer("192.168.105.155", Pool.ServerType.XEN);
             System.out.println("Is:" + pool.isServerRegistered());
-            //String ip = pool.getMasterIp();
-            //System.out.println("IP:" + ip);
             System.out.println(pool.getServerConfig());
             System.out.println(pool.getServerXmInfo());
             System.out.println(pool.getHostInfo());
@@ -89,8 +87,6 @@ public class Test {
             /* This is not being used at the moment.
              * Coverity issue: 1012179
              */
-            //final String txt =
-            //        "{\"MasterIp\": \"192.168.189.12\", \"dom0Memory\": 790626304, \"freeMemory\": 16378757120, \"totalMemory\": 17169383424, \"cpuNum\": 4, \"agentVersion\": \"2.3-38\", \"cpuSpeed\": 2261}";
 
             //OvmHost.Details d = new GsonBuilder().create().fromJson(txt, OvmHost.Details.class);
             //OvmHost.Details d = Coder.fromJson(txt, OvmHost.Details.class);

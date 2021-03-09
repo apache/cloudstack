@@ -67,18 +67,17 @@
               {{ $t('label.delete.ciscoasa1000v') }}
             </span>
           </template>
-          <a-button
+          <tooltip-button
             v-if="resource.name==='Ovs'"
-            type="default"
-            shape="circle"
+            :tooltip="$t('label.configure')"
             icon="setting"
             size="small"
             :loading="actionLoading"
             @click="onConfigureOvs(record)"/>
-          <a-button
+          <tooltip-button
             v-else
+            :tooltip="$t('label.delete')"
             type="danger"
-            shape="circle"
             icon="close"
             size="small"
             :loading="actionLoading"
@@ -117,10 +116,11 @@
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'ProviderListView',
-  components: { Status },
+  components: { Status, TooltipButton },
   props: {
     title: {
       type: String,
@@ -188,7 +188,7 @@ export default {
       return columns
     }
   },
-  inject: ['providerChangePage', 'provideReload', 'parentPollActionCompletion'],
+  inject: ['providerChangePage', 'provideReload'],
   methods: {
     changePage (page, pageSize) {
       this.providerChangePage(this.title, page, pageSize)
@@ -286,13 +286,13 @@ export default {
             try {
               const jobId = await this.executeDeleteRecord(apiName, params)
               if (jobId) {
-                this.$store.dispatch('AddAsyncJob', {
+                this.$pollJob({
+                  jobId,
                   title: this.$t(label),
-                  jobid: jobId,
                   description: this.$t(name),
-                  status: 'progress'
+                  loadingMessage: `${this.$t(label)} - ${this.$t(name)}`,
+                  catchMessage: this.$t('error.fetching.async.job.result')
                 })
-                this.parentPollActionCompletion(jobId, this.action)
               } else {
                 this.$success('Success')
                 this.provideReload()
@@ -322,13 +322,13 @@ export default {
           try {
             const jobId = await this.configureOvsElement(params)
             if (jobId) {
-              this.$store.dispatch('AddAsyncJob', {
+              this.$pollJob({
+                jobId,
                 title: this.$t('label.configure.ovs'),
-                jobid: jobId,
                 description: this.$t(record.id),
-                status: 'progress'
+                loadingMessage: `${this.$t('label.configure.ovs')} - ${this.$t(record.id)}`,
+                catchMessage: this.$t('error.fetching.async.job.result')
               })
-              this.parentPollActionCompletion(jobId, this.action)
             } else {
               this.$success('Success')
               this.provideReload()

@@ -24,13 +24,13 @@
 '''
 import random
 import marvin
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 from optparse import OptionParser
 from marvin.configGenerator import *
 
 
 def getGlobalSettings(config):
-   for k, v in dict(config.items('globals')).iteritems():
+   for k, v in dict(config.items('globals')).items():
         cfg = configuration()
         cfg.name = k
         cfg.value = v

@@ -39,7 +39,7 @@
           :cancelText="$t('label.no')"
           placement="top"
         >
-          <a-button :disabled="!('releaseDedicatedGuestVlanRange' in $store.getters.apis)" icon="delete" type="danger" shape="circle"></a-button>
+          <tooltip-button :tooltip="$t('label.delete')" :disabled="!('releaseDedicatedGuestVlanRange' in $store.getters.apis)" icon="delete" type="danger" />
         </a-popconfirm>
       </template>
     </a-table>
@@ -63,7 +63,9 @@
       v-model="modal"
       :title="$t('label.dedicate.vlan.vni.range')"
       :maskClosable="false"
-      @ok="handleSubmit">
+      :footer="null"
+      @cancel="modal = false"
+      v-ctrl-enter="handleSubmit">
       <a-spin :spinning="formLoading">
         <a-form
           :form="form"
@@ -74,6 +76,7 @@
               v-decorator="['range', {
                 rules: [{ required: true, message: `${$t('label.required')}` }]
               }]"
+              autoFocus
             ></a-input>
           </a-form-item>
 
@@ -91,7 +94,7 @@
                 rules: [{ required: true, message: `${$t('label.required')}` }]
               }]"
             >
-              <a-select-option v-for="domain in domains" :key="domain.id" :value="domain.id">{{ domain.name }}</a-select-option>
+              <a-select-option v-for="domain in domains" :key="domain.id" :value="domain.id">{{ domain.path || domain.name || domain.description }}</a-select-option>
             </a-select>
           </a-form-item>
 
@@ -124,6 +127,11 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+
+          <div :span="24" class="action-button">
+            <a-button @click="modal = false">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-spin>
     </a-modal>
@@ -133,9 +141,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'DedicatedVLANTab',
+  components: {
+    TooltipButton
+  },
   props: {
     resource: {
       type: Object,
@@ -183,7 +195,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {
@@ -289,13 +301,10 @@ export default {
       api('releaseDedicatedGuestVlanRange', {
         id: item.id
       }).then(response => {
-        this.$store.dispatch('AddAsyncJob', {
-          title: `${this.$t('label.delete.dedicated.vlan.range')} ${item.guestvlanrange} ${this.$t('label.for')} ${item.account}`,
-          jobid: response.releasededicatedguestvlanrangeresponse.jobid,
-          status: 'progress'
-        })
         this.$pollJob({
           jobId: response.releasededicatedguestvlanrangeresponse.jobid,
+          title: this.$t('label.delete.dedicated.vlan.range'),
+          description: `${this.$t('label.delete.dedicated.vlan.range')} ${item.guestvlanrange} ${this.$t('label.for')} ${item.account}`,
           successMethod: () => {
             this.fetchData()
             this.parentFinishLoading()
@@ -321,6 +330,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.formLoading) return
       this.form.validateFields(errors => {
         if (errors) return
 

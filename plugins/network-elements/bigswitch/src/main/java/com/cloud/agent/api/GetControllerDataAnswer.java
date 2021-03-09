@@ -21,26 +21,26 @@ package com.cloud.agent.api;
 
 public class GetControllerDataAnswer extends Answer {
     private final String _ipAddress;
-    private final boolean _isMaster;
+    private final boolean _isPrimary;
 
     public GetControllerDataAnswer(final GetControllerDataCommand cmd,
-            final String ipAddress, final boolean isMaster){
+            final String ipAddress, final boolean isPrimary){
         super(cmd);
         this._ipAddress = ipAddress;
-        this._isMaster = isMaster;
+        this._isPrimary = isPrimary;
     }
 
     public GetControllerDataAnswer(final Command command, final Exception e) {
         super(command, e);
         this._ipAddress = null;
-        this._isMaster = false;
+        this._isPrimary = false;
     }
 
     public String getIpAddress() {
         return _ipAddress;
     }
 
-    public boolean isMaster() {
-        return _isMaster;
+    public boolean isPrimary() {
+        return _isPrimary;
     }
 }

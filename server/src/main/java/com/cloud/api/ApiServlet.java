@@ -389,7 +389,7 @@ public class ApiServlet extends HttpServlet {
     }
 
     //This method will try to get login IP of user even if servlet is behind reverseProxy or loadBalancer
-    static InetAddress getClientAddress(final HttpServletRequest request) throws UnknownHostException {
+    public static InetAddress getClientAddress(final HttpServletRequest request) throws UnknownHostException {
         for(final String header : s_clientAddressHeaders) {
             final String ip = getCorrectIPAddress(request.getHeader(header));
             if (ip != null) {

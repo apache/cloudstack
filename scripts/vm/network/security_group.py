@@ -185,7 +185,9 @@ def destroy_network_rules_for_nic(vm_name, vm_ip, vm_mac, vif, sec_ips):
         logging.debug("Ignoring failure to delete ebtable rules for vm: " + vm_name)
 
 def get_bridge_physdev(brname):
-    physdev = execute("bridge -o link show | awk '/master %s / && !/^[0-9]+: vnet/ {print $2}' | head -1 | cut -d ':' -f1" % brname)
+    # eth1.50@eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 master breth1-50 state forwarding priority 32 cost 4 |
+    # eth1.50@eth1: | eth1.50@eth1 | eth1.50
+    physdev = execute("bridge -o link show | awk '/master %s / && !/^[0-9]+: vnet/ {print $2}' | head -1 | cut -d ':' -f1 | cut -d '@' -f1" % brname)
     return physdev.strip()
 
 
@@ -1327,9 +1329,11 @@ def add_fw_framework(brname):
 
     try:
         refs = int(execute("""iptables -n -L %s | awk '/%s(.*)references/ {gsub(/\(/, "") ;print $3}'""" % (brfw,brfw)).strip())
+        refs_in = int(execute("""iptables -n -L %s-IN | awk '/%s-IN(.*)references/ {gsub(/\(/, "") ;print $3}'""" % (brfw,brfw)).strip())
+        refs_out = int(execute("""iptables -n -L %s-OUT | awk '/%s-OUT(.*)references/ {gsub(/\(/, "") ;print $3}'""" % (brfw,brfw)).strip())
         refs6 = int(execute("""ip6tables -n -L %s | awk '/%s(.*)references/ {gsub(/\(/, "") ;print $3}'""" % (brfw,brfw)).strip())
 
-        if refs == 0:
+        if refs == 0 or refs_in == 0 or refs_out == 0:
             execute("iptables -I FORWARD -i " + brname + " -j DROP")
             execute("iptables -I FORWARD -o " + brname + " -j DROP")
             execute("iptables -I FORWARD -i " + brname + " -m physdev --physdev-is-bridged -j " + brfw)
@@ -1367,13 +1371,13 @@ def verify_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, sec
         vm_id = vm_name.split("-")[-2]
 
     if brname is None:
-        brname = execute("virsh domiflist %s |grep -w '%s' |tr -s ' '|cut -d ' ' -f3" % (vm_name, vm_mac)).strip()
+        brname = execute("virsh domiflist %s |grep -w '%s' | awk '{print $3}'" % (vm_name, vm_mac)).strip()
     if not brname:
         print("Cannot find bridge")
         sys.exit(1)
 
     if vif is None:
-        vif = execute("virsh domiflist %s |grep -w '%s' |tr -s ' '|cut -d ' ' -f1" % (vm_name, vm_mac)).strip()
+        vif = execute("virsh domiflist %s |grep -w '%s' | awk '{print $1}'" % (vm_name, vm_mac)).strip()
     if not vif:
         print("Cannot find vif")
         sys.exit(1)
@@ -1451,7 +1455,7 @@ def verify_iptables_rules_for_bridge(brname):
     expected_rules.append("-A %s -m state --state RELATED,ESTABLISHED -j ACCEPT" % (brfw))
     expected_rules.append("-A %s -m physdev --physdev-is-in --physdev-is-bridged -j %s" % (brfw, brfwin))
     expected_rules.append("-A %s -m physdev --physdev-is-out --physdev-is-bridged -j %s" % (brfw, brfwout))
-    phydev = execute("ip link show type bridge | awk '/^%s[ \t]/ {print $4}'" % brname ).strip()
+    phydev = get_bridge_physdev(brname)
     expected_rules.append("-A %s -m physdev --physdev-out %s --physdev-is-bridged -j ACCEPT" % (brfw, phydev))
 
     rules = execute("iptables-save |grep -w %s |grep -v \"^:\"" % brfw).split('\n')

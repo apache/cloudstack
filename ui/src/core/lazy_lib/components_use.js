@@ -63,7 +63,10 @@ import {
   Pagination,
   Comment,
   Tree,
-  Calendar
+  Calendar,
+  Slider,
+  AutoComplete,
+  Collapse
 } from 'ant-design-vue'
 
 Vue.use(ConfigProvider)
@@ -86,6 +89,7 @@ Vue.use(Icon)
 Vue.use(Badge)
 Vue.use(Popover)
 Vue.use(Dropdown)
+Vue.use(Descriptions)
 Vue.use(List)
 Vue.use(Avatar)
 Vue.use(Breadcrumb)
@@ -110,6 +114,9 @@ Vue.use(Pagination)
 Vue.use(Comment)
 Vue.use(Tree)
 Vue.use(Calendar)
+Vue.use(Slider)
+Vue.use(AutoComplete)
+Vue.use(Collapse)
 
 Vue.prototype.$confirm = Modal.confirm
 Vue.prototype.$message = message

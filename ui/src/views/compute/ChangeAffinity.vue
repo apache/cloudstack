@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-form class="form">
+  <a-form class="form" v-ctrl-enter="handleSubmit">
 
     <p v-html="$t('message.select.affinity.groups')" />
 
@@ -29,7 +29,8 @@
         style="margin-bottom: 10px;"
         :placeholder="$t('label.search')"
         v-model="filter"
-        @search="handleSearch" />
+        @search="handleSearch"
+        autoFocus />
     </div>
 
     <div class="form__item">
@@ -48,7 +49,7 @@
 
     <div :span="24" class="action-button">
       <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-      <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+      <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
     </div>
 
   </a-form>
@@ -98,7 +99,7 @@ export default {
       loading: false
     }
   },
-  mounted () {
+  created () {
     for (const group of this.resource.affinitygroup) {
       this.selectedRowKeys.push(group.id)
     }
@@ -142,6 +143,7 @@ export default {
       this.$emit('close-action')
     },
     handleSubmit () {
+      if (this.loading) return
       this.loading = true
       api('updateVMAffinityGroup', {
         id: this.resource.id,
@@ -167,14 +169,6 @@ export default {
   width: 90vw;
   @media (min-width: 800px) {
     width: 45vw;
-  }
-}
-
-.action-button {
-  text-align: right;
-  margin-top: 10px;
-  button {
-    margin-right: 5px;
   }
 }
 </style>

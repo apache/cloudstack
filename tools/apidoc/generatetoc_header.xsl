@@ -36,7 +36,7 @@ version="1.0">
             <div class="uppermenu_box"></div>
         </div>
         
-        <div id="main_master">
+        <div id="main_controller">
             <div id="inside_header">
                 <div class="header_top">
                     <a class="cloud_logo" href="http://cloudstack.org"></a>

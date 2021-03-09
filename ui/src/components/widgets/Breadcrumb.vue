@@ -26,12 +26,15 @@
         {{ $t(item.meta.title) }}
       </router-link>
       <span v-else-if="$route.params.id">
-        <label v-if="'name' in resource">
-          <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(resource.name)">{{ $t(resource.name.toLowerCase()) }}</span>
-          <span v-else>{{ resource.name }}</span>
+        <label
+          v-if="'name' in resource &&
+            ['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(resource.name)">
+          <span>
+            {{ $t(resource.name.toLowerCase()) }}
+          </span>
         </label>
         <label v-else>
-          {{ resource.name || resource.displayname || resource.displaytext || resource.hostname || resource.username || resource.ipaddress || $route.params.id }}
+          {{ resource.displayname || resource.displaytext || resource.name || resource.hostname || resource.username || resource.ipaddress || $route.params.id }}
         </label>
       </span>
       <span v-else>

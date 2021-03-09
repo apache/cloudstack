@@ -16,14 +16,18 @@
 // under the License.
 
 <template>
-  <div class="form">
+  <div class="form" v-ctrl-enter="submitData">
     <div v-if="loading" class="loading">
       <a-icon type="loading"></a-icon>
     </div>
 
     <div class="form__item">
       <p class="form__label">{{ $t('label.operation') }}</p>
-      <a-select v-model="selectedOperation" :defaultValue="$t('label.add')" @change="fetchData">
+      <a-select
+        v-model="selectedOperation"
+        :defaultValue="$t('label.add')"
+        @change="fetchData"
+        autoFocus>
         <a-select-option :value="$t('label.add')">{{ $t('label.add') }}</a-select-option>
         <a-select-option :value="$t('label.remove')">{{ $t('label.remove') }}</a-select-option>
         <a-select-option :value="$t('label.reset')">{{ $t('label.reset') }}</a-select-option>
@@ -83,13 +87,10 @@
         </div>
       </template>
     </template>
-    <div class="actions">
-      <a-button @click="closeModal">
-        {{ $t('label.cancel') }}
-      </a-button>
-      <a-button type="primary" @click="submitData">
-        {{ $t('label.ok') }}
-      </a-button>
+
+    <div :span="24" class="action-button">
+      <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
+      <a-button type="primary" ref="submit" @click="submitData">{{ $t('label.ok') }}</a-button>
     </div>
   </div>
 </template>
@@ -141,7 +142,7 @@ export default {
         ) : this.projects
     }
   },
-  mounted () {
+  created () {
     this.isImageTypeIso = this.$route.meta.name === 'iso'
     this.fetchData()
   },
@@ -164,7 +165,7 @@ export default {
     fetchAccounts () {
       this.loading = true
       api('listAccounts', {
-        listall: true
+        domainid: this.resource.domainid
       }).then(response => {
         this.accounts = response.listaccountsresponse.account.filter(account => account.name !== this.resource.account)
       }).finally(e => {
@@ -226,6 +227,7 @@ export default {
       this.$parent.$parent.close()
     },
     submitData () {
+      if (this.loading) return
       let variableKey = ''
       let variableValue = ''
       if (this.selectedShareWith === this.$t('label.account')) {
@@ -287,16 +289,6 @@ export default {
       margin-bottom: 5px;
     }
 
-  }
-  .actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 20px;
-    button {
-      &:not(:last-child) {
-        margin-right: 10px;
-      }
-    }
   }
 
   .required {

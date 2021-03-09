@@ -17,11 +17,8 @@
 
 import mysql
 import contextlib
-from mysql import connector
 from mysql.connector import errors
-from contextlib import closing
 from marvin import cloudstackException
-import sys
 import os
 
 
@@ -50,7 +47,9 @@ class DbConnection(object):
             with contextlib.closing(conn.cursor(buffered=True)) as cursor:
                 cursor.execute(sql, params)
                 try:
-                    resultRow = cursor.fetchall()
+                    if  sql.lower().startswith('select') and cursor.rowcount > 0:
+                        # we have more than just the row count/success
+                        resultRow = cursor.fetchall()
                 except errors.InterfaceError:
                     # Raised on empty result - DML
                     resultRow = []
@@ -80,8 +79,8 @@ if __name__ == "__main__":
     except cloudstackException.dbException, e:
         print e
     '''
-    print db.execute("update vm_template set name='fjkd' where id=200")
+    print(db.execute("update vm_template set name='fjkd' where id=200"))
     for i in range(10):
         result = db.execute("select job_status, created, \
 last_updated from async_job where id=%d" % i)
-        print result
+        print(result)

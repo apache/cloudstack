@@ -581,7 +581,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId) {
-        // We just care for resource domain admin for now. He should be permitted to see only his zone.
+        // We just care for resource domain admins for now, and they should be permitted to see only their zone.
         if (isResourceDomainAdmin(caller.getAccountId())) {
             if (zoneId == null) {
                 return getZoneIdForAccount(caller);
@@ -2431,7 +2431,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public Map<String, String> getKeys(GetUserKeysCmd cmd) {
         final long userId = cmd.getID();
+        return getKeys(userId);
+    }
 
+    @Override
+    public Map<String, String> getKeys(Long userId) {
         User user = getActiveUser(userId);
         if (user == null) {
             throw new InvalidParameterValueException("Unable to find user by id");
@@ -2487,10 +2491,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_REGISTER_FOR_SECRET_API_KEY, eventDescription = "register for the developer API keys")
     public String[] createApiKeyAndSecretKey(final long userId) {
+        Account caller = getCurrentCallingAccount();
         User user = getUserIncludingRemoved(userId);
         if (user == null) {
             throw new InvalidParameterValueException("Unable to find user by id");
         }
+        Account account = _accountDao.findById(user.getAccountId());
+        checkAccess(caller, null, true, account);
         final String[] keys = new String[2];
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override

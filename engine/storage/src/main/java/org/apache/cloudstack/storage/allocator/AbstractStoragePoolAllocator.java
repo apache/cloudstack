@@ -28,13 +28,15 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.StoragePoolStatus;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.dao.CapacityDao;
@@ -69,6 +71,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Inject private ClusterDao clusterDao;
     @Inject private StorageManager storageMgr;
     @Inject private StorageUtil storageUtil;
+    @Inject private StoragePoolDetailsDao storagePoolDetailsDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -87,12 +90,17 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         return false;
     }
 
-    protected abstract List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo);
+    protected abstract List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck);
 
     @Override
     public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
-        List<StoragePool> pools = select(dskCh, vmProfile, plan, avoid, returnUpTo);
-        return reorderPools(pools, vmProfile, plan);
+        return allocateToPool(dskCh, vmProfile, plan, avoid, returnUpTo, false);
+    }
+
+    @Override
+    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
+        List<StoragePool> pools = select(dskCh, vmProfile, plan, avoid, returnUpTo, bypassStorageTypeCheck);
+        return reorderPools(pools, vmProfile, plan, dskCh);
     }
 
     protected List<StoragePool> reorderPoolsByCapacity(DeploymentPlan plan,
@@ -159,7 +167,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     }
 
     @Override
-    public List<StoragePool> reorderPools(List<StoragePool> pools, VirtualMachineProfile vmProfile, DeploymentPlan plan) {
+    public List<StoragePool> reorderPools(List<StoragePool> pools, VirtualMachineProfile vmProfile, DeploymentPlan plan, DiskProfile dskCh) {
         if (pools == null) {
             return null;
         }
@@ -176,7 +184,39 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         } else if(allocationAlgorithm.equals("firstfitleastconsumed")){
             pools = reorderPoolsByCapacity(plan, pools);
         }
+
+        if (vmProfile.getVirtualMachine() == null) {
+            s_logger.trace("The VM is null, skipping pools reordering by disk provisioning type.");
+            return pools;
+        }
+
+        if (vmProfile.getHypervisorType() == HypervisorType.VMware &&
+                !storageMgr.DiskProvisioningStrictness.valueIn(plan.getDataCenterId())) {
+            pools = reorderPoolsByDiskProvisioningType(pools, dskCh);
+        }
+
         return pools;
+    }
+
+    private List<StoragePool> reorderPoolsByDiskProvisioningType(List<StoragePool> pools, DiskProfile diskProfile) {
+        if (diskProfile != null && diskProfile.getProvisioningType() != null && !diskProfile.getProvisioningType().equals(Storage.ProvisioningType.THIN)) {
+            List<StoragePool> reorderedPools = new ArrayList<>();
+            int preferredIndex = 0;
+            for (StoragePool pool : pools) {
+                StoragePoolDetailVO hardwareAcceleration = storagePoolDetailsDao.findDetail(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString());
+                if (pool.getPoolType() == Storage.StoragePoolType.NetworkFilesystem &&
+                        (hardwareAcceleration == null || !hardwareAcceleration.getValue().equals("true"))) {
+                    // add to the bottom of the list
+                    reorderedPools.add(pool);
+                } else {
+                    // add to the top of the list
+                    reorderedPools.add(preferredIndex++, pool);
+                }
+            }
+            return reorderedPools;
+        } else {
+            return pools;
+        }
     }
 
     protected boolean filter(ExcludeList avoid, StoragePool pool, DiskProfile dskCh, DeploymentPlan plan) {
@@ -204,6 +244,10 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("StoragePool does not have required hypervisorType, skipping this pool");
             }
+            return false;
+        }
+
+        if (!checkDiskProvisioningSupport(dskCh, pool)) {
             return false;
         }
 
@@ -237,7 +281,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             }
 
             try {
-                boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolComplaintWithStoragePolicy(requestVolumes, pool);
+                boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolCompliantWithStoragePolicy(requestVolumes, pool);
                 if (!isStoragePoolStoragepolicyComplaince) {
                     return false;
                 }
@@ -247,6 +291,18 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             }
         }
         return storageMgr.storagePoolHasEnoughIops(requestVolumes, pool) && storageMgr.storagePoolHasEnoughSpace(requestVolumes, pool, plan.getClusterId());
+    }
+
+    private boolean checkDiskProvisioningSupport(DiskProfile dskCh, StoragePool pool) {
+        if (dskCh.getHypervisorType() != null && dskCh.getHypervisorType() == HypervisorType.VMware && pool.getPoolType() == Storage.StoragePoolType.NetworkFilesystem &&
+                storageMgr.DiskProvisioningStrictness.valueIn(pool.getDataCenterId())) {
+            StoragePoolDetailVO hardwareAcceleration = storagePoolDetailsDao.findDetail(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString());
+            if (dskCh.getProvisioningType() == null || !dskCh.getProvisioningType().equals(Storage.ProvisioningType.THIN) &&
+                    (hardwareAcceleration == null || hardwareAcceleration.getValue() == null || !hardwareAcceleration.getValue().equals("true"))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /*

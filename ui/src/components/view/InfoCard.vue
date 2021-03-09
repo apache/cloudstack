@@ -106,19 +106,15 @@
         <div class="resource-detail-item" v-if="resource.id">
           <div class="resource-detail-item__label">{{ $t('label.id') }}</div>
           <div class="resource-detail-item__details">
-            <a-tooltip placement="right" >
-              <template slot="title">
-                <span>{{ $t('label.copyid') }}</span>
-              </template>
-              <a-button
-                style="margin-left: -5px"
-                shape="circle"
-                icon="barcode"
-                type="dashed"
-                size="small"
-                @click="$message.success($t('label.copied.clipboard'))"
-                v-clipboard:copy="resource.id" />
-            </a-tooltip>
+            <tooltip-button
+              tooltipPlacement="right"
+              :tooltip="$t('label.copyid')"
+              style="margin-left: -5px"
+              icon="barcode"
+              type="dashed"
+              size="small"
+              @click="$message.success($t('label.copied.clipboard'))"
+              v-clipboard:copy="resource.id" />
             <span style="margin-left: 10px;">{{ resource.id }}</span>
           </div>
         </div>
@@ -262,7 +258,8 @@
               <a-progress
                 class="progress-bar"
                 size="small"
-                :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeallocatedgb) / parseFloat(resource.disksizetotalgb)).toFixed(2))"
+                :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeallocatedgb) / (parseFloat(resource.disksizetotalgb) *
+                  (parseFloat(resource.overprovisionfactor) || 1.0))).toFixed(2))"
                 :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.disksizeallocatedgb')" />
             </span>
           </div>
@@ -283,7 +280,10 @@
                 :key="eth.id"
                 style="margin-left: -24px; margin-top: 5px;">
                 <a-icon type="api" />eth{{ index }} {{ eth.ipaddress }}
-                <router-link v-if="eth.networkname && eth.networkid" :to="{ path: '/guestnetwork/' + eth.networkid }">({{ eth.networkname }})</router-link>
+                <router-link v-if="!isStatic && eth.networkname && eth.networkid" :to="{ path: '/guestnetwork/' + eth.networkid }">({{ eth.networkname }})</router-link>
+                <a-tag v-if="eth.isdefault">
+                  {{ $t('label.default') }}
+                </a-tag >
               </div>
             </div>
           </div>
@@ -297,6 +297,9 @@
                 :key="network.id"
                 style="margin-top: 5px;">
                 <a-icon type="api" />{{ network.name }}
+                <span v-if="resource.defaultnetworkid === network.id">
+                  ({{ $t('label.default') }})
+                </span>
               </div>
             </div>
           </div>
@@ -308,15 +311,25 @@
               type="environment"
               @click="$message.success(`${$t('label.copied.clipboard')} : ${ ipaddress }`)"
               v-clipboard:copy="ipaddress" />
-            <router-link v-if="resource.ipaddressid" :to="{ path: '/publicip/' + resource.ipaddressid }">{{ ipaddress }}</router-link>
+            <router-link v-if="!isStatic && resource.ipaddressid" :to="{ path: '/publicip/' + resource.ipaddressid }">{{ ipaddress }}</router-link>
             <span v-else>{{ ipaddress }}</span>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="ipV6Address && ipV6Address !== null">
+          <div class="resource-detail-item__label">{{ $t('label.ip6address') }}</div>
+          <div class="resource-detail-item__details">
+            <a-icon
+              type="environment"
+              @click="$message.success(`${$t('label.copied.clipboard')} : ${ ipV6Address }`)"
+              v-clipboard:copy="ipV6Address" />
+            {{ ipV6Address }}
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.projectid || resource.projectname">
           <div class="resource-detail-item__label">{{ $t('label.project') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="project" />
-            <router-link v-if="resource.projectid" :to="{ path: '/project/' + resource.projectid }">{{ resource.project || resource.projectname || resource.projectid }}</router-link>
+            <router-link v-if="!isStatic && resource.projectid" :to="{ path: '/project/' + resource.projectid }">{{ resource.project || resource.projectname || resource.projectid }}</router-link>
             <router-link v-else :to="{ path: '/project', query: { name: resource.projectname }}">{{ resource.projectname }}</router-link>
           </div>
         </div>
@@ -395,17 +408,22 @@
           </span>
         </div>
         <div class="resource-detail-item" v-if="resource.templateid">
-          <div class="resource-detail-item__label">{{ $t('label.templatename') }}</div>
+          <div class="resource-detail-item__label">{{ resource.isoid ? $t('label.iso') : $t('label.templatename') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="picture" />
-            <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatename || resource.templateid }} </router-link>
+            <div v-if="resource.isoid">
+              <router-link :to="{ path: '/iso/' + resource.isoid }">{{ resource.isodisplaytext || resource.isoname || resource.isoid }} </router-link>
+            </div>
+            <div v-else>
+              <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
+            </div>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
           <div class="resource-detail-item__label">{{ $t('label.serviceofferingname') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="cloud" />
-            <router-link v-if="$route.meta.name === 'router'" :to="{ path: '/computeoffering/' + resource.serviceofferingid, query: { issystem: true } }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
+            <router-link v-if="!isStatic && $route.meta.name === 'router'" :to="{ path: '/computeoffering/' + resource.serviceofferingid, query: { issystem: true } }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
             <router-link v-else-if="$router.resolve('/computeoffering/' + resource.serviceofferingid).route.name !== '404'" :to="{ path: '/computeoffering/' + resource.serviceofferingid }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
             <span v-else>{{ resource.serviceofferingname || resource.serviceofferingid }}</span>
           </div>
@@ -414,21 +432,21 @@
           <div class="resource-detail-item__label">{{ $t('label.diskoffering') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="hdd" />
-            <router-link v-if="$router.resolve('/diskoffering/' + resource.diskofferingid).route.name !== '404'" :to="{ path: '/diskoffering/' + resource.diskofferingid }">{{ resource.diskofferingname || resource.diskofferingid }} </router-link>
+            <router-link v-if="!isStatic && $router.resolve('/diskoffering/' + resource.diskofferingid).route.name !== '404'" :to="{ path: '/diskoffering/' + resource.diskofferingid }">{{ resource.diskofferingname || resource.diskofferingid }} </router-link>
             <span v-else>{{ resource.diskofferingname || resource.diskofferingid }}</span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.backupofferingid">
           <div class="resource-detail-item__label">{{ $t('label.backupofferingid') }}</div>
           <a-icon type="cloud-upload" />
-          <router-link v-if="$router.resolve('/backupoffering/' + resource.backupofferingid).route.name !== '404'" :to="{ path: '/backupoffering/' + resource.backupofferingid }">{{ resource.backupofferingname || resource.backupofferingid }} </router-link>
+          <router-link v-if="!isStatic && $router.resolve('/backupoffering/' + resource.backupofferingid).route.name !== '404'" :to="{ path: '/backupoffering/' + resource.backupofferingid }">{{ resource.backupofferingname || resource.backupofferingid }} </router-link>
           <span v-else>{{ resource.backupofferingname || resource.backupofferingid }}</span>
         </div>
         <div class="resource-detail-item" v-if="resource.networkofferingid">
           <div class="resource-detail-item__label">{{ $t('label.networkofferingid') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="wifi" />
-            <router-link v-if="$router.resolve('/networkoffering/' + resource.networkofferingid).route.name !== '404'" :to="{ path: '/networkoffering/' + resource.networkofferingid }">{{ resource.networkofferingname || resource.networkofferingid }} </router-link>
+            <router-link v-if="!isStatic && $router.resolve('/networkoffering/' + resource.networkofferingid).route.name !== '404'" :to="{ path: '/networkoffering/' + resource.networkofferingid }">{{ resource.networkofferingname || resource.networkofferingid }} </router-link>
             <span v-else>{{ resource.networkofferingname || resource.networkofferingid }}</span>
           </div>
         </div>
@@ -436,7 +454,7 @@
           <div class="resource-detail-item__label">{{ $t('label.vpcoffering') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="deployment-unit" />
-            <router-link v-if="$router.resolve('/vpcoffering/' + resource.vpcofferingid).route.name !== '404'" :to="{ path: '/vpcoffering/' + resource.vpcofferingid }">{{ resource.vpcofferingname || resource.vpcofferingid }} </router-link>
+            <router-link v-if="!isStatic && $router.resolve('/vpcoffering/' + resource.vpcofferingid).route.name !== '404'" :to="{ path: '/vpcoffering/' + resource.vpcofferingid }">{{ resource.vpcofferingname || resource.vpcofferingid }} </router-link>
             <span v-else>{{ resource.vpcofferingname || resource.vpcofferingid }}</span>
           </div>
         </div>
@@ -444,7 +462,7 @@
           <div class="resource-detail-item__label">{{ $t('label.storagepool') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="database" />
-            <router-link v-if="$router.resolve('/storagepool/' + resource.storageid).route.name !== '404'" :to="{ path: '/storagepool/' + resource.storageid }">{{ resource.storage || resource.storageid }} </router-link>
+            <router-link v-if="!isStatic && $router.resolve('/storagepool/' + resource.storageid).route.name !== '404'" :to="{ path: '/storagepool/' + resource.storageid }">{{ resource.storage || resource.storageid }} </router-link>
             <span v-else>{{ resource.storage || resource.storageid }}</span>
             <a-tag style="margin-left: 5px;" v-if="resource.storagetype">
               {{ resource.storagetype }}
@@ -455,7 +473,7 @@
           <div class="resource-detail-item__label">{{ $t('label.hostname') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="desktop" />
-            <router-link v-if="$router.resolve('/host/' + resource.hostid).route.name !== '404'" :to="{ path: '/host/' + resource.hostid }">{{ resource.hostname || resource.hostid }} </router-link>
+            <router-link v-if="!isStatic && $router.resolve('/host/' + resource.hostid).route.name !== '404'" :to="{ path: '/host/' + resource.hostid }">{{ resource.hostname || resource.hostid }} </router-link>
             <span v-else>{{ resource.hostname || resource.hostid }}</span>
           </div>
         </div>
@@ -463,7 +481,7 @@
           <div class="resource-detail-item__label">{{ $t('label.clusterid') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="cluster" />
-            <router-link v-if="$router.resolve('/cluster/' + resource.clusterid).route.name !== '404'" :to="{ path: '/cluster/' + resource.clusterid }">{{ resource.clustername || resource.cluster || resource.clusterid }}</router-link>
+            <router-link v-if="!isStatic && $router.resolve('/cluster/' + resource.clusterid).route.name !== '404'" :to="{ path: '/cluster/' + resource.clusterid }">{{ resource.clustername || resource.cluster || resource.clusterid }}</router-link>
             <span v-else>{{ resource.clustername || resource.cluster || resource.clusterid }}</span>
           </div>
         </div>
@@ -471,7 +489,7 @@
           <div class="resource-detail-item__label">{{ $t('label.podid') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="appstore" />
-            <router-link v-if="$router.resolve('/pod/' + resource.podid).route.name !== '404'" :to="{ path: '/pod/' + resource.podid }">{{ resource.podname || resource.pod || resource.podid }}</router-link>
+            <router-link v-if="!isStatic && $router.resolve('/pod/' + resource.podid).route.name !== '404'" :to="{ path: '/pod/' + resource.podid }">{{ resource.podname || resource.pod || resource.podid }}</router-link>
             <span v-else>{{ resource.podname || resource.pod || resource.podid }}</span>
           </div>
         </div>
@@ -479,7 +497,7 @@
           <div class="resource-detail-item__label">{{ $t('label.zone') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="global" />
-            <router-link v-if="$router.resolve('/zone/' + resource.zoneid).route.name !== '404'" :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
+            <router-link v-if="!isStatic && $router.resolve('/zone/' + resource.zoneid).route.name !== '404'" :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
             <span v-else>{{ resource.zone || resource.zonename || resource.zoneid }}</span>
           </div>
         </div>
@@ -490,7 +508,7 @@
             <template v-for="(item,idx) in resource.owner">
               <span style="margin-right:5px" :key="idx">
                 <span v-if="$store.getters.userInfo.roletype !== 'User'">
-                  <router-link v-if="'user' in item" :to="{ path: '/accountuser', query: { username: item.user, domainid: resource.domainid }}">{{ item.account + '(' + item.user + ')' }}</router-link>
+                  <router-link v-if="!isStatic && 'user' in item" :to="{ path: '/accountuser', query: { username: item.user, domainid: resource.domainid }}">{{ item.account + '(' + item.user + ')' }}</router-link>
                   <router-link v-else :to="{ path: '/account', query: { name: item.account, domainid: resource.domainid } }">{{ item.account }}</router-link>
                 </span>
                 <span v-else>{{ item.user ? item.account + '(' + item.user + ')' : item.account }}</span>
@@ -502,7 +520,7 @@
           <div class="resource-detail-item__label">{{ $t('label.account') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="user" />
-            <router-link v-if="$store.getters.userInfo.roletype !== 'User'" :to="{ path: '/account', query: { name: resource.account, domainid: resource.domainid } }">{{ resource.account }}</router-link>
+            <router-link v-if="!isStatic && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/account', query: { name: resource.account, domainid: resource.domainid } }">{{ resource.account }}</router-link>
             <span v-else>{{ resource.account }}</span>
           </div>
         </div>
@@ -510,7 +528,7 @@
           <div class="resource-detail-item__label">{{ $t('label.role') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="idcard" />
-            <router-link v-if="$router.resolve('/role/' + resource.roleid).route.name !== '404'" :to="{ path: '/role/' + resource.roleid }">{{ resource.rolename || resource.role || resource.roleid }}</router-link>
+            <router-link v-if="!isStatic && $router.resolve('/role/' + resource.roleid).route.name !== '404'" :to="{ path: '/role/' + resource.roleid }">{{ resource.rolename || resource.role || resource.roleid }}</router-link>
             <span v-else>{{ resource.rolename || resource.role || resource.roleid }}</span>
           </div>
         </div>
@@ -518,7 +536,7 @@
           <div class="resource-detail-item__label">{{ $t('label.domain') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="block" />
-            <router-link v-if="$store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + resource.domainid }">{{ resource.domain || resource.domainid }}</router-link>
+            <router-link v-if="!isStatic && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + resource.domainid + '?tab=details' }">{{ resource.domain || resource.domainid }}</router-link>
             <span v-else>{{ resource.domain || resource.domainid }}</span>
           </div>
         </div>
@@ -526,7 +544,7 @@
           <div class="resource-detail-item__label">{{ $t('label.management.servers') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="rocket" />
-            <router-link v-if="$router.resolve('/managementserver/' + resource.managementserverid).route.name !== '404'" :to="{ path: '/managementserver/' + resource.managementserverid }">{{ resource.managementserver || resource.managementserverid }}</router-link>
+            <router-link v-if="!isStatic && $router.resolve('/managementserver/' + resource.managementserverid).route.name !== '404'" :to="{ path: '/managementserver/' + resource.managementserverid }">{{ resource.managementserver || resource.managementserverid }}</router-link>
             <span v-else>{{ resource.managementserver || resource.managementserverid }}</span>
           </div>
         </div>
@@ -534,6 +552,12 @@
           <div class="resource-detail-item__label">{{ $t('label.created') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="calendar" />{{ $toLocaleDate(resource.created) }}
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.lastupdated">
+          <div class="resource-detail-item__label">{{ $t('label.last.updated') }}</div>
+          <div class="resource-detail-item__details">
+            <a-icon type="calendar" />{{ $toLocaleDate(resource.lastupdated) }}
           </div>
         </div>
       </div>
@@ -557,14 +581,14 @@
           <a-icon type="key" />
           <strong>
             {{ $t('label.apikey') }}
-            <a-tooltip placement="right" >
-              <template slot="title">
-                <span>{{ $t('label.copy') + ' ' + $t('label.apikey') }}</span>
-              </template>
-              <a-button shape="circle" type="dashed" size="small" @click="$message.success($t('label.copied.clipboard'))" v-clipboard:copy="resource.apikey">
-                <a-icon type="copy"/>
-              </a-button>
-            </a-tooltip>
+            <tooltip-button
+              tooltipPlacement="right"
+              :tooltip="$t('label.copy') + ' ' + $t('label.apikey')"
+              icon="copy"
+              type="dashed"
+              size="small"
+              @click="$message.success($t('label.copied.clipboard'))"
+              v-clipboard:copy="resource.apikey" />
           </strong>
           <div>
             {{ resource.apikey.substring(0, 20) }}...
@@ -574,14 +598,14 @@
           <a-icon type="lock" />
           <strong>
             {{ $t('label.secretkey') }}
-            <a-tooltip placement="right" >
-              <template slot="title">
-                <span>{{ $t('label.copy') + ' ' + $t('label.secretkey') }}</span>
-              </template>
-              <a-button shape="circle" type="dashed" size="small" @click="$message.success($t('label.copied.clipboard'))" v-clipboard:copy="resource.secretkey">
-                <a-icon type="copy"/>
-              </a-button>
-            </a-tooltip>
+            <tooltip-button
+              tooltipPlacement="right"
+              :tooltip="$t('label.copy') + ' ' + $t('label.secretkey')"
+              icon="copy"
+              type="dashed"
+              size="small"
+              @click="$message.success($t('label.copied.clipboard'))"
+              v-clipboard:copy="resource.secretkey" />
           </strong>
           <div>
             {{ resource.secretkey.substring(0, 20) }}...
@@ -589,7 +613,7 @@
         </div>
       </div>
 
-      <div class="account-center-tags" v-if="resourceType && 'listTags' in $store.getters.apis">
+      <div class="account-center-tags" v-if="!isStatic && resourceType && 'listTags' in $store.getters.apis">
         <a-divider/>
         <a-spin :spinning="loadingTags">
           <div class="title">{{ $t('label.tags') }}</div>
@@ -608,24 +632,28 @@
                 @keyup.enter="handleInputConfirm"
                 compact>
                 <a-input ref="input" :value="inputKey" @change="handleKeyChange" style="width: 30%; text-align: center" :placeholder="$t('label.key')" />
-                <a-input style=" width: 30px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
+                <a-input
+                  class="tag-disabled-input"
+                  style="width: 30px; border-left: 0; pointer-events: none; text-align: center"
+                  placeholder="="
+                  disabled />
                 <a-input :value="inputValue" @change="handleValueChange" style="width: 30%; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-                <a-button shape="circle" size="small" @click="handleInputConfirm">
-                  <a-icon type="check"/>
-                </a-button>
-                <a-button shape="circle" size="small" @click="inputVisible=false">
-                  <a-icon type="close"/>
-                </a-button>
+                <tooltip-button :tooltip="$t('label.ok')" icon="check" size="small" @click="handleInputConfirm" />
+                <tooltip-button :tooltip="$t('label.cancel')" icon="close" size="small" @click="inputVisible=false" />
               </a-input-group>
             </div>
-            <a-tag @click="showInput" style="background: #fff; borderStyle: dashed;" v-else-if="isAdminOrOwner() && 'createTags' in $store.getters.apis">
+            <a-tag
+              @click="showInput"
+              class="btn-add-tag"
+              style="borderStyle: dashed;"
+              v-else-if="isAdminOrOwner() && 'createTags' in $store.getters.apis">
               <a-icon type="plus" /> {{ $t('label.new.tag') }}
             </a-tag>
           </div>
         </a-spin>
       </div>
 
-      <div class="account-center-team" v-if="annotationType && 'listAnnotations' in $store.getters.apis">
+      <div class="account-center-team" v-if="!isStatic && annotationType && 'listAnnotations' in $store.getters.apis">
         <a-divider :dashed="true"/>
         <a-spin :spinning="loadingAnnotations">
           <div class="title">
@@ -685,13 +713,15 @@ import { api } from '@/api'
 import Console from '@/components/widgets/Console'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'InfoCard',
   components: {
     Console,
     OsLogo,
-    Status
+    Status,
+    TooltipButton
   },
   props: {
     resource: {
@@ -709,11 +739,14 @@ export default {
     bordered: {
       type: Boolean,
       default: true
+    },
+    isStatic: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
     return {
-      name: '',
       ipaddress: '',
       resourceType: '',
       annotationType: '',
@@ -769,10 +802,21 @@ export default {
   created () {
     this.setData()
   },
+  computed: {
+    name () {
+      return this.resource.displayname || this.resource.displaytext || this.resource.name || this.resource.username ||
+        this.resource.ipaddress || this.resource.virtualmachinename || this.resource.templatetype
+    },
+    ipV6Address () {
+      if (this.resource.nic && this.resource.nic.length > 0) {
+        return this.resource.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ')
+      }
+
+      return null
+    }
+  },
   methods: {
     setData () {
-      this.name = this.resource.displayname || this.resource.displaytext || this.resource.name || this.resource.username ||
-        this.resource.ipaddress || this.resource.virtualmachinename || this.resource.templatetype
       if (this.resource.nic && this.resource.nic.length > 0) {
         this.ipaddress = this.resource.nic.filter(e => { return e.ipaddress }).map(e => { return e.ipaddress }).join(', ')
       } else {

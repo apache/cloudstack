@@ -21,6 +21,7 @@
       :form="form"
       @submit="handleSubmit"
       layout="vertical"
+      v-ctrl-enter="handleSubmit"
     >
       <a-form-item
         v-for="(item, index) in dataResource"
@@ -34,6 +35,7 @@
           v-decorator="[item.resourcetype, {
             initialValue: item.max
           }]"
+          :autoFocus="index === 0"
         />
       </a-form-item>
       <div class="card-footer">
@@ -42,6 +44,7 @@
           v-if="!($route.meta.name === 'domain' && resource.level === 0)"
           :loading="formLoading"
           type="primary"
+          ref="submit"
           @click="handleSubmit">{{ $t('label.submit') }}</a-button>
       </div>
     </a-form>
@@ -72,7 +75,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {
@@ -113,6 +116,8 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+
+      if (this.formLoading) return
 
       this.form.validateFields((err, values) => {
         if (err) {

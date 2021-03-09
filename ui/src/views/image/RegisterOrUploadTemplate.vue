@@ -24,6 +24,7 @@
     </span>
     <a-spin :spinning="loading" v-else>
       <a-form
+        v-ctrl-enter="handleSubmit"
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
@@ -31,7 +32,7 @@
           <a-row :gutter="12">
             <a-form-item :label="$t('label.url')">
               <a-input
-                autoFocus
+                :autoFocus="currentForm === 'Create'"
                 v-decorator="['url', {
                   rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
                 }]"
@@ -64,7 +65,8 @@
               v-decorator="['name', {
                 rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
               }]"
-              :placeholder="apiParams.name.description" />
+              :placeholder="apiParams.name.description"
+              :autoFocus="currentForm !== 'Create'"/>
           </a-form-item>
         </a-row>
         <a-row :gutter="12">
@@ -174,7 +176,8 @@
                     }
                   ]
                 }]"
-                :placeholder="apiParams.format.description">
+                :placeholder="apiParams.format.description"
+                @change="val => { selectedFormat = val }">
                 <a-select-option v-for="opt in format.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
@@ -207,8 +210,18 @@
               :default-checked="xenServerProvider" />
           </a-form-item>
         </a-row>
+
+        <a-form-item :label="$t('label.deployasis')" v-if="selectedFormat === 'OVA'">
+          <a-switch
+            v-decorator="['deployasis', {
+              initialValue: false,
+            }]"
+            :checked="deployasis"
+            @change="val => deployasis = val"/>
+        </a-form-item>
+
         <a-row :gutter="12" v-if="hyperKVMShow || hyperVMWShow">
-          <a-col :md="24" :lg="24" v-if="hyperKVMShow">
+          <a-col :md="24" :lg="24" v-if="hyperKVMShow || (hyperVMWShow && !deployasis)">
             <a-form-item :label="$t('label.rootdiskcontrollertype')">
               <a-select
                 v-decorator="['rootDiskControllerType', {
@@ -229,7 +242,7 @@
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="24">
-            <a-form-item v-if="hyperVMWShow" :label="$t('label.keyboardtype')">
+            <a-form-item v-if="hyperVMWShow && !deployasis" :label="$t('label.keyboardtype')">
               <a-select
                 v-decorator="['keyboardType', {
                   rules: [
@@ -247,7 +260,7 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-row :gutter="12" v-if="!hyperVMWShow">
+        <a-row :gutter="12" v-if="!hyperVMWShow || (hyperVMWShow && !deployasis)">
           <a-col :md="24" :lg="24">
             <a-form-item :label="$t('label.ostypeid')">
               <a-select
@@ -333,7 +346,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -377,6 +390,8 @@ export default {
       hyperKVMShow: false,
       hyperXenServerShow: false,
       hyperVMWShow: false,
+      selectedFormat: '',
+      deployasis: false,
       zoneError: '',
       zoneErrorMessage: '',
       loading: false,
@@ -389,11 +404,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.registerTemplate || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('registerTemplate')
   },
   created () {
     this.$set(this.zones, 'loading', false)
@@ -410,8 +421,6 @@ export default {
     this.$set(this.format, 'opts', [])
     this.$set(this.osTypes, 'loading', false)
     this.$set(this.osTypes, 'opts', [])
-  },
-  mounted () {
     this.fetchData()
   },
   computed: {
@@ -764,6 +773,7 @@ export default {
       this.hyperXenServerShow = false
       this.hyperVMWShow = false
       this.hyperKVMShow = false
+      this.deployasis = false
       this.allowDirectDownload = false
 
       this.resetSelect()
@@ -774,6 +784,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err || this.zoneError !== '') {
           return
@@ -795,10 +806,6 @@ export default {
               continue
             }
             params[key] = input.join()
-          } else if (key === 'zoneid') {
-            params[key] = input
-          } else if (key === 'ostypeid') {
-            params[key] = input
           } else if (key === 'hypervisor') {
             params[key] = this.hyperVisor.opts[input].name
           } else if (key === 'groupenabled') {
@@ -829,6 +836,9 @@ export default {
               params[key] = input
             }
           }
+        }
+        if (!('requireshvm' in params)) { // handled as default true by API
+          params.requireshvm = false
         }
         if (this.currentForm === 'Create') {
           this.loading = true
@@ -900,14 +910,6 @@ export default {
 
     @media (min-width: 700px) {
       width: 550px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

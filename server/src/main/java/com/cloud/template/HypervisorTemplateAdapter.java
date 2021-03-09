@@ -18,20 +18,16 @@ package com.cloud.template;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.configuration.Config;
-import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionStatus;
 import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
 import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
@@ -62,14 +58,17 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
@@ -87,6 +86,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.template.VirtualMachineTemplate.State;
@@ -95,6 +95,9 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class HypervisorTemplateAdapter extends TemplateAdapterBase {
@@ -167,6 +170,12 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         }
         CheckUrlAnswer ans = (CheckUrlAnswer) answer;
         return ans.getTemplateSize();
+    }
+
+    private void checkZoneImageStores(final List<Long> zoneIdList) {
+        if (zoneIdList != null && CollectionUtils.isEmpty(storeMgr.getImageStoresByScope(new ZoneScope(zoneIdList.get(0))))) {
+            throw new InvalidParameterValueException("Failed to find a secondary storage in the specified zone.");
+        }
     }
 
     @Override
@@ -466,6 +475,18 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         return null;
     }
 
+    boolean cleanupTemplate(VMTemplateVO template, boolean success) {
+        List<VMTemplateZoneVO> templateZones = templateZoneDao.listByTemplateId(template.getId());
+        List<Long> zoneIds = templateZones.stream().map(VMTemplateZoneVO::getZoneId).collect(Collectors.toList());
+        if (zoneIds.size() > 0) {
+            return success;
+        }
+        template.setRemoved(new Date());
+        template.setState(State.Inactive);
+        templateDao.update(template.getId(), template);
+        return success;
+    }
+
     @Override
     @DB
     public boolean delete(TemplateProfile profile) {
@@ -587,7 +608,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         if (success) {
             if ((imageStores != null && imageStores.size() > 1) && (profile.getZoneIdList() != null)) {
                 //if template is stored in more than one image stores, and the zone id is not null, then don't delete other templates.
-                return success;
+                return cleanupTemplate(template, success);
             }
 
             // delete all cache entries for this template
@@ -610,6 +631,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
                 // Mark template as Inactive.
                 template.setState(VirtualMachineTemplate.State.Inactive);
+                _tmpltDao.remove(template.getId());
                 _tmpltDao.update(template.getId(), template);
 
                     // Decrement the number of templates and total secondary storage
@@ -637,29 +659,17 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     public TemplateProfile prepareDelete(DeleteTemplateCmd cmd) {
         TemplateProfile profile = super.prepareDelete(cmd);
         VMTemplateVO template = profile.getTemplate();
-        List<Long> zoneIdList = profile.getZoneIdList();
-
         if (template.getTemplateType() == TemplateType.SYSTEM) {
             throw new InvalidParameterValueException("The DomR template cannot be deleted.");
         }
-
-        if (zoneIdList != null && (storeMgr.getImageStoreWithFreeCapacity(zoneIdList.get(0)) == null)) {
-            throw new InvalidParameterValueException("Failed to find a secondary storage in the specified zone.");
-        }
-
+        checkZoneImageStores(profile.getZoneIdList());
         return profile;
     }
 
     @Override
     public TemplateProfile prepareDelete(DeleteIsoCmd cmd) {
         TemplateProfile profile = super.prepareDelete(cmd);
-        List<Long> zoneIdList = profile.getZoneIdList();
-
-        if (zoneIdList != null &&
-                (storeMgr.getImageStoreWithFreeCapacity(zoneIdList.get(0)) == null)) {
-            throw new InvalidParameterValueException("Failed to find a secondary storage in the specified zone.");
-        }
-
+        checkZoneImageStores(profile.getZoneIdList());
         return profile;
     }
 }

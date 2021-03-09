@@ -122,10 +122,15 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     List<StoragePoolVO> listLocalStoragePoolByPath(long datacenterId, String path);
 
+    List<StoragePoolVO> findPoolsInClusters(List<Long> clusterIds);
+
     void deletePoolTags(long poolId);
 
     List<StoragePoolVO> listChildStoragePoolsInDatastoreCluster(long poolId);
 
     Integer countAll();
 
+    List<StoragePoolVO> findPoolsByStorageType(String storageType);
+
+    List<StoragePoolVO> listStoragePoolsWithActiveVolumesByOfferingId(long offeringid);
 }

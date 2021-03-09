@@ -21,7 +21,7 @@
       <label>
         {{ $t('label.header.backup.schedule') }}
       </label>
-      <div class="form">
+      <div class="form" v-ctrl-enter="handleSubmit">
         <a-form
           :form="form"
           layout="vertical"
@@ -61,7 +61,8 @@
                       rules: [{required: true, message: $t('message.error.required.input')}]
                     }]"
                     :min="1"
-                    :max="59"/>
+                    :max="59"
+                    autoFocus />
                 </a-tooltip>
               </a-form-item>
             </a-col>
@@ -137,6 +138,7 @@
             </a-button>
             <a-button
               :loading="actionLoading"
+              ref="submit"
               type="primary"
               @click="handleSubmit">
               {{ this.$t('label.ok') }}
@@ -243,6 +245,7 @@ export default {
       }
     },
     handleSubmit (e) {
+      if (this.actionLoading) return
       this.form.validateFields((error, values) => {
         if (error) {
           return
@@ -314,14 +317,5 @@ export default {
 
 .form {
   margin: 10px 0;
-}
-
-.action-button {
-  margin-top: 20px;
-  text-align: right;
-
-  button {
-    margin-right: 5px;
-  }
 }
 </style>

@@ -35,6 +35,8 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
     private boolean dpd;
     private boolean passive;
     private boolean encap;
+    private boolean splitConnections;
+    private String ikeVersion;
 
     @Override
     public boolean executeInSequence() {
@@ -46,7 +48,8 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
     }
 
     public Site2SiteVpnCfgCommand(boolean create, String localPublicIp, String localPublicGateway, String localGuestCidr, String peerGatewayIp, String peerGuestCidrList,
-            String ikePolicy, String espPolicy, String ipsecPsk, Long ikeLifetime, Long espLifetime, Boolean dpd, boolean passive, boolean encap) {
+            String ikePolicy, String espPolicy, String ipsecPsk, Long ikeLifetime, Long espLifetime, Boolean dpd, boolean passive, boolean encap,
+            boolean splitConnections, String ikeVersion) {
         this.create = create;
         this.setLocalPublicIp(localPublicIp);
         this.setLocalPublicGateway(localPublicGateway);
@@ -61,6 +64,8 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
         this.dpd = dpd;
         this.passive = passive;
         this.encap = encap;
+        this.splitConnections = splitConnections;
+        this.ikeVersion = ikeVersion;
     }
 
     public boolean isCreate() {
@@ -173,5 +178,21 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
 
     public void setPassive(boolean passive) {
         this.passive = passive;
+    }
+
+    public boolean getSplitConnections() {
+        return splitConnections;
+    }
+
+    public void setSplitConnections(boolean splitConnections) {
+        this.splitConnections = splitConnections;
+    }
+
+    public String getIkeVersion() {
+        return ikeVersion;
+    }
+
+    public void setIkeVersion(String ikeVersion) {
+        this.ikeVersion = ikeVersion;
     }
 }

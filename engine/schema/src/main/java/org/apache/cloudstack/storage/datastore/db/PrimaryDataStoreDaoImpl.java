@@ -56,6 +56,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     private final SearchBuilder<StoragePoolVO> DeleteLvmSearch;
     private final SearchBuilder<StoragePoolVO> DcLocalStorageSearch;
     private final GenericSearchBuilder<StoragePoolVO, Long> StatusCountSearch;
+    private final SearchBuilder<StoragePoolVO> ClustersSearch;
 
     @Inject
     private StoragePoolDetailsDao _detailsDao;
@@ -72,6 +73,11 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     // Storage tags are now separate from storage_pool_details, leaving only details on that table
     protected final String TagsSqlPrefix = "SELECT storage_pool.* from storage_pool LEFT JOIN storage_pool_tags ON storage_pool.id = storage_pool_tags.pool_id WHERE storage_pool.removed is null and storage_pool.status = 'Up' and storage_pool.data_center_id = ? and (storage_pool.pod_id = ? or storage_pool.pod_id is null) and storage_pool.scope = ? and (";
     protected final String TagsSqlSuffix = ") GROUP BY storage_pool_tags.pool_id HAVING COUNT(storage_pool_tags.tag) >= ?";
+
+    private static final String GET_STORAGE_POOLS_OF_VOLUMES_WITHOUT_OR_NOT_HAVING_TAGS = "select s.id " +
+            "from volumes vol " +
+            "join storage_pool s on vol.pool_id=s.id " +
+            "where vol.disk_offering_id= ? and vol.state not in (\"Destroy\", \"Error\", \"Expunging\") group by s.id";
 
     /**
      * Used in method findPoolsByDetailsOrTagsInternal
@@ -92,6 +98,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         AllFieldSearch.and("podId", AllFieldSearch.entity().getPodId(), Op.EQ);
         AllFieldSearch.and("clusterId", AllFieldSearch.entity().getClusterId(), Op.EQ);
         AllFieldSearch.and("storage_provider_name", AllFieldSearch.entity().getStorageProviderName(), Op.EQ);
+        AllFieldSearch.and("poolType", AllFieldSearch.entity().getPoolType(), Op.EQ);
         AllFieldSearch.done();
 
         DcPodSearch = createSearchBuilder();
@@ -132,6 +139,10 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         DcLocalStorageSearch.and("path", DcLocalStorageSearch.entity().getPath(), SearchCriteria.Op.EQ);
         DcLocalStorageSearch.and("scope", DcLocalStorageSearch.entity().getScope(), SearchCriteria.Op.EQ);
         DcLocalStorageSearch.done();
+
+        ClustersSearch = createSearchBuilder();
+        ClustersSearch.and("clusterIds", ClustersSearch.entity().getClusterId(), Op.IN);
+        ClustersSearch.and("status", ClustersSearch.entity().getStatus(), Op.EQ);
 
     }
 
@@ -567,5 +578,41 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         sc.addAnd("parent", SearchCriteria.Op.EQ, 0);
         sc.addAnd("removed", SearchCriteria.Op.NULL);
         return getCount(sc);
+    }
+
+    @Override
+    public List<StoragePoolVO> findPoolsInClusters(List<Long> clusterIds) {
+        SearchCriteria<StoragePoolVO> sc = ClustersSearch.create();
+        sc.setParameters("clusterIds", clusterIds.toArray());
+        sc.setParameters("status", StoragePoolStatus.Up);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<StoragePoolVO> findPoolsByStorageType(String storageType) {
+        SearchCriteria<StoragePoolVO> sc = AllFieldSearch.create();
+        sc.setParameters("poolType", storageType);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<StoragePoolVO> listStoragePoolsWithActiveVolumesByOfferingId(long offeringId) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        List<StoragePoolVO> result = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(GET_STORAGE_POOLS_OF_VOLUMES_WITHOUT_OR_NOT_HAVING_TAGS);
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+            pstmt.setLong(1, offeringId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                result.add(toEntityBean(rs, false));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + sql, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + sql, e);
+        }
     }
 }

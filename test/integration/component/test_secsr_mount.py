@@ -14,7 +14,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from __builtin__ import False
 """ Tests for Secondary Storage with Local Storage
 """
 
@@ -93,7 +92,7 @@ class TestSecSRMount(cloudstackTestCase):
                            "Check if listStoragePools returns a valid response"
                            )
         for storage_pool in storage_pools:
-            if storage_pool.type == u'NetworkFilesystem':
+            if storage_pool.type == 'NetworkFilesystem':
                 return False
             
         return True

@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Level;
@@ -70,6 +71,10 @@ import com.cloud.network.rules.RulesService;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.uservm.UserVm;
@@ -118,6 +123,10 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected VMInstanceDao vmInstanceDao;
     @Inject
     protected UserVmManager userVmManager;
+    @Inject
+    protected VolumeApiService volumeService;
+    @Inject
+    protected VolumeDao volumeDao;
 
     protected String kubernetesClusterNodeNamePrefix;
 
@@ -133,8 +142,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     private String getKubernetesNodeConfig(final String joinIp, final boolean ejectIso) throws IOException {
         String k8sNodeConfig = readResourceFile("/conf/k8s-node.yml");
         final String sshPubKey = "{{ k8s.ssh.pub.key }}";
-        final String joinIpKey = "{{ k8s_master.join_ip }}";
-        final String clusterTokenKey = "{{ k8s_master.cluster.token }}";
+        final String joinIpKey = "{{ k8s_control_node.join_ip }}";
+        final String clusterTokenKey = "{{ k8s_control_node.cluster.token }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
@@ -268,6 +277,29 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return plan(kubernetesCluster.getTotalNodeCount(), zone, offering);
     }
 
+    protected void resizeNodeVolume(final UserVm vm) throws ManagementServerException {
+        try {
+            if (vm.getHypervisorType() == Hypervisor.HypervisorType.VMware && templateDao.findById(vm.getTemplateId()).isDeployAsIs()) {
+                List<VolumeVO> vmVols = volumeDao.findByInstance(vm.getId());
+                for (VolumeVO volumeVO : vmVols) {
+                    if (volumeVO.getVolumeType() == Volume.Type.ROOT) {
+                        ResizeVolumeCmd resizeVolumeCmd = new ResizeVolumeCmd();
+                        resizeVolumeCmd = ComponentContext.inject(resizeVolumeCmd);
+                        Field f = resizeVolumeCmd.getClass().getDeclaredField("size");
+                        Field f1 = resizeVolumeCmd.getClass().getDeclaredField("id");
+                        f.setAccessible(true);
+                        f1.setAccessible(true);
+                        f1.set(resizeVolumeCmd, volumeVO.getId());
+                        f.set(resizeVolumeCmd, kubernetesCluster.getNodeRootDiskSize());
+                        volumeService.resizeVolume(resizeVolumeCmd);
+                    }
+                }
+            }
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new ManagementServerException(String.format("Failed to resize volume of  VM in the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        }
+    }
+
     protected void startKubernetesVM(final UserVm vm) throws ManagementServerException {
         try {
             StartVMCmd startVm = new StartVMCmd();
@@ -296,6 +328,9 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         for (int i = offset + 1; i <= nodeCount; i++) {
             UserVm vm = createKubernetesNode(publicIpAddress, i);
             addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId());
+            if (kubernetesCluster.getNodeRootDiskSize() > 0) {
+                resizeNodeVolume(vm);
+            }
             startKubernetesVM(vm);
             vm = userVmDao.findById(vm.getId());
             if (vm == null) {
@@ -339,7 +374,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                null, addrs, null, null, null, customParameterMap, null, null, null, null);
+                null, addrs, null, null, null, customParameterMap, null, null, null, null, true);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created node VM : %s, %s in the Kubernetes cluster : %s", hostName, nodeVm.getUuid(), kubernetesCluster.getName()));
         }

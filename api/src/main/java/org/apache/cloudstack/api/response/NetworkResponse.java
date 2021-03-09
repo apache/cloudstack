@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -245,6 +246,18 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.REDUNDANT_ROUTER)
     @Param(description = "If the network has redundant routers enabled", since = "4.11.1")
     private Boolean redundantRouter;
+
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "the date this network was created", since = "4.16.0")
+    private Date created;
+
+    @SerializedName(ApiConstants.RECEIVED_BYTES)
+    @Param(description = "the total number of network traffic bytes received")
+    private Long bytesReceived;
+
+    @SerializedName(ApiConstants.SENT_BYTES)
+    @Param(description = "the total number of network traffic bytes sent")
+    private Long bytesSent;
 
     public Boolean getDisplayNetwork() {
         return displayNetwork;
@@ -481,5 +494,21 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     public void setVpcName(String vpcName) {
         this.vpcName = vpcName;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
+    public void setBytesReceived(Long bytesReceived) {
+        this.bytesReceived = bytesReceived;
+    }
+
+    public void setBytesSent(final Long bytesSent) {
+        this.bytesSent = bytesSent;
     }
 }

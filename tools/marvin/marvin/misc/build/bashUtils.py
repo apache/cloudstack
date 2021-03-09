@@ -42,7 +42,7 @@ class remoteSSHClient(object):
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
             self.ssh.connect(str(host),int(port), user, passwd)
-        except paramiko.SSHException, sshex:
+        except paramiko.SSHException as sshex:
             logging.debug(repr(sshex))
         
     def execute(self, command):
@@ -70,7 +70,7 @@ class remoteSSHClient(object):
                 rl, wl, xl = select.select([channel],[],[],0.0)
                 if len(rl) > 0:
                   logging.debug(channel.recv(bufsize))
-        except paramiko.SSHException, e:
+        except paramiko.SSHException as e:
             logging.debug(repr(e))    
 
             
@@ -80,7 +80,7 @@ class remoteSSHClient(object):
         sftp = paramiko.SFTPClient.from_transport(transport)
         try:
             sftp.put(srcFile, destPath)
-        except IOError, e:
+        except IOError as e:
             raise e
 
 class bash:

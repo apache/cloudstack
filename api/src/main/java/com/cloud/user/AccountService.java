@@ -121,4 +121,6 @@ public interface AccountService {
     UserAccount getUserAccountById(Long userId);
 
     public Map<String, String> getKeys(GetUserKeysCmd cmd);
+
+    public Map<String, String> getKeys(Long userId);
 }

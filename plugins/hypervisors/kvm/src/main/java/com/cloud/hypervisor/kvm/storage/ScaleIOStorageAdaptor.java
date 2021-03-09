@@ -38,6 +38,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.google.common.base.Strings;
+import org.libvirt.LibvirtException;
 
 @StorageAdaptorInfo(storagePoolType= Storage.StoragePoolType.PowerFlex)
 public class ScaleIOStorageAdaptor implements StorageAdaptor {
@@ -270,8 +271,8 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             LOGGER.debug("Starting copy from source image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
             qemu.convert(srcFile, destFile);
             LOGGER.debug("Succesfully converted source image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
-        }  catch (QemuImgException e) {
-            LOGGER.error("Failed to convert from " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage());
+        }  catch (QemuImgException | LibvirtException e) {
+            LOGGER.error("Failed to convert from " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage(), e);
             destDisk = null;
         }
 
@@ -364,8 +365,8 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             QemuImg qemu = new QemuImg(timeout);
             qemu.convert(srcFile, destFile);
             LOGGER.debug("Succesfully converted source downloaded template " + srcFile.getFileName() + " to PowerFlex template volume: " + destDisk.getPath());
-        }  catch (QemuImgException e) {
-            LOGGER.error("Failed to convert from " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage());
+        }  catch (QemuImgException | LibvirtException e) {
+            LOGGER.error("Failed to convert from " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage(), e);
             destDisk = null;
         } finally {
             Script.runSimpleBashScript("rm -f " + srcTemplateFilePath);

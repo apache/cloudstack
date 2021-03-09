@@ -116,6 +116,21 @@ export default {
           }
         },
         {
+          api: 'updateVolume',
+          icon: 'edit',
+          label: 'label.edit',
+          dataView: true,
+          args: ['name'],
+          mapping: {
+            account: {
+              value: (record) => { return record.account }
+            },
+            domainid: {
+              value: (record) => { return record.domainid }
+            }
+          }
+        },
+        {
           api: 'createSnapshot',
           icon: 'camera',
           docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
@@ -223,12 +238,14 @@ export default {
           label: 'label.action.delete.volume',
           message: 'message.action.delete.volume',
           dataView: true,
-          groupAction: true,
           show: (record, store) => {
             return ['Expunging', 'Expunged', 'UploadError'].includes(record.state) ||
               ['Allocated', 'Uploaded'].includes(record.state) && record.type !== 'ROOT' && !record.virtualmachineid ||
               ((['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) || store.features.allowuserexpungerecovervolume) && record.state === 'Destroy')
-          }
+          },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         },
         {
           api: 'destroyVolume',
@@ -284,7 +301,13 @@ export default {
           label: 'label.action.create.volume',
           dataView: true,
           show: (record) => { return record.state === 'BackedUp' },
-          args: ['snapshotid', 'name'],
+          args: (record, store) => {
+            var fields = ['snapshotid', 'name']
+            if (record.volumetype === 'ROOT') {
+              fields.push('diskofferingid')
+            }
+            return fields
+          },
           mapping: {
             snapshotid: {
               value: (record) => { return record.id }
@@ -305,7 +328,10 @@ export default {
           label: 'label.action.delete.snapshot',
           message: 'message.action.delete.snapshot',
           dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' }
+          show: (record) => { return record.state !== 'Destroyed' },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
     },
@@ -363,7 +389,10 @@ export default {
             vmsnapshotid: {
               value: (record) => { return record.id }
             }
-          }
+          },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { vmsnapshotid: x } }) }
         }
       ]
     },

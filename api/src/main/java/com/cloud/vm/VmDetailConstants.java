@@ -21,6 +21,7 @@ public interface VmDetailConstants {
     String CPU_CORE_PER_SOCKET = "cpu.corespersocket";
     String ROOT_DISK_SIZE = "rootdisksize";
     String BOOT_MODE = "boot.mode";
+    String NAME_ON_HYPERVISOR= "nameonhypervisor";
 
     // VMware specific
     String NIC_ADAPTER = "nicAdapter";
@@ -28,6 +29,7 @@ public interface VmDetailConstants {
     String DATA_DISK_CONTROLLER = "dataDiskController";
     String SVGA_VRAM_SIZE = "svga.vramSize";
     String NESTED_VIRTUALIZATION_FLAG = "nestedVirtualizationFlag";
+    String RAM_RESERVATION = "ramReservation";
 
     // XenServer specific (internal)
     String HYPERVISOR_TOOLS_VERSION = "hypervisortoolsversion";

@@ -83,7 +83,7 @@ class TestVPCNetworkInternalLBRules(cloudstackTestCase):
             # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
-            print ("Warning: Exception during cleanup : %s" % e)
+            print(("Warning: Exception during cleanup : %s" % e))
         return
 
     def setUp(self):

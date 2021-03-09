@@ -102,7 +102,6 @@ import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.MigrationOptions;
-import com.cloud.storage.ScopeType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
@@ -134,6 +133,10 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Preconditions;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.stream.Collectors;
+import org.apache.commons.collections.CollectionUtils;
 
 public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private static final Logger LOGGER = Logger.getLogger(StorageSystemDataMotionStrategy.class);
@@ -1816,7 +1819,12 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     continue;
                 }
 
-                copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
+                if (srcVolumeInfo.getTemplateId() != null) {
+                    LOGGER.debug(String.format("Copying template [%s] of volume [%s] from source storage pool [%s] to target storage pool [%s].", srcVolumeInfo.getTemplateId(), srcVolumeInfo.getId(), sourceStoragePool.getId(), destStoragePool.getId()));
+                    copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
+                } else {
+                    LOGGER.debug(String.format("Skipping copy template from source storage pool [%s] to target storage pool [%s] before migration due to volume [%s] does not have a template.", sourceStoragePool.getId(), destStoragePool.getId(), srcVolumeInfo.getId()));
+                }
 
                 VolumeVO destVolume = duplicateVolumeOnAnotherStorage(srcVolume, destStoragePool);
                 VolumeInfo destVolumeInfo = _volumeDataFactory.getVolume(destVolume.getId(), destDataStore);
@@ -1855,9 +1863,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 MigrateCommand.MigrateDiskInfo migrateDiskInfo;
 
-                boolean isNonManagedNfsToNfs = sourceStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem
-                        && destStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem && !managedStorageDestination;
-                if (isNonManagedNfsToNfs) {
+                boolean isNonManagedNfsToNfsOrSharedMountPointToNfs = supportStoragePoolType(sourceStoragePool.getPoolType()) && destStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem && !managedStorageDestination;
+                if (isNonManagedNfsToNfsOrSharedMountPointToNfs) {
                     migrateDiskInfo = new MigrateCommand.MigrateDiskInfo(srcVolumeInfo.getPath(),
                             MigrateCommand.MigrateDiskInfo.DiskType.FILE,
                             MigrateCommand.MigrateDiskInfo.DriverType.QCOW2,
@@ -1920,9 +1927,12 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 throw new CloudRuntimeException(errMsg);
             }
-        } catch (Exception ex) {
-            errMsg = "Copy operation failed in 'StorageSystemDataMotionStrategy.copyAsync': " + ex.getMessage();
+        } catch (AgentUnavailableException | OperationTimedoutException | CloudRuntimeException ex) {
+            String volumesAndStorages = volumeDataStoreMap.entrySet().stream().map(entry -> formatEntryOfVolumesAndStoragesAsJsonToDisplayOnLog(entry)).collect(Collectors.joining(","));
+
+            errMsg = String.format("Copy volume(s) to storage(s) [%s] and VM to host [%s] failed in StorageSystemDataMotionStrategy.copyAsync. Error message: [%s].", volumesAndStorages, formatMigrationElementsAsJsonToDisplayOnLog("vm", vmTO.getId(), srcHost.getId(), destHost.getId()), ex.getMessage());
             LOGGER.error(errMsg, ex);
+
             throw new CloudRuntimeException(errMsg);
         } finally {
             CopyCmdAnswer copyCmdAnswer = new CopyCmdAnswer(errMsg);
@@ -1933,6 +1943,16 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             callback.complete(result);
         }
+    }
+
+    protected String formatMigrationElementsAsJsonToDisplayOnLog(String objectName, Object object, Object from, Object to){
+        return String.format("{%s: \"%s\", from: \"%s\", to:\"%s\"}", objectName, object, from, to);
+    }
+
+    protected String formatEntryOfVolumesAndStoragesAsJsonToDisplayOnLog(Map.Entry<VolumeInfo, DataStore> entry ){
+        VolumeInfo srcVolumeInfo = entry.getKey();
+        DataStore destDataStore = entry.getValue();
+        return formatMigrationElementsAsJsonToDisplayOnLog("volume", srcVolumeInfo.getId(), srcVolumeInfo.getPoolId(), destDataStore.getId());
     }
 
     /**
@@ -2238,17 +2258,24 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 throw new CloudRuntimeException("Destination storage pools must be either all managed or all not managed");
             }
 
-            if (!destStoragePoolVO.isManaged() && destStoragePoolVO.getPoolType() == StoragePoolType.NetworkFilesystem) {
-                if (destStoragePoolVO.getScope() != ScopeType.CLUSTER) {
-                    throw new CloudRuntimeException("KVM live storage migrations currently support cluster-wide " +
-                            "not managed NFS destination storage");
-                }
-                if (!sourcePools.containsKey(srcStoragePoolVO.getUuid())) {
-                    sourcePools.put(srcStoragePoolVO.getUuid(), srcStoragePoolVO.getPoolType());
-                }
-            }
+            addSourcePoolToPoolsMap(sourcePools, srcStoragePoolVO, destStoragePoolVO);
         }
         verifyDestinationStorage(sourcePools, destHost);
+    }
+
+    /**
+     * Adds source storage pool to the migration map if the destination pool is not managed and it is NFS.
+     */
+    protected void addSourcePoolToPoolsMap(Map<String, Storage.StoragePoolType> sourcePools, StoragePoolVO srcStoragePoolVO, StoragePoolVO destStoragePoolVO) {
+        if (destStoragePoolVO.isManaged() || !StoragePoolType.NetworkFilesystem.equals(destStoragePoolVO.getPoolType())) {
+            LOGGER.trace(String.format("Skipping adding source pool [%s] to map due to destination pool [%s] is managed or not NFS.", srcStoragePoolVO, destStoragePoolVO));
+            return;
+        }
+
+        String sourceStoragePoolUuid = srcStoragePoolVO.getUuid();
+        if (!sourcePools.containsKey(sourceStoragePoolUuid)) {
+            sourcePools.put(sourceStoragePoolUuid, srcStoragePoolVO.getPoolType());
+        }
     }
 
     /**
@@ -2878,4 +2905,27 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
         return copyCmdAnswer;
     }
+
+    protected Boolean supportStoragePoolType(StoragePoolType storagePoolTypeToValidate, StoragePoolType... extraAcceptedValues) {
+        List<StoragePoolType> values = new ArrayList<>();
+
+        values.add(StoragePoolType.NetworkFilesystem);
+        values.add(StoragePoolType.SharedMountPoint);
+
+        if (extraAcceptedValues != null) {
+            CollectionUtils.addAll(values, extraAcceptedValues);
+        }
+
+        return isStoragePoolTypeInList(storagePoolTypeToValidate, values.toArray(new StoragePoolType[values.size()]));
+    }
+
+    protected Boolean isStoragePoolTypeInList(StoragePoolType storagePoolTypeToValidate, StoragePoolType... acceptedValues){
+        Set<StoragePoolType> supportedTypes = new HashSet<>();
+
+        if (acceptedValues != null) {
+            supportedTypes.addAll(Arrays.asList(acceptedValues));
+        }
+
+        return supportedTypes.contains(storagePoolTypeToValidate);
+    };
 }

@@ -38,15 +38,12 @@
         <div>{{ returnPodName(record.podid) }}</div>
       </template>
       <template slot="actions" slot-scope="record">
-        <a-popover placement="bottom">
-          <template slot="content">{{ $t('label.remove.ip.range') }}</template>
-          <a-button
-            :disabled="!('deleteStorageNetworkIpRange' in $store.getters.apis)"
-            icon="delete"
-            shape="circle"
-            type="danger"
-            @click="handleDeleteIpRange(record.id)"></a-button>
-        </a-popover>
+        <tooltip-button
+          :tooltip="$t('label.remove.ip.range')"
+          :disabled="!('deleteStorageNetworkIpRange' in $store.getters.apis)"
+          icon="delete"
+          type="danger"
+          @click="handleDeleteIpRange(record.id)" />
       </template>
     </a-table>
     <a-pagination
@@ -69,8 +66,11 @@
     <a-modal
       v-model="addIpRangeModal"
       :title="$t('label.add.ip.range')"
+      :closable="true"
       :maskClosable="false"
-      @ok="handleAddIpRange">
+      :footer="null"
+      @cancel="addIpRangeModal = false"
+      v-ctrl-enter="handleAddIpRange">
       <a-form
         :form="form"
         @submit="handleAddIpRange"
@@ -79,6 +79,7 @@
       >
         <a-form-item :label="$t('label.podid')" class="form__item">
           <a-select
+            autoFocus
             v-decorator="['pod', {
               rules: [{ required: true, message: `${$t('label.required')}` }]
             }]"
@@ -111,6 +112,11 @@
             v-decorator="['endip', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
           </a-input>
         </a-form-item>
+
+        <div :span="24" class="action-button">
+          <a-button @click="addIpRangeModal = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleAddIpRange">{{ $t('label.ok') }}</a-button>
+        </div>
       </a-form>
     </a-modal>
 
@@ -119,9 +125,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'IpRangesTabStorage',
+  components: {
+    TooltipButton
+  },
   props: {
     resource: {
       type: Object,
@@ -179,7 +189,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {
@@ -236,13 +246,11 @@ export default {
     handleDeleteIpRange (id) {
       this.componentLoading = true
       api('deleteStorageNetworkIpRange', { id }).then(response => {
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('message.success.remove.iprange'),
-          jobid: response.deletestoragenetworkiprangeresponse.jobid,
-          status: 'progress'
-        })
         this.$pollJob({
           jobId: response.deletestoragenetworkiprangeresponse.jobid,
+          title: this.$t('label.remove.ip.range'),
+          description: id,
+          successMessage: this.$t('message.success.remove.iprange'),
           successMethod: () => {
             this.componentLoading = false
             this.fetchData()
@@ -266,6 +274,7 @@ export default {
       })
     },
     handleAddIpRange (e) {
+      if (this.componentLoading) return
       this.form.validateFields((error, values) => {
         if (error) return
 
@@ -280,13 +289,11 @@ export default {
           endip: values.endip,
           vlan: values.vlan || null
         }).then(response => {
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('message.success.add.iprange'),
-            jobid: response.createstoragenetworkiprangeresponse.jobid,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId: response.createstoragenetworkiprangeresponse.jobid,
+            title: this.$t('label.add.ip.range'),
+            description: values.pod,
+            successMessage: this.$t('message.success.add.iprange'),
             successMethod: () => {
               this.componentLoading = false
               this.fetchData()

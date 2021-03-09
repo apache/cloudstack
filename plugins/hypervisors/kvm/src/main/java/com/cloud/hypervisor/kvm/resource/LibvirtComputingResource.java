@@ -109,6 +109,8 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.dao.impl.PropertiesStorage;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
@@ -134,7 +136,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestResourceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InputDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.GuestNetType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
@@ -184,6 +185,8 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VmDetailConstants;
 import com.google.common.base.Strings;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
+import org.libvirt.VcpuInfo;
 
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
@@ -209,6 +212,71 @@ import com.google.common.base.Strings;
  **/
 public class LibvirtComputingResource extends ServerResourceBase implements ServerResource, VirtualRouterDeployer {
     private static final Logger s_logger = Logger.getLogger(LibvirtComputingResource.class);
+
+    private static final String LEGACY = "legacy";
+    private static final String SECURE = "secure";
+
+    /**
+     * Machine type.
+     */
+    private static final String PC = "pc";
+    private static final String VIRT = "virt";
+
+    /**
+     * Possible devices to add to VM.
+     */
+    private static final String TABLET = "tablet";
+    private static final String USB = "usb";
+    private static final String MOUSE = "mouse";
+    private static final String KEYBOARD = "keyboard";
+
+    /**
+     * Policies used by VM.
+     */
+    private static final String RESTART = "restart";
+    private static final String DESTROY = "destroy";
+
+    private static final String KVMCLOCK = "kvmclock";
+    private static final String HYPERVCLOCK = "hypervclock";
+    private static final String WINDOWS = "Windows";
+    private static final String Q35 = "q35";
+    private static final String PTY = "pty";
+    private static final String VNC = "vnc";
+
+    /**
+     * Acronym of System Management Mode. Perform low-level system management operations while an OS is running.
+     */
+    private static final String SMM = "smm";
+    /**
+     * Acronym of Advanced Configuration and Power Interface.<br>
+     * Provides an open standard that operating systems can use to discover and configure
+     * computer hardware components, to perform power management.
+     */
+    private static final String ACPI = "acpi";
+    /**
+     * Acronym of Advanced Programmable Interrupt Controllers.<br>
+     * With an I/O APIC, operating systems can use more than 16 interrupt requests (IRQs)
+     * and therefore avoid IRQ sharing for improved reliability.
+     */
+    private static final String APIC = "apic";
+    /**
+     * Acronym of Physical Address Extension. Feature implemented in modern x86 processors.<br>
+     * PAE extends memory addressing capabilities, allowing more than 4 GB of random access memory (RAM) to be used.
+     */
+    private static final String PAE = "pae";
+    /**
+     * Libvirt supports guest CPU mode since 0.9.10.
+     */
+    private static final int MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_MODE = 9010;
+    /**
+     * The CPU tune element provides details of the CPU tunable parameters for the domain.<br>
+     * It is supported since Libvirt 0.9.0
+     */
+    private static final int MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_TUNE = 9000;
+    /**
+     * Constant that defines ARM64 (aarch64) guest architectures.
+     */
+    private static final String AARCH64 = "aarch64";
 
     private String _modifyVlanPath;
     private String _versionstringpath;
@@ -254,6 +322,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected static final String DEFAULT_OVS_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.OvsVifDriver";
     protected static final String DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.BridgeVifDriver";
+    private final static long HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING = 6003000;
+    private final static long HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING = 5000000;
 
     protected HypervisorType _hypervisorType;
     protected String _hypervisorURI;
@@ -307,6 +377,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String _agentHooksVmOnStopScript = "libvirt-vm-state-change.groovy";
     protected String _agentHooksVmOnStopMethod = "onStop";
 
+    private static final String CONFIG_DRIVE_ISO_DISK_LABEL = "hdd";
+    private static final int CONFIG_DRIVE_ISO_DEVICE_ID = 4;
 
     protected File _qemuSocketsPath;
     private final String _qemuGuestAgentSocketName = "org.qemu.guest_agent.0";
@@ -342,6 +414,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected CPUStat _cpuStat = new CPUStat();
     protected MemStat _memStat = new MemStat(_dom0MinMem, _dom0OvercommitMem);
     private final LibvirtUtilitiesHelper libvirtUtilitiesHelper = new LibvirtUtilitiesHelper();
+
+    protected Boolean enableManuallySettingCpuTopologyOnKvmVm = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM);
+
+    protected long getHypervisorLibvirtVersion() {
+        return _hypervisorLibvirtVersion;
+    }
+
+    protected long getHypervisorQemuVersion() {
+        return _hypervisorQemuVersion;
+    }
 
     @Override
     public ExecutionResult executeInVR(final String routerIp, final String script, final String args) {
@@ -1871,7 +1953,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 // We don't know which "traffic type" is associated with
                 // each interface at this point, so inform all vif drivers
                 for (final VifDriver vifDriver : getAllVifDrivers()) {
-                    vifDriver.unplug(pluggedNic);
+                    vifDriver.unplug(pluggedNic, true);
                 }
             }
         }
@@ -2228,8 +2310,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
+    /**
+     * Creates VM KVM definitions from virtual machine transfer object specifications.
+     */
     public LibvirtVMDef createVMFromSpec(final VirtualMachineTO vmTO) {
-        final LibvirtVMDef vm = new LibvirtVMDef();
+        s_logger.debug(String.format("Creating VM from specifications [%s]", vmTO.toString()));
+
+        LibvirtVMDef vm = new LibvirtVMDef();
         vm.setDomainName(vmTO.getName());
         String uuid = vmTO.getUuid();
         uuid = getUuid(uuid);
@@ -2240,215 +2327,327 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         Map<String, String> customParams = vmTO.getDetails();
         boolean isUefiEnabled = false;
         boolean isSecureBoot = false;
-        String bootMode =null;
+        String bootMode = null;
+
         if (MapUtils.isNotEmpty(customParams) && customParams.containsKey(GuestDef.BootType.UEFI.toString())) {
             isUefiEnabled = true;
-            bootMode = customParams.get(GuestDef.BootType.UEFI.toString());
-            if (StringUtils.isNotBlank(bootMode) && "secure".equalsIgnoreCase(bootMode)) {
+            s_logger.debug(String.format("Enabled UEFI for VM UUID [%s].", uuid));
+
+            if (isSecureMode(customParams.get(GuestDef.BootType.UEFI.toString()))) {
+                s_logger.debug(String.format("Enabled Secure Boot for VM UUID [%s].", uuid));
                 isSecureBoot = true;
             }
         }
 
         Map<String, String> extraConfig = vmTO.getExtraConfig();
         if (dpdkSupport && (!extraConfig.containsKey(DpdkHelper.DPDK_NUMA) || !extraConfig.containsKey(DpdkHelper.DPDK_HUGE_PAGES))) {
-            s_logger.info("DPDK is enabled but it needs extra configurations for CPU NUMA and Huge Pages for VM deployment");
+            s_logger.info(String.format("DPDK is enabled for VM [%s], but it needs extra configurations for CPU NUMA and Huge Pages for VM deployment.", vmTO.toString()));
+        }
+        configureVM(vmTO, vm, customParams, isUefiEnabled, isSecureBoot, bootMode, extraConfig, uuid);
+        return vm;
+    }
+
+    /**
+     * Configures created VM from specification, adding the necessary components to VM.
+     */
+    private void configureVM(VirtualMachineTO vmTO, LibvirtVMDef vm, Map<String, String> customParams, boolean isUefiEnabled, boolean isSecureBoot, String bootMode,
+            Map<String, String> extraConfig, String uuid) {
+        s_logger.debug(String.format("Configuring VM with UUID [%s].", uuid));
+
+        GuestDef guest = createGuestFromSpec(vmTO, vm, uuid, customParams);
+        if (isUefiEnabled) {
+            configureGuestIfUefiEnabled(isSecureBoot, bootMode, guest);
         }
 
-        final GuestDef guest = new GuestDef();
+        vm.addComp(guest);
+        vm.addComp(createGuestResourceDef(vmTO));
 
-        if (HypervisorType.LXC == _hypervisorType && VirtualMachine.Type.User == vmTO.getType()) {
-            // LXC domain is only valid for user VMs. Use KVM for system VMs.
-            guest.setGuestType(GuestDef.GuestType.LXC);
-            vm.setHvsType(HypervisorType.LXC.toString().toLowerCase());
-        } else {
-            guest.setGuestType(GuestDef.GuestType.KVM);
-            vm.setHvsType(HypervisorType.KVM.toString().toLowerCase());
-            vm.setLibvirtVersion(_hypervisorLibvirtVersion);
-            vm.setQemuVersion(_hypervisorQemuVersion);
+        int vcpus = vmTO.getCpus();
+        if (!extraConfig.containsKey(DpdkHelper.DPDK_NUMA)) {
+            vm.addComp(createCpuModeDef(vmTO, vcpus));
         }
+
+        if (_hypervisorLibvirtVersion >= MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_TUNE) {
+            vm.addComp(createCpuTuneDef(vmTO));
+        }
+
+        FeaturesDef features = createFeaturesDef(customParams, isUefiEnabled, isSecureBoot);
+        enlightenWindowsVm(vmTO, features);
+        vm.addComp(features);
+
+        vm.addComp(createTermPolicy());
+        vm.addComp(createClockDef(vmTO));
+        vm.addComp(createDevicesDef(vmTO, guest, vcpus, isUefiEnabled));
+
+        addExtraConfigsToVM(vmTO, vm, extraConfig);
+    }
+
+    /**
+     *  Adds extra configuration to User VM Domain XML before starting.
+     */
+    private void addExtraConfigsToVM(VirtualMachineTO vmTO, LibvirtVMDef vm, Map<String, String> extraConfig) {
+        if (MapUtils.isNotEmpty(extraConfig) && VirtualMachine.Type.User.equals(vmTO.getType())) {
+            s_logger.debug(String.format("Appending extra configuration data [%s] to guest VM [%s] domain XML.", extraConfig, vmTO.toString()));
+            addExtraConfigComponent(extraConfig, vm);
+        }
+    }
+
+    /**
+     * Adds devices components to VM.
+     */
+    protected DevicesDef createDevicesDef(VirtualMachineTO vmTO, GuestDef guest, int vcpus, boolean isUefiEnabled) {
+        DevicesDef devices = new DevicesDef();
+        devices.setEmulatorPath(_hypervisorPath);
+        devices.setGuestType(guest.getGuestType());
+        devices.addDevice(createSerialDef());
+
+        if (_rngEnable) {
+            devices.addDevice(createRngDef());
+        }
+
+        devices.addDevice(createChannelDef(vmTO));
+        devices.addDevice(createWatchDogDef());
+        devices.addDevice(createVideoDef());
+        devices.addDevice(createConsoleDef());
+        devices.addDevice(createGraphicDef(vmTO));
+        devices.addDevice(createTabletInputDef());
+
+        if (isGuestAarch64()) {
+            createArm64UsbDef(devices);
+        }
+
+        DiskDef.DiskBus busT = getDiskModelFromVMDetail(vmTO);
+        if (busT == null) {
+            busT = getGuestDiskModel(vmTO.getPlatformEmulator(), isUefiEnabled);
+        }
+
+        if (busT == DiskDef.DiskBus.SCSI) {
+            devices.addDevice(createSCSIDef(vcpus));
+        }
+        return devices;
+    }
+
+    protected WatchDogDef createWatchDogDef() {
+        return new WatchDogDef(_watchDogAction, _watchDogModel);
+    }
+
+    protected void createArm64UsbDef(DevicesDef devices) {
+        devices.addDevice(new InputDef(KEYBOARD, USB));
+        devices.addDevice(new InputDef(MOUSE, USB));
+        devices.addDevice(new LibvirtVMDef.USBDef((short)0, 0, 5, 0, 0));
+    }
+
+    protected InputDef createTabletInputDef() {
+        return new InputDef(TABLET, USB);
+    }
+
+    /**
+     * Creates a Libvirt Graphic Definition with the VM's password and VNC address.
+     */
+    protected GraphicDef createGraphicDef(VirtualMachineTO vmTO) {
+        return new GraphicDef(VNC, (short)0, true, vmTO.getVncAddr(), vmTO.getVncPassword(), null);
+    }
+
+    /**
+     * Adds a Virtio channel for the Qemu Guest Agent tools.
+     */
+    protected ChannelDef createChannelDef(VirtualMachineTO vmTO) {
+        File virtIoChannel = Paths.get(_qemuSocketsPath.getPath(), vmTO.getName() + "." + _qemuGuestAgentSocketName).toFile();
+        return new ChannelDef(_qemuGuestAgentSocketName, ChannelDef.ChannelType.UNIX, virtIoChannel);
+    }
+
+    /**
+     * Creates Virtio SCSI controller. <br>
+     * The respective Virtio SCSI XML definition is generated only if the VM's Disk Bus is of ISCSI.
+     */
+    protected SCSIDef createSCSIDef(int vcpus) {
+        return new SCSIDef((short)0, 0, 0, 9, 0, vcpus);
+    }
+
+    protected ConsoleDef createConsoleDef() {
+        return new ConsoleDef(PTY, null, null, (short)0);
+    }
+
+    protected VideoDef createVideoDef() {
+        return new VideoDef(_videoHw, _videoRam);
+    }
+
+    protected RngDef createRngDef() {
+        return new RngDef(_rngPath, _rngBackendModel, _rngRateBytes, _rngRatePeriod);
+    }
+
+    protected SerialDef createSerialDef() {
+        return new SerialDef(PTY, null, (short)0);
+    }
+
+    protected ClockDef createClockDef(final VirtualMachineTO vmTO) {
+        ClockDef clock = new ClockDef();
+        if (org.apache.commons.lang.StringUtils.startsWith(vmTO.getOs(), WINDOWS)) {
+            clock.setClockOffset(ClockDef.ClockOffset.LOCALTIME);
+            clock.setTimer(HYPERVCLOCK, null, null);
+        } else if ((vmTO.getType() != VirtualMachine.Type.User || isGuestPVEnabled(vmTO.getOs())) && _hypervisorLibvirtVersion >= MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_MODE) {
+            clock.setTimer(KVMCLOCK, null, null, _noKvmClock);
+        }
+        return clock;
+    }
+
+    protected TermPolicy createTermPolicy() {
+        TermPolicy term = new TermPolicy();
+        term.setCrashPolicy(DESTROY);
+        term.setPowerOffPolicy(DESTROY);
+        term.setRebootPolicy(RESTART);
+        return term;
+    }
+
+    protected FeaturesDef createFeaturesDef(Map<String, String> customParams, boolean isUefiEnabled, boolean isSecureBoot) {
+        FeaturesDef features = new FeaturesDef();
+        features.addFeatures(PAE);
+        features.addFeatures(APIC);
+        features.addFeatures(ACPI);
+        if (isUefiEnabled && isSecureBoot) {
+            features.addFeatures(SMM);
+        }
+        return features;
+    }
+
+    /**
+     * A 4.0.X/4.1.X management server doesn't send the correct JSON
+     * command for getMinSpeed, it only sends a 'speed' field.<br>
+     * So, to create a cpu tune,  if getMinSpeed() returns null we fall back to getSpeed().<br>
+     * This way a >4.1 agent can work communicate a <=4.1 management server.<br>
+     * This change is due to the overcommit feature in 4.2.
+     */
+    protected CpuTuneDef createCpuTuneDef(VirtualMachineTO vmTO) {
+        CpuTuneDef ctd = new CpuTuneDef();
+        int shares = vmTO.getCpus() * (vmTO.getMinSpeed() != null ? vmTO.getMinSpeed() : vmTO.getSpeed());
+        ctd.setShares(shares);
+        setQuotaAndPeriod(vmTO, ctd);
+        return ctd;
+    }
+
+    private CpuModeDef createCpuModeDef(VirtualMachineTO vmTO, int vcpus) {
+        final CpuModeDef cmd = new CpuModeDef();
+        cmd.setMode(_guestCpuMode);
+        cmd.setModel(_guestCpuModel);
+        if (VirtualMachine.Type.User.equals(vmTO.getType())) {
+            cmd.setFeatures(_cpuFeatures);
+        }
+        setCpuTopology(cmd, vcpus, vmTO.getDetails());
+        return cmd;
+    }
+
+    private void configureGuestIfUefiEnabled(boolean isSecureBoot, String bootMode, GuestDef guest) {
+        setGuestLoader(bootMode, SECURE, guest, GuestDef.GUEST_LOADER_SECURE);
+        setGuestLoader(bootMode, LEGACY, guest, GuestDef.GUEST_LOADER_LEGACY);
+
+        if (isUefiPropertieNotNull(GuestDef.GUEST_NVRAM_PATH)) {
+            guest.setNvram(_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_PATH));
+        }
+
+        if (isSecureBoot && isUefiPropertieNotNull(GuestDef.GUEST_NVRAM_TEMPLATE_SECURE) && SECURE.equalsIgnoreCase(bootMode)) {
+            guest.setNvramTemplate(_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_SECURE));
+        } else if (isUefiPropertieNotNull(GuestDef.GUEST_NVRAM_TEMPLATE_LEGACY)) {
+            guest.setNvramTemplate(_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_LEGACY));
+        }
+    }
+
+    private void setGuestLoader(String bootMode, String mode, GuestDef guest, String propertie) {
+        if (isUefiPropertieNotNull(propertie) && mode.equalsIgnoreCase(bootMode)) {
+            guest.setLoader(_uefiProperties.getProperty(propertie));
+        }
+    }
+
+    private boolean isUefiPropertieNotNull(String propertie) {
+        return _uefiProperties.getProperty(propertie) != null;
+    }
+
+    private boolean isGuestAarch64() {
+        return AARCH64.equals(_guestCpuArch);
+    }
+
+    /**
+     * Creates a guest definition from a VM specification.
+     */
+    protected GuestDef createGuestFromSpec(VirtualMachineTO vmTO, LibvirtVMDef vm, String uuid, Map<String, String> customParams) {
+        GuestDef guest = new GuestDef();
+
+        configureGuestAndVMHypervisorType(vmTO, vm, guest);
         guest.setGuestArch(_guestCpuArch != null ? _guestCpuArch : vmTO.getArch());
-        guest.setMachineType(_guestCpuArch != null && _guestCpuArch.equals("aarch64") ? "virt" : "pc");
+        guest.setMachineType(isGuestAarch64() ? VIRT : PC);
         guest.setBootType(GuestDef.BootType.BIOS);
         if (MapUtils.isNotEmpty(customParams) && customParams.containsKey(GuestDef.BootType.UEFI.toString())) {
             guest.setBootType(GuestDef.BootType.UEFI);
             guest.setBootMode(GuestDef.BootMode.LEGACY);
-            guest.setMachineType("q35");
-            if (StringUtils.isNotBlank(customParams.get(GuestDef.BootType.UEFI.toString())) && "secure".equalsIgnoreCase(customParams.get(GuestDef.BootType.UEFI.toString()))) {
-                guest.setBootMode(GuestDef.BootMode.SECURE); // setting to secure mode
+            guest.setMachineType(Q35);
+            if (SECURE.equalsIgnoreCase(customParams.get(GuestDef.BootType.UEFI.toString()))) {
+                guest.setBootMode(GuestDef.BootMode.SECURE);
             }
         }
         guest.setUuid(uuid);
         guest.setBootOrder(GuestDef.BootOrder.CDROM);
         guest.setBootOrder(GuestDef.BootOrder.HARDISK);
+        return guest;
+    }
 
-        if (isUefiEnabled) {
-            if (_uefiProperties.getProperty(GuestDef.GUEST_LOADER_SECURE) != null && "secure".equalsIgnoreCase(bootMode)) {
-                guest.setLoader(_uefiProperties.getProperty(GuestDef.GUEST_LOADER_SECURE));
-            }
-
-            if (_uefiProperties.getProperty(GuestDef.GUEST_LOADER_LEGACY) != null && "legacy".equalsIgnoreCase(bootMode)) {
-                guest.setLoader(_uefiProperties.getProperty(GuestDef.GUEST_LOADER_LEGACY));
-            }
-
-            if (_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_PATH) != null) {
-                guest.setNvram(_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_PATH));
-            }
-
-            if (isSecureBoot) {
-                if (_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_SECURE) != null && "secure".equalsIgnoreCase(bootMode)) {
-                    guest.setNvramTemplate(_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_SECURE));
-                }
-            } else {
-                if (_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_LEGACY) != null) {
-                    guest.setNvramTemplate(_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_LEGACY));
-                }
-            }
-        }
-
-            vm.addComp(guest);
-
-        final GuestResourceDef grd = new GuestResourceDef();
-
-        if (vmTO.getMinRam() != vmTO.getMaxRam() && !_noMemBalloon) {
-            grd.setMemBalloning(true);
-            grd.setCurrentMem(vmTO.getMinRam() / 1024);
-            grd.setMemorySize(vmTO.getMaxRam() / 1024);
+    protected void configureGuestAndVMHypervisorType(VirtualMachineTO vmTO, LibvirtVMDef vm, GuestDef guest) {
+        if (HypervisorType.LXC == _hypervisorType && VirtualMachine.Type.User.equals(vmTO.getType())) {
+            configureGuestAndUserVMToUseLXC(vm, guest);
         } else {
-            grd.setMemorySize(vmTO.getMaxRam() / 1024);
+            configureGuestAndSystemVMToUseKVM(vm, guest);
         }
-        final int vcpus = vmTO.getCpus();
-        grd.setVcpuNum(vcpus);
-        vm.addComp(grd);
-
-        if (!extraConfig.containsKey(DpdkHelper.DPDK_NUMA)) {
-            final CpuModeDef cmd = new CpuModeDef();
-            cmd.setMode(_guestCpuMode);
-            cmd.setModel(_guestCpuModel);
-            if (vmTO.getType() == VirtualMachine.Type.User) {
-                cmd.setFeatures(_cpuFeatures);
-            }
-            setCpuTopology(cmd, vcpus, vmTO.getDetails());
-            vm.addComp(cmd);
-        }
-
-        if (_hypervisorLibvirtVersion >= 9000) {
-            final CpuTuneDef ctd = new CpuTuneDef();
-            /**
-             A 4.0.X/4.1.X management server doesn't send the correct JSON
-             command for getMinSpeed, it only sends a 'speed' field.
-
-             So if getMinSpeed() returns null we fall back to getSpeed().
-
-             This way a >4.1 agent can work communicate a <=4.1 management server
-
-             This change is due to the overcommit feature in 4.2
-             */
-            if (vmTO.getMinSpeed() != null) {
-                ctd.setShares(vmTO.getCpus() * vmTO.getMinSpeed());
-            } else {
-                ctd.setShares(vmTO.getCpus() * vmTO.getSpeed());
-            }
-
-            setQuotaAndPeriod(vmTO, ctd);
-
-            vm.addComp(ctd);
-        }
-
-        final FeaturesDef features = new FeaturesDef();
-        features.addFeatures("pae");
-        features.addFeatures("apic");
-        features.addFeatures("acpi");
-        if (isUefiEnabled && isSecureMode(customParams.get(GuestDef.BootType.UEFI.toString()))) {
-            features.addFeatures("smm");
-        }
-
-        //KVM hyperv enlightenment features based on OS Type
-        enlightenWindowsVm(vmTO, features);
-
-        vm.addComp(features);
-
-        final TermPolicy term = new TermPolicy();
-        term.setCrashPolicy("destroy");
-        term.setPowerOffPolicy("destroy");
-        term.setRebootPolicy("restart");
-        vm.addComp(term);
-
-        final ClockDef clock = new ClockDef();
-        if (vmTO.getOs().startsWith("Windows")) {
-            clock.setClockOffset(ClockDef.ClockOffset.LOCALTIME);
-            clock.setTimer("hypervclock", null, null);
-        } else if (vmTO.getType() != VirtualMachine.Type.User || isGuestPVEnabled(vmTO.getOs())) {
-            if (_hypervisorLibvirtVersion >= 9 * 1000 + 10) {
-                clock.setTimer("kvmclock", null, null, _noKvmClock);
-            }
-        }
-
-        vm.addComp(clock);
-
-        final DevicesDef devices = new DevicesDef();
-        devices.setEmulatorPath(_hypervisorPath);
-        devices.setGuestType(guest.getGuestType());
-
-        final SerialDef serial = new SerialDef("pty", null, (short)0);
-        devices.addDevice(serial);
-
-        if (_rngEnable) {
-            final RngDef rngDevice = new RngDef(_rngPath, _rngBackendModel, _rngRateBytes, _rngRatePeriod);
-            devices.addDevice(rngDevice);
-        }
-
-        /* Add a VirtIO channel for the Qemu Guest Agent tools */
-        File virtIoChannel = Paths.get(_qemuSocketsPath.getPath(), vmTO.getName() + "." + _qemuGuestAgentSocketName).toFile();
-        devices.addDevice(new ChannelDef(_qemuGuestAgentSocketName, ChannelDef.ChannelType.UNIX, virtIoChannel));
-
-        devices.addDevice(new WatchDogDef(_watchDogAction, _watchDogModel));
-
-        final VideoDef videoCard = new VideoDef(_videoHw, _videoRam);
-        devices.addDevice(videoCard);
-
-        final ConsoleDef console = new ConsoleDef("pty", null, null, (short)0);
-        devices.addDevice(console);
-
-        //add the VNC port passwd here, get the passwd from the vmInstance.
-        final String passwd = vmTO.getVncPassword();
-        final GraphicDef grap = new GraphicDef("vnc", (short)0, true, vmTO.getVncAddr(), passwd, null);
-        devices.addDevice(grap);
-
-        final InputDef input = new InputDef("tablet", "usb");
-        devices.addDevice(input);
-
-        // Add an explicit USB devices for ARM64
-        if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
-            devices.addDevice(new InputDef("keyboard", "usb"));
-            devices.addDevice(new InputDef("mouse", "usb"));
-            devices.addDevice(new LibvirtVMDef.USBDef((short)0, 0, 5, 0, 0));
-        }
-
-        DiskDef.DiskBus busT = getDiskModelFromVMDetail(vmTO);
-
-        if (busT == null) {
-            busT = getGuestDiskModel(vmTO.getPlatformEmulator());
-        }
-
-        // If we're using virtio scsi, then we need to add a virtual scsi controller
-        if (busT == DiskDef.DiskBus.SCSI) {
-            final SCSIDef sd = new SCSIDef((short)0, 0, 0, 9, 0, vcpus);
-            devices.addDevice(sd);
-        }
-
-        vm.addComp(devices);
-
-        // Add extra configuration to User VM Domain XML before starting
-        if (vmTO.getType().equals(VirtualMachine.Type.User) && MapUtils.isNotEmpty(extraConfig)) {
-            s_logger.info("Appending extra configuration data to guest VM domain XML");
-            addExtraConfigComponent(extraConfig, vm);
-        }
-
-        return vm;
     }
 
     /**
-     * Add extra configurations (if any) as a String component to the domain XML
+     * KVM domain is only valid for system VMs. Use LXC for user VMs.
+     */
+    private void configureGuestAndSystemVMToUseKVM(LibvirtVMDef vm, GuestDef guest) {
+        guest.setGuestType(GuestDef.GuestType.KVM);
+        vm.setHvsType(HypervisorType.KVM.toString().toLowerCase());
+        vm.setLibvirtVersion(_hypervisorLibvirtVersion);
+        vm.setQemuVersion(_hypervisorQemuVersion);
+    }
+
+    /**
+     * LXC domain is only valid for user VMs. Use KVM for system VMs.
+     */
+    private void configureGuestAndUserVMToUseLXC(LibvirtVMDef vm, GuestDef guest) {
+        guest.setGuestType(GuestDef.GuestType.LXC);
+        vm.setHvsType(HypervisorType.LXC.toString().toLowerCase());
+    }
+
+    /**
+     * Creates guest resources based in VM specification.
+     */
+    protected GuestResourceDef createGuestResourceDef(VirtualMachineTO vmTO){
+        GuestResourceDef grd = new GuestResourceDef();
+
+        grd.setMemBalloning(!_noMemBalloon);
+
+        Long maxRam = ByteScaleUtils.bytesToKib(vmTO.getMaxRam());
+
+        grd.setMemorySize(maxRam);
+        grd.setCurrentMem(getCurrentMemAccordingToMemBallooning(vmTO, maxRam));
+
+        int vcpus = vmTO.getCpus();
+        Integer maxVcpus = vmTO.getVcpuMaxLimit();
+
+        grd.setVcpuNum(vcpus);
+        grd.setMaxVcpuNum(maxVcpus == null ? vcpus : maxVcpus);
+
+        return grd;
+    }
+
+    protected long getCurrentMemAccordingToMemBallooning(VirtualMachineTO vmTO, long maxRam) {
+        if (_noMemBalloon) {
+            s_logger.warn(String.format("Setting VM's [%s] current memory as max memory [%s] due to memory ballooning is disabled. If you are using a custom service offering, verify if memory ballooning really should be disabled.", vmTO.toString(), maxRam));
+            return maxRam;
+        } else {
+            return ByteScaleUtils.bytesToKib(vmTO.getMinRam());
+        }
+    }
+
+    /**
+     * Adds extra configurations (if any) as a String component to the domain XML
      */
     protected void addExtraConfigComponent(Map<String, String> extraConfig, LibvirtVMDef vm) {
         if (MapUtils.isNotEmpty(extraConfig)) {
@@ -2522,7 +2721,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         });
 
-        if (MapUtils.isNotEmpty(details) && details.containsKey(GuestDef.BootType.UEFI.toString())) {
+        boolean isUefiEnabled = MapUtils.isNotEmpty(details) && details.containsKey(GuestDef.BootType.UEFI.toString());
+        if (isUefiEnabled) {
             isSecureBoot = isSecureMode(details.get(GuestDef.BootType.UEFI.toString()));
         }
         if (vmSpec.getOs().toLowerCase().contains("window")) {
@@ -2590,7 +2790,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             // if params contains a rootDiskController key, use its value (this is what other HVs are doing)
             DiskDef.DiskBus diskBusType = getDiskModelFromVMDetail(vmSpec);
             if (diskBusType == null) {
-                diskBusType = getGuestDiskModel(vmSpec.getPlatformEmulator());
+                diskBusType = getGuestDiskModel(vmSpec.getPlatformEmulator(), isUefiEnabled);
             }
 
             DiskDef.DiskBus diskBusTypeData = getDataDiskModelFromVMDetail(vmSpec);
@@ -2601,16 +2801,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             final DiskDef disk = new DiskDef();
             int devId = volume.getDiskSeq().intValue();
             if (volume.getType() == Volume.Type.ISO) {
-                if (volPath == null) {
-                    if (isSecureBoot) {
-                        disk.defISODisk(null, devId,isSecureBoot,isWindowsTemplate);
-                    } else {
-                        /* Add iso as placeholder */
-                        disk.defISODisk(null, devId);
-                    }
-                } else {
-                    disk.defISODisk(volPath, devId);
-                }
+
+                disk.defISODisk(volPath, devId, isUefiEnabled);
+
                 if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
                     disk.setBusType(DiskDef.DiskBus.SCSI);
                 }
@@ -2619,6 +2812,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.setQemuDriver(true);
                     disk.setDiscard(DiscardType.UNMAP);
                 }
+
+                setDiskIoDriver(disk);
 
                 if (pool.getType() == StoragePoolType.RBD) {
                     /*
@@ -2637,14 +2832,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.defNetworkBasedDisk(glusterVolume + path.replace(mountpoint, ""), pool.getSourceHost(), pool.getSourcePort(), null,
                             null, devId, diskBusType, DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);
                 } else if (pool.getType() == StoragePoolType.CLVM || physicalDisk.getFormat() == PhysicalDiskFormat.RAW) {
-                    if (volume.getType() == Volume.Type.DATADISK) {
+                    if (volume.getType() == Volume.Type.DATADISK && !(isWindowsTemplate && isUefiEnabled)) {
                         disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
                     }
                     else {
                         disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusType);
                     }
                 } else {
-                    if (volume.getType() == Volume.Type.DATADISK) {
+                    if (volume.getType() == Volume.Type.DATADISK && !(isWindowsTemplate && isUefiEnabled)) {
                         disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData, DiskDef.DiskFmtType.QCOW2);
                     } else {
                         if (isSecureBoot) {
@@ -2718,6 +2913,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private KVMPhysicalDisk getPhysicalDiskPrimaryStore(PrimaryDataStoreTO primaryDataStoreTO, DataTO data) {
         KVMStoragePool storagePool = _storagePoolMgr.getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
         return storagePool.getPhysicalDisk(data.getPath());
+    }
+
+    /**
+     * Set Disk IO Driver, if supported by the Libvirt/Qemu version.
+     * IO Driver works for:
+     * (i) Qemu >= 5.0;
+     * (ii) Libvirt >= 6.3.0
+     */
+    protected void setDiskIoDriver(DiskDef disk) {
+        if (getHypervisorLibvirtVersion() >= HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING && getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING) {
+            disk.setIoDriver(DiskDef.IoDriver.IOURING);
+        }
     }
 
     private KVMPhysicalDisk getPhysicalDiskFromNfsStore(String dataStoreUrl, DataTO data) {
@@ -2798,6 +3005,32 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected KVMStoragePoolManager getPoolManager() {
         return _storagePoolMgr;
+    }
+
+    public void detachAndAttachConfigDriveISO(final Connect conn, final String vmName) {
+        // detach and re-attach configdrive ISO
+        List<DiskDef> disks = getDisks(conn, vmName);
+        DiskDef configdrive = null;
+        for (DiskDef disk : disks) {
+            if (disk.getDeviceType() == DiskDef.DeviceType.CDROM && disk.getDiskLabel() == CONFIG_DRIVE_ISO_DISK_LABEL) {
+                configdrive = disk;
+            }
+        }
+        if (configdrive != null) {
+            try {
+                String result = attachOrDetachISO(conn, vmName, configdrive.getDiskPath(), false, CONFIG_DRIVE_ISO_DEVICE_ID);
+                if (result != null) {
+                    s_logger.warn("Detach ConfigDrive ISO with result: " + result);
+                }
+                result = attachOrDetachISO(conn, vmName, configdrive.getDiskPath(), true, CONFIG_DRIVE_ISO_DEVICE_ID);
+                if (result != null) {
+                    s_logger.warn("Attach ConfigDrive ISO with result: " + result);
+                }
+            } catch (final LibvirtException | InternalErrorException | URISyntaxException e) {
+                final String msg = "Detach and attach ConfigDrive ISO failed due to " + e.toString();
+                s_logger.warn(msg, e);
+            }
+        }
     }
 
     public synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, final Integer diskSeq) throws LibvirtException, URISyntaxException,
@@ -3228,33 +3461,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String msg = null;
         try {
             dm = conn.domainLookupByName(vmName);
-            // Get XML Dump including the secure information such as VNC password
-            // By passing 1, or VIR_DOMAIN_XML_SECURE flag
-            // https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainXMLFlags
-            String vmDef = dm.getXMLDesc(1);
-            final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
-            parser.parseDomainXML(vmDef);
-            for (final InterfaceDef nic : parser.getInterfaces()) {
-                if (nic.getNetType() == GuestNetType.BRIDGE && nic.getBrName().startsWith("cloudVirBr")) {
-                    try {
-                        final int vnetId = Integer.parseInt(nic.getBrName().replaceFirst("cloudVirBr", ""));
-                        final String pifName = getPif(_guestBridgeName);
-                        final String newBrName = "br" + pifName + "-" + vnetId;
-                        vmDef = vmDef.replace("'" + nic.getBrName() + "'", "'" + newBrName + "'");
-                        s_logger.debug("VM bridge name is changed from " + nic.getBrName() + " to " + newBrName);
-                    } catch (final NumberFormatException e) {
-                        continue;
-                    }
-                }
-            }
-            s_logger.debug(vmDef);
-            msg = stopVM(conn, vmName, false);
-            msg = startVM(conn, vmName, vmDef);
+            // Perform ACPI based reboot
+            // https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainReboot
+            // https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainRebootFlagValues
+            // Send ACPI event to Reboot
+            dm.reboot(0x1);
             return null;
         } catch (final LibvirtException e) {
-            s_logger.warn("Failed to create vm", e);
-            msg = e.getMessage();
-        } catch (final InternalErrorException e) {
             s_logger.warn("Failed to create vm", e);
             msg = e.getMessage();
         } finally {
@@ -3450,7 +3663,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     boolean isGuestPVEnabled(final String guestOSName) {
-        DiskDef.DiskBus db = getGuestDiskModel(guestOSName);
+        DiskDef.DiskBus db = getGuestDiskModel(guestOSName, false);
         return db != DiskDef.DiskBus.IDE;
     }
 
@@ -3504,7 +3717,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return null;
     }
 
-    private DiskDef.DiskBus getGuestDiskModel(final String platformEmulator) {
+    private DiskDef.DiskBus getGuestDiskModel(final String platformEmulator, boolean isUefiEnabled) {
         if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
             return DiskDef.DiskBus.SCSI;
         }
@@ -3514,14 +3727,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } else if (platformEmulator.startsWith("Other PV Virtio-SCSI")) {
             return DiskDef.DiskBus.SCSI;
         } else if (platformEmulator.contains("Ubuntu") ||
-                platformEmulator.startsWith("Fedora") ||
-                platformEmulator.startsWith("CentOS") ||
-                platformEmulator.startsWith("Red Hat Enterprise Linux") ||
-                platformEmulator.startsWith("Debian GNU/Linux") ||
-                platformEmulator.startsWith("FreeBSD") ||
-                platformEmulator.startsWith("Oracle") ||
-                platformEmulator.startsWith("Other PV")) {
+                org.apache.commons.lang3.StringUtils.startsWithAny(platformEmulator,
+                        "Fedora", "CentOS", "Red Hat Enterprise Linux", "Debian GNU/Linux", "FreeBSD", "Oracle", "Other PV")) {
             return DiskDef.DiskBus.VIRTIO;
+        } else if (isUefiEnabled && org.apache.commons.lang3.StringUtils.startsWithAny(platformEmulator, "Windows", "Other")) {
+            return DiskDef.DiskBus.SATA;
         } else {
             return DiskDef.DiskBus.IDE;
         }
@@ -3531,7 +3741,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (nics != null) {
             for (final InterfaceDef nic : nics) {
                 for (final VifDriver vifDriver : getAllVifDrivers()) {
-                    vifDriver.unplug(nic);
+                    vifDriver.unplug(nic, true);
                 }
             }
         }
@@ -4240,6 +4450,24 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return vmsnapshots;
     }
 
+    public String getVlanIdFromBridgeName(String brName) {
+        if (org.apache.commons.lang.StringUtils.isNotBlank(brName)) {
+            String[] s = brName.split("-");
+            if (s.length > 1) {
+                return s[1];
+            }
+            return null;
+        }
+        return null;
+    }
+
+    public boolean shouldDeleteBridge(Map<String, Boolean> vlanToPersistenceMap, String vlanId) {
+        if (MapUtils.isNotEmpty(vlanToPersistenceMap) && vlanId != null && vlanToPersistenceMap.containsKey(vlanId)) {
+            return vlanToPersistenceMap.get(vlanId);
+        }
+        return true;
+    }
+
     private static String getTagValue(String tag, Element eElement) {
         NodeList nlList = eElement.getElementsByTagName(tag).item(0).getChildNodes();
         Node nValue = nlList.item(0);
@@ -4296,6 +4524,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private void setCpuTopology(CpuModeDef cmd, int vcpus, Map<String, String> details) {
+        if (!enableManuallySettingCpuTopologyOnKvmVm) {
+            s_logger.debug(String.format("Skipping manually setting CPU topology on VM's XML due to it is disabled in agent.properties {\"property\": \"%s\", \"value\": %s}.",
+              AgentProperties.ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM.getName(), enableManuallySettingCpuTopologyOnKvmVm));
+            return;
+        }
         // multi cores per socket, for larger core configs
         int numCoresPerSocket = -1;
         if (details != null) {
@@ -4323,18 +4556,43 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         QemuImg qemu = new QemuImg(timeout);
         try{
             Map<String, String> info = qemu.info(file);
-            String backingFilePath = info.get(new String("backing_file"));
-            String backingFileFormat = info.get(new String("backing_file_format"));
-            if (org.apache.commons.lang.StringUtils.isEmpty(backingFileFormat)) {
+            String backingFilePath = info.get(QemuImg.BACKING_FILE);
+            String backingFileFormat = info.get(QemuImg.BACKING_FILE_FORMAT);
+            if (org.apache.commons.lang.StringUtils.isNotBlank(backingFilePath)
+                    && org.apache.commons.lang.StringUtils.isBlank(backingFileFormat)) {
+                // VMs which are created in CloudStack 4.14 and before cannot be started or migrated
+                // in latest Linux distributions due to missing backing file format
+                // Please refer to https://libvirt.org/kbase/backing_chains.html#vm-refuses-to-start-due-to-misconfigured-backing-store-format
                 s_logger.info("Setting backing file format of " + volPath);
                 QemuImgFile backingFile = new QemuImgFile(backingFilePath);
                 Map<String, String> backingFileinfo = qemu.info(backingFile);
-                String backingFileFmt = backingFileinfo.get(new String("file_format"));
+                String backingFileFmt = backingFileinfo.get(QemuImg.FILE_FORMAT);
                 qemu.rebase(file, backingFile, backingFileFmt, false);
             }
-        } catch (QemuImgException e) {
-            s_logger.error("Failed to set backing file format of " + volPath + " due to : " + e.getMessage());
+        } catch (QemuImgException | LibvirtException e) {
+            s_logger.error("Failed to set backing file format of " + volPath + " due to : " + e.getMessage(), e);
         }
     }
 
+    /**
+     * Retrieves the memory of the running VM. <br/>
+     * The libvirt (see <a href="https://github.com/libvirt/libvirt/blob/master/src/conf/domain_conf.c">https://github.com/libvirt/libvirt/blob/master/src/conf/domain_conf.c</a>, function <b>virDomainDefParseMemory</b>) uses <b>total memory</b> as the tag <b>memory</b>, in VM's XML.
+     * @param dm domain of the VM.
+     * @return the memory of the VM.
+     * @throws org.libvirt.LibvirtException
+     **/
+    public static long getDomainMemory(Domain dm) throws LibvirtException {
+        return dm.getMaxMemory();
+    }
+
+    /**
+     * Retrieves the quantity of running VCPUs of the running VM. <br/>
+     * @param dm domain of the VM.
+     * @return the quantity of running VCPUs of the running VM.
+     * @throws org.libvirt.LibvirtException
+     **/
+    public static long countDomainRunningVcpus(Domain dm) throws LibvirtException {
+        VcpuInfo vcpus[] = dm.getVcpusInfo();
+        return Arrays.stream(vcpus).filter(vcpu -> vcpu.state.equals(VcpuInfo.VcpuState.VIR_VCPU_RUNNING)).count();
+    }
 }

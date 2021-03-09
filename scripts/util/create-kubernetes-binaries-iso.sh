@@ -77,6 +77,11 @@ echo "Downloading dashboard config ${DASHBORAD_CONFIG_URL}"
 dashboard_conf_file="${working_dir}/dashboard.yaml"
 curl -sSL ${DASHBORAD_CONFIG_URL} -o ${dashboard_conf_file}
 
+PROVIDER_URL="https://raw.githubusercontent.com/apache/cloudstack-kubernetes-provider/main/deployment.yaml"
+echo "Downloading kubernetes cluster provider ${PROVIDER_URL}"
+provider_conf_file="${working_dir}/provider.yaml"
+curl -sSL ${PROVIDER_URL} -o ${provider_conf_file}
+
 echo "Fetching k8s docker images..."
 docker -v
 if [ $? -ne 0 ]; then
@@ -101,6 +106,9 @@ do
   images=`grep "image:" $i | cut -d ':' -f2- | tr -d ' ' | tr -d "'"`
   output=`printf "%s\n" ${output} ${images}`
 done
+
+provider_image=`grep "image:" ${provider_conf_file} | cut -d ':' -f2- | tr -d ' '`
+output=`printf "%s\n" ${output} ${provider_image}`
 
 while read -r line; do
     echo "Downloading docker image $line ---"

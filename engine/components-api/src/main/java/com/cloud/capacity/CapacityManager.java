@@ -22,8 +22,10 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.host.Host;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 
 /**
@@ -87,6 +89,9 @@ public interface CapacityManager {
                     ConfigKey.Scope.ImageStore,
                     null);
 
+    static final ConfigKey<Float> SecondaryStorageCapacityThreshold = new ConfigKey<Float>("Advanced", Float.class, "secondary.storage.capacity.threshold", "0.90",
+            "Percentage (as a value between 0 and 1) of secondary storage capacity threshold.", true);
+
     public boolean releaseVmCapacity(VirtualMachine vm, boolean moveFromReserved, boolean moveToReservered, Long hostId);
 
     void allocateVmCapacity(VirtualMachine vm, boolean fromLastHost);
@@ -141,4 +146,6 @@ public interface CapacityManager {
     long getUsedBytes(StoragePoolVO pool);
 
     long getUsedIops(StoragePoolVO pool);
+
+    Pair<Boolean, Boolean> checkIfHostHasCpuCapabilityAndCapacity(Host host, ServiceOffering offering, boolean considerReservedCapacity);
 }
