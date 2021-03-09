@@ -325,6 +325,8 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
+import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
@@ -332,6 +334,7 @@ import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.Ip;
@@ -394,6 +397,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private VMSnapshotDao vmSnapshotDao;
     @Inject
     private BackupOfferingDao backupOfferingDao;
+    @Inject
+    private UserStatisticsDao _userStatsDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -2307,6 +2312,20 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setExternalId(network.getExternalId());
         response.setRedundantRouter(network.isRedundant());
+
+        Long bytesReceived = 0L;
+        Long bytesSent = 0L;
+        SearchBuilder<UserStatisticsVO> sb = _userStatsDao.createSearchBuilder();
+        sb.and("networkId", sb.entity().getNetworkId(), Op.EQ);
+        SearchCriteria<UserStatisticsVO> sc = sb.create();
+        sc.setParameters("networkId", network.getId());
+        for (UserStatisticsVO stat: _userStatsDao.search(sc, null)) {
+            bytesReceived += stat.getNetBytesReceived() + stat.getCurrentBytesReceived();
+            bytesSent += stat.getNetBytesSent() + stat.getCurrentBytesSent();
+        }
+        response.setBytesReceived(bytesReceived);
+        response.setBytesSent(bytesSent);
+
         response.setObjectName("network");
         return response;
     }

@@ -246,6 +246,14 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @Param(description = "If the network has redundant routers enabled", since = "4.11.1")
     private Boolean redundantRouter;
 
+    @SerializedName(ApiConstants.RECEIVED_BYTES)
+    @Param(description = "the total number of network traffic bytes received")
+    private Long bytesReceived;
+
+    @SerializedName(ApiConstants.SENT_BYTES)
+    @Param(description = "the total number of network traffic bytes sent")
+    private Long bytesSent;
+
     public Boolean getDisplayNetwork() {
         return displayNetwork;
     }
@@ -481,5 +489,13 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     public void setVpcName(String vpcName) {
         this.vpcName = vpcName;
+    }
+
+    public void setBytesReceived(final Long bytesReceived) {
+        this.bytesReceived = bytesReceived;
+    }
+
+    public void setBytesSent(final Long bytesSent) {
+        this.bytesSent = bytesSent;
     }
 }
