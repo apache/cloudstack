@@ -47,6 +47,7 @@ import com.cloud.event.UsageEventVO;
 import com.cloud.server.ManagementServerImpl;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -112,6 +113,27 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 if (poolType != Storage.StoragePoolType.PowerFlex) {
                     return StrategyPriority.CANT_HANDLE;
                 }
+            }
+        }
+
+        return StrategyPriority.HIGHEST;
+    }
+
+    @Override
+    public StrategyPriority canHandle(Long vmId, boolean snapshotMemory) {
+        if (snapshotMemory) {
+            return StrategyPriority.CANT_HANDLE;
+        }
+        List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmId);
+        if (volumeTOs == null || volumeTOs.isEmpty()) {
+            return StrategyPriority.CANT_HANDLE;
+        }
+
+        for (VolumeObjectTO volumeTO : volumeTOs) {
+            Long poolId = volumeTO.getPoolId();
+            Storage.StoragePoolType poolType = vmSnapshotHelper.getStoragePoolType(poolId);
+            if (poolType != Storage.StoragePoolType.PowerFlex || volumeTO.getFormat() != ImageFormat.RAW) {
+                return StrategyPriority.CANT_HANDLE;
             }
         }
 

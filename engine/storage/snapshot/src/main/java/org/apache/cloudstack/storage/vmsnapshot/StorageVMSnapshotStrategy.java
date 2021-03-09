@@ -71,6 +71,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
@@ -366,6 +367,17 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
            return StrategyPriority.HYPERVISOR;
        }
        return StrategyPriority.CANT_HANDLE;
+    }
+
+    @Override
+    public StrategyPriority canHandle(Long vmId, boolean snapshotMemory) {
+        if (SnapshotManager.VMsnapshotKVM.value() && !snapshotMemory) {
+            UserVmVO vm = userVmDao.findById(vmId);
+            if (vm.getState() == VirtualMachine.State.Running) {
+                return StrategyPriority.HYPERVISOR;
+            }
+        }
+        return StrategyPriority.CANT_HANDLE;
     }
 
     @Override

@@ -79,16 +79,15 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -115,7 +114,6 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmDetailConstants;
@@ -364,14 +362,6 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             throw new InvalidParameterValueException("Can not snapshot memory when VM is not in Running state");
         }
 
-        boolean isKVMsnapshotsEnabled = SnapshotManager.VMsnapshotKVM.value() != null && SnapshotManager.VMsnapshotKVM.value();
-
-        // for KVM, only allow snapshot with memory when VM is in running state
-        if (userVmVo.getHypervisorType() == HypervisorType.KVM && userVmVo.getState() == State.Running && !snapshotMemory) {
-            if (!isKVMsnapshotsEnabled) {
-                throw new InvalidParameterValueException("KVM VM does not allow to take a disk-only snapshot when VM is in running state");
-            }
-        }
         List<VolumeVO> rootVolumes = _volumeDao.findReadyRootVolumesByInstance(userVmVo.getId());
         if (rootVolumes == null || rootVolumes.isEmpty()) {
             throw new CloudRuntimeException("Unable to find root volume for the user vm:" + userVmVo.getUuid());
@@ -383,17 +373,18 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             throw new CloudRuntimeException("Unable to find root volume storage pool for the user vm:" + userVmVo.getUuid());
         }
 
-        // for KVM, only allow snapshot with memory when VM is in running state
         if (userVmVo.getHypervisorType() == HypervisorType.KVM) {
-            if (rootVolumePool.getPoolType() != Storage.StoragePoolType.PowerFlex) {
-                if (userVmVo.getState() == State.Running && !snapshotMemory) {
-                    throw new InvalidParameterValueException("KVM VM does not allow to take a disk-only snapshot when VM is in running state");
-                }
-            } else {
-                if (snapshotMemory) {
-                    throw new InvalidParameterValueException("Can not snapshot memory for PowerFlex storage pool");
-                }
+            //DefaultVMSnapshotStrategy - allows snapshot with memory when VM is in running state
+            //ScaleIOVMSnapshotStrategy - allows group snapshots without memory; all VM's volumes should be on same storage pool; The state of VM could be Running/Stopped; RAW image format is only supported
+            //StorageVMSnapshotStrategy - allows volume snapshots without memory; VM has to be in Running state; No limitation of the image format if the storage plugin supports volume snapshots; "kvm.vmstoragesnapshot.enabled" has to be enabled
+            //Other Storage volume plugins could integrate this with their own functionality for group snapshots
+            VMSnapshotStrategy snapshotStrategy = storageStrategyFactory.getVmSnapshotStrategy(userVmVo.getId(), snapshotMemory);
 
+            if (snapshotStrategy == null) {
+                throw new CloudRuntimeException("Could not find snapshot strategy for VM snapshot");
+            }
+
+            if (rootVolumePool.getPoolType() == StoragePoolType.PowerFlex) {
                 // All volumes should be on the same PowerFlex storage pool for VM Snapshot
                 if (!isVolumesOfUserVmOnSameStoragePool(userVmVo.getId(), rootVolumePool.getId())) {
                     throw new InvalidParameterValueException("All volumes of the VM: " + userVmVo.getUuid() + " should be on the same PowerFlex storage pool");
@@ -416,20 +407,6 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
                 _snapshotDao.listByInstanceId(volume.getInstanceId(), Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp);
             if (activeSnapshots.size() > 0) {
                 throw new CloudRuntimeException("There is other active volume snapshot tasks on the instance to which the volume is attached, please try again later.");
-            }
-            if (userVmVo.getHypervisorType() == HypervisorType.KVM && volume.getFormat() != ImageFormat.QCOW2 ) {
-                if (!isKVMsnapshotsEnabled || snapshotMemory) {
-                    throw new CloudRuntimeException("We only support create vm snapshots from vm with QCOW2 image");
-                }
-            }
-            if (userVmVo.getHypervisorType() == HypervisorType.KVM) {
-                if (volume.getPoolType() != Storage.StoragePoolType.PowerFlex) {
-                    if (volume.getFormat() != ImageFormat.QCOW2) {
-                        throw new CloudRuntimeException("We only support create vm snapshots from vm with QCOW2 image");
-                    }
-                } else if (volume.getFormat() != ImageFormat.RAW) {
-                    throw new CloudRuntimeException("Only support create vm snapshots for volumes on PowerFlex with RAW image");
-                }
             }
         }
 

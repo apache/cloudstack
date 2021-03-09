@@ -53,6 +53,7 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
@@ -67,6 +68,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
@@ -445,5 +447,21 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_OFF_PRIMARY, vmSnapshot, userVm, full_chain_size, 0L);
         }
         return vmSnapshotDao.remove(vmSnapshot.getId());
+    }
+
+    @Override
+    public StrategyPriority canHandle(Long vmId, boolean snapshotMemory) {
+        UserVmVO vm = userVmDao.findById(vmId);
+        if (vm.getState() == State.Running && !snapshotMemory) {
+            return StrategyPriority.CANT_HANDLE;
+        }
+
+        List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
+        for (VolumeVO volume : volumes) {
+            if (volume.getFormat() != ImageFormat.QCOW2) {
+                return StrategyPriority.CANT_HANDLE;
+            }
+        }
+        return StrategyPriority.DEFAULT;
     }
 }
