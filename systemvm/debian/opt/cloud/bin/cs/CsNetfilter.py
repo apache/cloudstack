@@ -87,11 +87,11 @@ class CsNetfilters(object):
 
     def get_all_rules(self):
         for i in CsHelper.execute("iptables-save"):
-            if i.startswith('*'):  # Table
+            if i.startswith(b'*'):  # Table
                 self.table.add(i[1:])
-            if i.startswith(':'):  # Chain
+            if i.startswith(b':'):  # Chain
                 self.chain.add(self.table.last(), i[1:].split(' ')[0])
-            if i.startswith('-A'):  # Rule
+            if i.startswith(b'-A'):  # Rule
                 self.chain.add_rule(i.split()[1])
                 rule = CsNetfilter()
                 rule.parse(i)
