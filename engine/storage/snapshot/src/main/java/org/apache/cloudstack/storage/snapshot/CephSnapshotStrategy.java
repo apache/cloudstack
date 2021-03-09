@@ -64,10 +64,6 @@ public class CephSnapshotStrategy extends StorageSystemSnapshotStrategy {
             return StrategyPriority.HIGHEST;
         }
 
-        if (SnapshotOperation.DELETE.equals(op)) {
-            return StrategyPriority.HIGHEST;
-        }
-
         return StrategyPriority.CANT_HANDLE;
     }
 

@@ -84,7 +84,7 @@ export default {
       memoryKey: 'details[0].memory'
     }
   },
-  mounted () {
+  created () {
     this.fetchData({
       keyword: '',
       pageSize: 10,

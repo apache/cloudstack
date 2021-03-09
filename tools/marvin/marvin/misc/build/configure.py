@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 from bashUtils import bash
 from marvin import configGenerator
 from marvin import sshClient
@@ -28,12 +28,12 @@ import contextlib
 import telnetlib
 import logging
 import threading
-import Queue
+import queue
 import sys
 import random
 import string
-import urllib2
-import urlparse
+import urllib.request, urllib.error, urllib.parse
+import urllib.parse
 import socket
 
 WORKSPACE="."
@@ -83,11 +83,11 @@ def mkdirs(path):
 
 def fetch(filename, url, path):
     try:
-        zipstream = urllib2.urlopen(url)
+        zipstream = urllib.request.urlopen(url)
         tarball = open('/tmp/%s' % filename, 'wb')
         tarball.write(zipstream.read())
         tarball.close()
-    except urllib2.URLError, u:
+    except urllib.error.URLError as u:
         raise u
     except IOError:
         raise
@@ -95,7 +95,7 @@ def fetch(filename, url, path):
 
 def cobblerHomeResolve(ip_address, param="gateway"):
     ipAddr = IPAddress(ip_address)
-    for nic, network in cobblerinfo.items():
+    for nic, network in list(cobblerinfo.items()):
         subnet = IPNetwork(cobblerinfo[nic]["network"])
         if ipAddr in subnet:
             return cobblerinfo[nic][param]
@@ -142,7 +142,7 @@ def mountAndClean(host, path):
     Will mount and clear the files on NFS host in the path given. Obviously the
     NFS server should be mountable where this script runs
     """
-    mnt_path = "/tmp/" + ''.join([random.choice(string.ascii_uppercase) for x in xrange(0, 10)])
+    mnt_path = "/tmp/" + ''.join([random.choice(string.ascii_uppercase) for x in range(0, 10)])
     mkdirs(mnt_path)
     logging.info("cleaning up %s:%s" % (host, path))
     mnt = bash("mount -t nfs %s:%s %s" % (host, path, mnt_path))
@@ -157,8 +157,8 @@ def cleanPrimaryStorage(cscfg):
         for pod in zone.pods:
             for cluster in pod.clusters:
                 for primaryStorage in cluster.primaryStorages:
-                    if urlparse.urlsplit(primaryStorage.url).scheme == "nfs":
-                        mountAndClean(urlparse.urlsplit(primaryStorage.url).hostname, urlparse.urlsplit(primaryStorage.url).path)
+                    if urllib.parse.urlsplit(primaryStorage.url).scheme == "nfs":
+                        mountAndClean(urllib.parse.urlsplit(primaryStorage.url).hostname, urllib.parse.urlsplit(primaryStorage.url).path)
     logging.info("Cleaned up primary stores")
 
 def seedSecondaryStorage(cscfg, hypervisor):
@@ -172,8 +172,8 @@ def seedSecondaryStorage(cscfg, hypervisor):
     bash("rm -f /etc/puppet/modules/cloudstack/files/secseeder.sh")
     for zone in cscfg.zones:
         for sstor in zone.secondaryStorages:
-            shost = urlparse.urlsplit(sstor.url).hostname
-            spath = urlparse.urlsplit(sstor.url).path
+            shost = urllib.parse.urlsplit(sstor.url).hostname
+            spath = urllib.parse.urlsplit(sstor.url).path
             spath = ''.join([shost, ':', spath])
             logging.info("seeding %s systemvm template on %s"%(hypervisor, spath))
             bash("echo '/bin/bash /root/redeploy.sh -s %s -h %s' >> /etc/puppet/modules/cloudstack/files/secseeder.sh"%(spath, hypervisor))
@@ -189,7 +189,7 @@ def refreshHosts(cscfg, hypervisor="xenserver", profile="xenserver602"):
         for pod in zone.pods:
             for cluster in pod.clusters:
                 for host in cluster.hosts:
-                    hostname = urlparse.urlsplit(host.url).hostname
+                    hostname = urllib.parse.urlsplit(host.url).hostname
                     logging.debug("attempting to refresh host %s"%hostname)
                     #revoke certs
                     bash("puppet cert clean %s.%s"%(hostname, DOMAIN))
@@ -234,7 +234,7 @@ def _isPortListening(host, port, timeout=120):
         try:
             tn = telnetlib.Telnet(host, port, timeout=timeout)
             timeout = 0
-        except Exception, e:
+        except Exception as e:
             logging.debug("Failed to telnet connect to %s:%s with %s"%(host, port, e))
             delay(5)
             timeout = timeout - 5
@@ -257,7 +257,7 @@ def _isPortOpen(hostQueue, port=22):
         try:
             logging.debug("Attempting port=%s connect to host %s"%(port, host))
             err = channel.connect_ex((host, port))
-        except socket.error, e:
+        except socket.error as e:
             logging.debug("encountered %s retrying in 5s"%e)
             err = e.errno
             delay(5)
@@ -274,7 +274,7 @@ def _isPortOpen(hostQueue, port=22):
 
 def waitForHostReady(hostlist):
     logging.info("Waiting for hosts %s to refresh"%hostlist)
-    hostQueue = Queue.Queue()
+    hostQueue = queue.Queue()
 
     for host in hostlist:
         t = threading.Thread(name='HostWait-%s'%hostlist.index(host), target=_isPortOpen,
@@ -375,7 +375,7 @@ if __name__ == '__main__':
     try:
         with open(options.system, 'r') as cfg:
             system.readfp(cfg)
-    except IOError, e:
+    except IOError as e:
         logging.error("Specify a valid path for the environment properties")
         raise e
     generate_system_tables(system)

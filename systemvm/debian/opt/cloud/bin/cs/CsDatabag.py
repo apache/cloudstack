@@ -103,23 +103,23 @@ class CsCmdLine(CsDataBag):
         else:
             return "unknown"
 
-    def is_master(self):
+    def is_primary(self):
         if not self.is_redundant():
             return False
         if "redundant_state" in self.idata():
-            return self.idata()['redundant_state'] == "MASTER"
+            return self.idata()['redundant_state'] == "PRIMARY"
         return False
 
     def set_fault_state(self):
         self.idata()['redundant_state'] = "FAULT"
-        self.idata()['redundant_master'] = False
+        self.idata()['redundant_primary'] = False
 
-    def set_master_state(self, value):
+    def set_primary_state(self, value):
         if value:
-            self.idata()['redundant_state'] = "MASTER"
+            self.idata()['redundant_state'] = "PRIMARY"
         else:
             self.idata()['redundant_state'] = "BACKUP"
-        self.idata()['redundant_master'] = value
+        self.idata()['redundant_primary'] = value
 
     def get_router_id(self):
         if "router_id" in self.idata():

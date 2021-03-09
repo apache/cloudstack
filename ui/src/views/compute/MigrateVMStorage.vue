@@ -23,12 +23,7 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.storageid') }}
-            <a-tooltip :title="apiParams.storageid.description" v-if="!(apiParams.hostid && apiParams.hostid.required === false)">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.storageid')" :tooltip="apiParams.storageid ? apiParams.storageid.description : ''"/>
           <a-select
             :loading="loading"
             v-decorator="['storageid', {
@@ -51,9 +46,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'MigrateVMStorage',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,

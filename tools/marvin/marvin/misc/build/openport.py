@@ -24,9 +24,9 @@ def _openIntegrationPort():
     dbpasswd = 'cloud'#csconfig.dbSvr.passwd
     conn = dbConnection.dbConnection(dbhost, 3306, dbuser, dbpasswd, "cloud")
     query = "update configuration set value='8096' where name='integration.api.port'"
-    print conn.execute(query)
+    print(conn.execute(query))
     query = "select name,value from configuration where name='integration.api.port'"
-    print conn.execute(query)
+    print(conn.execute(query))
 
 if __name__ == '__main__':
     _openIntegrationPort()

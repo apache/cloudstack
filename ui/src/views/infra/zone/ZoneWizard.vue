@@ -18,13 +18,15 @@
 <template>
   <div class="form">
     <a-steps
+      ref="zoneStep"
       labelPlacement="vertical"
       size="small"
       :current="currentStep">
       <a-step
-        v-for="(item) in steps"
+        v-for="(item, index) in steps"
         :key="item.title"
-        :title="$t(item.title)">
+        :title="$t(item.title)"
+        :ref="`step${index}`">
       </a-step>
     </a-steps>
     <div>
@@ -79,6 +81,7 @@
   </div>
 </template>
 <script>
+import { mixinDevice } from '@/utils/mixin.js'
 import ZoneWizardZoneTypeStep from '@views/infra/zone/ZoneWizardZoneTypeStep'
 import ZoneWizardZoneDetailsStep from '@views/infra/zone/ZoneWizardZoneDetailsStep'
 import ZoneWizardNetworkSetupStep from '@views/infra/zone/ZoneWizardNetworkSetupStep'
@@ -93,6 +96,7 @@ export default {
     ZoneWizardAddResources,
     ZoneWizardLaunchZone
   },
+  mixins: [mixinDevice],
   data () {
     return {
       currentStep: 0,
@@ -138,9 +142,26 @@ export default {
   methods: {
     nextPressed () {
       this.currentStep++
+      this.scrollToStepActive()
     },
     backPressed (data) {
       this.currentStep--
+      this.scrollToStepActive()
+    },
+    scrollToStepActive () {
+      if (!this.isMobile()) {
+        return
+      }
+      this.$nextTick(() => {
+        if (!this.$refs.zoneStep) {
+          return
+        }
+        if (this.currentStep === 0) {
+          this.$refs.zoneStep.$el.scrollLeft = 0
+          return
+        }
+        this.$refs.zoneStep.$el.scrollLeft = this.$refs['step' + (this.currentStep - 1)][0].$el.offsetLeft
+      })
     },
     onFieldsChanged (data) {
       if (data.zoneType &&
@@ -177,7 +198,8 @@ export default {
 
 <style scoped lang="scss">
   .form {
-    width: 95vw;
+    width: 100%;
+
     @media (min-width: 1000px) {
       width: 800px;
     }
@@ -196,6 +218,15 @@ export default {
     /deep/.button-next.ant-btn-loading:not(.ant-btn-circle):not(.ant-btn-circle-outline):not(.ant-btn-icon-only) {
       position: absolute;
       right: 0;
+    }
+
+    /deep/.ant-steps {
+      overflow-x: auto;
+      padding: 10px 0;
+    }
+
+    /deep/.submit-btn {
+      display: none;
     }
   }
 

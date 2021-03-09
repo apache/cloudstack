@@ -51,7 +51,7 @@
     </bean>
 
     <bean id="managementServerImpl" class="com.cloud.server.ManagementServerImpl">
-        <property name="lockMasterListener" ref="lockMasterListener" />
+        <property name="lockControllerListener" ref="lockControllerListener" />
         <property name="userAuthenticators"
             value="#{userAuthenticatorsRegistry.registered}" />
         <property name="userPasswordEncoders"

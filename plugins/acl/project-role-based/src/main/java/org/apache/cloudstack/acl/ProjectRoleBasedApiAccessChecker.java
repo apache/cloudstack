@@ -55,7 +55,7 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
     }
 
     private void denyApiAccess(final String commandName) throws PermissionDeniedException {
-        throw new PermissionDeniedException("The API " + commandName + " is blacklisted for the user's/account's project role.");
+        throw new PermissionDeniedException("The API " + commandName + " is denied for the user's/account's project role.");
     }
 
 

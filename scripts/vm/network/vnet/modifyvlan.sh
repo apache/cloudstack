@@ -22,7 +22,7 @@
 # set -x
 
 usage() {
-  printf "Usage: %s: -o <op>(add | delete) -v <vlan id> -p <pif> -b <bridge name>\n" 
+  printf "Usage: %s: -o <op>(add | delete) -v <vlan id> -p <pif> -b <bridge name> -d <delete bridge>(true | false)\n"
 }
 
 addVlan() {
@@ -90,40 +90,43 @@ deleteVlan() {
 	local vlanId=$1
 	local pif=$2
 	local vlanDev=$pif.$vlanId
-        local vlanBr=$3
+  local vlanBr=$3
+  local deleteBr=$4
 
-	ip link delete $vlanDev type vlan > /dev/null
+  if [ $deleteBr == "true" ]
+  then
+	  ip link delete $vlanDev type vlan > /dev/null
 	
-	if [ $? -gt 0 ]
-	then
-		printf "Failed to del vlan: $vlanId"
-		return 1
-	fi	
+  	if [ $? -gt 0 ]
+	  then
+		  printf "Failed to del vlan: $vlanId"
+		  return 1
+	  fi
+    ip link set $vlanBr down
 
-	ip link set $vlanBr down
-	
-	if [ $? -gt 0 ]
-	then
-		return 1
-	fi
-	
-	ip link delete $vlanBr type bridge
-	
-	if [ $? -gt 0 ]
-	then
-		printf "Failed to del bridge $vlanBr"
-		return 1
-	fi
+    if [ $? -gt 0 ]
+    then
+      return 1
+    fi
 
+    ip link delete $vlanBr type bridge
+
+    if [ $? -gt 0 ]
+    then
+      printf "Failed to del bridge $vlanBr"
+      return 1
+    fi
+  fi
 	return 0
 	
 }
 
 op=
 vlanId=
+deleteBr="true"
 option=$@
 
-while getopts 'o:v:p:b:' OPTION
+while getopts 'o:v:p:b:d:' OPTION
 do
   case $OPTION in
   o)	oflag=1
@@ -136,8 +139,11 @@ do
 		pif="$OPTARG"
 		;;
   b)    bflag=1
-                brName="$OPTARG"
-                ;;
+    brName="$OPTARG"
+    ;;
+  d)    dflag=1
+    deleteBr="$OPTARG"
+    ;;
   ?)	usage
 		exit 2
 		;;
@@ -177,7 +183,7 @@ else
 	if [ "$op" == "delete" ]
 	then
 		# Delete the vlan
-		deleteVlan $vlanId $pif $brName
+		deleteVlan $vlanId $pif $brName $deleteBr
 	
 		# Always exit with success
 		exit 0

@@ -19,7 +19,8 @@
 """
 # Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.cloudstackAPI import (authorizeSecurityGroupIngress,
                                   disassociateIpAddress,
                                   deleteLoadBalancerRule)
@@ -167,7 +168,7 @@ class TestEIP(cloudstackTestCase):
         )
         if isinstance(ip_addrs, list):
             cls.source_nat = ip_addrs[0]
-            print "source_nat ipaddress : ", cls.source_nat.ipaddress
+            print("source_nat ipaddress : ", cls.source_nat.ipaddress)
         else:
             raise Exception(
                 "No Source NAT IP found for guest network: %s" %

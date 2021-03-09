@@ -37,6 +37,7 @@ public abstract class Command {
     @LogLevel(Log4jLevel.Trace)
     protected Map<String, String> contextMap = new HashMap<String, String>();
     private int wait;  //in second
+    private boolean bypassHostMaintenance = false;
 
     protected Command() {
         this.wait = 0;
@@ -72,6 +73,14 @@ public abstract class Command {
 
     public boolean allowCaching() {
         return true;
+    }
+
+    public boolean isBypassHostMaintenance() {
+        return bypassHostMaintenance;
+    }
+
+    public void setBypassHostMaintenance(boolean bypassHostMaintenance) {
+        this.bypassHostMaintenance = bypassHostMaintenance;
     }
 
     @Override

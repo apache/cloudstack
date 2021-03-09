@@ -142,7 +142,10 @@ public class SnapshotObject implements SnapshotInfo {
         List<SnapshotInfo> children = new ArrayList<>();
         if (vos != null) {
             for (SnapshotDataStoreVO vo : vos) {
-                children.add(snapshotFactory.getSnapshot(vo.getSnapshotId(), DataStoreRole.Image));
+                SnapshotInfo info = snapshotFactory.getSnapshot(vo.getSnapshotId(), DataStoreRole.Image);
+                if (info != null) {
+                    children.add(info);
+                }
             }
         }
         return children;

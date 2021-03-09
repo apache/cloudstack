@@ -419,6 +419,8 @@ class CsIP:
             self.fw.append(
                 ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 80 -s %s -m state --state NEW -j ACCEPT" % (self.dev, guestNetworkCidr)])
             self.fw.append(
+                ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 443 -s %s -m state --state NEW -j ACCEPT" % (self.dev, guestNetworkCidr)])
+            self.fw.append(
                 ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 8080 -s %s -m state --state NEW -j ACCEPT" % (self.dev, guestNetworkCidr)])
             self.fw.append(
                 ["filter", "", "-A FORWARD -i %s -o eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.dev])
@@ -467,19 +469,15 @@ class CsIP:
                 ["filter", "", "-A INPUT -i %s -p udp -m udp --dport 53 -s %s -j ACCEPT" % (self.dev, guestNetworkCidr)])
             self.fw.append(
                 ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 53 -s %s -j ACCEPT" % (self.dev, guestNetworkCidr)])
-
             self.fw.append(
                 ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 80 -s %s -m state --state NEW -j ACCEPT" % (self.dev, guestNetworkCidr)])
+            self.fw.append(
+                ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 443 -s %s -m state --state NEW -j ACCEPT" % (self.dev, guestNetworkCidr)])
             self.fw.append(
                 ["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 8080 -s %s -m state --state NEW -j ACCEPT" % (self.dev, guestNetworkCidr)])
             self.fw.append(["mangle", "",
                             "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
                             (self.dev, guestNetworkCidr, self.address['gateway'], self.dev)])
-
-            self.fw.append(["", "front", "-A NETWORK_STATS_%s -i %s -d %s" %
-                            ("eth1", "eth1", guestNetworkCidr)])
-            self.fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -s %s" %
-                            ("eth1", "eth1", guestNetworkCidr)])
 
         if self.is_private_gateway():
             self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
@@ -518,6 +516,10 @@ class CsIP:
                 ["mangle", "", "-A VPN_STATS_%s -i %s -m mark --mark 0x524/0xffffffff" % (self.dev, self.dev)])
             self.fw.append(
                 ["", "front", "-A FORWARD -j NETWORK_STATS_%s" % self.dev])
+            self.fw.append(
+                ["", "front", "-A NETWORK_STATS_%s -s %s -o %s" % (self.dev, self.cl.get_vpccidr(), self.dev)])
+            self.fw.append(
+                ["", "front", "-A NETWORK_STATS_%s -d %s -i %s" % (self.dev, self.cl.get_vpccidr(), self.dev)])
 
         self.fw.append(["", "front", "-A FORWARD -j NETWORK_STATS"])
         self.fw.append(["", "front", "-A INPUT -j NETWORK_STATS"])
@@ -606,13 +608,13 @@ class CsIP:
                 app.setup()
 
                 # If redundant then this is dealt with
-                # by the master backup functions
+                # by the primary backup functions
                 if not cmdline.is_redundant():
                     if method == "add":
                         CsPasswdSvc(self.address['public_ip']).start()
                     elif method == "delete":
                         CsPasswdSvc(self.address['public_ip']).stop()
-                elif cmdline.is_master():
+                elif cmdline.is_primary():
                     if method == "add":
                         CsPasswdSvc(self.get_gateway() + "," + self.address['public_ip']).start()
                     elif method == "delete":

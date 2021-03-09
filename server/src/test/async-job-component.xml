@@ -1,24 +1,24 @@
 <?xml version="1.0"?>
-<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
-  license agreements. See the NOTICE file distributed with this work for additional 
-  information regarding copyright ownership. The ASF licenses this file to you under 
-  the Apache License, Version 2.0 (the "License"); you may not use this file except 
-  in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
-  Unless required by applicable law or agreed to in writing, software distributed under 
-  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
-  OF ANY KIND, either express or implied. See the License for the specific language 
+<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor
+  license agreements. See the NOTICE file distributed with this work for additional
+  information regarding copyright ownership. The ASF licenses this file to you under
+  the Apache License, Version 2.0 (the "License"); you may not use this file except
+  in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+  OF ANY KIND, either express or implied. See the License for the specific language
   governing permissions and limitations under the License. -->
-<!-- components.xml is the configuration file for the VM Ops insertion servers. Someone 
-  can quickly pull together an insertion server by selecting the correct adapters to 
-  use. Here are some places to look for information. - To find out the general functionality 
-  that each Manager or Adapter provide, look at the javadoc for the interface that 
-  it implements. The interface is usually the "key" attribute in the declaration. - 
-  To find specific implementation of each Manager or Adapter, look at the javadoc for 
-  the actual class. The class can be found in the <class> element. - To find out the 
-  configuration parameters for each Manager or Adapter, look at the javadoc for the 
-  actual implementation class. It should be documented in the description of the class. 
-  - To know more about the components.xml in general, look for the javadoc for ComponentLocator.java. 
-  If you found that the Manager or Adapter are not properly documented, please contact 
+<!-- components.xml is the configuration file for the VM Ops insertion servers. Someone
+  can quickly pull together an insertion server by selecting the correct adapters to
+  use. Here are some places to look for information. - To find out the general functionality
+  that each Manager or Adapter provide, look at the javadoc for the interface that
+  it implements. The interface is usually the "key" attribute in the declaration. -
+  To find specific implementation of each Manager or Adapter, look at the javadoc for
+  the actual class. The class can be found in the <class> element. - To find out the
+  configuration parameters for each Manager or Adapter, look at the javadoc for the
+  actual implementation class. It should be documented in the description of the class.
+  - To know more about the components.xml in general, look for the javadoc for ComponentLocator.java.
+  If you found that the Manager or Adapter are not properly documented, please contact
   the author. -->
 <components.xml>
   <management-server class="com.vmops.server.ManagementServerImpl">
@@ -77,8 +77,6 @@
     <dao name="Limit" class="com.cloud.configuration.dao.LimitDaoImpl" />
     <dao name="UserAccount" class="com.cloud.user.dao.UserAccountDaoImpl" />
     <dao name="Usage IPAddress" class="com.cloud.usage.dao.UsageIPAddressDaoImpl" />
-    <dao name="VM Template Host" class="com.cloud.storage.dao.VMTemplateHostDaoImpl" />
-    <dao name="VM Template Swift" class="com.cloud.storage.dao.VMTemplateSwiftDaoImpl" />
     <dao name="Upload" class="com.cloud.storage.dao.UploadDaoImpl" />
     <dao name="VM Template Pool" class="com.cloud.storage.dao.VMTemplatePoolDaoImpl" />
     <dao name="Launch Permission" class="com.cloud.storage.dao.LaunchPermissionDaoImpl" />

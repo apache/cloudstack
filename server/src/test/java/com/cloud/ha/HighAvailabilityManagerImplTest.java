@@ -44,6 +44,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
+import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -64,6 +65,7 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.AccountManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -111,6 +113,10 @@ public class HighAvailabilityManagerImplTest {
     ConfigurationDao _configDao;
     @Mock
     VolumeOrchestrationService volumeMgr;
+    @Mock
+    ConsoleProxyManager consoleProxyManager;
+    @Mock
+    SecondaryStorageVmManager secondaryStorageVmManager;
     @Mock
     HostVO hostVO;
 

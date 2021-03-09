@@ -82,6 +82,14 @@ export default {
       show: (record) => { return record.state === 'Disabled' }
     },
     {
+      api: 'syncStoragePool',
+      icon: 'sync',
+      label: 'label.sync.storage',
+      message: 'message.confirm.sync.storage',
+      dataView: true,
+      show: (record) => { return record.state === 'Up' && record.type === 'DatastoreCluster' }
+    },
+    {
       api: 'enableStorageMaintenance',
       icon: 'plus-square',
       label: 'label.action.enable.maintenance.mode',

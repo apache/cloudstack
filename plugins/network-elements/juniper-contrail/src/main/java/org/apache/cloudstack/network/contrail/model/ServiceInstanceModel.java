@@ -110,7 +110,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
     }
 
     /**
-     * Recreate the model object from the Contrail API which is the master for this type of object.
+     * Recreate the model object from the Contrail API which is main for this type of object.
      * @param siObj
      */
     public void build(ModelController controller, ServiceInstance siObj) {

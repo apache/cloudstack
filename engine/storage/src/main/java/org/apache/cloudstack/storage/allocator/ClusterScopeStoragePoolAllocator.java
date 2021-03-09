@@ -45,8 +45,12 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
     DiskOfferingDao _diskOfferingDao;
 
     @Override
-    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
         s_logger.debug("ClusterScopeStoragePoolAllocator looking for storage pool");
+
+        if (!bypassStorageTypeCheck && dskCh.useLocalStorage()) {
+            return null;
+        }
 
         List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 

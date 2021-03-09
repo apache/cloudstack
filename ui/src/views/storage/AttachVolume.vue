@@ -25,6 +25,7 @@
       </div>
       <a-form-item :label="$t('label.virtualmachineid')">
         <a-select
+          autoFocus
           v-decorator="['virtualmachineid', {
             rules: [{ required: true, message: $t('message.error.select') }]
           }]"
@@ -61,13 +62,9 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.attachVolume || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('attachVolume')
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

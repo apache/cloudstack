@@ -58,7 +58,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     }
 
     private void denyApiAccess(final String commandName) throws PermissionDeniedException {
-        throw new PermissionDeniedException("The API " + commandName + " is blacklisted for the account's role.");
+        throw new PermissionDeniedException("The API " + commandName + " is denied for the account's role.");
     }
 
     public boolean isDisabled() {

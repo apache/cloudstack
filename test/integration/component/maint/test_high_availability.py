@@ -20,7 +20,8 @@
 """
 # Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.cloudstackAPI import (prepareHostForMaintenance,
                                   cancelHostMaintenance)
 from marvin.lib.utils import cleanup_resources

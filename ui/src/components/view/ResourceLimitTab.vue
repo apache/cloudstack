@@ -34,6 +34,7 @@
           v-decorator="[item.resourcetype, {
             initialValue: item.max
           }]"
+          :autoFocus="index === 0"
         />
       </a-form-item>
       <div class="card-footer">
@@ -72,7 +73,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {

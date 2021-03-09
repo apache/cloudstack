@@ -73,11 +73,9 @@ import com.cloud.storage.dao.StoragePoolHostDaoImpl;
 import com.cloud.storage.dao.StoragePoolWorkDaoImpl;
 import com.cloud.storage.dao.VMTemplateDaoImpl;
 import com.cloud.storage.dao.VMTemplateDetailsDaoImpl;
-import com.cloud.storage.dao.VMTemplateHostDaoImpl;
 import com.cloud.storage.dao.VMTemplatePoolDaoImpl;
 import com.cloud.storage.dao.VMTemplateZoneDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
-import com.cloud.storage.dao.VolumeHostDaoImpl;
 import com.cloud.storage.download.DownloadMonitorImpl;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.template.TemplateManager;
@@ -96,7 +94,7 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
 import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
 
 @Configuration
-@ComponentScan(basePackageClasses = {NicDaoImpl.class, VMInstanceDaoImpl.class, VMTemplateHostDaoImpl.class, VolumeHostDaoImpl.class, VolumeDaoImpl.class,
+@ComponentScan(basePackageClasses = {NicDaoImpl.class, VMInstanceDaoImpl.class, VolumeDaoImpl.class,
     VMTemplatePoolDaoImpl.class, ResourceTagsDaoImpl.class, VMTemplateDaoImpl.class, MockStorageMotionStrategy.class, ConfigurationDaoImpl.class,
     ClusterDaoImpl.class, HostPodDaoImpl.class, VMTemplateZoneDaoImpl.class, VMTemplateDetailsDaoImpl.class, HostDetailsDaoImpl.class,
     HostTagsDaoImpl.class, HostTransferMapDaoImpl.class, DataCenterIpAddressDaoImpl.class, DataCenterLinkLocalIpAddressDaoImpl.class,

@@ -1,6 +1,6 @@
 <!--
 Verify first that your issue/request is not already reported on GitHub.
-Also test if the latest release and master branch are affected too.
+Also test if the latest release and main branch are affected too.
 Always add information AFTER of these HTML comments, but no need to delete the comments.
 -->
 
@@ -23,7 +23,7 @@ Categorize the issue, e.g. API, VR, VPN, UI, etc.
 
 ##### CLOUDSTACK VERSION
 <!--
-New line separated list of affected versions, commit ID for issues on master branch.
+New line separated list of affected versions, commit ID for issues on main branch.
 -->
 
 ~~~

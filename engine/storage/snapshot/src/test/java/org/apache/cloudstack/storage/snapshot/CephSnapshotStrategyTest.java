@@ -87,8 +87,6 @@ public class CephSnapshotStrategyTest {
             StrategyPriority strategyPriority = cephSnapshotStrategy.canHandle(snapshot, snapshotOps[i]);
             if (snapshotOps[i] == SnapshotOperation.REVERT && isSnapshotStoredOnRbdStoragePool) {
                 Assert.assertEquals(StrategyPriority.HIGHEST, strategyPriority);
-            } else if (snapshotOps[i] == SnapshotOperation.DELETE && isSnapshotStoredOnRbdStoragePool) {
-                Assert.assertEquals(StrategyPriority.HIGHEST, strategyPriority);
             } else {
                 Assert.assertEquals(StrategyPriority.CANT_HANDLE, strategyPriority);
             }

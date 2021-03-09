@@ -259,8 +259,8 @@ class TestMultipleProjectCreation(cloudstackTestCase):
             "Check list project response returns a valid project"
         )
 
-        self.assert_(isinstance(self.user.user, list))
-        self.assert_(len(self.user.user) > 0,
+        self.assertTrue(isinstance(self.user.user, list))
+        self.assertTrue(len(self.user.user) > 0,
                      msg="Account %s has no users" % self.user.name)
         self.debug(
             "Adding account %s to project with email %s" %

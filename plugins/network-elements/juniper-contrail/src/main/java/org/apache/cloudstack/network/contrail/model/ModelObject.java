@@ -33,7 +33,7 @@ import com.cloud.exception.InternalErrorException;
  *
  * The object constructor should set the uuid and the internal id of the cloudstack objects.
  *
- * The build method reads the master database (typically cloudstack mysql) and derives the state that
+ * The build method reads the primary database (typically cloudstack mysql) and derives the state that
  * we wish to reflect in the contrail API. This method should not modify the Contrail API state.
  *
  * The verify method reads the API server state and compares with cached properties.

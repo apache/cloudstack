@@ -25,6 +25,7 @@
           }]"
           :checked="isSamlEnabled"
           @change="val => { isSamlEnabled = val }"
+          autoFocus
         />
       </a-form-item>
       <a-form-item :label="$t('label.samlentity')">
@@ -65,7 +66,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

@@ -256,6 +256,7 @@ public class ApiConstants {
     public static final String OLD_FORMAT = "oldformat";
     public static final String OP = "op";
     public static final String OS_CATEGORY_ID = "oscategoryid";
+    public static final String OS_CATEGORY_NAME = "oscategoryname";
     public static final String OS_ID = "osid";
     public static final String OS_TYPE_ID = "ostypeid";
     public static final String OS_DISPLAY_NAME = "osdisplayname";
@@ -629,12 +630,14 @@ public class ApiConstants {
     public static final String GUEST_IP = "guestip";
     public static final String REMOVED = "removed";
     public static final String COMPLETED = "completed";
+    public static final String IKE_VERSION = "ikeversion";
     public static final String IKE_POLICY = "ikepolicy";
     public static final String ESP_POLICY = "esppolicy";
     public static final String IKE_LIFETIME = "ikelifetime";
     public static final String ESP_LIFETIME = "esplifetime";
     public static final String DPD = "dpd";
     public static final String FORCE_ENCAP = "forceencap";
+    public static final String SPLIT_CONNECTIONS = "splitconnections";
     public static final String FOR_VPC = "forvpc";
     public static final String SHRINK_OK = "shrinkok";
     public static final String NICIRA_NVP_DEVICE_ID = "nvpdeviceid";
@@ -708,6 +711,7 @@ public class ApiConstants {
     public static final String UCS_BLADE_DN = "bladedn";
     public static final String UCS_BLADE_ID = "bladeid";
     public static final String VM_GUEST_IP = "vmguestip";
+    public static final String HEALTHCHECK_FAILED = "healthchecksfailed";
     public static final String HEALTHCHECK_RESPONSE_TIMEOUT = "responsetimeout";
     public static final String HEALTHCHECK_INTERVAL_TIME = "intervaltime";
     public static final String HEALTHCHECK_HEALTHY_THRESHOLD = "healthythreshold";
@@ -821,6 +825,7 @@ public class ApiConstants {
     public static final String KUBERNETES_VERSION_ID = "kubernetesversionid";
     public static final String KUBERNETES_VERSION_NAME = "kubernetesversionname";
     public static final String MASTER_NODES = "masternodes";
+    public static final String CONTROL_NODES = "controlnodes";
     public static final String MIN_SEMANTIC_VERSION = "minimumsemanticversion";
     public static final String MIN_KUBERNETES_VERSION_ID = "minimumkubernetesversionid";
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
@@ -834,6 +839,7 @@ public class ApiConstants {
     public static final String CROSS_ZONES = "crossZones";
     public static final String TEMPLATETYPE = "templatetype";
     public static final String SOURCETEMPLATEID = "sourcetemplateid";
+    public static final String DYNAMIC_SCALING_ENABLED = "dynamicscalingenabled";
 
     public static final String POOL_TYPE ="pooltype";
 

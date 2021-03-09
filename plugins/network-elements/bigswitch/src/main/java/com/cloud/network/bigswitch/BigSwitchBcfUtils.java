@@ -133,10 +133,10 @@ public class BigSwitchBcfUtils {
             _hostDao.loadDetails(bigswitchBcfHost);
             GetControllerDataAnswer answer = (GetControllerDataAnswer) _agentMgr.easySend(bigswitchBcfHost.getId(), cmd);
             if (answer != null){
-                if (answer.isMaster()) {
-                    cluster.setMaster(bigswitchBcfHost);
+                if (answer.isPrimary()) {
+                    cluster.setPrimary(bigswitchBcfHost);
                 } else {
-                    cluster.setSlave(bigswitchBcfHost);
+                    cluster.setSecondary(bigswitchBcfHost);
                 }
             }
         }
@@ -471,14 +471,14 @@ public class BigSwitchBcfUtils {
     public BcfAnswer sendBcfCommandWithNetworkSyncCheck(BcfCommand cmd, Network network)throws IllegalArgumentException{
         // get registered Big Switch controller
         ControlClusterData cluster = getControlClusterData(network.getPhysicalNetworkId());
-        if(cluster.getMaster()==null){
+        if(cluster.getPrimary()==null){
             return new BcfAnswer(cmd, new CloudRuntimeException("Big Switch Network controller temporarily unavailable"));
         }
 
         TopologyData topo = getTopology(network.getPhysicalNetworkId());
 
         cmd.setTopology(topo);
-        BcfAnswer answer =  (BcfAnswer) _agentMgr.easySend(cluster.getMaster().getId(), cmd);
+        BcfAnswer answer =  (BcfAnswer) _agentMgr.easySend(cluster.getPrimary().getId(), cmd);
 
         if (answer == null || !answer.getResult()) {
             s_logger.error ("BCF API Command failed");
@@ -487,17 +487,17 @@ public class BigSwitchBcfUtils {
 
         String newHash = answer.getHash();
         if (cmd.isTopologySyncRequested()) {
-            newHash = syncTopologyToBcfHost(cluster.getMaster());
+            newHash = syncTopologyToBcfHost(cluster.getPrimary());
         }
         if(newHash != null){
             commitTopologyHash(network.getPhysicalNetworkId(), newHash);
         }
 
-        HostVO slave = cluster.getSlave();
-        if(slave != null){
+        HostVO secondary = cluster.getSecondary();
+        if(secondary != null){
             TopologyData newTopo = getTopology(network.getPhysicalNetworkId());
             CacheBcfTopologyCommand cacheCmd = new CacheBcfTopologyCommand(newTopo);
-            _agentMgr.easySend(cluster.getSlave().getId(), cacheCmd);
+            _agentMgr.easySend(cluster.getSecondary().getId(), cacheCmd);
         }
 
         return answer;

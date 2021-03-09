@@ -48,7 +48,7 @@ vrrp_instance inside_network {
         heartbeat
     }
 
-    notify_backup "/opt/cloud/bin/master.py --backup"
-    notify_master "/opt/cloud/bin/master.py --master"
-    notify_fault "/opt/cloud/bin/master.py --fault"
+    notify_backup "/opt/cloud/bin/configure_router.py --backup"
+    notify_master "/opt/cloud/bin/configure_router.py --primary"
+    notify_fault "/opt/cloud/bin/configure_router.py --fault"
 }

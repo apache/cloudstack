@@ -30,6 +30,7 @@ import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
+import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
 
 import com.cloud.agent.api.Answer;
 
@@ -81,5 +82,7 @@ public interface StorageProcessor {
 
     Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd);
 
-    public Answer CheckDataStoreStoragePolicyComplaince(CheckDataStoreStoragePolicyComplainceCommand cmd);
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd);
+
+    public Answer syncVolumePath(SyncVolumePathCommand cmd);
 }

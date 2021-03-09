@@ -52,6 +52,8 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.db.TransactionLegacy;
 
 import junit.framework.TestCase;
+import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
+import org.apache.cloudstack.utils.mailing.SMTPMailSender;
 
 @RunWith(MockitoJUnitRunner.class)
 public class QuotaAlertManagerImplTest extends TestCase {
@@ -68,8 +70,6 @@ public class QuotaAlertManagerImplTest extends TestCase {
     private QuotaEmailTemplatesDao quotaEmailTemplateDao;
     @Mock
     private ConfigurationDao configDao;
-    @Mock
-    private QuotaAlertManagerImpl.EmailQuotaAlert emailQuotaAlert;
 
     @Spy
     @InjectMocks
@@ -77,7 +77,6 @@ public class QuotaAlertManagerImplTest extends TestCase {
 
     @Before
     public void setup() throws IllegalAccessException, NoSuchFieldException, ConfigurationException {
-        // Dummy transaction stack setup
         TransactionLegacy.open("QuotaAlertManagerImplTest");
     }
 
@@ -135,7 +134,8 @@ public class QuotaAlertManagerImplTest extends TestCase {
         quotaAccount.setQuotaAlertDate(null);
         quotaAccount.setQuotaEnforce(0);
 
-        QuotaAlertManagerImpl.DeferredQuotaEmail email = new QuotaAlertManagerImpl.DeferredQuotaEmail(account, quotaAccount, new BigDecimal(100), QuotaConfig.QuotaEmailTemplateTypes.QUOTA_LOW);
+        QuotaAlertManagerImpl.DeferredQuotaEmail email = new QuotaAlertManagerImpl.DeferredQuotaEmail(account, quotaAccount, new BigDecimal(100),
+                QuotaConfig.QuotaEmailTemplateTypes.QUOTA_LOW);
 
         QuotaEmailTemplatesVO quotaEmailTemplatesVO = new QuotaEmailTemplatesVO();
         quotaEmailTemplatesVO.setTemplateSubject("Low quota");
@@ -156,9 +156,13 @@ public class QuotaAlertManagerImplTest extends TestCase {
         users.add(user);
         Mockito.when(userDao.listByAccount(Mockito.anyLong())).thenReturn(users);
 
+        quotaAlertManager.mailSender = Mockito.mock(SMTPMailSender.class);
+        Mockito.when(quotaAlertManager.mailSender.sendMail(Mockito.anyObject())).thenReturn(Boolean.TRUE);
+
         quotaAlertManager.sendQuotaAlert(email);
         assertTrue(email.getSendDate() != null);
-        Mockito.verify(emailQuotaAlert, Mockito.times(1)).sendQuotaAlert(Mockito.anyListOf(String.class), Mockito.anyString(), Mockito.anyString());
+        Mockito.verify(quotaAlertManager, Mockito.times(1)).sendQuotaAlert(Mockito.anyListOf(String.class), Mockito.anyString(), Mockito.anyString());
+        Mockito.verify(quotaAlertManager.mailSender, Mockito.times(1)).sendMail(Mockito.any(SMTPMailProperties.class));
     }
 
     @Test

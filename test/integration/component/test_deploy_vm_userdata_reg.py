@@ -110,8 +110,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         """Test userdata as POST, size > 2k
         """
 
-
-        self.userdata=base64.b64encode(self.userdata)
+        self.userdata = base64.encodestring(self.userdata.encode()).decode()
         self.services["virtual_machine"]["userdata"] = self.userdata
 
         deployVmResponse = VirtualMachine.create(
@@ -132,10 +131,10 @@ class TestDeployVmWithUserData(cloudstackTestCase):
             domainid=self.account.domainid,
             id=deployVmResponse.id
         )
-        self.assert_(len(vms) > 0, "There are no Vms deployed in the account %s" % self.account.name)
+        self.assertTrue(len(vms) > 0, "There are no Vms deployed in the account %s" % self.account.name)
         vm = vms[0]
-        self.assert_(vm.id == str(deployVmResponse.id), "Vm deployed is different from the test")
-        self.assert_(vm.state == "Running", "VM is not in Running state")
+        self.assertTrue(vm.id == str(deployVmResponse.id), "Vm deployed is different from the test")
+        self.assertTrue(vm.state == "Running", "VM is not in Running state")
         ip_addr=deployVmResponse.ipaddress
         if self.zone.networktype == "Basic":
             list_router_response = list_routers(

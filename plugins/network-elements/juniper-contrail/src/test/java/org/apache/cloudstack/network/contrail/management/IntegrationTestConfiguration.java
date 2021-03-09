@@ -256,10 +256,8 @@ import com.cloud.storage.dao.StoragePoolHostDaoImpl;
 import com.cloud.storage.dao.UploadDaoImpl;
 import com.cloud.storage.dao.VMTemplateDaoImpl;
 import com.cloud.storage.dao.VMTemplateDetailsDaoImpl;
-import com.cloud.storage.dao.VMTemplateHostDaoImpl;
 import com.cloud.storage.dao.VMTemplateZoneDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
-import com.cloud.storage.dao.VolumeHostDaoImpl;
 import com.cloud.storage.snapshot.SnapshotApiService;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -332,8 +330,8 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
     StoragePoolJoinDaoImpl.class, SyncQueueItemDaoImpl.class, TemplateDataStoreDaoImpl.class, TemplateJoinDaoImpl.class, UploadDaoImpl.class, UsageEventDaoImpl.class,
     UserAccountJoinDaoImpl.class, UserDaoImpl.class, UserIpv6AddressDaoImpl.class, UserStatisticsDaoImpl.class, UserStatsLogDaoImpl.class,
     UserVmCloneSettingDaoImpl.class, UserVmDaoImpl.class, UserVmDetailsDaoImpl.class, UserVmJoinDaoImpl.class, UserVmManagerImpl.class, VMInstanceDaoImpl.class, VMSnapshotDaoImpl.class,
-    VMTemplateDaoImpl.class, VMTemplateDetailsDaoImpl.class, VMTemplateHostDaoImpl.class, VMTemplateZoneDaoImpl.class, VirtualMachineManagerImpl.class, VirtualRouterProviderDaoImpl.class,
-    VlanDaoImpl.class, VmDiskStatisticsDaoImpl.class, VmRulesetLogDaoImpl.class, VolumeDaoImpl.class, VolumeHostDaoImpl.class, VolumeJoinDaoImpl.class, VpcDaoImpl.class,
+    VMTemplateDaoImpl.class, VMTemplateDetailsDaoImpl.class, VMTemplateZoneDaoImpl.class, VirtualMachineManagerImpl.class, VirtualRouterProviderDaoImpl.class,
+    VlanDaoImpl.class, VmDiskStatisticsDaoImpl.class, VmRulesetLogDaoImpl.class, VolumeDaoImpl.class, VolumeJoinDaoImpl.class, VpcDaoImpl.class,
     VpcGatewayDaoImpl.class, VpcManagerImpl.class, VpcOfferingDaoImpl.class, VpcOfferingServiceMapDaoImpl.class, VpcServiceMapDaoImpl.class,
     VpcVirtualNetworkApplianceManagerImpl.class, VpnUserDaoImpl.class, XenServerGuru.class}, includeFilters = {@Filter(value = IntegrationTestConfiguration.ComponentFilter.class,
                                                                                                   type = FilterType.CUSTOM)}, useDefaultFilters = false)

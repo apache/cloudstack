@@ -26,7 +26,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = ("firewall_rules_dcidrs"))
+@Table(name = "firewall_rules_dcidrs")
 public class FirewallRulesDestCidrsVO implements InternalIdentity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

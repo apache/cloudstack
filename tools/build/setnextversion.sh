@@ -27,7 +27,7 @@ Mandatory arguments:
    -v, --version string                    Set the next version to be applied
 
 Optional arguments:
-   -b, --branch string                     Set the branch to update the version into (default "master")
+   -b, --branch string                     Set the branch to update the version into (default "main")
    -s, --sourcedir string                  Set the source directory to clone repo into (default "$sourcedir")
    -n, --no-commit                         Apply only the version change and don't git commit them (default "false")
 
@@ -103,7 +103,7 @@ if [ -z "$version" ]; then
 fi
 
 if [ -z "$branch" ]; then
-    branch="master"
+    branch="main"
 fi
 
 if [ -z "$sourcedir" ]; then

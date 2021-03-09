@@ -32,7 +32,7 @@ import com.cloud.network.VirtualRouterProvider;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name = ("virtual_router_providers"))
+@Table(name = "virtual_router_providers")
 public class VirtualRouterProviderVO implements VirtualRouterProvider {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

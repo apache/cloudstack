@@ -198,14 +198,14 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns", "ssh"], required_hardware="true")
     def test_networkRules_afterRebootRouters(self):
-        """Test network rules after master & backup routers rebooted
+        """Test network rules after primary & backup routers rebooted
         """
 
         # Steps to validate
         # 1. listNetworks should show the created network in allocated state
         # 2. listRouters returns no running routers
         # 3. VMs should be deployed and in Running state
-        # 4. should list MASTER and BACKUP routers
+        # 4. should list PRIMARY and BACKUP routers
         # 5. listPublicIpAddresses for networkid should show acquired IP addr
         # 6. listStaticNats for the network associated
         # 7. listFirewallRules should show allowed ports open
@@ -217,9 +217,9 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
         # 13 and 14. listLoadBalancerRules should show associated VMs for
         #    public IP
         # 15. ssh should succeed to the user VMs
-        # 16. listRouters should show one Router in MASTER state and Running
+        # 16. listRouters should show one Router in PRIMARY state and Running
         # 17. ssh should work for PF, FW, and LB ips
-        # 18. listRouters should show both routers MASTER and BACKUP in
+        # 18. listRouters should show both routers PRIMARY and BACKUP in
         #    Running state
         # 19. listPortForwardingRules, listFirewallRules, listLoadBalancerRule
         #    should return empty response
@@ -308,19 +308,19 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Priamry and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & Primary)"
                     )
 
-        if routers[0].redundantstate == 'MASTER':
-            master_router = routers[0]
+        if routers[0].redundantstate == 'PRIMARY':
+            primary_router = routers[0]
             backup_router = routers[1]
         else:
-            master_router = routers[1]
+            primary_router = routers[1]
             backup_router = routers[0]
 
         self.debug("Associating public IP for network: %s" % network.name)
@@ -435,11 +435,11 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
                                                 ))
         lb_rule.assign(self.apiclient, [virtual_machine])
 
-        self.debug("Starting router ID: %s" % master_router.id)
+        self.debug("Starting router ID: %s" % primary_router.id)
 
         for router in routers:
             try:
-                self.debug("Rebooting router ID: %s" % master_router.id)
+                self.debug("Rebooting router ID: %s" % primary_router.id)
                 #Stop the router
                 cmd = rebootRouter.rebootRouterCmd()
                 cmd.id = router.id
@@ -456,12 +456,12 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & Primary)"
                     )
         for router in routers:
             self.assertEqual(
@@ -510,7 +510,7 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
         # 1. listNetworks should show the created network in allocated state
         # 2. listRouters returns no running routers
         # 3. VMs should be deployed and in Running state
-        # 4. should list MASTER and BACKUP routers
+        # 4. should list PRIMARY and BACKUP routers
         # 5. listPublicIpAddresses for networkid should show acquired IP addr
         # 6. listStaticNats for the network associated
         # 7. listFirewallRules should show allowed ports open
@@ -522,10 +522,10 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
         # 13 and 14. listLoadBalancerRules should show associated VMs for
         #    public IP
         # 15. ssh should succeed to the user VMs
-        # 16. listRouters should show one Router in MASTER state and Running &
+        # 16. listRouters should show one Router in PRIMARY state and Running &
         #    one in BACKUP and Running
         # 17. ssh should work for PF, FW, and LB ips
-        # 18. listRouters should show one Router in MASTER state and Running &
+        # 18. listRouters should show one Router in PRIMARY state and Running &
         #    one in BACKUP and Running
         # 19. ssh should work for PF, FW, and LB ips
         # 20. listPortForwardingRules, listFirewallRules, listLoadBalancerRule
@@ -615,19 +615,19 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & primary)"
                     )
 
-        if routers[0].redundantstate == 'MASTER':
-            master_router = routers[0]
+        if routers[0].redundantstate == 'PRIMARY':
+            primary_router = routers[0]
             backup_router = routers[1]
         else:
-            master_router = routers[1]
+            primary_router = routers[1]
             backup_router = routers[0]
 
         self.debug("Associating public IP for network: %s" % network.name)
@@ -759,12 +759,12 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & primary)"
                     )
         for router in routers:
             self.assertEqual(
@@ -819,12 +819,12 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & primary)"
                     )
         for router in routers:
             self.assertEqual(
@@ -872,7 +872,7 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
         # 1. listNetworks should show the created network in allocated state
         # 2. listRouters returns no running routers
         # 3. VMs should be deployed and in Running state
-        # 4. should list MASTER and BACKUP routers
+        # 4. should list PRIMARY and BACKUP routers
         # 5. listPublicIpAddresses for networkid should show acquired IP
         # 6. listRemoteAccessVpns for the network associated should show the
         #    VPN created
@@ -962,12 +962,12 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & primary)"
                     )
 
         self.debug("Associating public IP for network: %s" % network.name)
@@ -1114,15 +1114,15 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "advancedns", "ssh", "needle"], required_hardware="true")
-    def test_applyNetworkRules_MasterDown_deleteNetworkRules(self):
-        """Test apply network rules when master down and delete network rules
+    def test_applyNetworkRules_PrimaryDown_deleteNetworkRules(self):
+        """Test apply network rules when primary down and delete network rules
         """
 
         # Steps to validate
         # 1. listNetworks should show the created network in allocated state
         # 2. listRouters returns no running routers
         # 3. VMs should be deployed and in Running state
-        # 4. should list MASTER and BACKUP routers
+        # 4. should list PRIMARY and BACKUP routers
         # 5. listPublicIpAddresses for networkid should show acquired IP addr
         # 6. listStaticNats for the network associated
         # 7. listFirewallRules should show allowed ports open
@@ -1134,9 +1134,9 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
         # 13 and 14. listLoadBalancerRules should show associated VMs for
         #    public IP
         # 15. ssh should succeed to the user VMs
-        # 16. listRouters should show one Router in MASTER state and Running
+        # 16. listRouters should show one Router in PRIMARY state and Running
         # 17. ssh should work for PF, FW, and LB ips
-        # 18. listRouters should show both routers MASTER and BACKUP in
+        # 18. listRouters should show both routers PRIMARY and BACKUP in
         #    Running state
         # 19. listPortForwardingRules, listFirewallRules, listLoadBalancerRule
         #    should return empty response
@@ -1229,27 +1229,27 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & primary)"
                     )
 
-        if routers[0].redundantstate == 'MASTER':
-            master_router = routers[0]
+        if routers[0].redundantstate == 'PRIMARY':
+            primary_router = routers[0]
             backup_router = routers[1]
         else:
-            master_router = routers[1]
+            primary_router = routers[1]
             backup_router = routers[0]
 
-        self.debug("Stopping router ID: %s" % master_router.id)
+        self.debug("Stopping router ID: %s" % primary_router.id)
 
         try:
-            Router.stop(self.apiclient, id=master_router.id)
+            Router.stop(self.apiclient, id=primary_router.id)
         except Exception as e:
-            self.fail("Failed to stop master router becaues of %s" % e)
+            self.fail("Failed to stop primary router becaues of %s" % e)
 
         self.debug("Associating public IP for network: %s" % network.name)
         public_ip = PublicIPAddress.create(
@@ -1394,12 +1394,12 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
         except Exception as e:
             self.fail("SSH to guest VM failed: %s" % e)
 
-        self.debug("Starting router ID: %s" % master_router.id)
+        self.debug("Starting router ID: %s" % primary_router.id)
 
         try:
-            Router.start(self.apiclient, id=master_router.id)
+            Router.start(self.apiclient, id=primary_router.id)
         except Exception as e:
-            self.fail("Failed to start master router..")
+            self.fail("Failed to start primary router..")
 
         self.debug("Listing routers for network: %s" % network.name)
         routers = Router.list(
@@ -1410,12 +1410,12 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & Primary)"
                     )
         for router in routers:
             self.assertEqual(

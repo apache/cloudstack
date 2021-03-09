@@ -55,9 +55,10 @@ public class MigrateVolumeCommand extends Command {
         this.setWait(timeout);
     }
 
-    public MigrateVolumeCommand(long volumeId, String volumePath, StoragePool sourcePool, StoragePool targetPool) {
-        this(volumeId,volumePath,targetPool, null, Volume.Type.UNKNOWN, -1);
+    public MigrateVolumeCommand(long volumeId, String volumePath, String attachedVmName, StoragePool sourcePool, StoragePool targetPool, String hostGuidInTargetCluster) {
+        this(volumeId,volumePath,targetPool, attachedVmName, Volume.Type.UNKNOWN, -1);
         this.sourcePool = new StorageFilerTO(sourcePool);
+        this.hostGuidInTargetCluster = hostGuidInTargetCluster;
     }
 
     public MigrateVolumeCommand(DataTO srcData, DataTO destData, Map<String, String> srcDetails, Map<String, String> destDetails, int timeout) {
@@ -67,11 +68,6 @@ public class MigrateVolumeCommand extends Command {
         this.destDetails = destDetails;
 
         setWait(timeout);
-    }
-
-    public MigrateVolumeCommand(long volumeId, String volumePath, StoragePool sourcePool, StoragePool targetPool, String targetClusterHost) {
-        this(volumeId, volumePath, sourcePool, targetPool);
-        this.hostGuidInTargetCluster = targetClusterHost;
     }
 
     @Override
@@ -107,6 +103,10 @@ public class MigrateVolumeCommand extends Command {
         return volumeType;
     }
 
+    public String getHostGuidInTargetCluster() {
+        return hostGuidInTargetCluster;
+    }
+
     public DataTO getSrcData() {
         return srcData;
     }
@@ -129,10 +129,6 @@ public class MigrateVolumeCommand extends Command {
 
     public Map<String, String> getDestDetails() {
         return destDetails;
-    }
-
-    public String getHostGuidInTargetCluster() {
-        return hostGuidInTargetCluster;
     }
 
     public int getWaitInMillSeconds() {

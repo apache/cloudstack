@@ -374,6 +374,7 @@ public class EventTypes {
     // Primary storage pool
     public static final String EVENT_ENABLE_PRIMARY_STORAGE = "ENABLE.PS";
     public static final String EVENT_DISABLE_PRIMARY_STORAGE = "DISABLE.PS";
+    public static final String EVENT_SYNC_STORAGE_POOL = "SYNC.STORAGE.POOL";
 
     // VPN
     public static final String EVENT_REMOTE_ACCESS_VPN_CREATE = "VPN.REMOTE.ACCESS.CREATE";

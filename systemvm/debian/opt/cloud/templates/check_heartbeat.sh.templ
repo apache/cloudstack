@@ -58,7 +58,7 @@ then
     systemctl stop --now conntrackd >> $ROUTER_LOG 2>&1
 
     #Set fault so we have the same effect as a KeepaliveD fault.
-    python /opt/cloud/bin/master.py --fault
+    python /opt/cloud/bin/configure_router.py --fault
 
     pkill -9 keepalived >> $ROUTER_LOG 2>&1 || true
     pkill -9 conntrackd >> $ROUTER_LOG 2>&1 || true

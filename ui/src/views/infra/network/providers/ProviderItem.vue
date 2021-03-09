@@ -103,45 +103,38 @@ export default {
   },
   inject: ['provideSetNsp', 'provideExecuteAction'],
   watch: {
-    loading (newValue, oldValue) {
-      if (newValue !== oldValue && !newValue) {
-        this.fetchData()
-      }
-    },
-    nsp (newData, oldData) {
-      if (newData && Object.keys(newData).length > 0) {
-        this.nsp = newData
-        this.resource = this.nsp
-        this.$set(this.resource, 'zoneid', this.zoneId)
-        this.provideSetNsp(this.resource)
-        this.fetchData()
-      }
-    }
-  },
-  mounted () {
-    if (!this.nsp || Object.keys(this.nsp).length === 0) {
-      this.resource = {
-        name: this.itemNsp.title,
-        state: 'Disabled',
-        physicalnetworkid: this.resourceId,
-        zoneid: this.zoneId
-      }
-    } else {
-      this.resource = this.nsp
-      this.$set(this.resource, 'zoneid', this.zoneId)
-    }
-    if (this.itemNsp && Object.keys(this.itemNsp).length > 0) {
-      this.provider = this.itemNsp
-      this.provideSetNsp(this.resource)
+    nsp () {
       this.fetchData()
     }
   },
+  created () {
+    if (!this.resourceId || !this.zoneId) {
+      return
+    }
+    this.fetchData()
+  },
   methods: {
     async fetchData () {
-      if (!this.provider.lists || this.provider.lists.length === 0) {
-        return
+      if (!this.nsp || Object.keys(this.nsp).length === 0) {
+        this.resource = {
+          name: this.itemNsp.title,
+          state: 'Disabled',
+          physicalnetworkid: this.resourceId,
+          zoneid: this.zoneId
+        }
+      } else {
+        this.resource = this.nsp
+        this.$set(this.resource, 'zoneid', this.zoneId)
       }
-      this.provider.lists.map(this.fetchOptions)
+      if (this.itemNsp && Object.keys(this.itemNsp).length > 0) {
+        this.provider = this.itemNsp
+        this.provideSetNsp(this.resource)
+
+        if (!this.provider.lists || this.provider.lists.length === 0) {
+          return
+        }
+        this.provider.lists.map(this.fetchOptions)
+      }
     },
     async fetchOptions (args) {
       if (!args || Object.keys(args).length === 0) {

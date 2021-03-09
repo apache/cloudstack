@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.hypervisor.xenserver.resource.CitrixHelper;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
@@ -46,16 +47,16 @@ public final class CitrixDeleteStoragePoolCommandWrapper extends CommandWrapper<
 
             // getRemoveDatastore being true indicates we are using managed storage and need to pull the SR name out of a Map
             // instead of pulling it out using getUuid of the StorageFilerTO instance.
+
+            String srNameLabel;
             if (command.getRemoveDatastore()) {
                 Map<String, String> details = command.getDetails();
-
-                String srNameLabel = details.get(DeleteStoragePoolCommand.DATASTORE_NAME);
-
-                sr = citrixResourceBase.getStorageRepository(conn, srNameLabel);
+                srNameLabel = details.get(DeleteStoragePoolCommand.DATASTORE_NAME);
             }
             else {
-                sr = citrixResourceBase.getStorageRepository(conn, poolTO.getUuid());
+                srNameLabel = CitrixHelper.getSRNameLabel(poolTO.getUuid(), poolTO.getType(), poolTO.getPath());
             }
+            sr = citrixResourceBase.getStorageRepository(conn, srNameLabel);
 
             citrixResourceBase.removeSR(conn, sr);
 

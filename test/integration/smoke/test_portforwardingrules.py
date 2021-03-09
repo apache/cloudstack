@@ -130,7 +130,7 @@ class TestPortForwardingRules(cloudstackTestCase):
         if len(expected_vals) != len(actual_vals):
             return False
 
-        keys = expected_vals.keys()
+        keys = list(expected_vals.keys())
         for i in range(0, len(expected_vals)):
             exp_val = expected_vals[keys[i]]
             act_val = actual_vals[keys[i]]
@@ -187,7 +187,7 @@ class TestPortForwardingRules(cloudstackTestCase):
             zoneid=self.zone.id
         )
         status = validateList(network_offerings_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Isolated Network Offerings with sourceNat,\
@@ -252,7 +252,7 @@ class TestPortForwardingRules(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "IP Addresses Association Failed"
@@ -285,7 +285,7 @@ class TestPortForwardingRules(cloudstackTestCase):
             networkid=network.id
         )
         status = validateList(list_vms_running)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM Created is not in Running state"
@@ -296,7 +296,7 @@ class TestPortForwardingRules(cloudstackTestCase):
             len(list_ipaddresses_after),
             "VM Created is not in Running state"
         )
-        self.assertEquals(
+        self.assertEqual(
             vm_created.id,
             list_vms_running[0].id,
             "VM Created is not in Running state"
@@ -365,7 +365,7 @@ class TestPortForwardingRules(cloudstackTestCase):
             ipaddressid=associated_ipaddress.ipaddress.id
         )
         status = validateList(list_prtfwdrule_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to create Port Forwarding Rule"

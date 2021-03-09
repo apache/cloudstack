@@ -200,7 +200,9 @@ public class DataMigrationUtility {
                     snapshotVO != null && snapshotVO.getHypervisorType() != Hypervisor.HypervisorType.Simulator
                     && snapshot.getParentSnapshotId() == 0 ) {
                 SnapshotInfo snap = snapshotFactory.getSnapshot(snapshotVO.getSnapshotId(), DataStoreRole.Image);
-                files.add(snap);
+                if (snap != null) {
+                    files.add(snap);
+                }
             }
         }
 

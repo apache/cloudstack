@@ -26,7 +26,7 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name = ("network_rule_config"))
+@Table(name = "network_rule_config")
 public class NetworkRuleConfigVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

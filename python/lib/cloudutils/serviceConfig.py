@@ -535,6 +535,12 @@ class libvirtConfigRedhat(serviceCfgBase):
                 cfo.addEntry("export CGROUP_DAEMON", "'cpu:/virt'")
             cfo.addEntry("LIBVIRTD_ARGS", "-l")
             cfo.save()
+            if os.path.exists("/lib/systemd/system/libvirtd.socket"):
+                bash("/bin/systemctl mask libvirtd.socket");
+                bash("/bin/systemctl mask libvirtd-ro.socket");
+                bash("/bin/systemctl mask libvirtd-admin.socket");
+                bash("/bin/systemctl mask libvirtd-tls.socket");
+                bash("/bin/systemctl mask libvirtd-tcp.socket");
 
             filename = "/etc/libvirt/qemu.conf"
 

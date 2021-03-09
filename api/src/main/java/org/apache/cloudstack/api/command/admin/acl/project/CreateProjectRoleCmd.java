@@ -20,7 +20,6 @@ package org.apache.cloudstack.api.command.admin.acl.project;
 import org.apache.cloudstack.acl.ProjectRole;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -42,7 +41,7 @@ public class CreateProjectRoleCmd extends ProjectRoleCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.NAME, type = BaseCmd.CommandType.STRING, required = true,
-            description = "creates a project role with this unique name", validations = {ApiArgValidator.NotNullOrEmpty})
+            description = "creates a project role with this unique name")
     private String projectRoleName;
 
     /////////////////////////////////////////////////////

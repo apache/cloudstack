@@ -27,6 +27,7 @@ public final class AttachCommand extends StorageSubSystemCommand {
     private DiskTO disk;
     private String vmName;
     private boolean inSeq = false;
+    private boolean forced = false;
     private Map<String, String> controllerInfo;
 
     public AttachCommand(final DiskTO disk, final String vmName) {
@@ -67,6 +68,14 @@ public final class AttachCommand extends StorageSubSystemCommand {
 
     public void setVmName(final String vmName) {
         this.vmName = vmName;
+    }
+
+    public boolean isForced() {
+        return forced;
+    }
+
+    public void setForced(boolean forced) {
+        this.forced = forced;
     }
 
     @Override

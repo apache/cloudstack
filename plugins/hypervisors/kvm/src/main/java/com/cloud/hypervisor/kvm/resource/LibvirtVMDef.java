@@ -530,6 +530,15 @@ public class LibvirtVMDef {
                     devicesBuilder.append(dev.toString());
                 }
             }
+
+            if (_emulator != null && _emulator.endsWith("aarch64")) {
+                devicesBuilder.append("<controller type='pci' model='pcie-root'/>\n");
+                for (int i = 0; i < 32; i++) {
+                  devicesBuilder.append("<controller type='pci' model='pcie-root-port'/>\n");
+                }
+                devicesBuilder.append("<controller type='pci' model='pcie-to-pci-bridge'/>\n");
+            }
+
             devicesBuilder.append("</devices>\n");
             return devicesBuilder.toString();
         }
@@ -651,6 +660,26 @@ public class LibvirtVMDef {
 
         }
 
+        /**
+         * This enum specifies IO Drivers, each option controls specific policies on I/O.
+         * Qemu guests support "threads" and "native" options Since 0.8.8 ; "io_uring" is supported Since 6.3.0 (QEMU 5.0).
+         */
+        public enum IoDriver {
+            NATIVE("native"),
+            THREADS("threads"),
+            IOURING("io_uring");
+            String ioDriver;
+
+            IoDriver(String driver) {
+                ioDriver = driver;
+            }
+
+            @Override
+            public String toString() {
+                return ioDriver;
+            }
+        }
+
         private DeviceType _deviceType; /* floppy, disk, cdrom */
         private DiskType _diskType;
         private DiskProtocol _diskProtocol;
@@ -681,6 +710,7 @@ public class LibvirtVMDef {
         private String _serial;
         private boolean qemuDriver = true;
         private DiscardType _discard = DiscardType.IGNORE;
+        private IoDriver ioDriver;
 
         public DiscardType getDiscard() {
             return _discard;
@@ -688,6 +718,14 @@ public class LibvirtVMDef {
 
         public void setDiscard(DiscardType discard) {
             this._discard = discard;
+        }
+
+        public DiskDef.IoDriver getIoDriver() {
+            return ioDriver;
+        }
+
+        public void setIoDriver(IoDriver ioDriver) {
+            this.ioDriver = ioDriver;
         }
 
         public void setDeviceType(DeviceType deviceType) {
@@ -716,16 +754,14 @@ public class LibvirtVMDef {
             } else if (bus == DiskBus.VIRTIO) {
                 return "vd" + getDevLabelSuffix(devId);
             } else if (bus == DiskBus.SATA){
-                if (!forIso) {
-                    return "sda";
-                }
+                return "sd" + getDevLabelSuffix(devId);
             }
             if (forIso) {
                 devId --;
             } else if(devId >= 2) {
                 devId += 2;
             }
-            return (DiskBus.SATA == bus) ? "sdb" : "hd" + getDevLabelSuffix(devId);
+            return "hd" + getDevLabelSuffix(devId);
 
         }
 
@@ -784,6 +820,16 @@ public class LibvirtVMDef {
             _bus = DiskBus.IDE;
         }
 
+        public void defISODisk(String volPath, boolean isUefiEnabled) {
+            _diskType = DiskType.FILE;
+            _deviceType = DeviceType.CDROM;
+            _sourcePath = volPath;
+            _bus = isUefiEnabled ? DiskBus.SATA : DiskBus.IDE;
+            _diskLabel = getDevLabel(3, _bus, true);
+            _diskFmtType = DiskFmtType.RAW;
+            _diskCacheMode = DiskCacheMode.NONE;
+        }
+
         public void defISODisk(String volPath, Integer devId) {
             if (devId == null) {
                 defISODisk(volPath);
@@ -798,20 +844,15 @@ public class LibvirtVMDef {
             }
         }
 
-        public void defISODisk(String volPath, Integer devId,boolean isSecure, boolean isWindowOs) {
+        public void defISODisk(String volPath, Integer devId,boolean isSecure) {
             if (!isSecure) {
                 defISODisk(volPath, devId);
             } else {
                 _diskType = DiskType.FILE;
                 _deviceType = DeviceType.CDROM;
                 _sourcePath = volPath;
-                if (isWindowOs) {
-                    _diskLabel = getDevLabel(devId, DiskBus.SATA, true);
-                    _bus = DiskBus.SATA;
-                } else {
-                    _diskLabel = getDevLabel(devId, DiskBus.SCSI, true);
-                    _bus = DiskBus.SCSI;
-                }
+                _diskLabel = getDevLabel(devId, DiskBus.SATA, true);
+                _bus = DiskBus.SATA;
                 _diskFmtType = DiskFmtType.RAW;
                 _diskCacheMode = DiskCacheMode.NONE;
 
@@ -1001,6 +1042,11 @@ public class LibvirtVMDef {
                 if(_discard != null && _discard != DiscardType.IGNORE) {
                     diskBuilder.append("discard='" + _discard.toString() + "' ");
                 }
+
+                if(ioDriver != null) {
+                    diskBuilder.append(String.format("io='%s'", ioDriver));
+                }
+
                 diskBuilder.append("/>\n");
             }
 

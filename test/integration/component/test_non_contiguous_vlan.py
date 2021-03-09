@@ -176,7 +176,7 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
         vlans = xsplit(vlan,[','])
 
         for virtualLan in vlans:
-            self.assert_(physicalnetworks[0].vlan.find(virtualLan) != -1, "vlan range %s \
+            self.assertTrue(physicalnetworks[0].vlan.find(virtualLan) != -1, "vlan range %s \
                         is not present in physical network: %s" % (virtualLan, physicalNetworkId))
 
         return
@@ -193,7 +193,7 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
         vlan1 = self.existingvlan + "," + self.vlan["partial_range"][0]
         updatePhysicalNetworkResponse = self.physicalnetwork.update(self.apiClient, id = self.physicalnetworkid, vlan = vlan1)
 
-        self.assert_(updatePhysicalNetworkResponse is not None,
+        self.assertTrue(updatePhysicalNetworkResponse is not None,
             msg="couldn't add non contiguous range in the physical network with vlan %s"%vlan1)
 
         self.debug("Verifying the VLAN of the updated physical network: %s, It should match with \
@@ -204,7 +204,7 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
         vlan2 = vlan1 + "," + self.vlan["partial_range"][1]
         updatePhysicalNetworkResponse2 = self.physicalnetwork.update(self.apiClient, id = self.physicalnetworkid, vlan = vlan2)
 
-        self.assert_(updatePhysicalNetworkResponse2 is not None,
+        self.assertTrue(updatePhysicalNetworkResponse2 is not None,
             msg="couldn't add non contiguous range in the physical network with vlan %s"%vlan2)
 
         self.debug("Verifying the VLAN of the updated physical network: %s, It should match with \
@@ -252,7 +252,7 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
         vlan2 = vlan1 + "," + self.vlan["full_range"]
         updatePhysicalNetworkResponse = self.physicalnetwork.update(self.apiClient, id = self.physicalnetworkid, vlan = vlan2)
 
-        self.assert_(updatePhysicalNetworkResponse is not None,
+        self.assertTrue(updatePhysicalNetworkResponse is not None,
             msg="couldn't extend the physical network with vlan %s"%vlan2)
 
         extendedvlan = self.existingvlan + "," + self.vlan["full_range"]
@@ -289,7 +289,7 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
 
         vlanranges= physicalnetworks[0].vlan
 
-        self.assert_(vlanranges.find(self.vlan["partial_range"][0]) == -1, "vlan range is not removed")
+        self.assertTrue(vlanranges.find(self.vlan["partial_range"][0]) == -1, "vlan range is not removed")
 
         return
 

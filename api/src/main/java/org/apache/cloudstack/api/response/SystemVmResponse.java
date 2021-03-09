@@ -170,6 +170,10 @@ public class SystemVmResponse extends BaseResponse {
     @Param(description = "the systemvm agent version", since = "4.13.1")
     private String version;
 
+    @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE)
+    @Param(description = "true if vm contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory.")
+    private Boolean isDynamicallyScalable;
+
     @Override
     public String getObjectId() {
         return this.getId();
@@ -441,5 +445,13 @@ public class SystemVmResponse extends BaseResponse {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public Boolean getDynamicallyScalable() {
+        return isDynamicallyScalable;
+    }
+
+    public void setDynamicallyScalable(Boolean dynamicallyScalable) {
+        isDynamicallyScalable = dynamicallyScalable;
     }
 }

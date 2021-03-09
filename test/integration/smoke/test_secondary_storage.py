@@ -184,7 +184,7 @@ class TestSecStorageServices(cloudstackTestCase):
                     hypervisors[cluster.hypervisor] = "self"
 
         for zid in self.zones:
-            for k, v in hypervisors.items():
+            for k, v in list(hypervisors.items()):
                 self.debug("Checking BUILTIN templates in zone: %s" %zid)
                 list_template_response = list_templates(
                                         self.apiclient,

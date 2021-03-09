@@ -27,7 +27,7 @@
                       http://www.springframework.org/schema/context/spring-context.xsd"
                       >
 
-    <bean id="lockMasterListener" class="com.cloud.server.LockMasterListener" >
+    <bean id="lockControllerListener" class="com.cloud.server.LockControllerListener" >
         <constructor-arg>
             <bean class="org.apache.cloudstack.utils.identity.ManagementServerNode" factory-method="getManagementServerId" />
         </constructor-arg>

@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.user.project;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -60,7 +59,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "ID of the account owning a project")
     private Long accountId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, validations = ApiArgValidator.NotNullOrEmpty, description = "name of the project")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the project")
     private String name;
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "display text of the project")

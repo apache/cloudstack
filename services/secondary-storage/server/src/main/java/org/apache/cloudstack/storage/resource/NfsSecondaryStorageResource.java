@@ -2350,6 +2350,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             File tmpltParent = null;
             if (tmpltPath.exists() && tmpltPath.isDirectory()) {
                 tmpltParent = tmpltPath;
+            } else if (absoluteTemplatePath.endsWith(File.separator + obj.getId())) {
+                // the path ends with <account id>/<template id>, if upload fails
+                tmpltParent = tmpltPath;
             } else {
                 tmpltParent = tmpltPath.getParentFile();
             }
@@ -2453,6 +2456,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             File tmpltParent = null;
             if (volPath.exists() && volPath.isDirectory()) {
                 // for vmware, absoluteVolumePath represents a directory where volume files are located.
+                tmpltParent = volPath;
+            } else if (absoluteVolumePath.endsWith(File.separator + obj.getId())) {
+                // the path ends with <account id>/<volume id>, if upload fails
                 tmpltParent = volPath;
             } else {
                 // for other hypervisors, the volume .vhd or .qcow2 file path is passed
@@ -3254,7 +3260,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         long accountTemplateDirSize = 0;
         File accountTemplateDir = new File(rootDir + getTemplatePathForAccount(accountId));
         if (accountTemplateDir.exists()) {
-            FileUtils.sizeOfDirectory(accountTemplateDir);
+            accountTemplateDirSize = FileUtils.sizeOfDirectory(accountTemplateDir);
         }
         long accountVolumeDirSize = 0;
         File accountVolumeDir = new File(rootDir + getVolumePathForAccount(accountId));

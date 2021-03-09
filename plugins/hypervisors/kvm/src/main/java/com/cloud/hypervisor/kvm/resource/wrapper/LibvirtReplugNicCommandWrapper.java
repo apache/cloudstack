@@ -90,7 +90,7 @@ public final class LibvirtReplugNicCommandWrapper extends CommandWrapper<ReplugN
             // We don't know which "traffic type" is associated with
             // each interface at this point, so inform all vif drivers
             for (final VifDriver vifDriver : libvirtComputingResource.getAllVifDrivers()) {
-                vifDriver.unplug(oldPluggedNic);
+                vifDriver.unplug(oldPluggedNic, true);
             }
 
             return new ReplugNicAnswer(command, true, "success");

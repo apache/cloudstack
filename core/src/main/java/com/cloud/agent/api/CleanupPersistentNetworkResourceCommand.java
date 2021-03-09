@@ -14,19 +14,30 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.usage.dao;
 
-import java.util.List;
+package com.cloud.agent.api;
 
-import com.cloud.usage.ExternalPublicIpStatisticsVO;
-import com.cloud.utils.db.GenericDao;
+import com.cloud.agent.api.to.NicTO;
 
-public interface ExternalPublicIpStatisticsDao extends GenericDao<ExternalPublicIpStatisticsVO, Long> {
+public class CleanupPersistentNetworkResourceCommand extends Command {
+    NicTO nicTO;
 
-    ExternalPublicIpStatisticsVO lock(long accountId, long zoneId, String publicIpAddress);
+    protected CleanupPersistentNetworkResourceCommand() {}
 
-    ExternalPublicIpStatisticsVO findBy(long accountId, long zoneId, String publicIpAddress);
+    public CleanupPersistentNetworkResourceCommand(NicTO nicTO) {
+        this.nicTO = nicTO;
+    }
 
-    List<ExternalPublicIpStatisticsVO> listBy(long accountId, long zoneId);
+    public NicTO getNicTO() {
+        return nicTO;
+    }
 
+    public void setNicTO(NicTO nicTO) {
+        this.nicTO = nicTO;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 }

@@ -74,7 +74,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
                description = "if true, firewall rule for source/end public port is automatically created; if false - firewall rule has to be created explicitly. Has value true by default")
     private Boolean openFirewall;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the CIDR list to forward traffic from. Multiple entries must be separated by a single comma character (,).")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the CIDR list to forward traffic from. Multiple entries must be separated by a single comma character (,). This parameter is deprecated. Do not use.")
     private List<String> cidrlist;
 
     /////////////////////////////////////////////////////

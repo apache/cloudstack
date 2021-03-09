@@ -18,7 +18,6 @@
 package org.apache.cloudstack.api.command.admin.acl.project;
 
 import org.apache.cloudstack.acl.ProjectRole;
-import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -31,7 +30,7 @@ public abstract class ProjectRoleCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, required = true, entityType = ProjectResponse.class,
-            description = "ID of project where role is being created", validations = {ApiArgValidator.NotNullOrEmpty})
+            description = "ID of project where role is being created")
     private Long projectId;
 
     @Parameter(name = ApiConstants.DESCRIPTION, type = BaseCmd.CommandType.STRING, description = "The description of the Project role")

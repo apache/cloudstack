@@ -44,7 +44,8 @@ from marvin.lib.common import (get_domain,
 from nose.plugins.attrib import attr
 from marvin.codes import PASS, FAIL, FAILED
 from marvin.sshClient import SshClient
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from ddt import ddt, data
 import time
 
@@ -878,7 +879,7 @@ class TestPersistentNetworks(cloudstackTestCase):
         # 1. create account and isolated network with network
         #    offering which has ispersistent field enabled
         #    and supporting Redundant Virtual Router in it
-        # 2. Check the Master and Backup Routers are present
+        # 2. Check the Primary and Backup Routers are present
         # 3. Deploy VM ,acquire IP, create Firewall, NAT rules
         # 4. Verify the working of NAT, Firewall rules
         #
@@ -927,7 +928,7 @@ class TestPersistentNetworks(cloudstackTestCase):
         self.assertEqual(
             len(routers),
             2,
-            "Length of the list router should be 2 (Backup & master)")
+            "Length of the list router should be 2 (Backup & Primary)")
 
         # Check if routers are reachable from the host
         for router in routers:
@@ -2780,7 +2781,8 @@ class TestVPCNetworkOperations(cloudstackTestCase):
             # Check if source nat IP address is released
             ipaddresses = PublicIPAddress.list(
                 self.apiclient,
-                id=publicipaddresses[0].id)
+                id=publicipaddresses[0].id,
+                state="Allocated")
             self.assertEqual(
                 validateList(ipaddresses)[0],
                 FAIL,

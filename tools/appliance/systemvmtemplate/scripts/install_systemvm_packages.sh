@@ -22,7 +22,7 @@ set -x
 function install_vhd_util() {
   [[ -f /bin/vhd-util ]] && return
 
-  wget --no-check-certificate https://github.com/rhtyd/cloudstack-nonoss/raw/master/vhd-util -O /bin/vhd-util
+  wget --no-check-certificate https://github.com/shapeblue/cloudstack-nonoss/raw/main/vhd-util -O /bin/vhd-util
   chmod a+x /bin/vhd-util
 }
 
@@ -42,7 +42,7 @@ function install_packages() {
 
   debconf_packages
 
-  local apt_get="apt-get --no-install-recommends -q -y"
+  local apt_get="apt-get --no-install-recommends -q -y -t buster-backports"
 
   ${apt_get} install grub-legacy \
     rsyslog logrotate cron net-tools ifupdown tmux vim-tiny htop netbase iptables nftables \
@@ -68,15 +68,13 @@ function install_packages() {
     haproxy \
     haveged \
     radvd \
-    sharutils genisoimage aria2 \
+    sharutils genisoimage \
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins strongswan-charon strongswan-starter \
     virt-what open-vm-tools qemu-guest-agent hyperv-daemons
 
   apt-get -y autoremove --purge
   apt-get clean
   apt-get autoclean
-
-  ${apt_get} install links
 
   #32 bit architecture support for vhd-util: not required for 32 bit template
   if [ "${arch}" != "i386" ]; then

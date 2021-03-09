@@ -19,9 +19,12 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
+import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.UnPlugNicAnswer;
@@ -32,6 +35,7 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Network;
+import com.xensource.xenapi.Types;
 import com.xensource.xenapi.VIF;
 import com.xensource.xenapi.VM;
 
@@ -44,6 +48,7 @@ public final class CitrixUnPlugNicCommandWrapper extends CommandWrapper<UnPlugNi
     public Answer execute(final UnPlugNicCommand command, final CitrixResourceBase citrixResourceBase) {
         final Connection conn = citrixResourceBase.getConnection();
         final String vmName = command.getVmName();
+        final Map<String, Boolean> vlanToPersistenceMap = command.getVlanToPersistenceMap();
         try {
             final Set<VM> vms = VM.getByNameLabel(conn, vmName);
             if (vms == null || vms.isEmpty()) {
@@ -59,7 +64,8 @@ public final class CitrixUnPlugNicCommandWrapper extends CommandWrapper<UnPlugNi
                 vif.destroy(conn);
                 try {
                     if (network.getNameLabel(conn).startsWith("VLAN")) {
-                        citrixResourceBase.disableVlanNetwork(conn, network);
+                        String networkLabel = network.getNameLabel(conn);
+                        citrixResourceBase.disableVlanNetwork(conn, network, shouldDeleteVlan(networkLabel, vlanToPersistenceMap));
                     }
                 } catch (final Exception e) {
                 }
@@ -70,5 +76,14 @@ public final class CitrixUnPlugNicCommandWrapper extends CommandWrapper<UnPlugNi
             s_logger.warn(msg, e);
             return new UnPlugNicAnswer(command, false, msg);
         }
+    }
+
+    private boolean shouldDeleteVlan(String networkLabel, Map<String, Boolean> vlanToPersistenceMap) throws XmlRpcException, Types.XenAPIException {
+        String[] networkNameParts = networkLabel.split("-");
+        String networkVlan = networkNameParts[networkNameParts.length -1];
+        if (MapUtils.isNotEmpty(vlanToPersistenceMap) && networkVlan != null && vlanToPersistenceMap.containsKey(networkVlan)) {
+            return vlanToPersistenceMap.get(networkVlan);
+        }
+        return true;
     }
 }

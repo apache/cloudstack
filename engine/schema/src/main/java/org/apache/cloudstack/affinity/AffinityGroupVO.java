@@ -30,7 +30,7 @@ import javax.persistence.Table;
 import org.apache.cloudstack.acl.ControlledEntity;
 
 @Entity
-@Table(name = ("affinity_group"))
+@Table(name = "affinity_group")
 public class AffinityGroupVO implements AffinityGroup {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

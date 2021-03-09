@@ -250,7 +250,7 @@ public class VirtualRouterElementTest {
     public void testGetRouters2(){
         Network networkUpdateInprogress=new NetworkVO(2l,null,null,null,1l,1l,1l,1l,"d","d","d",null,1l,1l,null,true,null,true);
         mockDAOs((NetworkVO)networkUpdateInprogress,testOffering);
-        //alwyas return backup routers first when both master and backup need update.
+        //alwyas return backup routers first when both primary and backup need update.
         List<DomainRouterVO> routers=virtualRouterElement.getRouters(networkUpdateInprogress);
         assertTrue(routers.size()==1);
         assertTrue(routers.get(0).getRedundantState()==RedundantState.BACKUP && routers.get(0).getUpdateState()==VirtualRouter.UpdateState.UPDATE_IN_PROGRESS);
@@ -260,7 +260,7 @@ public class VirtualRouterElementTest {
     public void testGetRouters3(){
         Network network=new NetworkVO(3l,null,null,null,1l,1l,1l,1l,"d","d","d",null,1l,1l,null,true,null,true);
         mockDAOs((NetworkVO)network,testOffering);
-        //alwyas return backup routers first when both master and backup need update.
+        //alwyas return backup routers first when both primary and backup need update.
         List<DomainRouterVO> routers=virtualRouterElement.getRouters(network);
         assertTrue(routers.size()==4);
     }
@@ -376,7 +376,7 @@ public class VirtualRouterElementTest {
                 /* stopPending */ false,
                 /* vpcId */ null);
                 routerNeedUpdateBackup.setUpdateState(VirtualRouter.UpdateState.UPDATE_NEEDED);
-        final DomainRouterVO routerNeedUpdateMaster = new DomainRouterVO(/* id */ 3L,
+        final DomainRouterVO routerNeedUpdatePrimary = new DomainRouterVO(/* id */ 3L,
                 /* serviceOfferingId */ 1L,
                 /* elementId */ 0L,
                 "name",
@@ -387,11 +387,11 @@ public class VirtualRouterElementTest {
                 /* accountId */ 1L,
                 /* userId */ 1L,
                 /* isRedundantRouter */ false,
-                RedundantState.MASTER,
+                RedundantState.PRIMARY,
                 /* haEnabled */ false,
                 /* stopPending */ false,
                 /* vpcId */ null);
-        routerNeedUpdateMaster.setUpdateState(VirtualRouter.UpdateState.UPDATE_NEEDED);
+        routerNeedUpdatePrimary.setUpdateState(VirtualRouter.UpdateState.UPDATE_NEEDED);
         final DomainRouterVO routerUpdateComplete = new DomainRouterVO(/* id */ 4L,
                 /* serviceOfferingId */ 1L,
                 /* elementId */ 0L,
@@ -427,12 +427,12 @@ public class VirtualRouterElementTest {
         List<DomainRouterVO> routerList1=new ArrayList<>();
         routerList1.add(routerUpdateComplete);
         routerList1.add(routerNeedUpdateBackup);
-        routerList1.add(routerNeedUpdateMaster);
+        routerList1.add(routerNeedUpdatePrimary);
         routerList1.add(routerUpdateInProgress);
         List<DomainRouterVO> routerList2=new ArrayList<>();
         routerList2.add(routerUpdateComplete);
         routerList2.add(routerNeedUpdateBackup);
-        routerList2.add(routerNeedUpdateMaster);
+        routerList2.add(routerNeedUpdatePrimary);
         List<DomainRouterVO> routerList3=new ArrayList<>();
         routerList3.add(routerUpdateComplete);
         routerList3.add(routerUpdateInProgress);

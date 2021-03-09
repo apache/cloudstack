@@ -41,6 +41,9 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     public static final ConfigKey<Boolean> NoVncConsoleDefault = new ConfigKey<Boolean>("Advanced", Boolean.class, "novnc.console.default", "true",
         "If true, noVNC console will be default console for virtual machines", true);
 
+    public static final ConfigKey<Boolean> NoVncConsoleSourceIpCheckEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "novnc.console.sourceip.check.enabled", "false",
+        "If true, The source IP to access novnc console must be same as the IP in request to management server for console URL. Needs to reconnect CPVM to management server when this changes (via restart CPVM, or management server, or cloud service in CPVM)", false);
+
     public void setManagementState(ConsoleProxyManagementState state);
 
     public ConsoleProxyManagementState getManagementState();

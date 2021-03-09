@@ -45,7 +45,7 @@ public class Ovm3ConfigurationTest {
         params.put("password", "unknown");
         params.put("username", "root");
         params.put("pool", "a9c1219d-817d-4242-b23e-2607801c79d5");
-        params.put("ismaster", "false");
+        params.put("isprimary", "false");
         params.put("storage.network.device", "xenbr0");
         params.put("Host.OS.Version", "5.7");
         params.put("xenserver.nics.max", "7");
@@ -64,7 +64,7 @@ public class Ovm3ConfigurationTest {
         params.put("ip", "192.168.1.64");
         params.put("guid", "19e5f1e7-22f4-3b6d-8d41-c82f89c65295");
         params.put("ovm3vip", "192.168.1.230");
-        params.put("hasmaster", "true");
+        params.put("hasprimary", "true");
         params.put("guest.network.device", "xenbr0");
         params.put("cluster", "1");
         params.put("xenserver.heartbeat.timeout", "120");

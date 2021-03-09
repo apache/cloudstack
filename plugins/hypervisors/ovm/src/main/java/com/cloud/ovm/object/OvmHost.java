@@ -26,7 +26,7 @@ public class OvmHost extends OvmObject {
     public static final String XEN = "xen";
 
     public static class Details {
-        public String masterIp;
+        public String primaryIp;
         public Integer cpuNum;
         public Integer cpuSpeed;
         public Long totalMemory;
@@ -42,9 +42,9 @@ public class OvmHost extends OvmObject {
         }
     }
 
-    public static void registerAsMaster(Connection c) throws XmlRpcException {
+    public static void registerAsPrimary(Connection c) throws XmlRpcException {
         Object[] params = {c.getIp(), c.getUserName(), c.getPassword(), c.getPort(), c.getIsSsl()};
-        c.call("OvmHost.registerAsMaster", params, false);
+        c.call("OvmHost.registerAsPrimary", params, false);
     }
 
     public static void registerAsVmServer(Connection c) throws XmlRpcException {

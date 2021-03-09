@@ -18,10 +18,10 @@
 import threading
 from marvin import cloudstackException
 import time
-import Queue
+import queue
 import copy
 import sys
-import jsonHelper
+from . import jsonHelper
 import datetime
 
 
@@ -45,7 +45,7 @@ class jobStatus(object):
 
     def __str__(self):
         return '{%s}' % str(', '.join('%s : %s' % (k, repr(v)) for (k, v)
-                                      in self.__dict__.iteritems()))
+                                      in self.__dict__.items()))
 
 
 class workThread(threading.Thread):
@@ -157,9 +157,9 @@ class outputDict(object):
 class asyncJobMgr(object):
 
     def __init__(self, apiClient, db):
-        self.inqueue = Queue.Queue()
+        self.inqueue = queue.Queue()
         self.output = outputDict()
-        self.outqueue = Queue.Queue()
+        self.outqueue = queue.Queue()
         self.apiClient = apiClient
         self.db = db
 
@@ -196,7 +196,7 @@ class asyncJobMgr(object):
     def waitForComplete(self, workers=10):
         self.inqueue.join()
         lock = threading.Lock()
-        resultQueue = Queue.Queue()
+        resultQueue = queue.Queue()
         '''intermediate result is stored in self.outqueue'''
         for i in range(workers):
             worker = workThread(self.outqueue, resultQueue, self.apiClient,
@@ -233,7 +233,7 @@ class asyncJobMgr(object):
         submit one job and execute the same job ntimes, with nums_threads
         of threads
         '''
-        inqueue1 = Queue.Queue()
+        inqueue1 = queue.Queue()
         lock = threading.Condition()
         for i in range(ntimes):
             newjob = copy.copy(job)
@@ -248,7 +248,7 @@ class asyncJobMgr(object):
 
     def submitJobs(self, jobs, nums_threads=1, interval=1):
         '''submit n jobs, execute them with nums_threads of threads'''
-        inqueue1 = Queue.Queue()
+        inqueue1 = queue.Queue()
         lock = threading.Condition()
 
         for job in jobs:

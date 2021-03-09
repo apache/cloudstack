@@ -69,7 +69,11 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
 
     @Override
     public TemplateInfo getTemplateOnPrimaryStorage(long templateId, DataStore store, String configuration) {
-        VMTemplateVO templ = imageDataDao.findById(templateId);
+        VMTemplateVO templ = imageDataDao.findByIdIncludingRemoved(templateId);
+        if (templ == null) {
+            s_logger.error("Could not find a template with id " + templateId);
+            return null;
+        }
         if (store.getRole() == DataStoreRole.Primary) {
             VMTemplateStoragePoolVO templatePoolVO = templatePoolDao.findByPoolTemplate(store.getId(), templateId, configuration);
             if (templatePoolVO != null) {

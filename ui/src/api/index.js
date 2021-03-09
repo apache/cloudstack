@@ -42,7 +42,7 @@ export function api (command, args = {}, method = 'GET', data = {}) {
 export function login (arg) {
   const params = new URLSearchParams()
   params.append('command', 'login')
-  params.append('username', arg.username)
+  params.append('username', arg.username || arg.email)
   params.append('password', arg.password)
   params.append('domain', arg.domain)
   params.append('response', 'json')

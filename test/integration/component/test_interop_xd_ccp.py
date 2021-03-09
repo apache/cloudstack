@@ -1156,10 +1156,10 @@ class TestXDCCPInterop(cloudstackTestCase):
             domainid=self.account.domainid,
             id=deployVmResponse.id
         )
-        self.assert_(len(vms) > 0, "There are no Vms deployed in the account %s" % self.account.name)
+        self.assertTrue(len(vms) > 0, "There are no Vms deployed in the account %s" % self.account.name)
         vm = vms[0]
-        self.assert_(vm.id == str(deployVmResponse.id), "Vm deployed is different from the test")
-        self.assert_(vm.state == "Running", "VM is not in Running state")
+        self.assertTrue(vm.id == str(deployVmResponse.id), "Vm deployed is different from the test")
+        self.assertTrue(vm.state == "Running", "VM is not in Running state")
         return
 
     @attr(tags=["devcloud", "basic", "advanced"], required_hardware="true")
@@ -1181,10 +1181,10 @@ class TestXDCCPInterop(cloudstackTestCase):
             domainid=self.account.domainid,
             id=deployVmResponse.id
         )
-        self.assert_(len(vms) > 0, "There are no Vms deployed in the account %s" % self.account.name)
+        self.assertTrue(len(vms) > 0, "There are no Vms deployed in the account %s" % self.account.name)
         vm = vms[0]
-        self.assert_(vm.id == str(deployVmResponse.id), "Vm deployed is different from the test")
-        self.assert_(vm.state == "Running", "VM is not in Running state")
+        self.assertTrue(vm.id == str(deployVmResponse.id), "Vm deployed is different from the test")
+        self.assertTrue(vm.state == "Running", "VM is not in Running state")
 
         return
 

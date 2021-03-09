@@ -660,20 +660,20 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
         self.assertEqual(src_sf_volume.account_id, dest_sf_volume.account_id, "The source and destination volumes should be in the same SolidFire account.")
 
     def _verifySfVolumeIds(self, src_sf_volume, dest_sf_volume):
-        self.assert_(src_sf_volume.volume_id < dest_sf_volume.volume_id,
+        self.assertTrue(src_sf_volume.volume_id < dest_sf_volume.volume_id,
                      "The destination SolidFire root volume's ID should be greater than the id of the source one.")
 
     # verify the name, folder, and iscsi_name
     def _verifyFields(self, cs_volume, sf_volume):
-        self.assert_(cs_volume.name == sf_volume.name, "The CloudStack volume name does not match the SolidFire volume name.")
+        self.assertTrue(cs_volume.name == sf_volume.name, "The CloudStack volume name does not match the SolidFire volume name.")
 
         cs_volume_folder = self._get_cs_volume_folder(cs_volume.id)
 
-        self.assert_(int(cs_volume_folder) == sf_volume.volume_id, "The CloudStack folder name does not match the SolidFire volume ID.")
+        self.assertTrue(int(cs_volume_folder) == sf_volume.volume_id, "The CloudStack folder name does not match the SolidFire volume ID.")
 
         cs_volume_iscsi_name = self._get_cs_volume_iscsi_name(cs_volume.id)
 
-        self.assert_(cs_volume_iscsi_name == sf_util.format_iqn(sf_volume.iqn), "The CloudStack volume iscsi_name does not match the SolidFire volume IQN.")
+        self.assertTrue(cs_volume_iscsi_name == sf_util.format_iqn(sf_volume.iqn), "The CloudStack volume iscsi_name does not match the SolidFire volume IQN.")
 
     def _get_cs_volume_property(self, cs_volume_id, volume_property):
         sql_query = "Select " + volume_property + " From volumes Where uuid = '" + cs_volume_id + "'"

@@ -263,6 +263,7 @@ public class VmwareStorageLayoutHelper implements Configurable {
                 s_logger.info("Check if we need to move " + fileFullDsPath + " to its root location");
                 DatastoreMO dsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(file.getDatastoreName()));
                 if (dsMo.getMor() != null && !dsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
+                    HypervisorHostHelper.createBaseFolderInDatastore(dsMo, dsMo.getDataCenterMor());
                     DatastoreFile targetFile = new DatastoreFile(file.getDatastoreName(), HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, file.getFileName());
                     if (!targetFile.getPath().equalsIgnoreCase(file.getPath())) {
                         s_logger.info("Move " + file.getPath() + " -> " + targetFile.getPath());
@@ -370,6 +371,7 @@ public class VmwareStorageLayoutHelper implements Configurable {
 
     //This method call is for the volumes which actually exists
     public static String getLegacyDatastorePathFromVmdkFileName(DatastoreMO dsMo, String vmdkFileName) throws Exception {
+        HypervisorHostHelper.createBaseFolderInDatastore(dsMo, dsMo.getDataCenterMor());
         String vmdkDatastorePath = String.format("[%s] %s/%s", dsMo.getName(), HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, vmdkFileName);
         if (!dsMo.fileExists(vmdkDatastorePath)) {
             vmdkDatastorePath = getDeprecatedLegacyDatastorePathFromVmdkFileName(dsMo, vmdkFileName);
@@ -379,6 +381,7 @@ public class VmwareStorageLayoutHelper implements Configurable {
 
     //This method call is for the volumes to be created or can also be for volumes already exists
     public static String getDatastorePathBaseFolderFromVmdkFileName(DatastoreMO dsMo, String vmdkFileName) throws Exception {
+        HypervisorHostHelper.createBaseFolderInDatastore(dsMo, dsMo.getDataCenterMor());
         return String.format("[%s] %s/%s", dsMo.getName(), HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, vmdkFileName);
     }
 

@@ -124,7 +124,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             throw new ManagementServerException("Firewall rule for node SSH access can't be provisioned");
         }
         int existingFirewallRuleSourcePortEnd = firewallRule.getSourcePortEnd();
-        final int scaledTotalNodeCount = clusterSize == null ? (int)kubernetesCluster.getTotalNodeCount() : (int)(clusterSize + kubernetesCluster.getMasterNodeCount());
+        final int scaledTotalNodeCount = clusterSize == null ? (int)kubernetesCluster.getTotalNodeCount() : (int)(clusterSize + kubernetesCluster.getControlNodeCount());
         // Provision new SSH firewall rules
         try {
             provisionFirewallRules(publicIp, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, CLUSTER_NODES_DEFAULT_START_SSH_PORT + scaledTotalNodeCount - 1);
@@ -170,7 +170,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         final ServiceOffering serviceOffering = newServiceOffering == null ?
                 serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId()) : newServiceOffering;
         final Long serviceOfferingId = newServiceOffering == null ? null : serviceOffering.getId();
-        final long size = newSize == null ? kubernetesCluster.getTotalNodeCount() : (newSize + kubernetesCluster.getMasterNodeCount());
+        final long size = newSize == null ? kubernetesCluster.getTotalNodeCount() : (newSize + kubernetesCluster.getControlNodeCount());
         final long cores = serviceOffering.getCpu() * size;
         final long memory = serviceOffering.getRamSize() * size;
         KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(cores, memory, newSize, serviceOfferingId);
@@ -309,7 +309,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         final List<KubernetesClusterVmMapVO> originalVmList  = getKubernetesClusterVMMaps();
         int i = originalVmList.size() - 1;
         List<Long> removedVmIds = new ArrayList<>();
-        while (i >= kubernetesCluster.getMasterNodeCount() + clusterSize) {
+        while (i >= kubernetesCluster.getControlNodeCount() + clusterSize) {
             KubernetesClusterVmMapVO vmMapVO = originalVmList.get(i);
             UserVmVO userVM = userVmDao.findById(vmMapVO.getVmId());
             if (!removeKubernetesClusterNode(publicIpAddress, sshPort, userVM, 3, 30000)) {

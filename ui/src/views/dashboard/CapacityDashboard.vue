@@ -153,7 +153,7 @@ export default {
       }
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {
@@ -162,11 +162,6 @@ export default {
         this.fetchData()
       }
     }
-  },
-  created () {
-    setTimeout(() => {
-      // to do after initial timeout
-    }, 1000)
   },
   methods: {
     getStatus (value) {

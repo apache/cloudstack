@@ -193,6 +193,9 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name = "root_disk_size")
     private Long rootDiskSize;
 
+    @Column(name = "dynamic_scaling_enabled")
+    private boolean dynamicScalingEnabled;
+
     public ServiceOfferingJoinVO() {
     }
 
@@ -396,5 +399,13 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
 
     public Long getRootDiskSize() {
         return rootDiskSize ;
+    }
+
+    public boolean isDynamicScalingEnabled() {
+        return dynamicScalingEnabled;
+    }
+
+    public void setDynamicScalingEnabled(boolean dynamicScalingEnabled) {
+        this.dynamicScalingEnabled = dynamicScalingEnabled;
     }
 }

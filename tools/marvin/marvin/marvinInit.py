@@ -67,14 +67,14 @@ class MarvinInit:
         '''
         try:
             if not os.path.isfile(self.__configFile):
-                print "\n=== Marvin Parse Config Init Failed ==="
+                print("\n=== Marvin Parse Config Init Failed ===")
                 return FAILED
             self.__parsedConfig = getSetupConfig(self.__configFile)
-            print "\n=== Marvin Parse Config Successful ==="
+            print("\n=== Marvin Parse Config Successful ===")
             return SUCCESS
         except Exception as e:
-            print "\nException Occurred Under __parseConfig : " \
-                  "%s" % GetDetailExceptionInfo(e)
+            print("\nException Occurred Under __parseConfig : " \
+                  "%s" % GetDetailExceptionInfo(e))
             return FAILED
 
     def getParsedConfig(self):
@@ -126,8 +126,8 @@ class MarvinInit:
                 self.__hypervisorType = XEN_SERVER
             return SUCCESS
         except Exception as e:
-            print "\n Exception Occurred Under init " \
-                  "%s" % GetDetailExceptionInfo(e)
+            print("\n Exception Occurred Under init " \
+                  "%s" % GetDetailExceptionInfo(e))
             return FAILED
 
     def init(self):
@@ -142,20 +142,20 @@ class MarvinInit:
         @Output : SUCCESS or FAILED
         '''
         try:
-            print "\n==== Marvin Init Started ===="
+            print("\n==== Marvin Init Started ====")
             if ((self.__parseConfig() != FAILED) and
                     (self.__setHypervisorAndZoneInfo())and
                     (self.__setTestDataPath() != FAILED) and
                     (self.__initLogging() != FAILED) and
                     (self.__createTestClient() != FAILED) and
                     (self.__deployDC() != FAILED)):
-                print "\n==== Marvin Init Successful ===="
+                print("\n==== Marvin Init Successful ====")
                 return SUCCESS
-            print "\n==== Marvin Init Failed ===="
+            print("\n==== Marvin Init Failed ====")
             return FAILED
         except Exception as e:
-            print "\n Exception Occurred Under init " \
-                  "%s" % GetDetailExceptionInfo(e)
+            print("\n Exception Occurred Under init " \
+                  "%s" % GetDetailExceptionInfo(e))
             return FAILED
 
     def __initLogging(self):
@@ -181,12 +181,12 @@ class MarvinInit:
                 if ret != FAILED:
                     self.__logFolderPath = log_obj.getLogFolderPath()
                     self.__tcRunLogger = log_obj.getLogger()
-                    print "\n=== Marvin Init Logging Successful==="
+                    print("\n=== Marvin Init Logging Successful===")
                     return SUCCESS
             return FAILED
         except Exception as e:
-            print "\n Exception Occurred Under __initLogging " \
-                  ":%s" % GetDetailExceptionInfo(e)
+            print("\n Exception Occurred Under __initLogging " \
+                  ":%s" % GetDetailExceptionInfo(e))
             return FAILED
 
     def __createTestClient(self):
@@ -210,8 +210,8 @@ class MarvinInit:
                 return self.__testClient.createTestClient()
             return FAILED
         except Exception as e:
-            print "\n Exception Occurred Under __createTestClient : %s" % \
-                  GetDetailExceptionInfo(e)
+            print("\n Exception Occurred Under __createTestClient : %s" % \
+                  GetDetailExceptionInfo(e))
             return FAILED
 
     def __setTestDataPath(self):
@@ -224,11 +224,11 @@ class MarvinInit:
             if ((self.__parsedConfig.TestData is not None) and
                     (self.__parsedConfig.TestData.Path is not None)):
                 self.__testDataFilePath = self.__parsedConfig.TestData.Path
-            print "\n=== Marvin Setting TestData Successful==="
+            print("\n=== Marvin Setting TestData Successful===")
             return SUCCESS
         except Exception as e:
-            print "\nException Occurred Under __setTestDataPath : %s" % \
-                  GetDetailExceptionInfo(e)
+            print("\nException Occurred Under __setTestDataPath : %s" % \
+                  GetDetailExceptionInfo(e))
             return FAILED
 
     def __deployDC(self):
@@ -245,9 +245,9 @@ class MarvinInit:
                                                self.__tcRunLogger)
                 ret = deploy_obj.deploy()
                 if ret != SUCCESS:
-                    print "==== Deploy DC Failed ===="
+                    print("==== Deploy DC Failed ====")
             return ret
         except Exception as e:
-            print "\n Exception Occurred Under __deployDC : %s" % \
-                  GetDetailExceptionInfo(e)
+            print("\n Exception Occurred Under __deployDC : %s" % \
+                  GetDetailExceptionInfo(e))
             return FAILED

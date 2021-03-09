@@ -69,7 +69,7 @@ class TestLogin(cloudstackTestCase):
 
         try:
             resp = session.post(self.server_url, params=args, verify=False)
-        except requests.exceptions.ConnectionError, e:
+        except requests.exceptions.ConnectionError as e:
             self.fail("Failed to attempt login request to mgmt server")
             return None, None
 

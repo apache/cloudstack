@@ -68,7 +68,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             conn = TransactionLegacy.getStandaloneConnectionWithException();
             conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
             conn.setAutoCommit(true);
-            _concierge = new ConnectionConcierge("LockMaster", conn, true);
+            _concierge = new ConnectionConcierge("LockController", conn, true);
         } catch (SQLException e) {
             s_logger.error("Unable to get a new db connection", e);
             throw new CloudRuntimeException("Unable to initialize a connection to the database for locking purposes", e);
@@ -83,8 +83,8 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         }
     }
 
-    public static synchronized Merovingian2 createLockMaster(long msId) {
-        assert s_instance == null : "No lock can serve two masters.  Either he will hate the one and love the other, or he will be devoted to the one and despise the other.";
+    public static synchronized Merovingian2 createLockController(long msId) {
+        assert s_instance == null : "No lock can serve two controllers.  Either we will hate the one and love the other, or we will be devoted to the one and despise the other.";
         s_instance = new Merovingian2(msId);
         s_instance.cleanupThisServer();
         try {
@@ -95,7 +95,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
         return s_instance;
     }
 
-    public static Merovingian2 getLockMaster() {
+    public static Merovingian2 getLockController() {
         return s_instance;
     }
 

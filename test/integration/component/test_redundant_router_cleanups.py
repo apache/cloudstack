@@ -306,12 +306,12 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & primary)"
                     )
 
         self.debug("restarting network with cleanup=False")
@@ -329,12 +329,12 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & primary)"
                     )
         for router in routers:
             self.assertEqual(
@@ -440,12 +440,12 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & primary)"
                     )
 
         self.debug("restarting network with cleanup=True")
@@ -463,12 +463,12 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & primary)"
                     )
         for router in routers:
             self.assertEqual(
@@ -490,7 +490,7 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
         # 4. stop the running user VM
         # 5. wait for network.gc time
         # 6. listRouters
-        # 7. start the routers MASTER and BACK
+        # 7. start the routers PRIMARY and BACK
         # 8. wait for network.gc time and listRouters
         # 9. delete the account
 
@@ -577,12 +577,12 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & primary)"
                     )
 
         self.debug("Stopping the user VM: %s" % virtual_machine.name)
@@ -616,7 +616,7 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         for router in routers:
             self.assertEqual(
@@ -637,7 +637,7 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         for router in routers:
             self.assertEqual(
@@ -658,7 +658,7 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         for router in routers:
             self.assertEqual(
@@ -669,15 +669,15 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "advancedns"], required_hardware="false")
-    def test_restart_network_with_destroyed_masterVR(self):
-        """Test restarting RvR network without cleanup after destroying master VR
+    def test_restart_network_with_destroyed_primaryVR(self):
+        """Test restarting RvR network without cleanup after destroying primary VR
         """
 
         # Steps to validate
         # 1. createNetwork using network offering for redundant virtual router
         # 2. listRouters in above network
         # 3. deployVM in above user account in the created network
-        # 4. Destroy master VR
+        # 4. Destroy primary VR
         # 5. restartNetwork cleanup=false
         # 6. Verify RVR status after network restart
 
@@ -741,46 +741,46 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
         self.assertEqual(
             validateList(routers)[0],
             PASS,
-            "list router should return Master and backup routers"
+            "list router should return Primary and backup routers"
         )
         self.assertEqual(
             len(routers),
             2,
-            "Length of the list router should be 2 (Backup & master)"
+            "Length of the list router should be 2 (Backup & primary)"
         )
-        if routers[0].redundantstate == 'MASTER' and\
+        if routers[0].redundantstate == 'PRIMARY' and\
                 routers[1].redundantstate == 'BACKUP':
-            master_router = routers[0]
+            primary_router = routers[0]
             backup_router = routers[1]
-        elif routers[1].redundantstate == 'MASTER' and \
+        elif routers[1].redundantstate == 'PRIMARY' and \
                 routers[0].redundantstate == 'BACKUP':
-            master_router = routers[1]
+            primary_router = routers[1]
             backup_router = routers[0]
         else:
             self.fail("Both the routers in RVR are in BackupState - CLOUDSTACK-9015")
 
         Router.stop(
             self.apiclient,
-            id=master_router.id
+            id=primary_router.id
         )
         Router.destroy(
             self.apiclient,
-            id=master_router.id
+            id=primary_router.id
         )
-        masterVR = Router.list(
+        primaryVR = Router.list(
             self.apiclient,
-            id=master_router.id
+            id=primary_router.id
         )
-        self.assertIsNone(masterVR, "Router is not destroyed")
-        new_master = Router.list(
+        self.assertIsNone(primaryVR, "Router is not destroyed")
+        new_primary = Router.list(
             self.apiclient,
             id=backup_router.id
         )
-        self.assertEqual(validateList(new_master)[0], PASS, "Invalid response after vr destroy")
+        self.assertEqual(validateList(new_primary)[0], PASS, "Invalid response after vr destroy")
         self.assertEqual(
-            new_master[0].redundantstate,
-            "MASTER",
-            "Backup didn't switch to Master after destroying Master VR"
+            new_primary[0].redundantstate,
+            "PRIMARY",
+            "Backup didn't switch to Primary after destroying Primary VR"
         )
 
         self.debug("restarting network with cleanup=False")
@@ -798,12 +798,12 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
         self.assertEqual(
             validateList(routers)[0],
             PASS,
-            "list router should return Master and backup routers afrer network restart"
+            "list router should return Primary and backup routers afrer network restart"
         )
         self.assertEqual(
             len(routers),
             2,
-            "Length of the list router should be 2 (Backup & master)"
+            "Length of the list router should be 2 (Backup & primary)"
         )
         for router in routers:
             self.assertEqual(
@@ -811,12 +811,12 @@ class TestRedundantRouterNetworkCleanups(cloudstackTestCase):
                 "Running",
                 "Router state should be running"
             )
-        if routers[0].redundantstate == 'MASTER' and\
+        if routers[0].redundantstate == 'PRIMARY' and\
                 routers[1].redundantstate == 'BACKUP':
-            self.debug("Found master and backup VRs after network restart")
+            self.debug("Found primary and backup VRs after network restart")
         elif routers[0].redundantstate == 'BACKUP' and \
-                routers[1].redundantstate == 'MASTER':
-            self.debug("Found master and backup routers")
+                routers[1].redundantstate == 'PRIMARY':
+            self.debug("Found primary and backup routers")
         else:
             self.fail("RVR is not in proper start after network restart")
         return

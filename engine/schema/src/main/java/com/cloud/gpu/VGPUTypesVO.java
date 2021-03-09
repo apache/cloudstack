@@ -26,7 +26,7 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="vgpu_types")
+@Table(name = "vgpu_types")
 public class VGPUTypesVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

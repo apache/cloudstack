@@ -14,7 +14,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from __builtin__ import False
 """ BVT tests for Hosts Maintenance
 """
 
@@ -198,7 +197,7 @@ class TestHostHA(cloudstackTestCase):
                            "Check if listStoragePools returns a valid response"
                            )
         for storage_pool in storage_pools:
-            if storage_pool.type == u'NetworkFilesystem':
+            if storage_pool.type == 'NetworkFilesystem':
                 return True
 
         return False
@@ -218,7 +217,7 @@ class TestHostHA(cloudstackTestCase):
                            "Check if listStoragePools returns a valid response"
                            )
         for storage_pool in storage_pools:
-            if storage_pool.type == u'NetworkFilesystem':
+            if storage_pool.type == 'NetworkFilesystem':
                 return False
 
         return True
@@ -238,7 +237,7 @@ class TestHostHA(cloudstackTestCase):
                            "Check if listStoragePools returns a valid response"
                            )
         for storage_pool in storage_pools:
-            if storage_pool.type == u'NetworkFilesystem':
+            if storage_pool.type == 'NetworkFilesystem':
                 return True
 
         return False

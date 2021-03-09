@@ -26,7 +26,7 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name = ("firewall_rules_cidrs"))
+@Table(name = "firewall_rules_cidrs")
 public class FirewallRulesCidrsVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

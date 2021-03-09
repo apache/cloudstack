@@ -23,7 +23,7 @@
     <a-form-item class="pair-select-container" :label="selectLabel" v-if="this.checked">
       <a-select
         v-decorator="[selectDecorator, {
-          initialValue: this.getSelectInitialValue()
+          initialValue: selectedOption ? selectedOption : this.getSelectInitialValue()
         }]"
         showSearch
         optionFilterProp="children"
@@ -80,23 +80,16 @@ export default {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
     },
     getSelectInitialValue () {
-      if (this.arrayHasItems(this.selectOptions)) {
-        for (var i = 0; i < this.selectOptions.length; i++) {
-          if (this.selectOptions[i].enabled !== false) {
-            return this.selectOptions[i].name
-          }
-        }
-      }
-      return ''
+      const provider = this.selectOptions?.filter(x => x.enabled)?.[0]?.name || ''
+      this.handleSelectChange(provider)
+      return provider
     },
     handleCheckChange (e) {
       this.checked = e.target.checked
-      if (this.checked && this.arrayHasItems(this.selectOptions)) {
-        this.selectedOption = this.selectOptions[0].name
-      }
       this.$emit('handle-checkpair-change', this.resourceKey, this.checked, '')
     },
     handleSelectChange (val) {
+      this.selectedOption = val
       this.$emit('handle-checkpair-change', this.resourceKey, this.checked, val)
     }
   }

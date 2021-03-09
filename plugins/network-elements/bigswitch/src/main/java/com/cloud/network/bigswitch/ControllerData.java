@@ -21,19 +21,19 @@ package com.cloud.network.bigswitch;
 
 public class ControllerData {
     private final String ipAddress;
-    private final boolean isMaster;
+    private final boolean isPrimary;
 
-    public ControllerData(String ipAddress, boolean isMaster) {
+    public ControllerData(String ipAddress, boolean isPrimary) {
         this.ipAddress = ipAddress;
-        this.isMaster = isMaster;
+        this.isPrimary = isPrimary;
     }
 
     public String getIpAddress() {
         return ipAddress;
     }
 
-    public boolean isMaster() {
-        return isMaster;
+    public boolean isPrimary() {
+        return isPrimary;
     }
 
 }

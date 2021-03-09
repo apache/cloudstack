@@ -45,6 +45,7 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteVpnConnection;
@@ -229,10 +230,20 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             throw new InvalidParameterValueException("The customer gateway with name " + name + " already existed!");
         }
 
+        Boolean splitConnections = cmd.getSplitConnections();
+        if (splitConnections == null) {
+            splitConnections = false;
+        }
+
+        String ikeVersion = cmd.getIkeVersion();
+        if (ikeVersion == null) {
+            ikeVersion = "ike";
+        }
+
         checkCustomerGatewayCidrList(peerCidrList);
 
         Site2SiteCustomerGatewayVO gw =
-            new Site2SiteCustomerGatewayVO(name, accountId, owner.getDomainId(), gatewayIp, peerCidrList, ipsecPsk, ikePolicy, espPolicy, ikeLifetime, espLifetime, dpd, encap);
+            new Site2SiteCustomerGatewayVO(name, accountId, owner.getDomainId(), gatewayIp, peerCidrList, ipsecPsk, ikePolicy, espPolicy, ikeLifetime, espLifetime, dpd, encap, splitConnections, ikeVersion);
         _customerGatewayDao.persist(gw);
         return gw;
     }
@@ -419,14 +430,6 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         }
         _accountMgr.checkAccess(caller, null, false, gw);
 
-        List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByCustomerGatewayId(id);
-        if (conns != null) {
-            for (Site2SiteVpnConnection conn : conns) {
-                if (conn.getState() != State.Error) {
-                    throw new InvalidParameterValueException("Unable to update customer gateway with connections in non-Error state!");
-                }
-            }
-        }
         String name = cmd.getName();
         String gatewayIp = cmd.getGatewayIp();
 
@@ -476,6 +479,10 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             encap = false;
         }
 
+        Boolean splitConnections = cmd.getSplitConnections();
+
+        String ikeVersion = cmd.getIkeVersion();
+
         checkCustomerGatewayCidrList(guestCidrList);
 
         long accountId = gw.getAccountId();
@@ -494,8 +501,45 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         gw.setEspLifetime(espLifetime);
         gw.setDpd(dpd);
         gw.setEncap(encap);
+        gw.setSplitConnections(splitConnections);
+        if (ikeVersion != null) {
+            gw.setIkeVersion(ikeVersion);
+        }
         _customerGatewayDao.persist(gw);
+
+        setupVpnConnection(caller, id);
+
         return gw;
+    }
+
+    private void setupVpnConnection(Account caller, Long vpnCustomerGwIp) {
+        List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByCustomerGatewayId(vpnCustomerGwIp);
+        if (conns != null) {
+            for (Site2SiteVpnConnection conn : conns) {
+                try {
+                    _accountMgr.checkAccess(caller, null, false, conn);
+                } catch (PermissionDeniedException e) {
+                    // Just don't restart this connection, as the user has no rights to it
+                    // Maybe should issue a notification to the system?
+                    s_logger.info("Site2SiteVpnManager:updateCustomerGateway() Not resetting VPN connection " + conn.getId() + " as user lacks permission");
+                    continue;
+                }
+
+                if (conn.getState() == State.Pending) {
+                    // Vpn connection cannot be reset when the state is Pending
+                    continue;
+                }
+                try {
+                    if (conn.getState() == State.Connected || conn.getState() == State.Error) {
+                        stopVpnConnection(conn.getId());
+                    }
+                    startVpnConnection(conn.getId());
+                } catch (ResourceUnavailableException e) {
+                    // Should never get here, as we are looping on the actual connections, but we must handle it regardless
+                    s_logger.warn("Failed to update VPN connection");
+                }
+            }
+        }
     }
 
     @Override

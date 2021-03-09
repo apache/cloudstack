@@ -16,9 +16,32 @@
 // under the License.
 package com.cloud.ha;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContext;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManagerListener;
+import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -46,37 +69,16 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.managed.context.ManagedContext;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.management.ManagementServerHost;
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 /**
  * HighAvailabilityManagerImpl coordinates the HA process. VMs are registered with the HA Manager for HA. The request is stored
@@ -88,7 +90,7 @@ import javax.naming.ConfigurationException;
  * state. If a Investigator finds the VM is dead, then HA process is started on the VM, skipping step 2. 2. If the list of
  * Investigators can not determine if the VM is dead or alive. The list of FenceBuilders is invoked to fence off the VM so that
  * it won't do any damage to the storage and network. 3. The VM is marked as stopped. 4. The VM is started again via the normal
- * process of starting VMs. Note that once the VM is marked as stopped, the user may have started the VM himself. 5. VMs that
+ * process of starting VMs. Note that once the VM is marked as stopped, the user may have started the VM explicitly. 5. VMs that
  * have re-started more than the configured number of times are marked as in Error state and the user is not allowed to restart
  * the VM.
  *
@@ -125,9 +127,12 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     HostPodDao _podDao;
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
-
     @Inject
     ServiceOfferingDao _serviceOfferingDao;
+    @Inject
+    private ConsoleProxyManager consoleProxyManager;
+    @Inject
+    private SecondaryStorageVmManager secondaryStorageVmManager;
 
     long _serverId;
 
@@ -197,7 +202,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     int _maxRetries;
     long _timeBetweenFailures;
     long _timeBetweenCleanups;
-    boolean _forceHA;
     String _haTag = null;
 
     protected HighAvailabilityManagerImpl() {
@@ -364,7 +368,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
                 alertType = AlertManager.AlertType.ALERT_TYPE_SSVM;
             }
 
-            if (!(_forceHA || vm.isHaEnabled())) {
+            if (!(ForceHA.value() || vm.isHaEnabled())) {
                 String hostDesc = "id:" + vm.getHostId() + ", availability zone id:" + vm.getDataCenterId() + ", pod id:" + vm.getPodIdToDeployIn();
                 _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "VM (name: " + vm.getHostName() + ", id: " + vm.getId() +
                     ") stopped unexpectedly on host " + hostDesc, "Virtual Machine " + vm.getHostName() + " (id: " + vm.getId() + ") running on host [" + vm.getHostId() +
@@ -569,7 +573,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
         vm = _itMgr.findById(vm.getId());
 
-        if (!_forceHA && !vm.isHaEnabled()) {
+        if (!ForceHA.value() && !vm.isHaEnabled()) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM is not HA enabled so we're done.");
             }
@@ -680,31 +684,51 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         _haDao.delete(vm.getId(), WorkType.Destroy);
     }
 
+    private void stopVMWithCleanup(VirtualMachine vm, VirtualMachine.State state) throws OperationTimedoutException, ResourceUnavailableException {
+        if (VirtualMachine.State.Running.equals(state)) {
+            _itMgr.advanceStop(vm.getUuid(), true);
+        }
+    }
+
+    private void destroyVM(VirtualMachine vm, boolean expunge) throws OperationTimedoutException, AgentUnavailableException {
+        s_logger.info("Destroying " + vm.toString());
+        if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
+            consoleProxyManager.destroyProxy(vm.getId());
+        } else if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())) {
+            secondaryStorageVmManager.destroySecStorageVm(vm.getId());
+        } else {
+            _itMgr.destroy(vm.getUuid(), expunge);
+        }
+    }
+
     protected Long destroyVM(final HaWorkVO work) {
         final VirtualMachine vm = _itMgr.findById(work.getInstanceId());
-        s_logger.info("Destroying " + vm.toString());
+        if (vm == null) {
+            s_logger.info("No longer can find VM " + work.getInstanceId() + ". Throwing away " + work);
+            return null;
+        }
+        boolean expunge = VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())
+                || VirtualMachine.Type.ConsoleProxy.equals(vm.getType());
+        if (!expunge && VirtualMachine.State.Destroyed.equals(work.getPreviousState())) {
+            s_logger.info("VM " + vm.getUuid() + " already in " + vm.getState() + " state. Throwing away " + work);
+            return null;
+        }
         try {
-            if (vm.getState() != State.Destroyed) {
-                s_logger.info("VM is no longer in Destroyed state " + vm.toString());
-                return null;
-            }
-
-            if (vm.getHostId() != null) {
-                _itMgr.destroy(vm.getUuid(), false);
-                s_logger.info("Successfully destroy " + vm);
+            stopVMWithCleanup(vm, work.getPreviousState());
+            if (!VirtualMachine.State.Expunging.equals(work.getPreviousState())) {
+                destroyVM(vm, expunge);
                 return null;
             } else {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(vm + " has already been stopped");
-                }
-                return null;
+                s_logger.info("VM " + vm.getUuid() + " still in " + vm.getState() + " state.");
             }
         } catch (final AgentUnavailableException e) {
-            s_logger.debug("Agnet is not available" + e.getMessage());
+            s_logger.debug("Agent is not available" + e.getMessage());
         } catch (OperationTimedoutException e) {
             s_logger.debug("operation timed out: " + e.getMessage());
         } catch (ConcurrentOperationException e) {
             s_logger.debug("concurrent operation: " + e.getMessage());
+        } catch (ResourceUnavailableException e) {
+            s_logger.debug("Resource unavailable: " + e.getMessage());
         }
 
         return (System.currentTimeMillis() >> 10) + _stopRetryInterval;
@@ -793,9 +817,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             case Stop:
             case CheckStop:
             case ForceStop:
-                return ((System.currentTimeMillis() >> 10) + _stopRetryInterval);
             case Destroy:
-                return ((System.currentTimeMillis() >> 10) + _restartRetryInterval);
+                return ((System.currentTimeMillis() >> 10) + _stopRetryInterval);
         }
         return 0;
     }
@@ -861,7 +884,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             _workers[i] = new WorkerThread("HA-Worker-" + i);
         }
 
-        _forceHA = ForceHA.value();
         _timeToSleep = TimeToSleep.value() * SECONDS_TO_MILLISECONDS_FACTOR;
         _maxRetries = MigrationMaxRetries.value();
         _timeBetweenFailures = TimeBetweenFailures.value() * SECONDS_TO_MILLISECONDS_FACTOR;

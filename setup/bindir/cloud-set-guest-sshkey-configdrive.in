@@ -31,7 +31,7 @@ mountdir=$(mktemp -d)
 # If lable name is other than config, please change the below line as required
 DefaultDisk=/dev/disk/by-label/config-2
 
-SSHKey_File=$mountdir/cloudstack/metadata/public_keys.txt
+SSHKey_File=$mountdir/cloudstack/metadata/public-keys.txt
 keys_received=0
 
 function prepare_mount
@@ -44,7 +44,7 @@ function prepare_mount
     if [ -e $DefaultDisk ]; then
         Disk=$DefaultDisk
     else
-        BLOCK_DEVICE=$(blkid -t LABEL='config' /dev/hd? /dev/sd? /dev/xvd? /dev/vd? -o device)
+        BLOCK_DEVICE=$(blkid -t LABEL='config-2' /dev/hd? /dev/sd? /dev/xvd? /dev/vd? -o device)
         if [ -n $BLOCK_DEVICE ]; then
             Disk=$BLOCK_DEVICE
         else

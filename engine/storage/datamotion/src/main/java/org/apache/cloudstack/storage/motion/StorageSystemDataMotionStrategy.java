@@ -134,6 +134,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Preconditions;
+import java.util.stream.Collectors;
 
 public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private static final Logger LOGGER = Logger.getLogger(StorageSystemDataMotionStrategy.class);
@@ -1816,7 +1817,12 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     continue;
                 }
 
-                copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
+                if (srcVolumeInfo.getTemplateId() != null) {
+                    LOGGER.debug(String.format("Copying template [%s] of volume [%s] from source storage pool [%s] to target storage pool [%s].", srcVolumeInfo.getTemplateId(), srcVolumeInfo.getId(), sourceStoragePool.getId(), destStoragePool.getId()));
+                    copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
+                } else {
+                    LOGGER.debug(String.format("Skipping copy template from source storage pool [%s] to target storage pool [%s] before migration due to volume [%s] does not have a template.", sourceStoragePool.getId(), destStoragePool.getId(), srcVolumeInfo.getId()));
+                }
 
                 VolumeVO destVolume = duplicateVolumeOnAnotherStorage(srcVolume, destStoragePool);
                 VolumeInfo destVolumeInfo = _volumeDataFactory.getVolume(destVolume.getId(), destDataStore);
@@ -1920,9 +1926,12 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 throw new CloudRuntimeException(errMsg);
             }
-        } catch (Exception ex) {
-            errMsg = "Copy operation failed in 'StorageSystemDataMotionStrategy.copyAsync': " + ex.getMessage();
+        } catch (AgentUnavailableException | OperationTimedoutException | CloudRuntimeException ex) {
+            String volumesAndStorages = volumeDataStoreMap.entrySet().stream().map(entry -> formatEntryOfVolumesAndStoragesAsJsonToDisplayOnLog(entry)).collect(Collectors.joining(","));
+
+            errMsg = String.format("Copy volume(s) to storage(s) [%s] and VM to host [%s] failed in StorageSystemDataMotionStrategy.copyAsync. Error message: [%s].", volumesAndStorages, formatMigrationElementsAsJsonToDisplayOnLog("vm", vmTO.getId(), srcHost.getId(), destHost.getId()), ex.getMessage());
             LOGGER.error(errMsg, ex);
+
             throw new CloudRuntimeException(errMsg);
         } finally {
             CopyCmdAnswer copyCmdAnswer = new CopyCmdAnswer(errMsg);
@@ -1933,6 +1942,16 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             callback.complete(result);
         }
+    }
+
+    protected String formatMigrationElementsAsJsonToDisplayOnLog(String objectName, Object object, Object from, Object to){
+        return String.format("{%s: \"%s\", from: \"%s\", to:\"%s\"}", objectName, object, from, to);
+    }
+
+    protected String formatEntryOfVolumesAndStoragesAsJsonToDisplayOnLog(Map.Entry<VolumeInfo, DataStore> entry ){
+        VolumeInfo srcVolumeInfo = entry.getKey();
+        DataStore destDataStore = entry.getValue();
+        return formatMigrationElementsAsJsonToDisplayOnLog("volume", srcVolumeInfo.getId(), srcVolumeInfo.getPoolId(), destDataStore.getId());
     }
 
     /**

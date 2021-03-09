@@ -24,7 +24,7 @@ import com.cloud.utils.component.PluggableService;
 public interface CloudianConnector extends PluggableService {
 
     ConfigKey<Boolean> CloudianConnectorEnabled = new ConfigKey<>("Advanced", Boolean.class, "cloudian.connector.enabled", "false",
-            "If set to true, this enables the Cloudian Connector for CloudStack.", true);
+            "If set to true, this enables the Cloudian Connector for CloudStack.", false);
 
     ConfigKey<String> CloudianAdminHost = new ConfigKey<>("Advanced", String.class, "cloudian.admin.host", "s3-admin.cloudian.com",
             "The hostname of the Cloudian Admin server.", true);

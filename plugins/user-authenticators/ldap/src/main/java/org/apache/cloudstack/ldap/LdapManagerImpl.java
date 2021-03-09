@@ -21,10 +21,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 import javax.naming.NamingException;
 import javax.naming.ldap.LdapContext;
+import java.util.Map;
 import java.util.UUID;
 
+import com.cloud.user.AccountManager;
+import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.LdapValidator;
 import org.apache.cloudstack.api.command.LDAPConfigCmd;
@@ -42,6 +46,8 @@ import org.apache.cloudstack.api.response.LdapConfigurationResponse;
 import org.apache.cloudstack.api.response.LdapUserResponse;
 import org.apache.cloudstack.api.response.LinkAccountToLdapResponse;
 import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.ldap.dao.LdapConfigurationDao;
 import org.apache.cloudstack.ldap.dao.LdapTrustMapDao;
 import org.apache.commons.lang.Validate;
@@ -57,7 +63,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 
 @Component
-public class LdapManagerImpl implements LdapManager, LdapValidator {
+public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManager, LdapValidator {
     private static final Logger LOGGER = Logger.getLogger(LdapManagerImpl.class.getName());
 
     @Inject
@@ -80,6 +86,9 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     @Inject
     LdapTrustMapDao _ldapTrustMapDao;
 
+    @Inject
+    private MessageBus messageBus;
+
     public LdapManagerImpl() {
         super();
     }
@@ -91,6 +100,33 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
         _ldapContextFactory = ldapContextFactory;
         _ldapUserManagerFactory = ldapUserManagerFactory;
         _ldapConfiguration = ldapConfiguration;
+    }
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        super.configure(name, params);
+        LOGGER.debug("Configuring LDAP Manager");
+
+        messageBus.subscribe(AccountManager.MESSAGE_REMOVE_ACCOUNT_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object args) {
+                try {
+                    final Account account = accountDao.findByIdIncludingRemoved((Long) args);
+                    long domainId = account.getDomainId();
+                    LdapTrustMapVO ldapTrustMapVO = _ldapTrustMapDao.findByAccount(domainId, account.getAccountId());
+                    if (ldapTrustMapVO != null) {
+                        String msg = String.format("Removing link between LDAP: %s - type: %s and account: %s on domain: %s",
+                                ldapTrustMapVO.getName(), ldapTrustMapVO.getType().name(), account.getAccountId(), domainId);
+                        LOGGER.debug(msg);
+                        _ldapTrustMapDao.remove(ldapTrustMapVO.getId());
+                    }
+                } catch (final Exception e) {
+                    LOGGER.error("Caught exception while removing account linked to LDAP", e);
+                }
+            }
+        });
+
+        return true;
     }
 
     @Override

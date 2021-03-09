@@ -558,4 +558,17 @@ public class UserVmManagerImplTest {
         Mockito.when(newRootDiskOffering.getName()).thenReturn("OfferingName");
         return newRootDiskOffering;
     }
+
+    @Test
+    public void validateRemoveEncryptedPasswordFromUserVmVoDetails(){
+        Map<String, String> detailsMock = Mockito.mock(HashMap.class);
+
+        Mockito.doReturn(detailsMock).when(userVmVoMock).getDetails();
+        Mockito.doNothing().when(userVmDao).saveDetails(userVmVoMock);
+        userVmManagerImpl.removeEncryptedPasswordFromUserVmVoDetails(userVmVoMock);
+
+        Mockito.verify(detailsMock, Mockito.times(1)).remove(VmDetailConstants.ENCRYPTED_PASSWORD);
+        Mockito.verify(userVmVoMock, Mockito.times(1)).setDetails(detailsMock);
+        Mockito.verify(userVmDao, Mockito.times(1)).saveDetails(userVmVoMock);
+    }
 }

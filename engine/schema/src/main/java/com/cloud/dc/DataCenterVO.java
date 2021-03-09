@@ -471,4 +471,10 @@ public class DataCenterVO implements DataCenter {
     public PartitionType partitionType() {
         return PartitionType.Zone;
     }
+
+    @Override
+    public String toString() {
+        return String.format("Zone {\"id\": \"%s\", \"name\": \"%s\", \"uuid\": \"%s\"}", id, name, uuid);
+    }
+
 }

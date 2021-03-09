@@ -17,12 +17,18 @@
 
 <template>
   <div style="width: auto;">
-    <a-steps progressDot :current="currentStep" size="small" style="margin-left: 0px; margin-top: 16px;">
+    <a-steps
+      ref="zoneNetStep"
+      progressDot
+      :current="currentStep"
+      size="small"
+      style="margin-left: 0px; margin-top: 16px;">
       <a-step
-        v-for="step in steps"
+        v-for="(step, index) in steps"
         :key="step.title"
         :title="$t(step.title)"
-        :style="stepScales"></a-step>
+        :style="stepScales"
+        :ref="`netStep${index}`"></a-step>
     </a-steps>
     <zone-wizard-physical-network-setup-step
       v-if="steps && steps[currentStep].formKey === 'physicalNetwork'"
@@ -110,6 +116,7 @@
 
 <script>
 import { api } from '@/api'
+import { mixinDevice } from '@/utils/mixin.js'
 import ZoneWizardPhysicalNetworkSetupStep from '@views/infra/zone/ZoneWizardPhysicalNetworkSetupStep'
 import IpAddressRangeForm from '@views/infra/zone/IpAddressRangeForm'
 import StaticInputsForm from '@views/infra/zone/StaticInputsForm'
@@ -122,6 +129,7 @@ export default {
     StaticInputsForm,
     AdvancedGuestTrafficForm
   },
+  mixins: [mixinDevice],
   props: {
     prefillContent: {
       type: Object,
@@ -187,8 +195,8 @@ export default {
       return steps
     },
     stepScales () {
-      if (this.allSteps.length > 4) {
-        return { width: 'calc(100% / ' + this.allSteps.length + ')' }
+      if (!this.isMobile() && this.steps.length > 4) {
+        return { width: 'calc(100% / ' + this.steps.length + ')' }
       }
       return {}
     },
@@ -361,13 +369,14 @@ export default {
       ]
     }
   },
-  mounted () {
+  created () {
     this.physicalNetworks = this.prefillContent.physicalNetworks
     this.steps = this.filteredSteps()
     this.currentStep = this.prefillContent.networkStep ? this.prefillContent.networkStep : 0
     if (this.stepChild && this.stepChild !== '') {
       this.currentStep = this.steps.findIndex(item => item.formKey === this.stepChild)
     }
+    this.scrollToStepActive()
     if (this.zoneType === 'Basic' ||
       (this.zoneType === 'Advanced' && this.sgEnabled)) {
       this.skipGuestTrafficStep = false
@@ -401,6 +410,7 @@ export default {
       } else {
         this.currentStep++
         this.$emit('fieldsChanged', { networkStep: this.currentStep })
+        this.scrollToStepActive()
       }
     },
     handleBack (e) {
@@ -409,7 +419,23 @@ export default {
       } else {
         this.currentStep--
         this.$emit('fieldsChanged', { networkStep: this.currentStep })
+        this.scrollToStepActive()
       }
+    },
+    scrollToStepActive () {
+      if (!this.isMobile()) {
+        return
+      }
+      this.$nextTick(() => {
+        if (!this.$refs.zoneNetStep) {
+          return
+        }
+        if (this.currentStep === 0) {
+          this.$refs.zoneNetStep.$el.scrollLeft = 0
+          return
+        }
+        this.$refs.zoneNetStep.$el.scrollLeft = this.$refs['netStep' + (this.currentStep - 1)][0].$el.offsetLeft
+      })
     },
     submitLaunchZone () {
       this.$emit('submitLaunchZone')

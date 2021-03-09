@@ -47,7 +47,7 @@ public class CreateProjectRolePermissionCmd extends BaseRolePermissionCmd {
     private Long projectRoleId;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, required = true, entityType = ProjectResponse.class,
-            description = "ID of project where project role permission is to be created", validations = {ApiArgValidator.NotNullOrEmpty})
+            description = "ID of project where project role permission is to be created")
     private Long projectId;
 
     /////////////////////////////////////////////////////

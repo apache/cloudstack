@@ -20,6 +20,7 @@
 package org.apache.cloudstack.api.command.user.template;
 
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.template.TemplateApiService;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
@@ -32,7 +33,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.util.ArrayList;
 
 @RunWith(MockitoJUnitRunner.class)
-public class RegisterTemplateCmdTest{
+public class RegisterTemplateCmdTest {
 
     @InjectMocks
     private RegisterTemplateCmd registerTemplateCmd;
@@ -107,5 +108,35 @@ public class RegisterTemplateCmdTest{
             registerTemplateCmd.zoneIds = null;
             registerTemplateCmd.zoneId = 1L;
             Assert.assertEquals((Long)1L,registerTemplateCmd.getZoneIds().get(0));
+    }
+
+    private void testIsDeployAsIsBase(Hypervisor.HypervisorType hypervisorType, Boolean deployAsIsParameter, boolean expectedResult) {
+        registerTemplateCmd = new RegisterTemplateCmd();
+        registerTemplateCmd.hypervisor = hypervisorType.name();
+        registerTemplateCmd.deployAsIs = deployAsIsParameter;
+        boolean isDeployAsIs = registerTemplateCmd.isDeployAsIs();
+        Assert.assertEquals(expectedResult, isDeployAsIs);
+    }
+
+    @Test
+    public void testIsDeployAsIsVmwareNullAsIs() {
+        testIsDeployAsIsBase(Hypervisor.HypervisorType.VMware, null, false);
+    }
+
+    @Test
+    public void testIsDeployAsIsVmwareNotAsIs() {
+        testIsDeployAsIsBase(Hypervisor.HypervisorType.VMware, false, false);
+    }
+
+    @Test
+    public void testIsDeployAsIsVmwareAsIs() {
+        testIsDeployAsIsBase(Hypervisor.HypervisorType.VMware, true, true);
+    }
+
+    @Test
+    public void testIsDeployAsIsNonVmware() {
+        testIsDeployAsIsBase(Hypervisor.HypervisorType.KVM, true, false);
+        testIsDeployAsIsBase(Hypervisor.HypervisorType.XenServer, true, false);
+        testIsDeployAsIsBase(Hypervisor.HypervisorType.Any, true, false);
     }
 }

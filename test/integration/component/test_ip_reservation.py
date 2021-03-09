@@ -22,7 +22,8 @@
 
     Feature Specifications: https://cwiki.apache.org/confluence/display/CLOUDSTACK/FS+-+IP+Range+Reservation+within+a+Network
 """
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.utils import validateList, cleanup_resources, verifyRouterState
 from marvin.lib.base import (Account,
                              Network,
@@ -37,7 +38,7 @@ from marvin.lib.common import (get_zone,
                                createEnabledNetworkOffering,
                                createNetworkRulesForVM,
                                verifyNetworkState)
-from marvin.codes import (PASS, FAIL, FAILED, UNKNOWN, FAULT, MASTER,
+from marvin.codes import (PASS, FAIL, FAILED, UNKNOWN, FAULT, PRIMARY,
                           NAT_RULE, STATIC_NAT_RULE)
 import netaddr
 
@@ -374,7 +375,7 @@ class TestIpReservation(cloudstackTestCase):
         # steps
         # 1. create vm in isolated network with RVR and ip in guestvmcidr
         # 2. update guestvmcidr
-        # 3. List routers and stop the master router, wait till backup router comes up
+        # 3. List routers and stop the primary router, wait till backup router comes up
         # 4. create another VM
         #
         # validation
@@ -382,7 +383,7 @@ class TestIpReservation(cloudstackTestCase):
         # 2. Existing guest vm ip should not be changed after reservation
         # 3. Newly created VM should get ip in guestvmcidr
         # 4. Verify that the network has two routers associated with it
-        # 5. Backup router should come up when master router is stopped"""
+        # 5. Backup router should come up when primary router is stopped"""
 
         subnet = "10.1."+str(random.randrange(1,254))
         gateway = subnet +".1"
@@ -412,29 +413,29 @@ class TestIpReservation(cloudstackTestCase):
         self.debug("Listing routers for network: %s" % isolated_network_RVR.name)
         routers = Router.list(self.apiclient, networkid=isolated_network_RVR.id, listall=True)
         self.assertEqual(validateList(routers)[0], PASS, "Routers list validation failed")
-        self.assertEqual(len(routers), 2, "Length of the list router should be 2 (Backup & master)")
+        self.assertEqual(len(routers), 2, "Length of the list router should be 2 (Backup & primary)")
 
-        if routers[0].redundantstate == MASTER:
-            master_router = routers[0]
+        if routers[0].redundantstate == PRIMARY:
+            primary_router = routers[0]
             backup_router = routers[1]
         else:
-            master_router = routers[1]
+            primary_router = routers[1]
             backup_router = routers[0]
 
-        self.debug("Stopping router ID: %s" % master_router.id)
+        self.debug("Stopping router ID: %s" % primary_router.id)
 
         try:
-            Router.stop(self.apiclient, id=master_router.id)
+            Router.stop(self.apiclient, id=primary_router.id)
         except Exception as e:
-            self.fail("Failed to stop master router due to error %s" % e)
+            self.fail("Failed to stop primary router due to error %s" % e)
 
         # wait for VR to update state
         wait_for_cleanup(self.apiclient, ["router.check.interval"])
 
-        result = verifyRouterState(master_router.id, [UNKNOWN,FAULT])
+        result = verifyRouterState(primary_router.id, [UNKNOWN,FAULT])
         if result[0] == FAIL:
             self.fail(result[1])
-        result = verifyRouterState(backup_router.id, [MASTER])
+        result = verifyRouterState(backup_router.id, [PRIMARY])
         if result[0] == FAIL:
             self.fail(result[1])
 
@@ -762,7 +763,7 @@ class TestUpdateIPReservation(cloudstackTestCase):
 
         try:
             virtual_machine_1 = createVirtualMachine(self, network_id=isolated_network.id,
-                    ip_address=u"10.1."+random_subnet+".3")
+                    ip_address="10.1."+random_subnet+".3")
         except Exception as e:
             self.fail("VM creation failed: %s" % e)
 

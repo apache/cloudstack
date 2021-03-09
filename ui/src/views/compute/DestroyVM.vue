@@ -17,34 +17,25 @@
 
 <template>
   <div class="form-layout">
-    <a-alert type="warning" v-html="$t('message.action.destroy.instance')" /><br/>
+    <a-alert type="warning" v-html="resource.backupofferingid ? $t('message.action.destroy.instance.with.backups') : $t('message.action.destroy.instance')" /><br/>
     <a-spin :spinning="loading">
       <a-form
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.allowuserexpungerecovervm">
-          <span slot="label">
-            {{ $t('label.expunge') }}
-            <a-tooltip placement="bottom" :title="apiParams.expunge.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.expunge')" :tooltip="apiParams.expunge.description"/>
           <a-switch v-decorator="['expunge']" :auto-focus="true" />
         </a-form-item>
 
         <a-form-item v-if="volumes.length > 0">
-          <span slot="label">
-            {{ $t('label.delete.volumes') }}
-            <a-tooltip placement="bottom" :title="apiParams.volumeids.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.delete.volumes')" :tooltip="apiParams.volumeids.description"/>
           <a-select
             v-decorator="['volumeids']"
             :placeholder="$t('label.delete.volumes')"
             mode="multiple"
-            :loading="loading">
+            :loading="loading"
+            :autoFocus="$store.getters.userInfo.roletype !== 'Admin' && !$store.getters.features.allowuserexpungerecovervm">
             <a-select-option v-for="volume in volumes" :key="volume.id">
               {{ volume.name }}
             </a-select-option>
@@ -63,9 +54,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'DestroyVM',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -81,13 +76,9 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiParams = {}
-    var apiConfig = this.$store.getters.apis.destroyVirtualMachine || {}
-    apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('destroyVirtualMachine')
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

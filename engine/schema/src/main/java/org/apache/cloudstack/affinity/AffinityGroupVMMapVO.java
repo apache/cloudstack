@@ -26,7 +26,7 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name = ("affinity_group_vm_map"))
+@Table(name = "affinity_group_vm_map")
 public class AffinityGroupVMMapVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

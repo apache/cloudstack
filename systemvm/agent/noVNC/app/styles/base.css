@@ -672,6 +672,10 @@ select:active {
   max-width: 100%;
 }
 
+:root:not(.noVNC_connected) #noVNC_fullscreen_button {
+  display: none;
+}
+
 /* Settings */
 #noVNC_settings {
 }

@@ -35,6 +35,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.alert.AlertManager;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -100,6 +101,8 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
     ManagementServer server;
     @Inject
     DataStoreProviderManager providerMgr;
+    @Inject
+    StorageManager storageManager;
 
     @Override
     public boolean maintain(DataStore store) {
@@ -161,6 +164,10 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 } else {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("ModifyStoragePool false succeeded");
+                    }
+                    if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                        s_logger.debug(String.format("Started synchronising datastore cluster storage pool %s with vCenter", pool.getUuid()));
+                        storageManager.syncDatastoreClusterStoragePool(pool.getId(), ((ModifyStoragePoolAnswer) answer).getDatastoreClusterChildren(), host.getId());
                     }
                 }
             }
@@ -322,6 +329,10 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
             } else {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("ModifyStoragePool add succeeded");
+                }
+                if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                    s_logger.debug(String.format("Started synchronising datastore cluster storage pool %s with vCenter", pool.getUuid()));
+                    storageManager.syncDatastoreClusterStoragePool(pool.getId(), ((ModifyStoragePoolAnswer) answer).getDatastoreClusterChildren(), host.getId());
                 }
             }
         }

@@ -1097,6 +1097,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     final List<SnapshotDetailsVO> snapshotList = _snapshotDetailsDao.findDetails(AsyncJob.Constants.MS_ID, Long.toString(msid), false);
                     for (final SnapshotDetailsVO snapshotDetailsVO : snapshotList) {
                         SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotDetailsVO.getResourceId(), DataStoreRole.Primary);
+                        if (snapshot == null) {
+                            _snapshotDetailsDao.remove(snapshotDetailsVO.getId());
+                            continue;
+                        }
                         snapshotSrv.processEventOnSnapshotObject(snapshot, Snapshot.Event.OperationFailed);
                         _snapshotDetailsDao.removeDetail(snapshotDetailsVO.getResourceId(), AsyncJob.Constants.MS_ID);
                     }

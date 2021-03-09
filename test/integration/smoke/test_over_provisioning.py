@@ -111,8 +111,8 @@ class TestUpdateOverProvision(cloudstackTestCase):
         factorOld = 0
         if pool.overprovisionfactor is not None:
             factorOld = float(str(pool.overprovisionfactor))
-        factorNew = str(factorOld - 1.0)
+        factorNew = (factorOld - 1.0)
         if factorNew > 0:
-            updateConfigurationCmd.value = factorNew
+            updateConfigurationCmd.value = str(factorNew)
             updateConfigurationCmd.storageid = pool.id
             updateConfigurationResponse = self.apiClient.updateConfiguration(updateConfigurationCmd)

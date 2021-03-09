@@ -76,7 +76,9 @@
           @ok="handleNetworkAclFormSubmit">
           <a-form @submit.prevent="handleNetworkAclFormSubmit" :form="networkAclForm">
             <a-form-item :label="$t('label.add.list.name')">
-              <a-input v-decorator="['name', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
+              <a-input
+                v-decorator="['name', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+                autoFocus></a-input>
             </a-form-item>
             <a-form-item :label="$t('label.description')">
               <a-input v-decorator="['description', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
@@ -131,7 +133,7 @@
             <p>{{ $t('message.add.new.gateway.to.vpc') }}</p>
             <a-form @submit.prevent="handleGatewayFormSubmit" :form="gatewayForm">
               <a-form-item :label="$t('label.physicalnetworkid')">
-                <a-select v-decorator="['physicalnetwork']">
+                <a-select v-decorator="['physicalnetwork']" autoFocus>
                   <a-select-option v-for="item in physicalnetworks" :key="item.id" :value="item.id">
                     {{ item.name }}
                   </a-select-option>
@@ -174,7 +176,7 @@
               <a-form-item :label="$t('label.aclid')">
                 <a-select v-decorator="['acl']">
                   <a-select-option v-for="item in networkAcls" :key="item.id" :value="item.id">
-                    {{ item.name }}
+                    <strong>{{ item.name }}</strong> ({{ item.description }})
                   </a-select-option>
                 </a-select>
               </a-form-item>
@@ -255,7 +257,7 @@
           <a-spin :spinning="modals.vpnConnectionLoading">
             <a-form @submit.prevent="handleVpnConnectionFormSubmit" :form="vpnConnectionForm">
               <a-form-item :label="$t('label.vpncustomergatewayid')">
-                <a-select v-decorator="['vpncustomergateway']">
+                <a-select v-decorator="['vpncustomergateway']" autoFocus>
                   <a-select-option v-for="item in vpncustomergateways" :key="item.id" :value="item.id">
                     {{ item.name }}
                   </a-select-option>
@@ -406,7 +408,7 @@ export default {
       this.setCurrentTab()
     }
   },
-  mounted () {
+  created () {
     this.handleFetchData()
     this.setCurrentTab()
   },

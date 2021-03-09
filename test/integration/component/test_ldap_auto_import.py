@@ -143,7 +143,7 @@ def checkLdapConfiguration(cls, ldapConfiguration):
             timeout=15)
         if tn is not None:
             tn.set_debuglevel(1)
-            print tn.msg("Connected to the server")
+            print(tn.msg("Connected to the server"))
             cls.debug(
                 "Ldap Server is Up and listening on the port %s" %
                 tn.msg("Connected to the server"))
@@ -251,7 +251,7 @@ class TestLdap(cloudstackTestCase):
         else:
             self.delflag1 = 1
             self.ldaplinkRes = self.apiClient.linkDomainToLdap(self.ldaplink)
-        self.assertEquals(
+        self.assertEqual(
             self.delflag1,
             1,
             "Linking LDAP failed,please check the configuration")
@@ -260,7 +260,7 @@ class TestLdap(cloudstackTestCase):
                               self.parent_domain.name,
                               method="POST")
         self.debug(loginRes)
-        self.assertEquals(loginRes, 1, self.reason)
+        self.assertEqual(loginRes, 1, self.reason)
 
         lsap_user = Account.list(self.api_client,
                                  domainid=self.parent_domain.id,
@@ -328,7 +328,7 @@ class TestLdap(cloudstackTestCase):
             self.parent_domain.name,
             method="POST")
         self.debug(loginRes)
-        self.assertEquals(loginRes, 1, self.reason)
+        self.assertEqual(loginRes, 1, self.reason)
 
     @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_03_ldap(self):
@@ -340,7 +340,7 @@ class TestLdap(cloudstackTestCase):
             self.parent_domain.name,
             method="POST")
         self.debug(loginRes)
-        self.assertEquals(loginRes, None, self.reason)
+        self.assertEqual(loginRes, None, self.reason)
 
     @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_04_ldap(self):
@@ -353,7 +353,7 @@ class TestLdap(cloudstackTestCase):
             "",
             method="POST")
         self.debug(loginRes)
-        self.assertEquals(loginRes, None, self.reason)
+        self.assertEqual(loginRes, None, self.reason)
 
     @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_05_ldap(self):
@@ -362,7 +362,7 @@ class TestLdap(cloudstackTestCase):
                               self.parent_domain.name,
                               method="POST")
         self.debug(loginRes)
-        self.assertEquals(loginRes, None, self.reason)
+        self.assertEqual(loginRes, None, self.reason)
 
     @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_06_ldap(self):
@@ -395,7 +395,7 @@ class TestLdap(cloudstackTestCase):
             self.parent_domain.name,
             method="POST")
         self.debug(loginRes)
-        self.assertEquals(loginRes, 1, self.reason)
+        self.assertEqual(loginRes, 1, self.reason)
 
     @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_07_ldap(self):
@@ -414,7 +414,7 @@ class TestLdap(cloudstackTestCase):
             self.parent_domain.name,
             method="POST")
         self.debug(loginRes)
-        self.assertEquals(loginRes, None, self.reason)
+        self.assertEqual(loginRes, None, self.reason)
 
     @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_08_ldap(self):
@@ -428,7 +428,7 @@ class TestLdap(cloudstackTestCase):
                 self.parent_domain.name,
                 method="POST")
             self.debug(loginRes)
-            self.assertEquals(loginRes, 1, self.reason)
+            self.assertEqual(loginRes, 1, self.reason)
 
             self.domain2 = Domain.create(
                 self.apiclient,
@@ -465,7 +465,7 @@ class TestLdap(cloudstackTestCase):
                 self.delflag2 = 1
                 self.ldaplinkRes2 = self.apiClient.linkDomainToLdap(
                     self.ldaplink2)
-            self.assertEquals(
+            self.assertEqual(
                 self.delflag2,
                 1,
                 "Linking LDAP failed,please check the configuration")
@@ -477,7 +477,7 @@ class TestLdap(cloudstackTestCase):
                 self.domain2.name,
                 method="POST")
             self.debug(loginRes)
-            self.assertEquals(loginRes, 1, self.reason)
+            self.assertEqual(loginRes, 1, self.reason)
 
             self.domain3 = Domain.create(
                 self.apiclient,
@@ -511,7 +511,7 @@ class TestLdap(cloudstackTestCase):
                 self.delflag3 = 1
                 self.ldaplinkRes3 = self.apiClient.linkDomainToLdap(
                     self.ldaplink3)
-            self.assertEquals(
+            self.assertEqual(
                 self.delflag3,
                 1,
                 "Linking LDAP failed,please check the configuration")
@@ -522,7 +522,7 @@ class TestLdap(cloudstackTestCase):
                 self.domain2.name,
                 method="POST")
             self.debug(loginRes)
-            self.assertEquals(loginRes, 1, self.reason)
+            self.assertEqual(loginRes, 1, self.reason)
 
         finally:
             try:
@@ -556,7 +556,7 @@ class TestLdap(cloudstackTestCase):
             self.parent_domain.name,
             method="POST")
         self.debug(loginRes)
-        self.assertEquals(loginRes, 1, self.reason)
+        self.assertEqual(loginRes, 1, self.reason)
 
     @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_10_ldap(self):
@@ -584,7 +584,7 @@ class TestLdap(cloudstackTestCase):
                     dbChecking[0][2]) == \
                         self.services["configurableData"]["link_ldap_details"]["accounttype"]:
             db_check = 0
-        self.assertEquals(db_check, 0, "DB check failed")
+        self.assertEqual(db_check, 0, "DB check failed")
 
     @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_11_ldap(self):
@@ -593,6 +593,6 @@ class TestLdap(cloudstackTestCase):
             self,
             "", "", self.parent_domain.name, method="POST")
         self.debug(loginRes)
-        self.assertEquals(loginRes, None, self.reason)
+        self.assertEqual(loginRes, None, self.reason)
 
 

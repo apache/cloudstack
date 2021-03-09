@@ -30,7 +30,7 @@ import { ACCESS_TOKEN, APIS } from '@/store/mutation-types'
 
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
-const whiteList = ['login'] // no redirect whitelist
+const allowList = ['login'] // no redirect allowlist
 
 router.beforeEach((to, from, next) => {
   // start progress bar
@@ -78,7 +78,7 @@ router.beforeEach((to, from, next) => {
       }
     }
   } else {
-    if (whiteList.includes(to.name)) {
+    if (allowList.includes(to.name)) {
       next()
     } else {
       next({ path: '/user/login', query: { redirect: to.fullPath } })

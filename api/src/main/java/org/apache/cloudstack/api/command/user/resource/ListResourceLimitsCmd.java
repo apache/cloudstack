@@ -54,8 +54,8 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
         + "5 - Project. Number of projects an account can own. "
         + "6 - Network. Number of networks an account can own. "
         + "7 - VPC. Number of VPC an account can own. "
-        + "8 - CPU. Number of CPU an account can allocate for his resources. "
-        + "9 - Memory. Amount of RAM an account can allocate for his resources. "
+        + "8 - CPU. Number of CPU an account can allocate for their resources. "
+        + "9 - Memory. Amount of RAM an account can allocate for their resources. "
         + "10 - PrimaryStorage. Total primary storage space (in GiB) a user can use. "
         + "11 - SecondaryStorage. Total secondary storage space (in GiB) a user can use. ")
     private Integer resourceType;
@@ -69,8 +69,8 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
             + "project - Project. Number of projects an account can own. "
             + "network - Network. Number of networks an account can own. "
             + "vpc - VPC. Number of VPC an account can own. "
-            + "cpu - CPU. Number of CPU an account can allocate for his resources. "
-            + "memory - Memory. Amount of RAM an account can allocate for his resources. "
+            + "cpu - CPU. Number of CPU an account can allocate for their resources. "
+            + "memory - Memory. Amount of RAM an account can allocate for their resources. "
             + "primary_storage - PrimaryStorage. Total primary storage space (in GiB) a user can use. "
             + "secondary_storage - SecondaryStorage. Total secondary storage space (in GiB) a user can use. ")
     private String resourceTypeName;

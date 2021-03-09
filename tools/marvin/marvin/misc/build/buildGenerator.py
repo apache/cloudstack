@@ -18,7 +18,7 @@
 # under the License.
 
 
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 from jenkinsapi import api, jenkins, job
 from time import sleep as delay
 import jenkinsapi
@@ -49,7 +49,7 @@ class BuildGenerator(object):
         try:
             j = jenkins.Jenkins(self.hudsonurl, self.username, self.password)
             self.jobclient = j.get_job(job)
-        except Exception, e:
+        except Exception as e:
             logging.error("Failed to login to Hudson")
             raise e
         else:
@@ -71,7 +71,7 @@ class BuildGenerator(object):
         params = {}
         if self.config:
             logging.debug("build params found:")
-            for k,v in dict(self.config.items('build_params')).iteritems():
+            for k,v in dict(self.config.items('build_params')).items():
                 logging.debug("%s : %s"%(k,v))
             return dict(self.config.items('build_params'))
         else:
@@ -141,7 +141,7 @@ class BuildGenerator(object):
     
     def getBuildParamList(self, bld):
         params = bld.get_actions()['parameters']
-        return dict(map(self.sift, params))
+        return dict(list(map(self.sift, params)))
         
     def resolveRepoPath(self):
             tarball_list = ['CloudStack-' , 

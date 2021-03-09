@@ -73,7 +73,7 @@ export default {
       columns: []
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {

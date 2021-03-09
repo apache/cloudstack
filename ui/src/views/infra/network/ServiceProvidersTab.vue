@@ -35,7 +35,8 @@
             :itemNsp="item"
             :nsp="nsps[item.title]"
             :resourceId="resource.id"
-            :zoneId="resource.zoneid"/>
+            :zoneId="resource.zoneid"
+            :tabKey="tabKey"/>
         </a-tab-pane>
       </a-tabs>
     </a-spin>
@@ -80,6 +81,7 @@
             :label="$t('label.' + field.name)">
             <span v-if="field.name==='password'">
               <a-input-password
+                :autoFocus="index===0"
                 v-decorator="[field.name, {
                   rules: [
                     {
@@ -92,6 +94,7 @@
             </span>
             <span v-else-if="field.type==='boolean'">
               <a-switch
+                :autoFocus="index===0"
                 v-decorator="[field.name, {
                   rules: [{
                     required: field.required,
@@ -103,6 +106,7 @@
             </span>
             <span v-else-if="field.type==='uuid'">
               <a-select
+                :autoFocus="index===0"
                 v-decorator="[field.name, {
                   rules: [{
                     required: field.required,
@@ -118,6 +122,7 @@
             </span>
             <span v-else>
               <a-input
+                :autoFocus="index===0"
                 v-decorator="[field.name, {
                   rules: [
                     {
@@ -1103,7 +1108,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {
@@ -1124,6 +1129,9 @@ export default {
   },
   methods: {
     fetchData () {
+      if (!this.resource || !('id' in this.resource)) {
+        return
+      }
       this.fetchServiceProvider()
     },
     fetchServiceProvider (name) {

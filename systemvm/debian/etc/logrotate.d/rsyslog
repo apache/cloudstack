@@ -6,7 +6,7 @@
 	notifempty
 	compress
 	postrotate
-		/usr/sbin/invoke-rc.d rsyslog rotate > /dev/null
+		/usr/lib/rsyslog/rsyslog-rotate
 	endscript
 }
 
@@ -30,6 +30,6 @@
 	compress
 	sharedscripts
 	postrotate
-		/usr/sbin/invoke-rc.d rsyslog rotate > /dev/null
+		/usr/lib/rsyslog/rsyslog-rotate
 	endscript
 }

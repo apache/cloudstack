@@ -2989,19 +2989,19 @@ class TestUsageDataAggregatior(cloudstackTestCase):
         """
         usageTypes = [
             {
-                "usagetypeid": 1, "description": u'Running Vm Usage'}, {
-                "usagetypeid": 2, "description": u'Allocated Vm Usage'}, {
-                "usagetypeid": 3, "description": u'IP Address Usage'}, {
-                "usagetypeid": 4, "description": u'Network Usage (Bytes Sent)'}, {
-                "usagetypeid": 5, "description": u'Network Usage (Bytes Received)'}, {
-                "usagetypeid": 6, "description": u'Volume Usage'}, {
-                "usagetypeid": 7, "description": u'Template Usage'}, {
-                "usagetypeid": 8, "description": u'ISO Usage'}, {
-                "usagetypeid": 9, "description": u'Snapshot Usage'}, {
-                "usagetypeid": 11, "description": u'Load Balancer Usage'}, {
-                "usagetypeid": 12, "description": u'Port Forwarding Usage'}, {
-                "usagetypeid": 13, "description": u'Network Offering Usage'}, {
-                "usagetypeid": 14, "description": u'VPN users usage'
+                "usagetypeid": 1, "description": 'Running Vm Usage'}, {
+                "usagetypeid": 2, "description": 'Allocated Vm Usage'}, {
+                "usagetypeid": 3, "description": 'IP Address Usage'}, {
+                "usagetypeid": 4, "description": 'Network Usage (Bytes Sent)'}, {
+                "usagetypeid": 5, "description": 'Network Usage (Bytes Received)'}, {
+                "usagetypeid": 6, "description": 'Volume Usage'}, {
+                "usagetypeid": 7, "description": 'Template Usage'}, {
+                "usagetypeid": 8, "description": 'ISO Usage'}, {
+                "usagetypeid": 9, "description": 'Snapshot Usage'}, {
+                "usagetypeid": 11, "description": 'Load Balancer Usage'}, {
+                "usagetypeid": 12, "description": 'Port Forwarding Usage'}, {
+                "usagetypeid": 13, "description": 'Network Offering Usage'}, {
+                "usagetypeid": 14, "description": 'VPN users usage'
             }
         ]
         listTypes = []

@@ -34,7 +34,7 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.TZDATE, description = "the start date of the async job")
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.TZDATE, description = "The start date of the async job (use format \"yyyy-MM-dd'T'HH:mm:ss'+'SSSS\")")
     private Date startDate;
 
     /////////////////////////////////////////////////////

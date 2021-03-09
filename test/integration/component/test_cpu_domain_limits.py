@@ -191,7 +191,7 @@ class TestDomainCPULimitsUpdateResources(cloudstackTestCase):
         users = {self.domain: self.admin,
                  self.child_domain: self.child_do_admin
                  }
-        for domain, admin in users.items():
+        for domain, admin in list(users.items()):
             self.account = admin
             self.domain = domain
 
@@ -267,7 +267,7 @@ class TestDomainCPULimitsUpdateResources(cloudstackTestCase):
         users = {self.domain: self.admin,
                  self.child_domain: self.child_do_admin
                  }
-        for domain, admin in users.items():
+        for domain, admin in list(users.items()):
             self.account = admin
             self.domain = domain
 
@@ -328,7 +328,7 @@ class TestDomainCPULimitsUpdateResources(cloudstackTestCase):
         users = {self.domain: self.admin,
                  self.child_domain: self.child_do_admin
                  }
-        for domain, admin in users.items():
+        for domain, admin in list(users.items()):
             self.account = admin
             self.domain = domain
 
@@ -392,7 +392,7 @@ class TestDomainCPULimitsUpdateResources(cloudstackTestCase):
         users = {self.domain: self.admin,
                  self.child_domain: self.child_do_admin
                  }
-        for domain, admin in users.items():
+        for domain, admin in list(users.items()):
             self.account = admin
             self.domain = domain
 

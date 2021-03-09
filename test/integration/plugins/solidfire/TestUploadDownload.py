@@ -18,7 +18,7 @@
 import logging
 import random
 import SignedAPICall
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 from solidfire.factory import ElementFactory
 
@@ -465,7 +465,7 @@ class TestUploadDownload(cloudstackTestCase):
 
         self._verify_uploaded_volume_present(install_path, False)
 
-        url_response = urllib2.urlopen(extract_result.url)
+        url_response = urllib.request.urlopen(extract_result.url)
 
         if url_response.code != 200:
             raise Exception(error_msg)
@@ -486,7 +486,7 @@ class TestUploadDownload(cloudstackTestCase):
 
         if len(result) == 0:
             try:
-                urllib2.urlopen(extract_result_url)
+                urllib.request.urlopen(extract_result_url)
             except Exception as e:
                 if "404" in str(e):
                     return True, ""

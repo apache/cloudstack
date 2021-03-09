@@ -61,7 +61,7 @@ export default {
       resourcesList: []
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

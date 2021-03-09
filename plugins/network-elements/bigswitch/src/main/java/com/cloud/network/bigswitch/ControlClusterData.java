@@ -22,22 +22,22 @@ package com.cloud.network.bigswitch;
 import com.cloud.host.HostVO;
 
 public class ControlClusterData {
-    private HostVO master;
-    private HostVO slave;
+    private HostVO primary;
+    private HostVO secondary;
 
-    public HostVO getMaster() {
-        return master;
+    public HostVO getPrimary() {
+        return primary;
     }
 
-    public void setMaster(HostVO master) {
-        this.master = master;
+    public void setPrimary(HostVO primary) {
+        this.primary = primary;
     }
 
-    public HostVO getSlave() {
-        return slave;
+    public HostVO getSecondary() {
+        return secondary;
     }
 
-    public void setSlave(HostVO slave) {
-        this.slave = slave;
+    public void setSecondary(HostVO secondary) {
+        this.secondary = secondary;
     }
 }

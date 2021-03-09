@@ -63,6 +63,14 @@ if [ "$1" = configure ]; then
     grep -s -q "db.cloud.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS} || sed -i -e "\$adb.cloud.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS}
     grep -s -q "db.usage.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS} || sed -i -e "\$adb.usage.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS}
     grep -s -q "db.simulator.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS} || sed -i -e "\$adb.simulator.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS}
+
+    # Update DB properties having master and slave(s), with source and replica(s) respectively (for inclusiveness)
+    grep -s -q "^db.cloud.slaves=" ${CONFDIR}/${DBPROPS} && sed -i "s/^db.cloud.slaves=/db.cloud.replicas=/g" ${CONFDIR}/${DBPROPS}
+    grep -s -q "^db.cloud.secondsBeforeRetryMaster=" ${CONFDIR}/${DBPROPS} && sed -i "s/^db.cloud.secondsBeforeRetryMaster=/db.cloud.secondsBeforeRetrySource=/g" ${CONFDIR}/${DBPROPS}
+    grep -s -q "^db.cloud.queriesBeforeRetryMaster=" ${CONFDIR}/${DBPROPS} && sed -i "s/^db.cloud.queriesBeforeRetryMaster=/db.cloud.queriesBeforeRetrySource=/g" ${CONFDIR}/${DBPROPS}
+    grep -s -q "^db.usage.slaves=" ${CONFDIR}/${DBPROPS} && sed -i "s/^db.usage.slaves=/db.usage.replicas=/g" ${CONFDIR}/${DBPROPS}
+    grep -s -q "^db.usage.secondsBeforeRetryMaster=" ${CONFDIR}/${DBPROPS} && sed -i "s/^db.usage.secondsBeforeRetryMaster=/db.usage.secondsBeforeRetrySource=/g" ${CONFDIR}/${DBPROPS}
+    grep -s -q "^db.usage.queriesBeforeRetryMaster=" ${CONFDIR}/${DBPROPS} && sed -i "s/^db.usage.queriesBeforeRetryMaster=/db.usage.queriesBeforeRetrySource=/g" ${CONFDIR}/${DBPROPS}
 fi
 
 #DEBHELPER#

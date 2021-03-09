@@ -221,7 +221,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             final SetupMSListCommand cmd = new SetupMSListCommand(msList, lbAlgorithm, lbCheckInterval);
             final Answer answer = agentManager.easySend(host.getId(), cmd);
             if (answer == null || !answer.getResult()) {
-                LOG.warn("Failed to setup management servers list to the agent of host id=" + host.getId());
+                LOG.warn(String.format("Failed to setup management servers list to the agent of %s", host));
             }
         }
     }

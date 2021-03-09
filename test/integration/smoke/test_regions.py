@@ -43,7 +43,7 @@ class TestRegions(cloudstackTestCase):
 
         self.domain = get_domain(self.apiclient)
         self.cleanup = []
-        pseudo_random_int = choice(xrange(2, 200))
+        pseudo_random_int = choice(range(2, 200))
         self.services["region"]["regionid"] = pseudo_random_int
         self.services["region"]["regionname"] = "region" + str(pseudo_random_int)
         self.services["region"]["regionendpoint"] = "http://region" + str(pseudo_random_int) + ":8080/client"
@@ -107,7 +107,7 @@ class TestRegions(cloudstackTestCase):
     def test_createRegionWithExistingRegionName(self):
         """Test for duplicate checks on region name
         """
-        random_int = choice(xrange(2, 200))
+        random_int = choice(range(2, 200))
         self.services["region"]["regionid"] = random_int  # alter id but not name
         self.services["region"]["regionendpoint"] = "http://region" + str(random_int) + ":8080/client"
         self.assertRaises(Exception, Region.create, self.apiclient, self.services["region"])

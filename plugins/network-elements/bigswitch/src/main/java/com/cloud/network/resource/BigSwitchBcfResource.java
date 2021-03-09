@@ -563,7 +563,7 @@ public class BigSwitchBcfResource extends ManagerBase implements ServerResource 
         ControllerData controller = _bigswitchBcfApi.getControllerData();
         return new GetControllerDataAnswer(cmd,
                 controller.getIpAddress(),
-                controller.isMaster());
+                controller.isPrimary());
     }
 
     private Answer executeRequest(ReadyCommand cmd) {

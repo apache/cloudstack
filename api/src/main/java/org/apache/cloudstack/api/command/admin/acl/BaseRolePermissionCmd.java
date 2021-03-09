@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.acl;
 
 import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.acl.Rule;
-import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -32,8 +31,7 @@ public abstract class BaseRolePermissionCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.RULE, type = CommandType.STRING, required = true, description = "The API name or wildcard rule such as list*",
-            validations = {ApiArgValidator.NotNullOrEmpty})
+    @Parameter(name = ApiConstants.RULE, type = CommandType.STRING, required = true, description = "The API name or wildcard rule such as list*")
     private String rule;
 
     @Parameter(name = ApiConstants.PERMISSION, type = CommandType.STRING, required = true, description = "The rule permission, allow or deny. Default: deny.")

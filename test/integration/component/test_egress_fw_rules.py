@@ -19,7 +19,8 @@
 """
 #Import Local Modules
 from nose.plugins.attrib           import attr
-from marvin.cloudstackTestCase     import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase     import cloudstackTestCase
+import unittest
 from marvin.lib.base   import (Account,
                                            Domain,
                                            Router,
@@ -847,7 +848,7 @@ class TestEgressFWRules(cloudstackTestCase):
 
     @attr(tags=["advanced"], required_hardware="true")
     def test_13_egress_fr13(self):
-        """Test Redundant Router : Master failover
+        """Test Redundant Router : Primary failover
         """
         # Validate the following:
         # 1. deploy VM using network offering with egress policy true.
@@ -864,36 +865,36 @@ class TestEgressFWRules(cloudstackTestCase):
                               listall=True)
         self.assertEqual(isinstance(routers, list),
                          True,
-                         "list router should return Master and backup routers")
+                         "list router should return Primary and backup routers")
         self.assertEqual(len(routers),
                          2,
-                         "Length of the list router should be 2 (Backup & master)")
+                         "Length of the list router should be 2 (Backup & primary)")
 
-        if routers[0].redundantstate == 'MASTER':
-            master_router = routers[0]
+        if routers[0].redundantstate == 'PRIMARY':
+            primary_router = routers[0]
             backup_router = routers[1]
         else:
-            master_router = routers[1]
+            primary_router = routers[1]
             backup_router = routers[0]
 
-        self.debug("Redundant states: %s, %s" % (master_router.redundantstate,
+        self.debug("Redundant states: %s, %s" % (primary_router.redundantstate,
                                                 backup_router.redundantstate))
-        self.debug("Stopping the Master router")
+        self.debug("Stopping the Primary router")
         try:
-            Router.stop(self.apiclient, id=master_router.id)
+            Router.stop(self.apiclient, id=primary_router.id)
         except Exception as e:
-            self.fail("Failed to stop master router: %s" % e)
+            self.fail("Failed to stop primary router: %s" % e)
 
         # wait for VR update state
         time.sleep(60)
 
-        self.debug("Checking state of the master router in %s" % self.network.name)
+        self.debug("Checking state of the primary router in %s" % self.network.name)
         routers = Router.list(self.apiclient,
-                              id=master_router.id,
+                              id=primary_router.id,
                               listall=True)
         self.assertEqual(isinstance(routers, list),
                          True,
-                         "list router should return Master and backup routers")
+                         "list router should return Primary and backup routers")
 
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
                                     "| grep -oP \'\d+(?=% packet loss)\'",
@@ -902,7 +903,7 @@ class TestEgressFWRules(cloudstackTestCase):
 
     @attr(tags=["advanced"], required_hardware="true")
     def test_13_1_egress_fr13(self):
-        """Test Redundant Router : Master failover
+        """Test Redundant Router : Primary failover
         """
         # Validate the following:
         # 1. deploy VM using network offering with egress policy false.
@@ -919,36 +920,36 @@ class TestEgressFWRules(cloudstackTestCase):
                               listall=True)
         self.assertEqual(isinstance(routers, list),
                          True,
-                         "list router should return Master and backup routers")
+                         "list router should return Primary and backup routers")
         self.assertEqual(len(routers),
                          2,
-                         "Length of the list router should be 2 (Backup & master)")
+                         "Length of the list router should be 2 (Backup & primary)")
 
-        if routers[0].redundantstate == 'MASTER':
-            master_router = routers[0]
+        if routers[0].redundantstate == 'PRIMARY':
+            primary_router = routers[0]
             backup_router = routers[1]
         else:
-            master_router = routers[1]
+            primary_router = routers[1]
             backup_router = routers[0]
 
-        self.debug("Redundant states: %s, %s" % (master_router.redundantstate,
+        self.debug("Redundant states: %s, %s" % (primary_router.redundantstate,
                                                 backup_router.redundantstate))
-        self.debug("Stopping the Master router")
+        self.debug("Stopping the Primary router")
         try:
-            Router.stop(self.apiclient, id=master_router.id)
+            Router.stop(self.apiclient, id=primary_router.id)
         except Exception as e:
-            self.fail("Failed to stop master router: %s" % e)
+            self.fail("Failed to stop primary router: %s" % e)
 
         # wait for VR update state
         time.sleep(60)
 
-        self.debug("Checking state of the master router in %s" % self.network.name)
+        self.debug("Checking state of the primary router in %s" % self.network.name)
         routers = Router.list(self.apiclient,
-                              id=master_router.id,
+                              id=primary_router.id,
                               listall=True)
         self.assertEqual(isinstance(routers, list),
                          True,
-                         "list router should return Master and backup routers")
+                         "list router should return Primary and backup routers")
 
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
                                     "| grep -oP \'\d+(?=% packet loss)\'",

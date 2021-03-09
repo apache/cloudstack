@@ -30,7 +30,6 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.Pair;
@@ -101,8 +100,6 @@ public interface TemplateManager {
      * @param templatePoolVO
      */
     void evictTemplateFromStoragePool(VMTemplateStoragePoolVO templatePoolVO);
-
-    boolean templateIsDeleteable(VMTemplateHostVO templateHostRef);
 
     boolean templateIsDeleteable(long templateId);
 

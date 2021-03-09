@@ -359,6 +359,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         parameters.setName(poolName);
         parameters.setClusterId(clusterId);
         parameters.setProviderName(providerName);
+        parameters.setHypervisorType(hypervisorType);
 
         return dataStoreHelper.createPrimaryDataStore(parameters);
     }
@@ -404,6 +405,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         CreateStoragePoolCommand cmd = new CreateStoragePoolCommand(true, pool);
         final Answer answer = agentMgr.easySend(hostId, cmd);
         if (answer != null && answer.getResult()) {
+            storageMgr.updateStorageCapabilities(pool.getId(), false);
             return true;
         } else {
             primaryDataStoreDao.expunge(pool.getId());

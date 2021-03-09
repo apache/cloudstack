@@ -72,7 +72,7 @@ public class BigSwitchBcfApi {
     private String zoneId;
     private Boolean nat;
 
-    private boolean isMaster;
+    private boolean isPrimary;
 
     private int _port = 8000;
 
@@ -241,7 +241,7 @@ public class BigSwitchBcfApi {
     }
 
     public ControllerData getControllerData() {
-        return new ControllerData(host, isMaster);
+        return new ControllerData(host, isPrimary);
     }
 
     private void checkInvariants() throws BigSwitchBcfApiException{
@@ -274,7 +274,7 @@ public class BigSwitchBcfApi {
             throw new BigSwitchBcfApiException("BCF topology sync required", true);
         }
         if (m.getStatusCode() == HttpStatus.SC_SEE_OTHER) {
-            isMaster = false;
+            isPrimary = false;
             set_hash(HASH_IGNORE);
             return HASH_IGNORE;
         }
@@ -402,10 +402,10 @@ public class BigSwitchBcfApi {
         }
         if(returnValue instanceof ControlClusterStatus) {
             if(HASH_CONFLICT.equals(hash)) {
-                isMaster = true;
+                isPrimary = true;
                 ((ControlClusterStatus) returnValue).setTopologySyncRequested(true);
-            } else if (!HASH_IGNORE.equals(hash) && !isMaster) {
-                isMaster = true;
+            } else if (!HASH_IGNORE.equals(hash) && !isPrimary) {
+                isPrimary = true;
                 ((ControlClusterStatus) returnValue).setTopologySyncRequested(true);
             }
         }

@@ -48,6 +48,9 @@ BuildRequires: /usr/bin/mkisofs
 BuildRequires: mysql-connector-python
 BuildRequires: maven => 3.0.0
 BuildRequires: python-setuptools
+BuildRequires: python3
+BuildRequires: python3-pip
+BuildRequires: python3-setuptools
 BuildRequires: wget
 BuildRequires: nodejs
 
@@ -153,6 +156,9 @@ Apache CloudStack command line interface
 
 %package marvin
 Summary: Apache CloudStack Marvin library
+Requires: python3
+Requires: python3-devel
+Requires: python3-pip
 Requires: python-pip
 Requires: gcc
 Requires: python-devel
@@ -392,7 +398,7 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-inte
 /usr/bin/systemctl off cloudstack-management || true
 
 %pre management
-id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
+id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -U -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
 
 rm -rf %{_localstatedir}/cache/cloudstack
@@ -418,11 +424,21 @@ fi
 # Install mysql-connector-python
 pip3 install %{_datadir}/%{name}-management/setup/wheel/six-1.15.0-py2.py3-none-any.whl %{_datadir}/%{name}-management/setup/wheel/setuptools-47.3.1-py3-none-any.whl %{_datadir}/%{name}-management/setup/wheel/protobuf-3.12.2-cp36-cp36m-manylinux1_x86_64.whl %{_datadir}/%{name}-management/setup/wheel/mysql_connector_python-8.0.20-cp36-cp36m-manylinux1_x86_64.whl
 
+pip3 install urllib3
+
 /usr/bin/systemctl on cloudstack-management > /dev/null 2>&1 || true
 
 grep -s -q "db.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
 grep -s -q "db.usage.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.usage.driver=jdbc:mysql"  "%{_sysconfdir}/%{name}/management/db.properties"
 grep -s -q "db.simulator.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.simulator.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
+
+# Update DB properties having master and slave(s), with source and replica(s) respectively (for inclusiveness)
+grep -s -q "^db.cloud.slaves=" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/^db.cloud.slaves=/db.cloud.replicas=/g" "%{_sysconfdir}/%{name}/management/db.properties"
+grep -s -q "^db.cloud.secondsBeforeRetryMaster=" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/^db.cloud.secondsBeforeRetryMaster=/db.cloud.secondsBeforeRetrySource=/g" "%{_sysconfdir}/%{name}/management/db.properties"
+grep -s -q "^db.cloud.queriesBeforeRetryMaster=" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/^db.cloud.queriesBeforeRetryMaster=/db.cloud.queriesBeforeRetrySource=/g" "%{_sysconfdir}/%{name}/management/db.properties"
+grep -s -q "^db.usage.slaves=" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/^db.usage.slaves=/db.usage.replicas=/g" "%{_sysconfdir}/%{name}/management/db.properties"
+grep -s -q "^db.usage.secondsBeforeRetryMaster=" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/^db.usage.secondsBeforeRetryMaster=/db.usage.secondsBeforeRetrySource=/g" "%{_sysconfdir}/%{name}/management/db.properties"
+grep -s -q "^db.usage.queriesBeforeRetryMaster=" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/^db.usage.queriesBeforeRetryMaster=/db.usage.queriesBeforeRetrySource=/g" "%{_sysconfdir}/%{name}/management/db.properties"
 
 if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
     echo Please download vhd-util from http://download.cloudstack.org/tools/vhd-util and put it in
@@ -476,7 +492,7 @@ fi
 systemctl daemon-reload
 
 %pre usage
-id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
+id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -U -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
 
 %preun usage
@@ -506,6 +522,9 @@ fi
 %post marvin
 pip install --upgrade https://files.pythonhosted.org/packages/ca/ea/1e2553b088bad2f9fa8120c2624f797b2d7450d3b61bb492d29c72e3d3c2/mysql_connector_python-8.0.20-cp27-cp27mu-manylinux1_x86_64.whl
 pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
+pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
+pip3 install --upgrade nose
+pip3 install --upgrade urllib3
 
 #No default permission as the permission setup is complex
 %files management

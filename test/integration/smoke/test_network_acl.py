@@ -62,11 +62,11 @@ class TestNetworkACL(cloudstackTestCase):
 
         # 0) Get the default network offering for VPC
         networkOffering = NetworkOffering.list(self.apiclient, name="DefaultIsolatedNetworkOfferingForVpcNetworks")
-        self.assert_(networkOffering is not None and len(networkOffering) > 0, "No VPC based network offering")
+        self.assertTrue(networkOffering is not None and len(networkOffering) > 0, "No VPC based network offering")
 
         # 1) Create VPC
         vpcOffering = VpcOffering.list(self.apiclient, name="Default VPC offering")
-        self.assert_(vpcOffering is not None and len(vpcOffering)>0, "No VPC offerings found")
+        self.assertTrue(vpcOffering is not None and len(vpcOffering)>0, "No VPC offerings found")
         self.services["vpc"] = {}
         self.services["vpc"]["name"] = "vpc-networkacl"
         self.services["vpc"]["displaytext"] = "vpc-networkacl"
@@ -80,7 +80,7 @@ class TestNetworkACL(cloudstackTestCase):
                 account=self.account.name,
                 domainid=self.domain.id
         )
-        self.assert_(vpc is not None, "VPC creation failed")
+        self.assertTrue(vpc is not None, "VPC creation failed")
 
         # 2) Create ACL
         aclgroup = NetworkACLList.create(apiclient=self.apiclient, services={}, name="acl", description="acl", vpcid=vpc.id)
@@ -121,13 +121,13 @@ class TestNetworkACL(cloudstackTestCase):
             domainid= self.domain.id,
             serviceofferingid=self.service_offering.id,
         )
-        self.assert_(vm is not None, "VM failed to deploy")
-        self.assert_(vm.state == 'Running', "VM is not running")
+        self.assertTrue(vm is not None, "VM failed to deploy")
+        self.assertTrue(vm.state == 'Running', "VM is not running")
         self.debug("VM %s deployed in VPC %s" %(vm.id, vpc.id))
 
     @classmethod
     def tearDownClass(cls):
         try:
             cleanup_resources(cls.apiclient, cls.cleanup)
-        except Exception, e:
+        except Exception as e:
             raise Exception("Cleanup failed with %s" % e)

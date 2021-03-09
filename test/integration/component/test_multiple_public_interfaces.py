@@ -1011,7 +1011,7 @@ class TestVPCPortForwarding(cloudstackTestCase):
                                                 )
                 logger.debug("Created network with ID: %s" % obj_network.id)
                 return obj_network
-        except Exception, e:
+        except Exception as e:
                 self.fail('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
 
     def deployvm_in_network(self, network, host_id=None):
@@ -1231,7 +1231,7 @@ class TestVPCStaticNat(cloudstackTestCase):
                                                 )
                 logger.debug("Created network with ID: %s" % obj_network.id)
                 return obj_network
-        except Exception, e:
+        except Exception as e:
                 self.fail('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
 
     def deployvm_in_network(self, network, host_id=None):

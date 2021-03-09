@@ -123,10 +123,10 @@ public class DhcpSubNetRules extends RuleApplier {
                         IpAddressManager ipAddrMgr = visitor.getVirtualNetworkApplianceFactory().getIpAddrMgr();
                         if (dc.getNetworkType() == NetworkType.Basic) {
                             routerPublicIP = ipAddrMgr.assignPublicIpAddressFromVlans(_router.getDataCenterId(), vm.getPodIdToDeployIn(), caller, Vlan.VlanType.DirectAttached,
-                                    vlanDbIdList, _nic.getNetworkId(), null, false);
+                                    vlanDbIdList, _nic.getNetworkId(), null, _nic.getIPv4Gateway(), false);
                         } else {
                             routerPublicIP = ipAddrMgr.assignPublicIpAddressFromVlans(_router.getDataCenterId(), null, caller, Vlan.VlanType.DirectAttached, vlanDbIdList,
-                                    _nic.getNetworkId(), null, false);
+                                    _nic.getNetworkId(), null, _nic.getIPv4Gateway(), false);
                         }
 
                         _routerAliasIp = routerPublicIP.getAddress().addr();

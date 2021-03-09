@@ -72,6 +72,10 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
                 libvirtComputingResource.applyDefaultNetworkRulesOnNic(conn, vmName, vmId, nic, false, false);
             }
 
+            if (vmType == VirtualMachine.Type.User) {
+                libvirtComputingResource.detachAndAttachConfigDriveISO(conn, vmName);
+            }
+
             return new PlugNicAnswer(command, true, "success");
         } catch (final LibvirtException e) {
             final String msg = " Plug Nic failed due to " + e.toString();

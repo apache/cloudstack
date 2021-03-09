@@ -358,7 +358,7 @@ cflag=
 nflag=
 op=""
 
-is_master=0
+is_primary=0
 is_redundant=0
 if_keep_state=0
 IFACEGWIPFILE='/var/cache/cloud/ifaceGwIp'
@@ -366,13 +366,13 @@ grep "redundant_router=1" /var/cache/cloud/cmdline > /dev/null
 if [ $? -eq 0 ]
 then
     is_redundant=1
-    sudo /opt/cloud/bin/checkrouter.sh --no-lock|grep "Status: MASTER" > /dev/null 2>&1
+    sudo /opt/cloud/bin/checkrouter.sh --no-lock|grep "Status: PRIMARY" > /dev/null 2>&1
     if [ $? -eq 0 ]
     then
-        is_master=1
+        is_primary=1
     fi
 fi
-if [ $is_redundant -eq 1 -a $is_master -ne 1 ]
+if [ $is_redundant -eq 1 -a $is_primary -ne 1 ]
 then
     if_keep_state=1
 fi

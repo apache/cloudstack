@@ -17,27 +17,27 @@
 
 """ P1 tests for VPN users
 """
-# Import Local Modules
 from nose.plugins.attrib import attr
+
+# Import Local Modules
 from marvin.cloudstackException import CloudstackAPIException
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.base import (
-                                        Account,
-                                        ServiceOffering,
-                                        VirtualMachine,
-                                        PublicIPAddress,
-                                        Vpn,
-                                        VpnUser,
-                                        Configurations,
-                                        NATRule,
-                                        FireWallRule
-                                        )
-from marvin.lib.common import (get_domain,
-                                        get_zone,
-                                        get_template
-                                        )
-from marvin.lib.utils import cleanup_resources, validateList
 from marvin.codes import PASS
+from marvin.lib.base import (
+    Account,
+    ServiceOffering,
+    VirtualMachine,
+    PublicIPAddress,
+    Vpn,
+    VpnUser,
+    Configurations,
+    NATRule
+)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template
+                               )
+from marvin.lib.utils import validateList
 
 
 class Services:
@@ -46,51 +46,51 @@ class Services:
 
     def __init__(self):
         self.services = {
-                        "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    # Random characters are appended for unique
-                                    # username
-                                    "password": "password",
-                         },
-                         "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 100,    # in MHz
-                                    "memory": 128,    # In MBs
-                        },
-                        "disk_offering": {
-                                    "displaytext": "Small Disk Offering",
-                                    "name": "Small Disk Offering",
-                                    "disksize": 1
-                        },
-                        "virtual_machine": {
-                                    "displayname": "TestVM",
-                                    "username": "root",
-                                    "password": "password",
-                                    "ssh_port": 22,
-                                    "hypervisor": 'KVM',
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "protocol": 'TCP',
-                                },
-                         "vpn_user": {
-                                   "username": "test",
-                                   "password": "p@as=s.w_o-r+d",
-                                },
-                         "natrule": {
-                                   "privateport": 1701,
-                                   "publicport": 1701,
-                                   "protocol": "UDP"
-                                },
-                        "ostype": 'CentOS 5.5 (64-bit)',
-                        "sleep": 60,
-                        "timeout": 10,
-                        # Networking mode: Advanced, Basic
-                    }
+            "account": {
+                "email": "test@test.com",
+                "firstname": "Test",
+                "lastname": "User",
+                "username": "test",
+                # Random characters are appended for unique
+                # username
+                "password": "password",
+            },
+            "service_offering": {
+                "name": "Tiny Instance",
+                "displaytext": "Tiny Instance",
+                "cpunumber": 1,
+                "cpuspeed": 100,  # in MHz
+                "memory": 128,  # In MBs
+            },
+            "disk_offering": {
+                "displaytext": "Small Disk Offering",
+                "name": "Small Disk Offering",
+                "disksize": 1
+            },
+            "virtual_machine": {
+                "displayname": "TestVM",
+                "username": "root",
+                "password": "password",
+                "ssh_port": 22,
+                "hypervisor": 'KVM',
+                "privateport": 22,
+                "publicport": 22,
+                "protocol": 'TCP',
+            },
+            "vpn_user": {
+                "username": "test",
+                "password": "p@as=s.w_o-r+d",
+            },
+            "natrule": {
+                "privateport": 1701,
+                "publicport": 1701,
+                "protocol": "UDP"
+            },
+            "ostype": 'CentOS 5.5 (64-bit)',
+            "sleep": 60,
+            "timeout": 10,
+            # Networking mode: Advanced, Basic
+        }
 
 
 class TestVPNUsers(cloudstackTestCase):
@@ -103,6 +103,7 @@ class TestVPNUsers(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls._cleanup = []
 
         cls.services["mode"] = cls.zone.networktype
 
@@ -117,58 +118,49 @@ class TestVPNUsers(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
-
-        cls._cleanup = [cls.service_offering, ]
+        cls._cleanup.append(cls.service_offering)
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestVPNUsers, cls).tearDownClass()
 
     def setUp(self):
+        self.cleanup = []
         try:
             self.apiclient = self.testClient.getApiClient()
             self.dbclient = self.testClient.getDbConnection()
             self.account = Account.create(
-                                self.apiclient,
-                                self.services["account"],
-                                domainid=self.domain.id
-                                )
-            self.cleanup = [
-                            self.account,
-                            ]
+                self.apiclient,
+                self.services["account"],
+                domainid=self.domain.id
+            )
+            self.cleanup.append(self.account)
+
             self.virtual_machine = VirtualMachine.create(
-                                    self.apiclient,
-                                    self.services["virtual_machine"],
-                                    templateid=self.template.id,
-                                    accountid=self.account.name,
-                                    domainid=self.account.domainid,
-                                    serviceofferingid=self.service_offering.id
-                                    )
+                self.apiclient,
+                self.services["virtual_machine"],
+                templateid=self.template.id,
+                accountid=self.account.name,
+                domainid=self.account.domainid,
+                serviceofferingid=self.service_offering.id
+            )
+            self.cleanup.append(self.virtual_machine)
             self.public_ip = PublicIPAddress.create(
-                                               self.apiclient,
-                                               accountid=self.virtual_machine.account,
-                                               zoneid=self.virtual_machine.zoneid,
-                                               domainid=self.virtual_machine.domainid,
-                                               services=self.services["virtual_machine"]
-                                               )
+                self.apiclient,
+                accountid=self.virtual_machine.account,
+                zoneid=self.virtual_machine.zoneid,
+                domainid=self.virtual_machine.domainid,
+                services=self.services["virtual_machine"]
+            )
+            self.cleanup.append(self.public_ip)
             return
         except CloudstackAPIException as e:
-                self.tearDown()
-                raise e
+            self.tearDown()
+            raise e
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestVPNUsers, self).tearDown()
 
     def create_VPN(self, public_ip):
         """Creates VPN for the network"""
@@ -177,19 +169,20 @@ class TestVPNUsers(cloudstackTestCase):
         try:
             # Assign VPN to Public IP
             vpn = Vpn.create(self.apiclient,
-                         self.public_ip.ipaddress.id,
-                         account=self.account.name,
-                         domainid=self.account.domainid)
+                             self.public_ip.ipaddress.id,
+                             account=self.account.name,
+                             domainid=self.account.domainid)
+            self.cleanup.append(vpn)
 
             self.debug("Verifying the remote VPN access")
             vpns = Vpn.list(self.apiclient,
-                        publicipid=public_ip.ipaddress.id,
-                        listall=True)
+                            publicipid=public_ip.ipaddress.id,
+                            listall=True)
             self.assertEqual(
-                         isinstance(vpns, list),
-                         True,
-                         "List VPNs shall return a valid response"
-                         )
+                isinstance(vpns, list),
+                True,
+                "List VPNs shall return a valid response"
+            )
             return vpn
         except Exception as e:
             self.fail("Failed to create remote VPN access: %s" % e)
@@ -198,28 +191,29 @@ class TestVPNUsers(cloudstackTestCase):
         """Creates VPN users for the network"""
 
         self.debug("Creating VPN users for account: %s" %
-                                                    self.account.name)
+                   self.account.name)
         if api_client is None:
             api_client = self.apiclient
         try:
             vpnuser = VpnUser.create(
-                                 api_client,
-                                 self.services["vpn_user"]["username"],
-                                 self.services["vpn_user"]["password"],
-                                 account=self.account.name,
-                                 domainid=self.account.domainid,
-                                 rand_name=rand_name
-                                 )
+                api_client,
+                self.services["vpn_user"]["username"],
+                self.services["vpn_user"]["password"],
+                account=self.account.name,
+                domainid=self.account.domainid,
+                rand_name=rand_name
+            )
+            self.cleanup.append(vpnuser)
 
             self.debug("Verifying the remote VPN access")
             vpn_users = VpnUser.list(self.apiclient,
                                      id=vpnuser.id,
                                      listall=True)
             self.assertEqual(
-                         isinstance(vpn_users, list),
-                         True,
-                         "List VPNs shall return a valid response"
-                         )
+                isinstance(vpn_users, list),
+                True,
+                "List VPNs shall return a valid response"
+            )
             return vpnuser
         except Exception as e:
             self.fail("Failed to create remote VPN users: %s" % e)
@@ -238,9 +232,9 @@ class TestVPNUsers(cloudstackTestCase):
 
         self.debug("Fetching the limit for remote access VPN users")
         configs = Configurations.list(
-                                     self.apiclient,
-                                     name='remote.access.vpn.user.limit',
-                                     listall=True)
+            self.apiclient,
+            name='remote.access.vpn.user.limit',
+            listall=True)
         self.assertEqual(isinstance(configs, list),
                          True,
                          "List configs should return a valid response")
@@ -248,7 +242,7 @@ class TestVPNUsers(cloudstackTestCase):
         limit = int(configs[0].value)
 
         self.debug("Enabling the VPN access for IP: %s" %
-                                            self.public_ip.ipaddress)
+                   self.public_ip.ipaddress)
 
         self.create_VPN(self.public_ip)
         self.debug("Creating %s VPN users" % limit)
@@ -273,11 +267,11 @@ class TestVPNUsers(cloudstackTestCase):
         self.debug("Creating a port forwarding rule on port 1701")
         # Create NAT rule
         nat_rule = NATRule.create(
-                        self.apiclient,
-                        self.virtual_machine,
-                        self.services["natrule"],
-                        self.public_ip.ipaddress.id)
-
+            self.apiclient,
+            self.virtual_machine,
+            self.services["natrule"],
+            self.public_ip.ipaddress.id)
+        self.cleanup.append(nat_rule)
         self.debug("Verifying the NAT rule created")
         nat_rules = NATRule.list(self.apiclient, id=nat_rule.id, listall=True)
 
@@ -286,7 +280,7 @@ class TestVPNUsers(cloudstackTestCase):
                          "List NAT rules should return a valid response")
 
         self.debug("Enabling the VPN connection for IP: %s" %
-                                            self.public_ip.ipaddress)
+                   self.public_ip.ipaddress)
         with self.assertRaises(Exception):
             self.create_VPN(self.public_ip)
         self.debug("Create VPN connection failed! Test successful!")
@@ -303,17 +297,17 @@ class TestVPNUsers(cloudstackTestCase):
         #    saying that VPN is enabled over port 1701
 
         self.debug("Enabling the VPN connection for IP: %s" %
-                                            self.public_ip.ipaddress)
+                   self.public_ip.ipaddress)
         self.create_VPN(self.public_ip)
 
         self.debug("Creating a port forwarding rule on port 1701")
         # Create NAT rule
         with self.assertRaises(Exception):
             NATRule.create(
-                        self.apiclient,
-                        self.virtual_machine,
-                        self.services["natrule"],
-                        self.public_ip.ipaddress.id)
+                self.apiclient,
+                self.virtual_machine,
+                self.services["natrule"],
+                self.public_ip.ipaddress.id)
 
         self.debug("Create NAT rule failed! Test successful!")
         return
@@ -329,12 +323,12 @@ class TestVPNUsers(cloudstackTestCase):
         #    the newly added user credential.
 
         self.debug("Enabling the VPN connection for IP: %s" %
-                                            self.public_ip.ipaddress)
+                   self.public_ip.ipaddress)
         self.create_VPN(self.public_ip)
 
         try:
             self.debug("Adding new VPN user to account: %s" %
-                                                    self.account.name)
+                       self.account.name)
             self.create_VPN_Users()
 
             # TODO: Verify the VPN connection
@@ -356,11 +350,11 @@ class TestVPNUsers(cloudstackTestCase):
         # 3. Adding this VPN user should fail.
 
         self.debug("Enabling the VPN connection for IP: %s" %
-                                            self.public_ip.ipaddress)
+                   self.public_ip.ipaddress)
         self.create_VPN(self.public_ip)
 
         self.debug("Adding new VPN user to account: %s" %
-                                                    self.account.name)
+                   self.account.name)
         self.create_VPN_Users(rand_name=False)
 
         # TODO: Verify the VPN connection
@@ -386,10 +380,10 @@ class TestVPNUsers(cloudstackTestCase):
         #   establish VPN connection that will give access all VMs of this user
 
         self.debug("Enabling VPN connection to account: %s" %
-                                                    self.account.name)
+                   self.account.name)
         self.create_VPN(self.public_ip)
         self.debug("Creating VPN user for the account: %s" %
-                                                    self.account.name)
+                   self.account.name)
         self.create_VPN_Users()
 
         self.debug("Creating a global admin account")
@@ -400,16 +394,16 @@ class TestVPNUsers(cloudstackTestCase):
         self.cleanup.append(admin)
         self.debug("Creating API client for newly created user")
         api_client = self.testClient.getUserApiClient(
-                                    UserName=self.account.name,
-                                    DomainName=self.account.domain)
+            UserName=self.account.name,
+            DomainName=self.account.domain)
 
         self.debug("Adding new user to VPN as a global admin: %s" %
-                                                            admin.name)
+                   admin.name)
         try:
             self.create_VPN_Users(api_client=api_client)
         except Exception as e:
             self.fail("Global admin should be allowed to create VPN user: %s" %
-                                                                            e)
+                      e)
         return
 
     @attr(tags=["advanced", "advancedns"], required_hardware="false")
@@ -429,10 +423,10 @@ class TestVPNUsers(cloudstackTestCase):
         #   establish VPN connection that will give access all VMs of this user
 
         self.debug("Enabling VPN connection to account: %s" %
-                                                    self.account.name)
+                   self.account.name)
         self.create_VPN(self.public_ip)
         self.debug("Creating VPN user for the account: %s" %
-                                                    self.account.name)
+                   self.account.name)
         self.create_VPN_Users()
 
         self.debug("Creating a domain admin account")
@@ -442,16 +436,16 @@ class TestVPNUsers(cloudstackTestCase):
         self.cleanup.append(admin)
         self.debug("Creating API client for newly created user")
         api_client = self.testClient.getUserApiClient(
-                                    UserName=self.account.name,
-                                    DomainName=self.account.domain)
+            UserName=self.account.name,
+            DomainName=self.account.domain)
 
         self.debug("Adding new user to VPN as a domain admin: %s" %
-                                                            admin.name)
+                   admin.name)
         try:
             self.create_VPN_Users(api_client=api_client)
         except Exception as e:
             self.fail("Domain admin should be allowed to create VPN user: %s" %
-                                                                            e)
+                      e)
         return
 
     @attr(tags=["advanced", "advancedns"], required_hardware="false")
@@ -500,11 +494,12 @@ class TestVPNUsers(cloudstackTestCase):
                 vpn,
                 "Failed to create remote access vpn"
             )
+            self.cleanup.append(vpn)
         except Exception as e:
             self.fail("Failed to enable vpn on SourceNAT IP with error: %s" % e)
 
-        #Create PF rule with TCP ports 500,4500 and 1701
-        self.services['natrule']['protocol']="TCP"
+        # Create PF rule with TCP ports 500,4500 and 1701
+        self.services['natrule']['protocol'] = "TCP"
         for port in [500, 4500, 1701]:
             self.services['natrule']['privateport'] = port
             self.services['natrule']['publicport'] = port
@@ -519,6 +514,7 @@ class TestVPNUsers(cloudstackTestCase):
                     nat,
                     "Failed to add PF rule with tcp parts matching vpn"
                 )
+                self.cleanup.append(nat)
             except Exception as e:
                 self.fail("Creating PF rule for TCP port %s in VPN failed : %s" % (port, e))
         return

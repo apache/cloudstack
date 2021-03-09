@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -78,7 +78,7 @@ def parse_reports(file_path_list):
     exit_code = 0
 
     for file_path in file_path_list:
-        data = lxml.etree.iterparse(file_path, tag='testcase')
+        data = lxml.etree.iterparse(file_path, tag='testcase', huge_tree=True)
         for event, elem in data:
             name = ''
             status = 'Success'
@@ -102,7 +102,7 @@ def parse_reports(file_path_list):
             if status not in ('Skipped', 'Success'):
                 table.add_row([name, status, time, file_path.replace(".xml", "").split("/")[-1]])
 
-    print table.draw()
+    print(table.draw())
 
     return exit_code
 

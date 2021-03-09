@@ -24,4 +24,4 @@ mvn -Dsimulator -Dorg.eclipse.jetty.annotations.maxWait=120 -pl :cloud-client-ui
 
 while ! nc -vzw 5 localhost 8096 2>&1 > /dev/null; do grep Exception /tmp/jetty-log; sleep 10; done
 echo -e "\nStarting DataCenter deployment"
-python tools/marvin/marvin/deployDataCenter.py -i setup/dev/advanced.cfg 2>&1 || true
+python3 tools/marvin/marvin/deployDataCenter.py -i setup/dev/advanced.cfg 2>&1 || true

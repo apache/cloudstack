@@ -40,6 +40,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -84,6 +85,7 @@ public class NicPlugInOutRules extends RuleApplier {
         NetworkModel networkModel = visitor.getVirtualNetworkApplianceFactory().getNetworkModel();
         VirtualMachineManager itMgr = visitor.getVirtualNetworkApplianceFactory().getItMgr();
         NicDao nicDao = visitor.getVirtualNetworkApplianceFactory().getNicDao();
+        VpcVirtualNetworkApplianceService routerService = visitor.getVirtualNetworkApplianceFactory().getRouterService();
 
         // de-associate IPs before unplugging nics
         if (!nicsToUnplug.isEmpty()) {
@@ -107,6 +109,12 @@ public class NicPlugInOutRules extends RuleApplier {
 
         // 1) Unplug the nics
         for (Entry<String, PublicIpAddress> entry : nicsToUnplug.entrySet()) {
+            PublicIpAddress ip = entry.getValue();
+            NicVO nic = nicDao.findByIp4AddressAndNetworkIdAndInstanceId(ip.getNetworkId(), _router.getId(), ip.getAddress().addr());
+            if (nic != null) {
+                s_logger.info("Collect network statistics for nic " + nic + " from router " + _router);
+                routerService.collectNetworkStatistics(_router, nic);
+            }
             Network publicNtwk = null;
             try {
                 publicNtwk = networkModel.getNetwork(entry.getValue().getNetworkId());

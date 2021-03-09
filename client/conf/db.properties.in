@@ -83,21 +83,21 @@ db.simulator.autoReconnect=true
 db.ha.enabled=false
 db.ha.loadBalanceStrategy=com.cloud.utils.db.StaticStrategy
 # cloud stack Database
-db.cloud.slaves=localhost,localhost
+db.cloud.replicas=localhost,localhost
 db.cloud.autoReconnect=true
 db.cloud.failOverReadOnly=false
 db.cloud.reconnectAtTxEnd=true
 db.cloud.autoReconnectForPools=true
-db.cloud.secondsBeforeRetryMaster=3600
-db.cloud.queriesBeforeRetryMaster=5000
+db.cloud.secondsBeforeRetrySource=3600
+db.cloud.queriesBeforeRetrySource=5000
 db.cloud.initialTimeout=3600
 
 #usage Database
-db.usage.slaves=localhost,localhost
+db.usage.replicas=localhost,localhost
 db.usage.autoReconnect=true
 db.usage.failOverReadOnly=false
 db.usage.reconnectAtTxEnd=true
 db.usage.autoReconnectForPools=true
-db.usage.secondsBeforeRetryMaster=3600
-db.usage.queriesBeforeRetryMaster=5000
+db.usage.secondsBeforeRetrySource=3600
+db.usage.queriesBeforeRetrySource=5000
 db.usage.initialTimeout=3600

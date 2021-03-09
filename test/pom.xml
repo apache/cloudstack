@@ -37,7 +37,7 @@
             <artifactId>log4j</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.trilead</groupId>
+            <groupId>org.jenkins-ci</groupId>
             <artifactId>trilead-ssh2</artifactId>
         </dependency>
         <dependency>

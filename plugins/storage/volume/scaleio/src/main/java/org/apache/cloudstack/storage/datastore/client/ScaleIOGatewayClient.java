@@ -40,8 +40,8 @@ public interface ScaleIOGatewayClient {
     String STORAGE_POOL_SYSTEM_ID = "powerflex.storagepool.system.id";
 
     static ScaleIOGatewayClient getClient(final String url, final String username, final String password,
-                                          final boolean validateCertificate, final int timeout) throws NoSuchAlgorithmException, KeyManagementException, URISyntaxException {
-        return new ScaleIOGatewayClientImpl(url, username, password, validateCertificate, timeout);
+                                          final boolean validateCertificate, final int timeout, final int maxConnections) throws NoSuchAlgorithmException, KeyManagementException, URISyntaxException {
+        return new ScaleIOGatewayClientImpl(url, username, password, validateCertificate, timeout, maxConnections);
     }
 
     // Volume APIs

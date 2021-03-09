@@ -68,14 +68,14 @@ def is_it_up(host, port):
     print "host: %s:%s UP" % (host, port)
     return True
 
-# hmm master actions don't apply to a slave
-master="192.168.1.161"
+# hmm primary actions don't apply to a secondary
+primary="192.168.1.161"
 port=8899
 user = "oracle"
 password = "test123"
 auth = "%s:%s" % (user, password)
 server = getCon(auth, 'localhost', port)
-mserver = getCon(auth, master, port)
+mserver = getCon(auth, primary, port)
 poolNode=True
 interface = "c0a80100"
 role='xen,utility'
@@ -93,7 +93,7 @@ try:
     for node in poolDom.getElementsByTagName('Server_Pool'):
         id = node.getElementsByTagName('Unique_Id')[0].firstChild.nodeValue
         alias = node.getElementsByTagName('Pool_Alias')[0].firstChild.nodeValue
-        mvip = node.getElementsByTagName('Master_Virtual_Ip')[0].firstChild.nodeValue
+        mvip = node.getElementsByTagName('Primary_Virtual_Ip')[0].firstChild.nodeValue
         print "pool: %s, %s, %s" % (id, mvip, alias)
         members = node.getElementsByTagName('Member')
         for member in members:

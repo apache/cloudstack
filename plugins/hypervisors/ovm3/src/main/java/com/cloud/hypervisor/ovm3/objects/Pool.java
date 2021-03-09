@@ -42,7 +42,7 @@ public class Pool extends OvmObject {
     };
     private List<String> poolHosts = new ArrayList<String>();
     private final List<String> poolRoles = new ArrayList<String>();
-    private String poolMasterVip;
+    private String poolPrimaryVip;
     private String poolAlias;
     private String poolId = null;
 
@@ -50,8 +50,8 @@ public class Pool extends OvmObject {
         setClient(c);
     }
 
-    public String getPoolMasterVip() {
-        return poolMasterVip;
+    public String getPoolPrimaryVip() {
+        return poolPrimaryVip;
     }
 
     public String getPoolAlias() {
@@ -115,7 +115,7 @@ public class Pool extends OvmObject {
     /*
      * public Boolean updatePoolVirtualIp(String ip) throws
      * Ovm3ResourceException { Object x = callWrapper("update_pool_virtual_ip",
-     * ip); if (x == null) { poolMasterVip = ip; return true; } return false; }
+     * ip); if (x == null) { poolPrimaryVip = ip; return true; } return false; }
      */
 
     public Boolean leaveServerPool(String uuid) throws Ovm3ResourceException{
@@ -199,7 +199,7 @@ public class Pool extends OvmObject {
         String path = "//Discover_Server_Pool_Result/Server_Pool";
         poolId = xmlToString(path + "/Unique_Id", xmlDocument);
         poolAlias = xmlToString(path + "/Pool_Alias", xmlDocument);
-        poolMasterVip = xmlToString(path + "/Master_Virtual_Ip",
+        poolPrimaryVip = xmlToString(path + "/Primary_Virtual_Ip",
                 xmlDocument);
         poolHosts.addAll(xmlToList(path + "//Registered_IP", xmlDocument));
         if (poolId == null) {

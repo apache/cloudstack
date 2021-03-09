@@ -55,6 +55,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import java.util.AbstractMap;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StorageSystemDataMotionStrategyTest {
@@ -266,4 +267,25 @@ public class StorageSystemDataMotionStrategyTest {
         Assert.assertEquals(expected, result);
     }
 
+    @Test
+    public void formatMigrationElementsAsJsonToDisplayOnLogValidateFormat(){
+        String objectName = "test";
+        Long object = 1L, from = 2L, to = 3L;
+
+        Assert.assertEquals(String.format("{%s: \"%s\", from: \"%s\", to:\"%s\"}", objectName, object, from, to), strategy.formatMigrationElementsAsJsonToDisplayOnLog(objectName,
+                object, from, to));
+    }
+
+    @Test
+    public void formatEntryOfVolumesAndStoragesAsJsonToDisplayOnLogValidateFormat(){
+        Long volume = 1L, from = 2L, to = 3L;
+        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+        DataStore dataStore = Mockito.mock(DataStore.class);
+
+        Mockito.when(volumeInfo.getId()).thenReturn(volume);
+        Mockito.when(volumeInfo.getPoolId()).thenReturn(from);
+        Mockito.when(dataStore.getId()).thenReturn(to);
+
+        Assert.assertEquals(String.format("{volume: \"%s\", from: \"%s\", to:\"%s\"}", volume, from, to), strategy.formatEntryOfVolumesAndStoragesAsJsonToDisplayOnLog(new AbstractMap.SimpleEntry<>(volumeInfo, dataStore)));
+    }
 }

@@ -41,7 +41,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.Mockito;
+
 
 @RunWith(MockitoJUnitRunner.class)
 public class RootCAProviderTest {
@@ -55,12 +58,6 @@ public class RootCAProviderTest {
         Field f = RootCAProvider.class.getDeclaredField(name);
         f.setAccessible(true);
         f.set(provider, o);
-    }
-
-    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
-        Field f = ConfigKey.class.getDeclaredField(name);
-        f.setAccessible(true);
-        f.set(configKey, o);
     }
 
     @Before
@@ -133,14 +130,16 @@ public class RootCAProviderTest {
 
     @Test
     public void testCreateSSLEngineWithoutAuthStrictness() throws Exception {
-        overrideDefaultConfigValue(RootCAProvider.rootCAAuthStrictness, "_defaultValue", "false");
+        provider.rootCAAuthStrictness = Mockito.mock(ConfigKey.class);
+        Mockito.when(provider.rootCAAuthStrictness.value()).thenReturn(Boolean.FALSE);
         final SSLEngine e = provider.createSSLEngine(SSLUtils.getSSLContext(), "/1.2.3.4:5678", null);
         Assert.assertFalse(e.getNeedClientAuth());
     }
 
     @Test
     public void testCreateSSLEngineWithAuthStrictness() throws Exception {
-        overrideDefaultConfigValue(RootCAProvider.rootCAAuthStrictness, "_defaultValue", "true");
+        provider.rootCAAuthStrictness = Mockito.mock(ConfigKey.class);
+        Mockito.when(provider.rootCAAuthStrictness.value()).thenReturn(Boolean.TRUE);
         final SSLEngine e = provider.createSSLEngine(SSLUtils.getSSLContext(), "/1.2.3.4:5678", null);
         Assert.assertTrue(e.getNeedClientAuth());
     }

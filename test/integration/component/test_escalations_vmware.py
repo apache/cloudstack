@@ -252,7 +252,7 @@ class TestVMware(cloudstackTestCase):
             isready="true"
         )
         status = validateList(list_default_iso_response)
-        self.assertEquals(
+        self.assertEqual(
                 PASS,
                 status[0],
                 "ISO list is empty")
@@ -260,7 +260,7 @@ class TestVMware(cloudstackTestCase):
             "Registered a ISO with name {}".format(list_default_iso_response[0].name))
         try:
             vm.attach_iso(self.userapiclient,list_default_iso_response[0])
-        except CloudstackAPIException  as e:
+        except CloudstackAPIException as e:
             self.fail("Attached ISO failed : %s" % e)
         response = VirtualMachine.list(self.userapiclient, id=vm.id)
         status = validateList(response)
@@ -316,7 +316,7 @@ class TestVMware(cloudstackTestCase):
             isready="true"
         )
         status = validateList(list_default_iso_response)
-        self.assertEquals(
+        self.assertEqual(
                 PASS,
                 status[0],
                 "ISO list is empty")
@@ -324,7 +324,7 @@ class TestVMware(cloudstackTestCase):
             "Registered a ISO with name {}".format(list_default_iso_response[0].name))
         try:
             vm.attach_iso(self.userapiclient,list_default_iso_response[0])
-        except CloudstackAPIException  as e:
+        except CloudstackAPIException as e:
             self.fail("Attached ISO failed : %s" % e)
         response = VirtualMachine.list(self.userapiclient, id=vm.id)
         status = validateList(response)

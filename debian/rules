@@ -38,7 +38,7 @@ override_dh_auto_install:
 	mkdir $(DESTDIR)/$(SYSCONFDIR)/profile.d
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-agent
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-agent/plugins
-	install -D agent/target/cloud-agent-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/$(PACKAGE)-agent.jar
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib
 	install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 	install -D plugins/hypervisors/kvm/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 

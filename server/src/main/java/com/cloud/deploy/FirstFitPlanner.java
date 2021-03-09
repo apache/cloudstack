@@ -260,15 +260,6 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                 }
                 podsWithCapacity.removeAll(avoid.getPodsToAvoid());
             }
-            if (!isRootAdmin(vmProfile)) {
-                List<Long> disabledPods = listDisabledPods(plan.getDataCenterId());
-                if (!disabledPods.isEmpty()) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Removing from the podId list these pods that are disabled: " + disabledPods);
-                    }
-                    podsWithCapacity.removeAll(disabledPods);
-                }
-            }
         } else {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("No pods found having a host with enough capacity, returning.");
@@ -306,7 +297,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
     private Map<Short, Float> getCapacityThresholdMap() {
         // Lets build this real time so that the admin wont have to restart MS
-        // if he changes these values
+        // if anyone changes these values
         Map<Short, Float> disableThresholdMap = new HashMap<Short, Float>();
 
         String cpuDisableThresholdString = ClusterCPUCapacityDisableThreshold.value().toString();
@@ -402,21 +393,6 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                 prioritizedClusterIds.removeAll(avoid.getClustersToAvoid());
             }
 
-            if (!isRootAdmin(vmProfile)) {
-                List<Long> disabledClusters = new ArrayList<Long>();
-                if (isZone) {
-                    disabledClusters = listDisabledClusters(plan.getDataCenterId(), null);
-                } else {
-                    disabledClusters = listDisabledClusters(plan.getDataCenterId(), id);
-                }
-                if (!disabledClusters.isEmpty()) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Removing from the clusterId list these clusters that are disabled/clusters under disabled pods: " + disabledClusters);
-                    }
-                    prioritizedClusterIds.removeAll(disabledClusters);
-                }
-            }
-
             removeClustersCrossingThreshold(prioritizedClusterIds, avoid, vmProfile, plan);
             String hostTagOnOffering = offering.getHostTag();
             if (hostTagOnOffering != null) {
@@ -463,21 +439,6 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     protected List<Long> reorderPods(Pair<List<Long>, Map<Long, Double>> podCapacityInfo, VirtualMachineProfile vmProfile, DeploymentPlan plan) {
         List<Long> podIdsByCapacity = podCapacityInfo.first();
         return podIdsByCapacity;
-    }
-
-    private List<Long> listDisabledClusters(long zoneId, Long podId) {
-        List<Long> disabledClusters = clusterDao.listDisabledClusters(zoneId, podId);
-        if (podId == null) {
-            //list all disabled clusters under this zone + clusters under any disabled pod of this zone
-            List<Long> clustersWithDisabledPods = clusterDao.listClustersWithDisabledPods(zoneId);
-            disabledClusters.addAll(clustersWithDisabledPods);
-        }
-        return disabledClusters;
-    }
-
-    private List<Long> listDisabledPods(long zoneId) {
-        List<Long> disabledPods = podDao.listDisabledPods(zoneId);
-        return disabledPods;
     }
 
     protected Pair<List<Long>, Map<Long, Double>> listClustersByCapacity(long id, int requiredCpu, long requiredRam, ExcludeList avoid, boolean isZone) {

@@ -282,17 +282,6 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
 
     private boolean templateAvailableInPod(long templateId, long dcId, long podId) {
         return true;
-        /*
-         * List<VMTemplateHostVO> thvoList = _templateHostDao.listByTemplateStatus(templateId, dcId, podId, Status.DOWNLOADED);
-         * List<VMTemplateStoragePoolVO> tpvoList = _templatePoolDao.listByTemplateStatus(templateId, dcId, podId,
-         * Status.DOWNLOADED);
-         *
-         * if (thvoList != null && thvoList.size() > 0) { if (s_logger.isDebugEnabled()) { s_logger.debug("Found " +
-         * thvoList.size() + " storage hosts in pod " + podId + " with template " + templateId); } return true; } else if
-         * (tpvoList != null && tpvoList.size() > 0) { if (s_logger.isDebugEnabled()) { s_logger.debug("Found " +
-         * tpvoList.size() + " storage pools in pod " + podId + " with template " + templateId); } return true; }else { return
-         * false; }
-         */
     }
 
     @Override

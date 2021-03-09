@@ -19,7 +19,11 @@
   <div class="list" :loading="loading">
     <div class="list__header">
       <div class="list__header__col" v-if="tiersSelect">
-        <a-select @change="handleTierSelect" v-model="vpcTiers" :placeholder="$t('label.select.tier')">
+        <a-select
+          autoFocus
+          @change="handleTierSelect"
+          v-model="vpcTiers"
+          :placeholder="$t('label.select.tier')">
           <a-select-option v-for="network in networksList" :key="network.id" :value="network.id">
             {{ network.name }}
           </a-select-option>
@@ -151,7 +155,7 @@ export default {
       pageSize: 10
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

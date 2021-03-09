@@ -31,7 +31,7 @@ import javax.persistence.Table;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name = ("user_ipv6_address"))
+@Table(name = "user_ipv6_address")
 public class UserIpv6AddressVO implements UserIpv6Address {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

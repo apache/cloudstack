@@ -83,6 +83,10 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                 boolean fullClone = (boolean) params.get(key);
                 processor.setFullCloneFlag(fullClone);
                 break;
+            case DISK_PROVISIONING_STRICTNESS:
+                boolean diskProvisioningStrictness = (boolean) params.get(key);
+                processor.setDiskProvisioningStrictness(diskProvisioningStrictness);
+                break;
             default:
                 s_logger.error("Unknown reconfigurable field " + key.getName() + " for VmwareStorageProcessor");
                 return false;

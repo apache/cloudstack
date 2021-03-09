@@ -150,7 +150,7 @@ class TestCreateDomainsDiskOffering(cloudstackTestCase):
             self.services["disk_offering"]["name"],
             "Check name in createDiskOffering"
         )
-        self.assertItemsEqual(
+        self.assertCountEqual(
             disk_response.domainid.split(","),
             offering_data_domainid.split(","),
             "Check domainid in createDiskOffering"
@@ -259,7 +259,7 @@ class TestDomainsDiskOfferings(cloudstackTestCase):
         )
 
         try:
-            self.assertItemsEqual(
+            self.assertCountEqual(
                 list_disk_response[0].domainid.split(","),
                 input_domainid.split(","),
                 "Check child domainid in updateDiskOffering, should fail"
@@ -268,7 +268,7 @@ class TestDomainsDiskOfferings(cloudstackTestCase):
         except AssertionError:
             self.debug("Child domain check successful")
 
-        self.assertItemsEqual(
+        self.assertCountEqual(
             list_disk_response[0].domainid.split(","),
             result_domainid.split(","),
             "Check domainid in updateDiskOffering"

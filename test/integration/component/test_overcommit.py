@@ -394,7 +394,7 @@ class Overcommit (cloudstackTestCase):
             "check list cluster response for zone id  %s" %
             self.zone.id)
         k = len(list_cluster)
-        for id in xrange(k):
+        for id in range(k):
             Configurations.update(self.apiclient,
                                   clusterid=list_cluster[id].id,
                                   name="mem.overprovisioning.factor",
@@ -414,7 +414,7 @@ class Overcommit (cloudstackTestCase):
             "check list capacity response for zone id %s" %
             self.zone.id)
         cpu, mem = capacity_parser(capacity)
-        for id in xrange(k):
+        for id in range(k):
             Configurations.update(self.apiclient,
                                   clusterid=list_cluster[id].id,
                                   name="mem.overprovisioning.factor",
@@ -452,7 +452,7 @@ class Overcommit (cloudstackTestCase):
         self.assertEqual(mem[2],
                          mem1[2],
                          "check mem capacity % used")
-        for id in xrange(k):
+        for id in range(k):
             Configurations.update(self.apiclient,
                                   clusterid=list_cluster[id].id,
                                   name="mem.overprovisioning.factor",

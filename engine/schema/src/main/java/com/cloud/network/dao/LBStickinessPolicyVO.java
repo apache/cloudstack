@@ -35,7 +35,7 @@ import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.utils.Pair;
 
 @Entity
-@Table(name = ("load_balancer_stickiness_policies"))
+@Table(name = "load_balancer_stickiness_policies")
 @PrimaryKeyJoinColumn(name = "load_balancer_id", referencedColumnName = "id")
 public class LBStickinessPolicyVO implements StickinessPolicy {
     @Id

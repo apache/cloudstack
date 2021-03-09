@@ -343,8 +343,8 @@ class TestDeployVM(cloudstackTestCase):
         listedvm = VirtualMachine.list(
             self.apiclient,
             id=self.virtual_machine.id)
-        self.assert_(isinstance(listedvm, list))
-        self.assert_(len(listedvm) > 0)
+        self.assertTrue(isinstance(listedvm, list))
+        self.assertTrue(len(listedvm) > 0)
         self.assertEqual(
             listedvm[0].serviceofferingid,
             medium_service_off.id,

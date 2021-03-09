@@ -363,7 +363,7 @@ public class VmwareResourceTest {
         EnumMap<VmwareStorageProcessorConfigurableFields, Object> params2 = _resource.examineStorageSubSystemCommandFullCloneFlagForVmware(storageCmd, params);
         verify(destDataTO).getDataStore();
         verify(destDataStoreTO, times(2)).isFullCloneFlag();
-        assertEquals(1, params2.size());
+        assertEquals(2, params2.size());
         assertEquals(FULL_CLONE_FLAG, params2.get(VmwareStorageProcessorConfigurableFields.FULL_CLONE_FLAG));
     }
 

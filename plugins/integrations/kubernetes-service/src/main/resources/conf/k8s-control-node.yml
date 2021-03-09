@@ -21,6 +21,26 @@ ssh_authorized_keys:
   {{ k8s.ssh.pub.key }}
 
 write-files:
+  - path: /etc/conf.d/nfs
+    permissions: '0644'
+    content: |
+      OPTS_RPC_MOUNTD=""
+
+  - path: /etc/kubernetes/pki/cloudstack/ca.crt
+    permissions: '0644'
+    content: |
+      {{ k8s_control_node.ca.crt }}
+
+  - path: /etc/kubernetes/pki/cloudstack/apiserver.crt
+    permissions: '0644'
+    content: |
+      {{ k8s_control_node.apiserver.crt }}
+
+  - path: /etc/kubernetes/pki/cloudstack/apiserver.key
+    permissions: '0600'
+    content: |
+      {{ k8s_control_node.apiserver.key }}
+
   - path: /opt/bin/setup-kube-system
     permissions: 0700
     owner: root:root
@@ -125,6 +145,8 @@ write-files:
           done <<< "$output"
           setup_complete=true
         fi
+        mkdir -p "${K8S_CONFIG_SCRIPTS_COPY_DIR}"
+        cp ${BINARIES_DIR}/*.yaml "${K8S_CONFIG_SCRIPTS_COPY_DIR}"
         umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"
         if [ "$EJECT_ISO_FROM_OS" = true ] && [ "$iso_drive_path" != "" ]; then
           eject "${iso_drive_path}"
@@ -174,6 +196,23 @@ write-files:
         done
       fi
 
+      crucial_cmd_attempts=1
+      while true; do
+        if (( "$crucial_cmd_attempts" > "$MAX_SETUP_CRUCIAL_CMD_ATTEMPTS" )); then
+          echo "Error: kubeadm init failed!"
+          exit 1
+        fi
+        retval=0
+        set +e
+        kubeadm init --token {{ k8s_control_node.cluster.token }} --token-ttl 0 {{ k8s_control_node.cluster.initargs }}
+        retval=$?
+        set -e
+        if [ $retval -eq 0 ]; then
+          break;
+        fi
+        crucial_cmd_attempts=$[$crucial_cmd_attempts + 1]
+      done
+
   - path: /opt/bin/deploy-kube-system
     permissions: 0700
     owner: root:root
@@ -185,18 +224,36 @@ write-files:
       exit 0
       fi
 
+      K8S_CONFIG_SCRIPTS_COPY_DIR=/tmp/k8sconfigscripts/
+
       if [[ $(systemctl is-active setup-kube-system) != "inactive" ]]; then
         echo "setup-kube-system is running!"
         exit 1
       fi
-      modprobe ip_vs
-      modprobe ip_vs_wrr
-      modprobe ip_vs_sh
-      modprobe nf_conntrack_ipv4
       if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
         export PATH=$PATH:/opt/bin
       fi
-      kubeadm join {{ k8s_master.join_ip }}:6443 --token {{ k8s_master.cluster.token }} --control-plane --certificate-key {{ k8s_master.cluster.ha.certificate.key }} --discovery-token-unsafe-skip-ca-verification
+      export KUBECONFIG=/etc/kubernetes/admin.conf
+
+      mkdir -p /root/.kube
+      cp -i /etc/kubernetes/admin.conf /root/.kube/config
+      chown $(id -u):$(id -g) /root/.kube/config
+      echo export PATH=\$PATH:/opt/bin >> /root/.bashrc
+
+      if [ -d "$K8S_CONFIG_SCRIPTS_COPY_DIR" ]; then
+        ### Network, dashboard configs available offline ###
+        echo "Offline configs are available!"
+        kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/network.yaml
+        kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/dashboard.yaml
+        rm -rf "${K8S_CONFIG_SCRIPTS_COPY_DIR}"
+      else
+        kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+        kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta6/aio/deploy/recommended.yaml
+      fi
+
+      kubectl create rolebinding admin-binding --role=admin --user=admin || true
+      kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=admin || true
+      kubectl create clusterrolebinding kubernetes-dashboard-ui --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:kubernetes-dashboard || true
 
       sudo touch /home/core/success
       echo "true" > /home/core/success
@@ -229,7 +286,7 @@ coreos:
         Type=simple
         StartLimitInterval=0
         Restart=on-failure
-        ExecStartPre=/usr/bin/curl -k https://{{ k8s_master.join_ip }}:6443/version
+        ExecStartPre=/usr/bin/curl -k https://127.0.0.1:6443/version
         ExecStart=/opt/bin/deploy-kube-system
 
   update:

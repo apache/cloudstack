@@ -146,7 +146,7 @@ class DBDeployer(object):
         try:
             mysqlCmds = [mysqlPath, '--user=%s'%kwargs['user'], '--host=%s'%kwargs['host'], '--port=%s'%kwargs['port']]
             if 'passwd' in kwargs:
-                mysqlCmds.append('--password=%s'%kwargs['passwd'])
+                mysqlCmds.append('--password=\'%s\''%kwargs['passwd'])
             open(self.tmpMysqlFile, 'w').write(text)
             mysqlCmds.append('<')
             mysqlCmds.append(self.tmpMysqlFile)
@@ -388,7 +388,7 @@ for example:
 
     def processEncryptionStuff(self):
         def encrypt(input):
-            cmd = ['java','-Djava.security.egd=file:/dev/urandom','-classpath','"' + self.encryptionJarPath + '"','org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI', 'encrypt.sh', 'input=%s'%input, 'password=%s'%self.mgmtsecretkey,'verbose=false']
+            cmd = ['java','-Djava.security.egd=file:/dev/urandom','-classpath','"' + self.encryptionJarPath + '"','org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI', 'encrypt.sh', 'input=\'%s\''%input, 'password=\'%s\''%self.mgmtsecretkey,'verbose=false']
             return str(runCmd(cmd)).strip('\r\n')
 
         def saveMgmtServerSecretKey():

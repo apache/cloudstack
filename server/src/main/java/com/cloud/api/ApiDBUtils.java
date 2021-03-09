@@ -317,6 +317,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
@@ -326,6 +327,7 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
@@ -459,6 +461,7 @@ public class ApiDBUtils {
     static BackupDao s_backupDao;
     static BackupScheduleDao s_backupScheduleDao;
     static BackupOfferingDao s_backupOfferingDao;
+    static NicDao s_nicDao;
 
     @Inject
     private ManagementServer ms;
@@ -703,6 +706,8 @@ public class ApiDBUtils {
     private BackupOfferingDao backupOfferingDao;
     @Inject
     private BackupScheduleDao backupScheduleDao;
+    @Inject
+    private NicDao nicDao;
 
     @PostConstruct
     void init() {
@@ -812,6 +817,7 @@ public class ApiDBUtils {
         s_hostDetailsDao = hostDetailsDao;
         s_clusterDetailsDao = clusterDetailsDao;
         s_vmSnapshotDao = vmSnapshotDao;
+        s_nicDao = nicDao;
         s_nicSecondaryIpDao = nicSecondaryIpDao;
         s_vpcProvSvc = vpcProvSvc;
         s_affinityGroupDao = affinityGroupDao;
@@ -1110,6 +1116,10 @@ public class ApiDBUtils {
 
     public static ServiceOffering findServiceOfferingById(Long serviceOfferingId) {
         return s_serviceOfferingDao.findByIdIncludingRemoved(serviceOfferingId);
+    }
+
+    public static ServiceOffering findServiceOfferingByUuid(String serviceOfferingUuid) {
+        return s_serviceOfferingDao.findByUuidIncludingRemoved(serviceOfferingUuid);
     }
 
     public static ServiceOfferingDetailsVO findServiceOfferingDetail(long serviceOfferingId, String key) {
@@ -1881,16 +1891,8 @@ public class ApiDBUtils {
         return s_hostJoinDao.newHostResponse(vr, details);
     }
 
-    public static HostResponse fillHostDetails(HostResponse vrData, HostJoinVO vr) {
-        return s_hostJoinDao.setHostResponse(vrData, vr);
-    }
-
     public static HostForMigrationResponse newHostForMigrationResponse(HostJoinVO vr, EnumSet<HostDetails> details) {
         return s_hostJoinDao.newHostForMigrationResponse(vr, details);
-    }
-
-    public static HostForMigrationResponse fillHostForMigrationDetails(HostForMigrationResponse vrData, HostJoinVO vr) {
-        return s_hostJoinDao.setHostForMigrationResponse(vrData, vr);
     }
 
     public static List<HostJoinVO> newHostView(Host vr) {
@@ -2089,5 +2091,13 @@ public class ApiDBUtils {
 
     public static BackupOfferingResponse newBackupOfferingResponse(BackupOffering policy) {
         return s_backupOfferingDao.newBackupOfferingResponse(policy);
+    }
+
+    public static NicVO findByIp4AddressAndNetworkId(String ip4Address, long networkId) {
+        return s_nicDao.findByIp4AddressAndNetworkId(ip4Address, networkId);
+    }
+
+    public static NicSecondaryIpVO findSecondaryIpByIp4AddressAndNetworkId(String ip4Address, long networkId) {
+        return s_nicSecondaryIpDao.findByIp4AddressAndNetworkId(ip4Address, networkId);
     }
 }

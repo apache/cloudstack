@@ -1161,7 +1161,7 @@ class MigrationStep:
 	You develop your own steps, and then pass a list of those steps to the
 	Migrator instance that will run them in order.
 	
-	When the migrator runs, it will take the list of steps you gave him,
+	When the migrator runs, it will take the list of steps you gave,
 	and, for each step:
 	
 	a) instantiate it, passing the context you gave to the migrator

@@ -36,6 +36,7 @@
       @submit="submitTariff">
       <a-form-item :label="$t('label.quota.value')">
         <a-input
+          autoFocus
           v-decorator="['value', {
             rules: [{
               required: true,

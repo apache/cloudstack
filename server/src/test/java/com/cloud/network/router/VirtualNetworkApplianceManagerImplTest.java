@@ -263,7 +263,7 @@ public class VirtualNetworkApplianceManagerImplTest {
     @Test
     public void testUpdateSite2SiteVpnConnectionState() throws Exception{
 
-        DomainRouterVO router = new DomainRouterVO(1L, 1L, 1L, "First testing router", 1L, Hypervisor.HypervisorType.XenServer, 1L, 1L, 1L, 1L, false, VirtualRouter.RedundantState.MASTER, true, true, 1L);
+        DomainRouterVO router = new DomainRouterVO(1L, 1L, 1L, "First testing router", 1L, Hypervisor.HypervisorType.XenServer, 1L, 1L, 1L, 1L, false, VirtualRouter.RedundantState.PRIMARY, true, true, 1L);
         router.setState(VirtualMachine.State.Running);
         router.setPrivateIpAddress("192.168.50.15");
 
@@ -278,7 +278,7 @@ public class VirtualNetworkApplianceManagerImplTest {
         conns.add(conn);
         conns.add(conn1);
 
-        Site2SiteCustomerGatewayVO gw = new Site2SiteCustomerGatewayVO("Testing gateway", 1L, 1L, "192.168.50.15", "Guest List", "ipsecPsk", "ikePolicy", "espPolicy", 1L, 1L, true, true);
+        Site2SiteCustomerGatewayVO gw = new Site2SiteCustomerGatewayVO("Testing gateway", 1L, 1L, "192.168.50.15", "Guest List", "ipsecPsk", "ikePolicy", "espPolicy", 1L, 1L, true, true, false, "ike");
         HostVO hostVo = new HostVO(1L, "Testing host", Host.Type.Routing, "192.168.50.15", "privateNetmask", "privateMacAddress", "publicIpAddress", "publicNetmask", "publicMacAddress", "storageIpAddress", "storageNetmask", "storageMacAddress", "deuxStorageIpAddress", "duxStorageNetmask", "deuxStorageMacAddress", "guid", Status.Up, "version", "iqn", new Date() , 1L, 1L, 1L, 1L, "parent", 20L, Storage.StoragePoolType.Gluster);
         hostVo.setManagementServerId(ManagementServerNode.getManagementServerId());
 

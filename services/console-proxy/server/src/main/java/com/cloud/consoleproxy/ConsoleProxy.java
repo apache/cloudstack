@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
+import com.cloud.utils.StringUtils;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.eclipse.jetty.websocket.api.Session;
 
@@ -57,6 +58,7 @@ public class ConsoleProxy {
     // dynamically changing to customer supplied certificate)
     public static byte[] ksBits;
     public static String ksPassword;
+    public static Boolean isSourceIpCheckEnabled;
 
     public static Method authMethod;
     public static Method reportMethod;
@@ -171,6 +173,11 @@ public class ConsoleProxy {
         authResult.setHost(param.getClientHostAddress());
         authResult.setPort(param.getClientHostPort());
 
+        String websocketUrl = param.getWebsocketUrl();
+        if (StringUtils.isNotBlank(websocketUrl)) {
+            return authResult;
+        }
+
         if (standaloneStart) {
             return authResult;
         }
@@ -232,7 +239,7 @@ public class ConsoleProxy {
         }
     }
 
-    public static void startWithContext(Properties conf, Object context, byte[] ksBits, String ksPassword, String password) {
+    public static void startWithContext(Properties conf, Object context, byte[] ksBits, String ksPassword, String password, Boolean isSourceIpCheckEnabled) {
         setEncryptorPassword(password);
         configLog4j();
         Logger.setFactory(new ConsoleProxyLoggerFactory());
@@ -248,6 +255,7 @@ public class ConsoleProxy {
         ConsoleProxy.context = context;
         ConsoleProxy.ksBits = ksBits;
         ConsoleProxy.ksPassword = ksPassword;
+        ConsoleProxy.isSourceIpCheckEnabled = isSourceIpCheckEnabled;
         try {
             final ClassLoader loader = Thread.currentThread().getContextClassLoader();
             Class<?> contextClazz = loader.loadClass("com.cloud.agent.resource.consoleproxy.ConsoleProxyResource");
@@ -526,6 +534,10 @@ public class ConsoleProxy {
         encryptorPassword = password;
     }
 
+    public static void setIsSourceIpCheckEnabled(Boolean isEnabled) {
+        isSourceIpCheckEnabled = isEnabled;
+    }
+
     static class ThreadExecutor implements Executor {
         @Override
         public void execute(Runnable r) {
@@ -551,11 +563,23 @@ public class ConsoleProxy {
                         !param.getClientHostPassword().equals(viewer.getClientHostPassword()))
                     throw new AuthenticationException("Cannot use the existing viewer " + viewer + ": bad sid");
 
-                if (!viewer.isFrontEndAlive()) {
+                try {
                     authenticationExternally(param);
-                    viewer.initClient(param);
-                    reportLoadChange = true;
+                } catch (Exception e) {
+                    s_logger.error("Authencation failed for param: " + param);
+                    return null;
                 }
+                s_logger.info("Initializing new novnc client and disconnecting existing session");
+                try {
+                    ((ConsoleProxyNoVncClient)viewer).getSession().disconnect();
+                } catch (IOException e) {
+                    s_logger.error("Exception while disconnect session of novnc viewer object: " + viewer, e);
+                }
+                removeViewer(viewer);
+                viewer = new ConsoleProxyNoVncClient(session);
+                viewer.initClient(param);
+                connectionMap.put(clientKey, viewer);
+                reportLoadChange = true;
             }
 
             if (reportLoadChange) {

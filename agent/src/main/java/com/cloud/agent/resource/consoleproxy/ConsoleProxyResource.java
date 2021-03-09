@@ -113,7 +113,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 
     private Answer execute(StartConsoleProxyAgentHttpHandlerCommand cmd) {
         s_logger.info("Invoke launchConsoleProxy() in responding to StartConsoleProxyAgentHttpHandlerCommand");
-        launchConsoleProxy(cmd.getKeystoreBits(), cmd.getKeystorePassword(), cmd.getEncryptorPassword());
+        launchConsoleProxy(cmd.getKeystoreBits(), cmd.getKeystorePassword(), cmd.getEncryptorPassword(), cmd.isSourceIpCheckEnabled());
         return new Answer(cmd);
     }
 
@@ -313,7 +313,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         return _name;
     }
 
-    private void launchConsoleProxy(final byte[] ksBits, final String ksPassword, final String encryptorPassword) {
+    private void launchConsoleProxy(final byte[] ksBits, final String ksPassword, final String encryptorPassword, final Boolean isSourceIpCheckEnabled) {
         final Object resource = this;
         s_logger.info("Building class loader for com.cloud.consoleproxy.ConsoleProxy");
         if (_consoleProxyMain == null) {
@@ -325,8 +325,8 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
                         Class<?> consoleProxyClazz = Class.forName("com.cloud.consoleproxy.ConsoleProxy");
                         try {
                             s_logger.info("Invoke startWithContext()");
-                            Method method = consoleProxyClazz.getMethod("startWithContext", Properties.class, Object.class, byte[].class, String.class, String.class);
-                            method.invoke(null, _properties, resource, ksBits, ksPassword, encryptorPassword);
+                            Method method = consoleProxyClazz.getMethod("startWithContext", Properties.class, Object.class, byte[].class, String.class, String.class, Boolean.class);
+                            method.invoke(null, _properties, resource, ksBits, ksPassword, encryptorPassword, isSourceIpCheckEnabled);
                         } catch (SecurityException e) {
                             s_logger.error("Unable to launch console proxy due to SecurityException", e);
                             System.exit(ExitStatus.Error.value());
@@ -358,6 +358,8 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
                 Class<?> consoleProxyClazz = Class.forName("com.cloud.consoleproxy.ConsoleProxy");
                 Method methodSetup = consoleProxyClazz.getMethod("setEncryptorPassword", String.class);
                 methodSetup.invoke(null, encryptorPassword);
+                methodSetup = consoleProxyClazz.getMethod("setIsSourceIpCheckEnabled", Boolean.class);
+                methodSetup.invoke(null, isSourceIpCheckEnabled);
             } catch (SecurityException e) {
                 s_logger.error("Unable to launch console proxy due to SecurityException", e);
                 System.exit(ExitStatus.Error.value());

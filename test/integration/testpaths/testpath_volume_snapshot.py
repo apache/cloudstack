@@ -17,7 +17,8 @@
 """ Test cases for VM/Volume snapshot Test Path
 """
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.utils import (cleanup_resources,
                               is_snapshot_on_nfs,
                               validateList)

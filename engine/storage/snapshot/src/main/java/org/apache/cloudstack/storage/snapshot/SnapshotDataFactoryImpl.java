@@ -87,6 +87,9 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     @Override
     public SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role) {
         SnapshotVO snapshot = snapshotDao.findById(snapshotId);
+        if (snapshot == null) {
+            return null;
+        }
         SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshotId, role);
         if (snapshotStore == null) {
             snapshotStore = snapshotStoreDao.findByVolume(snapshot.getVolumeId(), role);

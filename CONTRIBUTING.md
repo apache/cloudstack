@@ -14,14 +14,14 @@ Bug fixes
 It's very important that we can easily track bug fix commits, so their hashes should remain the same in all branches. 
 Therefore, a pull request (PR) that fixes a bug, should be sent against a release branch. 
 This can be either the "current release" or the "previous release", depending on which ones are maintained. 
-Since the goal is a stable master, bug fixes should be "merged forward" to the next branch in order: "previous release" -> "current release" -> master (in other words: old to new)
+Since the goal is a stable main, bug fixes should be "merged forward" to the next branch in order: "previous release" -> "current release" -> main (in other words: old to new)
 
 Developing new features
 -----------------------
 
-Development should be done in a feature branch, branched off of master. 
-Send a PR(steps below) to get it into master (2x LGTM applies). 
-PR will only be merged when master is open, will be held otherwise until master is open again. 
+Development should be done in a feature branch, branched off of main. 
+Send a PR(steps below) to get it into main (2x LGTM applies). 
+PR will only be merged when main is open, will be held otherwise until main is open again. 
 No back porting / cherry-picking features to existing branches!
 
 PendingReleaseNotes file
@@ -46,9 +46,9 @@ On your computer, follow these steps to setup a local repository for working on 
 $ git clone https://github.com/YOUR_ACCOUNT/cloudstack.git
 $ cd cloudstack
 $ git remote add upstream https://github.com/apache/cloudstack.git
-$ git checkout master
+$ git checkout main
 $ git fetch upstream
-$ git rebase upstream/master
+$ git rebase upstream/main
 ```
 
 
@@ -56,7 +56,7 @@ Making changes
 --------------
 
 
-It is important that you create a new branch to make changes on and that you do not change the `master` branch (other than to rebase in changes from `upstream/master`).  In this example I will assume you will be making your changes to a branch called `feature_x`.  This `feature_x` branch will be created on your local repository and will be pushed to your forked repository on GitHub.  Once this branch is on your fork you will create a Pull Request for the changes to be added to the ACS project.
+It is important that you create a new branch to make changes on and that you do not change the `main` branch (other than to rebase in changes from `upstream/main`).  In this example I will assume you will be making your changes to a branch called `feature_x`.  This `feature_x` branch will be created on your local repository and will be pushed to your forked repository on GitHub.  Once this branch is on your fork you will create a Pull Request for the changes to be added to the ACS project.
 
 It is best practice to create a new branch each time you want to contribute to the project and only track the changes for that pull request in this branch.
 
@@ -71,26 +71,26 @@ $ git commit -a -m "descriptive commit message for your changes"
 > The `-b` specifies that you want to create a new branch called `feature_x`.  You only specify `-b` the first time you checkout because you are creating a new branch.  Once the `feature_x` branch exists, you can later switch to it with only `git checkout feature_x`.
 
 
-Rebase `feature_x` to include updates from `upstream/master`
+Rebase `feature_x` to include updates from `upstream/main`
 ------------------------------------------------------------
 
-It is important that you maintain an up-to-date `master` branch in your local repository.  This is done by rebasing in the code changes from `upstream/master` (the official ACS project repository) into your local repository.  You will want to do this before you start working on a feature as well as right before you submit your changes as a pull request.  I recommend you do this process periodically while you work to make sure you are working off the most recent project code.
+It is important that you maintain an up-to-date `main` branch in your local repository.  This is done by rebasing in the code changes from `upstream/main` (the official ACS project repository) into your local repository.  You will want to do this before you start working on a feature as well as right before you submit your changes as a pull request.  I recommend you do this process periodically while you work to make sure you are working off the most recent project code.
 
 This process will do the following:
 
-1. Checkout your local `master` branch
-2. Synchronize your local `master` branch with the `upstream/master` so you have all the latest changes from the project
+1. Checkout your local `main` branch
+2. Synchronize your local `main` branch with the `upstream/main` so you have all the latest changes from the project
 3. Rebase the latest project code into your `feature_x` branch so it is up-to-date with the upstream code
 
 ``` bash
-$ git checkout master
+$ git checkout main
 $ git fetch upstream
-$ git rebase upstream/master
+$ git rebase upstream/main
 $ git checkout feature_x
-$ git rebase master
+$ git rebase main
 ```
 
-> Now your `feature_x` branch is up-to-date with all the code in `upstream/master`.
+> Now your `feature_x` branch is up-to-date with all the code in `upstream/main`.
 
 
 Make a GitHub Pull Request to contribute your changes
@@ -100,10 +100,10 @@ When you are happy with your changes and you are ready to contribute them, you w
 
 Please include JIRA id, detailed information about the bug/feature, what all tests are executed, how the reviewer can test this feature etc. Incase of UI PRs, a screenshot is preferred.
 
-> **IMPORTANT:** Make sure you have rebased your `feature_x` branch to include the latest code from `upstream/master` _before_ you do this.
+> **IMPORTANT:** Make sure you have rebased your `feature_x` branch to include the latest code from `upstream/main` _before_ you do this.
 
 ``` bash
-$ git push origin master
+$ git push origin main
 $ git push origin feature_x
 ```
 
@@ -113,7 +113,7 @@ To initiate the pull request, do the following:
 
 1. In your browser, navigate to your forked repository: [https://github.com/YOUR_ACCOUNT/cloudstack](https://github.com/YOUR_ACCOUNT/cloudstack)
 2. Click the new button called '**Compare & pull request**' that showed up just above the main area in your forked repository
-3. Validate the pull request will be into the upstream `master` and will be from your `feature_x` branch
+3. Validate the pull request will be into the upstream `main` and will be from your `feature_x` branch
 4. Enter a detailed description of the work you have done and then click '**Send pull request**'
 
 If you are requested to make modifications to your proposed changes, make the changes locally on your `feature_x` branch, re-push the `feature_x` branch to your fork.  The existing pull request should automatically pick up the change and update accordingly.
@@ -122,14 +122,14 @@ If you are requested to make modifications to your proposed changes, make the ch
 Cleaning up after a successful pull request
 -------------------------------------------
 
-Once the `feature_x` branch has been committed into the `upstream/master` branch, your local `feature_x` branch and the `origin/feature_x` branch are no longer needed.  If you want to make additional changes, restart the process with a new branch.
+Once the `feature_x` branch has been committed into the `upstream/main` branch, your local `feature_x` branch and the `origin/feature_x` branch are no longer needed.  If you want to make additional changes, restart the process with a new branch.
 
-> **IMPORTANT:** Make sure that your changes are in `upstream/master` before you delete your `feature_x` and `origin/feature_x` branches!
+> **IMPORTANT:** Make sure that your changes are in `upstream/main` before you delete your `feature_x` and `origin/feature_x` branches!
 
 You can delete these deprecated branches with the following:
 
 ``` bash
-$ git checkout master
+$ git checkout main
 $ git branch -D feature_x
 $ git push origin :feature_x
 ```

@@ -21,7 +21,8 @@ Tests for updating security group name
 
 # Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.cloudstackAPI import updateSecurityGroup, createSecurityGroup
 from marvin.sshClient import SshClient
 from marvin.lib.utils import (validateList,

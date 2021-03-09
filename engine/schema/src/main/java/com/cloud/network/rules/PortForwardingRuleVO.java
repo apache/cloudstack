@@ -29,7 +29,7 @@ import javax.persistence.Table;
 import com.cloud.utils.net.Ip;
 
 @Entity
-@Table(name = ("port_forwarding_rules"))
+@Table(name = "port_forwarding_rules")
 @DiscriminatorValue(value = "PortForwarding")
 @PrimaryKeyJoinColumn(name = "id")
 public class PortForwardingRuleVO extends FirewallRuleVO implements PortForwardingRule {

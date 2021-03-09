@@ -53,7 +53,7 @@ public class UpdateProjectRolePermissionCmd extends BaseCmd {
     private Long projectRoleId;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, required = true, entityType = ProjectResponse.class,
-            description = "ID of project where project role permission is to be updated", validations = {ApiArgValidator.NotNullOrEmpty})
+            description = "ID of project where project role permission is to be updated")
     private Long projectId;
 
     @Parameter(name = ApiConstants.RULE_ORDER, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = ProjectRolePermissionResponse.class,

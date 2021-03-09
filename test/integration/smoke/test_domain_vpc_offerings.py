@@ -151,7 +151,7 @@ class TestCreateDomainsVpcOffering(cloudstackTestCase):
         cmd.supportedServices = offering_data["supportedservices"]
         cmd.domainid = offering_data_domainid
         if "serviceProviderList" in offering_data:
-            for service, provider in offering_data["serviceProviderList"].items():
+            for service, provider in list(offering_data["serviceProviderList"].items()):
                 providers = provider
                 if isinstance(provider, str):
                     providers = [provider]
@@ -192,7 +192,7 @@ class TestCreateDomainsVpcOffering(cloudstackTestCase):
             self.localservices["vpc_offering"]["displaytext"],
             "Check server displaytext in createVPCOffering"
         )
-        self.assertItemsEqual(
+        self.assertCountEqual(
             vpc_response.domainid.split(","),
             offering_data_domainid.split(","),
             "Check domainid in createVPCOffering"
@@ -301,7 +301,7 @@ class TestDomainsVpcOfferings(cloudstackTestCase):
         )
 
         try:
-            self.assertItemsEqual(
+            self.assertCountEqual(
                 list_vpc_response[0].domainid.split(","),
                 input_domainid.split(","),
                 "Check child domainid in updateServiceOffering, should fail"
@@ -310,7 +310,7 @@ class TestDomainsVpcOfferings(cloudstackTestCase):
         except AssertionError:
             self.debug("Child domain check successful")
 
-        self.assertItemsEqual(
+        self.assertCountEqual(
             list_vpc_response[0].domainid.split(","),
             result_domainid.split(","),
             "Check domainid in createVPCOffering"
@@ -319,7 +319,6 @@ class TestDomainsVpcOfferings(cloudstackTestCase):
     @attr(
         tags=[
             "advanced",
-            "basic",
             "eip",
             "sg",
             "advancedns",

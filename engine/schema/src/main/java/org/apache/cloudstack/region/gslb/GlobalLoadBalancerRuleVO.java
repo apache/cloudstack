@@ -31,7 +31,7 @@ import javax.persistence.Table;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 
 @Entity
-@Table(name = ("global_load_balancing_rules"))
+@Table(name = "global_load_balancing_rules")
 public class GlobalLoadBalancerRuleVO implements GlobalLoadBalancerRule {
 
     @Id

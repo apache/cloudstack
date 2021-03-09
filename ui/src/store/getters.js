@@ -35,7 +35,8 @@ const getters = {
   cloudian: state => state.user.cloudian,
   zones: state => state.user.zones,
   timezoneoffset: state => state.user.timezoneoffset,
-  usebrowsertimezone: state => state.user.usebrowsertimezone
+  usebrowsertimezone: state => state.user.usebrowsertimezone,
+  domainStore: state => state.user.domainStore
 }
 
 export default getters
