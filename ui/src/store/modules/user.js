@@ -24,7 +24,17 @@ import router from '@/router'
 import store from '@/store'
 import { login, logout, api } from '@/api'
 import { i18n } from '@/locales'
-import { ACCESS_TOKEN, CURRENT_PROJECT, DEFAULT_THEME, APIS, ASYNC_JOB_IDS, ZONES, TIMEZONE_OFFSET, USE_BROWSER_TIMEZONE, DOMAIN_STORE } from '@/store/mutation-types'
+import {
+  ACCESS_TOKEN,
+  CURRENT_PROJECT,
+  DEFAULT_THEME,
+  APIS,
+  ZONES,
+  TIMEZONE_OFFSET,
+  USE_BROWSER_TIMEZONE,
+  HEADER_NOTICES,
+  DOMAIN_STORE
+} from '@/store/mutation-types'
 
 const user = {
   state: {
@@ -131,6 +141,7 @@ const user = {
           commit('SET_FEATURES', {})
           commit('SET_LDAP', {})
           commit('SET_CLOUDIAN', {})
+          commit('SET_DOMAIN_STORE', {})
 
           notification.destroy()
 
@@ -258,6 +269,7 @@ const user = {
         commit('SET_LDAP', {})
         commit('SET_CLOUDIAN', {})
         commit('RESET_THEME')
+        commit('SET_DOMAIN_STORE', {})
         Vue.ls.remove(CURRENT_PROJECT)
         Vue.ls.remove(ACCESS_TOKEN)
         Vue.ls.remove(ASYNC_JOB_IDS)

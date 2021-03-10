@@ -62,9 +62,11 @@
         v-else
         :treeData="treeData"
         :treeSelected="treeSelected"
+        :treeStore="domainStore"
         :loading="loading"
         :tabs="$route.meta.tabs"
         @change-resource="changeResource"
+        @change-tree-store="changeDomainStore"
         :actionData="actionData"/>
     </div>
 
@@ -108,7 +110,8 @@ export default {
       treeSelected: {},
       showAction: false,
       action: {},
-      dataView: false
+      dataView: false,
+      domainStore: {}
     }
   },
   computed: {
@@ -132,8 +135,11 @@ export default {
     next()
   },
   beforeRouteLeave (to, from, next) {
-    this.updateDomainStoreWhenLeave()
+    this.changeDomainStore({})
     next()
+  },
+  created () {
+    this.domainStore = store.getters.domainStore
   },
   watch: {
     '$route' (to, from) {
@@ -307,14 +313,15 @@ export default {
       this.treeSelected = resource
       this.resource = this.treeSelected
     },
+    changeDomainStore (domainStore) {
+      this.domainStore = domainStore
+      store.dispatch('SetDomainStore', domainStore)
+    },
     closeAction () {
       this.showAction = false
     },
     updateActionData (data) {
       this.actionData.push(data)
-    },
-    updateDomainStoreWhenLeave () {
-      store.dispatch('SetDomainStore', {})
     }
   }
 }

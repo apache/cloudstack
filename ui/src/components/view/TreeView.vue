@@ -122,6 +122,12 @@ export default {
       default () {
         return []
       }
+    },
+    treeStore: {
+      type: Object,
+      default () {
+        return {}
+      }
     }
   },
   data () {
@@ -146,7 +152,6 @@ export default {
       oldSearchQuery: '',
       searchQuery: '',
       arrExpand: [],
-      domainStore: {},
       rootKey: ''
     }
   },
@@ -154,7 +159,6 @@ export default {
     this.metaName = this.$route.meta.name
     this.apiList = this.$route.meta.permission[0] ? this.$route.meta.permission[0] : ''
     this.apiChildren = this.$route.meta.permission[1] ? this.$route.meta.permission[1] : ''
-    this.domainStore = store.getters.domainStore
   },
   watch: {
     loading () {
@@ -217,11 +221,11 @@ export default {
       this.reloadTreeData(newData)
     },
     treeVerticalData () {
-      if (!this.domainStore.isExpand) {
+      if (!this.treeStore.isExpand) {
         return
       }
-      if (this.domainStore.expands && this.domainStore.expands.length > 0) {
-        for (const expandKey of this.domainStore.expands) {
+      if (this.treeStore.expands && this.treeStore.expands.length > 0) {
+        for (const expandKey of this.treeStore.expands) {
           if (this.arrExpand.includes(expandKey)) {
             continue
           }
@@ -230,8 +234,8 @@ export default {
         }
       }
 
-      if (this.domainStore.selected) {
-        this.selectedTreeKey = this.domainStore.selected
+      if (this.treeStore.selected) {
+        this.selectedTreeKey = this.treeStore.selected
         this.defaultSelected = [this.selectedTreeKey]
 
         const resource = this.treeVerticalData.filter(item => item.id === this.selectedTreeKey)
@@ -311,18 +315,18 @@ export default {
       this.defaultSelected = []
       this.defaultSelected.push(this.selectedTreeKey)
 
-      this.domainStore.expands = this.arrExpand
-      this.domainStore.selected = this.selectedTreeKey
-      store.dispatch('SetDomainStore', this.domainStore)
+      this.treeStore.expands = this.arrExpand
+      this.treeStore.selected = this.selectedTreeKey
+      this.$emit('change-tree-store', this.treeStore)
 
       this.getDetailResource(this.selectedTreeKey)
     },
     onExpand (treeExpand) {
       this.arrExpand = treeExpand
-      this.domainStore.isExpand = true
-      this.domainStore.expands = this.arrExpand
-      this.domainStore.selected = this.selectedTreeKey
-      store.dispatch('SetDomainStore', this.domainStore)
+      this.treeStore.isExpand = true
+      this.treeStore.expands = this.arrExpand
+      this.treeStore.selected = this.selectedTreeKey
+      this.$emit('change-tree-store', this.treeStore)
     },
     onSearch (value) {
       if (this.searchQuery === '' && this.oldSearchQuery === '') {
@@ -349,8 +353,7 @@ export default {
       this.arrExpand = []
       this.treeViewData = []
       this.loadingSearch = true
-      this.domainStore = {}
-      store.dispatch('SetDomainStore', this.domainStore)
+      this.$emit('change-tree-store', {})
 
       api(this.apiList, params).then(json => {
         const listDomains = this.getResponseJsonData(json)
