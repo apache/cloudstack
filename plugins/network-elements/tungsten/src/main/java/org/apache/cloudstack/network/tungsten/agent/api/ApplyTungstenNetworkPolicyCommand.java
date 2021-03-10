@@ -17,21 +17,21 @@
 package org.apache.cloudstack.network.tungsten.agent.api;
 
 public class ApplyTungstenNetworkPolicyCommand extends TungstenCommand {
-    private final String projectUuid;
+    private final String projectFqn;
     private final String networkPolicyName;
     private final String networkUuid;
     private final boolean priority;
 
-    public ApplyTungstenNetworkPolicyCommand(final String projectUuid, final String networkPolicyName,
+    public ApplyTungstenNetworkPolicyCommand(final String projectFqn, final String networkPolicyName,
         final String networkUuid, final boolean priority) {
-        this.projectUuid = projectUuid;
+        this.projectFqn = projectFqn;
         this.networkPolicyName = networkPolicyName;
         this.networkUuid = networkUuid;
         this.priority = priority;
     }
 
-    public String getProjectUuid() {
-        return projectUuid;
+    public String getProjectFqn() {
+        return projectFqn;
     }
 
     public String getNetworkPolicyName() {

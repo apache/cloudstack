@@ -23,7 +23,6 @@ import com.cloud.api.query.dao.ProjectJoinDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
-import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -33,15 +32,12 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.TungstenProvider;
-import com.cloud.network.element.TungstenProviderVO;
 import com.cloud.projects.Project.State;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.projects.dao.ProjectInvitationDao;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.tungsten.TungstenProjectManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -66,6 +62,8 @@ import com.sun.mail.smtp.SMTPTransport;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -125,7 +123,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     @Inject
     protected ResourceTagDao _resourceTagDao;
     @Inject
-    private TungstenProjectManager _tungstenProjectManager;
+    MessageBus _messageBus;
 
     protected boolean _invitationRequired = false;
     protected long _invitationTimeOut = 86400000;
@@ -205,7 +203,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.project);
 
         final Account ownerFinal = owner;
-        return Transaction.execute(new TransactionCallback<Project>() {
+        Project project = Transaction.execute(new TransactionCallback<Project>() {
             @Override
             public Project doInTransaction(TransactionStatus status) {
 
@@ -217,28 +215,24 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
                 Project project = _projectDao.persist(new ProjectVO(name, displayText, ownerFinal.getDomainId(), projectAccount.getId()));
 
-                //check if any tungsten provider exists and create project on tungsten providers
-                List<TungstenProviderVO> tungstenProviders = _tungstenProjectManager.getTungstenProviders();
-                Domain domain = _domainDao.findById(project.getDomainId());
-                if(tungstenProviders != null && !tungstenProviders.isEmpty()) {
-                    for (TungstenProvider tungstenProvider : tungstenProviders) {
-                        _tungstenProjectManager.createProjectInTungsten(tungstenProvider, project.getUuid(), project.getName(), domain);
-                    }
-                }
                 //assign owner to the project
                 assignAccountToProject(project, ownerFinal.getId(), ProjectAccount.Role.Admin);
 
-        if (project != null) {
-            CallContext.current().setEventDetails("Project id=" + project.getId());
-            CallContext.current().putContextParameter(Project.class, project.getUuid());
-        }
+                if (project != null) {
+                    CallContext.current().setEventDetails("Project id=" + project.getId());
+                    CallContext.current().putContextParameter(Project.class, project.getUuid());
+                }
 
-        //Increment resource count
-                _resourceLimitMgr.incrementResourceCount(ownerFinal.getId(), ResourceType.project);
+                //Increment resource count
+                        _resourceLimitMgr.incrementResourceCount(ownerFinal.getId(), ResourceType.project);
+
+                return project;
+            }
+        });
+
+        _messageBus.publish(_name, ProjectManager.MESSAGE_CREATE_TUNGSTEN_PROJECT_EVENT, PublishScope.LOCAL, project);
 
         return project;
-    }
-        });
     }
 
     @Override
@@ -305,12 +299,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
                 return false;
             } else {
                 ////check if any tungsten provider exists and delete the project from tungsten providers
-                List<TungstenProviderVO> tungstenProviders = _tungstenProjectManager.getTungstenProviders();
-                if(tungstenProviders != null && !tungstenProviders.isEmpty()) {
-                    for (TungstenProvider tungstenProvider : tungstenProviders) {
-                        _tungstenProjectManager.deleteProjectFromTungsten(tungstenProvider, project.getUuid());
-                    }
-                }
+                _messageBus.publish(_name, ProjectManager.MESSAGE_DELETE_TUNGSTEN_PROJECT_EVENT, PublishScope.LOCAL, project);
                 //remove cloudstack project
                 return _projectDao.remove(project.getId());
             }

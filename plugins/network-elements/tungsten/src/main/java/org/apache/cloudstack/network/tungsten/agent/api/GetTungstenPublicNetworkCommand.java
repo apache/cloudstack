@@ -17,16 +17,16 @@
 package org.apache.cloudstack.network.tungsten.agent.api;
 
 public class GetTungstenPublicNetworkCommand extends TungstenCommand {
-    private final String parent;
+    private final String projectFqn;
     private final String name;
 
-    public GetTungstenPublicNetworkCommand(final String parent, final String name) {
-        this.parent = parent;
+    public GetTungstenPublicNetworkCommand(final String projectFqn, final String name) {
+        this.projectFqn = projectFqn;
         this.name = name;
     }
 
-    public String getParent() {
-        return parent;
+    public String getProjectFqn() {
+        return projectFqn;
     }
 
     public String getName() {

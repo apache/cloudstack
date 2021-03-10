@@ -17,13 +17,19 @@
 package org.apache.cloudstack.network.tungsten.service;
 
 import com.cloud.dc.HostPodVO;
+import com.cloud.network.Network;
 
 public interface TungstenService {
     String getProject(long accountId);
+
+    String getTungstenProjectFqn(Network network);
 
     boolean createManagementNetwork(HostPodVO pod);
 
     boolean deleteManagementNetwork(HostPodVO pod);
 
     String MESSAGE_APPLY_NETWORK_POLICY_EVENT = "Message.ApplyNetworkPolicy.Event";
+    String MESSAGE_CREATE_TUNGSTEN_NETWORK_EVENT = "Message.CreateTungstenNetwork.Event";
+    String MESSAGE_CREATE_TUNGSTEN_LOGICAL_ROUTER_EVENT = "Message.CreateTungstenLogicalRouter.Event";
+    String MESSAGE_SYNC_TUNGSTEN_DB_WITH_DOMAINS_AND_PROJECTS_EVENT = "Message.SyncTungstenDnWithDomainsAndProjects.Event";
 }

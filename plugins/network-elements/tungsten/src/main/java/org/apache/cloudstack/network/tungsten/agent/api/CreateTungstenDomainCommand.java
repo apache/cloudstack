@@ -14,15 +14,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.tungsten;
+package org.apache.cloudstack.network.tungsten.agent.api;
 
-import com.cloud.network.TungstenProvider;
-import com.cloud.network.dao.PhysicalNetworkVO;
-import net.juniper.tungsten.api.ApiConnector;
+public class CreateTungstenDomainCommand extends TungstenCommand {
+    private final String tungstenDomainName;
+    private final String tungstenDomainUuid;
 
-import java.io.IOException;
+    public CreateTungstenDomainCommand(String tungstenDomainName, String tungstenDomainUuid) {
+        this.tungstenDomainName = tungstenDomainName;
+        this.tungstenDomainUuid = tungstenDomainUuid;
+    }
 
-public interface TungstenResourceManager {
-    ApiConnector getApiConnector(TungstenProvider tungstenProvider);
-    void deleteTungstenPublicNetwork(PhysicalNetworkVO pNetwork, TungstenProvider tungstenProvider) throws IOException;
+    public String getTungstenDomainName() {
+        return tungstenDomainName;
+    }
+
+    public String getTungstenDomainUuid() {
+        return tungstenDomainUuid;
+    }
 }

@@ -36,16 +36,13 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.TungstenProvider;
 import com.cloud.network.dao.NetworkDomainDao;
-import com.cloud.network.element.TungstenProviderVO;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.tungsten.TungstenDomainManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
@@ -125,9 +122,6 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     private NetworkDomainDao _networkDomainDao;
     @Inject
     private ConfigurationManager _configMgr;
-    @Inject
-    private TungstenDomainManager _tungstenDomainManager;
-
     @Inject
     MessageBus _messageBus;
 
@@ -233,19 +227,13 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             public DomainVO doInTransaction(TransactionStatus status) {
                 DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, domainUUIDFinal));
                 _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
-                //check if tungsten provider exists and create domain in tungsten
-                List<TungstenProviderVO> tungstenProviders = _tungstenDomainManager.getTungstenProviders();
-                if(tungstenProviders != null && !tungstenProviders.isEmpty()) {
-                    for (TungstenProvider tungstenProvider : tungstenProviders) {
-                        _tungstenDomainManager.createDomainInTungsten(tungstenProvider, domain.getName(), domain.getUuid());
-                    }
-                }
                 return domain;
             }
         });
 
         CallContext.current().putContextParameter(Domain.class, domain.getUuid());
 
+        _messageBus.publish(_name, MESSAGE_CREATE_TUNGSTEN_DOMAIN_EVENT, PublishScope.LOCAL, domain);
         _messageBus.publish(_name, MESSAGE_ADD_DOMAIN_EVENT, PublishScope.LOCAL, domain.getId());
 
         return domain;
@@ -345,13 +333,9 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
                 cleanupDomainOfferings(domain.getId());
                 CallContext.current().putContextParameter(Domain.class, domain.getUuid());
-                ////check if tungsten provider exists and delete the domain from tungsten
-                List<TungstenProviderVO> tungstenProviders = _tungstenDomainManager.getTungstenProviders();
-                if(tungstenProviders != null && !tungstenProviders.isEmpty()) {
-                    for (TungstenProvider tungstenProvider : tungstenProviders) {
-                        _tungstenDomainManager.deleteDomainFromTungsten(tungstenProvider, domain.getUuid());
-                    }
-                }
+
+                _messageBus.publish(_name, MESSAGE_DELETE_TUNGSTEN_DOMAIN_EVENT, PublishScope.LOCAL, domain);
+
                 return true;
             } catch (Exception ex) {
                 s_logger.error("Exception deleting domain with id " + domain.getId(), ex);

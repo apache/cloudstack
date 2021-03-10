@@ -14,18 +14,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.tungsten;
+package org.apache.cloudstack.network.tungsten.agent.api;
 
-import com.cloud.domain.Domain;
-import com.cloud.network.TungstenProvider;
-import com.cloud.network.element.TungstenProviderVO;
+public class DeleteTungstenProjectCommand extends TungstenCommand {
+    private final String tungstenProjectUuid;
 
-import java.util.List;
+    public DeleteTungstenProjectCommand(String tungstenProjectUuid) {
+        this.tungstenProjectUuid = tungstenProjectUuid;
+    }
 
-public interface TungstenProjectManager {
-    List<TungstenProviderVO> getTungstenProviders();
-
-    void createProjectInTungsten(TungstenProvider tungstenProvider, String projectUuid, String projectName, Domain domain);
-
-    void deleteProjectFromTungsten(TungstenProvider tungstenProvider, String projectUuid);
+    public String getTungstenProjectUuid() {
+        return tungstenProjectUuid;
+    }
 }

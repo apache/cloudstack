@@ -17,11 +17,11 @@
 package org.apache.cloudstack.network.tungsten.agent.api;
 
 public class DeleteTungstenVmInterfaceCommand extends TungstenCommand {
-    private final String projectUuid;
+    private final String projectFqn;
     private final String name;
 
-    public DeleteTungstenVmInterfaceCommand(final String projectUuid, String name) {
-        this.projectUuid = projectUuid;
+    public DeleteTungstenVmInterfaceCommand(final String projectFqn, String name) {
+        this.projectFqn = projectFqn;
         this.name = name;
     }
 
@@ -29,7 +29,7 @@ public class DeleteTungstenVmInterfaceCommand extends TungstenCommand {
         return name;
     }
 
-    public String getProjectUuid() {
-        return projectUuid;
+    public String getProjectFqn() {
+        return projectFqn;
     }
 }

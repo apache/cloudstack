@@ -18,12 +18,12 @@ package org.apache.cloudstack.network.tungsten.agent.api;
 
 public class CreateTungstenLogicalRouterCommand extends TungstenCommand {
     private final String name;
-    private final String parentUuid;
+    private final String projectFqn;
     private final String pubNetworkUuid;
 
-    public CreateTungstenLogicalRouterCommand(final String name, final String parentUuid, final String pubNetworkUuid) {
+    public CreateTungstenLogicalRouterCommand(final String name, final String projectFqn, final String pubNetworkUuid) {
         this.name = name;
-        this.parentUuid = parentUuid;
+        this.projectFqn = projectFqn;
         this.pubNetworkUuid = pubNetworkUuid;
     }
 
@@ -31,8 +31,8 @@ public class CreateTungstenLogicalRouterCommand extends TungstenCommand {
         return name;
     }
 
-    public String getParentUuid() {
-        return parentUuid;
+    public String getProjectFqn() {
+        return projectFqn;
     }
 
     public String getPubNetworkUuid() {

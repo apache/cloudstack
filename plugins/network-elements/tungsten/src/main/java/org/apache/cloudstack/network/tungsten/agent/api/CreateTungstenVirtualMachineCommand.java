@@ -17,7 +17,7 @@
 package org.apache.cloudstack.network.tungsten.agent.api;
 
 public class CreateTungstenVirtualMachineCommand extends TungstenCommand {
-    private final String projectUuid;
+    private final String projectFqn;
     private final String vnUuid;
     private final String vmUuid;
     private final String vmName;
@@ -29,10 +29,10 @@ public class CreateTungstenVirtualMachineCommand extends TungstenCommand {
     private final String trafficType;
     private final String host;
 
-    public CreateTungstenVirtualMachineCommand(final String projectUuid, final String vnUuid, final String vmUuid,
+    public CreateTungstenVirtualMachineCommand(final String projectFqn, final String vnUuid, final String vmUuid,
         final String vmName, final String nicUuid, final long nicId, final String ip, final String mac,
         final String vmType, final String trafficType, final String host) {
-        this.projectUuid = projectUuid;
+        this.projectFqn = projectFqn;
         this.vnUuid = vnUuid;
         this.vmUuid = vmUuid;
         this.vmName = vmName;
@@ -45,8 +45,8 @@ public class CreateTungstenVirtualMachineCommand extends TungstenCommand {
         this.host = host;
     }
 
-    public String getProjectUuid() {
-        return projectUuid;
+    public String getProjectFqn() {
+        return projectFqn;
     }
 
     public String getVnUuid() {

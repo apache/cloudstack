@@ -21,7 +21,7 @@ import java.util.List;
 public class CreateTungstenNetworkCommand extends TungstenCommand {
     private final String uuid;
     private final String name;
-    private final String parent;
+    private final String projectFqn;
     private final boolean routerExternal;
     private final boolean shared;
     private final String ipPrefix;
@@ -34,13 +34,13 @@ public class CreateTungstenNetworkCommand extends TungstenCommand {
     private final boolean ipFromStart;
     private final boolean isManagementNetwork;
 
-    public CreateTungstenNetworkCommand(final String uuid, final String name, final String parent,
+    public CreateTungstenNetworkCommand(final String uuid, final String name, final String projectFqn,
         final boolean routerExternal, final boolean shared, final String ipPrefix, final int ipPrefixLen,
         final String gateway, final boolean dhcpEnable, final List<String> dnsServers, final String allocationStart,
         final String allocationEnd, final boolean ipFromStart, final boolean isManagementNetwork) {
         this.uuid = uuid;
         this.name = name;
-        this.parent = parent;
+        this.projectFqn = projectFqn;
         this.routerExternal = routerExternal;
         this.shared = shared;
         this.ipPrefix = ipPrefix;
@@ -62,8 +62,8 @@ public class CreateTungstenNetworkCommand extends TungstenCommand {
         return name;
     }
 
-    public String getParent() {
-        return parent;
+    public String getProjectFqn() {
+        return projectFqn;
     }
 
     public boolean isRouterExternal() {

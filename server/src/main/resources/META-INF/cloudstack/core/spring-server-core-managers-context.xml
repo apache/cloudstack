@@ -259,12 +259,6 @@
 
     <bean id="domainManagerImpl" class="com.cloud.user.DomainManagerImpl" />
 
-    <bean id="tungstenProjectManagerImpl" class="com.cloud.tungsten.TungstenProjectManagerImpl"/>
-
-    <bean id="tungstenDomainManagerImpl" class="com.cloud.tungsten.TungstenDomainManagerImpl"/>
-
-    <bean id="tungstenResourceManagerImpl" class="com.cloud.tungsten.TungstenResourceManagerImpl"/>
-
     <bean id="downloadMonitorImpl" class="com.cloud.storage.download.DownloadMonitorImpl" />
   
     <bean id="lBHealthCheckManagerImpl" class="com.cloud.network.lb.LBHealthCheckManagerImpl" />

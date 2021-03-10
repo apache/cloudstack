@@ -636,7 +636,7 @@ public class TungstenElement extends AdapterBase
     public boolean applyFWRules(final Network network, final List<? extends FirewallRule> rules)
         throws ResourceUnavailableException {
         boolean result = true;
-        String projectUuid;
+        String tungstenProjectFqn;
         String networkUuid;
         Network publicNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(network.getDataCenterId(),
             Networks.TrafficType.Public);
@@ -651,24 +651,24 @@ public class TungstenElement extends AdapterBase
                 tungstenRuleList.add(tungstenRule);
 
                 if (firewallRule.getTrafficType() == FirewallRule.TrafficType.Egress) {
-                    projectUuid = _tungstenService.getProject(network.getAccountId());
+                    tungstenProjectFqn = _tungstenService.getTungstenProjectFqn(network);
                     networkUuid = network.getUuid();
                 } else {
-                    projectUuid = null;
+                    tungstenProjectFqn = null;
                     networkUuid = publicNetwork.getUuid();
                 }
 
                 if (firewallRule.getState() == FirewallRule.State.Add) {
                     CreateTungstenNetworkPolicyCommand createTungstenNetworkPolicyCommand =
                         new CreateTungstenNetworkPolicyCommand(
-                        TungstenUtils.getRuleNetworkPolicyName(firewallRule.getId()), projectUuid, tungstenRuleList);
+                        TungstenUtils.getRuleNetworkPolicyName(firewallRule.getId()), tungstenProjectFqn, tungstenRuleList);
                     TungstenAnswer createNetworkPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
                         createTungstenNetworkPolicyCommand, network.getDataCenterId());
                     result = result && createNetworkPolicyAnswer.getResult();
 
                     ApplyTungstenNetworkPolicyCommand applyTungstenNetworkPolicyCommand =
                         new ApplyTungstenNetworkPolicyCommand(
-                        projectUuid, TungstenUtils.getRuleNetworkPolicyName(firewallRule.getId()), networkUuid, true);
+                                tungstenProjectFqn, TungstenUtils.getRuleNetworkPolicyName(firewallRule.getId()), networkUuid, true);
                     TungstenAnswer applyNetworkPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
                         applyTungstenNetworkPolicyCommand, network.getDataCenterId());
                     result = result && applyNetworkPolicyAnswer.getResult();
@@ -679,7 +679,7 @@ public class TungstenElement extends AdapterBase
                 if (firewallRule.getState() == FirewallRule.State.Revoke) {
                     DeleteTungstenNetworkPolicyCommand deleteTungstenNetworkPolicyCommand =
                         new DeleteTungstenNetworkPolicyCommand(
-                        TungstenUtils.getRuleNetworkPolicyName(firewallRule.getId()), projectUuid, networkUuid);
+                        TungstenUtils.getRuleNetworkPolicyName(firewallRule.getId()), tungstenProjectFqn, networkUuid);
                     TungstenAnswer deleteNetworkPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
                         deleteTungstenNetworkPolicyCommand, network.getDataCenterId());
 

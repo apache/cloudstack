@@ -22,13 +22,13 @@ import java.util.List;
 
 public class CreateTungstenNetworkPolicyCommand extends TungstenCommand {
     private final String name;
-    private final String projectUuid;
+    private final String projectFqn;
     private final List<TungstenRule> tungstenRuleList;
 
-    public CreateTungstenNetworkPolicyCommand(final String name, final String projectUuid,
+    public CreateTungstenNetworkPolicyCommand(final String name, final String projectFqn,
         final List<TungstenRule> tungstenRuleList) {
         this.name = name;
-        this.projectUuid = projectUuid;
+        this.projectFqn = projectFqn;
         this.tungstenRuleList = tungstenRuleList;
     }
 
@@ -36,8 +36,8 @@ public class CreateTungstenNetworkPolicyCommand extends TungstenCommand {
         return name;
     }
 
-    public String getProjectUuid() {
-        return projectUuid;
+    public String getProjectFqn() {
+        return projectFqn;
     }
 
     public List<TungstenRule> getTungstenRuleList() {

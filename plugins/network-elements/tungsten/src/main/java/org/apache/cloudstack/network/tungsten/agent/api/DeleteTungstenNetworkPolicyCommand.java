@@ -18,12 +18,12 @@ package org.apache.cloudstack.network.tungsten.agent.api;
 
 public class DeleteTungstenNetworkPolicyCommand extends TungstenCommand {
     private final String name;
-    private final String projectUuid;
+    private final String projectFqn;
     private final String networkUuid;
 
-    public DeleteTungstenNetworkPolicyCommand(final String name, final String projectUuid, final String networkUuid) {
+    public DeleteTungstenNetworkPolicyCommand(final String name, final String projectFqn, final String networkUuid) {
         this.name = name;
-        this.projectUuid = projectUuid;
+        this.projectFqn = projectFqn;
         this.networkUuid = networkUuid;
     }
 
@@ -31,8 +31,8 @@ public class DeleteTungstenNetworkPolicyCommand extends TungstenCommand {
         return name;
     }
 
-    public String getProjectUuid() {
-        return projectUuid;
+    public String getProjectFqn() {
+        return projectFqn;
     }
 
     public String getNetworkUuid() {

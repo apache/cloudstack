@@ -17,15 +17,15 @@
 package org.apache.cloudstack.network.tungsten.agent.api;
 
 public class SetTungstenNetworkGatewayCommand extends TungstenCommand {
-    private final String projectUuid;
+    private final String projectFqn;
     private final String routerName;
     private final long vnId;
     private final String vnUuid;
     private final String vnGatewayIp;
 
-    public SetTungstenNetworkGatewayCommand(String projectUuid, final String routerName, final long vnId,
+    public SetTungstenNetworkGatewayCommand(String projectFqn, final String routerName, final long vnId,
         final String vnUuid, final String vnGatewayIp) {
-        this.projectUuid = projectUuid;
+        this.projectFqn = projectFqn;
         this.routerName = routerName;
         this.vnId = vnId;
         this.vnUuid = vnUuid;
@@ -48,7 +48,7 @@ public class SetTungstenNetworkGatewayCommand extends TungstenCommand {
         return vnGatewayIp;
     }
 
-    public String getProjectUuid() {
-        return projectUuid;
+    public String getProjectFqn() {
+        return projectFqn;
     }
 }

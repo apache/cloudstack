@@ -17,6 +17,7 @@
 package org.apache.cloudstack.network.tungsten.service;
 
 import com.cloud.utils.TungstenUtils;
+import com.cloud.utils.exception.CloudRuntimeException;
 import net.juniper.tungsten.api.ApiConnector;
 import net.juniper.tungsten.api.ApiObjectBase;
 import net.juniper.tungsten.api.ApiPropertyBase;
@@ -323,6 +324,18 @@ public class TungstenApi {
         }
     }
 
+    public ApiObjectBase getTungstenProjectByFqn(String fqn) {
+        try {
+            if(fqn == null) {
+                return apiConnector.findByFQN(Project.class, TUNGSTEN_DEFAULT_DOMAIN + ":" + TUNGSTEN_DEFAULT_PROJECT);
+            } else {
+                return apiConnector.findByFQN(Project.class, fqn);
+            }
+        } catch (IOException ex) {
+            return null;
+        }
+    }
+
     public ApiObjectBase getTungstenObjectByName(Class<? extends ApiObjectBase> aClass, List<String> parent,
         String name) {
         try {
@@ -574,10 +587,10 @@ public class TungstenApi {
         }
     }
 
-    public ApiObjectBase createTungstenNetworkPolicy(String name, String projectUuid,
+    public ApiObjectBase createTungstenNetworkPolicy(String name, String projectFqn,
         List<TungstenRule> tungstenRuleList) {
         try {
-            Project project = (Project) getTungstenNetworkProject(projectUuid);
+            Project project = (Project) getTungstenProjectByFqn(projectFqn);
             NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.find(NetworkPolicy.class, project, name);
             if (networkPolicy == null) {
                 PolicyEntriesType policyEntriesType = new PolicyEntriesType();
@@ -616,10 +629,10 @@ public class TungstenApi {
         }
     }
 
-    public boolean applyTungstenNetworkPolicy(String projectUuid, String networkPolicyName, String networkUuid,
+    public boolean applyTungstenNetworkPolicy(String projectFqn, String networkPolicyName, String networkUuid,
         boolean priority) {
         try {
-            Project project = (Project) getTungstenNetworkProject(projectUuid);
+            Project project = (Project) getTungstenProjectByFqn(projectFqn);
             NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.find(NetworkPolicy.class, project,
                 networkPolicyName);
             VirtualNetwork network = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
@@ -671,6 +684,96 @@ public class TungstenApi {
         } catch (IOException e) {
             return false;
         }
+    }
+
+    public ApiObjectBase createTungstenDomain(String domainName, String domainUuid) {
+        try {
+
+            Domain domain = (Domain) apiConnector.findById(Domain.class, domainUuid);
+            if(domain != null)
+                return domain;
+            //create tungsten domain
+            Domain tungstenDomain = new Domain();
+            tungstenDomain.setDisplayName(domainName);
+            tungstenDomain.setName(domainName);
+            tungstenDomain.setUuid(domainUuid);
+            Status status = apiConnector.create(tungstenDomain);
+            status.ifFailure(errorHandler);
+            if (status.isSuccess()) {
+                // create default project in tungsten for this newly created domain
+                Project tungstenDefaultProject = new Project();
+                tungstenDefaultProject.setDisplayName(TUNGSTEN_DEFAULT_PROJECT);
+                tungstenDefaultProject.setName(TUNGSTEN_DEFAULT_PROJECT);
+                tungstenDefaultProject.setParent(tungstenDomain);
+                apiConnector.create(tungstenDefaultProject);
+                Status defaultProjectStatus = apiConnector.create(tungstenDefaultProject);
+                defaultProjectStatus.ifFailure(errorHandler);
+            }
+            return getTungstenObject(Domain.class, tungstenDomain.getUuid());
+        } catch (IOException e) {
+            throw new CloudRuntimeException("Failed creating domain resource in tungsten.");
+        }
+    }
+
+    public ApiObjectBase createTungstenProject(String projectName, String projectUuid, String domainUuid, String domainName) {
+        try {
+            Project project = (Project) getTungstenObject(Project.class, projectUuid);
+            if(project != null)
+                return project;
+            //Create tungsten project
+            Project tungstenProject = new Project();
+            tungstenProject.setDisplayName(projectName);
+            tungstenProject.setName(projectName);
+            tungstenProject.setUuid(projectUuid);
+            Domain tungstenDomain;
+
+            if (domainUuid == null && domainName == null)
+                tungstenDomain = getDefaultTungstenDomain();
+            else {
+                tungstenDomain = (Domain) getTungstenObject(Domain.class, domainUuid);
+                if (tungstenDomain == null)
+                    tungstenDomain = (Domain) createTungstenDomain(domainName, domainUuid);
+            }
+            tungstenProject.setParent(tungstenDomain);
+            apiConnector.create(tungstenProject);
+            return getTungstenObject(Project.class, tungstenProject.getUuid());
+        } catch (IOException e) {
+            throw new CloudRuntimeException("Failed creating project resource in tungsten.");
+        }
+    }
+
+    public boolean deleteTungstenDomain(String domainUuid) {
+        try {
+            Domain domain = (Domain) getTungstenObject(Domain.class, domainUuid);
+            //delete the projects of this domain
+            for(ObjectReference<ApiPropertyBase> project : domain.getProjects()){
+                apiConnector.delete(Project.class, project.getUuid());
+            }
+            Status status = apiConnector.delete(Domain.class, domainUuid);
+            status.ifFailure(errorHandler);
+            return status.isSuccess();
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean deleteTungstenProject(String projectUuid) {
+        try {
+            Project project = (Project) getTungstenObject(Project.class, projectUuid);
+            if (project != null) {
+                Status status = apiConnector.delete(Project.class, projectUuid);
+                status.ifFailure(errorHandler);
+                return status.isSuccess();
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public Domain getDefaultTungstenDomain() throws IOException {
+        Domain domain = (Domain) apiConnector.findByFQN(Domain.class, TUNGSTEN_DEFAULT_DOMAIN);
+        return domain;
     }
 
     public List<? extends ApiObjectBase> getTungstenListObject(Class<? extends ApiObjectBase> cls,

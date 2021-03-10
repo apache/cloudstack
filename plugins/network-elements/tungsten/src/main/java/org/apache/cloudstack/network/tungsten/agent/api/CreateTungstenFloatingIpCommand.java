@@ -17,23 +17,23 @@
 package org.apache.cloudstack.network.tungsten.agent.api;
 
 public class CreateTungstenFloatingIpCommand extends TungstenCommand {
-    private final String projectUuid;
+    private final String projectFqn;
     private final String networkUuid;
     private final String fipName;
     private final String name;
     private final String publicIp;
 
-    public CreateTungstenFloatingIpCommand(final String projectUuid, final String networkUuid, final String fipName,
+    public CreateTungstenFloatingIpCommand(final String projectFqn, final String networkUuid, final String fipName,
         final String name, final String publicIp) {
-        this.projectUuid = projectUuid;
+        this.projectFqn = projectFqn;
         this.networkUuid = networkUuid;
         this.fipName = fipName;
         this.name = name;
         this.publicIp = publicIp;
     }
 
-    public String getProjectUuid() {
-        return projectUuid;
+    public String getProjectFqn() {
+        return projectFqn;
     }
 
     public String getNetworkUuid() {

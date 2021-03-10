@@ -17,16 +17,16 @@
 package org.apache.cloudstack.network.tungsten.agent.api;
 
 public class GetTungstenNatIpCommand extends TungstenCommand {
-    private final String projectUuid;
+    private final String projectFqn;
     private final String logicalRouterUuid;
 
-    public GetTungstenNatIpCommand(final String projectUuid, final String logicalRouterUuid) {
-        this.projectUuid = projectUuid;
+    public GetTungstenNatIpCommand(final String projectFqn, final String logicalRouterUuid) {
+        this.projectFqn = projectFqn;
         this.logicalRouterUuid = logicalRouterUuid;
     }
 
-    public String getProjectUuid() {
-        return projectUuid;
+    public String getProjectFqn() {
+        return projectFqn;
     }
 
     public String getLogicalRouterUuid() {

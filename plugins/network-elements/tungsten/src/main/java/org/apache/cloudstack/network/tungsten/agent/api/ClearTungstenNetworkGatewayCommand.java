@@ -17,18 +17,18 @@
 package org.apache.cloudstack.network.tungsten.agent.api;
 
 public class ClearTungstenNetworkGatewayCommand extends TungstenCommand {
-    private final String projectUuid;
+    private final String projectFqn;
     private final String routerName;
     private final long vnId;
 
-    public ClearTungstenNetworkGatewayCommand(final String projectUuid, final String routerName, final long vnId) {
-        this.projectUuid = projectUuid;
+    public ClearTungstenNetworkGatewayCommand(final String projectFqn, final String routerName, final long vnId) {
+        this.projectFqn = projectFqn;
         this.routerName = routerName;
         this.vnId = vnId;
     }
 
-    public String getProjectUuid() {
-        return projectUuid;
+    public String getProjectFqn() {
+        return projectFqn;
     }
 
     public String getRouterName() {

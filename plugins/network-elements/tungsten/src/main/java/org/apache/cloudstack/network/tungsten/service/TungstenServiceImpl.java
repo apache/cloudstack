@@ -18,6 +18,9 @@ package org.apache.cloudstack.network.tungsten.service;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.HostPodVO;
+import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
@@ -30,9 +33,12 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.TungstenProviderDao;
 import com.cloud.network.element.TungstenProviderVO;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectManager;
 import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.Account;
+import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.TungstenUtils;
 import com.cloud.utils.component.ManagerBase;
@@ -40,12 +46,16 @@ import net.juniper.tungsten.api.types.FloatingIp;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.network.tungsten.agent.api.ApplyTungstenNetworkPolicyCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenDomainCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkPolicyCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenProjectCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenDomainCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenFloatingIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenNetworkPolicyCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenProjectCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenFloatingIpsCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
 import org.apache.cloudstack.network.tungsten.model.TungstenRule;
@@ -71,14 +81,19 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
     @Inject
     protected NetworkModel _networkModel;
     @Inject
+    private DomainDao _domainDao;
+    @Inject
     private TungstenProviderDao _tungstenProviderDao;
     @Inject
     private TungstenFabricUtils _tungstenFabricUtils;
 
+    public static final String TUNGSTEN_DEFAULT_DOMAIN = "default-domain";
+    public static final String TUNGSTEN_DEFAULT_PROJECT = "default-project";
+
     @Override
     public boolean start() {
         synchronizeTungstenData();
-        subcribeTungstenEvent();
+        subscribeTungstenEvent();
         return super.start();
     }
 
@@ -96,6 +111,8 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
             }
             deleteTungstenListFloatingIp(zoneId, publicNetwork);
         }
+
+        syncTungstenDbWithCloudstackProjectsAndDomains();
     }
 
     private boolean deleteTungstenListFloatingIp(long zoneId, Network publicNetwork) {
@@ -119,7 +136,7 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
         return result;
     }
 
-    private void subcribeTungstenEvent() {
+    private void subscribeTungstenEvent() {
         _messageBus.subscribe(IpAddressManager.MESSAGE_ASSIGN_IPADDR_EVENT, new MessageSubscriber() {
             @Override
             public void onPublishMessage(final String senderAddress, final String subject, final Object args) {
@@ -197,13 +214,74 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
                 }
             }
         });
+
+        _messageBus.subscribe(DomainManager.MESSAGE_CREATE_TUNGSTEN_DOMAIN_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object args) {
+                try {
+                    final DomainVO domain = (DomainVO) args;
+                    createTungstenDomain(domain);
+                } catch (final Exception e) {
+                    s_logger.error(e.getMessage());
+                }
+            }
+        });
+
+        _messageBus.subscribe(DomainManager.MESSAGE_DELETE_TUNGSTEN_DOMAIN_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object args) {
+                try {
+                    final DomainVO domain = (DomainVO) args;
+                    deleteTungstenDomain(domain);
+                } catch (final Exception e) {
+                    s_logger.error(e.getMessage());
+                }
+            }
+        });
+
+        _messageBus.subscribe(ProjectManager.MESSAGE_CREATE_TUNGSTEN_PROJECT_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object args) {
+                try {
+                    final Project project = (Project) args;
+                    createTungstenProject(project);
+                } catch (final Exception e) {
+                    s_logger.error(e.getMessage());
+                }
+            }
+        });
+
+        _messageBus.subscribe(ProjectManager.MESSAGE_DELETE_TUNGSTEN_PROJECT_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object args) {
+                try {
+                    final Project project = (Project) args;
+                    deleteTungstenProject(project);
+                } catch (final Exception e) {
+                    s_logger.error(e.getMessage());
+                }
+            }
+        });
+
+        _messageBus.subscribe(TungstenService.MESSAGE_SYNC_TUNGSTEN_DB_WITH_DOMAINS_AND_PROJECTS_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object args) {
+                try {
+                    syncTungstenDbWithCloudstackProjectsAndDomains();
+                } catch (final Exception e) {
+                    s_logger.error(e.getMessage());
+                }
+            }
+        });
     }
 
     private boolean createTungstenFloatingIp(long zoneId, IpAddress ipAddress) {
         Network publicNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Public);
-        String projectUuid = getProject(ipAddress.getAccountId());
+//        String projectUuid = getProject(ipAddress.getAccountId());
+        Network network = _networkDao.findById(ipAddress.getNetworkId());
+        String projectFqn = getTungstenProjectFqn(network);
         CreateTungstenFloatingIpCommand createTungstenFloatingIpPoolCommand = new CreateTungstenFloatingIpCommand(
-            projectUuid, publicNetwork.getUuid(), TungstenUtils.getFloatingIpPoolName(zoneId),
+                projectFqn, publicNetwork.getUuid(), TungstenUtils.getFloatingIpPoolName(zoneId),
             TungstenUtils.getFloatingIpName(ipAddress.getId()), ipAddress.getAddress().addr());
         TungstenAnswer tungstenAnswer = _tungstenFabricUtils.sendTungstenCommand(createTungstenFloatingIpPoolCommand,
             zoneId);
@@ -229,6 +307,34 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
             }
         }
         return null;
+    }
+
+    @Override
+    public String getTungstenProjectFqn(Network network) {
+
+        if(network == null){
+            return TungstenApi.TUNGSTEN_DEFAULT_DOMAIN + ":" + TungstenApi.TUNGSTEN_DEFAULT_PROJECT;
+        }
+
+        String networkProjectUuid = getProject(network.getAccountId());
+        Project project = _projectDao.findByUuid(networkProjectUuid);
+        Domain domain = _domainDao.findById(network.getDomainId());
+
+        StringBuilder sb = new StringBuilder();
+        if(domain != null && domain.getName() != null && domain.getId() != Domain.ROOT_DOMAIN) {
+            sb.append(domain.getName());
+        } else {
+            sb.append(TungstenApi.TUNGSTEN_DEFAULT_DOMAIN);
+        }
+
+        sb.append(":");
+
+        if(project != null && project.getName() != null) {
+            sb.append(project.getName());
+        } else {
+            sb.append(TungstenApi.TUNGSTEN_DEFAULT_PROJECT);
+        }
+        return sb.toString();
     }
 
     @Override
@@ -316,5 +422,95 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
             }
         }
         return true;
+    }
+
+    public boolean createTungstenDomain(DomainVO domain) {
+        if(domain != null && domain.getId() != Domain.ROOT_DOMAIN) {
+            List<TungstenProviderVO> tungstenProviders = _tungstenProviderDao.findAll();
+            for (TungstenProviderVO tungstenProvider : tungstenProviders) {
+                CreateTungstenDomainCommand createTungstenDomainCommand =
+                        new CreateTungstenDomainCommand(domain.getName(), domain.getUuid());
+                TungstenAnswer tungstenAnswer = _tungstenFabricUtils.sendTungstenCommand(createTungstenDomainCommand,
+                        tungstenProvider.getZoneId());
+                if (!tungstenAnswer.getResult()) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public boolean deleteTungstenDomain(DomainVO domain) {
+            List<TungstenProviderVO> tungstenProviders = _tungstenProviderDao.findAll();
+            for (TungstenProviderVO tungstenProvider : tungstenProviders) {
+                DeleteTungstenDomainCommand deleteTungstenDomainCommand =
+                        new DeleteTungstenDomainCommand(domain.getUuid());
+                TungstenAnswer tungstenAnswer = _tungstenFabricUtils.sendTungstenCommand(deleteTungstenDomainCommand,
+                        tungstenProvider.getZoneId());
+                if (!tungstenAnswer.getResult()) {
+                    return false;
+                }
+            }
+        return true;
+    }
+
+    public boolean createTungstenProject(Project project) {
+        List<TungstenProviderVO> tungstenProviders = _tungstenProviderDao.findAll();
+        String domainName;
+        String domainUuid;
+        Domain domain = _domainDao.findById(project.getDomainId());
+        //Check if the domain is the root domain
+        //if the domain is root domain we will use the default domain from tungsten by setting
+        //both domainName and domainUuid to null
+        if(domain != null && domain.getId() != Domain.ROOT_DOMAIN){
+            domainName = domain.getName();
+            domainUuid = domain.getUuid();
+        } else {
+            domainName = null;
+            domainUuid = null;
+        }
+        if(domain != null) {
+            for (TungstenProviderVO tungstenProvider : tungstenProviders) {
+                CreateTungstenProjectCommand createTungstenProjectCommand =
+                        new CreateTungstenProjectCommand(project.getName(), project.getUuid(), domainUuid, domainName);
+                TungstenAnswer tungstenAnswer = _tungstenFabricUtils.sendTungstenCommand(createTungstenProjectCommand,
+                        tungstenProvider.getZoneId());
+                if (!tungstenAnswer.getResult()) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public boolean deleteTungstenProject(Project project) {
+        List<TungstenProviderVO> tungstenProviders = _tungstenProviderDao.findAll();
+        for (TungstenProviderVO tungstenProvider : tungstenProviders) {
+            DeleteTungstenProjectCommand deleteTungstenProjectCommand =
+                    new DeleteTungstenProjectCommand(project.getUuid());
+            TungstenAnswer tungstenAnswer = _tungstenFabricUtils.sendTungstenCommand(deleteTungstenProjectCommand,
+                    tungstenProvider.getZoneId());
+            if (!tungstenAnswer.getResult()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void syncTungstenDbWithCloudstackProjectsAndDomains() {
+        List<DomainVO> cloudstackDomains = _domainDao.listAll();
+        List<ProjectVO> cloudstackProjects = _projectDao.listAll();
+
+        if (cloudstackDomains != null ) {
+            for (DomainVO domain : cloudstackDomains) {
+                createTungstenDomain(domain);
+            }
+        }
+
+        if (cloudstackProjects != null) {
+            for (ProjectVO project : cloudstackProjects) {
+                createTungstenProject(project);
+            }
+        }
     }
 }
