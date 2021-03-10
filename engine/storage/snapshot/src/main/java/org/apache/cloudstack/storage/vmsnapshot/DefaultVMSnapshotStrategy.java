@@ -453,7 +453,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     }
 
     @Override
-    public StrategyPriority canHandle(Long vmId, boolean snapshotMemory) {
+    public StrategyPriority canHandle(Long vmId, Long rootPoolId, boolean snapshotMemory) {
         UserVmVO vm = userVmDao.findById(vmId);
         if (vm.getState() == State.Running && !snapshotMemory) {
             return StrategyPriority.CANT_HANDLE;

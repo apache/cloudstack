@@ -42,6 +42,6 @@ public interface StorageStrategyFactory {
      * @param snapshotMemory for VM snapshots with memory
      * @return VMSnapshotStrategy
      */
-    VMSnapshotStrategy getVmSnapshotStrategy(Long vmId, boolean snapshotMemory);
+    VMSnapshotStrategy getVmSnapshotStrategy(Long vmId, Long rootPoolId, boolean snapshotMemory);
 
 }
