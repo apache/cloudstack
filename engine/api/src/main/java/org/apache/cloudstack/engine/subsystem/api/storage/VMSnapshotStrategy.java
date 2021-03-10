@@ -35,7 +35,7 @@ public interface VMSnapshotStrategy {
      * @param snapshotMemory for VM snapshots with memory
      * @return StrategyPriority
      */
-    StrategyPriority canHandle(Long vmId, boolean snapshotMemory);
+    StrategyPriority canHandle(Long vmId, Long poolId, boolean snapshotMemory);
 
     /**
      * Delete vm snapshot only from database. Introduced as a Vmware optimization in which vm snapshots are deleted when

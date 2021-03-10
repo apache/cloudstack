@@ -120,7 +120,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     }
 
     @Override
-    public StrategyPriority canHandle(Long vmId, boolean snapshotMemory) {
+    public StrategyPriority canHandle(Long vmId, Long rootPoolId, boolean snapshotMemory) {
         if (snapshotMemory) {
             return StrategyPriority.CANT_HANDLE;
         }
@@ -132,7 +132,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         for (VolumeObjectTO volumeTO : volumeTOs) {
             Long poolId = volumeTO.getPoolId();
             Storage.StoragePoolType poolType = vmSnapshotHelper.getStoragePoolType(poolId);
-            if (poolType != Storage.StoragePoolType.PowerFlex || volumeTO.getFormat() != ImageFormat.RAW) {
+            if (poolType != Storage.StoragePoolType.PowerFlex || volumeTO.getFormat() != ImageFormat.RAW || poolId != rootPoolId) {
                 return StrategyPriority.CANT_HANDLE;
             }
         }

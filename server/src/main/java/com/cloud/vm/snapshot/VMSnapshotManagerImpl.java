@@ -82,7 +82,6 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -374,21 +373,14 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         }
 
         if (userVmVo.getHypervisorType() == HypervisorType.KVM) {
-            //DefaultVMSnapshotStrategy - allows snapshot with memory when VM is in running state
+            //DefaultVMSnapshotStrategy - allows snapshot with memory when VM is in running state and all volumes have to be in QCOW format
             //ScaleIOVMSnapshotStrategy - allows group snapshots without memory; all VM's volumes should be on same storage pool; The state of VM could be Running/Stopped; RAW image format is only supported
             //StorageVMSnapshotStrategy - allows volume snapshots without memory; VM has to be in Running state; No limitation of the image format if the storage plugin supports volume snapshots; "kvm.vmstoragesnapshot.enabled" has to be enabled
             //Other Storage volume plugins could integrate this with their own functionality for group snapshots
-            VMSnapshotStrategy snapshotStrategy = storageStrategyFactory.getVmSnapshotStrategy(userVmVo.getId(), snapshotMemory);
+            VMSnapshotStrategy snapshotStrategy = storageStrategyFactory.getVmSnapshotStrategy(userVmVo.getId(), rootVolumePool.getId(), snapshotMemory);
 
             if (snapshotStrategy == null) {
                 throw new CloudRuntimeException("Could not find snapshot strategy for VM snapshot");
-            }
-
-            if (rootVolumePool.getPoolType() == StoragePoolType.PowerFlex) {
-                // All volumes should be on the same PowerFlex storage pool for VM Snapshot
-                if (!isVolumesOfUserVmOnSameStoragePool(userVmVo.getId(), rootVolumePool.getId())) {
-                    throw new InvalidParameterValueException("All volumes of the VM: " + userVmVo.getUuid() + " should be on the same PowerFlex storage pool");
-                }
             }
         }
 
@@ -430,21 +422,6 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             s_logger.error("Create vm snapshot record failed for vm: " + vmId + " due to: " + msg);
         }
         return null;
-    }
-
-    private boolean isVolumesOfUserVmOnSameStoragePool(Long userVmId, Long poolId) {
-        List<VolumeVO> volumesOfVm = _volumeDao.findCreatedByInstance(userVmId);
-        if (volumesOfVm == null || volumesOfVm.isEmpty()) {
-            throw new CloudRuntimeException("Unable to find volumes for the user vm:" + userVmId);
-        }
-
-        for (VolumeVO volume : volumesOfVm) {
-            if (volume == null || volume.getPoolId() != poolId) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /**
