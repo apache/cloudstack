@@ -188,7 +188,7 @@ export default {
       return columns
     }
   },
-  inject: ['providerChangePage', 'provideReload', 'parentFetchData'],
+  inject: ['providerChangePage', 'provideReload'],
   methods: {
     changePage (page, pageSize) {
       this.providerChangePage(this.title, page, pageSize)
@@ -290,8 +290,6 @@ export default {
                   jobId,
                   title: this.$t(label),
                   description: this.$t(name),
-                  successMethod: () => this.parentFetchData(),
-                  errorMethod: () => this.parentFetchData(),
                   loadingMessage: `${this.$t(label)} - ${this.$t(name)}`,
                   catchMessage: this.$t('error.fetching.async.job.result')
                 })
@@ -328,8 +326,6 @@ export default {
                 jobId,
                 title: this.$t('label.configure.ovs'),
                 description: this.$t(record.id),
-                successMethod: () => this.parentFetchData(),
-                errorMethod: () => this.parentFetchData(),
                 loadingMessage: `${this.$t('label.configure.ovs')} - ${this.$t(record.id)}`,
                 catchMessage: this.$t('error.fetching.async.job.result')
               })

@@ -143,7 +143,6 @@ export default {
       })
     }
   },
-  inject: ['parentFetchData'],
   mounted () {
     this.fetchData()
   },
@@ -191,9 +190,6 @@ export default {
             jobId: response.updatetraffictyperesponse.jobid,
             title: title,
             description: description,
-            successMethod: result => {
-              this.parentFetchData()
-            },
             successMessage: `${this.$t('label.update.traffic.label')} ${this.traffictype} ${this.$t('label.success')}`,
             loadingMessage: `${title} ${this.$t('label.in.progress')}`,
             catchMessage: this.$t('error.fetching.async.job.result')

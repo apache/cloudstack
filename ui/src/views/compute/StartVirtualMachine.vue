@@ -139,7 +139,6 @@ export default {
       loading: false
     }
   },
-  inject: ['parentFetchData'],
   beforeCreate () {
     this.form = this.$form.createForm(this)
     this.apiConfig = this.$store.getters.apis.startVirtualMachine || {}
@@ -248,9 +247,6 @@ export default {
             loadingMessage: `${this.$t('label.action.start.instance')} ${this.resource.name}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
             successMessage: `${this.$t('label.action.start.instance')} ${this.resource.name}`,
-            successMethod: () => {
-              this.parentFetchData()
-            },
             response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `Password of the VM is ${result.virtualmachine.password}` : null }
           })
           this.closeAction()
