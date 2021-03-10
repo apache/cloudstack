@@ -206,17 +206,10 @@ export default {
         this.$pollJob({
           jobId: response.assigntoloadbalancerruleresponse.jobid,
           successMessage: `${this.$t('message.success.assigned.vms')} ${this.$t('label.to')} ${this.resource.name}`,
-          successMethod: () => {
-            this.$emit('refresh-data')
-          },
           errorMessage: `${this.$t('message.failed.to.assign.vms')} ${this.$t('label.to')} ${this.resource.name}`,
-          errorMethod: () => {
-            this.$emit('refresh-data')
-          },
           loadingMessage: `${this.$t('label.assigning.vms')} ${this.$t('label.to')} ${this.resource.name}`,
           catchMessage: this.$t('error.fetching.async.job.result')
         })
-        this.$emit('refresh-data')
         this.closeModal()
       }).catch(error => {
         this.$notification.error({

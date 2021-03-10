@@ -214,7 +214,6 @@ export default {
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
               catchMessage: this.$t('error.fetching.async.job.result')
             })
-            this.$emit('refresh-data')
           }
           this.closeAction()
         }).catch(error => {

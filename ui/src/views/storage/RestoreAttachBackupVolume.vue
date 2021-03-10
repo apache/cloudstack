@@ -146,7 +146,6 @@ export default {
               title: title,
               description: values.volumeid,
               successMethod: result => {
-                this.parentFetchData()
                 this.closeAction()
               },
               loadingMessage: `${title} ${this.$t('label.in.progress.for')} ${this.resource.id}`,

@@ -143,13 +143,7 @@ export default {
         this.$pollJob({
           jobId: response.migratevolumeresponse.jobid,
           successMessage: this.$t('message.success.migrate.volume'),
-          successMethod: () => {
-            this.parentFetchData()
-          },
           errorMessage: this.$t('message.migrate.volume.failed'),
-          errorMethod: () => {
-            this.parentFetchData()
-          },
           loadingMessage: this.$t('message.migrate.volume.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
@@ -157,7 +151,6 @@ export default {
           }
         })
         this.closeModal()
-        this.parentFetchData()
       }).catch(error => {
         this.$notifyError(error)
       })

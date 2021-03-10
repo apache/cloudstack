@@ -102,17 +102,10 @@ export default {
             title: this.$t('message.success.create.snapshot.from.vmsnapshot'),
             description: values.name,
             successMessage: this.$t('message.success.create.snapshot.from.vmsnapshot'),
-            successMethod: () => {
-              this.$emit('refresh-data')
-            },
             errorMessage: this.$t('message.create.snapshot.from.vmsnapshot.failed'),
-            errorMethod: () => {
-              this.$emit('refresh-data')
-            },
             loadingMessage: this.$t('message.create.snapshot.from.vmsnapshot.progress'),
             catchMessage: this.$t('error.fetching.async.job.result')
           })
-          this.$emit('refresh-data')
           this.closeModal()
         }).catch(error => {
           this.$notifyError(error)

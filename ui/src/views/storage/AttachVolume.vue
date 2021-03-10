@@ -52,7 +52,6 @@ export default {
       required: true
     }
   },
-  inject: ['parentFetchData'],
   data () {
     return {
       virtualmachines: [],
@@ -117,9 +116,6 @@ export default {
             jobId: response.attachvolumeresponse.jobid,
             title: this.$t('label.action.attach.disk'),
             description: this.resource.id,
-            successMethod: () => {
-              this.parentFetchData()
-            },
             errorMessage: `${this.$t('message.attach.volume.failed')}: ${this.resource.name || this.resource.id}`,
             loadingMessage: `${this.$t('message.attach.volume.progress')}: ${this.resource.name || this.resource.id}`,
             catchMessage: this.$t('error.fetching.async.job.result')
@@ -129,7 +125,6 @@ export default {
           this.$notifyError(error)
         }).finally(() => {
           this.loading = false
-          this.parentFetchData()
         })
       })
     }

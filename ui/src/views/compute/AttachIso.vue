@@ -52,7 +52,6 @@ export default {
       required: true
     }
   },
-  inject: ['parentFetchData'],
   data () {
     return {
       loading: false,
@@ -124,9 +123,6 @@ export default {
               jobId,
               title: title,
               description: values.id,
-              successMethod: result => {
-                this.parentFetchData()
-              },
               successMessage: `${this.$t('label.action.attach.iso')} ${this.$t('label.success')}`,
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
               catchMessage: this.$t('error.fetching.async.job.result')

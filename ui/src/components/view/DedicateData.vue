@@ -179,13 +179,9 @@ export default {
           description: this.resource.id,
           successMessage: this.$t('message.dedicated.zone.released'),
           successMethod: () => {
-            this.parentFetchData()
             this.dedicatedDomainId = null
           },
           errorMessage: this.$t('error.release.dedicate.zone'),
-          errorMethod: () => {
-            this.parentFetchData()
-          },
           loadingMessage: this.$t('message.releasing.dedicated.zone'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
@@ -206,13 +202,9 @@ export default {
           description: this.resource.id,
           successMessage: this.$t('message.pod.dedication.released'),
           successMethod: () => {
-            this.parentFetchData()
             this.dedicatedDomainId = null
           },
           errorMessage: this.$t('error.release.dedicate.pod'),
-          errorMethod: () => {
-            this.parentFetchData()
-          },
           loadingMessage: this.$t('message.releasing.dedicated.pod'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
@@ -233,13 +225,9 @@ export default {
           description: this.resource.id,
           successMessage: this.$t('message.cluster.dedication.released'),
           successMethod: () => {
-            this.parentFetchData()
             this.dedicatedDomainId = null
           },
           errorMessage: this.$t('error.release.dedicate.cluster'),
-          errorMethod: () => {
-            this.parentFetchData()
-          },
           loadingMessage: this.$t('message.releasing.dedicated.cluster'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
@@ -260,13 +248,9 @@ export default {
           description: this.resource.id,
           successMessage: this.$t('message.host.dedication.released'),
           successMethod: () => {
-            this.parentFetchData()
             this.dedicatedDomainId = null
           },
           errorMessage: this.$t('error.release.dedicate.host'),
-          errorMethod: () => {
-            this.parentFetchData()
-          },
           loadingMessage: this.$t('message.releasing.dedicated.host'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {

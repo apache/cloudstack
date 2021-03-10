@@ -542,13 +542,9 @@ export default {
             description: values.name,
             loadingMessage: `${this.$t('label.kubernetes.cluster.create')} ${values.name} ${this.$t('label.in.progress')}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
-            successMessage: this.$t('message.success.create.kubernetes.cluter') + ' ' + values.name,
-            successMethod: result => {
-              this.$emit('refresh-data')
-            }
+            successMessage: this.$t('message.success.create.kubernetes.cluter') + ' ' + values.name
           })
           this.closeAction()
-          this.$emit('refresh-data')
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {

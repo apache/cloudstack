@@ -222,7 +222,6 @@ export default {
                         this.$set(this.resource, 'isDel', true)
                         this.parentUpdActionData(this.resource)
                       }
-                      this.parentFetchData()
                       if (this.action.response) {
                         const description = this.action.response(result.jobresult)
                         if (description) {
@@ -234,7 +233,6 @@ export default {
                         }
                       }
                     },
-                    errorMethod: () => this.parentFetchData(),
                     loadingMessage: `${this.$t(this.action.label)} ${this.$t('label.in.progress')} ${this.$t('label.for')} ${this.resource.name}`,
                     catchMessage: this.$t('error.fetching.async.job.result'),
                     action: this.action
