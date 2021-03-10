@@ -149,7 +149,9 @@ class CsInterface:
 
     def ip_in_subnet(self, ip):
         ipo = ip_address(ip)
-        net = ip_network("%s/%s" % (self.get_ip(), self.get_size()))
+        # we are using an ip as netaddress so strict must be False
+        net = ip_network("%s/%s" % (self.get_ip(), self.get_size()),
+                         strict=False)
         return ipo in net
 
     def get_gateway_cidr(self):

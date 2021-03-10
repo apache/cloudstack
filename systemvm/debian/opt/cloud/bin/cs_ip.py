@@ -42,7 +42,9 @@ def merge(dbag, ip):
                     nic_dev_id = address['nic_dev_id']
                 dbag[dev].remove(address)
 
-    ipo = ip_network(ip['public_ip'] + '/' + ip['netmask'])
+    # we are passing and must allow for host bits so strict is False
+    ipo = ip_network(ip['public_ip'] + '/' + ip['netmask'],
+                     strict=False)
     if 'nic_dev_id' in ip:
         nic_dev_id = ip['nic_dev_id']
     if 'vif_mac_address' in ip:

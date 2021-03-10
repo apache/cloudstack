@@ -119,7 +119,7 @@ def get_device_info():
             to = {}
             to['ip'] = vals[1]
             to['dev'] = vals[-1]
-            to['network'] = ip_network(to['ip'])
+            to['network'] = ip_network(to['ip'], strict=False)
             to['dnsmasq'] = False
             list.append(to)
     return list
