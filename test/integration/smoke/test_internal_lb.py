@@ -801,4 +801,4 @@ class TestInternalLb(cloudstackTestCase):
         super(TestInternalLb, cls).tearDownClass()
 
     def tearDown(self):
-        super.(TestInternalLb, self).tearDown()
+        super(TestInternalLb, self).tearDown()
