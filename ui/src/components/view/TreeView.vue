@@ -221,8 +221,7 @@ export default {
         return
       }
       if (this.domainStore.expands && this.domainStore.expands.length > 0) {
-        for (let i = 0; i < this.domainStore.expands.length; i++) {
-          const expandKey = this.domainStore.expands[i]
+        for (const expandKey of this.domainStore.expands) {
           if (this.arrExpand.includes(expandKey)) {
             continue
           }
