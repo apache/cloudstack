@@ -964,6 +964,9 @@ export default {
               }
               break
             }
+            if (!input) {
+              continue
+            }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {
               params[key] = action.mapping[key].options[input]
             } else if (param.type === 'list') {
@@ -987,12 +990,14 @@ export default {
           }
         }
 
-        if (action.mapping) {
-          for (const key in action.mapping) {
-            if (!action.mapping[key].value) {
-              continue
+        if (!this.projectView || !['uploadSslCert'].includes(action.api)) {
+          if (action.mapping) {
+            for (const key in action.mapping) {
+              if (!action.mapping[key].value) {
+                continue
+              }
+              params[key] = action.mapping[key].value(this.resource, params)
             }
-            params[key] = action.mapping[key].value(this.resource, params)
           }
         }
 
