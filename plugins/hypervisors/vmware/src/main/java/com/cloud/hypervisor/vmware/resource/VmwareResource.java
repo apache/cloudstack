@@ -5741,7 +5741,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             synchronized(this) {
                 NetworkMO networkMo = new NetworkMO(hostMo.getContext(), netDetails.getNetworkMor());
                 List<ManagedObjectReference> vms = networkMo.getVMsOnNetwork();
-                if(vms == null || vms.size() == 0) {
+                if (CollectionUtils.isEmpty(vms)) {
                     if(s_logger.isInfoEnabled()) {
                         s_logger.info("Cleanup network as it is currently not in use: " + netDetails.getName());
                     }
@@ -5749,7 +5749,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
         } catch(Throwable e) {
-            s_logger.warn("Unable to cleanup network due to exception, skip for next time");
+            s_logger.warn("Unable to cleanup network due to exception: " + e.getMessage());
         }
     }
 
