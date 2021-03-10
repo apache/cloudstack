@@ -1305,7 +1305,7 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
 
         Volume.migrate(self.apiclient, storageid=target_pool.id, volumeid=volume1.id)
 
-        vol = Volume.list(self.apiclient, volume=volume1.id)[0]
+        vol = Volume.list(self.apiclient, id=volume1.id)[0]
 
         self.assertEqual(vol.storageid, target_pool.id, "Storage pool was not the same as expected")
 
