@@ -236,13 +236,11 @@ export default {
     handleDeleteIpRange (id) {
       this.componentLoading = true
       api('deleteStorageNetworkIpRange', { id }).then(response => {
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('message.success.remove.iprange'),
-          jobid: response.deletestoragenetworkiprangeresponse.jobid,
-          status: 'progress'
-        })
         this.$pollJob({
           jobId: response.deletestoragenetworkiprangeresponse.jobid,
+          title: this.$t('label.remove.ip.range'),
+          description: id,
+          successMessage: this.$t('message.success.remove.iprange'),
           successMethod: () => {
             this.componentLoading = false
             this.fetchData()
@@ -280,13 +278,11 @@ export default {
           endip: values.endip,
           vlan: values.vlan || null
         }).then(response => {
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('message.success.add.iprange'),
-            jobid: response.createstoragenetworkiprangeresponse.jobid,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId: response.createstoragenetworkiprangeresponse.jobid,
+            title: this.$t('label.add.ip.range'),
+            description: values.pod,
+            successMessage: this.$t('message.success.add.iprange'),
             successMethod: () => {
               this.componentLoading = false
               this.fetchData()

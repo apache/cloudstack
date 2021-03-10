@@ -20,6 +20,7 @@ import { i18n } from '@/locales'
 import { api } from '@/api'
 import { message, notification } from 'ant-design-vue'
 import eventBus from '@/config/eventBus'
+import store from '@/store'
 
 export const pollJobPlugin = {
   install (Vue) {
@@ -27,6 +28,8 @@ export const pollJobPlugin = {
       /**
        * @param {String} jobId
        * @param {String} [name='']
+       * @param {String} [title='']
+       * @param {String} [description='']
        * @param {String} [successMessage=Success]
        * @param {Function} [successMethod=() => {}]
        * @param {String} [errorMessage=Error]
@@ -40,6 +43,8 @@ export const pollJobPlugin = {
       const {
         jobId,
         name = '',
+        title = '',
+        description = '',
         successMessage = i18n.t('label.success'),
         successMethod = () => {},
         errorMessage = i18n.t('label.error'),
@@ -50,6 +55,13 @@ export const pollJobPlugin = {
         catchMethod = () => {},
         action = null
       } = options
+
+      store.dispatch('AddHeaderNotice', {
+        key: jobId,
+        title: title,
+        description: description,
+        status: 'progress'
+      })
 
       api('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
@@ -66,6 +78,13 @@ export const pollJobPlugin = {
             key: jobId,
             duration: 2
           })
+          store.dispatch('AddHeaderNotice', {
+            key: jobId,
+            title: title,
+            description: description,
+            status: 'done',
+            duration: 2
+          })
           eventBus.$emit('async-job-complete', action)
           successMethod(result)
         } else if (result.jobstatus === 2) {
@@ -74,18 +93,25 @@ export const pollJobPlugin = {
             key: jobId,
             duration: 1
           })
-          var title = errorMessage
+          var errTitle = errorMessage
           if (action && action.label) {
-            title = i18n.t(action.label)
+            errTitle = i18n.t(action.label)
           }
           var desc = result.jobresult.errortext
           if (name) {
             desc = `(${name}) ${desc}`
           }
           notification.error({
-            message: title,
+            message: errTitle,
             description: desc,
             key: jobId,
+            duration: 0
+          })
+          store.dispatch('AddHeaderNotice', {
+            key: jobId,
+            title: title,
+            description: desc,
+            status: 'failed',
             duration: 0
           })
           eventBus.$emit('async-job-complete', action)

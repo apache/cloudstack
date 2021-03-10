@@ -122,12 +122,9 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
+              title: title,
+              description: values.id,
               successMethod: result => {
-                this.$store.dispatch('AddAsyncJob', {
-                  title: title,
-                  jobid: jobId,
-                  status: this.$t('progress')
-                })
                 this.parentFetchData()
               },
               successMessage: `${this.$t('label.action.attach.iso')} ${this.$t('label.success')}`,

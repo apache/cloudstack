@@ -366,13 +366,7 @@ export default {
           params.id = this.nsp.id
           const jobId = await this.addPaloAltoFirewall(params)
           if (jobId) {
-            await this.$store.dispatch('AddAsyncJob', {
-              title: this.$t(this.action.label),
-              jobid: jobId,
-              description: this.$t(this.nsp.name),
-              status: 'progress'
-            })
-            await this.parentPollActionCompletion(jobId, this.action)
+            await this.parentPollActionCompletion(jobId, this.action, this.$t(this.nsp.name))
           }
           this.loading = false
           await this.provideCloseAction()

@@ -113,13 +113,10 @@ export default {
           id: this.resource.id,
           virtualmachineid: values.virtualmachineid
         }).then(response => {
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.action.attach.disk'),
-            jobid: response.attachvolumeresponse.jobid,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId: response.attachvolumeresponse.jobid,
+            title: this.$t('label.action.attach.disk'),
+            description: this.resource.id,
             successMethod: () => {
               this.parentFetchData()
             },

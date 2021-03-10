@@ -189,13 +189,9 @@ export default {
         api('updateTrafficType', params).then(response => {
           this.$pollJob({
             jobId: response.updatetraffictyperesponse.jobid,
+            title: title,
+            description: description,
             successMethod: result => {
-              this.$store.dispatch('AddAsyncJob', {
-                title: title,
-                description: description,
-                jobid: response.updatetraffictyperesponse.jobid,
-                status: this.$t('progress')
-              })
               this.parentFetchData()
             },
             successMessage: `${this.$t('label.update.traffic.label')} ${this.traffictype} ${this.$t('label.success')}`,

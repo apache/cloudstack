@@ -93,18 +93,14 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.dedicatezoneresponse.jobid,
-          successMessage: this.$t('label.zone.dedicated'),
+          title: this.$t('label.dedicate.zone'),
+          description: `${this.$t('label.domain.id')} : ${this.domainId}`,
+          successMessage: `${this.$t('label.zone.dedicated')}`,
           successMethod: () => {
             this.parentFetchData()
             this.fetchParentData()
             this.dedicatedDomainId = this.domainId
             this.dedicatedDomainModal = false
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('label.zone.dedicated'),
-              jobid: response.dedicatezoneresponse.jobid,
-              description: `${this.$t('label.domain.id')} : ${this.dedicatedDomainId}`,
-              status: 'progress'
-            })
           },
           errorMessage: this.$t('error.dedicate.zone.failed'),
           errorMethod: () => {
@@ -137,18 +133,14 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.dedicatepodresponse.jobid,
+          title: this.$t('label.dedicate.pod'),
+          description: `${this.$t('label.domain.id')} : ${this.domainId}`,
           successMessage: this.$t('label.pod.dedicated'),
           successMethod: () => {
             this.parentFetchData()
             this.fetchParentData()
             this.dedicatedDomainId = this.domainId
             this.dedicatedDomainModal = false
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('label.pod.dedicated'),
-              jobid: response.dedicatepodresponse.jobid,
-              description: `${this.$t('label.domainid')}: ${this.dedicatedDomainId}`,
-              status: 'progress'
-            })
           },
           errorMessage: this.$t('error.dedicate.pod.failed'),
           errorMethod: () => {
@@ -181,18 +173,14 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.dedicateclusterresponse.jobid,
+          title: this.$t('label.dedicate.cluster'),
+          description: `${this.$t('label.domain.id')} : ${this.domainId}`,
           successMessage: this.$t('message.cluster.dedicated'),
           successMethod: () => {
             this.parentFetchData()
             this.fetchParentData()
             this.dedicatedDomainId = this.domainId
             this.dedicatedDomainModal = false
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.cluster.dedicated'),
-              jobid: response.dedicateclusterresponse.jobid,
-              description: `${this.$t('label.domainid')}: ${this.dedicatedDomainId}`,
-              status: 'progress'
-            })
           },
           errorMessage: this.$t('error.dedicate.cluster.failed'),
           errorMethod: () => {
@@ -225,18 +213,14 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.dedicatehostresponse.jobid,
+          title: this.$t('label.dedicate.host'),
+          description: `${this.$t('label.domain.id')} : ${this.domainId}`,
           successMessage: this.$t('message.host.dedicated'),
           successMethod: () => {
             this.parentFetchData()
             this.fetchParentData()
             this.dedicatedDomainId = this.domainId
             this.dedicatedDomainModal = false
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.host.dedicated'),
-              jobid: response.dedicatehostresponse.jobid,
-              description: `${this.$t('label.domainid')}: ${this.dedicatedDomainId}`,
-              status: 'progress'
-            })
           },
           errorMessage: this.$t('error.dedicate.host.failed'),
           errorMethod: () => {

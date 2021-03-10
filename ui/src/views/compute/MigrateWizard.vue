@@ -154,14 +154,10 @@ export default {
         virtualmachineid: this.resource.id
       }).then(response => {
         const jobid = this.selectedHost.requiresStorageMotion ? response.migratevirtualmachinewithvolumeresponse.jobid : response.migratevirtualmachineresponse.jobid
-        this.$store.dispatch('AddAsyncJob', {
-          title: `${this.$t('label.migrating')} ${this.resource.name}`,
-          jobid: jobid,
-          description: this.resource.name,
-          status: 'progress'
-        })
         this.$pollJob({
           jobId: jobid,
+          title: `${this.$t('label.migrating')} ${this.resource.name}`,
+          description: this.resource.name,
           successMessage: `${this.$t('message.success.migrating')} ${this.resource.name}`,
           successMethod: () => {
             this.$emit('close-action')

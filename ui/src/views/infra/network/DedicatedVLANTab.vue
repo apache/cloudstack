@@ -289,13 +289,10 @@ export default {
       api('releaseDedicatedGuestVlanRange', {
         id: item.id
       }).then(response => {
-        this.$store.dispatch('AddAsyncJob', {
-          title: `${this.$t('label.delete.dedicated.vlan.range')} ${item.guestvlanrange} ${this.$t('label.for')} ${item.account}`,
-          jobid: response.releasededicatedguestvlanrangeresponse.jobid,
-          status: 'progress'
-        })
         this.$pollJob({
           jobId: response.releasededicatedguestvlanrangeresponse.jobid,
+          title: this.$t('label.delete.dedicated.vlan.range'),
+          description: `${this.$t('label.delete.dedicated.vlan.range')} ${item.guestvlanrange} ${this.$t('label.for')} ${item.account}`,
           successMethod: () => {
             this.fetchData()
             this.parentFinishLoading()

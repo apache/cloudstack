@@ -130,13 +130,10 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.createstaticrouteresponse.jobid,
+          title: this.$t('message.success.add.static.route'),
+          description: this.newRoute,
           successMethod: () => {
             this.fetchData()
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.success.add.static.route'),
-              jobid: response.createstaticrouteresponse.jobid,
-              status: 'progress'
-            })
             this.componentLoading = false
             this.newRoute = null
           },
@@ -165,13 +162,10 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.deletestaticrouteresponse.jobid,
+          title: this.$t('message.success.delete.static.route'),
+          description: route.id,
           successMethod: () => {
             this.fetchData()
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.success.delete.static.route'),
-              jobid: response.deletestaticrouteresponse.jobid,
-              status: 'progress'
-            })
             this.componentLoading = false
           },
           errorMessage: this.$t('message.delete.static.route.failed'),

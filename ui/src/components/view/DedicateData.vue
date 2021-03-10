@@ -175,15 +175,12 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.releasededicatedzoneresponse.jobid,
+          title: this.$t('label.release.dedicated.zone'),
+          description: this.resource.id,
           successMessage: this.$t('message.dedicated.zone.released'),
           successMethod: () => {
             this.parentFetchData()
             this.dedicatedDomainId = null
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.dedicated.zone.released'),
-              jobid: response.releasededicatedzoneresponse.jobid,
-              status: 'progress'
-            })
           },
           errorMessage: this.$t('error.release.dedicate.zone'),
           errorMethod: () => {
@@ -205,15 +202,12 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.releasededicatedpodresponse.jobid,
+          title: this.$t('label.release.dedicated.pod'),
+          description: this.resource.id,
           successMessage: this.$t('message.pod.dedication.released'),
           successMethod: () => {
             this.parentFetchData()
             this.dedicatedDomainId = null
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.pod.dedication.released'),
-              jobid: response.releasededicatedpodresponse.jobid,
-              status: 'progress'
-            })
           },
           errorMessage: this.$t('error.release.dedicate.pod'),
           errorMethod: () => {
@@ -235,15 +229,12 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.releasededicatedclusterresponse.jobid,
+          title: this.$t('label.release.dedicated.cluster'),
+          description: this.resource.id,
           successMessage: this.$t('message.cluster.dedication.released'),
           successMethod: () => {
             this.parentFetchData()
             this.dedicatedDomainId = null
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.cluster.dedication.released'),
-              jobid: response.releasededicatedclusterresponse.jobid,
-              status: 'progress'
-            })
           },
           errorMessage: this.$t('error.release.dedicate.cluster'),
           errorMethod: () => {
@@ -265,15 +256,12 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.releasededicatedhostresponse.jobid,
+          title: this.$t('label.release.dedicated.host'),
+          description: this.resource.id,
           successMessage: this.$t('message.host.dedication.released'),
           successMethod: () => {
             this.parentFetchData()
             this.dedicatedDomainId = null
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.host.dedication.released'),
-              jobid: response.releasededicatedhostresponse.jobid,
-              status: 'progress'
-            })
           },
           errorMessage: this.$t('error.release.dedicate.host'),
           errorMethod: () => {

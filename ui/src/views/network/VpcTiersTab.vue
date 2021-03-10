@@ -533,14 +533,10 @@ export default {
           sourceipaddressnetworkid: this.networkid,
           scheme: 'Internal'
         }).then(response => {
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('message.create.internallb'),
-            jobid: response.createloadbalancerresponse.jobid,
-            description: values.name,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId: response.createloadbalancerresponse.jobid,
+            title: this.$t('message.create.internallb'),
+            description: values.name,
             successMessage: this.$t('message.success.create.internallb'),
             successMethod: () => {
               this.fetchData()

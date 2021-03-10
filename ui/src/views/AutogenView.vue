@@ -833,6 +833,8 @@ export default {
     pollActionCompletion (jobId, action, resourceName, showLoading = true) {
       this.$pollJob({
         jobId,
+        title: this.$t(action.label),
+        description: resourceName,
         name: resourceName,
         successMethod: result => {
           this.fetchData()
@@ -918,7 +920,6 @@ export default {
         if (obj.includes('response')) {
           if (response[obj].jobid) {
             const jobid = response[obj].jobid
-            this.$store.dispatch('AddAsyncJob', { title: this.$t(action.label), jobid: jobid, description: resourceName, status: 'progress' })
             this.pollActionCompletion(jobid, action, resourceName, showLoading)
             return true
           } else {

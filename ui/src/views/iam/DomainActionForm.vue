@@ -155,32 +155,6 @@ export default {
   },
   inject: ['parentCloseAction', 'parentFetchData', 'parentUpdActionData'],
   methods: {
-    pollActionCompletion (jobId, action) {
-      this.$pollJob({
-        jobId,
-        successMethod: result => {
-          if (this.action.api === 'deleteDomain') {
-            this.$set(this.resource, 'isDel', true)
-            this.parentUpdActionData(this.resource)
-          }
-          this.parentFetchData()
-          if (action.response) {
-            const description = action.response(result.jobresult)
-            if (description) {
-              this.$notification.info({
-                message: this.$t(action.label),
-                description: (<span domPropsInnerHTML={description}></span>),
-                duration: 0
-              })
-            }
-          }
-        },
-        errorMethod: () => this.parentFetchData(),
-        loadingMessage: `${this.$t(action.label)} ${this.$t('label.in.progress')} ${this.$t('label.for')} ${this.resource.name}`,
-        catchMessage: this.$t('error.fetching.async.job.result'),
-        action
-      })
-    },
     handleSubmit (e) {
       e.preventDefault()
       this.form.validateFields((err, values) => {
@@ -239,13 +213,32 @@ export default {
             if (obj.includes('response')) {
               for (const res in json[obj]) {
                 if (res === 'jobid') {
-                  this.$store.dispatch('AddAsyncJob', {
+                  this.$pollJob({
+                    jobId: json[obj][res],
                     title: this.$t(this.action.label),
-                    jobid: json[obj][res],
                     description: this.resource.name,
-                    status: 'progress'
+                    successMethod: result => {
+                      if (this.action.api === 'deleteDomain') {
+                        this.$set(this.resource, 'isDel', true)
+                        this.parentUpdActionData(this.resource)
+                      }
+                      this.parentFetchData()
+                      if (this.action.response) {
+                        const description = this.action.response(result.jobresult)
+                        if (description) {
+                          this.$notification.info({
+                            message: this.$t(this.action.label),
+                            description: (<span domPropsInnerHTML={description}></span>),
+                            duration: 0
+                          })
+                        }
+                      }
+                    },
+                    errorMethod: () => this.parentFetchData(),
+                    loadingMessage: `${this.$t(this.action.label)} ${this.$t('label.in.progress')} ${this.$t('label.for')} ${this.resource.name}`,
+                    catchMessage: this.$t('error.fetching.async.job.result'),
+                    action: this.action
                   })
-                  this.pollActionCompletion(json[obj][res], this.action)
                   hasJobId = true
                   break
                 }

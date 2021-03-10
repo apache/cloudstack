@@ -359,11 +359,11 @@ export default {
             if (res === 'jobid') {
               hasJobId = true
               const jobId = json[obj][res]
-              this.$store.dispatch('AddAsyncJob', {
-                title: title,
-                jobid: jobId,
-                description: description,
-                status: 'progress'
+              this.$pollJob({
+                jobId,
+                title,
+                description,
+                showLoading: false
               })
             }
           }
