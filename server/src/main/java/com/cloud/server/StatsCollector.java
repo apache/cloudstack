@@ -145,6 +145,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+import org.apache.commons.io.FileUtils;
 
 /**
  * Provides real time stats for various agent resources up to x seconds
@@ -204,6 +205,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static final String INFLUXDB_HOST_MEASUREMENT = "host_stats";
     private static final String INFLUXDB_VM_MEASUREMENT = "vm_stats";
 
+    private static final double MIN_STORAGE_SECONDARY_CAPACITY_THRESHOLD = 0.00;
+    private static final double MAX_STORAGE_SECONDARY_CAPACITY_THRESHOLD = 1.00;
+
     private static final ConfigKey<Integer> vmDiskStatsInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vm.disk.stats.interval", "0",
             "Interval (in seconds) to report vm disk statistics. Vm disk statistics will be disabled if this is set to 0 or less than 0.", false);
     private static final ConfigKey<Integer> vmDiskStatsIntervalMin = new ConfigKey<Integer>("Advanced", Integer.class, "vm.disk.stats.interval.min", "300",
@@ -219,6 +223,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static final ConfigKey<String> statsOutputUri = new ConfigKey<String>("Advanced", String.class, "stats.output.uri", "",
             "URI to send StatsCollector statistics to. The collector is defined on the URI scheme. Example: graphite://graphite-hostaddress:port or influxdb://influxdb-hostaddress/dbname. Note that the port is optional, if not added the default port for the respective collector (graphite or influxdb) will be used. Additionally, the database name '/dbname' is  also optional; default db name is 'cloudstack'. You must create and configure the database if using influxdb.",
             true);
+    private static final ConfigKey<Double> secondaryStorageCapacityThreshold = new ConfigKey<Double>("Advanced", Double.class, "secondary.storage.capacity.threshold", "0.90",
+            "Secondary storage capacity threshold (1 = 100%).", true);
 
     private static StatsCollector s_instance = null;
 
@@ -295,8 +301,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private long storageStatsInterval = -1L;
     private long volumeStatsInterval = -1L;
     private long autoScaleStatsInterval = -1L;
-
-    private double _imageStoreCapacityThreshold = 0.90;
 
     private String externalStatsPrefix = "";
     String externalStatsHost = null;
@@ -1367,10 +1371,28 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         if (!_storageStats.keySet().contains(imageStore.getId())) { // Stats not available for this store yet, can be a new store. Better to assume it has enough capacity?
             return true;
         }
-        StorageStats imageStoreStats = _storageStats.get(imageStore.getId());
-        if (imageStoreStats != null && (imageStoreStats.getByteUsed() / (imageStoreStats.getCapacityBytes() * 1.0)) <= _imageStoreCapacityThreshold) {
+
+        long imageStoreId = imageStore.getId();
+        StorageStats imageStoreStats = _storageStats.get(imageStoreId);
+
+        if (imageStoreStats == null) {
+            s_logger.debug(String.format("Stats for image store [%s] not found.", imageStoreId));
+            return false;
+        }
+
+        double totalCapacity = imageStoreStats.getCapacityBytes();
+        double usedCapacity = imageStoreStats.getByteUsed();
+        double threshold = getImageStoreCapacityThreshold();
+        String readableTotalCapacity = FileUtils.byteCountToDisplaySize((long) totalCapacity);
+        String readableUsedCapacity = FileUtils.byteCountToDisplaySize((long) usedCapacity);
+
+        s_logger.debug(String.format("Verifying image storage [%s]. Capacity: total=[%s], used=[%s], threshold=[%s%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100));
+
+        if (usedCapacity / totalCapacity <= threshold) {
             return true;
         }
+
+        s_logger.warn(String.format("Image storage [%s] has not enough capacity. Capacity: total=[%s], used=[%s], threshold=[%s%%].", imageStoreId,readableTotalCapacity, readableUsedCapacity, threshold * 100));
         return false;
     }
 
@@ -1599,10 +1621,21 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmDiskStatsInterval, vmDiskStatsIntervalMin, vmNetworkStatsInterval, vmNetworkStatsIntervalMin, StatsTimeout, statsOutputUri};
+        return new ConfigKey<?>[] {vmDiskStatsInterval, vmDiskStatsIntervalMin, vmNetworkStatsInterval, vmNetworkStatsIntervalMin, StatsTimeout, statsOutputUri, secondaryStorageCapacityThreshold};
     }
 
     public double getImageStoreCapacityThreshold() {
-        return _imageStoreCapacityThreshold;
+        double thresholdConfig = secondaryStorageCapacityThreshold.value();
+
+        if (thresholdConfig >= MIN_STORAGE_SECONDARY_CAPACITY_THRESHOLD && thresholdConfig <= MAX_STORAGE_SECONDARY_CAPACITY_THRESHOLD) {
+            return thresholdConfig;
+        }
+
+        s_logger.warn(String.format("Invalid [%s] configuration: value set [%s] is [%s]. Assuming %s as secondary storage capacity threshold.",
+                                    secondaryStorageCapacityThreshold.key(),
+                                    thresholdConfig,
+                                    thresholdConfig < MIN_STORAGE_SECONDARY_CAPACITY_THRESHOLD ? String.format("lower than '%s'", MIN_STORAGE_SECONDARY_CAPACITY_THRESHOLD) : String.format("bigger than '%s'", MAX_STORAGE_SECONDARY_CAPACITY_THRESHOLD),
+                                    MAX_STORAGE_SECONDARY_CAPACITY_THRESHOLD));
+        return MAX_STORAGE_SECONDARY_CAPACITY_THRESHOLD;
     }
 }
