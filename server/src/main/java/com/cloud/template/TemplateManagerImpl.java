@@ -28,11 +28,11 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.to.DatadiskTO;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
@@ -109,6 +109,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ComputeChecksumCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.api.ApiDBUtils;
@@ -1936,7 +1937,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     UserVmVO userVm = _userVmDao.findById(vmId);
                     if (userVm != null) {
                         _userVmDao.loadDetails(userVm);
-                        details.putAll(userVm.getDetails());
+                        Map<String, String> vmDetails = userVm.getDetails();
+                        vmDetails = vmDetails.entrySet()
+                                .stream()
+                                .filter(map -> map.getValue() != null)
+                                .collect(Collectors.toMap(map -> map.getKey(), map -> map.getValue()));
+                        details.putAll(vmDetails);
                     }
                 }
             }
