@@ -713,7 +713,6 @@ export default {
   },
   data () {
     return {
-      name: '',
       ipaddress: '',
       resourceType: '',
       annotationType: '',
@@ -769,10 +768,14 @@ export default {
   created () {
     this.setData()
   },
+  computed: {
+    name () {
+      return this.resource.displayname || this.resource.displaytext || this.resource.name || this.resource.username ||
+        this.resource.ipaddress || this.resource.virtualmachinename || this.resource.templatetype
+    }
+  },
   methods: {
     setData () {
-      this.name = this.resource.displayname || this.resource.displaytext || this.resource.name || this.resource.username ||
-        this.resource.ipaddress || this.resource.virtualmachinename || this.resource.templatetype
       if (this.resource.nic && this.resource.nic.length > 0) {
         this.ipaddress = this.resource.nic.filter(e => { return e.ipaddress }).map(e => { return e.ipaddress }).join(', ')
       } else {
