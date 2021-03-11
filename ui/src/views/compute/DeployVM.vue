@@ -603,7 +603,7 @@
       </a-col>
       <a-col :md="24" :lg="7" v-if="!isMobile()">
         <a-affix :offsetTop="75">
-          <info-card class="vm-info-card" :resource="vm" :title="vm.name ? this.$t('label.yourinstance') + ' : ' + vm.name : this.$t('label.yourinstance')" />
+          <info-card class="vm-info-card" :resource="vm" :title="this.$t('label.yourinstance')" />
         </a-affix>
       </a-col>
     </a-row>
