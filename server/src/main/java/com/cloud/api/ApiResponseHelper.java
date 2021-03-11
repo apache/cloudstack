@@ -3972,7 +3972,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         NicResponse response = new NicResponse();
         NetworkVO network = _entityMgr.findById(NetworkVO.class, result.getNetworkId());
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, result.getInstanceId());
-        UserVmJoinVO userVm = _entityMgr.findById(UserVmJoinVO.class, result.getInstanceId());
         List<NicExtraDhcpOptionVO> nicExtraDhcpOptionVOs = _nicExtraDhcpOptionDao.listByNicId(result.getId());
 
         // The numbered comments are to keep track of the data returned from here and UserVmJoinDaoImpl.setUserVmResponse()
@@ -3986,15 +3985,13 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setVmId(vm.getUuid());
         }
 
-        if (userVm != null){
-            if (userVm.getTrafficType() != null) {
-                /*4: trafficType*/
-                response.setTrafficType(userVm.getTrafficType().toString());
-            }
-            if (userVm.getGuestType() != null) {
-                /*5: guestType*/
-                response.setType(userVm.getGuestType().toString());
-            }
+        if (network.getTrafficType() != null) {
+            /*4: trafficType*/
+            response.setTrafficType(network.getTrafficType().toString());
+        }
+        if (network.getGuestType() != null) {
+            /*5: guestType*/
+            response.setType(network.getGuestType().toString());
         }
         /*6: ipAddress*/
         response.setIpaddress(result.getIPv4Address());
@@ -4003,9 +4000,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         /*8: netmask*/
         response.setNetmask(result.getIPv4Netmask());
         /*9: networkName*/
-        if(userVm != null && userVm.getNetworkName() != null) {
-            response.setNetworkName(userVm.getNetworkName());
-        }
+        response.setNetworkName(network.getName());
         /*10: macAddress*/
         response.setMacAddress(result.getMacAddress());
         /*11: IPv6Address*/
