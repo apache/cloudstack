@@ -146,6 +146,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 /**
  * Provides real time stats for various agent resources up to x seconds
@@ -1625,16 +1626,27 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     }
 
     public double getImageStoreCapacityThreshold() {
-        double thresholdConfig = secondaryStorageCapacityThreshold.value();
+        double thresholdConfigValue = secondaryStorageCapacityThreshold.value();
+        double thresholdConfigDefaultValue = NumberUtils.toDouble(secondaryStorageCapacityThreshold.defaultValue());
+        String thresholdConfigKey = secondaryStorageCapacityThreshold.key();
 
-        if (thresholdConfig >= MIN_STORAGE_SECONDARY_CAPACITY_THRESHOLD && thresholdConfig <= MAX_STORAGE_SECONDARY_CAPACITY_THRESHOLD) {
-            return thresholdConfig;
+        if (thresholdConfigValue >= MIN_STORAGE_SECONDARY_CAPACITY_THRESHOLD && thresholdConfigValue <= MAX_STORAGE_SECONDARY_CAPACITY_THRESHOLD) {
+            return thresholdConfigValue;
         }
 
-        s_logger.warn(String.format("Invalid [%s] configuration: value set [%s] is [%s]. Assuming %s as secondary storage capacity threshold.",
-                                    secondaryStorageCapacityThreshold.key(),
-                                    thresholdConfig,
-                                    thresholdConfig < MIN_STORAGE_SECONDARY_CAPACITY_THRESHOLD ? String.format("lower than '%s'", MIN_STORAGE_SECONDARY_CAPACITY_THRESHOLD) : String.format("bigger than '%s'", MAX_STORAGE_SECONDARY_CAPACITY_THRESHOLD),
+        if (thresholdConfigValue < MIN_STORAGE_SECONDARY_CAPACITY_THRESHOLD) {
+            s_logger.warn(String.format("Invalid [%s] configuration: value set [%s] is lower than '%s'. Assuming '%s', default value, as secondary storage capacity threshold.",
+                                        thresholdConfigKey,
+                                        thresholdConfigValue,
+                                        MIN_STORAGE_SECONDARY_CAPACITY_THRESHOLD,
+                                        thresholdConfigDefaultValue));
+            return thresholdConfigDefaultValue;
+        }
+
+        s_logger.warn(String.format("Invalid [%s] configuration: value set [%s] is bigger than '%s'. Assuming '%s', top limit, as secondary storage capacity threshold.",
+                                    thresholdConfigKey,
+                                    thresholdConfigValue,
+                                    MAX_STORAGE_SECONDARY_CAPACITY_THRESHOLD,
                                     MAX_STORAGE_SECONDARY_CAPACITY_THRESHOLD));
         return MAX_STORAGE_SECONDARY_CAPACITY_THRESHOLD;
     }
