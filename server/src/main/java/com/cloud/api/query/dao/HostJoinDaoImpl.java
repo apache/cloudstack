@@ -177,7 +177,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 hostResponse.setMemoryAllocatedPercentage(memoryAllocatedPercentage);
 
                 String hostTags = host.getTag();
-                hostResponse.setHostTags(host.getTag());
+                hostResponse.setHostTags(hostTags);
 
                 hostResponse.setHaHost(false);
                 String haTag = ApiDBUtils.getHaTag();
@@ -336,17 +336,13 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 hostResponse.setMemoryAllocatedBytes(mem);
 
                 String hostTags = host.getTag();
-                hostResponse.setHostTags(host.getTag());
+                hostResponse.setHostTags(hostTags);
 
+                hostResponse.setHaHost(false);
                 String haTag = ApiDBUtils.getHaTag();
-                if (haTag != null && !haTag.isEmpty() && hostTags != null && !hostTags.isEmpty()) {
-                    if (haTag.equalsIgnoreCase(hostTags)) {
-                        hostResponse.setHaHost(true);
-                    } else {
-                        hostResponse.setHaHost(false);
-                    }
-                } else {
-                    hostResponse.setHaHost(false);
+                if (StringUtils.isNotEmpty(haTag) && StringUtils.isNotEmpty(hostTags) &&
+                        haTag.equalsIgnoreCase(hostTags)) {
+                    hostResponse.setHaHost(true);
                 }
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
@@ -420,6 +416,13 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 response.setHostTags(response.getHostTags() + "," + tag);
             } else {
                 response.setHostTags(tag);
+            }
+
+            if (!Boolean.TRUE.equals(response.getHaHost())) {
+                String haTag = ApiDBUtils.getHaTag();
+                if (StringUtils.isNotEmpty(haTag) && haTag.equalsIgnoreCase(tag)) {
+                    response.setHaHost(true);
+                }
             }
         }
         return response;
