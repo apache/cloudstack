@@ -131,7 +131,7 @@ class TestPortablePublicIPAcquire(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super(TestPortablePublicIPAcquire,cls).tearDownClass(cls)
+        super(TestPortablePublicIPAcquire,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
