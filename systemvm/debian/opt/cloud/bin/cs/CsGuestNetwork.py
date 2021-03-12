@@ -36,7 +36,7 @@ class CsGuestNetwork:
         return self.guest
 
     def get_dns(self):
-        if not self.guest:
+        if not self.guest or self.config.use_extdns():
             return self.config.get_dns()
 
         dns = []
