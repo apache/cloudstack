@@ -850,22 +850,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         _accountMgr.checkAccess(caller, null, true, userVm);
-        String password = null;
-        String sshPublicKey = s.getPublicKey();
-        if (template != null && template.isEnablePassword()) {
-            password = _mgr.generateRandomPassword();
-        }
 
-        boolean result = resetVMSSHKeyInternal(vmId, sshPublicKey, password);
+        String sshPublicKey = s.getPublicKey();
+
+        boolean result = resetVMSSHKeyInternal(vmId, sshPublicKey);
 
         if (!result) {
             throw new CloudRuntimeException("Failed to reset SSH Key for the virtual machine ");
         }
-        userVm.setPassword(password);
+
         return userVm;
     }
 
-    private boolean resetVMSSHKeyInternal(Long vmId, String sshPublicKey, String password) throws ResourceUnavailableException, InsufficientCapacityException {
+    private boolean resetVMSSHKeyInternal(Long vmId, String sshPublicKey) throws ResourceUnavailableException, InsufficientCapacityException {
         Long userId = CallContext.current().getCallingUserId();
         VMInstanceVO vmInstance = _vmDao.findById(vmId);
 
@@ -882,10 +879,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vmInstance);
 
-        if (template.isEnablePassword()) {
-            vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
-        }
-
         UserDataServiceProvider element = _networkMgr.getSSHKeyResetProvider(defaultNetwork);
         if (element == null) {
             throw new CloudRuntimeException("Can't find network element for " + Service.UserData.getName() + " provider needed for SSH Key reset");
@@ -900,11 +893,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             final UserVmVO userVm = _vmDao.findById(vmId);
             _vmDao.loadDetails(userVm);
             userVm.setDetail(VmDetailConstants.SSH_PUBLIC_KEY, sshPublicKey);
-            if (template.isEnablePassword()) {
-                userVm.setPassword(password);
-                //update the encrypted password in vm_details table too
-                encryptAndStorePassword(userVm, password);
-            }
             _vmDao.saveDetails(userVm);
 
             if (vmInstance.getState() == State.Stopped) {
