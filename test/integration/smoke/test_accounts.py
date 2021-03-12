@@ -991,6 +991,7 @@ class TestAddVmToSubDomain(cloudstackTestCase):
             domainid=cls.account_1.domainid,
             serviceofferingid=cls.service_offering.id
         )
+        cls._cleanup.append(cls.vm_1)
 
         cls.vm_2 = VirtualMachine.create(
             cls.api_client,
@@ -1000,6 +1001,7 @@ class TestAddVmToSubDomain(cloudstackTestCase):
             domainid=cls.account_2.domainid,
             serviceofferingid=cls.service_offering.id
         )
+        cls._cleanup.append(cls.vm_2)
         return
 
     @classmethod
