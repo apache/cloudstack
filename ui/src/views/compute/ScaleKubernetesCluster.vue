@@ -109,8 +109,6 @@ export default {
   },
   created () {
     this.originalSize = !this.isObjectEmpty(this.resource) ? this.resource.size : 1
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

@@ -410,8 +410,6 @@ export default {
     this.$set(this.format, 'opts', [])
     this.$set(this.osTypes, 'loading', false)
     this.$set(this.osTypes, 'opts', [])
-  },
-  mounted () {
     this.fetchData()
   },
   computed: {

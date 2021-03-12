@@ -517,7 +517,7 @@ export default {
       searchQuery: null
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {

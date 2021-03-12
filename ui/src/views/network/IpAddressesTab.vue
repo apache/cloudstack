@@ -185,7 +185,7 @@ export default {
       listPublicIpAddress: []
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {

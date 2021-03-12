@@ -87,8 +87,6 @@ export default {
         name: this.$t('state.disabled')
       }
     ]
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

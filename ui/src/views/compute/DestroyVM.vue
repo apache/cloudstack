@@ -87,7 +87,7 @@ export default {
       this.apiParams[param.name] = param
     })
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

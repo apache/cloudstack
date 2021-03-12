@@ -101,7 +101,7 @@ export default {
       loading: false
     }
   },
-  mounted () {
+  created () {
     this.fetchRoles()
   },
   beforeCreate () {

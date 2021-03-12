@@ -228,8 +228,6 @@ export default {
     this.apiConfig.params.forEach(param => {
       this.apiParams[param.name] = param
     })
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

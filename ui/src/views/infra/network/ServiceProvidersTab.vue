@@ -35,7 +35,8 @@
             :itemNsp="item"
             :nsp="nsps[item.title]"
             :resourceId="resource.id"
-            :zoneId="resource.zoneid"/>
+            :zoneId="resource.zoneid"
+            :tabKey="tabKey"/>
         </a-tab-pane>
       </a-tabs>
     </a-spin>
@@ -1103,7 +1104,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {
@@ -1124,6 +1125,9 @@ export default {
   },
   methods: {
     fetchData () {
+      if (!this.resource || !('id' in this.resource)) {
+        return
+      }
       this.fetchServiceProvider()
     },
     fetchServiceProvider (name) {

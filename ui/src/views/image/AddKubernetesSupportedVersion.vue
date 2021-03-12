@@ -189,8 +189,6 @@ export default {
         name: this.$t('label.all.zone')
       }
     ]
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

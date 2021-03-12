@@ -98,7 +98,7 @@ export default {
       loading: false
     }
   },
-  mounted () {
+  created () {
     for (const group of this.resource.affinitygroup) {
       this.selectedRowKeys.push(group.id)
     }

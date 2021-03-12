@@ -151,7 +151,7 @@ export default {
       pageSize: 10
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

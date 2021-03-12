@@ -148,7 +148,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     if (this.action.dataView && this.action.icon === 'edit') {
       this.fillEditFormFieldValues()
     }
