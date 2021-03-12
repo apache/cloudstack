@@ -1809,34 +1809,34 @@ class TestDomainForceRemove(cloudstackTestCase):
         #    not return any routers in the deleted accounts/domains
 
         self.debug("Creating a domain for login with API domain test")
-        domain = Domain.create(
+        self.child_domain = Domain.create(
             self.apiclient,
             self.services["domain"],
             parentdomainid=self.domain.id
         )
-        self.cleanup.append(domain)
+        self.cleanup.append(self.child_domain)
         self.debug("Domain is created succesfully.")
         self.debug(
             "Checking if the created domain is listed in list domains API")
-        domains = Domain.list(self.apiclient, id=domain.id, listall=True)
+        domains = Domain.list(self.apiclient, id=self.child_domain.id, listall=True)
 
         self.assertEqual(
             isinstance(domains, list),
             True,
             "List domains shall return a valid response"
         )
-        self.debug("Creating 2 user accounts in domain: %s" % domain.name)
+        self.debug("Creating 2 user accounts in domain: %s" % self.child_domain.name)
         self.account_1 = Account.create(
             self.apiclient,
             self.services["account"],
-            domainid=domain.id
+            domainid=self.child_domain.id
         )
         self.cleanup.append(self.account_1)
 
         self.account_2 = Account.create(
             self.apiclient,
             self.services["account"],
-            domainid=domain.id
+            domainid=self.child_domain.id
         )
         self.cleanup.append(self.account_2)
 
@@ -1940,9 +1940,8 @@ class TestDomainForceRemove(cloudstackTestCase):
 
         self.debug("Deleting domain with force option")
         try:
-            domain.delete(self.apiclient, cleanup=True)
-            self.cleanup.remove(domain)
-            self.cleanup.remove(self.service_offering)
+            self.child_domain.delete(self.apiclient, cleanup=True)
+            self.cleanup.remove(self.child_domain)
             self.cleanup.remove(self.account_1)
             self.cleanup.remove(self.account_2)
             self.cleanup.remove(self.vm_1)
@@ -1957,7 +1956,7 @@ class TestDomainForceRemove(cloudstackTestCase):
             with self.assertRaises(CloudstackAPIException):
                 Domain.list(
                     self.apiclient,
-                    id=domain.id,
+                    id=self.child_domain.id,
                     listall=True
                 )
 
@@ -1996,35 +1995,35 @@ class TestDomainForceRemove(cloudstackTestCase):
         # 5. domain deletion should fail saying there are resources under use
 
         self.debug("Creating a domain for login with API domain test")
-        domain = Domain.create(
+        self.child_domain = Domain.create(
             self.apiclient,
             self.services["domain"],
             parentdomainid=self.domain.id
         )
         # in this test delete domain *should* fail so we need to housekeep:
-        self.cleanup.append(domain)
-        self.debug("Domain: %s is created successfully." % domain.name)
+        self.cleanup.append(self.child_domain)
+        self.debug("Domain: %s is created successfully." % self.child_domain.name)
         self.debug(
             "Checking if the created domain is listed in list domains API")
-        domains = Domain.list(self.apiclient, id=domain.id, listall=True)
+        domains = Domain.list(self.apiclient, id=self.child_domain.id, listall=True)
 
         self.assertEqual(
             isinstance(domains, list),
             True,
             "List domains shall return a valid response"
         )
-        self.debug("Creating 2 user accounts in domain: %s" % domain.name)
+        self.debug("Creating 2 user accounts in domain: %s" % self.child_domain.name)
         self.account_1 = Account.create(
             self.apiclient,
             self.services["account"],
-            domainid=domain.id
+            domainid=self.child_domain.id
         )
         self.cleanup.append(self.account_1)
 
         self.account_2 = Account.create(
             self.apiclient,
             self.services["account"],
-            domainid=domain.id
+            domainid=self.child_domain.id
         )
         self.cleanup.append(self.account_2)
 
@@ -2109,7 +2108,7 @@ class TestDomainForceRemove(cloudstackTestCase):
         self.cleanup.append(self.nat_rule)
         self.debug("Created PF rule on source NAT: %s" % src_nat.ipaddress)
 
-        nat_rules = NATRule.list(self.apiclient, id=nat_rule.id)
+        nat_rules = NATRule.list(self.apiclient, id=self.nat_rule.id)
 
         self.assertEqual(
             isinstance(nat_rules, list),
@@ -2124,9 +2123,18 @@ class TestDomainForceRemove(cloudstackTestCase):
         )
 
         self.debug("Deleting domain without force option")
-        with self.assertRaises(Exception):
-            domain.delete(self.apiclient, cleanup=False)
+        with self.failDeleteTest():
+            self.child_domain.delete(self.apiclient, cleanup=False)
         return
+
+    def failDeleteTest(self):
+        self.cleanup.remove(self.nat_rule)
+        self.cleanup.remove(self.vm_2)
+        self.cleanup.remove(self.vm_1)
+        self.cleanup.remove(self.account_2)
+        self.cleanup.remove(self.account_1)
+        self.cleanup.remove(self.child_domain)
+        self.fail("shouldn't be able to delete domain")
 
 class TestMoveUser(cloudstackTestCase):
 
