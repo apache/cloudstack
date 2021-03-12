@@ -882,7 +882,8 @@ class TestReleaseIP(cloudstackTestCase):
         while retriesCount > 0:
             listResponse = list_publicIP(
                 self.apiclient,
-                id=self.ip_addr.id
+                id=self.ip_addr.id,
+                state="Allocated"
             )
             if listResponse is None:
                 isIpAddressDisassociated = True
