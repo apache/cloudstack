@@ -757,15 +757,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new CloudRuntimeException("Failed to add data store: " + e.getMessage(), e);
         }
 
-        // create entry for storage pool capacity
-        StoragePoolVO pool = _storagePoolDao.findById(store.getId());
-        long disk = _capacityMgr.getAllocatedPoolCapacity(pool, null);
-        if (pool.isShared()) {
-            createCapacityEntry(pool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, disk);
-        } else {
-            createCapacityEntry(pool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, disk);
-        }
-
         return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Primary);
     }
 
