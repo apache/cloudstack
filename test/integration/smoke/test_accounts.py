@@ -2123,18 +2123,18 @@ class TestDomainForceRemove(cloudstackTestCase):
         )
 
         self.debug("Deleting domain without force option")
-        with self.failDeleteTest():
+        try:
             self.child_domain.delete(self.apiclient, cleanup=False)
+            self.cleanup.remove(self.nat_rule)
+            self.cleanup.remove(self.vm_2)
+            self.cleanup.remove(self.vm_1)
+            self.cleanup.remove(self.account_2)
+            self.cleanup.remove(self.account_1)
+            self.cleanup.remove(self.child_domain)
+            self.fail("shouldn't be able to delete domain")
+        except:
+            pass
         return
-
-    def failDeleteTest(self):
-        self.cleanup.remove(self.nat_rule)
-        self.cleanup.remove(self.vm_2)
-        self.cleanup.remove(self.vm_1)
-        self.cleanup.remove(self.account_2)
-        self.cleanup.remove(self.account_1)
-        self.cleanup.remove(self.child_domain)
-        self.fail("shouldn't be able to delete domain")
 
 class TestMoveUser(cloudstackTestCase):
 
