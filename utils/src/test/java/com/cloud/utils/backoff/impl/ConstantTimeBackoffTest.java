@@ -43,7 +43,7 @@ public class ConstantTimeBackoffTest {
         Thread.sleep(100);
         Assert.assertFalse(backoff.getWaiters().isEmpty());
         waitThread.interrupt();
-        Thread.sleep(100);
+        Thread.sleep(500);
         Assert.assertTrue(backoff.getWaiters().isEmpty());
     }
 
