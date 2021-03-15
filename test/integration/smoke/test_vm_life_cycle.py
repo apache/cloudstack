@@ -929,15 +929,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if cls.hypervisor.lower() in ["kvm"]:
-            cls.hosts = Host.list(
-                cls.apiclient,
-                zoneid=cls.zone.id,
-                type='Routing',
-                hypervisor='KVM')
-            for cls.host in cls.hosts:
-                TestSecuredVmMigration.secure_host(cls.host)
-            super(TestSecuredVmMigration, cls).tearDownClass()
+        super(TestSecuredVmMigration, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
