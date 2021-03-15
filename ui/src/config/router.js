@@ -140,7 +140,7 @@ function generateRouterMap (section) {
         title: section.title,
         name: section.name,
         icon: section.icon,
-        docHelp: Vue.prototype.$applyDocHelpMappings(section.docHel),
+        docHelp: Vue.prototype.$applyDocHelpMappings(section.docHelp),
         hidden: section.hidden,
         permission: section.permission,
         resourceType: section.resourceType,
