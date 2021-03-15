@@ -2072,6 +2072,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             //
             for (DiskTO vol : sortedDisks) {
                 if (vol.getType() == Volume.Type.ISO || deployAsIs && vol.getType() == Volume.Type.ROOT) {
+                    rootDiskTO = vol;
+                    resizeRootDiskOnVMStart(vmMo, rootDiskTO, hyperHost, context);
                     continue;
                 }
 

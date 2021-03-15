@@ -105,7 +105,9 @@
                           @update-template-iso="updateFieldValue" />
                         <span>
                           {{ $t('label.override.rootdisk.size') }}
-                          <a-switch @change="val => { this.showRootDiskSizeChanger = val }" style="margin-left: 10px;"/>
+                          <a-switch :disabled="template.deployasis" @change="val => { this.showRootDiskSizeChanger = val }" style="margin-left: 10px;"/>
+                          <div v-if="template.deployasis"> To resize the root disk(s) either create a VM in stopped state and resize the volumes before starting the VM or
+                            Deploy the VM, Stop it and then resize the respective volumes </div>
                         </span>
                         <disk-size-selection
                           v-show="showRootDiskSizeChanger"
@@ -544,6 +546,10 @@
                       ></a-select>
                     </a-form-item>
                   </div>
+                  <span>
+                    {{ $t('label.start.vm') }}
+                    <a-switch @change="val => { this.startvm = val }" :checked="this.startvm" style="margin-left: 10px"/>
+                  </span>
                 </template>
               </a-step>
               <a-step
@@ -663,6 +669,7 @@ export default {
       podId: null,
       clusterId: null,
       zoneSelected: false,
+      startvm: true,
       vm: {
         name: null,
         zoneid: null,
@@ -1419,6 +1426,9 @@ export default {
         if (values.hypervisor && values.hypervisor.length > 0) {
           deployVmData.hypervisor = values.hypervisor
         }
+
+        deployVmData.startvm = this.startvm
+
         // step 3: select service offering
         deployVmData.serviceofferingid = values.computeofferingid
         if (this.serviceOffering && this.serviceOffering.iscustomized) {
