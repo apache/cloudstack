@@ -103,7 +103,7 @@
             <a
               v-if="currentAction.docHelp || $route.meta.docHelp"
               style="margin-left: 5px"
-              :href="$config.docBase + '/' + this.$applyDocHelpMappings(currentAction.docHelp || $route.meta.docHelp)"
+              :href="$config.docBase + '/' + currentAction.docHelp || $route.meta.docHelp"
               target="_blank">
               <a-icon type="question-circle-o"></a-icon>
             </a>
@@ -137,7 +137,7 @@
           <a
             v-if="currentAction.docHelp || $route.meta.docHelp"
             style="margin-left: 5px"
-            :href="$config.docBase + '/' + this.$applyDocHelpMappings(currentAction.docHelp || $route.meta.docHelp)"
+            :href="$config.docBase + '/' + currentAction.docHelp || $route.meta.docHelp"
             target="_blank">
             <a-icon type="question-circle-o"></a-icon>
           </a>

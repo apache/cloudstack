@@ -172,8 +172,7 @@ export const configUtilPlugin = {
   install (Vue) {
     Vue.prototype.$applyDocHelpMappings = function (docHelp) {
       var docHelpMappings = this.$config.docHelpMappings
-      if (docHelp !== null && docHelp !== undefined && docHelp !== '' &&
-        docHelpMappings !== null && docHelpMappings !== undefined &&
+      if (docHelp && docHelpMappings &&
         docHelpMappings.constructor === Object && Object.keys(docHelpMappings).length > 0) {
         for (var key in docHelpMappings) {
           if (docHelp.includes(key)) {

@@ -45,7 +45,7 @@
           <a
             v-if="item.meta.docHelp"
             style="margin-right: 12px"
-            :href="$config.docBase + '/' + docHelp"
+            :href="$config.docBase + '/' + $route.meta.docHelp"
             target="_blank">
             <a-icon type="question-circle-o"></a-icon>
           </a>
@@ -72,7 +72,6 @@ export default {
   data () {
     return {
       name: '',
-      docHelp: '',
       breadList: []
     }
   },
@@ -87,7 +86,6 @@ export default {
   methods: {
     getBreadcrumb () {
       this.name = this.$route.name
-      this.docHelp = this.$applyDocHelpMappings(this.$route.meta.docHelp)
       this.breadList = []
       this.$route.matched.forEach((item) => {
         if (item && item.parent && item.parent.name !== 'index' && !item.path.endsWith(':id')) {
