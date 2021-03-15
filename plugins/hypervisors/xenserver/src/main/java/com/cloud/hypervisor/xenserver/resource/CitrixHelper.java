@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.storage.Storage;
 import com.xensource.xenapi.Host;
 
 /**
@@ -43,5 +45,13 @@ public class CitrixHelper {
             }
         }
         return "";
+    }
+
+    public static String getSRNameLabel(final StorageFilerTO primaryStore) {
+        if (Storage.StoragePoolType.PreSetup.equals(primaryStore.getType()) &&
+                !primaryStore.getPath().contains(primaryStore.getUuid())) {
+            return  primaryStore.getPath().replace("/", "");
+        }
+        return primaryStore.getUuid();
     }
 }

@@ -28,7 +28,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
 import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.to.DiskTO;
-import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.hypervisor.xenserver.resource.CitrixHelper;
 import com.cloud.hypervisor.xenserver.resource.XenServer610Resource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
@@ -62,10 +62,7 @@ public final class XenServer610MigrateVolumeCommandWrapper extends CommandWrappe
                         chapInitiatorUsername, chapInitiatorSecret, false);
             }
             else {
-                StorageFilerTO destPoolTO = command.getPool();
-                String destPoolUuid = destPoolTO.getUuid();
-
-                destPool = xenServer610Resource.getStorageRepository(connection, destPoolUuid);
+                destPool = xenServer610Resource.getStorageRepository(connection, CitrixHelper.getSRNameLabel(command.getPool()));
             }
 
             Map<String, String> other = new HashMap<>();

@@ -58,6 +58,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Snapshot;
@@ -326,7 +327,13 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
                     volumeToStorageUuid.add(new Pair<>(volumeTo, iqn));
                 }
                 else {
-                    volumeToStorageUuid.add(new Pair<>(volumeTo, ((StoragePool)entry.getValue()).getUuid()));
+                    StoragePool pool = (StoragePool)entry.getValue();
+                    String srNameLabel = pool.getUuid();
+                    if (Storage.StoragePoolType.PreSetup.equals(pool.getPoolType()) &&
+                            !pool.getPath().contains(pool.getUuid())) {
+                        srNameLabel = pool.getPath().replace("/", "");
+                    }
+                    volumeToStorageUuid.add(new Pair<>(volumeTo, srNameLabel));
                 }
             }
 

@@ -28,6 +28,7 @@ import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.hypervisor.xenserver.resource.CitrixHelper;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
@@ -50,7 +51,7 @@ public final class CitrixCreateCommandWrapper extends CommandWrapper<CreateComma
 
         VDI vdi = null;
         try {
-            final SR poolSr = citrixResourceBase.getStorageRepository(conn, pool.getUuid());
+            final SR poolSr = citrixResourceBase.getStorageRepository(conn, CitrixHelper.getSRNameLabel(pool));
             if (command.getTemplateUrl() != null) {
                 VDI tmpltvdi = null;
 
