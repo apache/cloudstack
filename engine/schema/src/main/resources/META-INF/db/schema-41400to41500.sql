@@ -843,25 +843,3 @@ UPDATE `cloud`.`data_center` JOIN (SELECT COUNT(1) AS count FROM `cloud`.`data_c
 
 -- Fix description of volume.stats.interval which is in milliseconds not seconds
 UPDATE `cloud`.`configuration` SET `description` = 'Interval (in milliseconds) to report volume statistics' WHERE `name` = 'volume.stats.interval';
-
--- Table for customized load balancer configurations
-CREATE TABLE IF NOT EXISTS `cloud`.`load_balancer_config`  (
-    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    `uuid` varchar(40) DEFAULT NULL,
-    `scope` varchar(20) DEFAULT NULL COMMENT 'The scope of this config, Vpc/Network/LoadBalancer',
-    `network_id` bigint(20) unsigned DEFAULT NULL,
-    `vpc_id` bigint(20) unsigned DEFAULT NULL,
-    `load_balancer_id` bigint(20) unsigned DEFAULT NULL,
-    `name` varchar(255) NOT NULL,
-    `value` varchar(255) DEFAULT NULL,
-    `created` datetime NOT NULL COMMENT 'date created',
-    `removed` datetime DEFAULT NULL COMMENT 'date removed',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `id_UNIQUE` (`id`),
-    KEY `fk_load_balancer_config_network_id` (`network_id`),
-    KEY `fk_load_balancer_config_vpc_id` (`vpc_id`),
-    KEY `fk_load_balancer_config_loadbalancer_id` (`load_balancer_id`),
-    CONSTRAINT `fk_load_balancer_config_network_id` FOREIGN KEY (`network_id`) REFERENCES `networks` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `fk_load_balancer_config_vpc_id` FOREIGN KEY (`vpc_id`) REFERENCES `vpc` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `fk_load_balancer_config_loadbalancer_id` FOREIGN KEY (`load_balancer_id`) REFERENCES `load_balancing_rules` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
