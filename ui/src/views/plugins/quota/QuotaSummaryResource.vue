@@ -51,7 +51,7 @@ export default {
       pattern: 'YYYY-MM-DD'
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {

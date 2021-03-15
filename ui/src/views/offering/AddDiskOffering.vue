@@ -483,8 +483,6 @@ export default {
         name: this.$t('label.all.zone')
       }
     ]
-  },
-  mounted () {
     this.fetchData()
     this.isPublic = this.isAdmin()
   },

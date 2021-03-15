@@ -178,7 +178,7 @@ export default {
       }
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   beforeCreate () {

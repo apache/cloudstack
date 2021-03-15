@@ -82,7 +82,7 @@ export default {
       selectedDiskOffering: null
     }
   },
-  mounted () {
+  created () {
     this.fetchStoragePools()
     this.resource.virtualmachineid && this.fetchDiskOfferings()
   },

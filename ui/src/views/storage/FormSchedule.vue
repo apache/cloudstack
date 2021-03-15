@@ -237,7 +237,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.volumeId = this.resource.id
     this.fetchTimeZone()
   },
