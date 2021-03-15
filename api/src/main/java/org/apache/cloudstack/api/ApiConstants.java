@@ -258,6 +258,7 @@ public class ApiConstants {
     public static final String OLD_FORMAT = "oldformat";
     public static final String OP = "op";
     public static final String OS_CATEGORY_ID = "oscategoryid";
+    public static final String OS_CATEGORY_NAME = "oscategoryname";
     public static final String OS_ID = "osid";
     public static final String OS_TYPE_ID = "ostypeid";
     public static final String OS_DISPLAY_NAME = "osdisplayname";
@@ -341,6 +342,7 @@ public class ApiConstants {
     public static final String SNAPSHOT_POLICY_ID = "snapshotpolicyid";
     public static final String SNAPSHOT_TYPE = "snapshottype";
     public static final String SNAPSHOT_QUIESCEVM = "quiescevm";
+    public static final String SUPPORTS_STORAGE_SNAPSHOT = "supportsstoragesnapshot";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
     public static final String START_DATE = "startdate";
     public static final String START_ID = "startid";
@@ -805,6 +807,8 @@ public class ApiConstants {
     public static final String ROUTER_HEALTH_CHECKS = "healthchecks";
     public static final String ROUTER_CHECK_NAME = "checkname";
     public static final String ROUTER_CHECK_TYPE = "checktype";
+    public static final String ROUTER_IP = "routerip";
+    public static final String ROUTER_IPV6 = "routeripv6";
     public static final String LAST_UPDATED = "lastupdated";
     public static final String PERFORM_FRESH_CHECKS = "performfreshchecks";
     public static final String CACHE_MODE = "cachemode";
@@ -834,6 +838,8 @@ public class ApiConstants {
     public static final String CROSS_ZONES = "crossZones";
     public static final String TEMPLATETYPE = "templatetype";
     public static final String SOURCETEMPLATEID = "sourcetemplateid";
+
+    public static final String POOL_TYPE ="pooltype";
 
     public enum BootType {
         UEFI, BIOS;

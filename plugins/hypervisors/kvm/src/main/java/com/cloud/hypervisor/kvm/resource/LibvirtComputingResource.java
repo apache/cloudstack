@@ -46,9 +46,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceAgentExecutor;
-import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceExecutor;
-import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceServiceExecutor;
+import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -56,6 +54,9 @@ import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.KVMHostInfo;
 import org.apache.cloudstack.utils.linux.MemStat;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.collections.MapUtils;
@@ -88,6 +89,7 @@ import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
+import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -110,7 +112,6 @@ import com.cloud.agent.dao.impl.PropertiesStorage;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
-import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
@@ -133,7 +134,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestResourceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InputDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.GuestNetType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
@@ -143,6 +143,9 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VideoDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
+import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceAgentExecutor;
+import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceExecutor;
+import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceServiceExecutor;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.hypervisor.kvm.storage.IscsiStorageCleanupMonitor;
@@ -235,6 +238,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String SSHPRVKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.cloud";
     public static final String SSHPUBKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.pub.cloud";
     public static final String DEFAULTDOMRSSHPORT = "3922";
+
+    public final static String HOST_CACHE_PATH_PARAMETER = "host.cache.location";
+    public final static String CONFIG_DIR = "config";
 
     public static final String BASH_SCRIPT_PATH = "/bin/bash";
 
@@ -515,6 +521,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return directDownloadTemporaryDownloadPath;
     }
 
+    public String getConfigPath() {
+        return getCachePath() + "/" + CONFIG_DIR;
+    }
+
+    public String getCachePath() {
+        return cachePath;
+    }
+
     public String getResizeVolumePath() {
         return _resizeVolumePath;
     }
@@ -567,6 +581,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected boolean dpdkSupport = false;
     protected String dpdkOvsPath;
     protected String directDownloadTemporaryDownloadPath;
+    protected String cachePath;
 
     private String getEndIpFromStartIp(final String startIp, final int numIps) {
         final String[] tokens = startIp.split("[.]");
@@ -616,6 +631,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private String getDefaultDirectDownloadTemporaryPath() {
         return "/var/lib/libvirt/images";
+    }
+
+    private String getDefaultCachePath() {
+        return "/var/cache/cloud";
     }
 
     protected String getDefaultNetworkScriptsDir() {
@@ -705,6 +724,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         directDownloadTemporaryDownloadPath = (String) params.get("direct.download.temporary.download.location");
         if (org.apache.commons.lang.StringUtils.isBlank(directDownloadTemporaryDownloadPath)) {
             directDownloadTemporaryDownloadPath = getDefaultDirectDownloadTemporaryPath();
+        }
+
+        cachePath = (String) params.get(HOST_CACHE_PATH_PARAMETER);
+        if (org.apache.commons.lang.StringUtils.isBlank(cachePath)) {
+            cachePath = getDefaultCachePath();
         }
 
         params.put("domr.scripts.dir", domrScriptsDir);
@@ -2247,8 +2271,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (MapUtils.isNotEmpty(customParams) && customParams.containsKey(GuestDef.BootType.UEFI.toString())) {
             guest.setBootType(GuestDef.BootType.UEFI);
             guest.setBootMode(GuestDef.BootMode.LEGACY);
+            guest.setMachineType("q35");
             if (StringUtils.isNotBlank(customParams.get(GuestDef.BootType.UEFI.toString())) && "secure".equalsIgnoreCase(customParams.get(GuestDef.BootType.UEFI.toString()))) {
-                guest.setMachineType("q35");
                 guest.setBootMode(GuestDef.BootMode.SECURE); // setting to secure mode
             }
         }
@@ -2458,11 +2482,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public String getVolumePath(final Connect conn, final DiskTO volume) throws LibvirtException, URISyntaxException {
+        return getVolumePath(conn, volume, false);
+    }
+
+    public String getVolumePath(final Connect conn, final DiskTO volume, boolean diskOnHostCache) throws LibvirtException, URISyntaxException {
         final DataTO data = volume.getData();
         final DataStoreTO store = data.getDataStore();
 
         if (volume.getType() == Volume.Type.ISO && data.getPath() != null && (store instanceof NfsTO ||
                 store instanceof PrimaryDataStoreTO && data instanceof TemplateObjectTO && !((TemplateObjectTO) data).isDirectDownload())) {
+
+            if (data.getPath().startsWith(ConfigDrive.CONFIGDRIVEDIR) && diskOnHostCache) {
+                String configDrivePath = getConfigPath() + "/" + data.getPath();
+                return configDrivePath;
+            }
+
             final String isoPath = store.getUrl().split("\\?")[0] + File.separator + data.getPath();
             final int index = isoPath.lastIndexOf("/");
             final String path = isoPath.substring(0, index);
@@ -2500,7 +2534,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (volume.getType() == Volume.Type.ISO && data.getPath() != null) {
                 DataStoreTO dataStore = data.getDataStore();
                 String dataStoreUrl = null;
-                if (dataStore instanceof NfsTO) {
+                if (data.getPath().startsWith(ConfigDrive.CONFIGDRIVEDIR) && vmSpec.isConfigDriveOnHostCache() && data instanceof TemplateObjectTO) {
+                    String configDrivePath = getConfigPath() + "/" + data.getPath();
+                    physicalDisk = new KVMPhysicalDisk(configDrivePath, ((TemplateObjectTO) data).getUuid(), null);
+                    physicalDisk.setFormat(PhysicalDiskFormat.FILE);
+                } else if (dataStore instanceof NfsTO) {
                     NfsTO nfsStore = (NfsTO)data.getDataStore();
                     dataStoreUrl = nfsStore.getUrl();
                     physicalDisk = getPhysicalDiskFromNfsStore(dataStoreUrl, data);
@@ -2528,6 +2566,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 volPath = physicalDisk.getPath();
             }
 
+            if (volume.getType() != Volume.Type.ISO
+                    && physicalDisk != null && physicalDisk.getFormat() == PhysicalDiskFormat.QCOW2
+                    && (pool.getType() == StoragePoolType.NetworkFilesystem
+                    || pool.getType() == StoragePoolType.SharedMountPoint
+                    || pool.getType() == StoragePoolType.Filesystem
+                    || pool.getType() == StoragePoolType.Gluster)) {
+                setBackingFileFormat(physicalDisk.getPath());
+            }
+
             // check for disk activity, if detected we should exit because vm is running elsewhere
             if (_diskActivityCheckEnabled && physicalDisk != null && physicalDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
                 s_logger.debug("Checking physical disk file at path " + volPath + " for disk activity to ensure vm is not running elsewhere");
@@ -2545,9 +2592,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 diskBusType = getGuestDiskModel(vmSpec.getPlatformEmulator());
             }
 
-            // I'm not sure why previously certain DATADISKs were hard-coded VIRTIO and others not, however this
-            // maintains existing functionality with the exception that SCSI will override VIRTIO.
-            DiskDef.DiskBus diskBusTypeData = (diskBusType == DiskDef.DiskBus.SCSI) ? diskBusType : DiskDef.DiskBus.VIRTIO;
+            DiskDef.DiskBus diskBusTypeData = getDataDiskModelFromVMDetail(vmSpec);
+            if (diskBusTypeData == null) {
+                diskBusTypeData = (diskBusType == DiskDef.DiskBus.SCSI) ? diskBusType : DiskDef.DiskBus.VIRTIO;
+            }
 
             final DiskDef disk = new DiskDef();
             int devId = volume.getDiskSeq().intValue();
@@ -2579,6 +2627,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                      */
                     disk.defNetworkBasedDisk(physicalDisk.getPath().replace("rbd:", ""), pool.getSourceHost(), pool.getSourcePort(), pool.getAuthUserName(),
                             pool.getUuid(), devId, diskBusType, DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
+                } else if (pool.getType() == StoragePoolType.PowerFlex) {
+                    disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
                 } else if (pool.getType() == StoragePoolType.Gluster) {
                     final String mountpoint = pool.getLocalPath();
                     final String path = physicalDisk.getPath();
@@ -2662,7 +2712,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             }
         }
-
     }
 
     private KVMPhysicalDisk getPhysicalDiskPrimaryStore(PrimaryDataStoreTO primaryDataStoreTO, DataTO data) {
@@ -2824,6 +2873,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (attachingPool.getType() == StoragePoolType.RBD) {
                     diskdef.defNetworkBasedDisk(attachingDisk.getPath(), attachingPool.getSourceHost(), attachingPool.getSourcePort(), attachingPool.getAuthUserName(),
                             attachingPool.getUuid(), devId, busT, DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
+                } else if (attachingPool.getType() == StoragePoolType.PowerFlex) {
+                    diskdef.defBlockBasedDisk(attachingDisk.getPath(), devId, busT);
                 } else if (attachingPool.getType() == StoragePoolType.Gluster) {
                     diskdef.defNetworkBasedDisk(attachingDisk.getPath(), attachingPool.getSourceHost(), attachingPool.getSourcePort(), null,
                             null, devId, busT, DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);
@@ -3176,33 +3227,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String msg = null;
         try {
             dm = conn.domainLookupByName(vmName);
-            // Get XML Dump including the secure information such as VNC password
-            // By passing 1, or VIR_DOMAIN_XML_SECURE flag
-            // https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainXMLFlags
-            String vmDef = dm.getXMLDesc(1);
-            final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
-            parser.parseDomainXML(vmDef);
-            for (final InterfaceDef nic : parser.getInterfaces()) {
-                if (nic.getNetType() == GuestNetType.BRIDGE && nic.getBrName().startsWith("cloudVirBr")) {
-                    try {
-                        final int vnetId = Integer.parseInt(nic.getBrName().replaceFirst("cloudVirBr", ""));
-                        final String pifName = getPif(_guestBridgeName);
-                        final String newBrName = "br" + pifName + "-" + vnetId;
-                        vmDef = vmDef.replace("'" + nic.getBrName() + "'", "'" + newBrName + "'");
-                        s_logger.debug("VM bridge name is changed from " + nic.getBrName() + " to " + newBrName);
-                    } catch (final NumberFormatException e) {
-                        continue;
-                    }
-                }
-            }
-            s_logger.debug(vmDef);
-            msg = stopVM(conn, vmName, false);
-            msg = startVM(conn, vmName, vmDef);
+            // Perform ACPI based reboot
+            // https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainReboot
+            // https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainRebootFlagValues
+            // Send ACPI event to Reboot
+            dm.reboot(0x1);
             return null;
         } catch (final LibvirtException e) {
-            s_logger.warn("Failed to create vm", e);
-            msg = e.getMessage();
-        } catch (final InternalErrorException e) {
             s_logger.warn("Failed to create vm", e);
             msg = e.getMessage();
         } finally {
@@ -3420,12 +3451,31 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return DiskDef.DiskBus.SCSI;
         }
 
-        final String rootDiskController = details.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
+        String rootDiskController = details.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
         if (StringUtils.isNotBlank(rootDiskController)) {
-            s_logger.debug("Passed custom disk bus " + rootDiskController);
-            for (final DiskDef.DiskBus bus : DiskDef.DiskBus.values()) {
+            s_logger.debug("Passed custom disk controller for ROOT disk " + rootDiskController);
+            for (DiskDef.DiskBus bus : DiskDef.DiskBus.values()) {
                 if (bus.toString().equalsIgnoreCase(rootDiskController)) {
-                    s_logger.debug("Found matching enum for disk bus " + rootDiskController);
+                    s_logger.debug("Found matching enum for disk controller for ROOT disk " + rootDiskController);
+                    return bus;
+                }
+            }
+        }
+        return null;
+    }
+
+    public DiskDef.DiskBus getDataDiskModelFromVMDetail(final VirtualMachineTO vmTO) {
+        Map<String, String> details = vmTO.getDetails();
+        if (details == null) {
+            return null;
+        }
+
+        String dataDiskController = details.get(VmDetailConstants.DATA_DISK_CONTROLLER);
+        if (StringUtils.isNotBlank(dataDiskController)) {
+            s_logger.debug("Passed custom disk controller for DATA disk " + dataDiskController);
+            for (DiskDef.DiskBus bus : DiskDef.DiskBus.values()) {
+                if (bus.toString().equalsIgnoreCase(dataDiskController)) {
+                    s_logger.debug("Found matching enum for disk controller for DATA disk " + dataDiskController);
                     return bus;
                 }
             }
@@ -4245,4 +4295,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             cmd.setTopology(numCoresPerSocket, vcpus / numCoresPerSocket);
         }
     }
+
+    public void setBackingFileFormat(String volPath) {
+        final int timeout = 0;
+        QemuImgFile file = new QemuImgFile(volPath);
+        QemuImg qemu = new QemuImg(timeout);
+        try{
+            Map<String, String> info = qemu.info(file);
+            String backingFilePath = info.get(new String("backing_file"));
+            String backingFileFormat = info.get(new String("backing_file_format"));
+            if (org.apache.commons.lang.StringUtils.isEmpty(backingFileFormat)) {
+                s_logger.info("Setting backing file format of " + volPath);
+                QemuImgFile backingFile = new QemuImgFile(backingFilePath);
+                Map<String, String> backingFileinfo = qemu.info(backingFile);
+                String backingFileFmt = backingFileinfo.get(new String("file_format"));
+                qemu.rebase(file, backingFile, backingFileFmt, false);
+            }
+        } catch (QemuImgException e) {
+            s_logger.error("Failed to set backing file format of " + volPath + " due to : " + e.getMessage());
+        }
+    }
+
 }

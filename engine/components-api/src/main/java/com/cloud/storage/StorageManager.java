@@ -109,6 +109,24 @@ public interface StorageManager extends StorageService {
             ConfigKey.Scope.Cluster,
             null);
 
+    ConfigKey<Integer> STORAGE_POOL_DISK_WAIT = new ConfigKey<>(Integer.class,
+            "storage.pool.disk.wait",
+            "Storage",
+            "60",
+            "Timeout (in secs) for the storage pool disk (of managed pool) to become available in the host. Currently only supported for PowerFlex.",
+            true,
+            ConfigKey.Scope.StoragePool,
+            null);
+
+    ConfigKey<Integer> STORAGE_POOL_CLIENT_TIMEOUT = new ConfigKey<>(Integer.class,
+            "storage.pool.client.timeout",
+            "Storage",
+            "60",
+            "Timeout (in secs) for the storage pool client connection timeout (for managed pools). Currently only supported for PowerFlex.",
+            true,
+            ConfigKey.Scope.StoragePool,
+            null);
+
     ConfigKey<Integer> PRIMARY_STORAGE_DOWNLOAD_WAIT = new ConfigKey<Integer>("Storage", Integer.class, "primary.storage.download.wait", "10800",
             "In second, timeout for download template to primary storage", false);
 
@@ -144,6 +162,8 @@ public interface StorageManager extends StorageService {
 
     Pair<Long, Answer> sendToPool(StoragePool pool, long[] hostIdsToTryFirst, List<Long> hostIdsToAvoid, Command cmd) throws StorageUnavailableException;
 
+    public Answer getVolumeStats(StoragePool pool, Command cmd);
+
     /**
      * Checks if a host has running VMs that are using its local storage pool.
      * @return true if local storage is active on the host
@@ -171,6 +191,14 @@ public interface StorageManager extends StorageService {
     List<VMInstanceVO> listByStoragePool(long storagePoolId);
 
     StoragePoolVO findLocalStorageOnHost(long hostId);
+
+    Host findUpAndEnabledHostWithAccessToStoragePools(List<Long> poolIds);
+
+    List<StoragePoolHostVO> findStoragePoolsConnectedToHost(long hostId);
+
+    boolean canHostAccessStoragePool(Host host, StoragePool pool);
+
+    Host getHost(long hostId);
 
     Host updateSecondaryStorage(long secStorageId, String newUrl);
 
@@ -210,13 +238,17 @@ public interface StorageManager extends StorageService {
      */
     boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool, Long clusterId);
 
-    boolean storagePoolHasEnoughSpaceForResize(StoragePool pool, long currentSize, long newSiz);
+    boolean storagePoolHasEnoughSpaceForResize(StoragePool pool, long currentSize, long newSize);
+
+    boolean storagePoolCompatibleWithVolumePool(StoragePool pool, Volume volume);
 
     boolean isStoragePoolComplaintWithStoragePolicy(List<Volume> volumes, StoragePool pool) throws StorageUnavailableException;
 
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 
     void connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
+
+    void disconnectHostFromSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
 
     void createCapacityEntry(long poolId);
 

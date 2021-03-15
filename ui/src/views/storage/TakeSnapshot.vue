@@ -34,7 +34,7 @@
                 :placeholder="apiParams.name.description" />
             </a-form-item>
           </a-col>
-          <a-col :md="24" :lg="24">
+          <a-col :md="24" :lg="24" v-if="!supportsStorageSnapshot">
             <a-form-item :label="$t('label.asyncbackup')">
               <a-switch v-decorator="['asyncbackup']" />
             </a-form-item>
@@ -113,6 +113,7 @@ export default {
     return {
       actionLoading: false,
       quiescevm: false,
+      supportsStorageSnapshot: false,
       inputValue: '',
       inputKey: '',
       inputVisible: '',
@@ -130,6 +131,7 @@ export default {
   },
   mounted () {
     this.quiescevm = this.resource.quiescevm
+    this.supportsStorageSnapshot = this.resource.supportsstoragesnapshot
   },
   methods: {
     handleSubmit (e) {

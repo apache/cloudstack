@@ -33,7 +33,7 @@ while getopts 'c:' OPTION; do
 esac; done
 
 export DEFER_CONFIG=true
-while read line; do
+cat $cfg | while read line; do
     #comment
     if [[ $line == \#* ]]; then
         continue
@@ -74,7 +74,7 @@ while read line; do
 
     fi
 
-done < $cfg
+done 
 
 # archive the configuration file
 mv $cfg /var/cache/cloud/processed/

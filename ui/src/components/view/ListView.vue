@@ -93,6 +93,12 @@
       <span v-else>{{ text }}</span>
     </template>
     <a slot="displayname" slot-scope="text, record" href="javascript:;">
+      <QuickView
+        style="margin-left: 5px"
+        :actions="actions"
+        :resource="record"
+        :enabled="quickViewEnabled() && actions.length > 0 && columns && columns[0].dataIndex === 'displayname' "
+        @exec-action="$parent.execAction"/>
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
     </a>
     <span slot="username" slot-scope="text, record" href="javascript:;">
@@ -404,7 +410,7 @@ export default {
   methods: {
     quickViewEnabled () {
       return new RegExp(['/vm', '/kubernetes', '/ssh', '/vmgroup', '/affinitygroup',
-        '/volume', '/snapshot', '/backup',
+        '/volume', '/snapshot', '/vmsnapshot', '/backup',
         '/guestnetwork', '/vpc', '/vpncustomergateway',
         '/template', '/iso',
         '/project', '/account',

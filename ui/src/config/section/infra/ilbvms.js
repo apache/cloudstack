@@ -45,13 +45,18 @@ export default {
       icon: 'drag',
       label: 'label.action.migrate.router',
       dataView: true,
-      show: (record) => { return record.state === 'Running' },
-      args: ['virtualmachineid', 'hostid'],
-      mapping: {
-        virtualmachineid: {
-          value: (record) => { return record.id }
-        }
-      }
+      show: (record, store) => { return record.state === 'Running' && ['Admin'].includes(store.userInfo.roletype) },
+      component: () => import('@/views/compute/MigrateWizard'),
+      popup: true
+    },
+    {
+      api: 'migrateSystemVm',
+      icon: 'drag',
+      label: 'label.action.migrate.systemvm.to.ps',
+      dataView: true,
+      show: (record, store) => { return ['Stopped'].includes(record.state) && ['VMware'].includes(record.hypervisor) },
+      component: () => import('@/views/compute/MigrateVMStorage'),
+      popup: true
     }
   ]
 }

@@ -390,6 +390,9 @@ export default {
     },
     fetchData () {
       this.networks = this.resource.network
+      if (!this.networks || this.networks.length === 0) {
+        return
+      }
       for (const network of this.networks) {
         this.fetchLoadBalancers(network.id)
         this.fetchVMs(network.id)

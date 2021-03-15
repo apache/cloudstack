@@ -24,6 +24,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
@@ -42,12 +46,6 @@ import com.ceph.rbd.RbdException;
 import com.ceph.rbd.RbdImage;
 import com.ceph.rbd.jna.RbdImageInfo;
 import com.ceph.rbd.jna.RbdSnapInfo;
-
-import org.apache.cloudstack.utils.qemu.QemuImg;
-import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
-import org.apache.cloudstack.utils.qemu.QemuImgException;
-import org.apache.cloudstack.utils.qemu.QemuImgFile;
-
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtSecretDef;
@@ -160,20 +158,20 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, KVMStoragePool destPool, boolean isIso) {
+    public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format, int timeout) {
         File sourceFile = new File(templateFilePath);
         if (!sourceFile.exists()) {
             throw new CloudRuntimeException("Direct download template file " + sourceFile + " does not exist on this host");
         }
         String templateUuid = UUID.randomUUID().toString();
-        if (isIso) {
+        if (Storage.ImageFormat.ISO.equals(format)) {
             templateUuid += ".iso";
         }
         String destinationFile = destPool.getLocalPath() + File.separator + templateUuid;
 
         if (destPool.getType() == StoragePoolType.NetworkFilesystem || destPool.getType() == StoragePoolType.Filesystem
             || destPool.getType() == StoragePoolType.SharedMountPoint) {
-            if (!isIso && isTemplateExtractable(templateFilePath)) {
+            if (!Storage.ImageFormat.ISO.equals(format) && isTemplateExtractable(templateFilePath)) {
                 extractDownloadedTemplate(templateFilePath, destPool, destinationFile);
             } else {
                 Script.runSimpleBashScript("mv " + templateFilePath + " " + destinationFile);
@@ -451,11 +449,13 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 type = StoragePoolType.CLVM;
             } else if (spd.getPoolType() == LibvirtStoragePoolDef.PoolType.GLUSTERFS) {
                 type = StoragePoolType.Gluster;
+            } else if (spd.getPoolType() == LibvirtStoragePoolDef.PoolType.POWERFLEX) {
+                type = StoragePoolType.PowerFlex;
             }
 
             LibvirtStoragePool pool = new LibvirtStoragePool(uuid, storage.getName(), type, this, storage);
 
-            if (pool.getType() != StoragePoolType.RBD)
+            if (pool.getType() != StoragePoolType.RBD && pool.getType() != StoragePoolType.PowerFlex)
                 pool.setLocalPath(spd.getTargetPath());
             else
                 pool.setLocalPath("");
@@ -545,7 +545,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             s_logger.debug("Failed to get physical disk:", e);
             throw new CloudRuntimeException(e.toString());
         }
-
     }
 
     @Override
@@ -1021,7 +1020,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                         " due to a failed executing of qemu-img: " + e.getMessage());
             }
         }
-
 
         return disk;
     }

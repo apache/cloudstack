@@ -47,7 +47,8 @@ export default {
       label: 'label.action.reboot.systemvm',
       message: 'message.action.reboot.systemvm',
       dataView: true,
-      show: (record) => { return record.state === 'Running' }
+      show: (record) => { return record.state === 'Running' },
+      args: ['forced']
     },
     {
       api: 'scaleSystemVm',
@@ -69,17 +70,18 @@ export default {
       icon: 'drag',
       label: 'label.action.migrate.systemvm',
       dataView: true,
-      show: (record) => { return record.state === 'Running' },
-      args: ['virtualmachineid', 'hostid'],
-      mapping: {
-        virtualmachineid: {
-          value: (record) => { return record.id }
-        },
-        hostid: {
-          api: 'findHostsForMigration',
-          params: (record) => { return { virtualmachineid: record.id } }
-        }
-      }
+      show: (record, store) => { return record.state === 'Running' && ['Admin'].includes(store.userInfo.roletype) },
+      component: () => import('@/views/compute/MigrateWizard'),
+      popup: true
+    },
+    {
+      api: 'migrateSystemVm',
+      icon: 'drag',
+      label: 'label.action.migrate.systemvm.to.ps',
+      dataView: true,
+      show: (record, store) => { return ['Stopped'].includes(record.state) && ['VMware'].includes(record.hypervisor) },
+      component: () => import('@/views/compute/MigrateVMStorage'),
+      popup: true
     },
     {
       api: 'runDiagnostics',

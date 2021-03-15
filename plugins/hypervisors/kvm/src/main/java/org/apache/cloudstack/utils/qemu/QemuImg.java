@@ -379,8 +379,29 @@ public class QemuImg {
     }
 
     /* Changes the backing file of an image */
-    public void rebase() throws QemuImgException {
+    public void rebase(final QemuImgFile file, final QemuImgFile backingFile, final String backingFileFormat, final boolean secure) throws QemuImgException {
+        if (backingFile == null) {
+            throw new QemuImgException("No backing file was passed");
+        }
+        final Script s = new Script(_qemuImgPath, timeout);
+        s.add("rebase");
+        if (! secure) {
+            s.add("-u");
+        }
+        s.add("-F");
+        if (backingFileFormat != null) {
+            s.add(backingFileFormat);
+        } else {
+            s.add(backingFile.getFormat().toString());
+        }
+        s.add("-b");
+        s.add(backingFile.getFileName());
 
+        s.add(file.getFileName());
+        final String result = s.execute();
+        if (result != null) {
+            throw new QemuImgException(result);
+        }
     }
 
     /**
