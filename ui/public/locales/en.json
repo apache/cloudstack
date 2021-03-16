@@ -3177,6 +3177,7 @@
 "message.update.ipaddress.processing": "Updating IP Address...",
 "message.update.os.preference": "Please choose a OS preference for this host.  All virtual instances with similar preferences will be first allocated to this host before choosing another.",
 "message.update.resource.count": "Please confirm that you want to update resource counts for this account.",
+"message.update.resource.count.domain": "Please confirm that you want to update resource counts for this domain.",
 "message.update.ssl": "Please submit a new X.509 compliant SSL certificate chain to be updated to each console proxy and secondary storage virtual instance:",
 "message.update.ssl.failed": "Failed to update SSL Certificate.",
 "message.update.ssl.succeeded": "Update SSL Certificates succeeded",
