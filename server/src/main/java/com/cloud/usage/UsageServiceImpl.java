@@ -228,26 +228,29 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
                 domainId = caller.getDomainId();
             }
 
-            // Check if a domain admin is allowed to access the requested account info.
-            Account account = _accountService.getAccount(accountId);
-            boolean matchFound = false;
+            if (cmd.getAccountId() != null) {
 
-            if (account.getDomainId() == domainId) {
-                matchFound = true;
-            } else {
+                // Check if a domain admin is allowed to access the requested account info.
+                Account account = _accountService.getAccount(accountId);
+                boolean matchFound = false;
 
-                // Check if the account is in a child domain of this domain admin.
-                List<DomainVO> childDomains = _domainDao.findAllChildren(_domainDao.findById(domainId).getPath(), domainId);
+                if (account.getDomainId() == domainId) {
+                    matchFound = true;
+                } else {
 
-                for (DomainVO domainVO : childDomains) {
-                    if (account.getDomainId() == domainVO.getId()) {
-                        matchFound = true;
-                        break;
+                    // Check if the account is in a child domain of this domain admin.
+                    List<DomainVO> childDomains = _domainDao.findAllChildren(_domainDao.findById(domainId).getPath(), domainId);
+
+                    for (DomainVO domainVO : childDomains) {
+                        if (account.getDomainId() == domainVO.getId()) {
+                            matchFound = true;
+                            break;
+                        }
                     }
                 }
-            }
-            if (!matchFound) {
+                if (!matchFound) {
                     throw new PermissionDeniedException("Domain admins may only retrieve usage records for accounts in their own domain and child domains.");
+                }
             }
         }
 
