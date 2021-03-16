@@ -232,7 +232,6 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate.State;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
@@ -3637,7 +3636,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         SearchCriteria<TemplateJoinVO> sc = sb.create();
 
-        boolean restrictPublicTemplatesToDomain = TemplateManager.RestrictPublicTemplateAccessToDomain.value();
+        boolean restrictPublicTemplatesToDomain = QueryService.RestrictPublicTemplateAccessToDomain.valueIn(caller.getDomainId());
 
         // verify templateId parameter and specially handle it
         if (templateId != null) {
@@ -4407,6 +4406,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMDeniedDetails, UserVMReadOnlyDetails, SortKeyAscending, AllowUserViewAllDomainAccounts};
+        return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMDeniedDetails, UserVMReadOnlyDetails, SortKeyAscending,
+                AllowUserViewAllDomainAccounts, RestrictPublicTemplateAccessToDomain};
     }
 }
