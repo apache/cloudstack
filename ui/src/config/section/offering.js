@@ -36,10 +36,6 @@ export default {
           store.getters.apis.createServiceOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')
         }
-        if (store.getters.apis.createServiceOffering &&
-          store.getters.apis.createServiceOffering.params.filter(x => x.name === 'rootdisksize').length > 0) {
-          fields.splice(12, 0, 'rootdisksize')
-        }
         return fields
       },
       related: [{

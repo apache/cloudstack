@@ -106,8 +106,7 @@
                         <span>
                           {{ $t('label.override.rootdisk.size') }}
                           <a-switch :disabled="template.deployasis" @change="val => { this.showRootDiskSizeChanger = val }" style="margin-left: 10px;"/>
-                          <div v-if="template.deployasis"> To resize the root disk(s) either create a VM in stopped state and resize the volumes before starting the VM or
-                            Deploy the VM, Stop it and then resize the respective volumes </div>
+                          <div v-if="template.deployasis">  {{ this.$t('message.deployasis') }} </div>
                         </span>
                         <disk-size-selection
                           v-show="showRootDiskSizeChanger"
@@ -185,6 +184,7 @@
                     </a-form-item>
                     <compute-offering-selection
                       :compute-items="options.serviceOfferings"
+                      :selected-template="template"
                       :row-count="rowCount.serviceOfferings"
                       :zoneId="zoneId"
                       :value="serviceOffering ? serviceOffering.id : ''"
@@ -545,11 +545,14 @@
                         :options="keyboardSelectOptions"
                       ></a-select>
                     </a-form-item>
+                    <a-form-item :label="$t('label.start.vm')">
+                      <a-switch v-decorator="['startvm', { initialValue: true }]" :checked="this.startvm" @change="checked => { this.startvm = checked }" />
+                    </a-form-item>
                   </div>
-                  <span>
+                  <!-- <span>
                     {{ $t('label.start.vm') }}
                     <a-switch @change="val => { this.startvm = val }" :checked="this.startvm" style="margin-left: 10px"/>
-                  </span>
+                  </span> -->
                 </template>
               </a-step>
               <a-step
@@ -1427,7 +1430,7 @@ export default {
           deployVmData.hypervisor = values.hypervisor
         }
 
-        deployVmData.startvm = this.startvm
+        deployVmData.startvm = values.startvm
 
         // step 3: select service offering
         deployVmData.serviceofferingid = values.computeofferingid
