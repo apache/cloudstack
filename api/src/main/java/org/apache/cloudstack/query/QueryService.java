@@ -90,6 +90,8 @@ import com.cloud.exception.PermissionDeniedException;
  */
 public interface QueryService {
 
+    static final String RestrictPublicTemplateAccessToDomainCK = "restrict.public.template.access.to.domain";
+
     // Config keys
     ConfigKey<Boolean> AllowUserViewDestroyedVM = new ConfigKey<>("Advanced", Boolean.class, "allow.user.view.destroyed.vm", "false",
             "Determines whether users can view their destroyed or expunging vm ", true, ConfigKey.Scope.Account);
