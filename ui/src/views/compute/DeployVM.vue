@@ -549,10 +549,6 @@
                       <a-switch v-decorator="['startvm', { initialValue: true }]" :checked="this.startvm" @change="checked => { this.startvm = checked }" />
                     </a-form-item>
                   </div>
-                  <!-- <span>
-                    {{ $t('label.start.vm') }}
-                    <a-switch @change="val => { this.startvm = val }" :checked="this.startvm" style="margin-left: 10px"/>
-                  </span> -->
                 </template>
               </a-step>
               <a-step
