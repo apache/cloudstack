@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -162,7 +163,7 @@ public interface StorageManager extends StorageService {
 
     Pair<Long, Answer> sendToPool(StoragePool pool, long[] hostIdsToTryFirst, List<Long> hostIdsToAvoid, Command cmd) throws StorageUnavailableException;
 
-    public Answer getVolumeStats(StoragePool pool, Command cmd);
+    public Answer getVolumeStats(StoragePool pool, Command cmd, DataStoreDriver storeDriver);
 
     /**
      * Checks if a host has running VMs that are using its local storage pool.
