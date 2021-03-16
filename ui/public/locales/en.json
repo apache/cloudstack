@@ -3043,7 +3043,7 @@
 "message.restart.mgmt.usage.server": "Please restart your management server(s) and usage server(s) for your new settings to take effect.",
 "message.restart.network": "All services provided by this network will be interrupted. Please confirm that you want to restart this network.",
 "message.restart.vpc": "Please confirm that you want to restart the VPC",
-"message.restart.vpc.remark": "Please confirm that you want to restart the VPC <p><small><i>Remark: making a non-redundant VPC redundant will force a clean up. The networks will not be available for a couple of minutes</i>.</small></p>",
+"message.restart.vpc.remark": "Please confirm that you want to restart the VPC <p><i>Remark: making a non-redundant VPC redundant will force a clean up. The networks will not be available for a couple of minutes</i>.</p>",
 "message.restorevm": "Do you want to restore the VM ?",
 "message.role.ordering.fail": "Reordering of rule permissions aborted as the list has changed while you were making changes. Please try again.",
 "message.role.update.fail": "Failed updating rule permission",

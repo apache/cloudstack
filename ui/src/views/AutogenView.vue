@@ -727,6 +727,13 @@ export default {
         return 0
       })
       this.currentAction.paramFields = []
+      if ('message' in action) {
+        var message = action.message
+        if (typeof action.message === 'function') {
+          message = action.message(action.resource)
+        }
+        action.message = message
+      }
       if ('args' in action) {
         var args = action.args
         if (typeof action.args === 'function') {
