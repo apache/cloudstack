@@ -43,5 +43,5 @@ then
 fi
 
 echo "Running systemvm/python unit tests"
-nosetests .
+/usr/bin/nosetests .
 exit $?
