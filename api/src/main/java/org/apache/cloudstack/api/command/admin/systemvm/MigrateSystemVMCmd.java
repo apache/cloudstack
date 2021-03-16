@@ -122,8 +122,8 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        if (getHostId() == null && getStorageId() == null) {
-            throw new InvalidParameterValueException("Either hostId or storageId must be specified");
+        if (getHostId() != null && getStorageId() != null) {
+            throw new InvalidParameterValueException("Only one of hostId and storageId can be specified");
         }
 
         try {
