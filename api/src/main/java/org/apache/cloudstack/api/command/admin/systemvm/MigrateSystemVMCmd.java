@@ -149,7 +149,11 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
                     }
                 }
                 CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: " + getHostId());
-                migratedVm = _userVmService.migrateVirtualMachineWithVolume(getVirtualMachineId(), destinationHost, new HashMap<String, String>());
+                if (destinationHost == null) {
+                    migratedVm = _userVmService.migrateVirtualMachine(getVirtualMachineId(), null);
+                } else {
+                    migratedVm = _userVmService.migrateVirtualMachineWithVolume(getVirtualMachineId(), destinationHost, new HashMap<String, String>());
+                }
             }
             if (migratedVm != null) {
                 // return the generic system VM instance response
