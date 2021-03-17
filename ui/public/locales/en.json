@@ -1812,6 +1812,8 @@
 "label.root.disk.size": "Root disk size (GB)",
 "label.rootdiskcontrollertype": "Root disk controller",
 "label.rootdiskcontrollertypekvm": "Root disk controller",
+"label.routerip": "IPv4 address for Router in Shared Network",
+"label.routeripv6": "IPv6 address for Router in Shared Network",
 "label.router.health.check.last.updated": "Last updated",
 "label.router.health.check.name": "Check name",
 "label.router.health.check.success": "Success",
