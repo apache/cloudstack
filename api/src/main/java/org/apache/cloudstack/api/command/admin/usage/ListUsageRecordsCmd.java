@@ -86,7 +86,7 @@ public class ListUsageRecordsCmd extends BaseListCmd {
     private Boolean oldFormat;
 
     @Parameter(name = ApiConstants.IS_RECURSIVE, type = CommandType.BOOLEAN,
-            description = "Specify if usage records should be fetched recursively per domain.",
+            description = "Specify if usage records should be fetched recursively per domain. If an account id is passed, records will be limited to that account.",
             since = "4.15")
     private Boolean recursive = false;
 
