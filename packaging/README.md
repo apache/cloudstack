@@ -6,9 +6,9 @@ These scripts are also used by the CloudStack team to build packages for the off
 # Requirements
 The RPM and DEB packages have dependencies on versions of specific libraries. Due to these dependencies the following distributions and their versions are supported by the packages.
 
-* CentOS / RHEL: 7
+* CentOS / RHEL: 7 and 8
 * Debian 7 (Wheezy) and 8 (Jessy) (untested!)
-* Ubuntu: 16.04 (Xenial) and 18.04 (Bionic)
+* Ubuntu: 16.04 (Xenial), 18.04 (Bionic) and 20.04 (Focal)
 
 # Building
 Using the scripts in the *packaging* directory the RPM and DEB packages can be build.

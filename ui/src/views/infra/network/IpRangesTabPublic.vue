@@ -35,7 +35,7 @@
       :pagination="false"
     >
       <template slot="account" slot-scope="record">
-        <a-button @click="() => handleOpenAccountModal(record)">{{ `[${record.domain}] ${record.account}` }}</a-button>
+        <a-button @click="() => handleOpenAccountModal(record)">{{ `[${record.domain}] ${record.account === undefined ? '' : record.account}` }}</a-button>
       </template>
       <template slot="actions" slot-scope="record">
         <div class="actions">

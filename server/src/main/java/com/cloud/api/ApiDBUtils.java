@@ -1209,7 +1209,7 @@ public class ApiDBUtils {
                 type = HypervisorType.Hyperv;
             }
         } if (format == ImageFormat.RAW) {
-            // Currently, KVM only suppoorts RBD images of type RAW.
+            // Currently, KVM only supports RBD and PowerFlex images of type RAW.
             // This results in a weird collision with OVM volumes which
             // can only be raw, thus making KVM RBD volumes show up as OVM
             // rather than RBD. This block of code can (hopefuly) by checking to
@@ -1221,7 +1221,7 @@ public class ApiDBUtils {
             ListIterator<StoragePoolVO> itr = pools.listIterator();
             while(itr.hasNext()) {
                 StoragePoolVO pool = itr.next();
-                if(pool.getPoolType() == StoragePoolType.RBD || pool.getPoolType() == StoragePoolType.CLVM) {
+                if(pool.getPoolType() == StoragePoolType.RBD || pool.getPoolType() == StoragePoolType.PowerFlex || pool.getPoolType() == StoragePoolType.CLVM) {
                   // This case will note the presence of non-qcow2 primary stores, suggesting KVM without NFS. Otherwse,
                   // If this check is not passed, the hypervisor type will remain OVM.
                   type = HypervisorType.KVM;

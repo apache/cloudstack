@@ -51,10 +51,6 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "the domain name where the project belongs to")
     private String domain;
 
-    @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account name of the project's owner")
-    private String ownerName;
-
     @SerializedName(ApiConstants.OWNER)
     @Param(description = "the account name of the project's owners")
     private List<Map<String, String>> owners;
@@ -229,10 +225,6 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
 
     public void setDomain(String domain) {
         this.domain = domain;
-    }
-
-    public void setOwner(String owner) {
-        ownerName = owner;
     }
 
     public void setProjectAccountName(String projectAccountName) {

@@ -332,6 +332,17 @@
               v-decorator="['endipv4', {}]"
               :placeholder="this.$t('label.endipv4')"/>
           </a-form-item>
+          <a-form-item v-if="isVirtualRouterForAtLeastOneService">
+            <span slot="label">
+              {{ $t('label.routerip') }}
+              <a-tooltip :title="apiParams.routerip.description" v-if="'routerip' in apiParams">
+                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              </a-tooltip>
+            </span>
+            <a-input
+              v-decorator="['routerip', {}]"
+              :placeholder="this.$t('label.routerip')"/>
+          </a-form-item>
           <a-form-item>
             <span slot="label">
               {{ $t('label.ip6gateway') }}
@@ -375,6 +386,17 @@
             <a-input
               v-decorator="['endipv6', {}]"
               :placeholder="this.$t('label.endipv6')"/>
+          </a-form-item>
+          <a-form-item v-if="isVirtualRouterForAtLeastOneService">
+            <span slot="label">
+              {{ $t('label.routeripv6') }}
+              <a-tooltip :title="apiParams.routeripv6.description" v-if="'routeripv6' in apiParams">
+                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              </a-tooltip>
+            </span>
+            <a-input
+              v-decorator="['routeripv6', {}]"
+              :placeholder="this.$t('label.routeripv6')"/>
           </a-form-item>
           <a-form-item>
             <span slot="label">
@@ -457,7 +479,9 @@ export default {
       selectedNetworkOffering: {},
       projects: [],
       projectLoading: false,
-      selectedProject: {}
+      selectedProject: {},
+      isVirtualRouterForAtLeastOneService: false,
+      selectedServiceProviderMap: {}
     }
   },
   watch: {
@@ -654,6 +678,7 @@ export default {
       this.networkOfferings = []
       api('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering
+        this.handleNetworkOfferingChange(this.networkOfferings[0])
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -662,7 +687,6 @@ export default {
           this.form.setFieldsValue({
             networkofferingid: 0
           })
-          this.handleNetworkOfferingChange(this.networkOfferings[0])
         } else {
           this.form.setFieldsValue({
             networkofferingid: null
@@ -672,6 +696,27 @@ export default {
     },
     handleNetworkOfferingChange (networkOffering) {
       this.selectedNetworkOffering = networkOffering
+      if (networkOffering) {
+        this.networkServiceProviderMap(this.selectedNetworkOffering.id)
+      }
+    },
+    networkServiceProviderMap (id) {
+      api('listNetworkOfferings', { id: id }).then(json => {
+        var networkOffering = json.listnetworkofferingsresponse.networkoffering[0]
+        const services = networkOffering.service
+        this.selectedServiceProviderMap = {}
+        for (const svc of services) {
+          this.selectedServiceProviderMap[svc.name] = svc.provider[0].name
+        }
+        var providers = Object.values(this.selectedServiceProviderMap)
+        this.isVirtualRouterForAtLeastOneService = false
+        var self = this
+        providers.forEach(function (prvdr, idx) {
+          if (prvdr === 'VirtualRouter') {
+            self.isVirtualRouterForAtLeastOneService = true
+          }
+        })
+      })
     },
     fetchDomainData () {
       const params = {}
@@ -791,6 +836,9 @@ export default {
         if (this.isValidTextValueForKey(values, 'ip4gateway')) {
           params.ip6gateway = values.ip6gateway
         }
+        if (this.isValidTextValueForKey(values, 'routerip')) {
+          params.routerip = values.routerip
+        }
         if (this.isValidTextValueForKey(values, 'ip6cidr')) {
           params.ip6cidr = values.ip6cidr
         }
@@ -799,6 +847,9 @@ export default {
         }
         if (this.isValidTextValueForKey(values, 'endipv6')) {
           params.endipv6 = values.endipv6
+        }
+        if (this.isValidTextValueForKey(values, 'routeripv6')) {
+          params.routeripv6 = values.routeripv6
         }
         // IPv6 (end)
 

@@ -38,7 +38,7 @@ export default {
         return filters
       },
       columns: () => {
-        const fields = ['name', 'state', 'ipaddress']
+        const fields = ['displayname', 'name', 'state', 'ipaddress']
         const metricsFields = ['cpunumber', 'cpuused', 'cputotal',
           {
             memoryused: (record) => {
@@ -125,6 +125,7 @@ export default {
           show: (record) => { return ['Running'].includes(record.state) },
           args: (record, store) => {
             var fields = []
+            fields.push('forced')
             if (record.hypervisor === 'VMware') {
               if (store.apis.rebootVirtualMachine.params.filter(x => x.name === 'bootintosetup').length > 0) {
                 fields.push('bootintosetup')
@@ -156,7 +157,8 @@ export default {
           args: ['virtualmachineid', 'name', 'description', 'snapshotmemory', 'quiescevm'],
           show: (record) => {
             return ((['Running'].includes(record.state) && record.hypervisor !== 'LXC') ||
-              (['Stopped'].includes(record.state) && record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC'))
+              (['Stopped'].includes(record.state) && ((record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') ||
+              (record.hypervisor === 'KVM' && record.pooltype === 'PowerFlex'))))
           },
           mapping: {
             virtualmachineid: {

@@ -62,6 +62,7 @@ import com.google.common.base.Strings;
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
+import org.apache.commons.lang3.StringUtils;
 
 @Component
 public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertManager {
@@ -114,8 +115,9 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         String smtpUsername = configs.get(QuotaConfig.QuotaSmtpUser.key());
         String smtpPassword = configs.get(QuotaConfig.QuotaSmtpPassword.key());
         String emailSender = configs.get(QuotaConfig.QuotaSmtpSender.key());
+        String smtpEnabledSecurityProtocols = configs.get(QuotaConfig.QuotaSmtpEnabledSecurityProtocols.key());
         _lockAccountEnforcement = "true".equalsIgnoreCase(configs.get(QuotaConfig.QuotaEnableEnforcement.key()));
-        _emailQuotaAlert = new EmailQuotaAlert(smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, _smtpDebug);
+        _emailQuotaAlert = new EmailQuotaAlert(smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, smtpEnabledSecurityProtocols, _smtpDebug);
 
         return true;
     }
@@ -341,7 +343,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         private final String _smtpPassword;
         private final String _emailSender;
 
-        public EmailQuotaAlert(String smtpHost, int smtpPort, boolean smtpUseAuth, final String smtpUsername, final String smtpPassword, String emailSender, boolean smtpDebug) {
+        public EmailQuotaAlert(String smtpHost, int smtpPort, boolean smtpUseAuth, final String smtpUsername, final String smtpPassword, String emailSender, String smtpEnabledSecurityProtocols, boolean smtpDebug) {
             _smtpHost = smtpHost;
             _smtpPort = smtpPort;
             _smtpUseAuth = smtpUseAuth;
@@ -363,6 +365,10 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                 smtpProps.put("mail.smtps.auth", "" + smtpUseAuth);
                 if (!Strings.isNullOrEmpty(smtpUsername)) {
                     smtpProps.put("mail.smtps.user", smtpUsername);
+                }
+
+                if (StringUtils.isNotBlank(smtpEnabledSecurityProtocols)) {
+                    smtpProps.put("mail.smtp.ssl.protocols", smtpEnabledSecurityProtocols);
                 }
 
                 if (!Strings.isNullOrEmpty(smtpUsername) && !Strings.isNullOrEmpty(smtpPassword)) {

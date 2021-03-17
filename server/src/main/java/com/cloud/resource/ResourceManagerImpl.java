@@ -3030,12 +3030,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public HostVO findOneRandomRunningHostByHypervisor(HypervisorType type) {
+    public HostVO findOneRandomRunningHostByHypervisor(final HypervisorType type, final Long dcId) {
         final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         sc.and(sc.entity().getHypervisorType(), Op.EQ, type);
         sc.and(sc.entity().getType(),Op.EQ, Type.Routing);
         sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
         sc.and(sc.entity().getResourceState(), Op.EQ, ResourceState.Enabled);
+        if (dcId != null) {
+            sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        }
         sc.and(sc.entity().getRemoved(), Op.NULL);
         List<HostVO> hosts = sc.list();
         if (CollectionUtils.isEmpty(hosts)) {

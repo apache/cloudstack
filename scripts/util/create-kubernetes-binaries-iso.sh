@@ -37,7 +37,10 @@ CNI_VERSION="v${3}"
 echo "Downloading CNI ${CNI_VERSION}..."
 cni_dir="${working_dir}/cni/"
 mkdir -p "${cni_dir}"
-curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-amd64.tgz"
+cni_status_code=$(curl -L  --write-out "%{http_code}\n" "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-amd64.tgz")
+if [[ ${cni_status_code} -eq 404 ]] ; then
+  curl -L  --write-out "%{http_code}\n" "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-amd64.tgz"
+fi
 
 CRICTL_VERSION="v${4}"
 echo "Downloading CRI tools ${CRICTL_VERSION}..."

@@ -34,6 +34,11 @@
       :rowKey="record => record.id"
       :pagination="false"
     >
+      <template slot="name" slot-scope="text, item">
+        <router-link :to="{ path: '/guestnetwork/' + item.id }">
+          {{ text }}
+        </router-link>
+      </template>
     </a-table>
     <a-pagination
       class="row-element pagination"
@@ -98,7 +103,8 @@ export default {
       columns: [
         {
           title: this.$t('label.name'),
-          dataIndex: 'name'
+          dataIndex: 'name',
+          scopedSlots: { customRender: 'name' }
         },
         {
           title: this.$t('label.type'),

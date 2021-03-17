@@ -17,7 +17,9 @@
 package com.cloud.servlet;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URLEncoder;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -46,6 +48,7 @@ import com.cloud.vm.VmDetailConstants;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import com.cloud.api.ApiServlet;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
@@ -289,8 +292,15 @@ public class ConsoleProxyServlet extends HttpServlet {
             }
         }
 
+        InetAddress remoteAddress = null;
+        try {
+            remoteAddress = ApiServlet.getClientAddress(req);
+        } catch (UnknownHostException e) {
+            s_logger.warn("UnknownHostException when trying to lookup remote IP-Address. This should never happen. Blocking request.", e);
+        }
+
         StringBuffer sb = new StringBuffer();
-        sb.append("<html><title>").append(escapeHTML(vmName)).append("</title><frameset><frame src=\"").append(composeConsoleAccessUrl(rootUrl, vm, host));
+        sb.append("<html><title>").append(escapeHTML(vmName)).append("</title><frameset><frame src=\"").append(composeConsoleAccessUrl(rootUrl, vm, host, remoteAddress));
         sb.append("\"></frame></frameset></html>");
         s_logger.debug("the console url is :: " + sb.toString());
         sendResponse(resp, sb.toString());
@@ -417,7 +427,7 @@ public class ConsoleProxyServlet extends HttpServlet {
         return sb.toString();
     }
 
-    private String composeConsoleAccessUrl(String rootUrl, VirtualMachine vm, HostVO hostVo) {
+    private String composeConsoleAccessUrl(String rootUrl, VirtualMachine vm, HostVO hostVo, InetAddress addr) {
         StringBuffer sb = new StringBuffer(rootUrl);
         String host = hostVo.getPrivateIpAddress();
 
@@ -465,6 +475,7 @@ public class ConsoleProxyServlet extends HttpServlet {
         param.setClientHostPassword(sid);
         param.setClientTag(tag);
         param.setTicket(ticket);
+        param.setSourceIP(addr != null ? addr.getHostAddress(): null);
 
         if (details != null) {
             param.setLocale(details.getValue());

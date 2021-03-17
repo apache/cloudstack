@@ -53,6 +53,10 @@ export default {
         name: 'virtual.routers',
         component: () => import('@/views/network/RoutersTab.vue'),
         show: (record) => { return (record.type === 'Isolated' || record.type === 'Shared') && 'listRouters' in store.getters.apis }
+      }, {
+        name: 'guest.ip.range',
+        component: () => import('@/views/network/GuestIpRanges.vue'),
+        show: (record) => { return 'listVlanIpRanges' in store.getters.apis && (record.type === 'Shared' || (record.service && record.service.filter(x => x.name === 'SourceNat').count === 0)) }
       }],
       actions: [
         {
@@ -82,7 +86,7 @@ export default {
           icon: 'sync',
           label: 'label.restart.network',
           dataView: true,
-          args: ['cleanup', 'makeredundant'],
+          args: ['cleanup'],
           show: (record) => record.type !== 'L2'
         },
         {
