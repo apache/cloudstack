@@ -17,7 +17,12 @@
 
 <template>
   <span class="row-action-button">
-    <console :resource="resource" :size="size" v-if="resource && resource.id && dataView" />
+    <a-tooltip arrowPointAtCenter placement="bottomRight">
+      <template slot="title">
+        {{ $t('label.view.console') }}
+      </template>
+      <console :resource="resource" :size="size" v-if="resource && resource.id && dataView" />
+    </a-tooltip>
     <a-tooltip
       v-for="(action, actionIndex) in actions"
       :key="actionIndex"
