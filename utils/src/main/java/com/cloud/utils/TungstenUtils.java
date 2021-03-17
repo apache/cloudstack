@@ -165,4 +165,60 @@ public class TungstenUtils {
     public static String getRuleNetworkPolicyName(long ruleId) {
         return "rule-network-policy" + ruleId;
     }
+
+    public static String getSubnetName(long networkId) {
+        return "subnet-name" + networkId;
+    }
+
+    public static String getLoadBalancerVmiName(long publicIpId) {
+        return "loadbalancer-vmi" + publicIpId;
+    }
+
+    public static String getLoadBalancerIiName(long publicIpId) {
+        return "loadbalancer-ii" + publicIpId;
+    }
+
+    public static String getLoadBalancerName(long publicIpId) {
+        return "loadbalancer" + publicIpId;
+    }
+
+    public static String getLoadBalancerListenerName(long ruleId) {
+        return "loadbalancer-listener" + ruleId;
+    }
+
+    public static String getLoadBalancerHealthMonitorName(long publicIpId) {
+        return "loadbalancer-healthmonitor" + publicIpId;
+    }
+
+    public static String getLoadBalancerPoolName(long ruleId) {
+        return "loadbalancer-pool" + ruleId;
+    }
+
+    public static String getLoadBalancerMemberName(long ruleId, String memberIp) {
+        return "loadbalancer-member" + ruleId + memberIp;
+    }
+
+    public static String getLoadBalancerAlgorithm(String algorithm) {
+        switch (algorithm) {
+            case "leastconn":
+                return "LEAST_CONNECTIONS";
+            case "source":
+                return "SOURCE_IP";
+            default:
+                return "ROUND_ROBIN";
+        }
+    }
+
+    public static String getLoadBalancerSession(String stickiness) {
+        switch (stickiness) {
+            case "LbCookie":
+                return "HTTP_COOKIE";
+            case "AppCookie":
+                return "APP_COOKIE";
+            case "SourceBased":
+                return "SOURCE_IP";
+            default:
+                return null;
+        }
+    }
 }

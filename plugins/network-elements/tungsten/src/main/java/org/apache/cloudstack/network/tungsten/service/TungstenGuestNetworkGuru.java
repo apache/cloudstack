@@ -118,12 +118,9 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     public boolean canHandle(NetworkOffering offering, DataCenter.NetworkType networkType,
         PhysicalNetwork physicalNetwork) {
-        if (networkType == DataCenter.NetworkType.Advanced && isMyTrafficType(offering.getTrafficType())
+        return networkType == DataCenter.NetworkType.Advanced && isMyTrafficType(offering.getTrafficType())
             && offering.getGuestType() == Network.GuestType.Isolated && isMyIsolationMethod(physicalNetwork)
-            && _ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.Tungsten)) {
-            return true;
-        }
-        return false;
+            && _ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.Tungsten);
     }
 
     @Override
@@ -200,8 +197,10 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
             // create tungsten network
             Pair<String, Integer> pair = NetUtils.getCidr(network.getCidr());
             CreateTungstenNetworkCommand createTungstenGuestNetworkCommand = new CreateTungstenNetworkCommand(
-                network.getUuid(), network.getName(), tungstenProjectFqn, false, false, pair.first(), pair.second(),
-                network.getGateway(), network.getMode().equals(Networks.Mode.Dhcp), null, null, null, false, false);
+                network.getUuid(), TungstenUtils.getGuestNetworkName(network.getName()), network.getName(),
+                tungstenProjectFqn, false, false, pair.first(), pair.second(), network.getGateway(),
+                network.getMode().equals(Networks.Mode.Dhcp), null, null, null, false, false,
+                TungstenUtils.getSubnetName(network.getId()));
             _tungstenFabricUtils.sendTungstenCommand(createTungstenGuestNetworkCommand, network.getDataCenterId());
 
             // create logical router with public network
@@ -225,7 +224,8 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
             _tungstenFabricUtils.sendTungstenCommand(createTungstenNetworkPolicyCommand, zoneId);
 
             ApplyTungstenNetworkPolicyCommand applyTungstenNetworkPolicyCommand = new ApplyTungstenNetworkPolicyCommand(
-                    tungstenProjectFqn, TungstenUtils.getVirtualNetworkPolicyName(network.getId()), network.getUuid(), false);
+                tungstenProjectFqn, TungstenUtils.getVirtualNetworkPolicyName(network.getId()), network.getUuid(),
+                false);
             TungstenAnswer applyNetworkPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
                 applyTungstenNetworkPolicyCommand, zoneId);
             if (!applyNetworkPolicyAnswer.getResult()) {
@@ -248,8 +248,8 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
 
             // create gateway vmi, update logical router
             SetTungstenNetworkGatewayCommand setTungstenNetworkGatewayCommand = new SetTungstenNetworkGatewayCommand(
-                    tungstenProjectFqn, TungstenUtils.getLogicalRouterName(network.getId()), network.getId(), network.getUuid(),
-                network.getGateway());
+                tungstenProjectFqn, TungstenUtils.getLogicalRouterName(network.getId()), network.getId(),
+                network.getUuid(), network.getGateway());
             _tungstenFabricUtils.sendTungstenCommand(setTungstenNetworkGatewayCommand, network.getDataCenterId());
         } catch (Exception ex) {
             throw new CloudRuntimeException("unable to create tungsten network " + network.getUuid());

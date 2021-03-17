@@ -26,10 +26,21 @@ import net.juniper.tungsten.api.Status;
 import net.juniper.tungsten.api.types.ActionListType;
 import net.juniper.tungsten.api.types.AddressType;
 import net.juniper.tungsten.api.types.Domain;
+import net.juniper.tungsten.api.types.FatFlowProtocols;
 import net.juniper.tungsten.api.types.FloatingIp;
 import net.juniper.tungsten.api.types.FloatingIpPool;
 import net.juniper.tungsten.api.types.InstanceIp;
 import net.juniper.tungsten.api.types.IpamSubnetType;
+import net.juniper.tungsten.api.types.Loadbalancer;
+import net.juniper.tungsten.api.types.LoadbalancerHealthmonitor;
+import net.juniper.tungsten.api.types.LoadbalancerHealthmonitorType;
+import net.juniper.tungsten.api.types.LoadbalancerListener;
+import net.juniper.tungsten.api.types.LoadbalancerListenerType;
+import net.juniper.tungsten.api.types.LoadbalancerMember;
+import net.juniper.tungsten.api.types.LoadbalancerMemberType;
+import net.juniper.tungsten.api.types.LoadbalancerPool;
+import net.juniper.tungsten.api.types.LoadbalancerPoolType;
+import net.juniper.tungsten.api.types.LoadbalancerType;
 import net.juniper.tungsten.api.types.LogicalRouter;
 import net.juniper.tungsten.api.types.MacAddressesType;
 import net.juniper.tungsten.api.types.NetworkIpam;
@@ -47,6 +58,7 @@ import net.juniper.tungsten.api.types.VirtualNetworkPolicyType;
 import net.juniper.tungsten.api.types.VnSubnetsType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.network.tungsten.model.TungstenLoadBalancerMember;
 import org.apache.cloudstack.network.tungsten.model.TungstenRule;
 import org.apache.log4j.Logger;
 
@@ -114,16 +126,18 @@ public class TungstenApi {
         }
     }
 
-    public VirtualNetwork createTungstenNetwork(String uuid, String name, String parent, boolean routerExternal,
-        boolean shared, String ipPrefix, int ipPrefixLen, String gateway, boolean dhcpEnable, List<String> dnsServers,
-        String allocationStart, String allocationEnd, boolean ipFromStart, boolean isManagementNetwork) {
+    public VirtualNetwork createTungstenNetwork(String uuid, String name, String displayName, String parent,
+        boolean routerExternal, boolean shared, String ipPrefix, int ipPrefixLen, String gateway, boolean dhcpEnable,
+        List<String> dnsServers, String allocationStart, String allocationEnd, boolean ipFromStart,
+        boolean isManagementNetwork, String subnetName) {
         try {
             VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, uuid);
-            if(virtualNetwork != null)
+            if (virtualNetwork != null)
                 return virtualNetwork;
             Project project = (Project) apiConnector.findById(Project.class, parent);
             NetworkIpam networkIpam = getDefaultProjectNetworkIpam(project);
             IpamSubnetType ipamSubnetType = new IpamSubnetType();
+            ipamSubnetType.setSubnetName(subnetName);
             ipamSubnetType.setSubnet(new SubnetType(ipPrefix, ipPrefixLen));
             ipamSubnetType.setDefaultGateway(gateway);
             ipamSubnetType.setEnableDhcp(dhcpEnable);
@@ -139,8 +153,8 @@ public class TungstenApi {
             if (uuid != null) {
                 virtualNetwork.setUuid(uuid);
             }
-            virtualNetwork.setName(TungstenUtils.getGuestNetworkName(name));
-            virtualNetwork.setDisplayName(name);
+            virtualNetwork.setName(name);
+            virtualNetwork.setDisplayName(displayName);
             virtualNetwork.addNetworkIpam(networkIpam, vnSubnetsType);
             virtualNetwork.setParent(project);
             virtualNetwork.setRouterExternal(routerExternal);
@@ -232,6 +246,36 @@ public class TungstenApi {
             instanceIp.setVirtualNetwork(virtualNetwork);
             instanceIp.setVirtualMachineInterface(virtualMachineInterface);
             instanceIp.setAddress(ip);
+            Status status = apiConnector.create(instanceIp);
+            status.ifFailure(errorHandler);
+            return (InstanceIp) apiConnector.findById(InstanceIp.class, instanceIp.getUuid());
+        } catch (IOException e) {
+            S_LOGGER.error("Failed creating instance ip in tungsten");
+            return null;
+        }
+    }
+
+    public InstanceIp createTungstenInstanceIp(String instanceIpName, String ip, String virtualNetworkUuid,
+        String vmInterfaceUuid, String subnetUuid) {
+        VirtualNetwork virtualNetwork;
+        VirtualMachineInterface virtualMachineInterface;
+
+        try {
+            virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, virtualNetworkUuid);
+            virtualMachineInterface = (VirtualMachineInterface) apiConnector.findById(VirtualMachineInterface.class,
+                vmInterfaceUuid);
+        } catch (IOException e) {
+            S_LOGGER.error("Failed getting the resources needed for virtual machine interface creation from tungsten");
+            return null;
+        }
+
+        try {
+            InstanceIp instanceIp = new InstanceIp();
+            instanceIp.setName(instanceIpName);
+            instanceIp.setVirtualNetwork(virtualNetwork);
+            instanceIp.setVirtualMachineInterface(virtualMachineInterface);
+            instanceIp.setAddress(ip);
+            instanceIp.setSubnetUuid(subnetUuid);
             Status status = apiConnector.create(instanceIp);
             status.ifFailure(errorHandler);
             return (InstanceIp) apiConnector.findById(InstanceIp.class, instanceIp.getUuid());
@@ -482,7 +526,7 @@ public class TungstenApi {
         }
     }
 
-    public ApiObjectBase assignTungstenFloatingIp(String networkUuid, String vmiUuid, String fipName, String name,
+    public boolean assignTungstenFloatingIp(String networkUuid, String vmiUuid, String fipName, String name,
         String privateIp) {
         try {
             VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
@@ -494,17 +538,13 @@ public class TungstenApi {
             floatingIp.setFixedIpAddress(privateIp);
             Status status = apiConnector.update(floatingIp);
             status.ifFailure(errorHandler);
-            if (status.isSuccess()) {
-                return apiConnector.findById(FloatingIp.class, floatingIp.getUuid());
-            } else {
-                return null;
-            }
+            return status.isSuccess();
         } catch (IOException e) {
-            return null;
+            return false;
         }
     }
 
-    public ApiObjectBase releaseTungstenFloatingIp(String networkUuid, String fipName, String name) {
+    public boolean releaseTungstenFloatingIp(String networkUuid, String fipName, String name) {
         try {
             VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
             FloatingIpPool fip = (FloatingIpPool) apiConnector.find(FloatingIpPool.class, virtualNetwork, fipName);
@@ -513,13 +553,9 @@ public class TungstenApi {
             floatingIp.setFixedIpAddress(null);
             Status status = apiConnector.update(floatingIp);
             status.ifFailure(errorHandler);
-            if (status.isSuccess()) {
-                return apiConnector.findById(FloatingIp.class, floatingIp.getUuid());
-            } else {
-                return null;
-            }
+            return status.isSuccess();
         } catch (IOException e) {
-            return null;
+            return false;
         }
     }
 
@@ -578,6 +614,71 @@ public class TungstenApi {
         try {
             if (networkPolicy != null) {
                 Status status = apiConnector.delete(networkPolicy);
+                status.ifFailure(errorHandler);
+                return status.isSuccess();
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean deleteTungstenLoadBalancer(Loadbalancer loadbalancer) {
+        try {
+            if (loadbalancer != null) {
+                Status status = apiConnector.delete(loadbalancer);
+                status.ifFailure(errorHandler);
+                return status.isSuccess();
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean deleteTungstenLoadBalancerHealthMonitor(LoadbalancerHealthmonitor loadbalancerHealthmonitor) {
+        try {
+            if (loadbalancerHealthmonitor != null) {
+                Status status = apiConnector.delete(loadbalancerHealthmonitor);
+                status.ifFailure(errorHandler);
+                return status.isSuccess();
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean deleteTungstenLoadBalancerMember(LoadbalancerMember loadbalancerMember) {
+        try {
+            if (loadbalancerMember != null) {
+                Status status = apiConnector.delete(loadbalancerMember);
+                status.ifFailure(errorHandler);
+                return status.isSuccess();
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean deleteTungstenLoadBalancerPool(LoadbalancerPool loadbalancerPool) {
+        try {
+            if (loadbalancerPool != null) {
+                Status status = apiConnector.delete(loadbalancerPool);
+                status.ifFailure(errorHandler);
+                return status.isSuccess();
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean deleteTungstenLoadBalancerListener(LoadbalancerListener loadbalancerListener) {
+        try {
+            if (loadbalancerListener != null) {
+                Status status = apiConnector.delete(loadbalancerListener);
                 status.ifFailure(errorHandler);
                 return status.isSuccess();
             }
@@ -670,27 +771,13 @@ public class TungstenApi {
         }
     }
 
-    public boolean removeTungstenNetworkPolicy(String projectUuid, String networkUuid, String networkPolicyName) {
-        try {
-            Project project = (Project) getTungstenNetworkProject(projectUuid);
-            VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
-            NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.find(NetworkPolicy.class, project,
-                networkPolicyName);
-            virtualNetwork.removeNetworkPolicy(networkPolicy,
-                new VirtualNetworkPolicyType(new SequenceType(0, 0), null));
-            Status status = apiConnector.update(virtualNetwork);
-            status.ifFailure(errorHandler);
-            return status.isSuccess();
-        } catch (IOException e) {
-            return false;
-        }
-    }
+
 
     public ApiObjectBase createTungstenDomain(String domainName, String domainUuid) {
         try {
 
             Domain domain = (Domain) apiConnector.findById(Domain.class, domainUuid);
-            if(domain != null)
+            if (domain != null)
                 return domain;
             //create tungsten domain
             Domain tungstenDomain = new Domain();
@@ -715,10 +802,11 @@ public class TungstenApi {
         }
     }
 
-    public ApiObjectBase createTungstenProject(String projectName, String projectUuid, String domainUuid, String domainName) {
+    public ApiObjectBase createTungstenProject(String projectName, String projectUuid, String domainUuid,
+        String domainName) {
         try {
             Project project = (Project) getTungstenObject(Project.class, projectUuid);
-            if(project != null)
+            if (project != null)
                 return project;
             //Create tungsten project
             Project tungstenProject = new Project();
@@ -746,7 +834,7 @@ public class TungstenApi {
         try {
             Domain domain = (Domain) getTungstenObject(Domain.class, domainUuid);
             //delete the projects of this domain
-            for(ObjectReference<ApiPropertyBase> project : domain.getProjects()){
+            for (ObjectReference<ApiPropertyBase> project : domain.getProjects()) {
                 apiConnector.delete(Project.class, project.getUuid());
             }
             Status status = apiConnector.delete(Domain.class, domainUuid);
@@ -776,6 +864,286 @@ public class TungstenApi {
         return domain;
     }
 
+    public ApiObjectBase createTungstenLoadbalancer(String projectFqn, String lbName, String vmiUuid, String subnetUuid,
+        String privateIp) {
+        try {
+            Project project = (Project) getTungstenProjectByFqn(projectFqn);
+            VirtualMachineInterface virtualMachineInterface = (VirtualMachineInterface) apiConnector.findById(
+                VirtualMachineInterface.class, vmiUuid);
+            LoadbalancerType loadbalancerType = new LoadbalancerType();
+            loadbalancerType.setVipSubnetId(subnetUuid);
+            loadbalancerType.setVipAddress(privateIp);
+            loadbalancerType.setAdminState(true);
+            loadbalancerType.setOperatingStatus("ONLINE");
+            loadbalancerType.setProvisioningStatus("ACTIVE");
+
+            Loadbalancer loadbalancer = new Loadbalancer();
+            loadbalancer.setName(lbName);
+            loadbalancer.setParent(project);
+            loadbalancer.setProperties(loadbalancerType);
+            loadbalancer.setProvider("opencontrail");
+            loadbalancer.setVirtualMachineInterface(virtualMachineInterface);
+            Status status = apiConnector.create(loadbalancer);
+            status.ifFailure(errorHandler);
+            if (status.isSuccess()) {
+                return apiConnector.findById(Loadbalancer.class, loadbalancer.getUuid());
+            } else {
+                return null;
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase createTungstenLoadbalancerListener(String projectFqn, String loadBalancerUuid, String name,
+        String protocol, int port) {
+        try {
+            Project project = (Project) getTungstenProjectByFqn(projectFqn);
+            Loadbalancer loadbalancer = (Loadbalancer) apiConnector.findById(Loadbalancer.class, loadBalancerUuid);
+            LoadbalancerListenerType loadbalancerListenerType = new LoadbalancerListenerType();
+            loadbalancerListenerType.setConnectionLimit(-1);
+            loadbalancerListenerType.setAdminState(true);
+            loadbalancerListenerType.setProtocol(protocol);
+            loadbalancerListenerType.setProtocolPort(port);
+
+            LoadbalancerListener loadbalancerListener = new LoadbalancerListener();
+            loadbalancerListener.setName(name);
+            loadbalancerListener.setParent(project);
+            loadbalancerListener.setLoadbalancer(loadbalancer);
+            loadbalancerListener.setProperties(loadbalancerListenerType);
+            Status status = apiConnector.create(loadbalancerListener);
+            status.ifFailure(errorHandler);
+            if (status.isSuccess()) {
+                return apiConnector.findById(LoadbalancerListener.class, loadbalancerListener.getUuid());
+            } else {
+                return null;
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase createTungstenLoadbalancerHealthMonitor(String projectFqn, String name, String monitorType,
+        int maxRetries, int delay, int timeout, String httpMethod, String urlPath, String expectedCode) {
+        try {
+            Project project = (Project) getTungstenProjectByFqn(projectFqn);
+            LoadbalancerHealthmonitorType loadbalancerHealthmonitorType = new LoadbalancerHealthmonitorType();
+            loadbalancerHealthmonitorType.setMonitorType(monitorType);
+            loadbalancerHealthmonitorType.setMaxRetries(maxRetries);
+            loadbalancerHealthmonitorType.setDelay(delay);
+            loadbalancerHealthmonitorType.setAdminState(true);
+            loadbalancerHealthmonitorType.setTimeout(timeout);
+            if (monitorType == "HTTP") {
+                loadbalancerHealthmonitorType.setHttpMethod(httpMethod);
+                loadbalancerHealthmonitorType.setUrlPath(urlPath);
+                loadbalancerHealthmonitorType.setExpectedCodes(expectedCode);
+            }
+
+            LoadbalancerHealthmonitor loadbalancerHealthmonitor = new LoadbalancerHealthmonitor();
+            loadbalancerHealthmonitor.setName(name);
+            loadbalancerHealthmonitor.setParent(project);
+            loadbalancerHealthmonitor.setProperties(loadbalancerHealthmonitorType);
+            Status status = apiConnector.create(loadbalancerHealthmonitor);
+            status.ifFailure(errorHandler);
+            if (status.isSuccess()) {
+                return apiConnector.findById(LoadbalancerHealthmonitor.class, loadbalancerHealthmonitor.getUuid());
+            } else {
+                return null;
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase createTungstenLoadbalancerPool(String projectFqn, String loadbalancerlistenerUuid,
+        String loadbalancerHealthmonitorUuid, String name, String method, String protocol) {
+        try {
+            Project project = (Project) getTungstenProjectByFqn(projectFqn);
+            LoadbalancerListener loadbalancerListener = (LoadbalancerListener) apiConnector.findById(
+                LoadbalancerListener.class, loadbalancerlistenerUuid);
+            LoadbalancerHealthmonitor loadbalancerHealthmonitor = (LoadbalancerHealthmonitor) apiConnector.findById(
+                LoadbalancerHealthmonitor.class, loadbalancerHealthmonitorUuid);
+            LoadbalancerPoolType loadbalancerPoolType = new LoadbalancerPoolType();
+            loadbalancerPoolType.setLoadbalancerMethod(method);
+            loadbalancerPoolType.setProtocol(protocol);
+            loadbalancerPoolType.setAdminState(true);
+
+            LoadbalancerPool loadbalancerPool = new LoadbalancerPool();
+            loadbalancerPool.setName(name);
+            loadbalancerPool.setParent(project);
+            loadbalancerPool.setLoadbalancerListener(loadbalancerListener);
+            loadbalancerPool.setLoadbalancerHealthmonitor(loadbalancerHealthmonitor);
+            loadbalancerPool.setProperties(loadbalancerPoolType);
+            Status status = apiConnector.create(loadbalancerPool);
+            status.ifFailure(errorHandler);
+            if (status.isSuccess()) {
+                return apiConnector.findById(LoadbalancerPool.class, loadbalancerPool.getUuid());
+            } else {
+                return null;
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase createTungstenLoadbalancerMember(String loadbalancerPoolUuid, String name, String address,
+        String subnetUuid, int port, int weight) {
+        try {
+            LoadbalancerPool loadbalancerPool = (LoadbalancerPool) apiConnector.findById(LoadbalancerPool.class,
+                loadbalancerPoolUuid);
+            LoadbalancerMemberType loadbalancerMemberType = new LoadbalancerMemberType();
+            loadbalancerMemberType.setAddress(address);
+            loadbalancerMemberType.setAdminState(true);
+            loadbalancerMemberType.setProtocolPort(port);
+            loadbalancerMemberType.setSubnetId(subnetUuid);
+            loadbalancerMemberType.setWeight(weight);
+
+            LoadbalancerMember loadbalancerMember = new LoadbalancerMember();
+            loadbalancerMember.setName(name);
+            loadbalancerMember.setParent(loadbalancerPool);
+            loadbalancerMember.setProperties(loadbalancerMemberType);
+            Status status = apiConnector.create(loadbalancerMember);
+            status.ifFailure(errorHandler);
+            if (status.isSuccess()) {
+                return apiConnector.findById(LoadbalancerMember.class, loadbalancerMember.getUuid());
+            } else {
+                return null;
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public boolean removeTungstenNetworkPolicy(String projectFqn, String networkUuid, String networkPolicyName) {
+        try {
+            Project project = (Project) getTungstenProjectByFqn(projectFqn);
+            VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
+            NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.find(NetworkPolicy.class, project,
+                networkPolicyName);
+            virtualNetwork.removeNetworkPolicy(networkPolicy,
+                new VirtualNetworkPolicyType(new SequenceType(0, 0), null));
+            Status status = apiConnector.update(virtualNetwork);
+            status.ifFailure(errorHandler);
+            return status.isSuccess();
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean updateLoadBalancerMember(String projectFqn, String lbPoolName,
+        List<TungstenLoadBalancerMember> listTungstenLoadBalancerMember, String subnetUuid) {
+        try {
+            Project project = (Project) getTungstenProjectByFqn(projectFqn);
+            LoadbalancerPool loadbalancerPool = (LoadbalancerPool) apiConnector.find(LoadbalancerPool.class, project,
+                lbPoolName);
+            List<ObjectReference<ApiPropertyBase>> listMember = loadbalancerPool.getLoadbalancerMembers();
+
+            if (listMember != null) {
+                for (ObjectReference<ApiPropertyBase> member : listMember) {
+                    Status status = apiConnector.delete(LoadbalancerMember.class, member.getUuid());
+                    status.ifFailure(errorHandler);
+                    if (!status.isSuccess()) {
+                        return false;
+                    }
+                }
+            }
+
+            for (TungstenLoadBalancerMember tungstenLoadBalancerMember : listTungstenLoadBalancerMember) {
+                LoadbalancerMemberType loadbalancerMemberType = new LoadbalancerMemberType();
+                loadbalancerMemberType.setAddress(tungstenLoadBalancerMember.getIpAddress());
+                loadbalancerMemberType.setProtocolPort(tungstenLoadBalancerMember.getPort());
+                loadbalancerMemberType.setSubnetId(subnetUuid);
+                loadbalancerMemberType.setAdminState(true);
+                loadbalancerMemberType.setWeight(tungstenLoadBalancerMember.getWeight());
+                LoadbalancerMember loadbalancerMember = new LoadbalancerMember();
+                loadbalancerMember.setName(tungstenLoadBalancerMember.getName());
+                loadbalancerMember.setParent(loadbalancerPool);
+                loadbalancerMember.setProperties(loadbalancerMemberType);
+                Status status = apiConnector.create(loadbalancerMember);
+                status.ifFailure(errorHandler);
+                if (!status.isSuccess()) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean updateLoadBalancerListener(String projectFqn, String lbListenerName, String lbProtocol) {
+        try {
+            Project project = (Project) getTungstenProjectByFqn(projectFqn);
+            LoadbalancerListener loadbalancerListener = (LoadbalancerListener) apiConnector.find(
+                LoadbalancerListener.class, project, lbListenerName);
+            LoadbalancerListenerType loadbalancerListenerType = loadbalancerListener.getProperties();
+            loadbalancerListenerType.setProtocol(lbProtocol);
+            Status status = apiConnector.update(loadbalancerListener);
+            status.ifFailure(errorHandler);
+            return status.isSuccess();
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean updateLoadBalancerPool(String projectFqn, String lbPoolName, String lbMethod,
+        String lbSessionPersistence, String lbPersistenceCookieName, String lbProtocol) {
+        try {
+            Project project = (Project) getTungstenProjectByFqn(projectFqn);
+            LoadbalancerPool loadbalancerPool = (LoadbalancerPool) apiConnector.find(LoadbalancerPool.class, project,
+                lbPoolName);
+            LoadbalancerPoolType loadbalancerPoolType = loadbalancerPool.getProperties();
+            if (lbMethod != null) {
+                loadbalancerPoolType.setLoadbalancerMethod(lbMethod);
+            }
+            if (lbSessionPersistence != null) {
+                loadbalancerPoolType.setSessionPersistence(lbSessionPersistence);
+            }
+            if (lbPersistenceCookieName != null) {
+                loadbalancerPoolType.setPersistenceCookieName(lbPersistenceCookieName);
+            }
+            if (lbProtocol != null) {
+                loadbalancerPoolType.setProtocol(lbProtocol);
+            }
+            Status status = apiConnector.update(loadbalancerPool);
+            status.ifFailure(errorHandler);
+            return status.isSuccess();
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean updateLBServiceInstanceFatFlow(String publicNetworkUuid, String floatingIpPoolName,
+        String floatingIpName) {
+        boolean result = true;
+        try {
+            VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class,
+                publicNetworkUuid);
+            FloatingIpPool floatingIpPool = (FloatingIpPool) apiConnector.find(FloatingIpPool.class, virtualNetwork,
+                floatingIpPoolName);
+            FloatingIp floatingIp = (FloatingIp) apiConnector.find(FloatingIp.class, floatingIpPool, floatingIpName);
+            List<ObjectReference<ApiPropertyBase>> listRefVmi = floatingIp.getVirtualMachineInterface();
+            for (ObjectReference<ApiPropertyBase> refVmi : listRefVmi) {
+                if (refVmi.getReferredName().get(refVmi.getReferredName().size() - 1).contains("right__1")) {
+                    String siUuid = refVmi.getUuid();
+                    VirtualMachineInterface vmi = (VirtualMachineInterface) apiConnector.findById(
+                        VirtualMachineInterface.class, siUuid);
+                    FatFlowProtocols fatFlowProtocols = vmi.getFatFlowProtocols();
+                    if (fatFlowProtocols != null) {
+                        fatFlowProtocols.clearFatFlowProtocol();
+                        Status status = apiConnector.update(vmi);
+                        status.ifFailure(errorHandler);
+                        result = result && status.isSuccess();
+                    }
+                }
+            }
+
+            return result;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     public List<? extends ApiObjectBase> getTungstenListObject(Class<? extends ApiObjectBase> cls,
         ApiObjectBase parent) {
         try {
@@ -795,5 +1163,27 @@ public class TungstenApi {
         policyRuleType.setDirection(tungstenRule.getDirection());
         policyRuleType.setProtocol(tungstenRule.getProtocol());
         return policyRuleType;
+    }
+
+    public String getSubnetUuid(String networkUuid) {
+        try {
+            VirtualNetwork network = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
+            if (network != null) {
+                List<ObjectReference<VnSubnetsType>> listIpam = network.getNetworkIpam();
+                if (listIpam != null) {
+                    for (ObjectReference<VnSubnetsType> objectReference : listIpam) {
+                        VnSubnetsType vnSubnetsType = objectReference.getAttr();
+                        List<IpamSubnetType> ipamSubnetTypeList = vnSubnetsType.getIpamSubnets();
+                        for (IpamSubnetType ipamSubnetType : ipamSubnetTypeList) {
+                            return ipamSubnetType.getSubnetUuid();
+                        }
+                    }
+                }
+                return null;
+            }
+            return null;
+        } catch (IOException e) {
+            return null;
+        }
     }
 }

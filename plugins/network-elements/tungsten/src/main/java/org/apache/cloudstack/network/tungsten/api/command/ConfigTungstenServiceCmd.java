@@ -107,7 +107,7 @@ public class ConfigTungstenServiceCmd extends BaseCmd {
                     networkOfferingVO = new NetworkOfferingVO(DefaultTungstenNetworkOffering,
                         "Default offering for Tungsten Network", Networks.TrafficType.Guest, false, false, null, null,
                         true, NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated, true, false,
-                        false, false, false, false);
+                        false, false, true, false);
                     networkOfferingVO.setForTungsten(true);
                     networkOfferingVO.setState(NetworkOffering.State.Enabled);
                     _networkOfferingDao.persist(networkOfferingVO);
@@ -120,6 +120,7 @@ public class ConfigTungstenServiceCmd extends BaseCmd {
                     tungstenServiceProvider.put(Network.Service.StaticNat, Network.Provider.Tungsten);
                     tungstenServiceProvider.put(Network.Service.Connectivity, Network.Provider.Tungsten);
                     tungstenServiceProvider.put(Network.Service.Firewall, Network.Provider.Tungsten);
+                    tungstenServiceProvider.put(Network.Service.Lb, Network.Provider.Tungsten);
 
                     for (Network.Service service : tungstenServiceProvider.keySet()) {
                         NetworkOfferingServiceMapVO networkOfferingServiceMapVO = new NetworkOfferingServiceMapVO(

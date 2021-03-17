@@ -26,6 +26,7 @@ import com.cloud.network.dao.TungstenProviderDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenProviderCmd;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,6 +59,8 @@ public class TungstenProviderServiceTest {
     TungstenProviderDao tungstenProviderDao;
     @Mock
     HostDetailsDao hostDetailsDao;
+    @Mock
+    MessageBus messageBus;
 
     TungstenProviderServiceImpl tungstenProviderService;
 
@@ -71,6 +74,7 @@ public class TungstenProviderServiceTest {
         tungstenProviderService._projectDao = projectDao;
         tungstenProviderService._tungstenProviderDao = tungstenProviderDao;
         tungstenProviderService._hostDetailsDao = hostDetailsDao;
+        tungstenProviderService._messageBus = messageBus;
 
         when(dcDao.findById(anyLong())).thenReturn(zone);
         when(zone.getName()).thenReturn("ZoneName");

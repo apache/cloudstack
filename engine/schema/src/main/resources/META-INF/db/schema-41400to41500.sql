@@ -100,3 +100,13 @@ CREATE TABLE `cloud`.`tungsten_providers` (
   CONSTRAINT `fk_tungsten_providers__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
   CONSTRAINT `uc_tungsten_providers__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud`.`tungsten_guest_network_ip_address`;
+CREATE TABLE `cloud`.`tungsten_guest_network_ip_address` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `network_id` bigint unsigned NOT NULL COMMENT 'network id',
+  `public_ip_address` varchar(15) NOT NULL COMMENT 'ip public_ip_address',
+  `guest_ip_address` varchar(15) NOT NULL COMMENT 'ip guest_ip_address',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_tungsten_guest_network_ip_address__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

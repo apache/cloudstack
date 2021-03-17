@@ -96,8 +96,10 @@ public class CreateTungstenPublicNetworkCmd extends BaseCmd {
 
         // create public network
         CreateTungstenNetworkCommand createTungstenPublicNetworkCommand = new CreateTungstenNetworkCommand(
-            publicNetwork.getUuid(), TungstenUtils.getPublicNetworkName(zoneId), null, true, false, publicPair.first(),
-            publicPair.second(), pubVlanVO.getVlanGateway(), true, null, ipAddress[0], ipAddress[1], false, false);
+            publicNetwork.getUuid(), TungstenUtils.getPublicNetworkName(zoneId),
+            TungstenUtils.getPublicNetworkName(zoneId), null, true, false, publicPair.first(), publicPair.second(),
+            pubVlanVO.getVlanGateway(), true, null, ipAddress[0], ipAddress[1], false, false,
+            TungstenUtils.getSubnetName(publicNetwork.getId()));
         TungstenAnswer createPublicNetworkAnswer = _tungstenFabricUtils.sendTungstenCommand(
             createTungstenPublicNetworkCommand, zoneId);
         if (!createPublicNetworkAnswer.getResult()) {

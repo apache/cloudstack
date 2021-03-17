@@ -30,9 +30,16 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.TungstenUtils;
 import net.juniper.tungsten.api.ApiConnectorFactory;
 import net.juniper.tungsten.api.ApiObjectBase;
+import net.juniper.tungsten.api.ApiPropertyBase;
+import net.juniper.tungsten.api.ObjectReference;
 import net.juniper.tungsten.api.types.FloatingIp;
 import net.juniper.tungsten.api.types.FloatingIpPool;
 import net.juniper.tungsten.api.types.InstanceIp;
+import net.juniper.tungsten.api.types.Loadbalancer;
+import net.juniper.tungsten.api.types.LoadbalancerHealthmonitor;
+import net.juniper.tungsten.api.types.LoadbalancerListener;
+import net.juniper.tungsten.api.types.LoadbalancerMember;
+import net.juniper.tungsten.api.types.LoadbalancerPool;
 import net.juniper.tungsten.api.types.LogicalRouter;
 import net.juniper.tungsten.api.types.NetworkPolicy;
 import net.juniper.tungsten.api.types.Project;
@@ -50,12 +57,15 @@ import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIp
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIpPoolCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenLogicalRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkLoadbalancerCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenProjectCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenVirtualMachineCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenDomainCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenFloatingIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenFloatingIpPoolCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenLoadBalancerCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenLoadBalancerListenerCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenNetworkPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenProjectCommand;
@@ -64,12 +74,17 @@ import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVmCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVmInterfaceCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenFabricNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenFloatingIpsCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenLoadBalancerCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenNatIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenPublicNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ReleaseTungstenFloatingIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.SetTungstenNetworkGatewayCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.StartupTungstenCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
+import org.apache.cloudstack.network.tungsten.agent.api.UpdateLoadBalancerServiceInstanceCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.UpdateTungstenLoadBalancerMemberCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.UpdateTungstenLoadBalancerPoolCommand;
+import org.apache.cloudstack.network.tungsten.model.TungstenLoadBalancerMember;
 import org.apache.cloudstack.network.tungsten.service.TungstenApi;
 import org.apache.cloudstack.network.tungsten.service.TungstenVRouterApi;
 import org.apache.cloudstack.network.tungsten.vrouter.Port;
@@ -222,6 +237,20 @@ public class TungstenResource implements ServerResource {
             return executeRequest((GetTungstenFloatingIpsCommand) cmd, numRetries);
         } else if (cmd instanceof GetTungstenFabricNetworkCommand) {
             return executeRequest((GetTungstenFabricNetworkCommand) cmd, numRetries);
+        } else if (cmd instanceof CreateTungstenNetworkLoadbalancerCommand) {
+            return executeRequest((CreateTungstenNetworkLoadbalancerCommand) cmd, numRetries);
+        } else if (cmd instanceof UpdateLoadBalancerServiceInstanceCommand) {
+            return executeRequest((UpdateLoadBalancerServiceInstanceCommand) cmd, numRetries);
+        } else if (cmd instanceof DeleteTungstenLoadBalancerCommand) {
+            return executeRequest((DeleteTungstenLoadBalancerCommand) cmd, numRetries);
+        } else if (cmd instanceof DeleteTungstenLoadBalancerListenerCommand) {
+            return executeRequest((DeleteTungstenLoadBalancerListenerCommand) cmd, numRetries);
+        } else if (cmd instanceof UpdateTungstenLoadBalancerPoolCommand) {
+            return executeRequest((UpdateTungstenLoadBalancerPoolCommand) cmd, numRetries);
+        } else if (cmd instanceof UpdateTungstenLoadBalancerMemberCommand) {
+            return executeRequest((UpdateTungstenLoadBalancerMemberCommand) cmd, numRetries);
+        } else if (cmd instanceof GetTungstenLoadBalancerCommand) {
+            return executeRequest((GetTungstenLoadBalancerCommand) cmd, numRetries);
         } else if (cmd instanceof CreateTungstenDomainCommand) {
             return executeRequest((CreateTungstenDomainCommand) cmd, numRetries);
         } else if (cmd instanceof DeleteTungstenDomainCommand) {
@@ -247,9 +276,9 @@ public class TungstenResource implements ServerResource {
         }
 
         VirtualNetwork virtualNetwork = _tungstenApi.createTungstenNetwork(cmd.getUuid(), cmd.getName(),
-            project.getUuid(), cmd.isRouterExternal(), cmd.isShared(), cmd.getIpPrefix(), cmd.getIpPrefixLen(),
-            cmd.getGateway(), cmd.isDhcpEnable(), cmd.getDnsServers(), cmd.getAllocationStart(), cmd.getAllocationEnd(),
-            cmd.isIpFromStart(), cmd.isManagementNetwork());
+            cmd.getDisplayName(), project.getUuid(), cmd.isRouterExternal(), cmd.isShared(), cmd.getIpPrefix(),
+            cmd.getIpPrefixLen(), cmd.getGateway(), cmd.isDhcpEnable(), cmd.getDnsServers(), cmd.getAllocationStart(),
+            cmd.getAllocationEnd(), cmd.isIpFromStart(), cmd.isManagementNetwork(), cmd.getSubnetName());
 
         if (virtualNetwork != null)
             return new TungstenAnswer(cmd, virtualNetwork, true, "Tungsten network created");
@@ -499,20 +528,19 @@ public class TungstenResource implements ServerResource {
     }
 
     private Answer executeRequest(AssignTungstenFloatingIpCommand cmd, int numRetries) {
-        ApiObjectBase apiObjectBase = _tungstenApi.assignTungstenFloatingIp(cmd.getNetworkUuid(), cmd.getVmiUuid(),
-            cmd.getFipName(), cmd.getName(), cmd.getPrivateIp());
-        if (apiObjectBase != null) {
-            return new TungstenAnswer(cmd, apiObjectBase, true, null);
+        boolean result = _tungstenApi.assignTungstenFloatingIp(cmd.getNetworkUuid(), cmd.getVmiUuid(), cmd.getFipName(),
+            cmd.getName(), cmd.getPrivateIp());
+        if (result) {
+            return new TungstenAnswer(cmd, true, null);
         } else {
             return new TungstenAnswer(cmd, new IOException());
         }
     }
 
     private Answer executeRequest(ReleaseTungstenFloatingIpCommand cmd, int numRetries) {
-        ApiObjectBase apiObjectBase = _tungstenApi.releaseTungstenFloatingIp(cmd.getVnUuid(), cmd.getFipName(),
-            cmd.getName());
-        if (apiObjectBase != null) {
-            return new TungstenAnswer(cmd, apiObjectBase, true, null);
+        boolean result = _tungstenApi.releaseTungstenFloatingIp(cmd.getVnUuid(), cmd.getFipName(), cmd.getName());
+        if (result) {
+            return new TungstenAnswer(cmd, true, null);
         } else {
             return new TungstenAnswer(cmd, new IOException());
         }
@@ -633,8 +661,9 @@ public class TungstenResource implements ServerResource {
     }
 
     private Answer executeRequest(CreateTungstenDomainCommand cmd, int numRetries) {
-        ApiObjectBase tungstenDomain = _tungstenApi.createTungstenDomain(cmd.getTungstenDomainName(), cmd.getTungstenDomainUuid());
-        if(tungstenDomain != null) {
+        ApiObjectBase tungstenDomain = _tungstenApi.createTungstenDomain(cmd.getTungstenDomainName(),
+            cmd.getTungstenDomainUuid());
+        if (tungstenDomain != null) {
             return new TungstenAnswer(cmd, tungstenDomain, true, null);
         } else {
             return new TungstenAnswer(cmd, false, null);
@@ -643,8 +672,8 @@ public class TungstenResource implements ServerResource {
 
     private Answer executeRequest(CreateTungstenProjectCommand cmd, int numRetries) {
         ApiObjectBase tungstenProject = _tungstenApi.createTungstenProject(cmd.getTungstenProjectName(),
-                cmd.getTungstenProjectUuid(), cmd.getTungstenDomainUuid(), cmd.getTungstenDomainName());
-        if(tungstenProject != null) {
+            cmd.getTungstenProjectUuid(), cmd.getTungstenDomainUuid(), cmd.getTungstenDomainName());
+        if (tungstenProject != null) {
             return new TungstenAnswer(cmd, tungstenProject, true, null);
         } else {
             return new TungstenAnswer(cmd, false, null);
@@ -653,7 +682,7 @@ public class TungstenResource implements ServerResource {
 
     private Answer executeRequest(DeleteTungstenDomainCommand cmd, int numRetries) {
         boolean deleted = _tungstenApi.deleteTungstenDomain(cmd.getTungstenDomainUuid());
-        if(deleted){
+        if (deleted) {
             return new TungstenAnswer(cmd, true, "Tungsten domain deleted");
         } else {
             if (numRetries > 0) {
@@ -666,7 +695,7 @@ public class TungstenResource implements ServerResource {
 
     private Answer executeRequest(DeleteTungstenProjectCommand cmd, int numRetries) {
         boolean deleted = _tungstenApi.deleteTungstenProject(cmd.getTungstenProjectUuid());
-        if(deleted){
+        if (deleted) {
             return new TungstenAnswer(cmd, true, "Tungsten project deleted");
         } else {
             if (numRetries > 0) {
@@ -677,7 +706,281 @@ public class TungstenResource implements ServerResource {
         }
     }
 
+    private Answer executeRequest(CreateTungstenNetworkLoadbalancerCommand cmd, int numRetries) {
+        Project project = (Project) _tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
+        if (project == null) {
+            return new TungstenAnswer(cmd, new IOException());
+        }
 
+        VirtualNetwork virtualNetwork = (VirtualNetwork) _tungstenApi.getTungstenObject(VirtualNetwork.class,
+            cmd.getNetworkUuid());
+        if (virtualNetwork == null) {
+            return new TungstenAnswer(cmd, new IOException());
+        }
+
+        String subnetUuid = _tungstenApi.getSubnetUuid(cmd.getNetworkUuid());
+        if (subnetUuid == null) {
+            return new TungstenAnswer(cmd, new IOException());
+        }
+
+        // create loadbalancer vmi
+        VirtualMachineInterface virtualMachineInterface =
+            (VirtualMachineInterface) _tungstenApi.getTungstenObjectByName(
+            VirtualMachineInterface.class, project.getQualifiedName(), cmd.getLoadBalancerVmiName());
+        if (virtualMachineInterface == null) {
+            virtualMachineInterface = (VirtualMachineInterface) _tungstenApi.createTungstenGatewayVmi(
+                cmd.getLoadBalancerVmiName(), project.getUuid(), virtualNetwork.getUuid());
+        }
+
+        if (virtualMachineInterface == null) {
+            return new TungstenAnswer(cmd, new IOException());
+        }
+
+        // create loadbalancer ii
+        InstanceIp instanceIp = (InstanceIp) _tungstenApi.getTungstenObjectByName(InstanceIp.class, null,
+            cmd.getLoadBalancerIiName());
+        if (instanceIp == null) {
+            instanceIp = _tungstenApi.createTungstenInstanceIp(cmd.getLoadBalancerIiName(), cmd.getPrivateIp(),
+                cmd.getNetworkUuid(), virtualMachineInterface.getUuid(), subnetUuid);
+        }
+        if (instanceIp == null) {
+            return new TungstenAnswer(cmd, new IOException());
+        }
+
+        // update loadbalancer floating ip
+        // must not source nat ip or static nat ip
+        // UI : don't allow add loadbalancer on source nat & static nat ip
+        // check this on tungsten create load balance rule
+        boolean result = _tungstenApi.assignTungstenFloatingIp(cmd.getPublicNetworkUuid(),
+            virtualMachineInterface.getUuid(), cmd.getFipName(), cmd.getFiName(), cmd.getPrivateIp());
+        if (!result) {
+            return new TungstenAnswer(cmd, new IOException());
+        }
+
+        Loadbalancer loadbalancer = (Loadbalancer) _tungstenApi.getTungstenObjectByName(Loadbalancer.class,
+            project.getQualifiedName(), cmd.getLoadBalancerName());
+        if (loadbalancer == null) {
+            loadbalancer = (Loadbalancer) _tungstenApi.createTungstenLoadbalancer(project.getUuid(),
+                cmd.getLoadBalancerName(), virtualMachineInterface.getUuid(), subnetUuid, cmd.getPrivateIp());
+        }
+
+        if (loadbalancer == null) {
+            return new TungstenAnswer(cmd, new IOException());
+        }
+
+        LoadbalancerListener loadbalancerListener = (LoadbalancerListener) _tungstenApi.getTungstenObjectByName(
+            LoadbalancerListener.class, project.getQualifiedName(), cmd.getLoadBalancerListenerName());
+        if (loadbalancerListener == null) {
+            loadbalancerListener = (LoadbalancerListener) _tungstenApi.createTungstenLoadbalancerListener(
+                project.getUuid(), loadbalancer.getUuid(), cmd.getLoadBalancerListenerName(), cmd.getProtocol(),
+                cmd.getSrcPort());
+        }
+
+        if (loadbalancerListener == null) {
+            return new TungstenAnswer(cmd, new IOException());
+        }
+
+        LoadbalancerHealthmonitor loadbalancerHealthmonitor =
+            (LoadbalancerHealthmonitor) _tungstenApi.getTungstenObjectByName(
+            LoadbalancerHealthmonitor.class, project.getQualifiedName(), cmd.getLoadBalancerHealthMonitorName());
+        if (loadbalancerHealthmonitor == null) {
+            loadbalancerHealthmonitor =
+                (LoadbalancerHealthmonitor) _tungstenApi.createTungstenLoadbalancerHealthMonitor(
+                project.getUuid(), cmd.getLoadBalancerHealthMonitorName(), cmd.getMonitorType(), cmd.getMaxRetries(),
+                cmd.getDelay(), cmd.getTimeout(), cmd.getHttpMethod(), cmd.getUrlPath(), cmd.getExpectedCodes());
+        }
+
+        if (loadbalancerHealthmonitor == null) {
+            return new TungstenAnswer(cmd, new IOException());
+        }
+
+        LoadbalancerPool loadbalancerPool = (LoadbalancerPool) _tungstenApi.getTungstenObjectByName(
+            LoadbalancerPool.class, project.getQualifiedName(), cmd.getLoadBalancerPoolName());
+
+        if (loadbalancerPool == null) {
+            loadbalancerPool = (LoadbalancerPool) _tungstenApi.createTungstenLoadbalancerPool(project.getUuid(),
+                loadbalancerListener.getUuid(), loadbalancerHealthmonitor.getUuid(), cmd.getLoadBalancerPoolName(),
+                cmd.getLoadBalancerMethod(), cmd.getProtocol());
+        }
+
+        if (loadbalancerPool == null) {
+            return new TungstenAnswer(cmd, new IOException());
+        }
+
+        for (TungstenLoadBalancerMember member : cmd.getListMember()) {
+            LoadbalancerMember loadbalancerMember = (LoadbalancerMember) _tungstenApi.getTungstenObjectByName(
+                LoadbalancerMember.class, loadbalancerPool.getQualifiedName(), member.getName());
+            if (loadbalancerMember == null) {
+                loadbalancerMember = (LoadbalancerMember) _tungstenApi.createTungstenLoadbalancerMember(
+                    loadbalancerPool.getUuid(), member.getName(), member.getIpAddress(), subnetUuid, member.getPort(),
+                    member.getWeight());
+            }
+
+            if (loadbalancerMember == null) {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+
+        return new TungstenAnswer(cmd, loadbalancer, true, null);
+    }
+
+    private Answer executeRequest(UpdateLoadBalancerServiceInstanceCommand cmd, int numRetries) {
+        boolean result = _tungstenApi.updateLBServiceInstanceFatFlow(cmd.getPublicNetworkUuid(),
+            cmd.getFloatingPoolName(), cmd.getFloatingIpName());
+
+        if (result) {
+            return new TungstenAnswer(cmd, true, null);
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(DeleteTungstenLoadBalancerCommand cmd, int numRetries) {
+        boolean result = true;
+        Project project = (Project) _tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
+        Loadbalancer loadbalancer = (Loadbalancer) _tungstenApi.getTungstenObjectByName(Loadbalancer.class,
+            project.getQualifiedName(), cmd.getLoadBalancerName());
+        if (loadbalancer != null) {
+            // delete load balancer listener
+            List<ObjectReference<ApiPropertyBase>> listLoadBalancerListener =
+                loadbalancer.getLoadbalancerListenerBackRefs();
+            if (listLoadBalancerListener != null && listLoadBalancerListener.size() > 0) {
+                for (ObjectReference<ApiPropertyBase> listener : listLoadBalancerListener) {
+                    LoadbalancerListener loadbalancerListener = (LoadbalancerListener) _tungstenApi.getTungstenObject(
+                        LoadbalancerListener.class, listener.getUuid());
+                    result = result && deleteLoadBalancerListener(loadbalancerListener);
+                }
+            }
+
+            // delete load balancer
+            result = result && _tungstenApi.deleteTungstenLoadBalancer(loadbalancer);
+
+            // release floating ip
+            result = result && _tungstenApi.releaseTungstenFloatingIp(cmd.getPublicNetworkUuid(), cmd.getFipName(),
+                cmd.getFiName());
+
+            // delete load balancer vmi
+            VirtualMachineInterface virtualMachineInterface =
+                (VirtualMachineInterface) _tungstenApi.getTungstenObjectByName(
+                VirtualMachineInterface.class, project.getQualifiedName(), cmd.getLoadBalancerVmiName());
+
+            result = result && _tungstenApi.deleteTungstenVmInterface(virtualMachineInterface);
+
+            // delete load balancer health monitor
+            LoadbalancerHealthmonitor loadbalancerHealthmonitor =
+                (LoadbalancerHealthmonitor) _tungstenApi.getTungstenObjectByName(
+                LoadbalancerHealthmonitor.class, project.getQualifiedName(), cmd.getLoadBalancerHealthMonitorName());
+            result = result && _tungstenApi.deleteTungstenLoadBalancerHealthMonitor(loadbalancerHealthmonitor);
+
+            if (result)
+                return new TungstenAnswer(cmd, true, "Tungsten loadbalancer deleted");
+            else {
+                if (numRetries > 0) {
+                    return retry(cmd, --numRetries);
+                } else {
+                    return new TungstenAnswer(cmd, new IOException());
+                }
+            }
+        }
+        return new TungstenAnswer(cmd, true, "Tungsten loadbalancer is not exist");
+    }
+
+    private Answer executeRequest(DeleteTungstenLoadBalancerListenerCommand cmd, int numRetries) {
+        boolean result = true;
+        Project project = (Project) _tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
+        LoadbalancerListener loadbalancerListener = (LoadbalancerListener) _tungstenApi.getTungstenObjectByName(
+            LoadbalancerListener.class, project.getQualifiedName(), cmd.getLoadBalancerListenerName());
+        if (loadbalancerListener != null) {
+            result = result && deleteLoadBalancerListener(loadbalancerListener);
+            if (result)
+                return new TungstenAnswer(cmd, true, "Tungsten loadbalancer listener deleted");
+            else {
+                if (numRetries > 0) {
+                    return retry(cmd, --numRetries);
+                } else {
+                    return new TungstenAnswer(cmd, new IOException());
+                }
+            }
+        }
+
+        return new TungstenAnswer(cmd, true, "Tungsten loadbalancer listener is not exist");
+    }
+
+    private Answer executeRequest(UpdateTungstenLoadBalancerPoolCommand cmd, int numRetries) {
+        boolean result = _tungstenApi.updateLoadBalancerPool(cmd.getProjectFqn(), cmd.getLbPoolName(),
+            cmd.getLbMethod(), cmd.getLbSessionPersistence(), cmd.getLbPersistenceCookieName(), cmd.getLbProtocol());
+        if (result)
+            return new TungstenAnswer(cmd, true, "Tungsten loadbalancer pool updated");
+        else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(UpdateTungstenLoadBalancerMemberCommand cmd, int numRetries) {
+        String subnetUuid = _tungstenApi.getSubnetUuid(cmd.getNetworkUuid());
+        if (subnetUuid == null) {
+            return new TungstenAnswer(cmd, new IOException());
+        }
+
+        boolean result = _tungstenApi.updateLoadBalancerMember(cmd.getProjectFqn(), cmd.getLbPoolName(),
+            cmd.getListTungstenLoadBalancerMember(), subnetUuid);
+
+        if (result)
+            return new TungstenAnswer(cmd, true, "Tungsten loadbalancer member updated");
+        else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private boolean deleteLoadBalancerListener(LoadbalancerListener loadbalancerListener) {
+        boolean result = true;
+        List<ObjectReference<ApiPropertyBase>> listPool = loadbalancerListener.getLoadbalancerPoolBackRefs();
+        if (listPool != null && listPool.size() > 0) {
+            for (ObjectReference<ApiPropertyBase> pool : listPool) {
+                LoadbalancerPool loadbalancerPool = (LoadbalancerPool) _tungstenApi.getTungstenObject(
+                    LoadbalancerPool.class, pool.getUuid());
+                List<ObjectReference<ApiPropertyBase>> listMember = loadbalancerPool.getLoadbalancerMembers();
+                if (listMember != null && listMember.size() > 0) {
+                    for (ObjectReference<ApiPropertyBase> member : listMember) {
+                        LoadbalancerMember loadbalancerMember = (LoadbalancerMember) _tungstenApi.getTungstenObject(
+                            LoadbalancerMember.class, member.getUuid());
+                        result = result && _tungstenApi.deleteTungstenLoadBalancerMember(loadbalancerMember);
+                    }
+                }
+                result = result && _tungstenApi.deleteTungstenLoadBalancerPool(loadbalancerPool);
+            }
+        }
+
+        result = result && _tungstenApi.deleteTungstenLoadBalancerListener(loadbalancerListener);
+        return result;
+    }
+
+    private Answer executeRequest(GetTungstenLoadBalancerCommand cmd, int numRetries) {
+        Project project = (Project) _tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
+        ApiObjectBase apiObjectBase = _tungstenApi.getTungstenObjectByName(Loadbalancer.class,
+            project.getQualifiedName(), cmd.getLbName());
+        if (apiObjectBase != null) {
+            return new TungstenAnswer(cmd, apiObjectBase, true, "");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
 
     private Answer retry(Command cmd, int numRetries) {
         s_logger.warn("Retrying " + cmd.getClass().getSimpleName() + ". Number of retries remaining: " + numRetries);

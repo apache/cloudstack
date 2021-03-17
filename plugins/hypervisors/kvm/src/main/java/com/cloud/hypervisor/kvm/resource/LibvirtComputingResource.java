@@ -308,6 +308,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _routerProxyPath;
     private String _ovsTunnelPath;
     private String _setupTungstenVrouterPath;
+    private String _updateTungstenLoadbalancerStatsPath;
+    private String _updateTungstenLoadbalancerSslPath;
     private String _host;
     private String _dcId;
     private String _pod;
@@ -964,6 +966,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _setupTungstenVrouterPath = Script.findScript(tungstenScriptsDir, "setup_tungsten_vrouter.sh");
         if (_setupTungstenVrouterPath == null) {
             throw new ConfigurationException("Unable to find the setup_tungsten_vrouter.sh");
+        }
+
+        _updateTungstenLoadbalancerStatsPath = Script.findScript(tungstenScriptsDir, "update_tungsten_loadbalancer_stats.sh");
+        if (_updateTungstenLoadbalancerStatsPath == null) {
+            throw new ConfigurationException("Unable to find the update_tungsten_loadbalancer_stats.sh");
+        }
+
+        _updateTungstenLoadbalancerSslPath = Script.findScript(tungstenScriptsDir, "update_tungsten_loadbalancer_ssl.sh");
+        if (_updateTungstenLoadbalancerSslPath == null) {
+            throw new ConfigurationException("Unable to find the update_tungsten_loadbalancer_ssl.sh");
         }
 
         String value = (String)params.get("developer");
@@ -4509,6 +4521,38 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.add(subnet);
         cmd.add(route);
         cmd.add(vrf);
+
+        final String result = cmd.execute();
+        if (result != null) {
+            return false;
+        }
+        return true;
+    }
+
+    public boolean updateTungstenLoadbalancerStats(final String lbUuid, final String lbStatsPort,
+        final String lbStatsUri, final String lbStatsAuth) {
+        final Script cmd = new Script(_updateTungstenLoadbalancerStatsPath, _timeout, s_logger);
+        cmd.add(lbUuid);
+        cmd.add(lbStatsPort);
+        cmd.add(lbStatsUri);
+        cmd.add(lbStatsAuth);
+
+        final String result = cmd.execute();
+        if (result != null) {
+            return false;
+        }
+        return true;
+    }
+
+    public boolean updateTungstenLoadbalancerSsl(final String lbUuid, final String sslCertName,
+        final String certificateKey, final String privateKey, final String privateIp, final String port) {
+        final Script cmd = new Script(_updateTungstenLoadbalancerSslPath, _timeout, s_logger);
+        cmd.add(lbUuid);
+        cmd.add(sslCertName);
+        cmd.add(certificateKey);
+        cmd.add(privateKey);
+        cmd.add(privateIp);
+        cmd.add(port);
 
         final String result = cmd.execute();
         if (result != null) {

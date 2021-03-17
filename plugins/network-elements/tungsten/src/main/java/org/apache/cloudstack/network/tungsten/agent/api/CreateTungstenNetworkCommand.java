@@ -21,6 +21,7 @@ import java.util.List;
 public class CreateTungstenNetworkCommand extends TungstenCommand {
     private final String uuid;
     private final String name;
+    private final String displayName;
     private final String projectFqn;
     private final boolean routerExternal;
     private final boolean shared;
@@ -33,13 +34,16 @@ public class CreateTungstenNetworkCommand extends TungstenCommand {
     private final String allocationEnd;
     private final boolean ipFromStart;
     private final boolean isManagementNetwork;
+    private final String subnetName;
 
-    public CreateTungstenNetworkCommand(final String uuid, final String name, final String projectFqn,
-        final boolean routerExternal, final boolean shared, final String ipPrefix, final int ipPrefixLen,
-        final String gateway, final boolean dhcpEnable, final List<String> dnsServers, final String allocationStart,
-        final String allocationEnd, final boolean ipFromStart, final boolean isManagementNetwork) {
+    public CreateTungstenNetworkCommand(final String uuid, final String name, final String displayName,
+        final String projectFqn, final boolean routerExternal, final boolean shared, final String ipPrefix,
+        final int ipPrefixLen, final String gateway, final boolean dhcpEnable, final List<String> dnsServers,
+        final String allocationStart, final String allocationEnd, final boolean ipFromStart,
+        final boolean isManagementNetwork, final String subnetName) {
         this.uuid = uuid;
         this.name = name;
+        this.displayName = displayName;
         this.projectFqn = projectFqn;
         this.routerExternal = routerExternal;
         this.shared = shared;
@@ -52,6 +56,7 @@ public class CreateTungstenNetworkCommand extends TungstenCommand {
         this.allocationEnd = allocationEnd;
         this.ipFromStart = ipFromStart;
         this.isManagementNetwork = isManagementNetwork;
+        this.subnetName = subnetName;
     }
 
     public String getUuid() {
@@ -60,6 +65,10 @@ public class CreateTungstenNetworkCommand extends TungstenCommand {
 
     public String getName() {
         return name;
+    }
+
+    public String getDisplayName() {
+        return displayName;
     }
 
     public String getProjectFqn() {
@@ -108,5 +117,9 @@ public class CreateTungstenNetworkCommand extends TungstenCommand {
 
     public boolean isManagementNetwork() {
         return isManagementNetwork;
+    }
+
+    public String getSubnetName() {
+        return subnetName;
     }
 }

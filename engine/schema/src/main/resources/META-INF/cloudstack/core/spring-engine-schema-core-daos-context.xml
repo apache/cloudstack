@@ -268,6 +268,7 @@
   <bean id="serviceOfferingDetailsDaoImpl" class="com.cloud.service.dao.ServiceOfferingDetailsDaoImpl"/>
   <bean id="vpcOfferingDetailsDaoImpl" class="com.cloud.network.vpc.dao.VpcOfferingDetailsDaoImpl"/>
   <bean id="networkDetailsDaoImpl" class="com.cloud.network.dao.NetworkDetailsDaoImpl" />
+  <bean id="tungstenGuestNetworkIpAddressDaoImpl" class="com.cloud.network.dao.TungstenGuestNetworkIpAddressDaoImpl"/>
   <bean id="vlanDetailsDaoImpl" class="com.cloud.dc.dao.VlanDetailsDaoImpl" />
   <bean id="hostGpuGroupsDaoImpl" class="com.cloud.gpu.dao.HostGpuGroupsDaoImpl" />
   <bean id="vGPUTypesDaoImpl" class="com.cloud.gpu.dao.VGPUTypesDaoImpl" />
