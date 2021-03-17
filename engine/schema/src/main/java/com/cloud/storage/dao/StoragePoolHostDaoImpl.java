@@ -21,7 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -43,6 +43,8 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
     protected final SearchBuilder<StoragePoolHostVO> PoolHostSearch;
 
     protected static final String HOST_FOR_POOL_SEARCH = "SELECT * FROM storage_pool_host_ref ph,  host h where  ph.host_id = h.id and ph.pool_id=? and h.status=? ";
+
+    protected static final String HOSTS_FOR_POOLS_SEARCH = "SELECT DISTINCT(ph.host_id) FROM storage_pool_host_ref ph, host h WHERE ph.host_id = h.id AND h.status = 'Up' AND resource_state = 'Enabled' AND ph.pool_id IN (?)";
 
     protected static final String STORAGE_POOL_HOST_INFO = "SELECT p.data_center_id,  count(ph.host_id) " + " FROM storage_pool p, storage_pool_host_ref ph "
         + " WHERE p.id = ph.pool_id AND p.data_center_id = ? " + " GROUP by p.data_center_id";
@@ -119,6 +121,33 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
             s_logger.warn("listByHostStatus:Exception: ", e);
         }
         return result;
+    }
+
+    @Override
+    public List<Long> findHostsConnectedToPools(List<Long> poolIds) {
+        List<Long> hosts = new ArrayList<Long>();
+        if (poolIds == null || poolIds.isEmpty()) {
+            return hosts;
+        }
+
+        String poolIdsInStr = poolIds.stream().map(poolId -> String.valueOf(poolId)).collect(Collectors.joining(",", "(", ")"));
+        String sql = HOSTS_FOR_POOLS_SEARCH.replace("(?)", poolIdsInStr);
+
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try(PreparedStatement pstmt = txn.prepareStatement(sql);) {
+            try(ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    long hostId = rs.getLong(1); // host_id column
+                    hosts.add(hostId);
+                }
+            } catch (SQLException e) {
+                s_logger.warn("findHostsConnectedToPools:Exception: ", e);
+            }
+        } catch (Exception e) {
+            s_logger.warn("findHostsConnectedToPools:Exception: ", e);
+        }
+
+        return hosts;
     }
 
     @Override

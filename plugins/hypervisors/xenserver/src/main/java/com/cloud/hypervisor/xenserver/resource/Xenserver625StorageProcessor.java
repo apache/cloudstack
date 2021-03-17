@@ -30,6 +30,7 @@ import java.util.UUID;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -918,6 +919,12 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
     public Answer CheckDataStoreStoragePolicyComplaince(CheckDataStoreStoragePolicyComplainceCommand cmd) {
         s_logger.info("'CheckDataStoreStoragePolicyComplainceCommand' not applicable used for XenServerStorageProcessor");
         return new Answer(cmd,false,"Not applicable used for XenServerStorageProcessor");
+    }
+
+    @Override
+    public Answer SyncVolumePath(SyncVolumePathCommand cmd) {
+        s_logger.info("SyncVolumePathCommand not currently applicable for XenServerStorageProcessor");
+        return new Answer(cmd,false,"Not currently applicable for XenServerStorageProcessor");
     }
 
     @Override

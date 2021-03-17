@@ -34,6 +34,7 @@ import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -74,6 +75,8 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             return processor.handleDownloadTemplateToPrimaryStorage((DirectDownloadCommand) command);
         } else if (command instanceof CheckDataStoreStoragePolicyComplainceCommand) {
             return processor.CheckDataStoreStoragePolicyComplaince((CheckDataStoreStoragePolicyComplainceCommand) command);
+        } else if (command instanceof SyncVolumePathCommand) {
+            return processor.SyncVolumePath((SyncVolumePathCommand) command);
         }
 
         return new Answer((Command)command, false, "not implemented yet");
