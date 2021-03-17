@@ -36,7 +36,7 @@ import org.apache.log4j.Logger;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.16.0")
 public class UpdateStorageCapabilitiesCmd extends BaseCmd {
     public static final String APINAME = "updateStorageCapabilities";
-    private static final Logger LOG = Logger.getLogger(UpdateImageStoreCmd.class.getName());
+    private static final Logger LOG = Logger.getLogger(UpdateStorageCapabilitiesCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
