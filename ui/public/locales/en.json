@@ -203,6 +203,8 @@
 "label.action.generate.keys": "Generate Keys",
 "label.action.generate.keys.processing": "Generate Keys....",
 "label.action.get.diagnostics": "Get Diagnostics Data",
+"label.action.image.store.read.only": "Make Image store read-only",
+"label.action.image.store.read.write": "Make Image store read-write",
 "label.action.iso.permission": "Update ISO Permissions",
 "label.action.iso.share": "Update ISO Sharing",
 "label.action.list.nexusvswitch": "List Nexus 1000v",
@@ -2448,7 +2450,12 @@
 "message.action.revert.snapshot": "Please confirm that you want to revert the owning volume to this snapshot.",
 "message.action.router.health.checks": "Health checks result will be fetched from router.",
 "message.action.router.health.checks.disabled.warning": "Please enable router health checks.",
+<<<<<<< HEAD
 "message.action.scale.kubernetes.cluster.warning": "Please do not manually scale the cluster if cluster autoscaling is enabled",
+=======
+"message.action.secondary.storage.read.only": "Please confirm that you want to make this secondary storage read only.",
+"message.action.secondary.storage.read.write": "Please confirm that you want to make this secondary storage read write.",
+>>>>>>> 775de36688b18dad651af69179cd7776d6d2b791
 "message.action.secure.host": "This will restart the host agent and libvirtd process after applying new X509 certificates, please confirm?",
 "message.action.settings.warning.vm.running": "Please stop the virtual machine to access settings",
 "message.action.settings.warning.vm.started": "Virtual machine has been started. It needs to be stopped to access settings",
@@ -3070,7 +3077,7 @@
 "message.restart.mgmt.usage.server": "Please restart your management server(s) and usage server(s) for your new settings to take effect.",
 "message.restart.network": "All services provided by this network will be interrupted. Please confirm that you want to restart this network.",
 "message.restart.vpc": "Please confirm that you want to restart the VPC",
-"message.restart.vpc.remark": "Please confirm that you want to restart the VPC <p><small><i>Remark: making a non-redundant VPC redundant will force a clean up. The networks will not be available for a couple of minutes</i>.</small></p>",
+"message.restart.vpc.remark": "Please confirm that you want to restart the VPC <p><i>Remark: making a non-redundant VPC redundant will force a clean up. The networks will not be available for a couple of minutes</i>.</p>",
 "message.restorevm": "Do you want to restore the VM ?",
 "message.role.ordering.fail": "Reordering of rule permissions aborted as the list has changed while you were making changes. Please try again.",
 "message.role.update.fail": "Failed updating rule permission",
@@ -3205,6 +3212,7 @@
 "message.update.ipaddress.processing": "Updating IP Address...",
 "message.update.os.preference": "Please choose a OS preference for this host.  All virtual instances with similar preferences will be first allocated to this host before choosing another.",
 "message.update.resource.count": "Please confirm that you want to update resource counts for this account.",
+"message.update.resource.count.domain": "Please confirm that you want to update resource counts for this domain.",
 "message.update.ssl": "Please submit a new X.509 compliant SSL certificate chain to be updated to each console proxy and secondary storage virtual instance:",
 "message.update.ssl.failed": "Failed to update SSL Certificate.",
 "message.update.ssl.succeeded": "Update SSL Certificates succeeded",

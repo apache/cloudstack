@@ -311,7 +311,7 @@ export default {
           message: 'message.action.instance.reset.password',
           dataView: true,
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) && record.passwordenabled },
-          response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `Password of the VM is ${result.virtualmachine.password}` : null }
+          response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null }
         },
         {
           api: 'resetSSHKeyForVirtualMachine',
@@ -540,6 +540,7 @@ export default {
           api: 'deleteSSHKeyPair',
           icon: 'delete',
           label: 'label.remove.ssh.key.pair',
+          message: 'message.please.confirm.remove.ssh.key.pair',
           dataView: true,
           args: ['name', 'account', 'domainid'],
           mapping: {
