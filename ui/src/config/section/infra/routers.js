@@ -104,6 +104,7 @@ export default {
       api: 'migrateSystemVm',
       icon: 'drag',
       label: 'label.action.migrate.router',
+      message: 'message.migrate.router.confirm',
       dataView: true,
       show: (record, store) => { return record.state === 'Running' && ['Admin'].includes(store.userInfo.roletype) },
       component: () => import('@/views/compute/MigrateWizard'),

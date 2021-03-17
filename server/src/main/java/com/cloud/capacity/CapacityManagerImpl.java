@@ -675,11 +675,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             Map<String, String> vmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
             String vmDetailCpu = vmDetails.get("cpuOvercommitRatio");
             String vmDetailRam = vmDetails.get("memoryOvercommitRatio");
-            if (vmDetailCpu != null) {
-                //if vmDetail_cpu is not null it means it is running in a overcommited cluster.
-                cpuOvercommitRatio = Float.parseFloat(vmDetailCpu);
-                ramOvercommitRatio = Float.parseFloat(vmDetailRam);
-            }
+            // if vmDetailCpu or vmDetailRam is not null it means it is running in a overcommitted cluster.
+            cpuOvercommitRatio = (vmDetailCpu != null) ? Float.parseFloat(vmDetailCpu) : clusterCpuOvercommitRatio;
+            ramOvercommitRatio = (vmDetailRam != null) ? Float.parseFloat(vmDetailRam) : clusterRamOvercommitRatio;
             ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
             if (so == null) {
                 so = _offeringsDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
