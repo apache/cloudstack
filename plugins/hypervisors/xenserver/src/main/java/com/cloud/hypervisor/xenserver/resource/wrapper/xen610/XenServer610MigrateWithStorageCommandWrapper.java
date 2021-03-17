@@ -90,7 +90,8 @@ public final class XenServer610MigrateWithStorageCommandWrapper extends CommandW
                 final StorageFilerTO storageFiler = entry.second();
                 final VolumeTO volume = entry.first();
                 vdiMap.put(xenServer610Resource.getVDIbyUuid(connection, volume.getPath()),
-                        xenServer610Resource.getStorageRepository(connection, CitrixHelper.getSRNameLabel(storageFiler)));
+                        xenServer610Resource.getStorageRepository(connection,
+                                CitrixHelper.getSRNameLabel(storageFiler.getUuid(), storageFiler.getType(), storageFiler.getPath())));
             }
 
             // Get the vm to migrate.

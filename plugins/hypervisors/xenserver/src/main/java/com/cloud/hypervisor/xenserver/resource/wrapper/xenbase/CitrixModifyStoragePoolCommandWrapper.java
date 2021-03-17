@@ -52,7 +52,7 @@ public final class CitrixModifyStoragePoolCommandWrapper extends CommandWrapper<
             try {
                 String srName = command.getStoragePath();
                 if (srName == null) {
-                    srName = CitrixHelper.getSRNameLabel(pool);
+                    srName = CitrixHelper.getSRNameLabel(pool.getUuid(), pool.getType(), pool.getPath());
                 }
                 final SR sr = citrixResourceBase.getStorageRepository(conn, srName);
                 citrixResourceBase.setupHeartbeatSr(conn, sr, false);
@@ -79,7 +79,8 @@ public final class CitrixModifyStoragePoolCommandWrapper extends CommandWrapper<
             }
         } else {
             try {
-                final SR sr = citrixResourceBase.getStorageRepository(conn, CitrixHelper.getSRNameLabel(pool));
+                final SR sr = citrixResourceBase.getStorageRepository(conn,
+                        CitrixHelper.getSRNameLabel(pool.getUuid(), pool.getType(), pool.getPath()));
                 final String srUuid = sr.getUuid(conn);
                 final String result = citrixResourceBase.callHostPluginPremium(conn, "setup_heartbeat_file", "host", citrixResourceBase.getHost().getUuid(), "sr", srUuid, "add",
                         "false");

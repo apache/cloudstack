@@ -331,7 +331,7 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
                     String srNameLabel = pool.getUuid();
                     if (Storage.StoragePoolType.PreSetup.equals(pool.getPoolType()) &&
                             !pool.getPath().contains(pool.getUuid())) {
-                        srNameLabel = pool.getPath().replace("/", "");
+                        srNameLabel = pool.getPath().replaceFirst("/", "");
                     }
                     volumeToStorageUuid.add(new Pair<>(volumeTo, srNameLabel));
                 }

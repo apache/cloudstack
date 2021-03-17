@@ -51,7 +51,8 @@ public final class CitrixCreateCommandWrapper extends CommandWrapper<CreateComma
 
         VDI vdi = null;
         try {
-            final SR poolSr = citrixResourceBase.getStorageRepository(conn, CitrixHelper.getSRNameLabel(pool));
+            final SR poolSr = citrixResourceBase.getStorageRepository(conn,
+                    CitrixHelper.getSRNameLabel(pool.getUuid(), pool.getType(), pool.getPath()));
             if (command.getTemplateUrl() != null) {
                 VDI tmpltvdi = null;
 

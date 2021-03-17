@@ -96,14 +96,6 @@ public class XenServerStorageProcessor implements StorageProcessor {
         hypervisorResource = resource;
     }
 
-    protected String getSRNameLabel(final PrimaryDataStoreTO primaryStore) {
-        if (Storage.StoragePoolType.PreSetup.equals(primaryStore.getPoolType()) &&
-                !primaryStore.getPath().contains(primaryStore.getUuid())) {
-            return  primaryStore.getPath().replace("/", "");
-        }
-        return primaryStore.getUuid();
-    }
-
     // if the source SR needs to be attached to, do so
     // take a snapshot of the source VDI (on the source SR)
     // create an iSCSI SR based on the new back-end volume
@@ -799,7 +791,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
         try {
             final Connection conn = hypervisorResource.getConnection();
             final PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)data.getDataStore();
-            final SR poolSr = hypervisorResource.getStorageRepository(conn, getSRNameLabel(primaryStore));
+            final SR poolSr = hypervisorResource.getStorageRepository(conn,
+                    CitrixHelper.getSRNameLabel(primaryStore.getUuid(), primaryStore.getPoolType(), primaryStore.getPath()));
             VDI.Record vdir = new VDI.Record();
             vdir.nameLabel = volume.getName();
             vdir.SR = poolSr;
@@ -873,7 +866,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
             final NfsTO nfsStore = (NfsTO) srcStore;
             try {
                 final PrimaryDataStoreTO destStore = (PrimaryDataStoreTO)destVolume.getDataStore();
-                final SR primaryStoragePool = hypervisorResource.getStorageRepository(conn, getSRNameLabel(destStore));
+                final SR primaryStoragePool = hypervisorResource.getStorageRepository(conn,
+                        CitrixHelper.getSRNameLabel(destStore.getUuid(), destStore.getPoolType(), destStore.getPath()));
                 final String srUuid = primaryStoragePool.getUuid(conn);
                 final URI uri = new URI(nfsStore.getUrl());
                 final String volumePath = uri.getHost() + ":" + uri.getPath() + nfsStore.getPathSeparator() + srcVolume.getPath();
@@ -1156,7 +1150,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
         final DataTO destData = cmd.getDestTO();
         final int wait = cmd.getWait();
         final PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)srcData.getDataStore();
-        final String primaryStorageNameLabel = getSRNameLabel(primaryStore);
+        final String primaryStorageNameLabel = CitrixHelper.getSRNameLabel(primaryStore.getUuid(),
+                primaryStore.getPoolType(), primaryStore.getPath());
         String secondaryStorageUrl = null;
         NfsTO cacheStore = null;
         String destPath = null;

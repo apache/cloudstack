@@ -18,8 +18,6 @@
  */
 package com.cloud.hypervisor.xenserver.resource;
 
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
-
 import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
@@ -327,7 +325,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
                     destSr = hypervisorResource.prepareManagedSr(conn, details);
                 } else {
-                    final String srName = getSRNameLabel(destStore);
+                    final String srName = CitrixHelper.getSRNameLabel(destStore.getUuid(), destStore.getPoolType(), destStore.getPath());
                     final Set<SR> srs = SR.getByNameLabel(conn, srName);
 
                     if (srs.size() != 1) {
@@ -493,7 +491,8 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         final DataTO destData = cmd.getDestTO();
         final int wait = cmd.getWait();
         final PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)srcData.getDataStore();
-        final String primaryStorageNameLabel = getSRNameLabel(primaryStore);
+        final String primaryStorageNameLabel = CitrixHelper.getSRNameLabel(primaryStore.getUuid(),
+                primaryStore.getPoolType(), primaryStore.getPath());
         String secondaryStorageUrl = null;
         NfsTO cacheStore = null;
         String destPath = null;
@@ -994,7 +993,8 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             final SR srcSr = createFileSr(conn, uri.getHost() + ":" + uri.getPath(), volumeDirectory);
             Task task = null;
             try {
-                final SR primaryStoragePool = hypervisorResource.getStorageRepository(conn, getSRNameLabel(primaryStore));
+                final SR primaryStoragePool = hypervisorResource.getStorageRepository(conn,
+                        CitrixHelper.getSRNameLabel(primaryStore.getUuid(), primaryStore.getPoolType(), primaryStore.getPath()));
                 final VDI srcVdi = VDI.getByUuid(conn, volumeUuid);
                 task = srcVdi.copyAsync(conn, primaryStoragePool, null, null);
                 // poll every 1 seconds ,

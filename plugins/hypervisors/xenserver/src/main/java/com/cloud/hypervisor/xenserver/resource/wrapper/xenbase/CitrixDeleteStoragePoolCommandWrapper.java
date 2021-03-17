@@ -54,7 +54,7 @@ public final class CitrixDeleteStoragePoolCommandWrapper extends CommandWrapper<
                 srNameLabel = details.get(DeleteStoragePoolCommand.DATASTORE_NAME);
             }
             else {
-                srNameLabel = CitrixHelper.getSRNameLabel(poolTO);
+                srNameLabel = CitrixHelper.getSRNameLabel(poolTO.getUuid(), poolTO.getType(), poolTO.getPath());
             }
             sr = citrixResourceBase.getStorageRepository(conn, srNameLabel);
 

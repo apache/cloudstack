@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
