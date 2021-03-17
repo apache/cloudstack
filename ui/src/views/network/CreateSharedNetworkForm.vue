@@ -678,6 +678,7 @@ export default {
       this.networkOfferings = []
       api('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering
+        this.handleNetworkOfferingChange(this.networkOfferings[0])
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -686,7 +687,6 @@ export default {
           this.form.setFieldsValue({
             networkofferingid: 0
           })
-          this.handleNetworkOfferingChange(this.networkOfferings[0])
         } else {
           this.form.setFieldsValue({
             networkofferingid: null
@@ -838,6 +838,9 @@ export default {
         // IPv6 (begin)
         if (this.isValidTextValueForKey(values, 'ip4gateway')) {
           params.ip6gateway = values.ip6gateway
+        }
+        if (this.isValidTextValueForKey(values, 'routerip')) {
+          params.routerip = values.routerip
         }
         if (this.isValidTextValueForKey(values, 'ip6cidr')) {
           params.ip6cidr = values.ip6cidr

@@ -16,18 +16,20 @@
 // under the License.
 package com.cloud.vm;
 
+import java.util.Map;
+
 public class VmWorkStorageMigration extends VmWork {
     private static final long serialVersionUID = -8677979691741157474L;
 
-    Long destPoolId;
+    Map<Long, Long> volumeToPool;
 
-    public VmWorkStorageMigration(long userId, long accountId, long vmId, String handlerName, Long destPoolId) {
+    public VmWorkStorageMigration(long userId, long accountId, long vmId, String handlerName, Map <Long, Long> volumeToPool) {
         super(userId, accountId, vmId, handlerName);
 
-        this.destPoolId = destPoolId;
+        this.volumeToPool = volumeToPool;
     }
 
-    public Long getDestStoragePoolId() {
-        return destPoolId;
+    public Map<Long, Long> getVolumeToPool() {
+        return volumeToPool;
     }
 }

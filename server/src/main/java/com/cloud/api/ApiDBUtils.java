@@ -311,6 +311,7 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroup;
@@ -1208,7 +1209,7 @@ public class ApiDBUtils {
                 type = HypervisorType.Hyperv;
             }
         } if (format == ImageFormat.RAW) {
-            // Currently, KVM only suppoorts RBD images of type RAW.
+            // Currently, KVM only supports RBD and PowerFlex images of type RAW.
             // This results in a weird collision with OVM volumes which
             // can only be raw, thus making KVM RBD volumes show up as OVM
             // rather than RBD. This block of code can (hopefuly) by checking to
@@ -1220,7 +1221,7 @@ public class ApiDBUtils {
             ListIterator<StoragePoolVO> itr = pools.listIterator();
             while(itr.hasNext()) {
                 StoragePoolVO pool = itr.next();
-                if(pool.getPoolType() == StoragePoolType.RBD || pool.getPoolType() == StoragePoolType.CLVM) {
+                if(pool.getPoolType() == StoragePoolType.RBD || pool.getPoolType() == StoragePoolType.PowerFlex || pool.getPoolType() == StoragePoolType.CLVM) {
                   // This case will note the presence of non-qcow2 primary stores, suggesting KVM without NFS. Otherwse,
                   // If this check is not passed, the hypervisor type will remain OVM.
                   type = HypervisorType.KVM;
@@ -1736,7 +1737,17 @@ public class ApiDBUtils {
     ///////////////////////////////////////////////////////////////////////
 
     public static DomainRouterResponse newDomainRouterResponse(DomainRouterJoinVO vr, Account caller) {
-        return s_domainRouterJoinDao.newDomainRouterResponse(vr, caller);
+        DomainRouterResponse response = s_domainRouterJoinDao.newDomainRouterResponse(vr, caller);
+        if (StringUtils.isBlank(response.getHypervisor())) {
+            VMInstanceVO vm = ApiDBUtils.findVMInstanceById(vr.getId());
+            if (vm.getLastHostId() != null) {
+                HostVO lastHost = ApiDBUtils.findHostById(vm.getLastHostId());
+                if (lastHost != null) {
+                    response.setHypervisor(lastHost.getHypervisorType().toString());
+                }
+            }
+        }
+        return  response;
     }
 
     public static DomainRouterResponse fillRouterDetails(DomainRouterResponse vrData, DomainRouterJoinVO vr) {

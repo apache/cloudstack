@@ -744,4 +744,18 @@ public class VmwareHelper {
         return DatatypeFactory.newInstance().newXMLGregorianCalendar(gregorianCalendar);
     }
 
+    public static HostMO getHostMOFromHostName(final VmwareContext context, final String hostName) {
+        HostMO host = null;
+        if (com.cloud.utils.StringUtils.isNotBlank(hostName) && hostName.contains("@")) {
+            String hostMorInfo = hostName.split("@")[0];
+            if (hostMorInfo.contains(":")) {
+                ManagedObjectReference morHost = new ManagedObjectReference();
+                morHost.setType(hostMorInfo.split(":")[0]);
+                morHost.setValue(hostMorInfo.split(":")[1]);
+                host = new HostMO(context, morHost);
+            }
+        }
+        return host;
+    }
+
 }

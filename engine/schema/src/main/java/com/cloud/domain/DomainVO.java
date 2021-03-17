@@ -55,6 +55,9 @@ public class DomainVO implements Domain {
     @Column(name = "level")
     private int level;
 
+    @Column(name = GenericDao.CREATED_COLUMN)
+    private Date created;
+
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
@@ -141,6 +144,11 @@ public class DomainVO implements Domain {
 
     public void setAccountId(long accountId) {
         this.accountId = accountId;
+    }
+
+    @Override
+    public Date getCreated() {
+        return created;
     }
 
     @Override

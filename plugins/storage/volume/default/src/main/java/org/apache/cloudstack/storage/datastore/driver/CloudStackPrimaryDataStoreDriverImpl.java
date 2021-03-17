@@ -76,6 +76,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
+import com.cloud.utils.Pair;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
@@ -278,6 +279,11 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     }
 
     @Override
+    public void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+        copyAsync(srcData, destData, callback);
+    }
+
+    @Override
     public boolean canCopy(DataObject srcData, DataObject destData) {
         //BUG fix for CLOUDSTACK-4618
         DataStore store = destData.getDataStore();
@@ -389,4 +395,29 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Override
     public void handleQualityOfServiceForVolumeMigration(VolumeInfo volumeInfo, QualityOfServiceState qualityOfServiceState) {}
+
+    @Override
+    public boolean canProvideStorageStats() {
+        return false;
+    }
+
+    @Override
+    public Pair<Long, Long> getStorageStats(StoragePool storagePool) {
+        return null;
+    }
+
+    @Override
+    public boolean canProvideVolumeStats() {
+        return false;
+    }
+
+    @Override
+    public Pair<Long, Long> getVolumeStats(StoragePool storagePool, String volumeId) {
+        return null;
+    }
+
+    @Override
+    public boolean canHostAccessStoragePool(Host host, StoragePool pool) {
+        return true;
+    }
 }

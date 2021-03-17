@@ -86,7 +86,8 @@ public interface StorageAdaptor {
      * Create physical disk on Primary Storage from direct download template on the host (in temporary location)
      * @param templateFilePath
      * @param destPool
-     * @param isIso
+     * @param format
+     * @param timeout
      */
-    KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, KVMStoragePool destPool, boolean isIso);
+    KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format, int timeout);
 }

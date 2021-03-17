@@ -16,8 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.api.APICommand;
@@ -31,6 +34,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.VsphereStoragePoliciesResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.offering.DiskOffering;
@@ -155,7 +159,10 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.STORAGE_POLICY, type = CommandType.UUID, entityType = VsphereStoragePoliciesResponse.class,required = false, description = "Name of the storage policy defined at vCenter, this is applicable only for VMware", since = "4.15")
     private Long storagePolicy;
 
-/////////////////////////////////////////////////////
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "details to specify disk offering parameters", since = "4.16")
+    private Map details;
+
+    /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
@@ -275,6 +282,20 @@ public class CreateDiskOfferingCmd extends BaseCmd {
 
     public String getCacheMode() {
         return cacheMode;
+    }
+
+    public Map<String, String> getDetails() {
+        Map<String, String> detailsMap = new HashMap<>();
+        if (MapUtils.isNotEmpty(details)) {
+            Collection<?> props = details.values();
+            for (Object prop : props) {
+                HashMap<String, String> detail = (HashMap<String, String>) prop;
+                for (Map.Entry<String, String> entry: detail.entrySet()) {
+                    detailsMap.put(entry.getKey(),entry.getValue());
+                }
+            }
+        }
+        return detailsMap;
     }
 
     public Long getStoragePolicy() {

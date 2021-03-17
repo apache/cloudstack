@@ -110,6 +110,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageStats;
@@ -931,7 +932,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 for (StoragePoolVO pool : pools) {
                     List<VolumeVO> volumes = _volsDao.findByPoolId(pool.getId(), null);
                     for (VolumeVO volume : volumes) {
-                        if (volume.getFormat() != ImageFormat.QCOW2 && volume.getFormat() != ImageFormat.VHD && volume.getFormat() != ImageFormat.OVA) {
+                        if (volume.getFormat() != ImageFormat.QCOW2 && volume.getFormat() != ImageFormat.VHD && volume.getFormat() != ImageFormat.OVA && (volume.getFormat() != ImageFormat.RAW || pool.getPoolType() != Storage.StoragePoolType.PowerFlex)) {
                             s_logger.warn("Volume stats not implemented for this format type " + volume.getFormat());
                             break;
                         }
