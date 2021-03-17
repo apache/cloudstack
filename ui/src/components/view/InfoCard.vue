@@ -398,7 +398,12 @@
           <div class="resource-detail-item__label">{{ $t('label.templatename') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="picture" />
-            <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatename || resource.templateid }} </router-link>
+            <div v-if="resource.isoid">
+              <router-link :to="{ path: '/iso/' + resource.isoid }">{{ resource.isoname || resource.isoid }} </router-link>
+            </div>
+            <div v-else>
+              <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatename || resource.templateid }} </router-link>
+            </div>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
