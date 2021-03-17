@@ -2072,7 +2072,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // Setup ROOT/DATA disk devices
             //
             for (DiskTO vol : sortedDisks) {
-                if (vol.getType() == Volume.Type.ISO || deployAsIs && vol.getType() == Volume.Type.ROOT) {
+                if (vol.getType() == Volume.Type.ISO) {
+                    continue;
+                }
+
+                if (deployAsIs && vol.getType() == Volume.Type.ROOT) {
+                    rootDiskTO = vol;
+                    s_logger.info("root disk to path: "+ rootDiskTO.getPath());
+                    resizeRootDiskOnVMStart(vmMo, rootDiskTO, hyperHost, context);
                     continue;
                 }
 
