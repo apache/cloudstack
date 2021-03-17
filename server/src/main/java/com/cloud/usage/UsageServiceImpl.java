@@ -201,7 +201,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             }
         }
 
-        boolean isAdmin = false;
+        boolean ignoreAccountId = false;
         boolean isDomainAdmin = _accountService.isDomainAdmin(caller.getId());
         boolean isNormalUser = _accountService.isNormalUser(caller.getId());
 
@@ -210,9 +210,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             accountId = caller.getId();
             //List records for all the accounts if the caller account is of type admin.
             //If account_id or account_name is explicitly mentioned, list records for the specified account only even if the caller is of type admin
-            if (_accountService.isRootAdmin(caller.getId())) {
-                isAdmin = true;
-            }
+            ignoreAccountId = _accountService.isRootAdmin(caller.getId());
             s_logger.debug("Account details not available. Using userContext accountId: " + accountId);
         }
 
@@ -229,47 +227,14 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             }
 
             if (cmd.getAccountId() != null) {
-
                 // Check if a domain admin is allowed to access the requested account info.
-                Account account = _accountService.getAccount(accountId);
-                boolean matchFound = false;
-
-                if (account.getDomainId() == domainId) {
-                    matchFound = true;
-                } else {
-
-                    // Check if the account is in a child domain of this domain admin.
-                    List<DomainVO> childDomains = _domainDao.findAllChildren(_domainDao.findById(domainId).getPath(), domainId);
-
-                    for (DomainVO domainVO : childDomains) {
-                        if (account.getDomainId() == domainVO.getId()) {
-                            matchFound = true;
-                            break;
-                        }
-                    }
-                }
-                if (!matchFound) {
-                    throw new PermissionDeniedException("Domain admins may only retrieve usage records for accounts in their own domain and child domains.");
-                }
+                checkDomainAdminAccountAccess(accountId, domainId);
             }
         }
 
         // By default users do not have access to this API.
         // Adding checks here in case someone changes the default access.
-        if (isNormalUser) {
-            // A user can only access their own account records
-            if (caller.getId() != accountId) {
-                throw new PermissionDeniedException("Users are only allowed to list usage records for their own account.");
-            }
-            // Users cannot get recursive records
-            if (cmd.isRecursive()) {
-                throw new PermissionDeniedException("Users are not allowed to list usage records recursively.");
-            }
-            // Users cannot get domain records
-            if (cmd.getDomainId() != null) {
-                throw new PermissionDeniedException("Users are not allowed to list usage records for a domain");
-            }
-        }
+        checkUserAccess(cmd, accountId, caller, isNormalUser);
 
         Date startDate = cmd.getStartDate();
         Date endDate = cmd.getEndDate();
@@ -289,7 +254,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
 
         SearchCriteria<UsageVO> sc = _usageDao.createSearchCriteria();
 
-        if (accountId != -1 && accountId != Account.ACCOUNT_ID_SYSTEM && !isAdmin) {
+        if (accountId != -1 && accountId != Account.ACCOUNT_ID_SYSTEM && !ignoreAccountId) {
             // account exists and either domain on user role
             // If not recursive and the account belongs to the user/domain admin, or the account was passed in, filter
             if ((accountId == caller.getId() && !cmd.isRecursive()) || cmd.getAccountId() != null){
@@ -430,6 +395,46 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         }
 
         return new Pair<List<? extends Usage>, Integer>(usageRecords.first(), usageRecords.second());
+    }
+
+    private void checkUserAccess(ListUsageRecordsCmd cmd, Long accountId, Account caller, boolean isNormalUser) {
+        if (isNormalUser) {
+            // A user can only access their own account records
+            if (caller.getId() != accountId) {
+                throw new PermissionDeniedException("Users are only allowed to list usage records for their own account.");
+            }
+            // Users cannot get recursive records
+            if (cmd.isRecursive()) {
+                throw new PermissionDeniedException("Users are not allowed to list usage records recursively.");
+            }
+            // Users cannot get domain records
+            if (cmd.getDomainId() != null) {
+                throw new PermissionDeniedException("Users are not allowed to list usage records for a domain");
+            }
+        }
+    }
+
+    private void checkDomainAdminAccountAccess(Long accountId, Long domainId) {
+        Account account = _accountService.getAccount(accountId);
+        boolean matchFound = false;
+
+        if (account.getDomainId() == domainId) {
+            matchFound = true;
+        } else {
+
+            // Check if the account is in a child domain of this domain admin.
+            List<DomainVO> childDomains = _domainDao.findAllChildren(_domainDao.findById(domainId).getPath(), domainId);
+
+            for (DomainVO domainVO : childDomains) {
+                if (account.getDomainId() == domainVO.getId()) {
+                    matchFound = true;
+                    break;
+                }
+            }
+        }
+        if (!matchFound) {
+            throw new PermissionDeniedException("Domain admins may only retrieve usage records for accounts in their own domain and child domains.");
+        }
     }
 
     @Override
