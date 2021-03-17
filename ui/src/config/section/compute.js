@@ -543,6 +543,7 @@ export default {
           api: 'deleteSSHKeyPair',
           icon: 'delete',
           label: 'label.remove.ssh.key.pair',
+          message: 'message.please.confirm.remove.ssh.key.pair',
           dataView: true,
           args: ['name', 'account', 'domainid'],
           mapping: {
