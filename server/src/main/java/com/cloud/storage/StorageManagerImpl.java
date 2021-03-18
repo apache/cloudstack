@@ -452,7 +452,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
             if (storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).canProvideStorageStats()) {
                 // Get stats from the pool directly instead of sending cmd to host
-                return getStoragePoolStats(pool, (GetStorageStatsCommand) cmd, storeDriver);
+                return getStoragePoolStats(pool, (GetStorageStatsCommand) cmd);
             }
         }
 
@@ -463,9 +463,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return answers[0];
     }
 
-    private GetStorageStatsAnswer getStoragePoolStats(StoragePool pool, GetStorageStatsCommand cmd, DataStoreDriver storeDriver) {
+    private GetStorageStatsAnswer getStoragePoolStats(StoragePool pool, GetStorageStatsCommand cmd) {
         GetStorageStatsAnswer answer = null;
 
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
         PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver) storeDriver;
         Pair<Long, Long> storageStats = primaryStoreDriver.getStorageStats(pool);
         if (storageStats == null) {
@@ -478,7 +480,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public Answer getVolumeStats(StoragePool pool, Command cmd, DataStoreDriver storeDriver) {
+    public Answer getVolumeStats(StoragePool pool, Command cmd) {
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
         PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver) storeDriver;
         HashMap<String, VolumeStatsEntry> statEntry = new HashMap<String, VolumeStatsEntry>();
         GetVolumeStatsCommand getVolumeStatsCommand = (GetVolumeStatsCommand) cmd;

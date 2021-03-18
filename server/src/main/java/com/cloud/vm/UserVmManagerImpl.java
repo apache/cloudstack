@@ -2060,7 +2060,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 if (storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver) storeDriver).canProvideVolumeStats()) {
                     // Get volume stats from the pool directly instead of sending cmd to host
-                    answer = _storageManager.getVolumeStats(storagePool, cmd, storeDriver);
+                    answer = _storageManager.getVolumeStats(storagePool, cmd);
                 } else {
                     if (timeout > 0) {
                         cmd.setWait(timeout/1000);
