@@ -528,7 +528,7 @@ export default {
 
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
 
-      if (this.$route && this.$route.params && this.$route.params.id) {
+      if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
         if (!refreshed) {
           this.resource = {}
