@@ -46,25 +46,40 @@
         </div>
 
         <div slot="actions" class="action">
-          <a-button
-            shape="circle"
-            :disabled="!('updateConfiguration' in $store.getters.apis)"
-            v-if="editableValueKey !== index"
-            icon="edit"
-            @click="setEditableSetting(item, index)" />
-          <a-button
-            shape="circle"
-            size="default"
-            @click="editableValueKey = null"
-            v-if="editableValueKey === index" >
-            <a-icon type="close-circle" theme="twoTone" twoToneColor="#f5222d" />
-          </a-button>
-          <a-button
-            shape="circle"
-            @click="updateData(item)"
-            v-if="editableValueKey === index" >
-            <a-icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" />
-          </a-button>
+          <a-tooltip arrowPointAtCenter placement="bottomRight">
+            <template slot="title">
+              {{ $t('label.edit') }}
+            </template>
+            <a-button
+              shape="circle"
+              :disabled="!('updateConfiguration' in $store.getters.apis)"
+              v-if="editableValueKey !== index"
+              icon="edit"
+              @click="setEditableSetting(item, index)" />
+          </a-tooltip>
+          <a-tooltip arrowPointAtCenter placement="bottomRight">
+            <template slot="title">
+              {{ $t('label.ok') }}
+            </template>
+            <a-button
+              shape="circle"
+              size="default"
+              @click="editableValueKey = null"
+              v-if="editableValueKey === index" >
+              <a-icon type="close-circle" theme="twoTone" twoToneColor="#f5222d" />
+            </a-button>
+          </a-tooltip>
+          <a-tooltip arrowPointAtCenter placement="bottomRight">
+            <template slot="title">
+              {{ $t('label.cancel') }}
+            </template>
+            <a-button
+              shape="circle"
+              @click="updateData(item)"
+              v-if="editableValueKey === index" >
+              <a-icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" />
+            </a-button>
+          </a-tooltip>
         </div>
       </a-list-item>
     </a-list>
