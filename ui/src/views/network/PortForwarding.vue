@@ -96,14 +96,24 @@
       </template>
       <template slot="actions" slot-scope="record">
         <div class="actions">
-          <a-button shape="circle" icon="tag" class="rule-action" @click="() => openTagsModal(record.id)" />
-          <a-button
-            shape="circle"
-            type="danger"
-            icon="delete"
-            class="rule-action"
-            :disabled="!('deletePortForwardingRule' in $store.getters.apis)"
-            @click="deleteRule(record)" />
+          <a-tooltip arrowPointAtCenter placement="bottomRight">
+            <template slot="title">
+              {{ $t('label.edit.tags') }}
+            </template>
+            <a-button shape="circle" icon="tag" class="rule-action" @click="() => openTagsModal(record.id)" />
+          </a-tooltip>
+          <a-tooltip arrowPointAtCenter placement="bottomRight">
+            <template slot="title">
+              {{ $t('label.remove.rule') }}
+            </template>
+            <a-button
+              shape="circle"
+              type="danger"
+              icon="delete"
+              class="rule-action"
+              :disabled="!('deletePortForwardingRule' in $store.getters.apis)"
+              @click="deleteRule(record)" />
+          </a-tooltip>
         </div>
       </template>
     </a-table>
