@@ -589,6 +589,16 @@
               </a-step>
             </a-steps>
             <div class="card-footer">
+              <a-form-item>
+                <span>
+                  <b v-html="$t('label.stay.on.page')" style="margin-right: 55px"/><br />
+                  <span v-html="$t('message.stay.on.page')" style="margin-right: 10px"/>
+                </span>
+                <a-switch
+                  style="margin-top: -20px"
+                  v-decorator="['stayonpage']"
+                ></a-switch>
+              </a-form-item>
               <!-- ToDo extract as component -->
               <a-button @click="() => this.$router.back()" :disabled="loading.deploy">
                 {{ this.$t('label.cancel') }}
@@ -1568,9 +1578,12 @@ export default {
           new Promise(resolve => setTimeout(resolve, 3000)).then(() => {
             eventBus.$emit('vm-refresh-data')
           })
-          this.$router.back()
+          if (!values.stayonpage) {
+            this.$router.back()
+          }
         }).catch(error => {
           this.$notifyError(error)
+        }).finally(() => {
           this.loading.deploy = false
         })
       })
