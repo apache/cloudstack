@@ -1153,6 +1153,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return new Pair<Long, Answer>(result.first(), result.second()[0]);
     }
 
+    private void cleanupInactiveTemplates() {
+        List<VMTemplateVO> vmTemplateVOS = _templateDao.listUnRemovedTemplatesByStates(VirtualMachineTemplate.State.Inactive);
+        for (VMTemplateVO template: vmTemplateVOS) {
+            template.setRemoved(new Date());
+            _templateDao.update(template.getId(), template);
+        }
+    }
+
     @Override
     public void cleanupStorage(boolean recurring) {
         GlobalLock scanLock = GlobalLock.getInternLock("storagemgr.cleanup");
@@ -1324,11 +1332,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             s_logger.warn("Unable to destroy uploaded template " + template.getUuid() + ". Error details: " + th.getMessage());
                         }
                     }
-                    List<VMTemplateVO> vmTemplateVOS = _templateDao.listUnRemovedTemplatesByStates(VirtualMachineTemplate.State.Inactive);
-                    for (VMTemplateVO template: vmTemplateVOS) {
-                        template.setRemoved(new Date());
-                        _templateDao.update(template.getId(), template);
-                    }
+                    cleanupInactiveTemplates();
                 } finally {
                     scanLock.unlock();
                 }
