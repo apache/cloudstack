@@ -61,12 +61,12 @@ class CsApache(CsApp):
 
         self.fw.append([
             "", "front",
-            "-A INPUT -i %s -d %s/32 -p tcp -m tcp -m state --state NEW --dport 80 -j ACCEPT" % (self.dev, self.ip)
+            "-A INPUT -i %s -s %s/32 -p tcp -m tcp -m state --state NEW --dport 80 -j ACCEPT" % (self.dev, self.ip)
         ])
 
         self.fw.append([
             "", "front",
-            "-A INPUT -i %s -d %s/32 -p tcp -m tcp -m state --state NEW --dport 443 -j ACCEPT" % (self.dev, self.ip)
+            "-A INPUT -i %s -s %s/32 -p tcp -m tcp -m state --state NEW --dport 443 -j ACCEPT" % (self.dev, self.ip)
         ])
 
 
