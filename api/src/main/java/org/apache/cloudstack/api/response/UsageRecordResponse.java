@@ -16,15 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.google.gson.annotations.SerializedName;
-
-import org.apache.cloudstack.api.ApiConstants;
-
-import com.cloud.serializer.Param;
-import org.apache.cloudstack.api.BaseResponseWithTagInformation;
-
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponseWithTagInformation;
+
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class UsageRecordResponse extends BaseResponseWithTagInformation implements ControlledEntityResponse {
@@ -89,8 +88,20 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
     private String templateId;
 
     @SerializedName(ApiConstants.OS_TYPE_ID)
-    @Param(description = "virtual machine os type id")
-    private Long osTypeId;
+    @Param(description = "virtual machine os type ID")
+    private String osTypeId;
+
+    @SerializedName(ApiConstants.OS_DISPLAY_NAME)
+    @Param(description = "virtual machine os display name")
+    private String osDisplayName;
+
+    @SerializedName(ApiConstants.OS_CATEGORY_ID)
+    @Param(description = "virtual machine guest os category ID")
+    private String osCategoryId;
+
+    @SerializedName(ApiConstants.OS_CATEGORY_NAME)
+    @Param(description = "virtual machine os category name")
+    private String osCategoryName;
 
     @SerializedName("usageid")
     @Param(description = "id of the resource")
@@ -206,8 +217,20 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
         this.templateId = templateId;
     }
 
-    public void setOsTypeId(Long osTypeId) {
+    public void setOsTypeId(String osTypeId) {
         this.osTypeId = osTypeId;
+    }
+
+    public void setOsDisplayName(String osDisplayName) {
+        this.osDisplayName = osDisplayName;
+    }
+
+    public void setOsCategoryId(String osCategoryId) {
+        this.osCategoryId = osCategoryId;
+    }
+
+    public void setOsCategoryName(String osCategoryName) {
+        this.osCategoryName = osCategoryName;
     }
 
     public void setUsageId(String usageId) {

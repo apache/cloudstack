@@ -36,6 +36,9 @@
           :form="form"
           @submit="handleSubmit"
           layout="vertical" >
+          <a-alert type="warning" v-if="action.message">
+            <span slot="message" v-html="$t(action.message)" />
+          </a-alert>
           <a-form-item
             v-for="(field, fieldIndex) in action.paramFields"
             :key="fieldIndex"

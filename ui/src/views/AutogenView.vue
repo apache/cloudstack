@@ -532,7 +532,7 @@ export default {
 
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
 
-      if (this.$route && this.$route.params && this.$route.params.id) {
+      if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
         if (!refreshed) {
           this.resource = {}
@@ -731,6 +731,13 @@ export default {
         return 0
       })
       this.currentAction.paramFields = []
+      if ('message' in action) {
+        var message = action.message
+        if (typeof action.message === 'function') {
+          message = action.message(action.resource)
+        }
+        action.message = message
+      }
       if ('args' in action) {
         var args = action.args
         if (typeof action.args === 'function') {
@@ -969,6 +976,9 @@ export default {
               }
               break
             }
+            if (!input) {
+              continue
+            }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {
               params[key] = action.mapping[key].options[input]
             } else if (param.type === 'list') {
@@ -992,12 +1002,14 @@ export default {
           }
         }
 
-        if (action.mapping) {
-          for (const key in action.mapping) {
-            if (!action.mapping[key].value) {
-              continue
+        if (!this.projectView || !['uploadSslCert'].includes(action.api)) {
+          if (action.mapping) {
+            for (const key in action.mapping) {
+              if (!action.mapping[key].value) {
+                continue
+              }
+              params[key] = action.mapping[key].value(this.resource, params)
             }
-            params[key] = action.mapping[key].value(this.resource, params)
           }
         }
 

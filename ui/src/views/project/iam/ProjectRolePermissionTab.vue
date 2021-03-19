@@ -133,7 +133,7 @@ export default {
       updateTable: false,
       rules: null,
       newRule: '',
-      newRulePermission: 'allow',
+      newRulePermission: 'deny',
       newRuleDescription: '',
       newRuleSelectError: false,
       drag: false,
@@ -159,7 +159,7 @@ export default {
     },
     resetNewFields () {
       this.newRule = ''
-      this.newRulePermission = 'allow'
+      this.newRulePermission = 'deny'
       this.newRuleDescription = ''
       this.newRuleSelectError = false
     },

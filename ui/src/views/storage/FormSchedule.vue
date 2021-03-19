@@ -18,9 +18,9 @@
 <template>
   <a-spin :spinning="loading">
     <div class="form-layout" v-ctrl-enter="handleSubmit">
-      <label>
-        {{ $t('label.header.volume.snapshot') }}
-      </label>
+      <a-alert type="warning">
+        <span slot="message" v-html="$t('label.header.volume.snapshot')" />
+      </a-alert>
       <div class="form">
         <a-form
           :form="form"

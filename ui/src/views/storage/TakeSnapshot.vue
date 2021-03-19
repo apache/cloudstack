@@ -18,9 +18,9 @@
 <template>
   <div class="take-snapshot" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading || actionLoading">
-      <label>
-        {{ $t('label.header.volume.take.snapshot') }}
-      </label>
+      <a-alert type="warning">
+        <span slot="message" v-html="$t('label.header.volume.take.snapshot')" />
+      </a-alert>
       <a-form
         class="form"
         :form="form"

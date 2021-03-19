@@ -16,10 +16,12 @@
 // under the License.
 
 <template>
-  <div class="migrate-volume-container" v-ctrl-enter="submitMigrateVolume">
-
+  <div class="migrate-volume-container" v-ctrl-enter="handleSubmit">
     <div class="modal-form">
       <div v-if="storagePools.length > 0">
+        <a-alert type="warning">
+          <span slot="message" v-html="$t('message.migrate.volume')" />
+        </a-alert>
         <p class="modal-form__label">{{ $t('label.storagepool') }}</p>
         <a-select v-model="selectedStoragePool" style="width: 100%;">
           <a-select-option v-for="(storagePool, index) in storagePools" :value="storagePool.id" :key="index">
@@ -175,11 +177,10 @@ export default {
 
 <style scoped lang="scss">
   .migrate-volume-container {
-    width: 95vw;
-    max-width: 100%;
+    width: 85vw;
 
     @media (min-width: 760px) {
-      width: 50vw;
+      width: 500px;
     }
   }
 
