@@ -79,56 +79,57 @@ public final class RootCACustomTrustManager implements X509TrustManager {
         if (LOG.isDebugEnabled()) {
             printCertificateChain(certificates, s);
         }
-        if (!authStrictness) {
-            return;
-        }
-        if (certificates == null || certificates.length < 1 || certificates[0] == null) {
-            throw new CertificateException("In strict auth mode, certificate(s) are expected from client:" + clientAddress);
-        }
-        final X509Certificate primaryClientCertificate = certificates[0];
 
-        // Revocation check
-        final BigInteger serialNumber = primaryClientCertificate.getSerialNumber();
-        if (serialNumber == null || crlDao.findBySerial(serialNumber) != null) {
-            final String errorMsg = String.format("Client is using revoked certificate of serial=%x, subject=%s from address=%s",
-                    primaryClientCertificate.getSerialNumber(), primaryClientCertificate.getSubjectDN(), clientAddress);
-            LOG.error(errorMsg);
-            throw new CertificateException(errorMsg);
-        }
+        final X509Certificate primaryClientCertificate = (certificates != null && certificates.length > 0 && certificates[0] != null) ? certificates[0] : null;
 
-        // Validity check
-        if (!allowExpiredCertificate) {
-            try {
-                primaryClientCertificate.checkValidity();
-            } catch (final CertificateExpiredException | CertificateNotYetValidException e) {
-                final String errorMsg = String.format("Client certificate has expired with serial=%x, subject=%s from address=%s",
+        if (authStrictness) {
+            if (primaryClientCertificate == null) {
+                throw new CertificateException("In strict auth mode, certificate(s) are expected from client:" + clientAddress);
+            }
+
+            // Revocation check
+            final BigInteger serialNumber = primaryClientCertificate.getSerialNumber();
+            if (serialNumber == null || crlDao.findBySerial(serialNumber) != null) {
+                final String errorMsg = String.format("Client is using revoked certificate of serial=%x, subject=%s from address=%s",
                         primaryClientCertificate.getSerialNumber(), primaryClientCertificate.getSubjectDN(), clientAddress);
                 LOG.error(errorMsg);
-                throw new CertificateException(errorMsg);                }
-        }
+                throw new CertificateException(errorMsg);
+            }
 
-        // Ownership check
-        boolean certMatchesOwnership = false;
-        if (primaryClientCertificate.getSubjectAlternativeNames() != null) {
-            for (final List<?> list : primaryClientCertificate.getSubjectAlternativeNames()) {
-                if (list != null && list.size() == 2 && list.get(1) instanceof String) {
-                    final String alternativeName = (String) list.get(1);
-                    if (clientAddress.equals(alternativeName)) {
-                        certMatchesOwnership = true;
+            // Validity check
+            if (!allowExpiredCertificate) {
+                try {
+                    primaryClientCertificate.checkValidity();
+                } catch (final CertificateExpiredException | CertificateNotYetValidException e) {
+                    final String errorMsg = String.format("Client certificate has expired with serial=%x, subject=%s from address=%s",
+                            primaryClientCertificate.getSerialNumber(), primaryClientCertificate.getSubjectDN(), clientAddress);
+                    LOG.error(errorMsg);
+                    throw new CertificateException(errorMsg);                }
+            }
+
+            // Ownership check
+            boolean certMatchesOwnership = false;
+            if (primaryClientCertificate.getSubjectAlternativeNames() != null) {
+                for (final List<?> list : primaryClientCertificate.getSubjectAlternativeNames()) {
+                    if (list != null && list.size() == 2 && list.get(1) instanceof String) {
+                        final String alternativeName = (String) list.get(1);
+                        if (clientAddress.equals(alternativeName)) {
+                            certMatchesOwnership = true;
+                        }
                     }
                 }
             }
+            if (!certMatchesOwnership) {
+                final String errorMsg = "Certificate ownership verification failed for client: " + clientAddress;
+                LOG.error(errorMsg);
+                throw new CertificateException(errorMsg);
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Client/agent connection from ip=" + clientAddress + " has been validated and trusted.");
+            }
         }
-        if (!certMatchesOwnership) {
-            final String errorMsg = "Certificate ownership verification failed for client: " + clientAddress;
-            LOG.error(errorMsg);
-            throw new CertificateException(errorMsg);
-        }
-        if (activeCertMap != null && !Strings.isNullOrEmpty(clientAddress)) {
+        if (primaryClientCertificate != null && activeCertMap != null && !Strings.isNullOrEmpty(clientAddress)) {
             activeCertMap.put(clientAddress, primaryClientCertificate);
-        }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Client/agent connection from ip=" + clientAddress + " has been validated and trusted.");
         }
     }
 
