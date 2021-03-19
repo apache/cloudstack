@@ -25,6 +25,7 @@ import VueClipboard from 'vue-clipboard2'
 import config from '@/config/settings'
 import { createLocalVue } from '@vue/test-utils'
 import registerRequireContextHook from 'babel-plugin-require-context-hook/register'
+import '@/utils/directives'
 
 const localVue = createLocalVue()
 
