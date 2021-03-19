@@ -370,7 +370,7 @@ public class TungstenApi {
 
     public ApiObjectBase getTungstenProjectByFqn(String fqn) {
         try {
-            if(fqn == null) {
+            if (fqn == null) {
                 return apiConnector.findByFQN(Project.class, TUNGSTEN_DEFAULT_DOMAIN + ":" + TUNGSTEN_DEFAULT_PROJECT);
             } else {
                 return apiConnector.findByFQN(Project.class, fqn);
@@ -393,18 +393,6 @@ public class TungstenApi {
                 names.add(name);
                 String uuid = apiConnector.findByName(aClass, names);
                 return apiConnector.findById(aClass, uuid);
-            }
-        } catch (IOException ex) {
-            return null;
-        }
-    }
-
-    public ApiObjectBase getTungstenNetworkProject(String uuid) {
-        try {
-            if (uuid == null) {
-                return apiConnector.findByFQN(Project.class, TUNGSTEN_DEFAULT_DOMAIN + ":" + TUNGSTEN_DEFAULT_PROJECT);
-            } else {
-                return apiConnector.findById(Project.class, uuid);
             }
         } catch (IOException ex) {
             return null;
