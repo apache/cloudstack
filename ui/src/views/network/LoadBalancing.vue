@@ -17,7 +17,7 @@
 
 <template>
   <div>
-    <a-form @submit="handleOpenAddVMModal">
+    <div v-ctrl-enter="handleOpenAddVMModal">
       <div class="form">
         <div class="form__item" ref="newRuleName">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.name') }}</div>
@@ -54,16 +54,12 @@
         </div>
         <div class="form__item">
           <div class="form__label" style="white-space: nowrap;">{{ $t('label.add.vms') }}</div>
-          <a-button
-            :disabled="!('createLoadBalancerRule' in $store.getters.apis)"
-            type="primary"
-            html-type="submit"
-            @click="handleOpenAddVMModal">
+          <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleOpenAddVMModal">
             {{ $t('label.add') }}
           </a-button>
         </div>
       </div>
-    </a-form>
+    </div>
 
     <a-divider />
 
@@ -151,7 +147,8 @@
       :afterClose="closeModal"
       :maskClosable="false"
       class="tags-modal"
-      @cancel="tagsModalVisible = false">
+      @cancel="tagsModalVisible = false"
+      v-ctrl-enter="handleAddTag">
       <span v-show="tagsModalLoading" class="modal-loading">
         <a-icon type="loading"></a-icon>
       </span>
@@ -193,7 +190,8 @@
       :maskClosable="false"
       :closable="true"
       :okButtonProps="{ props: {htmlType: 'submit'}}"
-      @cancel="stickinessModalVisible = false">
+      @cancel="stickinessModalVisible = false"
+      v-ctrl-enter="handleSubmitStickinessForm">
 
       <span v-show="stickinessModalLoading" class="modal-loading">
         <a-icon type="loading"></a-icon>
@@ -259,7 +257,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="stickinessModalVisible = false">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" html-type="submit" @submit="handleSubmitStickinessForm">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" @submit="handleSubmitStickinessForm">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-modal>
@@ -271,40 +269,38 @@
       :maskClosable="false"
       :closable="true"
       :footer="null"
-      @cancel="editRuleModalVisible = false">
+      @cancel="editRuleModalVisible = false"
+      v-ctrl-enter="handleSubmitEditForm">
       <span v-show="editRuleModalLoading" class="modal-loading">
         <a-icon type="loading"></a-icon>
       </span>
 
-      <a-form @submit="handleSubmitEditForm">
-        <div class="edit-rule" v-if="selectedRule">
-          <div class="edit-rule__item">
-            <p class="edit-rule__label">{{ $t('label.name') }}</p>
-            <a-input autoFocus v-model="editRuleDetails.name" />
-          </div>
-          <div class="edit-rule__item">
-            <p class="edit-rule__label">{{ $t('label.algorithm') }}</p>
-            <a-select v-model="editRuleDetails.algorithm">
-              <a-select-option value="roundrobin">{{ $t('label.lb.algorithm.roundrobin') }}</a-select-option>
-              <a-select-option value="leastconn">{{ $t('label.lb.algorithm.leastconn') }}</a-select-option>
-              <a-select-option value="source">{{ $t('label.lb.algorithm.source') }}</a-select-option>
-            </a-select>
-          </div>
-          <div class="edit-rule__item">
-            <p class="edit-rule__label">{{ $t('label.protocol') }}</p>
-            <a-select v-model="editRuleDetails.protocol">
-              <a-select-option value="tcp-proxy">{{ $t('label.tcp.proxy') }}</a-select-option>
-              <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
-              <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
-            </a-select>
-          </div>
+      <div class="edit-rule" v-if="selectedRule">
+        <div class="edit-rule__item">
+          <p class="edit-rule__label">{{ $t('label.name') }}</p>
+          <a-input v-model="editRuleDetails.name" />
         </div>
-
+        <div class="edit-rule__item">
+          <p class="edit-rule__label">{{ $t('label.algorithm') }}</p>
+          <a-select v-model="editRuleDetails.algorithm">
+            <a-select-option value="roundrobin">{{ $t('label.lb.algorithm.roundrobin') }}</a-select-option>
+            <a-select-option value="leastconn">{{ $t('label.lb.algorithm.leastconn') }}</a-select-option>
+            <a-select-option value="source">{{ $t('label.lb.algorithm.source') }}</a-select-option>
+          </a-select>
+        </div>
+        <div class="edit-rule__item">
+          <p class="edit-rule__label">{{ $t('label.protocol') }}</p>
+          <a-select v-model="editRuleDetails.protocol">
+            <a-select-option value="tcp-proxy">{{ $t('label.tcp.proxy') }}</a-select-option>
+            <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
+            <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
+          </a-select>
+        </div>
         <div :span="24" class="action-button">
           <a-button @click="() => editRuleModalVisible = false">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" htmlType="submit" @click="handleSubmitEditForm">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" @click="handleSubmitEditForm">{{ $t('label.ok') }}</a-button>
         </div>
-      </a-form>
+      </div>
     </a-modal>
 
     <a-modal
@@ -317,6 +313,7 @@
       :okButtonProps="{ props:
         {disabled: newRule.virtualmachineid === [] } }"
       @cancel="closeModal"
+      v-ctrl-enter="handleAddNewRule"
     >
       <div>
         <span
@@ -392,8 +389,8 @@
       </div>
 
       <div :span="24" class="action-button">
-        <a-button @click="clo">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" htmlType="submit" @click="handleAddNewRule">{{ $t('label.ok') }}</a-button>
+        <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
+        <a-button type="primary" @click="handleAddNewRule">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
 
@@ -675,6 +672,7 @@ export default {
       })
     },
     handleAddTag (e) {
+      if (this.tagsModalLoading) return
       this.tagsModalLoading = true
 
       e.preventDefault()
@@ -844,6 +842,7 @@ export default {
       })
     },
     handleSubmitStickinessForm (e) {
+      if (this.stickinessModalLoading) return
       this.stickinessModalLoading = true
       e.preventDefault()
       this.stickinessPolicyForm.validateFields((err, values) => {
@@ -920,6 +919,7 @@ export default {
       this.editRuleDetails.protocol = this.selectedRule.protocol
     },
     handleSubmitEditForm () {
+      if (this.editRuleModalLoading) return
       this.loading = true
       this.editRuleModalLoading = true
       api('updateLoadBalancerRule', {
@@ -992,6 +992,7 @@ export default {
       })
     },
     handleOpenAddVMModal () {
+      if (this.addVmModalLoading) return
       if (!this.selectedRule) {
         if (!this.newRule.name) {
           this.$refs.newRuleName.classList.add('error')
@@ -1125,6 +1126,7 @@ export default {
       })
     },
     handleAddNewRule () {
+      if (this.loading) return
       this.loading = true
 
       if (this.selectedRule) {

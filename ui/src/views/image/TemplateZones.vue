@@ -74,6 +74,7 @@
       :footer="null"
       :confirmLoading="copyLoading"
       @cancel="onCloseModal"
+      v-ctrl-enter="handleCopyTemplateSubmit"
       centered>
       <a-spin :spinning="copyLoading">
         <a-form
@@ -107,7 +108,7 @@
 
           <div :span="24" class="action-button">
             <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
-            <a-button type="primary" htmlType="submit" @click="handleCopyTemplateSubmit">{{ $t('label.ok') }}</a-button>
+            <a-button type="primary" @click="handleCopyTemplateSubmit">{{ $t('label.ok') }}</a-button>
           </div>
         </a-form>
       </a-spin>
@@ -120,6 +121,7 @@
       :maskClosable="false"
       :footer="null"
       @cancel="onCloseModal"
+      v-ctrl-enter="deleteTemplate"
       :confirmLoading="deleteLoading"
       centered>
       <a-spin :spinning="deleteLoading">
@@ -129,7 +131,7 @@
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" htmlType="submit" @click="deleteTemplate">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" @click="deleteTemplate">{{ $t('label.ok') }}</a-button>
         </div>
       </a-spin>
     </a-modal>
@@ -258,6 +260,7 @@ export default {
         this.resource.templatetype !== 'SYSTEM'
     },
     deleteTemplate () {
+      if (this.deleteLoading) return
       const params = {
         id: this.currentRecord.id,
         forced: this.forcedDelete,
@@ -327,6 +330,7 @@ export default {
     },
     handleCopyTemplateSubmit (e) {
       e.preventDefault()
+      if (this.copyLoading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return

@@ -47,9 +47,9 @@
           :closable="true"
           :maskClosable="false"
           style="top: 20px;"
+          @cancel="onCloseAction"
           :confirmLoading="actionLoading"
           :footer="null"
-          @cancel="showFormAction = false"
           centered>
           <component
             :is="currentAction.component"
@@ -65,13 +65,13 @@
         :closable="true"
         :maskClosable="false"
         @cancel="onCloseAction"
+        v-ctrl-enter="handleSubmit"
         style="top: 20px;"
         centered
       >
         <a-form
           :form="form"
-          layout="vertical"
-          @submit="handleSubmit">
+          layout="vertical">
           <a-form-item
             v-for="(field, index) in currentAction.fieldParams"
             :key="index"
@@ -130,7 +130,7 @@
 
           <div :span="24" class="action-button">
             <a-button @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
-            <a-button type="primary" htmlType="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+            <a-button type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
           </div>
         </a-form>
       </a-modal>
@@ -1151,11 +1151,11 @@ export default {
       this.nsp = nsp
     },
     async handleSubmit () {
+      if (this.actionLoading) return
       if (this.currentAction.confirm) {
         await this.executeConfirmAction()
         return
       }
-
       await this.form.validateFields(async (err, values) => {
         if (err) {
           return

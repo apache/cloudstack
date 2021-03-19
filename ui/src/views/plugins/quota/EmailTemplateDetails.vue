@@ -16,48 +16,45 @@
 // under the License.
 
 <template>
-  <a-form @submit="handleSubmit">
-    <a-spin :spinning="loading || loading">
-      <a-row :gutter="12">
-        <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.templatesubject')">
-            <a-textarea v-model="formModel.templatesubject" autoFocus />
-          </a-form-item>
-        </a-col>
-      </a-row>
-      <a-row :gutter="12">
-        <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.templatebody')">
-            <a-textarea v-model="formModel.templatebody" />
-          </a-form-item>
-        </a-col>
-      </a-row>
-      <a-row :gutter="12">
-        <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.last.updated')">
-            <label>{{ resource.last_updated }}</label>
-          </a-form-item>
-        </a-col>
-      </a-row>
-      <a-row :gutter="12">
-        <a-col :md="24" :lg="24">
-          <a-button
-            style="float: right; margin-left: 10px;"
-            :disabled="!('quotaEmailTemplateUpdate' in $store.getters.apis)"
-            :loading="loading"
-            type="primary"
-            html-type="submit"
-            @click="handleSubmit">{{ $t('label.apply') }}</a-button>
-          <a-button
-            style="float: right;"
-            :disabled="!('quotaEmailTemplateUpdate' in $store.getters.apis)"
-            :loading="loading"
-            type="default"
-            @click="() => { $router.go(-1) }">{{ $t('label.cancel') }}</a-button>
-        </a-col>
-      </a-row>
-    </a-spin>
-  </a-form>
+  <a-spin :spinning="loading || loading" v-ctrl-enter="handleSubmit">
+    <a-row :gutter="12">
+      <a-col :md="24" :lg="24">
+        <a-form-item :label="$t('label.templatesubject')">
+          <a-textarea v-model="formModel.templatesubject" />
+        </a-form-item>
+      </a-col>
+    </a-row>
+    <a-row :gutter="12">
+      <a-col :md="24" :lg="24">
+        <a-form-item :label="$t('label.templatebody')">
+          <a-textarea v-model="formModel.templatebody" />
+        </a-form-item>
+      </a-col>
+    </a-row>
+    <a-row :gutter="12">
+      <a-col :md="24" :lg="24">
+        <a-form-item :label="$t('label.last.updated')">
+          <label>{{ resource.last_updated }}</label>
+        </a-form-item>
+      </a-col>
+    </a-row>
+    <a-row :gutter="12">
+      <a-col :md="24" :lg="24">
+        <a-button
+          style="float: right; margin-left: 10px;"
+          :disabled="!('quotaEmailTemplateUpdate' in $store.getters.apis)"
+          :loading="loading"
+          type="primary"
+          @click="handleSubmit">{{ $t('label.apply') }}</a-button>
+        <a-button
+          style="float: right;"
+          :disabled="!('quotaEmailTemplateUpdate' in $store.getters.apis)"
+          :loading="loading"
+          type="default"
+          @click="() => { $router.go(-1) }">{{ $t('label.cancel') }}</a-button>
+      </a-col>
+    </a-row>
+  </a-spin>
 </template>
 
 <script>
@@ -103,6 +100,7 @@ export default {
       this.formModel.templatebody = this.resource.templatebody || null
     },
     handleSubmit () {
+      if (this.loading) return
       const params = {}
       params.templatesubject = this.formModel.templatesubject
       params.templatebody = this.formModel.templatebody

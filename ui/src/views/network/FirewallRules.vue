@@ -17,8 +17,8 @@
 
 <template>
   <div>
-    <a-form @submit="addRule">
-      <div class="form">
+    <div>
+      <div class="form" v-ctrl-enter="addRule">
         <div class="form__item">
           <div class="form__label">{{ $t('label.sourcecidr') }}</div>
           <a-input v-model="newRule.cidrlist"></a-input>
@@ -48,14 +48,10 @@
           <a-input v-model="newRule.icmpcode"></a-input>
         </div>
         <div class="form__item" style="margin-left: auto;">
-          <a-button
-            :disabled="!('createFirewallRule' in $store.getters.apis)"
-            html-type="submit"
-            type="primary"
-            @click="addRule">{{ $t('label.add') }}</a-button>
+          <a-button :disabled="!('createFirewallRule' in $store.getters.apis)" type="primary" @click="addRule">{{ $t('label.add') }}</a-button>
         </div>
       </div>
-    </a-form>
+    </div>
 
     <a-divider/>
 
@@ -112,7 +108,8 @@
       :closable="true"
       :afterClose="closeModal"
       :maskClosable="false"
-      @cancel="tagsModalVisible = false">
+      @cancel="tagsModalVisible = false"
+      v-ctrl-enter="handleAddTag">
       <a-form :form="newTagsForm" @submit="handleAddTag">
         <div class="add-tags">
           <div class="add-tags__input">
@@ -268,6 +265,7 @@ export default {
       })
     },
     addRule () {
+      if (this.loading) return
       this.loading = true
       api('createFirewallRule', { ...this.newRule }).then(response => {
         this.$pollJob({
@@ -329,6 +327,7 @@ export default {
     },
     handleAddTag (e) {
       e.preventDefault()
+      if (this.addTagLoading) return
       this.addTagLoading = true
 
       this.newTagsForm.validateFields((err, values) => {

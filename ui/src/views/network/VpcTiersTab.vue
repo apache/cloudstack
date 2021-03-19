@@ -160,7 +160,8 @@
       :maskClosable="false"
       :closable="true"
       :footer="null"
-      @cancel="showCreateNetworkModal = false">
+      @cancel="showCreateNetworkModal = false"
+      v-ctrl-enter="handleAddNetworkSubmit">
       <a-spin :spinning="modalLoading">
         <a-form @submit.prevent="handleAddNetworkSubmit" :form="form">
           <a-form-item :label="$t('label.name')">
@@ -172,7 +173,7 @@
             <a-select
               v-decorator="['networkOffering',{rules: [{ required: true, message: `${$t('label.required')}` }]}]">
               <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id">
-                {{ item.name }}
+                {{ item.displaytext || item.name || item.description }}
               </a-select-option>
             </a-select>
           </a-form-item>
@@ -200,7 +201,7 @@
 
           <div :span="24" class="action-button">
             <a-button @click="showCreateNetworkModal = false">{{ $t('label.cancel') }}</a-button>
-            <a-button type="primary" htmlType="submit" @click="handleAddNetworkSubmit">{{ $t('label.ok') }}</a-button>
+            <a-button type="primary" @click="handleAddNetworkSubmit">{{ $t('label.ok') }}</a-button>
           </div>
         </a-form>
       </a-spin>
@@ -212,7 +213,8 @@
       :maskClosable="false"
       :closable="true"
       :footer="null"
-      @cancel="showAddInternalLB = false">
+      @cancel="showAddInternalLB = false"
+      v-ctrl-enter="handleAddInternalLBSubmit">
       <a-spin :spinning="modalLoading">
         <a-form @submit.prevent="handleAddInternalLBSubmit" :form="form">
           <a-form-item :label="$t('label.name')">
@@ -254,7 +256,7 @@
 
           <div :span="24" class="action-button">
             <a-button @click="showAddInternalLB = false">{{ $t('label.cancel') }}</a-button>
-            <a-button type="primary" htmlType="submit" @click="handleAddInternalLBSubmit">{{ $t('label.ok') }}</a-button>
+            <a-button type="primary" @click="handleAddInternalLBSubmit">{{ $t('label.ok') }}</a-button>
           </div>
         </a-form>
       </a-spin>
@@ -496,11 +498,14 @@ export default {
       this.networkid = id
     },
     handleAddNetworkSubmit () {
+      if (this.modalLoading) return
       this.fetchLoading = true
+      this.modalLoading = true
 
       this.form.validateFields((errors, values) => {
         if (errors) {
           this.fetchLoading = false
+          this.modalLoading = false
           return
         }
 
@@ -527,15 +532,18 @@ export default {
           this.parentFetchData()
           this.fetchData()
           this.fetchLoading = false
+          this.modalLoading = false
         })
       })
     },
     handleAddInternalLBSubmit () {
+      if (this.modalLoading) return
       this.fetchLoading = true
       this.modalLoading = true
       this.form.validateFields((errors, values) => {
         if (errors) {
           this.fetchLoading = false
+          this.modalLoading = false
           return
         }
         api('createLoadBalancer', {
@@ -558,20 +566,24 @@ export default {
             successMessage: this.$t('message.success.create.internallb'),
             successMethod: () => {
               this.fetchData()
+              this.modalLoading = false
             },
             errorMessage: `${this.$t('message.create.internallb.failed')} ` + response,
             errorMethod: () => {
               this.fetchData()
+              this.modalLoading = false
             },
             loadingMessage: this.$t('message.create.internallb.processing'),
             catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.fetchData()
+              this.modalLoading = false
             }
           })
         }).catch(error => {
           console.error(error)
           this.$message.error(this.$t('message.create.internallb.failed'))
+          this.modalLoading = false
         }).finally(() => {
           this.modalLoading = false
           this.fetchLoading = false

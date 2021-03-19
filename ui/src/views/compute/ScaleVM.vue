@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-form class="form">
+  <a-form class="form" v-ctrl-enter="handleSubmit">
     <p v-html="getMessage()"></p>
 
     <div v-if="loading" class="loading">
@@ -151,6 +151,7 @@ export default {
       this.$emit('close-action')
     },
     handleSubmit () {
+      if (this.loading) return
       this.loading = true
 
       if ('cpuspeed' in this.selectedOffering && this.selectedOffering.iscustomized) {

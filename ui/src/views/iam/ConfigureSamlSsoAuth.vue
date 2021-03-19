@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-form :form="form" @submit="handleSubmit" layout="vertical" :loading="loading">
       <a-form-item :label="$t('label.samlenable')">
         <a-switch
@@ -39,7 +39,7 @@
       </a-form-item>
       <div class="action-button">
         <a-button @click="handleClose">{{ $t('label.close') }}</a-button>
-        <a-button :loading="loading" html-type="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
@@ -91,10 +91,12 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
         }
+        this.loading = true
         api('authorizeSamlSso', {
           enable: values.samlEnable,
           userid: this.resource.id,

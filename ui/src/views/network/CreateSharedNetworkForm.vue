@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="loading">
-    <div class="form-layout">
+    <div class="form-layout" v-ctrl-enter="handleSubmit">
       <div class="form">
         <a-form
           :form="form"
@@ -404,7 +404,6 @@
             </a-button>
             <a-button
               :loading="actionLoading"
-              htmlType="submit"
               type="primary"
               @click="handleSubmit">
               {{ this.$t('label.ok') }}
@@ -723,6 +722,7 @@ export default {
       this.selectedProject = project
     },
     handleSubmit (e) {
+      if (this.actionLoading) return
       this.form.validateFields((error, values) => {
         if (error) {
           return

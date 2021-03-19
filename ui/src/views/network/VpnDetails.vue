@@ -34,7 +34,8 @@
       :title="$t('label.disable.vpn')"
       :closable="true"
       :maskClosable="false"
-      @cancel="disableVpn = false">
+      @cancel="disableVpn = false"
+      v-ctrl-enter="handleDisableVpn">
       <p>{{ $t('message.disable.vpn') }}</p>
 
       <a-divider></a-divider>
@@ -58,7 +59,8 @@
       :title="$t('label.enable.vpn')"
       :maskClosable="false"
       :closable="true"
-      @cancel="enableVpn = false">
+      @cancel="enableVpn = false"
+      v-ctrl-enter="handleCreateVpn">
       <p>{{ $t('message.enable.vpn') }}</p>
 
       <a-divider></a-divider>
@@ -86,7 +88,8 @@ export default {
     return {
       remoteAccessVpn: null,
       enableVpn: false,
-      disableVpn: false
+      disableVpn: false,
+      isSubmitted: false
     }
   },
   inject: ['parentFetchData', 'parentToggleLoading'],
@@ -116,6 +119,8 @@ export default {
       })
     },
     handleCreateVpn () {
+      if (this.isSubmitted) return
+      this.isSubmitted = true
       this.parentToggleLoading()
       this.enableVpn = false
       api('createRemoteAccessVpn', {
@@ -136,12 +141,14 @@ export default {
             this.fetchData()
             this.parentFetchData()
             this.parentToggleLoading()
+            this.isSubmitted = false
           },
           errorMessage: this.$t('message.enable.vpn.failed'),
           errorMethod: () => {
             this.fetchData()
             this.parentFetchData()
             this.parentToggleLoading()
+            this.isSubmitted = false
           },
           loadingMessage: this.$t('message.enable.vpn.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
@@ -149,6 +156,7 @@ export default {
             this.fetchData()
             this.parentFetchData()
             this.parentToggleLoading()
+            this.isSubmitted = false
           }
         })
       }).catch(error => {
@@ -156,9 +164,12 @@ export default {
         this.fetchData()
         this.parentFetchData()
         this.parentToggleLoading()
+        this.isSubmitted = false
       })
     },
     handleDisableVpn () {
+      if (this.isSubmitted) return
+      this.isSubmitted = true
       this.parentToggleLoading()
       this.disableVpn = false
       api('deleteRemoteAccessVpn', {
@@ -172,12 +183,14 @@ export default {
             this.fetchData()
             this.parentFetchData()
             this.parentToggleLoading()
+            this.isSubmitted = false
           },
           errorMessage: this.$t('message.disable.vpn.failed'),
           errorMethod: () => {
             this.fetchData()
             this.parentFetchData()
             this.parentToggleLoading()
+            this.isSubmitted = false
           },
           loadingMessage: this.$t('message.disable.vpn.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
@@ -185,6 +198,7 @@ export default {
             this.fetchData()
             this.parentFetchData()
             this.parentToggleLoading()
+            this.isSubmitted = false
           }
         })
       }).catch(error => {
@@ -192,6 +206,7 @@ export default {
         this.fetchData()
         this.parentFetchData()
         this.parentToggleLoading()
+        this.isSubmitted = false
       })
     }
   }

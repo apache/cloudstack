@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div>
+  <div v-ctrl-enter="handleSubmit">
     <a-card
       class="ant-form-text"
       style="text-align: justify; margin: 10px 0; padding: 24px;"
@@ -66,10 +66,6 @@
             style="width: 100%;"
           />
         </a-form-item>
-
-        <div class="submit-btn">
-          <a-button html-type="submit" @click="handleSubmit"></a-button>
-        </div>
       </a-form-item>
     </a-form>
     <div class="form-action">

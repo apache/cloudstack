@@ -128,6 +128,7 @@
         style="top: 20px;"
         :confirmLoading="actionLoading"
         @cancel="closeAction"
+        v-ctrl-enter="handleSubmit"
         centered
       >
         <span slot="title">
@@ -291,7 +292,7 @@
 
             <div :span="24" class="action-button">
               <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-              <a-button type="primary" htmlType="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+              <a-button type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
             </div>
           </a-form>
         </a-spin>
@@ -875,6 +876,7 @@ export default {
       })
     },
     handleSubmit (e) {
+      if (this.actionLoading) return
       if (!this.dataView && this.currentAction.groupAction && this.selectedRowKeys.length > 0) {
         this.form.validateFields((err, values) => {
           if (!err) {

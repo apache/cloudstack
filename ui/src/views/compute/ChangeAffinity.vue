@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-form class="form">
+  <a-form class="form" v-ctrl-enter="handleSubmit">
 
     <p v-html="$t('message.select.affinity.groups')" />
 
@@ -142,6 +142,7 @@ export default {
       this.$emit('close-action')
     },
     handleSubmit () {
+      if (this.loading) return
       this.loading = true
       api('updateVMAffinityGroup', {
         id: this.resource.id,

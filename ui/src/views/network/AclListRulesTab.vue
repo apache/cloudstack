@@ -103,7 +103,8 @@
       :footer="null"
       :closable="true"
       :maskClosable="false"
-      @cancel="tagsModalVisible = false">
+      @cancel="tagsModalVisible = false"
+      v-ctrl-enter="handleAddTag">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>
@@ -120,7 +121,7 @@
               <a-input v-decorator="['value', { rules: [{ required: true, message: $t('message.specifiy.tag.value')}] }]" />
             </a-form-item>
           </div>
-          <a-button type="primary" html-type="submit">{{ $t('label.add') }}</a-button>
+          <a-button type="primary">{{ $t('label.add') }}</a-button>
         </a-form>
 
         <a-divider style="margin-top: 0;"></a-divider>
@@ -144,7 +145,8 @@
       :maskClosable="false"
       :footer="null"
       v-model="ruleModalVisible"
-      @cancel="ruleModalVisible = false">
+      @cancel="ruleModalVisible = false"
+      v-ctrl-enter="handleRuleModalForm">
       <a-form :form="ruleForm" @submit="handleRuleModalForm">
         <a-form-item :label="$t('label.number')">
           <a-input-number style="width: 100%" v-decorator="['number']" />
@@ -205,7 +207,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="() => { ruleModalVisible = false } ">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" htmlType="submit" @click="handleRuleModalForm">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" @click="handleRuleModalForm">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-modal>
@@ -361,6 +363,7 @@ export default {
       })
     },
     handleAddTag (e) {
+      if (this.tagsLoading) return
       this.tagsLoading = true
 
       e.preventDefault()
@@ -527,6 +530,7 @@ export default {
       })
     },
     handleRuleModalForm (e) {
+      if (this.fetchLoading) return
       if (this.ruleFormMode === 'edit') {
         this.handleEditRule(e)
         return

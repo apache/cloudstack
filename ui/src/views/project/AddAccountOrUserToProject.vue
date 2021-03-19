@@ -17,7 +17,10 @@
 <template>
   <div>
     <a-tabs class="form-layout">
-      <a-tab-pane key="1" :tab="$t('label.action.project.add.account')">
+      <a-tab-pane
+        key="1"
+        :tab="$t('label.action.project.add.account')"
+        v-ctrl-enter="addAccountToProject">
         <a-form
           :form="form"
           @submit="addAccountToProject"
@@ -79,11 +82,15 @@
           </a-form-item>
           <div :span="24" class="action-button">
             <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-            <a-button type="primary" html-type="submit" @click="addAccountToProject" :loading="loading">{{ $t('label.ok') }}</a-button>
+            <a-button type="primary" @click="addAccountToProject" :loading="loading">{{ $t('label.ok') }}</a-button>
           </div>
         </a-form>
       </a-tab-pane>
-      <a-tab-pane key="2" :tab="$t('label.action.project.add.user')" v-if="apiParams.addUserToProject">
+      <a-tab-pane
+        key="2"
+        :tab="$t('label.action.project.add.user')"
+        v-if="apiParams.addUserToProject"
+        v-ctrl-enter="addUserToProject">
         <a-form
           :form="form"
           @submit="addUserToProject"
@@ -146,7 +153,7 @@
           </a-form-item>
           <div :span="24" class="action-button">
             <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-            <a-button type="primary" html-type="submit" @click="addUserToProject" :loading="loading">{{ $t('label.ok') }}</a-button>
+            <a-button type="primary" @click="addUserToProject" :loading="loading">{{ $t('label.ok') }}</a-button>
           </div>
         </a-form>
       </a-tab-pane>

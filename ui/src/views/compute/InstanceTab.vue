@@ -160,7 +160,8 @@
       :maskClosable="false"
       :closable="true"
       :footer="null"
-      @cancel="closeModals">
+      @cancel="closeModals"
+      v-ctrl-enter="submitAddNetwork">
       {{ $t('message.network.addvm.desc') }}
       <a-form @submit="submitAddNetwork">
         <div class="modal-form">
@@ -182,10 +183,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeModals">{{ $t('label.cancel') }}</a-button>
-          <a-button
-            type="primary"
-            htmlType="submit"
-            @click="submitAddNetwork">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" @click="submitAddNetwork">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-modal>
@@ -197,6 +195,7 @@
       :closable="true"
       :footer="null"
       @cancel="closeModals"
+      v-ctrl-enter="submitUpdateIP"
     >
       {{ $t('message.network.updateip') }}
 
@@ -221,10 +220,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeModals">{{ $t('label.cancel') }}</a-button>
-          <a-button
-            type="primary"
-            htmlType="submit"
-            @click="submitUpdateIP">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" @click="submitUpdateIP">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-modal>
@@ -237,6 +233,7 @@
       :closable="false"
       class="wide-modal"
       @cancel="closeModals"
+      v-ctrl-enter="submitSecondaryIP"
     >
       <p>
         {{ $t('message.network.secondaryip') }}
@@ -249,11 +246,7 @@
           v-model="newSecondaryIp"
           autoFocus></a-input>
         <div style="margin-top: 10px; display: flex; justify-content:flex-end;">
-          <a-button
-            html-type="submit"
-            @click="submitSecondaryIP"
-            type="primary"
-            style="margin-right: 10px;">{{ $t('label.add.secondary.ip') }}</a-button>
+          <a-button @click="submitSecondaryIP" type="primary" style="margin-right: 10px;">{{ $t('label.add.secondary.ip') }}</a-button>
           <a-button @click="closeModals">{{ $t('label.close') }}</a-button>
         </div>
       </a-form>
@@ -477,6 +470,7 @@ export default {
       }
     },
     submitAddNetwork () {
+      if (this.loadingNic) return
       const params = {}
       params.virtualmachineid = this.vm.id
       params.networkid = this.addNetworkData.network
@@ -544,6 +538,7 @@ export default {
       })
     },
     submitUpdateIP () {
+      if (this.loadingNic) return
       this.loadingNic = true
       this.showUpdateIpModal = false
       api('updateVmNicIp', {
@@ -611,6 +606,7 @@ export default {
         })
     },
     submitSecondaryIP () {
+      if (this.loadingNic) return
       this.loadingNic = true
 
       const params = {}

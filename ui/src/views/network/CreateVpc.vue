@@ -15,12 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :form="form"
-        layout="vertical"
-        @submit="handleSubmit">
+        layout="vertical">
         <a-form-item>
           <span slot="label">
             {{ $t('label.name') }}
@@ -116,12 +115,11 @@
           </span>
           <a-switch v-decorator="['start', {initialValue: true}]" defaultChecked />
         </a-form-item>
-
-        <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" html-type="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
-        </div>
       </a-form>
+      <div :span="24" class="action-button">
+        <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+      </div>
     </a-spin>
   </div>
 </template>
@@ -191,6 +189,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return

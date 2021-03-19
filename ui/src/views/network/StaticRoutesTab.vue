@@ -17,12 +17,10 @@
 
 <template>
   <a-spin :spinning="componentLoading">
-    <a-form @submit="handleAdd">
-      <div class="new-route">
-        <a-input v-model="newRoute" icon="plus" :placeholder="$t('label.cidr.destination.network')" autoFocus></a-input>
-        <a-button type="primary" html-type="submit" :disabled="!('createStaticRoute' in $store.getters.apis)" @click="handleAdd">{{ $t('label.add.route') }}</a-button>
-      </div>
-    </a-form>
+    <div class="new-route" v-ctrl-enter="handleAdd">
+      <a-input v-model="newRoute" icon="plus" :placeholder="$t('label.cidr.destination.network')"></a-input>
+      <a-button type="primary" :disabled="!('createStaticRoute' in $store.getters.apis)" @click="handleAdd">{{ $t('label.add.route') }}</a-button>
+    </div>
 
     <div class="list">
       <div v-for="(route, index) in routes" :key="index" class="list__item">
@@ -43,7 +41,8 @@
       :footer="null"
       :closable="true"
       :maskClosable="false"
-      @cancel="tagsModalVisible = false">
+      @cancel="tagsModalVisible = false"
+      v-ctrl-enter="handleAddTag">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>
@@ -129,6 +128,7 @@ export default {
       })
     },
     handleAdd () {
+      if (this.componentLoading) return
       if (!this.newRoute) return
 
       this.componentLoading = true
@@ -244,6 +244,7 @@ export default {
       })
     },
     handleAddTag (e) {
+      if (this.tagsLoading) return
       this.tagsLoading = true
 
       e.preventDefault()

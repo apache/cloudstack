@@ -16,7 +16,7 @@
 // under the License.
 <template>
   <div>
-    <a-form class="form-layout" :form="form" layout="vertical" @submit="handleSubmit">
+    <a-form class="form-layout" :form="form" layout="vertical" v-ctrl-enter="handleSubmit">
       <a-form-item>
         <span slot="label">
           {{ $t('label.name') }}
@@ -236,7 +236,7 @@
         <a-button @click="closeModal">
           {{ $t('label.cancel') }}
         </a-button>
-        <a-button type="primary" html-type="submit" @click="handleSubmit">
+        <a-button type="primary" @click="handleSubmit">
           {{ $t('label.ok') }}
         </a-button>
       </div>
@@ -279,7 +279,8 @@ export default {
         'Group 17': 'modp6144',
         'Group 18': 'modp8192'
       },
-      ikeDhGroupInitialValue: 'Group 5(modp1536)'
+      ikeDhGroupInitialValue: 'Group 5(modp1536)',
+      isSubmitted: false
     }
   },
   beforeCreate () {
@@ -296,10 +297,12 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.isSubmitted) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
         }
+        this.isSubmitted = true
         let ikepolicy = values.ikeEncryption + '-' + values.ikeHash + ';'
         ikepolicy += (values.ikeDh !== this.ikeDhGroupInitialValue) ? values.ikeDh : (values.ikeDh.split('(')[1]).split(')')[0]
         let esppolicy = values.espEncryption + '-' + values.espHash
@@ -330,16 +333,19 @@ export default {
             successMethod: () => {
               this.closeModal()
               this.parentFetchData()
+              this.isSubmitted = false
             },
             errorMessage: `${this.$t('message.create.vpn.customer.gateway.failed')} ` + response,
             errorMethod: () => {
               this.closeModal()
               this.parentFetchData()
+              this.isSubmitted = false
             },
             loadingMessage: this.$t('message.add.vpn.customer.gateway.processing'),
             catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.closeModal()
+              this.isSubmitted = false
             }
           })
           this.closeModal()
@@ -347,6 +353,7 @@ export default {
         }).catch(error => {
           console.error(error)
           this.$message.error(this.$t('message.success.add.vpn.customer.gateway'))
+          this.isSubmitted = false
         })
       })
     }

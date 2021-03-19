@@ -82,6 +82,7 @@
       :footer="null"
       :confirmLoading="copyLoading"
       @cancel="onCloseCopyForm"
+      v-ctrl-enter="handleCopyIsoSubmit"
       centered>
       <a-spin :spinning="copyLoading">
         <a-form
@@ -115,7 +116,7 @@
 
           <div :span="24" class="action-button">
             <a-button @click="onCloseCopyForm">{{ $t('label.cancel') }}</a-button>
-            <a-button type="primary" htmlType="submit" @click="handleCopyIsoSubmit">{{ $t('label.ok') }}</a-button>
+            <a-button type="primary" @click="handleCopyIsoSubmit">{{ $t('label.ok') }}</a-button>
           </div>
         </a-form>
       </a-spin>
@@ -301,6 +302,7 @@ export default {
     },
     handleCopyIsoSubmit (e) {
       e.preventDefault()
+      if (this.copyLoading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return

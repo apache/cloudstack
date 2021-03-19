@@ -16,8 +16,8 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
-    <a-form layout="vertical" :form="form" @submit="handleSubmit">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
+    <a-form layout="vertical" :form="form">
       <a-form-item :label="$t('label.volume')">
         <a-select
           allowClear
@@ -49,7 +49,7 @@
       </a-form-item>
       <div :span="24" class="action-button">
         <a-button :loading="loading || actionLoading" @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading || actionLoading" htmlType="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading || actionLoading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
@@ -126,7 +126,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-
+      if (this.actionLoading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return

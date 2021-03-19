@@ -21,6 +21,7 @@
       :form="form"
       @submit="handleSubmit"
       layout="vertical"
+      v-ctrl-enter="handleSubmit"
     >
       <a-form-item
         v-for="(item, index) in dataResource"
@@ -42,7 +43,6 @@
           v-if="!($route.meta.name === 'domain' && resource.level === 0)"
           :loading="formLoading"
           type="primary"
-          html-type="submit"
           @click="handleSubmit">{{ $t('label.submit') }}</a-button>
       </div>
     </a-form>
@@ -114,6 +114,8 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+
+      if (this.formLoading) return
 
       this.form.validateFields((err, values) => {
         if (err) {

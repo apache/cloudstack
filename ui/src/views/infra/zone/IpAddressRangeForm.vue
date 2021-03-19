@@ -99,7 +99,7 @@
         </a-form>
       </template>
     </a-table>
-    <div class="form-action">
+    <div class="form-action" v-ctrl-enter="handleSubmit">
       <a-button
         v-if="!isFixError"
         class="button-prev"
@@ -116,12 +116,13 @@
       :maskClosable="false"
       :title="`${$t('label.error')}!`"
       @cancel="showError = false"
+      v-ctrl-enter="showError = false"
       centered
     >
       <span>{{ $t('message.required.add.least.ip') }}</span>
       <div :span="24" class="action-button">
         <a-button @click="showError = false">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" htmlType="submit" @click="showError = false">{{ $t('label.ok') }}</a-button>
+        <a-button type="primary" @click="showError = false">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
   </div>

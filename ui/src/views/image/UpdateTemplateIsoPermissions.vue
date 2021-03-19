@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-form class="form" @submit="submitData">
+  <div class="form" v-ctrl-enter="submitData">
     <div v-if="loading" class="loading">
       <a-icon type="loading"></a-icon>
     </div>
@@ -86,9 +86,9 @@
 
     <div :span="24" class="action-button">
       <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-      <a-button type="primary" htmlType="submit" @click="submitData">{{ $t('label.ok') }}</a-button>
+      <a-button type="primary" @click="submitData">{{ $t('label.ok') }}</a-button>
     </div>
-  </a-form>
+  </div>
 </template>
 <script>
 import { api } from '@/api'
@@ -223,6 +223,7 @@ export default {
       this.$parent.$parent.close()
     },
     submitData () {
+      if (this.loading) return
       let variableKey = ''
       let variableValue = ''
       if (this.selectedShareWith === this.$t('label.account')) {

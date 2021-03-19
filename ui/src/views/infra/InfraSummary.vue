@@ -43,7 +43,8 @@
             :visible="sslFormVisible"
             :footer="null"
             :maskClosable="false"
-            @cancel="sslModalClose">
+            @cancel="sslModalClose"
+            v-ctrl-enter="handleSslFormSubmit">
             <p>
               {{ $t('message.update.ssl') }}
             </p>
@@ -160,7 +161,7 @@
                 <a-button @click="this.sslModalClose" class="close-button">
                   {{ $t('label.cancel' ) }}
                 </a-button>
-                <a-button type="primary" htmlType="submit" :loading="sslFormSubmitting">
+                <a-button type="primary" :loading="sslFormSubmitting">
                   {{ $t('label.submit' ) }}
                 </a-button>
               </a-form-item>
@@ -288,6 +289,7 @@ export default {
     },
 
     handleSslFormSubmit () {
+      if (this.sslFormSubmitting) return
       this.sslFormSubmitting = true
 
       this.form.validateFields(errors => {

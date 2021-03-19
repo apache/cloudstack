@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="migrate-volume-container">
+  <div class="migrate-volume-container" v-ctrl-enter="submitMigrateVolume">
 
     <div class="modal-form">
       <div v-if="storagePools.length > 0">
@@ -79,7 +79,8 @@ export default {
       selectedStoragePool: null,
       diskOfferings: [],
       replaceDiskOffering: false,
-      selectedDiskOffering: null
+      selectedDiskOffering: null,
+      isSubmitted: false
     }
   },
   mounted () {
@@ -130,10 +131,12 @@ export default {
       this.$parent.$parent.close()
     },
     submitMigrateVolume () {
+      if (this.isSubmitted) return
       if (this.storagePools.length === 0) {
         this.closeModal()
         return
       }
+      this.isSubmitted = true
       api('migrateVolume', {
         livemigrate: this.resource.vmstate === 'Running',
         storageid: this.selectedStoragePool,
@@ -145,21 +148,25 @@ export default {
           successMessage: this.$t('message.success.migrate.volume'),
           successMethod: () => {
             this.parentFetchData()
+            this.isSubmitted = false
           },
           errorMessage: this.$t('message.migrate.volume.failed'),
           errorMethod: () => {
             this.parentFetchData()
+            this.isSubmitted = false
           },
           loadingMessage: this.$t('message.migrate.volume.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
+            this.isSubmitted = false
           }
         })
         this.closeModal()
         this.parentFetchData()
       }).catch(error => {
         this.$notifyError(error)
+        this.isSubmitted = false
       })
     }
   }

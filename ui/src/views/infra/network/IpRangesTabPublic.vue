@@ -119,30 +119,29 @@
       v-model="addAccountModal"
       :title="$t('label.add.account')"
       :footer="null"
-      @cancel="addAccountModal = false">
-      <a-form @submit="handleAddAccount">
-        <a-spin :spinning="domainsLoading">
-          <div style="margin-bottom: 10px;">
-            <div class="list__label">{{ $t('label.account') }}:</div>
-            <a-input v-model="addAccount.account" autoFocus></a-input>
-          </div>
-          <div>
-            <div class="list__label">{{ $t('label.domain') }}:</div>
-            <a-select v-model="addAccount.domain">
-              <a-select-option
-                v-for="domain in domains"
-                :key="domain.id"
-                :value="domain.id">{{ domain.name }}
-              </a-select-option>
-            </a-select>
-          </div>
+      @cancel="addAccountModal = false"
+      v-ctrl-enter="handleAddAccount">
+      <a-spin :spinning="domainsLoading">
+        <div style="margin-bottom: 10px;">
+          <div class="list__label">{{ $t('label.account') }}:</div>
+          <a-input v-model="addAccount.account"></a-input>
+        </div>
+        <div>
+          <div class="list__label">{{ $t('label.domain') }}:</div>
+          <a-select v-model="addAccount.domain">
+            <a-select-option
+              v-for="domain in domains"
+              :key="domain.id"
+              :value="domain.id">{{ domain.name }}
+            </a-select-option>
+          </a-select>
+        </div>
 
-          <div :span="24" class="action-button">
-            <a-button @click="addAccountModal = false">{{ $t('label.cancel') }}</a-button>
-            <a-button type="primary" htmlType="submit" @click="handleAddAccount">{{ $t('label.ok') }}</a-button>
-          </div>
-        </a-spin>
-      </a-form>
+        <div :span="24" class="action-button">
+          <a-button @click="addAccountModal = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" @click="handleAddAccount">{{ $t('label.ok') }}</a-button>
+        </div>
+      </a-spin>
     </a-modal>
 
     <a-modal
@@ -150,7 +149,8 @@
       :title="$t('label.add.ip.range')"
       :maskClosable="false"
       :footer="null"
-      @cancel="addIpRangeModal = false">
+      @cancel="addIpRangeModal = false"
+      v-ctrl-enter="handleAddIpRange">
       <a-form
         :form="form"
         @submit="handleAddIpRange"
@@ -209,7 +209,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="addIpRangeModal = false">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" htmlType="submit" @click="handleAddIpRange">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" @click="handleAddIpRange">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-modal>
@@ -335,6 +335,7 @@ export default {
       })
     },
     handleAddAccount () {
+      if (this.domainsLoading) return
       this.domainsLoading = true
 
       if (this.addIpRangeModal === true) {
@@ -399,6 +400,7 @@ export default {
       })
     },
     handleAddIpRange (e) {
+      if (this.componentLoading) return
       this.form.validateFields((error, values) => {
         if (error) return
 

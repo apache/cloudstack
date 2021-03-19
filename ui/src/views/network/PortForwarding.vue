@@ -17,8 +17,8 @@
 
 <template>
   <div>
-    <a-form @submit="openAddVMModal">
-      <div class="form">
+    <div>
+      <div class="form" v-ctrl-enter="openAddVMModal">
         <div class="form__item">
           <div class="form__label">{{ $t('label.privateport') }}</div>
           <a-input-group class="form__item__input-container" compact>
@@ -64,14 +64,10 @@
         </div>
         <div class="form__item" style="margin-left: auto;">
           <div class="form__label">{{ $t('label.add.vm') }}</div>
-          <a-button
-            :disabled="!('createPortForwardingRule' in $store.getters.apis)"
-            type="primary"
-            html-type="submit"
-            @click="openAddVMModal">{{ $t('label.add') }}</a-button>
+          <a-button :disabled="!('createPortForwardingRule' in $store.getters.apis)" type="primary" @click="openAddVMModal">{{ $t('label.add') }}</a-button>
         </div>
       </div>
-    </a-form>
+    </div>
 
     <a-divider/>
 
@@ -134,7 +130,8 @@
       :closable="true"
       :maskClosable="false"
       :afterClose="closeModal"
-      @cancel="tagsModalVisible = false">
+      @cancel="tagsModalVisible = false"
+      v-ctrl-enter="handleAddTag">
       <span v-show="tagsModalLoading" class="tags-modal-loading">
         <a-icon type="loading"></a-icon>
       </span>
@@ -155,7 +152,7 @@
           </a-form-item>
         </div>
 
-        <a-button type="primary" html-type="submit" @click="handleAddTag">{{ $t('label.add') }}</a-button>
+        <a-button type="primary" @click="handleAddTag">{{ $t('label.add') }}</a-button>
       </a-form>
 
       <a-divider></a-divider>
@@ -181,6 +178,7 @@
       :okButtonProps="{ props:
         {disabled: newRule.virtualmachineid === null } }"
       @cancel="closeModal"
+      v-ctrl-enter="addRule"
     >
       <div>
         <span
@@ -255,7 +253,7 @@
       </div>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" htmlType="submit" @click="addRule">{{ $t('label.ok') }}</a-button>
+        <a-button type="primary" @click="addRule">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
   </div>
@@ -455,6 +453,7 @@ export default {
       })
     },
     addRule () {
+      if (this.loading) return
       this.loading = true
       this.addVmModalVisible = false
       const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
@@ -532,6 +531,7 @@ export default {
       })
     },
     handleAddTag (e) {
+      if (this.tagsModalLoading) return
       this.tagsModalLoading = true
       e.preventDefault()
       this.newTagsForm.validateFields((err, values) => {
@@ -608,6 +608,7 @@ export default {
       })
     },
     openAddVMModal () {
+      if (this.addVmModalLoading) return
       this.addVmModalVisible = true
       this.fetchVirtualMachines()
     },

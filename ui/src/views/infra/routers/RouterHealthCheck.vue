@@ -46,6 +46,7 @@
         :maskClosable="false"
         :footer="null"
         @cancel="onCloseGetHealthChecksForm"
+        v-ctrl-enter="handleGetHealthChecksSubmit"
         centered>
         <a-spin :spinning="loading">
           <a-form
@@ -66,7 +67,7 @@
 
             <div :span="24" class="action-button">
               <a-button @click="onCloseGetHealthChecksForm">{{ $t('label.cancel') }}</a-button>
-              <a-button type="primary" htmlType="submit" @click="handleGetHealthChecksSubmit">{{ $t('label.ok') }}</a-button>
+              <a-button type="primary" @click="handleGetHealthChecksSubmit">{{ $t('label.ok') }}</a-button>
             </div>
           </a-form>
         </a-spin>
@@ -155,6 +156,7 @@ export default {
     },
     handleGetHealthChecksSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return

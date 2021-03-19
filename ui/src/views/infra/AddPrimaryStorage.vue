@@ -16,9 +16,9 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
-      <a-form :form="form" layout="vertical" @submit="handleSubmit">
+      <a-form :form="form" layout="vertical">
         <a-form-item>
           <span slot="label">
             {{ $t('label.scope') }}
@@ -288,7 +288,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" html-type="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -563,6 +563,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return

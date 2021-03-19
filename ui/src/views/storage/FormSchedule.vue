@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="loading">
-    <div class="form-layout">
+    <div class="form-layout" v-ctrl-enter="handleSubmit">
       <label>
         {{ $t('label.header.volume.snapshot') }}
       </label>
@@ -183,7 +183,6 @@
             <a-button
               v-if="handleShowButton()"
               :loading="actionLoading"
-              htmlType="submit"
               type="primary"
               @click="handleSubmit">
               {{ this.$t('label.ok') }}
@@ -331,6 +330,7 @@ export default {
     handleDeleteTag (tag) {
     },
     handleSubmit (e) {
+      if (this.actionLoading) return
       this.form.validateFields((error, values) => {
         if (error) {
           return

@@ -102,29 +102,26 @@
       :closable="true"
       :footer="null"
       @cancel="onCloseModal"
+      v-ctrl-enter="acquireIpAddress"
       centered
       width="450px">
-      <a-form @submit="acquireIpAddress">
-        <a-spin :spinning="acquireLoading">
-          <a-alert :message="$t('message.action.acquire.ip')" type="warning" />
-          <a-form-item :label="$t('label.ipaddress')">
-            <a-select
-              autoFocus
-              style="width: 100%;"
-              showSearch
-              v-model="acquireIp">
-              <a-select-option
-                v-for="ip in listPublicIpAddress"
-                :key="ip.ipaddress">{{ ip.ipaddress }}</a-select-option>
-            </a-select>
-          </a-form-item>
-
-          <div :span="24" class="action-button">
-            <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
-            <a-button type="primary" htmlType="submit" @click="acquireIpAddress">{{ $t('label.ok') }}</a-button>
-          </div>
-        </a-spin>
-      </a-form>
+      <a-spin :spinning="acquireLoading">
+        <a-alert :message="$t('message.action.acquire.ip')" type="warning" />
+        <a-form-item :label="$t('label.ipaddress')">
+          <a-select
+            style="width: 100%;"
+            showSearch
+            v-model="acquireIp">
+            <a-select-option
+              v-for="ip in listPublicIpAddress"
+              :key="ip.ipaddress">{{ ip.ipaddress }}</a-select-option>
+          </a-select>
+        </a-form-item>
+        <div :span="24" class="action-button">
+          <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" @click="acquireIpAddress">{{ $t('label.ok') }}</a-button>
+        </div>
+      </a-spin>
     </a-modal>
   </div>
 </template>
@@ -257,6 +254,7 @@ export default {
       this.fetchData()
     },
     acquireIpAddress () {
+      if (this.acquireLoading) return
       const params = {}
       if (this.$route.path.startsWith('/vpc')) {
         params.vpcid = this.resource.id

@@ -18,7 +18,7 @@
 <template>
   <div>
     <div>
-      <a-form class="form" @submit="addRule">
+      <div class="form" v-ctrl-enter="addRule">
         <div class="form__item">
           <div class="form__label">{{ $t('label.sourcecidr') }}</div>
           <a-input v-model="newRule.cidrlist"></a-input>
@@ -53,14 +53,9 @@
           <a-input v-model="newRule.icmpcode"></a-input>
         </div>
         <div class="form__item">
-          <a-button
-            :disabled="!('createEgressFirewallRule' in $store.getters.apis)"
-            html-type="submit"
-            type="primary"
-            icon="plus"
-            @click="addRule">{{ $t('label.add') }}</a-button>
+          <a-button :disabled="!('createEgressFirewallRule' in $store.getters.apis)" type="primary" icon="plus" @click="addRule">{{ $t('label.add') }}</a-button>
         </div>
-      </a-form>
+      </div>
     </div>
 
     <a-divider/>
@@ -213,6 +208,7 @@ export default {
       })
     },
     addRule () {
+      if (this.loading) return
       this.loading = true
       api('createEgressFirewallRule', { ...this.newRule }).then(response => {
         this.$pollJob({

@@ -21,6 +21,7 @@
       <a-col :md="24" :lg="17">
         <a-card :bordered="true" :title="this.$t('label.newinstance')">
           <a-form
+            v-ctrl-enter="handleSubmit"
             :form="form"
             @submit="handleSubmit"
             layout="vertical"
@@ -1353,6 +1354,7 @@ export default {
     handleSubmit (e) {
       console.log('wizard submit')
       e.preventDefault()
+      if (this.loading.deploy) return
       this.form.validateFields(async (err, values) => {
         if (err) {
           if (err.licensesaccepted) {

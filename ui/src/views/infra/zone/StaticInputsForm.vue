@@ -23,6 +23,7 @@
       v-html="$t(description)">
     </a-card>
     <a-form
+      v-ctrl-enter="handleSubmit"
       class="form-content"
       :form="form"
       @submit="handleSubmit">
@@ -91,10 +92,6 @@
           }]"
         />
       </a-form-item>
-
-      <div class="submit-btn">
-        <a-button html-type="submit" @click="handleSubmit"></a-button>
-      </div>
     </a-form>
     <div class="form-action">
       <a-button

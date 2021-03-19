@@ -22,6 +22,7 @@
     ref="formLogin"
     :form="form"
     @submit="handleSubmit"
+    v-ctrl-enter="handleSubmit"
   >
     <a-tabs
       :activeKey="customActiveKey"
@@ -171,6 +172,7 @@ export default {
         customActiveKey,
         Login
       } = this
+      if (state.loginBtn) return
 
       state.loginBtn = true
 

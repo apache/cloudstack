@@ -17,7 +17,12 @@
 
 <template>
   <a-spin :spinning="loading">
-    <a-form class="form" :form="form" @submit="handleSubmit" layout="vertical">
+    <a-form
+      class="form"
+      :form="form"
+      @submit="handleSubmit"
+      v-ctrl-enter="handleSubmit"
+      layout="vertical">
       <a-form-item>
         <span slot="label">
           {{ $t('label.name') }}
@@ -90,7 +95,7 @@
       </span>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" htmlType="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <a-button type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </a-spin>
@@ -147,6 +152,7 @@ export default {
       })
     },
     handleSubmit (e) {
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return

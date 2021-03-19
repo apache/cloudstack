@@ -19,7 +19,7 @@
   <div>
     <p v-html="$t('message.assign.instance.another')"></p>
 
-    <div class="form">
+    <div class="form" v-ctrl-enter="submitData">
 
       <div v-if="loading" class="loading">
         <a-icon type="loading" style="color: #1890ff;"></a-icon>
@@ -190,6 +190,8 @@ export default {
       this.$emit('close-action')
     },
     submitData () {
+      if (this.loading) return
+
       let variableKey = ''
       let variableValue = ''
 

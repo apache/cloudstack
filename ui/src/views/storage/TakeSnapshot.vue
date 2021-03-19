@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="take-snapshot">
+  <div class="take-snapshot" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading || actionLoading">
       <label>
         {{ $t('label.header.volume.take.snapshot') }}
@@ -84,7 +84,6 @@
           <a-button
             v-if="handleShowButton()"
             :loading="actionLoading"
-            htmlType="submit"
             type="primary"
             @click="handleSubmit">
             {{ this.$t('label.ok') }}
@@ -135,6 +134,7 @@ export default {
   methods: {
     handleSubmit (e) {
       e.preventDefault()
+      if (this.actionLoading) return
       this.form.validateFields((error, values) => {
         if (error) {
           return

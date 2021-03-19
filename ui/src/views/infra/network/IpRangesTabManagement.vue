@@ -73,7 +73,8 @@
       :title="$t('label.add.ip.range')"
       :maskClosable="false"
       :footer="null"
-      @cancel="addIpRangeModal = false">
+      @cancel="addIpRangeModal = false"
+      v-ctrl-enter="handleAddIpRange">
       <a-form
         :form="form"
         @submit="handleAddIpRange"
@@ -120,7 +121,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="addIpRangeModal = false">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" htmlType="submit" @click="handleAddIpRange">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" @click="handleAddIpRange">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-modal>
@@ -290,6 +291,7 @@ export default {
       })
     },
     handleAddIpRange (e) {
+      if (this.componentLoading) return
       this.form.validateFields((error, values) => {
         if (error) return
 

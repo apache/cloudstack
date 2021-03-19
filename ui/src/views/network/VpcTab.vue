@@ -75,7 +75,8 @@
           :footer="null"
           :maskClosable="false"
           :closable="true"
-          @cancel="modals.networkAcl = fetchAclList">
+          @cancel="modals.networkAcl = fetchAclList"
+          v-ctrl-enter="handleNetworkAclFormSubmit">
           <a-form @submit.prevent="handleNetworkAclFormSubmit" :form="networkAclForm">
             <a-form-item :label="$t('label.add.list.name')">
               <a-input v-decorator="['name', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
@@ -86,7 +87,7 @@
 
             <div :span="24" class="action-button">
               <a-button @click="modals.networkAcl = false">{{ $t('label.cancel') }}</a-button>
-              <a-button type="primary" htmlType="submit" @click="handleNetworkAclFormSubmit">{{ $t('label.ok') }}</a-button>
+              <a-button type="primary" @click="handleNetworkAclFormSubmit">{{ $t('label.ok') }}</a-button>
             </div>
           </a-form>
         </a-modal>
@@ -135,7 +136,8 @@
           :maskClosable="false"
           :closable="true"
           :footer="null"
-          @cancel="modals.gateway = false">
+          @cancel="modals.gateway = false"
+          v-ctrl-enter="handleGatewayFormSubmit">
           <a-spin :spinning="modals.gatewayLoading">
             <p>{{ $t('message.add.new.gateway.to.vpc') }}</p>
             <a-form @submit.prevent="handleGatewayFormSubmit" :form="gatewayForm">
@@ -190,7 +192,7 @@
 
               <div :span="24" class="action-button">
                 <a-button @click="modals.gateway = false">{{ $t('label.cancel') }}</a-button>
-                <a-button type="primary" htmlType="submit" @click="handleGatewayFormSubmit">{{ $t('label.ok') }}</a-button>
+                <a-button type="primary" @click="handleGatewayFormSubmit">{{ $t('label.ok') }}</a-button>
               </div>
             </a-form>
           </a-spin>
@@ -267,7 +269,8 @@
           :maskClosable="false"
           :closable="true"
           :footer="null"
-          @cancel="modals.vpnConnection = false">
+          @cancel="modals.vpnConnection = false"
+          v-ctrl-enter="handleVpnConnectionFormSubmit">
           <a-spin :spinning="modals.vpnConnectionLoading">
             <a-form @submit.prevent="handleVpnConnectionFormSubmit" :form="vpnConnectionForm">
               <a-form-item :label="$t('label.vpncustomergatewayid')">
@@ -585,6 +588,7 @@ export default {
       }
     },
     handleGatewayFormSubmit () {
+      if (this.modals.gatewayLoading) return
       this.modals.gatewayLoading = true
 
       this.gatewayForm.validateFields(errors => {
@@ -642,6 +646,7 @@ export default {
       })
     },
     handleVpnConnectionFormSubmit () {
+      if (this.fetchLoading) return
       this.fetchLoading = true
       this.modals.vpnConnection = false
 
@@ -688,6 +693,7 @@ export default {
       })
     },
     handleNetworkAclFormSubmit () {
+      if (this.fetchLoading) return
       this.fetchLoading = true
       this.modals.networkAcl = false
 

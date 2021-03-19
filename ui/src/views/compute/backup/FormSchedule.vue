@@ -21,7 +21,7 @@
       <label>
         {{ $t('label.header.backup.schedule') }}
       </label>
-      <div class="form">
+      <div class="form" v-ctrl-enter="handleSubmit">
         <a-form
           :form="form"
           layout="vertical"
@@ -136,7 +136,6 @@
               {{ this.$t('label.cancel') }}
             </a-button>
             <a-button
-              htmlType="submit"
               :loading="actionLoading"
               type="primary"
               @click="handleSubmit">
@@ -244,6 +243,7 @@ export default {
       }
     },
     handleSubmit (e) {
+      if (this.actionLoading) return
       this.form.validateFields((error, values) => {
         if (error) {
           return

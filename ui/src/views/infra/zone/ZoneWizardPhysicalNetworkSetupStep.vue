@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div>
+  <div v-ctrl-enter="handleSubmit">
     <a-card
       class="ant-form-text"
       style="text-align: justify; margin: 10px 0; padding: 20px;"
@@ -66,9 +66,10 @@
           :maskClosable="false"
           :footer="null"
           @cancel="cancelEditTraffic"
+          v-ctrl-enter="updateTrafficLabel(trafficInEdit)"
           centered
         >
-          <a-form :form="form" onsubmit="updateTrafficLabel(trafficInEdit)">
+          <a-form :form="form">
             <span class="ant-form-text"> {{ $t('message.edit.traffic.type') }} </span>
             <a-form-item v-bind="formItemLayout" style="margin-top:16px;" :label="$t('label.traffic.label')">
               <a-input
@@ -83,7 +84,7 @@
 
             <div :span="24" class="action-button">
               <a-button @click="cancelEditTraffic">{{ $t('label.cancel') }}</a-button>
-              <a-button type="primary" htmlType="submit" @click="updateTrafficLabel(trafficInEdit)">{{ $t('label.ok') }}</a-button>
+              <a-button type="primary" @click="updateTrafficLabel(trafficInEdit)">{{ $t('label.ok') }}</a-button>
             </div>
           </a-form>
         </a-modal>
@@ -158,12 +159,13 @@
       :maskClosable="false"
       :closable="true"
       @cancel="() => { showError = false }"
+      v-ctrl-enter="showError = false"
       centered
     >
       <span>{{ $t('message.required.traffic.type') }}</span>
       <div :span="24" class="action-button">
         <a-button @click="showError = false">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" htmlType="submit" @click="showError = false">{{ $t('label.ok') }}</a-button>
+        <a-button type="primary" @click="showError = false">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
   </div>
