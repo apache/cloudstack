@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -3290,6 +3291,18 @@ public class VirtualMachineMO extends BaseMO {
     public int getVirtualHardwareVersion() throws Exception {
         VirtualHardwareOption vhOption = getVirtualHardwareOption();
         return vhOption.getHwVersion();
+    }
+
+    /**
+     * Return a hardware version string in the format expected by Vmware
+     * Format: "vmx-DD" where DD represents the hardware version number
+     * @param virtualHardwareVersion numeric virtual hardware version
+     */
+    public static String getVmxFormattedVirtualHardwareVersion(int virtualHardwareVersion) {
+        if (virtualHardwareVersion < 1) {
+            throw new CloudRuntimeException("Invalid hardware version: " + virtualHardwareVersion);
+        }
+        return String.format("vmx-%02d", virtualHardwareVersion);
     }
 
     public VirtualHardwareOption getVirtualHardwareOption() throws Exception {
