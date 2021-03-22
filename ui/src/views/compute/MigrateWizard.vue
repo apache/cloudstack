@@ -84,7 +84,7 @@
     </a-pagination>
 
     <div style="margin-top: 20px; display: flex; justify-content:flex-end;">
-      <a-button type="primary" @click="submitForm">
+      <a-button type="primary" :disabled="!selectedHost.id" @click="submitForm">
         {{ $t('label.ok') }}
       </a-button>
     </div>
@@ -168,6 +168,7 @@ export default {
         this.hosts.sort((a, b) => {
           return b.suitableformigration - a.suitableformigration
         })
+        this.hosts.unshift({ id: -1, name: 'autoselect', suitableformigration: true, requiresstoragemigration: false })
         this.totalCount = response.findhostsformigrationresponse.count
       }).catch(error => {
         this.$message.error(`${this.$t('message.load.host.failed')}: ${error}`)
@@ -184,10 +185,9 @@ export default {
       var migrateApi = isUserVm
         ? this.selectedHost.requiresStorageMotion ? 'migrateVirtualMachineWithVolume' : 'migrateVirtualMachine'
         : 'migrateSystemVm'
-      api(migrateApi, {
-        hostid: this.selectedHost.id,
-        virtualmachineid: this.resource.id
-      }).then(response => {
+      var migrateParams = this.selectedHost.id === -1 ? { autoselect: true, virtualmachineid: this.resource.id }
+        : { hostid: this.selectedHost.id, virtualmachineid: this.resource.id }
+      api(migrateApi, migrateParams).then(response => {
         var migrateResponse = isUserVm
           ? this.selectedHost.requiresStorageMotion ? response.migratevirtualmachinewithvolumeresponse : response.migratevirtualmachineresponse
           : response.migratesystemvmresponse
