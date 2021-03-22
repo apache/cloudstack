@@ -41,6 +41,7 @@ public class TungstenUtils {
     public static final String PASS_ACTION = "pass";
     public static final String ONE_WAY_DIRECTION = ">";
     public static final String TWO_WAY_DIRECTION = "<>";
+    public static final String FABRIC_NETWORK_FQN = "default-domain:default-project:ip-fabric";
 
     public static String getTapName(final String macAddress) {
         return "tap" + macAddress.replace(":", "");

@@ -591,7 +591,8 @@ public class TungstenResource implements ServerResource {
     }
 
     private Answer executeRequest(CreateTungstenNetworkPolicyCommand cmd, int numRetries) {
-        ApiObjectBase apiObjectBase = _tungstenApi.createTungstenNetworkPolicy(cmd.getName(), cmd.getProjectFqn(),
+        Project project = (Project) _tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
+        ApiObjectBase apiObjectBase = _tungstenApi.createTungstenNetworkPolicy(cmd.getName(), project.getUuid(),
             cmd.getTungstenRuleList());
         if (apiObjectBase != null) {
             return new TungstenAnswer(cmd, apiObjectBase, true, null);
@@ -646,7 +647,8 @@ public class TungstenResource implements ServerResource {
     }
 
     private Answer executeRequest(ApplyTungstenNetworkPolicyCommand cmd, int numRetries) {
-        boolean result = _tungstenApi.applyTungstenNetworkPolicy(cmd.getProjectFqn(), cmd.getNetworkPolicyName(),
+        Project project = (Project) _tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
+        boolean result = _tungstenApi.applyTungstenNetworkPolicy(project.getUuid(), cmd.getNetworkPolicyName(),
             cmd.getNetworkUuid(), cmd.isPriority());
         return new TungstenAnswer(cmd, result, null);
     }
@@ -911,8 +913,9 @@ public class TungstenResource implements ServerResource {
     }
 
     private Answer executeRequest(UpdateTungstenLoadBalancerPoolCommand cmd, int numRetries) {
-        boolean result = _tungstenApi.updateLoadBalancerPool(cmd.getProjectFqn(), cmd.getLbPoolName(),
-            cmd.getLbMethod(), cmd.getLbSessionPersistence(), cmd.getLbPersistenceCookieName(), cmd.getLbProtocol());
+        Project project = (Project) _tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
+        boolean result = _tungstenApi.updateLoadBalancerPool(project.getUuid(), cmd.getLbPoolName(), cmd.getLbMethod(),
+            cmd.getLbSessionPersistence(), cmd.getLbPersistenceCookieName(), cmd.getLbProtocol());
         if (result)
             return new TungstenAnswer(cmd, true, "Tungsten loadbalancer pool updated");
         else {
@@ -925,12 +928,13 @@ public class TungstenResource implements ServerResource {
     }
 
     private Answer executeRequest(UpdateTungstenLoadBalancerMemberCommand cmd, int numRetries) {
+        Project project = (Project) _tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
         String subnetUuid = _tungstenApi.getSubnetUuid(cmd.getNetworkUuid());
         if (subnetUuid == null) {
             return new TungstenAnswer(cmd, new IOException());
         }
 
-        boolean result = _tungstenApi.updateLoadBalancerMember(cmd.getProjectFqn(), cmd.getLbPoolName(),
+        boolean result = _tungstenApi.updateLoadBalancerMember(project.getUuid(), cmd.getLbPoolName(),
             cmd.getListTungstenLoadBalancerMember(), subnetUuid);
 
         if (result)

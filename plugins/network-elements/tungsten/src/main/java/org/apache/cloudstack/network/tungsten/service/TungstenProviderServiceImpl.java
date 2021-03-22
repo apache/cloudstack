@@ -39,6 +39,7 @@ import org.apache.cloudstack.network.tungsten.api.command.ConfigTungstenServiceC
 import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenManagementNetworkCmd;
 import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenProviderCmd;
 import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenPublicNetworkCmd;
+import org.apache.cloudstack.network.tungsten.api.command.GetLoadBalancerSslCertificateCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ListTungstenProvidersCmd;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenProviderResponse;
 import org.apache.cloudstack.network.tungsten.resource.TungstenResource;
@@ -76,7 +77,7 @@ public class TungstenProviderServiceImpl extends ManagerBase implements Tungsten
     public List<Class<?>> getCommands() {
         return Lists.<Class<?>>newArrayList(CreateTungstenProviderCmd.class, ConfigTungstenServiceCmd.class,
             CreateTungstenPublicNetworkCmd.class, ListTungstenProvidersCmd.class,
-            CreateTungstenManagementNetworkCmd.class);
+            CreateTungstenManagementNetworkCmd.class, GetLoadBalancerSslCertificateCmd.class);
     }
 
     @Override
@@ -119,7 +120,7 @@ public class TungstenProviderServiceImpl extends ManagerBase implements Tungsten
                     public TungstenProviderVO doInTransaction(TransactionStatus status) {
                         TungstenProviderVO tungstenProviderVO = new TungstenProviderVO(zoneId, name, host.getId(), port,
                             hostname, vrouter, vrouterPort);
-                       _tungstenProviderDao.persist(tungstenProviderVO);
+                        _tungstenProviderDao.persist(tungstenProviderVO);
 
                         DetailVO detail = new DetailVO(host.getId(), "tungstendeviceid",
                             String.valueOf(tungstenProviderVO.getId()));
@@ -128,7 +129,8 @@ public class TungstenProviderServiceImpl extends ManagerBase implements Tungsten
                         return tungstenProviderVO;
                     }
                 });
-                _messageBus.publish(_name, TungstenService.MESSAGE_SYNC_TUNGSTEN_DB_WITH_DOMAINS_AND_PROJECTS_EVENT, PublishScope.LOCAL, tungstenProvider);
+                _messageBus.publish(_name, TungstenService.MESSAGE_SYNC_TUNGSTEN_DB_WITH_DOMAINS_AND_PROJECTS_EVENT,
+                    PublishScope.LOCAL, tungstenProvider);
             } else {
                 throw new CloudRuntimeException("Failed to add Tungsten provider due to internal error.");
             }

@@ -81,7 +81,6 @@ public class TungstenApi {
     public static final String TUNGSTEN_DEFAULT_DOMAIN = "default-domain";
     public static final String TUNGSTEN_DEFAULT_PROJECT = "default-project";
     public static final String TUNGSTEN_DEFAULT_IPAM = "default-network-ipam";
-    public static final String TUNGSTEN_FABRIC_NETWORK = "ip-fabric";
 
     private String hostname;
     private String port;
@@ -162,7 +161,7 @@ public class TungstenApi {
 
             if (isManagementNetwork) {
                 VirtualNetwork fabricNetwork = (VirtualNetwork) apiConnector.findByFQN(VirtualNetwork.class,
-                    TUNGSTEN_DEFAULT_DOMAIN + ":" + TUNGSTEN_DEFAULT_PROJECT + ":" + TUNGSTEN_FABRIC_NETWORK);
+                    TungstenUtils.FABRIC_NETWORK_FQN);
                 if (fabricNetwork != null) {
                     virtualNetwork.setVirtualNetwork(fabricNetwork);
                 }
@@ -676,10 +675,10 @@ public class TungstenApi {
         }
     }
 
-    public ApiObjectBase createTungstenNetworkPolicy(String name, String projectFqn,
+    public ApiObjectBase createTungstenNetworkPolicy(String name, String projectUuid,
         List<TungstenRule> tungstenRuleList) {
         try {
-            Project project = (Project) getTungstenProjectByFqn(projectFqn);
+            Project project = (Project) getTungstenObject(Project.class, projectUuid);
             NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.find(NetworkPolicy.class, project, name);
             if (networkPolicy == null) {
                 PolicyEntriesType policyEntriesType = new PolicyEntriesType();
@@ -718,10 +717,10 @@ public class TungstenApi {
         }
     }
 
-    public boolean applyTungstenNetworkPolicy(String projectFqn, String networkPolicyName, String networkUuid,
+    public boolean applyTungstenNetworkPolicy(String projectUuid, String networkPolicyName, String networkUuid,
         boolean priority) {
         try {
-            Project project = (Project) getTungstenProjectByFqn(projectFqn);
+            Project project = (Project) getTungstenObject(Project.class, projectUuid);
             NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.find(NetworkPolicy.class, project,
                 networkPolicyName);
             VirtualNetwork network = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
@@ -752,8 +751,7 @@ public class TungstenApi {
 
     public ApiObjectBase getTungstenFabricNetwork() {
         try {
-            return apiConnector.findByFQN(VirtualNetwork.class,
-                TUNGSTEN_DEFAULT_DOMAIN + ":" + TUNGSTEN_DEFAULT_PROJECT + ":" + TUNGSTEN_FABRIC_NETWORK);
+            return apiConnector.findByFQN(VirtualNetwork.class, TungstenUtils.FABRIC_NETWORK_FQN);
         } catch (IOException e) {
             return null;
         }
@@ -852,10 +850,10 @@ public class TungstenApi {
         return domain;
     }
 
-    public ApiObjectBase createTungstenLoadbalancer(String projectFqn, String lbName, String vmiUuid, String subnetUuid,
-        String privateIp) {
+    public ApiObjectBase createTungstenLoadbalancer(String projectUuid, String lbName, String vmiUuid,
+        String subnetUuid, String privateIp) {
         try {
-            Project project = (Project) getTungstenProjectByFqn(projectFqn);
+            Project project = (Project) getTungstenObject(Project.class, projectUuid);
             VirtualMachineInterface virtualMachineInterface = (VirtualMachineInterface) apiConnector.findById(
                 VirtualMachineInterface.class, vmiUuid);
             LoadbalancerType loadbalancerType = new LoadbalancerType();
@@ -883,10 +881,10 @@ public class TungstenApi {
         }
     }
 
-    public ApiObjectBase createTungstenLoadbalancerListener(String projectFqn, String loadBalancerUuid, String name,
+    public ApiObjectBase createTungstenLoadbalancerListener(String projectUuid, String loadBalancerUuid, String name,
         String protocol, int port) {
         try {
-            Project project = (Project) getTungstenProjectByFqn(projectFqn);
+            Project project = (Project) getTungstenObject(Project.class, projectUuid);
             Loadbalancer loadbalancer = (Loadbalancer) apiConnector.findById(Loadbalancer.class, loadBalancerUuid);
             LoadbalancerListenerType loadbalancerListenerType = new LoadbalancerListenerType();
             loadbalancerListenerType.setConnectionLimit(-1);
@@ -911,10 +909,10 @@ public class TungstenApi {
         }
     }
 
-    public ApiObjectBase createTungstenLoadbalancerHealthMonitor(String projectFqn, String name, String monitorType,
+    public ApiObjectBase createTungstenLoadbalancerHealthMonitor(String projectUuid, String name, String monitorType,
         int maxRetries, int delay, int timeout, String httpMethod, String urlPath, String expectedCode) {
         try {
-            Project project = (Project) getTungstenProjectByFqn(projectFqn);
+            Project project = (Project) getTungstenObject(Project.class, projectUuid);
             LoadbalancerHealthmonitorType loadbalancerHealthmonitorType = new LoadbalancerHealthmonitorType();
             loadbalancerHealthmonitorType.setMonitorType(monitorType);
             loadbalancerHealthmonitorType.setMaxRetries(maxRetries);
@@ -943,10 +941,10 @@ public class TungstenApi {
         }
     }
 
-    public ApiObjectBase createTungstenLoadbalancerPool(String projectFqn, String loadbalancerlistenerUuid,
+    public ApiObjectBase createTungstenLoadbalancerPool(String projectUuid, String loadbalancerlistenerUuid,
         String loadbalancerHealthmonitorUuid, String name, String method, String protocol) {
         try {
-            Project project = (Project) getTungstenProjectByFqn(projectFqn);
+            Project project = (Project) getTungstenObject(Project.class, projectUuid);
             LoadbalancerListener loadbalancerListener = (LoadbalancerListener) apiConnector.findById(
                 LoadbalancerListener.class, loadbalancerlistenerUuid);
             LoadbalancerHealthmonitor loadbalancerHealthmonitor = (LoadbalancerHealthmonitor) apiConnector.findById(
@@ -1002,9 +1000,9 @@ public class TungstenApi {
         }
     }
 
-    public boolean removeTungstenNetworkPolicy(String projectFqn, String networkUuid, String networkPolicyName) {
+    public boolean removeTungstenNetworkPolicy(String projectUuid, String networkUuid, String networkPolicyName) {
         try {
-            Project project = (Project) getTungstenProjectByFqn(projectFqn);
+            Project project = (Project) getTungstenObject(Project.class, projectUuid);
             VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
             NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.find(NetworkPolicy.class, project,
                 networkPolicyName);
@@ -1018,10 +1016,10 @@ public class TungstenApi {
         }
     }
 
-    public boolean updateLoadBalancerMember(String projectFqn, String lbPoolName,
+    public boolean updateLoadBalancerMember(String projectUuid, String lbPoolName,
         List<TungstenLoadBalancerMember> listTungstenLoadBalancerMember, String subnetUuid) {
         try {
-            Project project = (Project) getTungstenProjectByFqn(projectFqn);
+            Project project = (Project) getTungstenObject(Project.class, projectUuid);
             LoadbalancerPool loadbalancerPool = (LoadbalancerPool) apiConnector.find(LoadbalancerPool.class, project,
                 lbPoolName);
             List<ObjectReference<ApiPropertyBase>> listMember = loadbalancerPool.getLoadbalancerMembers();
@@ -1059,25 +1057,10 @@ public class TungstenApi {
         }
     }
 
-    public boolean updateLoadBalancerListener(String projectFqn, String lbListenerName, String lbProtocol) {
-        try {
-            Project project = (Project) getTungstenProjectByFqn(projectFqn);
-            LoadbalancerListener loadbalancerListener = (LoadbalancerListener) apiConnector.find(
-                LoadbalancerListener.class, project, lbListenerName);
-            LoadbalancerListenerType loadbalancerListenerType = loadbalancerListener.getProperties();
-            loadbalancerListenerType.setProtocol(lbProtocol);
-            Status status = apiConnector.update(loadbalancerListener);
-            status.ifFailure(errorHandler);
-            return status.isSuccess();
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
-    public boolean updateLoadBalancerPool(String projectFqn, String lbPoolName, String lbMethod,
+    public boolean updateLoadBalancerPool(String projectUuid, String lbPoolName, String lbMethod,
         String lbSessionPersistence, String lbPersistenceCookieName, String lbProtocol) {
         try {
-            Project project = (Project) getTungstenProjectByFqn(projectFqn);
+            Project project = (Project) getTungstenObject(Project.class, projectUuid);
             LoadbalancerPool loadbalancerPool = (LoadbalancerPool) apiConnector.find(LoadbalancerPool.class, project,
                 lbPoolName);
             LoadbalancerPoolType loadbalancerPoolType = loadbalancerPool.getProperties();
