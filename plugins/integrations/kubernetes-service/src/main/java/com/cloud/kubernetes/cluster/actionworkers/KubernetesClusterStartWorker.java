@@ -277,6 +277,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         UserVm k8sMasterVM = null;
         k8sMasterVM = createKubernetesMaster(network, publicIpAddress);
         addKubernetesClusterVm(kubernetesCluster.getId(), k8sMasterVM.getId(), true);
+        resizeNodeVolume(k8sMasterVM);
         startKubernetesVM(k8sMasterVM);
         k8sMasterVM = userVmDao.findById(k8sMasterVM.getId());
         if (k8sMasterVM == null) {
@@ -296,6 +297,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 UserVm vm = null;
                 vm = createKubernetesAdditionalMaster(publicIpAddress, i);
                 addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), true);
+                resizeNodeVolume(vm);
                 startKubernetesVM(vm);
                 vm = userVmDao.findById(vm.getId());
                 if (vm == null) {
@@ -427,6 +429,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 logTransitStateAndThrow(Level.ERROR, String.format("Failed to start all VMs in Kubernetes cluster : %s", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
             try {
+                resizeNodeVolume(vm);
                 startKubernetesVM(vm);
             } catch (ManagementServerException ex) {
                 LOGGER.warn(String.format("Failed to start VM : %s in Kubernetes cluster : %s due to ", vm.getDisplayName(), kubernetesCluster.getName()) + ex);
