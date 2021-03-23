@@ -17,9 +17,11 @@
 
 <template>
   <div class="migrate-volume-container">
-
     <div class="modal-form">
       <div v-if="storagePools.length > 0">
+        <a-alert type="warning">
+          <span slot="message" v-html="$t('message.migrate.volume')" />
+        </a-alert>
         <p class="modal-form__label">{{ $t('label.storagepool') }}</p>
         <a-select
           v-model="selectedStoragePool"
@@ -171,11 +173,10 @@ export default {
 
 <style scoped lang="scss">
   .migrate-volume-container {
-    width: 95vw;
-    max-width: 100%;
+    width: 85vw;
 
     @media (min-width: 760px) {
-      width: 50vw;
+      width: 500px;
     }
   }
 

@@ -144,9 +144,10 @@ export default {
 </script>
 <style lang="scss" scoped>
 .form-layout {
-  width: 75vw;
-  @media (min-width: 700px) {
-    width: 40vw;
+  width: 85vw;
+
+  @media (min-width: 760px) {
+    width: 500px;
   }
 }
 .action-button {

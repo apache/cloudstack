@@ -395,10 +395,15 @@
           </span>
         </div>
         <div class="resource-detail-item" v-if="resource.templateid">
-          <div class="resource-detail-item__label">{{ $t('label.templatename') }}</div>
+          <div class="resource-detail-item__label">{{ resource.isoid ? $t('label.iso') : $t('label.templatename') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="picture" />
-            <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatename || resource.templateid }} </router-link>
+            <div v-if="resource.isoid">
+              <router-link :to="{ path: '/iso/' + resource.isoid }">{{ resource.isoname || resource.isoid }} </router-link>
+            </div>
+            <div v-else>
+              <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatename || resource.templateid }} </router-link>
+            </div>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
@@ -713,7 +718,6 @@ export default {
   },
   data () {
     return {
-      name: '',
       ipaddress: '',
       resourceType: '',
       annotationType: '',
@@ -769,10 +773,14 @@ export default {
   created () {
     this.setData()
   },
+  computed: {
+    name () {
+      return this.resource.displayname || this.resource.displaytext || this.resource.name || this.resource.username ||
+        this.resource.ipaddress || this.resource.virtualmachinename || this.resource.templatetype
+    }
+  },
   methods: {
     setData () {
-      this.name = this.resource.displayname || this.resource.displaytext || this.resource.name || this.resource.username ||
-        this.resource.ipaddress || this.resource.virtualmachinename || this.resource.templatetype
       if (this.resource.nic && this.resource.nic.length > 0) {
         this.ipaddress = this.resource.nic.filter(e => { return e.ipaddress }).map(e => { return e.ipaddress }).join(', ')
       } else {

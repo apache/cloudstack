@@ -48,6 +48,9 @@
       <div slot="memused" slot-scope="record">
         {{ record.memoryused | byteToGigabyte }} GB
       </div>
+      <div slot="memoryallocatedpercentage" slot-scope="record">
+        {{ record.memoryallocatedpercentage }}
+      </div>
       <template slot="select" slot-scope="record">
         <a-radio
           class="host-item__radio"
@@ -113,6 +116,10 @@ export default {
         {
           title: this.$t('label.cpuused'),
           dataIndex: 'cpuused'
+        },
+        {
+          title: this.$t('label.memoryallocated'),
+          scopedSlots: { customRender: 'memoryallocatedpercentage' }
         },
         {
           title: this.$t('label.memused'),
