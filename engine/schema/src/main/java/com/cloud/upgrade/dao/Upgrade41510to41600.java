@@ -64,6 +64,7 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public void performDataMigration(Connection conn) {
+        updateVMwareSystemvVMTemplateField(conn, "systemvm-vmware-4.16.0");
     }
 
     @Override
@@ -169,9 +170,7 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
                         LOG.error("updateSystemVmTemplates:Exception while updating template with id " + templateId + " to be marked as 'system': " + e.getMessage());
                         throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating template with id " + templateId + " to be marked as 'system'", e);
                     }
-                    if (hypervisorAndTemplateName.getKey() == Hypervisor.HypervisorType.VMware) {
-                        updateVMwareSystemvVMTemplateField(conn, hypervisorAndTemplateName.getValue());
-                    }
+
                     // update template ID of system Vms
                     try (PreparedStatement update_templ_id_pstmt = conn
                             .prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = ? and removed is NULL");) {
@@ -227,9 +226,6 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
                                     + hypervisorAndTemplateName.getKey().toString() + ": " + e.getMessage());
                             throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating 'url' and 'checksum' for hypervisor type "
                                     + hypervisorAndTemplateName.getKey().toString(), e);
-                        }
-                        if (hypervisorAndTemplateName.getKey() == Hypervisor.HypervisorType.VMware) {
-                            updateVMwareSystemvVMTemplateField(conn, hypervisorAndTemplateName.getValue());
                         }
                     }
                 }
