@@ -147,7 +147,7 @@ public class Upgrade41500to41510 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
         for (final Map.Entry<Hypervisor.HypervisorType, String> hypervisorAndTemplateName : NewTemplateNameList.entrySet()) {
             LOG.debug("Updating " + hypervisorAndTemplateName.getKey() + " System Vms");
-            try (PreparedStatement pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = ? and removed is null order by id desc limit 1")) {
+            try (PreparedStatement pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = ? and removed is null and account_id in (select id from account where type = 1 and removed is NULL) order by id desc limit 1")) {
                 // Get systemvm template id for corresponding hypervisor
                 long templateId = -1;
                 pstmt.setString(1, hypervisorAndTemplateName.getValue());
