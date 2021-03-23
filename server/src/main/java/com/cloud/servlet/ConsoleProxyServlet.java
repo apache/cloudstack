@@ -495,8 +495,10 @@ public class ConsoleProxyServlet extends HttpServlet {
         if (param.getHypervHost() != null || !ConsoleProxyManager.NoVncConsoleDefault.value()) {
             sb.append("/ajax?token=" + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
         } else {
-            sb.append("/resource/noVNC/vnc.html?port=" + ConsoleProxyManager.DEFAULT_NOVNC_PORT + "&token="
-                + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
+            sb.append("/resource/noVNC/vnc.html")
+                .append("?autoconnect=true")
+                .append("&port=" + ConsoleProxyManager.DEFAULT_NOVNC_PORT)
+                .append("&token=" + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
         }
 
         // for console access, we need guest OS type to help implement keyboard
