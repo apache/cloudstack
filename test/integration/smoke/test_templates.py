@@ -1332,7 +1332,6 @@ class TestCreateTemplateWithDirectDownload(cloudstackTestCase):
                 domainid=self.account.domainid,
                 serviceofferingid=self.service_offering.id
             )
-            self.cleanup.append(tmpl)
             self.fail("Expected to fail deployment")
         except Exception as e:
             self.debug("Expected exception")
