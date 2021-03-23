@@ -103,6 +103,7 @@ export default {
       api: 'migrateSystemVm',
       icon: 'drag',
       label: 'label.action.migrate.router',
+      message: 'message.migrate.router.confirm',
       dataView: true,
       show: (record, store) => { return ['Running'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
       args: ['virtualmachineid', 'hostid'],

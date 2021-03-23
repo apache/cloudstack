@@ -255,7 +255,7 @@ export default {
             successMethod: () => {
               this.parentFetchData()
             },
-            response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `Password of the VM is ${result.virtualmachine.password}` : null }
+            response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null }
           })
           this.closeAction()
         }).catch(error => {

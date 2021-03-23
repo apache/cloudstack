@@ -237,7 +237,7 @@
           <a-select-option
             v-for="networkOffering in availableNetworkOfferings"
             :key="networkOffering.id">
-            {{ networkOffering.name }}
+            {{ networkOffering.displaytext || networkOffering.name || networkOffering.description }}
           </a-select-option>
         </a-select>
       </a-form-item>
