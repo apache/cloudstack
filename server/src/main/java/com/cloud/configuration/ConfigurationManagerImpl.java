@@ -2503,11 +2503,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         final Account account = _accountDao.findById(user.getAccountId());
         if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-            if (filteredDomainIds.isEmpty()) {
-                throw new InvalidParameterValueException(String.format("Unable to create public service offering by admin: %s because it is domain-admin", user.getUuid()));
-            }
             if (tags != null || hostTag != null) {
-                throw new InvalidParameterValueException(String.format("Unable to create service offering with storage tags or host tags by admin: %s because it is domain-admin", user.getUuid()));
+                throw new InvalidParameterValueException(String.format("Unable to create service offering with storage tags or host tags by user: %s because it is domain-admin", user.getUsername()));
+            }
+            if (CollectionUtils.isEmpty(filteredDomainIds)) {
+                filteredDomainIds.add(account.getDomainId());
             }
             for (Long domainId : filteredDomainIds) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
@@ -2937,11 +2937,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         final Account account = _accountDao.findById(user.getAccountId());
         if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-            if (filteredDomainIds.isEmpty()) {
-                throw new InvalidParameterValueException(String.format("Unable to create public disk offering by admin: %s because it is domain-admin", user.getUuid()));
-            }
             if (tags != null) {
-                throw new InvalidParameterValueException(String.format("Unable to create disk offering with storage tags by admin: %s because it is domain-admin", user.getUuid()));
+                throw new InvalidParameterValueException(String.format("Unable to create disk offering with storage tags by user: %s because it is domain-admin", user.getUsername()));
+            }
+            if (CollectionUtils.isEmpty(filteredDomainIds)) {
+                filteredDomainIds.add(account.getDomainId());
             }
             for (Long domainId : filteredDomainIds) {
                 if (domainId == null || !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
