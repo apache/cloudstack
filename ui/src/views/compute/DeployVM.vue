@@ -545,7 +545,7 @@
                         :options="keyboardSelectOptions"
                       ></a-select>
                     </a-form-item>
-                    <a-form-item :label="$t('label.start.vm')">
+                    <a-form-item :label="$t('label.action.start.instance')">
                       <a-switch v-decorator="['startvm', { initialValue: true }]" :checked="this.startvm" @change="checked => { this.startvm = checked }" />
                     </a-form-item>
                   </div>
