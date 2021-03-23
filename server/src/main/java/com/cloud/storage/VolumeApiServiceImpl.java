@@ -1764,12 +1764,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_UPDATE, eventDescription = "updating volume", async = true)
     public Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume, String customId, long entityOwnerId, String chainInfo) {
-
+        Account caller = CallContext.current().getCallingAccount();
         VolumeVO volume = _volsDao.findById(volumeId);
 
         if (volume == null) {
             throw new InvalidParameterValueException("The volume id doesn't exist");
         }
+
+        /* Does the caller have authority to act on this volume? */
+        _accountMgr.checkAccess(caller, null, true, volume);
 
         if (path != null) {
             volume.setPath(path);
@@ -1994,6 +1997,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "detaching volume")
     public Volume detachVolumeViaDestroyVM(long vmId, long volumeId) {
+        Account caller = CallContext.current().getCallingAccount();
+        Volume volume = _volsDao.findById(volumeId);
+        // Permissions check
+        _accountMgr.checkAccess(caller, null, true, volume);
         return orchestrateDetachVolumeFromVM(vmId, volumeId);
     }
 
@@ -2183,6 +2190,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_MIGRATE, eventDescription = "migrating volume", async = true)
     public Volume migrateVolume(MigrateVolumeCmd cmd) {
+        Account caller = CallContext.current().getCallingAccount();
         Long volumeId = cmd.getVolumeId();
         Long storagePoolId = cmd.getStoragePoolId();
 
@@ -2190,6 +2198,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (vol == null) {
             throw new InvalidParameterValueException("Failed to find the volume id: " + volumeId);
         }
+
+        _accountMgr.checkAccess(caller, null, true, vol);
 
         if (vol.getState() != Volume.State.Ready) {
             throw new InvalidParameterValueException("Volume must be in ready state");
@@ -2548,10 +2558,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private Snapshot takeSnapshotInternal(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup)
             throws ResourceAllocationException {
+        Account caller = CallContext.current().getCallingAccount();
         VolumeInfo volume = volFactory.getVolume(volumeId);
         if (volume == null) {
             throw new InvalidParameterValueException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
         }
+
+        _accountMgr.checkAccess(caller, null, true, volume);
 
         if (volume.getState() != Volume.State.Ready) {
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
@@ -2569,6 +2582,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         if (vm != null) {
+            _accountMgr.checkAccess(caller, null, true, vm);
             // serialize VM operation
             AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
             if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
