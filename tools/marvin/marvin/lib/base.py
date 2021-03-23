@@ -4273,6 +4273,26 @@ class Configurations:
         return (apiclient.listCapabilities(cmd))
 
 
+    @classmethod
+    def reset(cls, apiclient, name, zoneid=None, clusterid=None, storageid=None, domainid=None, accountid=None):
+        """Resets the specified configuration to original value"""
+
+        cmd = resetConfiguration.resetConfigurationCmd()
+        cmd.name = name
+
+        if zoneid:
+            cmd.zoneid = zoneid
+        if clusterid:
+            cmd.clusterid = clusterid
+        if storageid:
+            cmd.storageid = storageid
+        if domainid:
+            cmd.domainid = domainid
+        if accountid:
+            cmd.accountid = accountid
+
+        apiclient.resetConfiguration(cmd)
+
 class NetScaler:
     """Manage external netscaler device"""
 

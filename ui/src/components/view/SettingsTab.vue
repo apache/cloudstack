@@ -64,6 +64,16 @@
             v-if="editableValueKey === index"
             iconType="check-circle"
             iconTwoToneColor="#52c41a" />
+            <a-icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" />
+          <a-tooltip placement="bottom">
+            <template slot="title">{{ $t('label.reset.config.value') }}</template>
+            <a-button
+              shape="circle"
+              :disabled="!('updateConfiguration' in $store.getters.apis)"
+              v-if="editableValueKey !== index"
+              icon="reload"
+              @click="resetConfig(item)" />
+          </a-tooltip>
         </div>
       </a-list-item>
     </a-list>
@@ -182,6 +192,28 @@ export default {
     handleSearch (value) {
       this.filter = value
       this.fetchData()
+    },
+    resetConfig (item) {
+      this.tabLoading = true
+      api('resetConfiguration', {
+        [this.scopeKey]: this.resource.id,
+        name: item.name
+      }).then(() => {
+        const message = `${this.$t('label.setting')} ${item.name} ${this.$t('label.reset.config.value')}`
+        this.$message.success(message)
+      }).catch(error => {
+        console.error(error)
+        this.$message.error(this.$t('message.error.reset.config'))
+        this.$notification.error({
+          message: this.$t('label.error'),
+          description: this.$t('message.error.reset.config')
+        })
+      }).finally(() => {
+        this.tabLoading = false
+        this.fetchData(() => {
+          this.editableValueKey = null
+        })
+      })
     }
   }
 }
