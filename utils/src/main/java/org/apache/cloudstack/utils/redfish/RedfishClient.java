@@ -231,7 +231,7 @@ public class RedfishClient {
         for (int attempt = 1; attempt < redfishRequestMaxRetries + 1; attempt++) {
             try {
                 TimeUnit.SECONDS.sleep(WAIT_FOR_REQUEST_RETRY);
-                LOGGER.debug(String.format("Retry HTTP %s request [URL: %s], attempt %d/%d.", httpReq.getMethod(), url, attempt, redfishRequestMaxRetries));
+                LOGGER.debug(String.format("HTTP %s request retry attempt %d/%d [URL: %s].", httpReq.getMethod(), url, attempt, redfishRequestMaxRetries));
                 response = client.execute(httpReq);
                 break;
             } catch (IOException | InterruptedException e) {
