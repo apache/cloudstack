@@ -91,6 +91,8 @@ public class ConsoleProxyHttpHandlerHelper {
                     map.put("username", param.getUsername());
                 if (param.getPassword() != null)
                     map.put("password", param.getPassword());
+                if (param.getSourceIP() != null)
+                    map.put("sourceIP", param.getSourceIP());
             } else {
                 s_logger.error("Unable to decode token");
             }

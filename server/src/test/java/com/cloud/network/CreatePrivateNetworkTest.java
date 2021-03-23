@@ -123,7 +123,7 @@ public class CreatePrivateNetworkTest {
                 ACLType.Account, false, 1L, false);
         when(networkService._networkMgr.createGuestNetwork(eq(ntwkOff.getId()), eq("bla"), eq("fake"), eq("10.1.1.1"), eq("10.1.1.0/24"), nullable(String.class), nullable(Boolean.class), nullable(String.class),
                         eq(account), nullable(Long.class), eq(physicalNetwork), eq(physicalNetwork.getDataCenterId()), eq(ACLType.Account), nullable(Boolean.class), eq(1L), nullable(String.class), nullable(String.class),
-                        nullable(Boolean.class), nullable(String.class), nullable(Network.PVlanType.class), nullable(String.class))).thenReturn(net);
+                        nullable(Boolean.class), nullable(String.class), nullable(Network.PVlanType.class), nullable(String.class), nullable(String.class), nullable(String.class))).thenReturn(net);
         when(
             networkService._networkMgr.createPrivateNetwork(eq(ntwkOff.getId()), eq("bla"), eq("fake"), eq("10.1.1.1"), eq("10.1.1.0/24"), anyString(), anyBoolean(), eq(account), eq(physicalNetwork), eq(1L))).thenReturn(net);
 

@@ -23,6 +23,9 @@ import java.util.Map;
 
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+
+import com.cloud.storage.Storage;
 
 public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
 
@@ -32,6 +35,7 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
 
     private String url;
     private Long templateId;
+    private TemplateObjectTO destData;
     private PrimaryDataStoreTO destPool;
     private String checksum;
     private Map<String, String> headers;
@@ -39,11 +43,12 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
     private Integer soTimeout;
     private Integer connectionRequestTimeout;
     private Long templateSize;
-    private boolean iso;
+    private Storage.ImageFormat format;
 
     protected DirectDownloadCommand (final String url, final Long templateId, final PrimaryDataStoreTO destPool, final String checksum, final Map<String, String> headers, final Integer connectTimeout, final Integer soTimeout, final Integer connectionRequestTimeout) {
         this.url = url;
         this.templateId = templateId;
+        this.destData = destData;
         this.destPool = destPool;
         this.checksum = checksum;
         this.headers = headers;
@@ -58,6 +63,14 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
 
     public Long getTemplateId() {
         return templateId;
+    }
+
+    public TemplateObjectTO getDestData() {
+        return destData;
+    }
+
+    public void setDestData(TemplateObjectTO destData) {
+         this.destData = destData;
     }
 
     public PrimaryDataStoreTO getDestPool() {
@@ -104,12 +117,12 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
         this.templateSize = templateSize;
     }
 
-    public boolean isIso() {
-        return iso;
+    public Storage.ImageFormat getFormat() {
+        return format;
     }
 
-    public void setIso(boolean iso) {
-        this.iso = iso;
+    public void setFormat(Storage.ImageFormat format) {
+        this.format = format;
     }
 
     @Override
@@ -119,5 +132,9 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
     @Override
     public boolean executeInSequence() {
         return false;
+    }
+
+    public int getWaitInMillSeconds() {
+        return getWait() * 1000;
     }
 }

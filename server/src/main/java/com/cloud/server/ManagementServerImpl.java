@@ -27,12 +27,16 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+
+
 import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
@@ -40,7 +44,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.Storage;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -573,6 +576,8 @@ import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.dao.StoragePoolJoinDao;
+import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -657,8 +662,10 @@ import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.VolumeVO;
@@ -729,6 +736,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "6", "Specifies the length of a randomly generated password", false);
     static final ConfigKey<Integer> sshKeyLength = new ConfigKey<Integer>("Advanced", Integer.class, "ssh.key.length", "2048", "Specifies custom SSH key length (bit)", true, ConfigKey.Scope.Global);
     static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<Boolean>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
+    public static final ConfigKey<String> customCsIdentifier = new ConfigKey<String>("Advanced", String.class, "custom.cs.identifier", UUID.randomUUID().toString().split("-")[0].substring(4), "Custom identifier for the cloudstack installation", true, ConfigKey.Scope.Global);
 
     @Inject
     public AccountManager _accountMgr;
@@ -788,6 +796,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private GuestOSHypervisorDao _guestOSHypervisorDao;
     @Inject
     private PrimaryDataStoreDao _poolDao;
+    @Inject
+    private StoragePoolJoinDao _poolJoinDao;
     @Inject
     private NetworkDao _networkDao;
     @Inject
@@ -1145,7 +1155,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<List<? extends Cluster>, Integer>(result.first(), result.second());
     }
 
-    private HypervisorType getHypervisorType(VMInstanceVO vm, StoragePool srcVolumePool, VirtualMachineProfile profile) {
+    private HypervisorType getHypervisorType(VMInstanceVO vm, StoragePool srcVolumePool) {
         HypervisorType type = null;
         if (vm == null) {
             StoragePoolVO poolVo = _poolDao.findById(srcVolumePool.getId());
@@ -1155,18 +1165,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     ClusterVO cluster = _clusterDao.findById(clusterId);
                     type = cluster.getHypervisorType();
                 }
-            } else if (ScopeType.ZONE.equals(poolVo.getScope())) {
-                Long zoneId = poolVo.getDataCenterId();
-                if (zoneId != null) {
-                    DataCenterVO dc = _dcDao.findById(zoneId);
-                }
             }
 
             if (null == type) {
                 type = srcVolumePool.getHypervisor();
             }
         } else {
-            type = profile.getHypervisorType();
+            type = vm.getHypervisorType();
         }
         return type;
     }
@@ -1257,15 +1262,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
+        String srcHostVersion = srcHost.getHypervisorVersion();
+        if (HypervisorType.KVM.equals(srcHost.getHypervisorType()) && srcHostVersion == null) {
+            srcHostVersion = "";
+        }
 
         // Check if the vm can be migrated with storage.
         boolean canMigrateWithStorage = false;
 
-        if (vm.getType() == VirtualMachine.Type.User) {
-            final HypervisorCapabilitiesVO capabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(srcHost.getHypervisorType(), srcHost.getHypervisorVersion());
-            if (capabilities != null) {
-                canMigrateWithStorage = capabilities.isStorageMotionSupported();
-            }
+        if (VirtualMachine.Type.User.equals(vm.getType()) || HypervisorType.VMware.equals(vm.getHypervisorType())) {
+            canMigrateWithStorage = Boolean.TRUE.equals(_hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion));
         }
 
         // Check if the vm is using any disks on local storage.
@@ -1292,8 +1298,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
         DataCenterDeployment plan = null;
         if (canMigrateWithStorage) {
-            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null, null, null, keyword,
-                null, null, srcHost.getHypervisorType(), srcHost.getHypervisorVersion(), srcHost.getId());
+            Long podId = !VirtualMachine.Type.User.equals(vm.getType()) ? srcHost.getPodId() : null;
+            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), podId, null, null, keyword,
+                null, null, srcHost.getHypervisorType(), null, srcHost.getId());
             allHosts = allHostsPair.first();
             hostsForMigrationWithStorage = new ArrayList<>(allHosts);
 
@@ -1303,6 +1310,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
                 for (Iterator<HostVO> iterator = hostsForMigrationWithStorage.iterator(); iterator.hasNext();) {
                     final Host host = iterator.next();
+                    String hostVersion = host.getHypervisorVersion();
+                    if (HypervisorType.KVM.equals(host.getHypervisorType()) && hostVersion == null) {
+                        hostVersion = "";
+                    }
 
                     if (volClusterId != null) {
                         if (storagePool.isLocal() || !host.getClusterId().equals(volClusterId) || usesLocal) {
@@ -1314,7 +1325,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                                 // source volume.
                                 iterator.remove();
                             } else {
-                                if (hasSuitablePoolsForVolume(volume, host, vmProfile)) {
+                                boolean hostSupportsStorageMigration = false;
+                                if ((srcHostVersion != null && srcHostVersion.equals(hostVersion)) ||
+                                        Boolean.TRUE.equals(_hypervisorCapabilitiesDao.isStorageMotionSupported(host.getHypervisorType(), hostVersion))) {
+                                    hostSupportsStorageMigration = true;
+                                }
+                                if (hostSupportsStorageMigration && hasSuitablePoolsForVolume(volume, host, vmProfile)) {
                                     requiresStorageMotion.put(host, true);
                                 } else {
                                     iterator.remove();
@@ -1324,6 +1340,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     } else {
                         if (storagePool.isManaged()) {
                             if (srcHost.getClusterId() != host.getClusterId()) {
+                                if (storagePool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
+                                    // No need of new volume creation for zone wide PowerFlex/ScaleIO pool
+                                    // Simply, changing volume access to host should work: grant access on dest host and revoke access on source host
+                                    continue;
+                                }
                                 // If the volume's storage pool is managed and at the zone level, then we still have to perform a storage migration
                                 // because we need to create a new target volume and copy the contents of the source volume into it before deleting
                                 // the source volume.
@@ -1334,7 +1355,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 }
             }
 
-            plan = new DataCenterDeployment(srcHost.getDataCenterId(), null, null, null, null, null);
+            plan = new DataCenterDeployment(srcHost.getDataCenterId(), podId, null, null, null, null);
         } else {
             final Long cluster = srcHost.getClusterId();
             if (s_logger.isDebugEnabled()) {
@@ -1488,12 +1509,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         StoragePool srcVolumePool = _poolDao.findById(volume.getPoolId());
-        allPools = getAllStoragePoolCompatileWithVolumeSourceStoragePool(srcVolumePool);
+        HypervisorType hypervisorType = getHypervisorType(vm, srcVolumePool);
+        Pair<Host, List<Cluster>> hostClusterPair = getVolumeVmHostClusters(srcVolumePool, vm, hypervisorType);
+        Host vmHost = hostClusterPair.first();
+        List<Cluster> clusters = hostClusterPair.second();
+        allPools = getAllStoragePoolCompatibleWithVolumeSourceStoragePool(srcVolumePool, hypervisorType, clusters);
         allPools.remove(srcVolumePool);
         if (vm != null) {
-            suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, srcVolumePool);
+            suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, vmHost, srcVolumePool,
+                    CollectionUtils.isNotEmpty(clusters) ? clusters.get(0) : null, hypervisorType);
         } else {
-            suitablePools = allPools;
+            suitablePools = findAllSuitableStoragePoolsForDetachedVolume(volume, allPools);
         }
         List<StoragePool> avoidPools = new ArrayList<>();
         if (srcVolumePool.getParent() != 0L) {
@@ -1520,6 +1546,30 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
+    private Pair<Host, List<Cluster>> getVolumeVmHostClusters(StoragePool srcVolumePool, VirtualMachine vm, HypervisorType hypervisorType) {
+        Host host = null;
+        List<Cluster> clusters = new ArrayList<>();
+        Long clusterId = srcVolumePool.getClusterId();
+        if (vm != null) {
+            Long hostId = vm.getHostId();
+            if (hostId == null) {
+                hostId = vm.getLastHostId();
+            }
+            if (hostId != null) {
+                host = _hostDao.findById(hostId);
+            }
+        }
+        if (clusterId == null && host != null) {
+            clusterId = host.getClusterId();
+        }
+        if (clusterId != null && vm != null) {
+            clusters.add(_clusterDao.findById(clusterId));
+        } else {
+            clusters.addAll(_clusterDao.listByDcHyType(srcVolumePool.getDataCenterId(), hypervisorType.toString()));
+        }
+        return new Pair<>(host, clusters);
+    }
+
     /**
      * This method looks for all storage pools that are compatible with the given volume.
      * <ul>
@@ -1527,16 +1577,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      *  <li>We also all storage available filtering by data center, pod and cluster as the current storage pool used by the given volume.</li>
      * </ul>
      */
-    private List<? extends StoragePool> getAllStoragePoolCompatileWithVolumeSourceStoragePool(StoragePool srcVolumePool) {
+    private List<? extends StoragePool> getAllStoragePoolCompatibleWithVolumeSourceStoragePool(StoragePool srcVolumePool, HypervisorType hypervisorType, List<Cluster> clusters) {
         List<StoragePoolVO> storagePools = new ArrayList<>();
-        List<StoragePoolVO> zoneWideStoragePools = _poolDao.findZoneWideStoragePoolsByTags(srcVolumePool.getDataCenterId(), null);
+        List<StoragePoolVO> zoneWideStoragePools = _poolDao.findZoneWideStoragePoolsByHypervisor(srcVolumePool.getDataCenterId(), hypervisorType);
         if (CollectionUtils.isNotEmpty(zoneWideStoragePools)) {
             storagePools.addAll(zoneWideStoragePools);
         }
-        List<StoragePoolVO> clusterAndLocalStoragePools = _poolDao.listBy(srcVolumePool.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null);
-        if (CollectionUtils.isNotEmpty(clusterAndLocalStoragePools)) {
-            storagePools.addAll(clusterAndLocalStoragePools);
+        if (CollectionUtils.isNotEmpty(clusters)) {
+            List<Long> clusterIds = clusters.stream().map(Cluster::getId).collect(Collectors.toList());
+            List<StoragePoolVO> clusterAndLocalStoragePools = _poolDao.findPoolsInClusters(clusterIds);
+            if (CollectionUtils.isNotEmpty(clusterAndLocalStoragePools)) {
+                storagePools.addAll(clusterAndLocalStoragePools);
+            }
         }
+
         return storagePools;
     }
 
@@ -1547,38 +1601,58 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      *
      *  Side note: the idea behind this method is to provide power for administrators of manually overriding deployments defined by CloudStack.
      */
-    private List<StoragePool> findAllSuitableStoragePoolsForVm(final VolumeVO volume, VMInstanceVO vm, StoragePool srcVolumePool) {
+    private List<StoragePool> findAllSuitableStoragePoolsForVm(final VolumeVO volume, VMInstanceVO vm, Host vmHost, StoragePool srcVolumePool, Cluster srcCluster, HypervisorType hypervisorType) {
         List<StoragePool> suitablePools = new ArrayList<>();
-
-        HostVO host = _hostDao.findById(vm.getHostId());
-        if (host == null) {
-            host = _hostDao.findById(vm.getLastHostId());
-        }
-
         ExcludeList avoid = new ExcludeList();
         avoid.addPool(srcVolumePool.getId());
-
-        DataCenterDeployment plan = new DataCenterDeployment(volume.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null, null, null);
+        Long clusterId = null;
+        Long podId = null;
+        if (srcCluster != null) {
+            clusterId = srcCluster.getId();
+            podId = srcCluster.getPodId();
+        }
+        DataCenterDeployment plan = new DataCenterDeployment(volume.getDataCenterId(), podId, clusterId,
+                null, null, null, null);
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         // OfflineVmwareMigration: vm might be null here; deal!
-        HypervisorType type = getHypervisorType(vm, srcVolumePool, profile);
 
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-        //This is an override mechanism so we can list the possible local storage pools that a volume in a shared pool might be able to be migrated to
-        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, type);
-        diskProfile.setUseLocalStorage(true);
+        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, hypervisorType);
 
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
-            List<StoragePool> pools = allocator.allocateToPool(diskProfile, profile, plan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL);
+            List<StoragePool> pools = allocator.allocateToPool(diskProfile, profile, plan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL, true);
             if (CollectionUtils.isEmpty(pools)) {
                 continue;
             }
             for (StoragePool pool : pools) {
-                boolean isLocalPoolSameHostAsSourcePool = pool.isLocal() && StringUtils.equals(host.getPrivateIpAddress(), pool.getHostAddress());
-                if (isLocalPoolSameHostAsSourcePool || pool.isShared()) {
+                boolean isLocalPoolSameHostAsVmHost = pool.isLocal() &&
+                        (vmHost == null || StringUtils.equals(vmHost.getPrivateIpAddress(), pool.getHostAddress()));
+                if (isLocalPoolSameHostAsVmHost || pool.isShared()) {
                     suitablePools.add(pool);
                 }
+            }
+        }
+        return suitablePools;
+    }
 
+    private List<StoragePool> findAllSuitableStoragePoolsForDetachedVolume(Volume volume, List<? extends StoragePool> allPools) {
+        List<StoragePool> suitablePools = new ArrayList<>();
+        if (CollectionUtils.isEmpty(allPools)) {
+            return  suitablePools;
+        }
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        List<String> tags = new ArrayList<>();
+        String[] tagsArray = diskOffering.getTagsArray();
+        if (tagsArray != null && tagsArray.length > 0) {
+            tags = Arrays.asList(tagsArray);
+        }
+        Long[] poolIds = allPools.stream().map(StoragePool::getId).toArray(Long[]::new);
+        List<StoragePoolJoinVO> pools = _poolJoinDao.searchByIds(poolIds);
+        for (StoragePoolJoinVO storagePool : pools) {
+            if (StoragePoolStatus.Up.equals(storagePool.getStatus()) &&
+                    (CollectionUtils.isEmpty(tags) || tags.contains(storagePool.getTag()))) {
+                Optional<? extends StoragePool> match = allPools.stream().filter(x -> x.getId() == storagePool.getId()).findFirst();
+                match.ifPresent(suitablePools::add);
             }
         }
         return suitablePools;
@@ -2428,7 +2502,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     private ConsoleProxyVO stopConsoleProxy(final VMInstanceVO systemVm, final boolean isForced) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
-
         _itMgr.advanceStop(systemVm.getUuid(), isForced);
         return _consoleProxyDao.findById(systemVm.getId());
     }
@@ -2436,6 +2509,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private ConsoleProxyVO rebootConsoleProxy(final long instanceId) {
         _consoleProxyMgr.rebootProxy(instanceId);
         return _consoleProxyDao.findById(instanceId);
+    }
+
+    private ConsoleProxyVO forceRebootConsoleProxy(final VMInstanceVO systemVm)  throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        _itMgr.advanceStop(systemVm.getUuid(), false);
+        return _consoleProxyMgr.startProxy(systemVm.getId(), true);
     }
 
     protected ConsoleProxyVO destroyConsoleProxy(final long instanceId) {
@@ -3225,7 +3303,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength, humanReadableSizes};
+        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
@@ -3325,6 +3403,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public SecondaryStorageVmVO rebootSecondaryStorageVm(final long instanceId) {
         _secStorageVmMgr.rebootSecStorageVm(instanceId);
         return _secStorageVmDao.findById(instanceId);
+    }
+
+    private SecondaryStorageVmVO forceRebootSecondaryStorageVm(final VMInstanceVO systemVm)  throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        _itMgr.advanceStop(systemVm.getUuid(), false);
+        return _secStorageVmMgr.startSecStorageVm(systemVm.getId());
     }
 
     protected SecondaryStorageVmVO destroySecondaryStorageVm(final long instanceId) {
@@ -3496,12 +3579,24 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw ex;
         }
 
-        if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)) {
-            ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy Vm");
-            return rebootConsoleProxy(cmd.getId());
-        } else {
-            ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_SSVM_REBOOT, "rebooting secondary storage Vm");
-            return rebootSecondaryStorageVm(cmd.getId());
+        try {
+            if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)) {
+                ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy Vm");
+                if (cmd.isForced()) {
+                    return forceRebootConsoleProxy(systemVm);
+                }
+                return rebootConsoleProxy(cmd.getId());
+            } else {
+                ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_SSVM_REBOOT, "rebooting secondary storage Vm");
+                if (cmd.isForced()) {
+                    return forceRebootSecondaryStorageVm(systemVm);
+                }
+                return rebootSecondaryStorageVm(cmd.getId());
+            }
+        } catch (final ResourceUnavailableException e) {
+            throw new CloudRuntimeException("Unable to reboot " + systemVm, e);
+        } catch (final OperationTimedoutException e) {
+            throw new CloudRuntimeException("Operation timed out - Unable to reboot " + systemVm, e);
         }
     }
 

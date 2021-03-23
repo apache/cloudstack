@@ -488,6 +488,8 @@ public interface UserVmService {
 
     VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool);
 
+    VirtualMachine vmStorageMigration(Long vmId, Map<String, String> volumeToPool);
+
     UserVm restoreVM(RestoreVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException;
 
     UserVm restoreVirtualMachine(Account caller, long vmId, Long newTemplateId) throws InsufficientCapacityException, ResourceUnavailableException;

@@ -77,6 +77,8 @@ public interface SnapshotManager extends Configurable {
 
     boolean canOperateOnVolume(Volume volume);
 
+    boolean backedUpSnapshotsExistsForVolume(Volume volume);
+
     void cleanupSnapshotsByVolume(Long volumeId);
 
     Answer sendToPool(Volume vol, Command cmd);

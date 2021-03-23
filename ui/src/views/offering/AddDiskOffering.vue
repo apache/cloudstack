@@ -334,8 +334,8 @@
             :loading="storageTagLoading"
             :placeholder="this.$t('label.tags')"
             v-if="this.isAdmin()">
-            <a-select-option v-for="(opt) in this.storageTags" :key="opt.name">
-              {{ opt.name || opt.description }}
+            <a-select-option v-for="(opt) in this.storageTags" :key="opt">
+              {{ opt }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -530,13 +530,10 @@ export default {
       params.listAll = true
       this.storageTagLoading = true
       api('listStorageTags', params).then(json => {
-        const tags = json.liststoragetagsresponse.storagetag
-        if (this.arrayHasItems(tags)) {
-          for (var i in tags) {
-            var tag = {}
-            tag.id = tags[i].name
-            tag.name = tags[i].name
-            this.storageTags.push(tag)
+        const tags = json.liststoragetagsresponse.storagetag || []
+        for (const tag of tags) {
+          if (!this.storageTags.includes(tag.name)) {
+            this.storageTags.push(tag.name)
           }
         }
       }).finally(() => {

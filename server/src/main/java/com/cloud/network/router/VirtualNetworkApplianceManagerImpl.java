@@ -280,6 +280,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualMachine> {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
     private static final String CONNECTIVITY_TEST = "connectivity.test";
+    private static final String FILESYSTEM_WRITABLE_TEST = "filesystem.writable.test";
+    private static final String READONLY_FILESYSTEM_ERROR = "Read-only file system";
     private static final String BACKUP_ROUTER_EXCLUDED_TESTS = "gateways_check.py";
 
     @Inject private EntityManager _entityMgr;
@@ -508,7 +510,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROUTER_REBOOT, eventDescription = "rebooting router Vm", async = true)
-    public VirtualRouter rebootRouter(final long routerId, final boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException,
+    public VirtualRouter rebootRouter(final long routerId, final boolean reprogramNetwork, final boolean forced) throws ConcurrentOperationException, ResourceUnavailableException,
     InsufficientCapacityException {
         final Account caller = CallContext.current().getCallingAccount();
 
@@ -529,7 +531,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final UserVO user = _userDao.findById(CallContext.current().getCallingUserId());
         s_logger.debug("Stopping and starting router " + router + " as a part of router reboot");
 
-        if (stop(router, false, user, caller) != null) {
+        if (stop(router, forced, user, caller) != null) {
             return startRouter(routerId, reprogramNetwork);
         } else {
             throw new CloudRuntimeException("Failed to reboot router " + router);
@@ -1046,7 +1048,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 }
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, backupRouter.getDataCenterId(), backupRouter.getPodIdToDeployIn(), title, title);
                 try {
-                    rebootRouter(backupRouter.getId(), true);
+                    rebootRouter(backupRouter.getId(), true, false);
                 } catch (final ConcurrentOperationException e) {
                     s_logger.warn("Fail to reboot " + backupRouter.getInstanceName(), e);
                 } catch (final ResourceUnavailableException e) {
@@ -1269,63 +1271,68 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 ex.printStackTrace();
             }
         }
+    }
 
-        private List<String> getFailingChecks(DomainRouterVO router, GetRouterMonitorResultsAnswer answer) {
+    private List<String> getFailingChecks(DomainRouterVO router, GetRouterMonitorResultsAnswer answer) {
 
-            if (answer == null) {
-                s_logger.warn("Unable to fetch monitor results for router " + router);
-                resetRouterHealthChecksAndConnectivity(router.getId(), false, "Communication failed");
-                return Arrays.asList(CONNECTIVITY_TEST);
-            } else if (!answer.getResult()) {
-                s_logger.warn("Failed to fetch monitor results from router " + router + " with details: " + answer.getDetails());
-                resetRouterHealthChecksAndConnectivity(router.getId(), false, "Failed to fetch results with details: " + answer.getDetails());
-                return Arrays.asList(CONNECTIVITY_TEST);
+        if (answer == null) {
+            s_logger.warn("Unable to fetch monitor results for router " + router);
+            resetRouterHealthChecksAndConnectivity(router.getId(), false, false, "Communication failed");
+            return Arrays.asList(CONNECTIVITY_TEST);
+        } else if (!answer.getResult()) {
+            s_logger.warn("Failed to fetch monitor results from router " + router + " with details: " + answer.getDetails());
+            if (StringUtils.isNotBlank(answer.getDetails()) && answer.getDetails().equalsIgnoreCase(READONLY_FILESYSTEM_ERROR)) {
+                resetRouterHealthChecksAndConnectivity(router.getId(), true, false, "Failed to write: " + answer.getDetails());
+                return Arrays.asList(FILESYSTEM_WRITABLE_TEST);
             } else {
-                resetRouterHealthChecksAndConnectivity(router.getId(), true, "Successfully fetched data");
-                updateDbHealthChecksFromRouterResponse(router.getId(), answer.getMonitoringResults());
-                return answer.getFailingChecks();
+                resetRouterHealthChecksAndConnectivity(router.getId(), false, false, "Failed to fetch results with details: " + answer.getDetails());
+                return Arrays.asList(CONNECTIVITY_TEST);
+            }
+        } else {
+            resetRouterHealthChecksAndConnectivity(router.getId(), true, true, "Successfully fetched data");
+            updateDbHealthChecksFromRouterResponse(router.getId(), answer.getMonitoringResults());
+            return answer.getFailingChecks();
+        }
+    }
+
+    private void handleFailingChecks(DomainRouterVO router, List<String> failingChecks) {
+        if (failingChecks == null || failingChecks.size() == 0) {
+            return;
+        }
+
+        String alertMessage = "Health checks failed: " + failingChecks.size() + " failing checks on router " + router.getUuid();
+        _alertMgr.sendAlert(AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(),
+                alertMessage, alertMessage);
+        s_logger.warn(alertMessage + ". Checking failed health checks to see if router needs recreate");
+
+        String checkFailsToRecreateVr = RouterHealthChecksFailuresToRecreateVr.valueIn(router.getDataCenterId());
+        StringBuilder failingChecksEvent = new StringBuilder();
+        boolean recreateRouter = false;
+        for (int i = 0; i < failingChecks.size(); i++) {
+            String failedCheck = failingChecks.get(i);
+            if (i == 0) {
+                failingChecksEvent.append("Router ")
+                        .append(router.getUuid())
+                        .append(" has failing checks: ");
+            }
+
+            failingChecksEvent.append(failedCheck);
+            if (i < failingChecks.size() - 1) {
+                failingChecksEvent.append(", ");
+            }
+
+            if (StringUtils.isNotBlank(checkFailsToRecreateVr) && checkFailsToRecreateVr.contains(failedCheck)) {
+                recreateRouter = true;
             }
         }
 
-        private void handleFailingChecks(DomainRouterVO router, List<String> failingChecks) {
-            if (failingChecks == null || failingChecks.size() == 0) {
-                return;
-            }
+        ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
+                Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS, failingChecksEvent.toString());
 
-            String alertMessage = "Health checks failed: " + failingChecks.size() + " failing checks on router " + router.getUuid();
-            _alertMgr.sendAlert(AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(),
-                    alertMessage, alertMessage);
-            s_logger.warn(alertMessage + ". Checking failed health checks to see if router needs recreate");
-
-            String checkFailsToRecreateVr = RouterHealthChecksFailuresToRecreateVr.valueIn(router.getDataCenterId());
-            StringBuilder failingChecksEvent = new StringBuilder();
-            boolean recreateRouter = false;
-            for (int i = 0; i < failingChecks.size(); i++) {
-                String failedCheck = failingChecks.get(i);
-                if (i == 0) {
-                    failingChecksEvent.append("Router ")
-                            .append(router.getUuid())
-                            .append(" has failing checks: ");
-                }
-
-                failingChecksEvent.append(failedCheck);
-                if (i < failingChecks.size() - 1) {
-                    failingChecksEvent.append(", ");
-                }
-
-                if (StringUtils.isNotBlank(checkFailsToRecreateVr) && checkFailsToRecreateVr.contains(failedCheck)) {
-                    recreateRouter = true;
-                }
-            }
-
-            ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
-                    Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS, failingChecksEvent.toString());
-
-            if (recreateRouter) {
-                s_logger.warn("Health Check Alert: Found failing checks in " +
-                        RouterHealthChecksFailuresToRecreateVrCK + ", attempting recreating router.");
-                recreateRouter(router.getId());
-            }
+        if (recreateRouter) {
+            s_logger.warn("Health Check Alert: Found failing checks in " +
+                    RouterHealthChecksFailuresToRecreateVrCK + ", attempting recreating router.");
+            recreateRouter(router.getId());
         }
     }
 
@@ -1418,28 +1425,31 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         return healthCheckResults;
     }
 
-    private RouterHealthCheckResultVO resetRouterHealthChecksAndConnectivity(final long routerId, boolean connected, String message) {
+    private void resetRouterHealthChecksAndConnectivity(final long routerId, boolean connected, boolean writable, String message) {
         routerHealthCheckResultDao.expungeHealthChecks(routerId);
-        boolean newEntry = false;
-        RouterHealthCheckResultVO connectivityVO = routerHealthCheckResultDao.getRouterHealthCheckResult(routerId, CONNECTIVITY_TEST, "basic");
+        updateRouterHealthCheckResult(routerId, CONNECTIVITY_TEST, "basic", connected, connected ? "Successfully connected to router" : message);
+        updateRouterHealthCheckResult(routerId, FILESYSTEM_WRITABLE_TEST, "basic", writable, writable ? "Successfully written to file system" : message);
+    }
+
+    private void updateRouterHealthCheckResult(final long routerId, String checkName, String checkType, boolean checkResult, String checkMessage) {
+        boolean newHealthCheckEntry = false;
+        RouterHealthCheckResultVO connectivityVO = routerHealthCheckResultDao.getRouterHealthCheckResult(routerId, checkName, checkType);
         if (connectivityVO == null) {
-            connectivityVO = new RouterHealthCheckResultVO(routerId, CONNECTIVITY_TEST, "basic");
-            newEntry = true;
+            connectivityVO = new RouterHealthCheckResultVO(routerId, checkName, checkType);
+            newHealthCheckEntry = true;
         }
 
-        connectivityVO.setCheckResult(connected);
+        connectivityVO.setCheckResult(checkResult);
         connectivityVO.setLastUpdateTime(new Date());
-        if (StringUtils.isNotEmpty(message)) {
-            connectivityVO.setCheckDetails(message.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
+        if (StringUtils.isNotEmpty(checkMessage)) {
+            connectivityVO.setCheckDetails(checkMessage.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
         }
 
-        if (newEntry) {
+        if (newHealthCheckEntry) {
             routerHealthCheckResultDao.persist(connectivityVO);
         } else {
             routerHealthCheckResultDao.update(connectivityVO.getId(), connectivityVO);
         }
-
-        return routerHealthCheckResultDao.getRouterHealthCheckResult(routerId, CONNECTIVITY_TEST, "basic");
     }
 
     private RouterHealthCheckResultVO parseHealthCheckVOFromJson(final long routerId,
@@ -1544,7 +1554,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         String controlIP = getRouterControlIP(router);
         if (StringUtils.isNotBlank(controlIP) && !controlIP.equals("0.0.0.0")) {
-            final GetRouterMonitorResultsCommand command = new GetRouterMonitorResultsCommand(performFreshChecks);
+            final GetRouterMonitorResultsCommand command = new GetRouterMonitorResultsCommand(performFreshChecks, false);
             command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlIP);
             command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
             try {
@@ -1569,8 +1579,40 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         return null;
     }
 
+    private GetRouterMonitorResultsAnswer performBasicTestsOnRouter(DomainRouterVO router) {
+        if (!RouterHealthChecksEnabled.value()) {
+            return null;
+        }
+
+        String controlIP = getRouterControlIP(router);
+        if (StringUtils.isNotBlank(controlIP) && !controlIP.equals("0.0.0.0")) {
+            final GetRouterMonitorResultsCommand command = new GetRouterMonitorResultsCommand(false, true);
+            command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlIP);
+            command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+            try {
+                final Answer answer = _agentMgr.easySend(router.getHostId(), command);
+
+                if (answer == null) {
+                    s_logger.warn("Unable to fetch basic router test results data from router " + router.getHostName());
+                    return null;
+                }
+                if (answer instanceof GetRouterMonitorResultsAnswer) {
+                    return (GetRouterMonitorResultsAnswer) answer;
+                } else {
+                    s_logger.warn("Unable to fetch basic router test results from router " + router.getHostName() + " Received answer " + answer.getDetails());
+                    return new GetRouterMonitorResultsAnswer(command, false, null, answer.getDetails());
+                }
+            } catch (final Exception e) {
+                s_logger.warn("Error while performing basic tests on router: " + router.getInstanceName(), e);
+                return null;
+            }
+        }
+
+        return null;
+    }
+
     @Override
-    public boolean performRouterHealthChecks(long routerId) {
+    public Pair<Boolean, String> performRouterHealthChecks(long routerId) {
         DomainRouterVO router = _routerDao.findById(routerId);
 
         if (router == null) {
@@ -1583,29 +1625,45 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         s_logger.info("Running health check results for router " + router.getUuid());
 
-        final GetRouterMonitorResultsAnswer answer;
+        GetRouterMonitorResultsAnswer answer = null;
+        String resultDetails = "";
         boolean success = true;
-        // Step 1: Update health check data on router and perform and retrieve health checks on router
-        if (!updateRouterHealthChecksConfig(router)) {
-            s_logger.warn("Unable to update health check config for fresh run successfully for router: " + router + ", so trying to fetch last result.");
+
+        // Step 1: Perform basic tests to check the connectivity and file system on router
+        answer = performBasicTestsOnRouter(router);
+        if (answer == null) {
+            s_logger.debug("No results received for the basic tests on router: " + router);
+            resultDetails = "Basic tests results unavailable";
             success = false;
-            answer = fetchAndUpdateRouterHealthChecks(router, false);
+        } else if (!answer.getResult()) {
+            s_logger.debug("Basic tests failed on router: " + router);
+            resultDetails = "Basic tests failed - " + answer.getMonitoringResults();
+            success = false;
         } else {
-            s_logger.info("Successfully updated health check config for fresh run successfully for router: " + router);
-            answer = fetchAndUpdateRouterHealthChecks(router, true);
+            // Step 2: Update health check data on router and perform and retrieve health checks on router
+            if (!updateRouterHealthChecksConfig(router)) {
+                s_logger.warn("Unable to update health check config for fresh run successfully for router: " + router + ", so trying to fetch last result.");
+                success = false;
+                answer = fetchAndUpdateRouterHealthChecks(router, false);
+            } else {
+                s_logger.info("Successfully updated health check config for fresh run successfully for router: " + router);
+                answer = fetchAndUpdateRouterHealthChecks(router, true);
+            }
+
+            if (answer == null) {
+                resultDetails = "Failed to fetch and update health checks";
+                success = false;
+            } else if (!answer.getResult()) {
+                resultDetails = "Get health checks failed - " + answer.getMonitoringResults();
+                success = false;
+            }
         }
 
-        // Step 2: Update health checks values in database. We do this irrespective of new health check config.
-        if (answer == null || !answer.getResult()) {
-            success = false;
-            resetRouterHealthChecksAndConnectivity(routerId, false,
-                    answer == null ? "Communication failed " : "Failed to fetch results with details: " + answer.getDetails());
-        } else {
-            resetRouterHealthChecksAndConnectivity(routerId, true, "Successfully fetched data");
-            updateDbHealthChecksFromRouterResponse(routerId, answer.getMonitoringResults());
-        }
+        // Step 3: Update health checks values in database. We do this irrespective of new health check config.
+        List<String> failingChecks = getFailingChecks(router, answer);
+        handleFailingChecks(router, failingChecks);
 
-        return success;
+        return new Pair<Boolean, String>(success, resultDetails);
     }
 
     protected class UpdateRouterHealthChecksConfigTask extends ManagedContextRunnable {
@@ -1619,7 +1677,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 s_logger.debug("Found " + routers.size() + " running routers. ");
 
                 for (final DomainRouterVO router : routers) {
-                    updateRouterHealthChecksConfig(router);
+                    GetRouterMonitorResultsAnswer answer = performBasicTestsOnRouter(router);
+                    if (answer != null && answer.getResult()) {
+                        updateRouterHealthChecksConfig(router);
+                    } else {
+                        String resultDetails = (answer == null) ? "" : ", " + answer.getMonitoringResults();
+                        s_logger.debug("Couldn't update health checks config on router: " + router + " as basic tests didn't succeed" + resultDetails);
+                    }
                 }
             } catch (final Exception ex) {
                 s_logger.error("Fail to complete the UpdateRouterHealthChecksConfigTask! ", ex);
@@ -1656,7 +1720,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             return false;
         }
 
-        SetMonitorServiceCommand command = createMonitorServiceCommand(router, null,true, true);
         String controlIP = getRouterControlIP(router);
         if (StringUtils.isBlank(controlIP) || controlIP.equals("0.0.0.0")) {
             s_logger.debug("Skipping update data on router " + router.getUuid() + " because controlIp is not correct.");
@@ -1666,6 +1729,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         s_logger.info("Updating data for router health checks for router " + router.getUuid());
         Answer origAnswer = null;
         try {
+            SetMonitorServiceCommand command = createMonitorServiceCommand(router, null, true, true);
             origAnswer = _agentMgr.easySend(router.getHostId(), command);
         } catch (final Exception e) {
             s_logger.error("Error while sending update data for health check to router: " + router.getInstanceName(), e);

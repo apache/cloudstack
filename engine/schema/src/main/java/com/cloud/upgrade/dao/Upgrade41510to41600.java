@@ -32,7 +32,7 @@ import org.apache.log4j.Logger;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade41510to41600 implements DbUpgrade {
+public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
     final static Logger LOG = Logger.getLogger(Upgrade41510to41600.class);
 
@@ -64,11 +64,11 @@ public class Upgrade41510to41600 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
-        updateSystemVmTemplates(conn);
     }
 
+    @Override
     @SuppressWarnings("serial")
-    private void updateSystemVmTemplates(final Connection conn) {
+    public void updateSystemVmTemplates(final Connection conn) {
         LOG.debug("Updating System Vm template IDs");
         final Set<Hypervisor.HypervisorType> hypervisorsListInUse = new HashSet<Hypervisor.HypervisorType>();
         try (PreparedStatement pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null"); ResultSet rs = pstmt.executeQuery()) {

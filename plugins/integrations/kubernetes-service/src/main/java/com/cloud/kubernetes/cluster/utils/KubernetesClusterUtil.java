@@ -17,19 +17,27 @@
 
 package com.cloud.kubernetes.cluster.utils;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URL;
+import java.security.SecureRandom;
+import java.util.stream.Collectors;
 
-import org.apache.commons.io.IOUtils;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+
+import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
+import com.cloud.utils.nio.TrustAllManager;
 import com.cloud.utils.ssh.SshHelper;
 import com.google.common.base.Strings;
 
@@ -220,7 +228,13 @@ public class KubernetesClusterUtil {
         boolean k8sApiServerSetup = false;
         while (System.currentTimeMillis() < timeoutTime) {
             try {
-                String versionOutput = IOUtils.toString(new URL(String.format("https://%s:%d/version", ipAddress, port)), StringUtils.getPreferredCharset());
+                final SSLContext sslContext = SSLUtils.getSSLContext();
+                sslContext.init(null, new TrustManager[]{new TrustAllManager()}, new SecureRandom());
+                URL url = new URL(String.format("https://%s:%d/version", ipAddress, port));
+                HttpsURLConnection con = (HttpsURLConnection)url.openConnection();
+                con.setSSLSocketFactory(sslContext.getSocketFactory());
+                BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                String versionOutput = br.lines().collect(Collectors.joining());
                 if (!Strings.isNullOrEmpty(versionOutput)) {
                     if (LOGGER.isInfoEnabled()) {
                         LOGGER.info(String.format("Kubernetes cluster : %s API has been successfully provisioned, %s", kubernetesCluster.getName(), versionOutput));

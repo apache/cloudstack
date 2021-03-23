@@ -815,3 +815,46 @@ class TestRouterServices(cloudstackTestCase):
             "Router response after reboot is either is invalid\
                     or in stopped state")
         return
+
+    @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="false")
+    def test_10_reboot_router_forced(self):
+        """Test force reboot router
+        """
+
+        list_router_response = list_routers(
+            self.apiclient,
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+        self.assertEqual(
+            isinstance(list_router_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        router = list_router_response[0]
+
+        public_ip = router.publicip
+
+        self.debug("Force rebooting the router with ID: %s" % router.id)
+        # Reboot the router
+        cmd = rebootRouter.rebootRouterCmd()
+        cmd.id = router.id
+        cmd.forced = True
+        self.apiclient.rebootRouter(cmd)
+
+        # List routers to check state of router
+        retries_cnt = 10
+        while retries_cnt >= 0:
+            router_response = list_routers(
+                self.apiclient,
+                id=router.id
+            )
+            if self.verifyRouterResponse(router_response, public_ip):
+                self.debug("Router is running successfully after force reboot")
+                return
+            time.sleep(10)
+            retries_cnt = retries_cnt - 1
+        self.fail(
+            "Router response after force reboot is either invalid\
+                    or router in stopped state")
+        return

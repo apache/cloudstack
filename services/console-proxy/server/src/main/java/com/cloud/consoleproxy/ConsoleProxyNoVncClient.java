@@ -235,4 +235,8 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         return "";
     }
 
+    public Session getSession() {
+        return session;
+    }
+
 }

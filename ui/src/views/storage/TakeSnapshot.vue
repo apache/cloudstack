@@ -18,9 +18,9 @@
 <template>
   <div class="take-snapshot">
     <a-spin :spinning="loading || actionLoading">
-      <label>
-        {{ $t('label.header.volume.take.snapshot') }}
-      </label>
+      <a-alert type="warning">
+        <span slot="message" v-html="$t('label.header.volume.take.snapshot')" />
+      </a-alert>
       <a-form
         class="form"
         :form="form"
@@ -34,7 +34,7 @@
                 :placeholder="apiParams.name.description" />
             </a-form-item>
           </a-col>
-          <a-col :md="24" :lg="24">
+          <a-col :md="24" :lg="24" v-if="!supportsStorageSnapshot">
             <a-form-item :label="$t('label.asyncbackup')">
               <a-switch v-decorator="['asyncbackup']" />
             </a-form-item>
@@ -113,6 +113,7 @@ export default {
     return {
       actionLoading: false,
       quiescevm: false,
+      supportsStorageSnapshot: false,
       inputValue: '',
       inputKey: '',
       inputVisible: '',
@@ -130,6 +131,7 @@ export default {
   },
   mounted () {
     this.quiescevm = this.resource.quiescevm
+    this.supportsStorageSnapshot = this.resource.supportsstoragesnapshot
   },
   methods: {
     handleSubmit (e) {
