@@ -1283,7 +1283,7 @@ export default {
         }
       }
 
-      const server = this.prefillContent.primaryStorageServer ? this.prefillContent.primaryStorageServer.value : null
+      var server = this.prefillContent.primaryStorageServer ? this.prefillContent.primaryStorageServer.value : null
       let url = ''
       const protocol = this.prefillContent.primaryStorageProtocol.value
 
@@ -1303,7 +1303,13 @@ export default {
         params['details[0].password'] = this.prefillContent.primaryStorageSMBPassword.value
         params['details[0].domain'] = this.prefillContent.primaryStorageSMBDomain.value
       } else if (protocol === 'PreSetup') {
-        let path = this.prefillContent.primaryStoragePath.value
+        let path = ''
+        if (this.stepData.clusterReturned.hypervisortype === 'XenServer') {
+          path = this.prefillContent.primaryStorageSRLabel.value
+          server = 'localhost'
+        } else {
+          path = this.prefillContent.primaryStoragePath.value
+        }
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }

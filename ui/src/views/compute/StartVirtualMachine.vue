@@ -247,7 +247,7 @@ export default {
             loadingMessage: `${this.$t('label.action.start.instance')} ${this.resource.name}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
             successMessage: `${this.$t('label.action.start.instance')} ${this.resource.name}`,
-            response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `Password of the VM is ${result.virtualmachine.password}` : null }
+            response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null }
           })
           this.closeAction()
         }).catch(error => {
