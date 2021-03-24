@@ -17,11 +17,15 @@
 package com.cloud.hypervisor;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingDetailsVO;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -37,6 +41,9 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
+import org.junit.Assert;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KVMGuruTest {
@@ -64,6 +71,15 @@ public class KVMGuruTest {
     ServiceOfferingDetailsVO detail1;
     @Mock
     ServiceOfferingDetailsVO detail2;
+
+    @Mock
+    ServiceOfferingVO serviceOfferingVoMock;
+
+    @Mock
+    VirtualMachine virtualMachineMock;
+
+    @Mock
+    ServiceOfferingDao serviceOfferingDaoMock;
 
     private static final long hostId = 1L;
     private static final Long offeringId = 1L;
@@ -128,5 +144,162 @@ public class KVMGuruTest {
         Mockito.when(vmTO.getMaxSpeed()).thenReturn(3000);
         guru.setVmQuotaPercentage(vmTO, vmProfile);
         Mockito.verify(vmTO).setCpuQuotaPercentage(1d);
+    }
+
+    @Test
+    public void validateGetVmMaxMemoryReturnCustomOfferingMaxMemory(){
+        int maxCustomOfferingMemory = 64;
+        Mockito.when(serviceOfferingVoMock.getDetail(ApiConstants.MAX_MEMORY)).thenReturn(String.valueOf(maxCustomOfferingMemory));
+
+        long result = guru.getVmMaxMemory(serviceOfferingVoMock, "Vm description", 1l);
+
+        Assert.assertEquals(ByteScaleUtils.mibToBytes(maxCustomOfferingMemory), result);
+    }
+
+    @Test
+    public void validateGetVmMaxMemoryReturnVmServiceOfferingMaxRAMSize(){
+        int maxMemoryConfig = 64;
+        Mockito.when(serviceOfferingVoMock.getDetail(ApiConstants.MAX_MEMORY)).thenReturn(null);
+
+        ConfigKey<Integer> vmServiceOfferingMaxRAMSize = Mockito.mock(ConfigKey.class);
+        ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE = vmServiceOfferingMaxRAMSize;
+
+        Mockito.when(vmServiceOfferingMaxRAMSize.value()).thenReturn(maxMemoryConfig);
+        long result = guru.getVmMaxMemory(serviceOfferingVoMock, "Vm description", 1l);
+
+        Assert.assertEquals(ByteScaleUtils.mibToBytes(maxMemoryConfig), result);
+    }
+
+    @Test
+    public void validateGetVmMaxMemoryReturnMaxHostMemory(){
+        long maxHostMemory = ByteScaleUtils.mibToBytes(2000);
+        Mockito.when(serviceOfferingVoMock.getDetail(ApiConstants.MAX_MEMORY)).thenReturn(null);
+
+        ConfigKey<Integer> vmServiceOfferingMaxRAMSize = Mockito.mock(ConfigKey.class);
+        ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE = vmServiceOfferingMaxRAMSize;
+
+        Mockito.when(vmServiceOfferingMaxRAMSize.value()).thenReturn(0);
+
+        long result = guru.getVmMaxMemory(serviceOfferingVoMock, "Vm description", maxHostMemory);
+
+        Assert.assertEquals(maxHostMemory, result);
+    }
+
+    @Test
+    public void validateGetVmMaxCpuCoresReturnCustomOfferingMaxCpuCores(){
+        int maxCustomOfferingCpuCores = 16;
+        Mockito.when(serviceOfferingVoMock.getDetail(ApiConstants.MAX_CPU_NUMBER)).thenReturn(String.valueOf(maxCustomOfferingCpuCores));
+
+        long result = guru.getVmMaxCpuCores(serviceOfferingVoMock, "Vm description", 1);
+
+        Assert.assertEquals(maxCustomOfferingCpuCores, result);
+    }
+
+    @Test
+    public void validateGetVmMaxCpuCoresVmServiceOfferingMaxCPUCores(){
+        int maxCpuCoresConfig = 16;
+        Mockito.when(serviceOfferingVoMock.getDetail(ApiConstants.MAX_CPU_NUMBER)).thenReturn(null);
+
+        ConfigKey<Integer> vmServiceOfferingMaxCPUCores = Mockito.mock(ConfigKey.class);
+        ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_CPU_CORES = vmServiceOfferingMaxCPUCores;
+
+        Mockito.when(vmServiceOfferingMaxCPUCores.value()).thenReturn(maxCpuCoresConfig);
+        long result = guru.getVmMaxCpuCores(serviceOfferingVoMock, "Vm description", 1);
+
+        Assert.assertEquals(maxCpuCoresConfig, result);
+    }
+
+    @Test
+    public void validateGetVmMaxCpuCoresReturnMaxHostMemory(){
+        int maxHostCpuCores = 64;
+        Mockito.when(serviceOfferingVoMock.getDetail(ApiConstants.MAX_CPU_NUMBER)).thenReturn(null);
+
+        ConfigKey<Integer> vmServiceOfferingMaxCPUCores = Mockito.mock(ConfigKey.class);
+        ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_CPU_CORES = vmServiceOfferingMaxCPUCores;
+
+        Mockito.when(vmServiceOfferingMaxCPUCores.value()).thenReturn(0);
+
+        long result = guru.getVmMaxCpuCores(serviceOfferingVoMock, "Vm description", maxHostCpuCores);
+
+        Assert.assertEquals(maxHostCpuCores, result);
+    }
+
+    @Test
+    public void validateGetHostMaxMemoryAndCpuCoresHostNotNull(){
+        Long maxMemory = 2048l;
+        Integer maxCpuCores = 16;
+
+        Mockito.when(host.getTotalMemory()).thenReturn(maxMemory);
+        Mockito.when(host.getCpus()).thenReturn(maxCpuCores);
+
+        Pair<Long, Integer> result = guru.getHostMaxMemoryAndCpuCores(host, virtualMachineMock, "Vm description");
+
+        Assert.assertEquals(new Pair<>(maxMemory, maxCpuCores), result);
+    }
+
+    @Test
+    public void validateGetHostMaxMemoryAndCpuCoresHostNullAndLastHostIdNull(){
+        Long maxMemory = Long.MAX_VALUE;
+        Integer maxCpuCores = Integer.MAX_VALUE;
+
+        Pair<Long, Integer> result = guru.getHostMaxMemoryAndCpuCores(null, virtualMachineMock, "Vm description");
+
+        Assert.assertEquals(new Pair<>(maxMemory, maxCpuCores), result);
+    }
+
+    @Test
+    public void validateGetHostMaxMemoryAndCpuCoresHostNullAndLastHostIdNotNullAndLastHostNull(){
+        Long maxMemory = Long.MAX_VALUE;
+        Integer maxCpuCores = Integer.MAX_VALUE;
+        guru._hostDao = hostDao;
+
+        Mockito.when(virtualMachineMock.getLastHostId()).thenReturn(1l);
+        Mockito.doReturn(null).when(hostDao).findById(Mockito.any());
+
+        Pair<Long, Integer> result = guru.getHostMaxMemoryAndCpuCores(null, virtualMachineMock, "Vm description");
+
+        Assert.assertEquals(new Pair<>(maxMemory, maxCpuCores), result);
+    }
+
+    @Test
+    public void validateGetHostMaxMemoryAndCpuCoresHostNullAndLastHostIdNotNullAndLastHostNotNull(){
+        Long maxMemory = 2048l;
+        Integer maxCpuCores = 16;
+        guru._hostDao = hostDao;
+
+        Mockito.when(virtualMachineMock.getLastHostId()).thenReturn(1l);
+        Mockito.doReturn(host).when(hostDao).findById(Mockito.any());
+        Mockito.when(host.getTotalMemory()).thenReturn(maxMemory);
+        Mockito.when(host.getCpus()).thenReturn(maxCpuCores);
+
+        Pair<Long, Integer> result = guru.getHostMaxMemoryAndCpuCores(null, virtualMachineMock, "Vm description");
+
+        Assert.assertEquals(new Pair<>(maxMemory, maxCpuCores), result);
+    }
+
+    @Test
+    public void validateConfigureVmMemoryAndCpuCoresServiceOfferingIsDynamicCallGetMethods(){
+        guru.serviceOfferingDao = serviceOfferingDaoMock;
+
+        Mockito.doReturn(serviceOfferingVoMock).when(serviceOfferingDaoMock).findById(Mockito.anyLong(), Mockito.anyLong());
+        Mockito.doReturn(true).when(serviceOfferingVoMock).isDynamic();
+
+        guru.configureVmMemoryAndCpuCores(vmTO, host, virtualMachineMock, vmProfile);
+
+        Mockito.verify(guru).getVmMaxMemory(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyLong());
+        Mockito.verify(guru).getVmMaxCpuCores(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyInt());
+    }
+
+    @Test
+    public void validateConfigureVmMemoryAndCpuCoresServiceOfferingIsNotDynamicDoNotCallGetMethods(){
+        guru.serviceOfferingDao = serviceOfferingDaoMock;
+
+        Mockito.doReturn(serviceOfferingVoMock).when(serviceOfferingDaoMock).findById(Mockito.anyLong(), Mockito.anyLong());
+        Mockito.doReturn(false).when(serviceOfferingVoMock).isDynamic();
+
+        guru.configureVmMemoryAndCpuCores(vmTO, host, virtualMachineMock, vmProfile);
+
+        Mockito.verify(guru, Mockito.never()).getVmMaxMemory(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyLong());
+        Mockito.verify(guru, Mockito.never()).getVmMaxCpuCores(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyInt());
     }
 }
