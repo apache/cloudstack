@@ -1130,7 +1130,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             return createLoginResponse(session);
         }
-        throw new CloudAuthenticationException("Failed to authenticate user " + username + " in domain " + domainId + "; please provide valid credentials");
+        throw new CloudAuthenticationException("Failed to authenticate user " + username + " in domain " + userDomain.getPath() + "; please provide valid credentials");
     }
 
     @Override
