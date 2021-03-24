@@ -123,24 +123,32 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
 
         enableDpdkIfNeeded(vm, to);
 
-        // Determine the VM's OS description
-        GuestOSVO guestOS = _guestOsDao.findByIdIncludingRemoved(vm.getVirtualMachine().getGuestOSId());
-        to.setOs(guestOS.getDisplayName());
         VirtualMachine virtualMachine = vm.getVirtualMachine();
         Long hostId = virtualMachine.getHostId();
         HostVO host = hostId == null ? null : _hostDao.findById(hostId);
-        GuestOSHypervisorVO guestOsMapping = null;
-        if (host != null) {
-            guestOsMapping = _guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), getHypervisorType().toString(), host.getHypervisorVersion());
-        }
-        if (guestOsMapping == null || host == null) {
-            to.setPlatformEmulator(guestOS.getDisplayName() == null ? "Other" : guestOS.getDisplayName());
-        } else {
-            to.setPlatformEmulator(guestOsMapping.getGuestOsName());
-        }
+
+        // Determine the VM's OS description
+        configureVmOsDescription(virtualMachine, to, host);
 
         configureVmMemoryAndCpuCores(to, host, virtualMachine, vm);
         return to;
+    }
+
+    protected void configureVmOsDescription(VirtualMachine virtualMachine, VirtualMachineTO virtualMachineTo, HostVO hostVo) {
+        GuestOSVO guestOS = _guestOsDao.findByIdIncludingRemoved(virtualMachine.getGuestOSId());
+        String guestOsDisplayName = guestOS.getDisplayName();
+        virtualMachineTo.setOs(guestOsDisplayName);
+        GuestOSHypervisorVO guestOsMapping = null;
+
+        if (hostVo != null) {
+            guestOsMapping = _guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), getHypervisorType().toString(), hostVo.getHypervisorVersion());
+        }
+
+        if (guestOsMapping == null || hostVo == null) {
+            virtualMachineTo.setPlatformEmulator(guestOsDisplayName == null ? "Other" : guestOsDisplayName);
+        } else {
+            virtualMachineTo.setPlatformEmulator(guestOsMapping.getGuestOsName());
+        }
     }
 
     protected void enableDpdkIfNeeded(VirtualMachineProfile virtualMachineProfile, VirtualMachineTO virtualMachineTo) {

@@ -27,6 +27,10 @@ import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
+import com.cloud.storage.GuestOSHypervisorVO;
+import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
@@ -87,6 +91,18 @@ public class KVMGuruTest {
 
     @Mock
     DpdkHelper dpdkHelperMock;
+
+    @Mock
+    GuestOSVO guestOsVoMock;
+
+    @Mock
+    GuestOSHypervisorVO guestOsMappingMock;
+
+    @Mock
+    GuestOSHypervisorDao guestOSHypervisorDaoMock;
+
+    @Mock
+    GuestOSDao guestOsDaoMock;
 
     private static final long hostId = 1L;
     private static final Long offeringId = 1L;
@@ -346,4 +362,80 @@ public class KVMGuruTest {
             Mockito.verify(nic).setDpdkEnabled(true);
         }
     }
+
+     @Test
+    public void ConfigureVmOsDescription(){
+        guru._guestOsDao = guestOsDaoMock;
+        guru._guestOsHypervisorDao = guestOSHypervisorDaoMock;
+
+        VirtualMachineTO virtualMachineTo = new VirtualMachineTO() {};
+        String platformEmulator = "Ubuntu";
+
+        Mockito.doReturn(guestOsVoMock).when(guestOsDaoMock).findByIdIncludingRemoved(Mockito.any());
+        Mockito.doReturn(guestOsMappingMock).when(guestOSHypervisorDaoMock).findByOsIdAndHypervisor(Mockito.anyLong(), Mockito.anyString(), Mockito.any());
+        Mockito.doReturn(platformEmulator).when(guestOsMappingMock).getGuestOsName();
+
+        guru.configureVmOsDescription(virtualMachineMock, virtualMachineTo, host);
+
+        Assert.assertEquals(platformEmulator, virtualMachineTo.getPlatformEmulator());
+    }
+
+    @Test
+    public void validateVirtualMachineSetPlatformEmulatorHostNotNullAndGuestOsMappingNullAndGuestOsDisplayNameNull(){
+        guru._guestOsDao = guestOsDaoMock;
+        guru._guestOsHypervisorDao = guestOSHypervisorDaoMock;
+
+        VirtualMachineTO virtualMachineTo = new VirtualMachineTO() {};
+
+        Mockito.doReturn(guestOsVoMock).when(guestOsDaoMock).findByIdIncludingRemoved(Mockito.any());
+        Mockito.doReturn(null).when(guestOSHypervisorDaoMock).findByOsIdAndHypervisor(Mockito.anyLong(), Mockito.anyString(), Mockito.any());
+
+        guru.configureVmOsDescription(virtualMachineMock, virtualMachineTo, host);
+
+        Assert.assertEquals("Other", virtualMachineTo.getPlatformEmulator());
+    }
+
+    @Test
+    public void validateVirtualMachineSetPlatformEmulatorHostNotNullAndGuestOsMappingNullAndGuestOsDisplayNameNotNull(){
+        guru._guestOsDao = guestOsDaoMock;
+        guru._guestOsHypervisorDao = guestOSHypervisorDaoMock;
+
+        VirtualMachineTO virtualMachineTo = new VirtualMachineTO() {};
+        String platformEmulator = "Ubuntu";
+
+        Mockito.doReturn(guestOsVoMock).when(guestOsDaoMock).findByIdIncludingRemoved(Mockito.any());
+        Mockito.doReturn(null).when(guestOSHypervisorDaoMock).findByOsIdAndHypervisor(Mockito.anyLong(), Mockito.anyString(), Mockito.any());
+        Mockito.doReturn(platformEmulator).when(guestOsVoMock).getDisplayName();
+
+        guru.configureVmOsDescription(virtualMachineMock, virtualMachineTo, host);
+
+        Assert.assertEquals(platformEmulator, virtualMachineTo.getPlatformEmulator());
+    }
+
+    @Test
+    public void validateVirtualMachineSetPlatformEmulatorHostNullAndGuestOsMappingNullAndGuestOsDisplayNameNull(){
+        guru._guestOsDao = guestOsDaoMock;
+        VirtualMachineTO virtualMachineTo = new VirtualMachineTO() {};
+
+        Mockito.doReturn(guestOsVoMock).when(guestOsDaoMock).findByIdIncludingRemoved(Mockito.any());
+        guru.configureVmOsDescription(virtualMachineMock, virtualMachineTo, host);
+
+        Assert.assertEquals("Other", virtualMachineTo.getPlatformEmulator());
+    }
+
+    @Test
+    public void validateVirtualMachineSetPlatformEmulatorHostNullAndGuestOsMappingNullAndGuestOsDisplayNameNotNull(){
+        guru._guestOsDao = guestOsDaoMock;
+
+        VirtualMachineTO virtualMachineTo = new VirtualMachineTO() {};
+        String platformEmulator = "Ubuntu";
+
+        Mockito.doReturn(guestOsVoMock).when(guestOsDaoMock).findByIdIncludingRemoved(Mockito.any());
+        Mockito.doReturn(platformEmulator).when(guestOsVoMock).getDisplayName();
+
+        guru.configureVmOsDescription(virtualMachineMock, virtualMachineTo, host);
+
+        Assert.assertEquals(platformEmulator, virtualMachineTo.getPlatformEmulator());
+    }
+
 }
