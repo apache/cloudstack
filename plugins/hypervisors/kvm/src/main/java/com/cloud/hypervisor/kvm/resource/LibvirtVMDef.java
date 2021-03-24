@@ -234,6 +234,7 @@ public class LibvirtVMDef {
         private long _currentMem = -1;
         private String _memBacking;
         private int _vcpu = -1;
+        private int maxVcpu = -1;
         private boolean _memBalloning = false;
 
         public void setMemorySize(long mem) {
@@ -252,29 +253,30 @@ public class LibvirtVMDef {
             _vcpu = vcpu;
         }
 
+        public void setMaxVcpuNum(int maxVcpu) {
+            this.maxVcpu = maxVcpu;
+        }
+
+        public int getVcpu() {
+            return _vcpu;
+        }
+
+        public int getMaxVcpu() {
+            return maxVcpu;
+        }
+
         public void setMemBalloning(boolean turnon) {
             _memBalloning = turnon;
         }
 
         @Override
         public String toString() {
-            StringBuilder resBuidler = new StringBuilder();
-            resBuidler.append("<memory>" + _mem + "</memory>\n");
-            if (_currentMem != -1) {
-                resBuidler.append("<currentMemory>" + _currentMem + "</currentMemory>\n");
-            }
-            if (_memBacking != null) {
-                resBuidler.append("<memoryBacking>" + "<" + _memBacking + "/>" + "</memoryBacking>\n");
-            }
-            if (_memBalloning) {
-                resBuidler.append("<devices>\n" + "<memballoon model='virtio'/>\n" + "</devices>\n");
-            } else {
-                resBuidler.append("<devices>\n" + "<memballoon model='none'/>\n" + "</devices>\n");
-            }
-            if (_vcpu != -1) {
-                resBuidler.append("<vcpu>" + _vcpu + "</vcpu>\n");
-            }
-            return resBuidler.toString();
+            StringBuilder response = new StringBuilder();
+            response.append(String.format("<memory>%s</memory>\n", this._mem));
+            response.append(String.format("<currentMemory>%s</currentMemory>\n", this._currentMem));
+            response.append(String.format("<devices>\n<memballoon model='%s'/>\n</devices>\n", this._memBalloning ? "virtio" : "none"));
+            response.append(String.format("<vcpu current=\"%s\">%s</vcpu>\n", this._vcpu, this.maxVcpu));
+            return response.toString();
         }
     }
 

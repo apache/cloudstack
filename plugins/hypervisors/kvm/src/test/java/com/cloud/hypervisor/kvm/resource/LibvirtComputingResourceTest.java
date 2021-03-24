@@ -189,6 +189,7 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.Type;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(value = {MemStat.class})
@@ -5208,5 +5209,58 @@ public class LibvirtComputingResourceTest {
         extraConfig.put("extraconfig-3", "value3");
         libvirtComputingResource.addExtraConfigComponent(extraConfig, vmDef);
         Mockito.verify(vmDef, times(1)).addComp(any());
+    }
+
+    @Test
+    public void validateGetCurrentMemAccordingToMemBallooningWithoutMemBalooning(){
+        VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+        libvirtComputingResource._noMemBalloon = true;
+        long maxMemory = 2048;
+
+        long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, maxMemory);
+        Assert.assertEquals(maxMemory, currentMemory);
+        Mockito.verify(vmTo, Mockito.times(0)).getMinRam();
+    }
+
+    @Test
+    public void validateGetCurrentMemAccordingToMemBallooningWithtMemBalooning(){
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+        libvirtComputingResource._noMemBalloon = false;
+
+        long maxMemory = 2048;
+        long minMemory = ByteScaleUtils.mibToBytes(64);
+
+        VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
+        Mockito.when(vmTo.getMinRam()).thenReturn(minMemory);
+
+        long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, maxMemory);
+        Assert.assertEquals(ByteScaleUtils.bytesToKib(minMemory), currentMemory);
+        Mockito.verify(vmTo).getMinRam();
+    }
+
+    @Test
+    public void validateCreateGuestResourceDefWithVcpuMaxLimit(){
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+        VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
+        int maxCpu = 16;
+
+        Mockito.when(vmTo.getVcpuMaxLimit()).thenReturn(maxCpu);
+
+        LibvirtVMDef.GuestResourceDef grd = libvirtComputingResource.createGuestResourceDef(vmTo);
+        Assert.assertEquals(maxCpu, grd.getMaxVcpu());
+    }
+
+    @Test
+    public void validateCreateGuestResourceDefWithVcpuMaxLimitAsNull(){
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+        VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
+        int min = 1;
+
+        Mockito.when(vmTo.getCpus()).thenReturn(min);
+        Mockito.when(vmTo.getVcpuMaxLimit()).thenReturn(null);
+
+        LibvirtVMDef.GuestResourceDef grd = libvirtComputingResource.createGuestResourceDef(vmTo);
+        Assert.assertEquals(min, grd.getMaxVcpu());
     }
 }

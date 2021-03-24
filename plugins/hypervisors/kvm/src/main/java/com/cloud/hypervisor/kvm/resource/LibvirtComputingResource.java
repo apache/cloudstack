@@ -183,6 +183,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VmDetailConstants;
 import com.google.common.base.Strings;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
@@ -2306,18 +2307,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             vm.addComp(guest);
 
-        final GuestResourceDef grd = new GuestResourceDef();
-
-        if (vmTO.getMinRam() != vmTO.getMaxRam() && !_noMemBalloon) {
-            grd.setMemBalloning(true);
-            grd.setCurrentMem(vmTO.getMinRam() / 1024);
-            grd.setMemorySize(vmTO.getMaxRam() / 1024);
-        } else {
-            grd.setMemorySize(vmTO.getMaxRam() / 1024);
-        }
-        final int vcpus = vmTO.getCpus();
-        grd.setVcpuNum(vcpus);
+        GuestResourceDef grd = createGuestResourceDef(vmTO);
         vm.addComp(grd);
+
+        int vcpus = grd.getVcpu();
 
         if (!extraConfig.containsKey(DpdkHelper.DPDK_NUMA)) {
             final CpuModeDef cmd = new CpuModeDef();
@@ -2444,6 +2437,34 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return vm;
+    }
+
+    protected GuestResourceDef createGuestResourceDef(VirtualMachineTO vmTO){
+        GuestResourceDef grd = new GuestResourceDef();
+
+        grd.setMemBalloning(!_noMemBalloon);
+
+        Long maxRam = ByteScaleUtils.bytesToKib(vmTO.getMaxRam());
+
+        grd.setMemorySize(maxRam);
+        grd.setCurrentMem(getCurrentMemAccordingToMemBallooning(vmTO, maxRam));
+
+        int vcpus = vmTO.getCpus();
+        Integer maxVcpus = vmTO.getVcpuMaxLimit();
+
+        grd.setVcpuNum(vcpus);
+        grd.setMaxVcpuNum(maxVcpus == null ? vcpus : maxVcpus);
+
+        return grd;
+    }
+
+    protected long getCurrentMemAccordingToMemBallooning(VirtualMachineTO vmTO, long maxRam) {
+        if (_noMemBalloon) {
+            s_logger.warn(String.format("Setting VM's [%s] current memory as max memory [%s] due to memory ballooning is disabled. If you are using a custom service offering, verify if memory ballooning really should be disabled.", vmTO.toString(), maxRam));
+            return maxRam;
+        } else {
+            return ByteScaleUtils.bytesToKib(vmTO.getMinRam());
+        }
     }
 
     /**
