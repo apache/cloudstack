@@ -16,10 +16,12 @@
 // under the License.
 package com.cloud.hypervisor;
 
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
@@ -41,6 +43,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.junit.Assert;
@@ -80,6 +84,9 @@ public class KVMGuruTest {
 
     @Mock
     ServiceOfferingDao serviceOfferingDaoMock;
+
+    @Mock
+    DpdkHelper dpdkHelperMock;
 
     private static final long hostId = 1L;
     private static final Long offeringId = 1L;
@@ -301,5 +308,42 @@ public class KVMGuruTest {
 
         Mockito.verify(guru, Mockito.never()).getVmMaxMemory(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyLong());
         Mockito.verify(guru, Mockito.never()).getVmMaxCpuCores(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyInt());
+    }
+
+    @Test
+    public void validateEnableDpdkIfNeededCallDpdkHelperSetDpdkVhostUserMode() {
+        Mockito.when(dpdkHelperMock.isDpdkvHostUserModeSettingOnServiceOffering(vmProfile)).thenReturn(Boolean.TRUE);
+        guru.enableDpdkIfNeeded(vmProfile, vmTO);
+        Mockito.verify(dpdkHelperMock).setDpdkVhostUserMode(vmTO, vmProfile);
+    }
+
+    @Test
+    public void validateEnableDpdkIfNeededDoNotCallDpdkHelperSetDpdkVhostUserMode() {
+        Mockito.when(dpdkHelperMock.isDpdkvHostUserModeSettingOnServiceOffering(vmProfile)).thenReturn(Boolean.FALSE);
+        guru.enableDpdkIfNeeded(vmProfile, vmTO);
+        Mockito.verify(dpdkHelperMock, Mockito.times(0)).setDpdkVhostUserMode(vmTO, vmProfile);
+    }
+
+    @Test
+    public void validateEnableDpdkIfNeededNicSetDpdkEnabledTrue() {
+        Map<String, String> map = new HashMap<>();
+        map.put(DpdkHelper.DPDK_NUMA, "test1");
+        map.put(DpdkHelper.DPDK_HUGE_PAGES, "test2");
+
+        NicTO nicTo1 = Mockito.mock(NicTO.class);
+        NicTO nicTo2 = Mockito.mock(NicTO.class);
+        NicTO nicTo3 = Mockito.mock(NicTO.class);
+
+        NicTO[] nics = {nicTo1, nicTo2, nicTo3};
+
+        Mockito.when(vmTO.getType()).thenReturn(VirtualMachine.Type.User);
+        Mockito.when(vmTO.getExtraConfig()).thenReturn(map);
+        Mockito.when(vmTO.getNics()).thenReturn(nics);
+
+        guru.enableDpdkIfNeeded(vmProfile, vmTO);
+
+        for (NicTO nic : nics) {
+            Mockito.verify(nic).setDpdkEnabled(true);
+        }
     }
 }

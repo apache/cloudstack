@@ -121,16 +121,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         VirtualMachineTO to = toVirtualMachineTO(vm);
         setVmQuotaPercentage(to, vm);
 
-        if (dpdkHelper.isDpdkvHostUserModeSettingOnServiceOffering(vm)) {
-            dpdkHelper.setDpdkVhostUserMode(to, vm);
-        }
-
-        if (to.getType() == VirtualMachine.Type.User && MapUtils.isNotEmpty(to.getExtraConfig()) &&
-                to.getExtraConfig().containsKey(DpdkHelper.DPDK_NUMA) && to.getExtraConfig().containsKey(DpdkHelper.DPDK_HUGE_PAGES)) {
-            for (final NicTO nic : to.getNics()) {
-                nic.setDpdkEnabled(true);
-            }
-        }
+        enableDpdkIfNeeded(vm, to);
 
         // Determine the VM's OS description
         GuestOSVO guestOS = _guestOsDao.findByIdIncludingRemoved(vm.getVirtualMachine().getGuestOSId());
@@ -150,6 +141,19 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
 
         configureVmMemoryAndCpuCores(to, host, virtualMachine, vm);
         return to;
+    }
+
+    protected void enableDpdkIfNeeded(VirtualMachineProfile virtualMachineProfile, VirtualMachineTO virtualMachineTo) {
+        if (dpdkHelper.isDpdkvHostUserModeSettingOnServiceOffering(virtualMachineProfile)) {
+            dpdkHelper.setDpdkVhostUserMode(virtualMachineTo, virtualMachineProfile);
+        }
+
+        if (virtualMachineTo.getType() == VirtualMachine.Type.User && MapUtils.isNotEmpty(virtualMachineTo.getExtraConfig()) &&
+          virtualMachineTo.getExtraConfig().containsKey(DpdkHelper.DPDK_NUMA) && virtualMachineTo.getExtraConfig().containsKey(DpdkHelper.DPDK_HUGE_PAGES)) {
+            for (final NicTO nic : virtualMachineTo.getNics()) {
+                nic.setDpdkEnabled(true);
+            }
+        }
     }
 
     protected void configureVmMemoryAndCpuCores(VirtualMachineTO virtualMachineTo, HostVO hostVo, VirtualMachine virtualMachine, VirtualMachineProfile virtualMachineProfile) {
