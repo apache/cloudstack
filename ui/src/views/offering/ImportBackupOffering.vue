@@ -131,6 +131,7 @@ export default {
   created () {
     this.fetchData()
   },
+  inject: ['parentFetchData'],
   methods: {
     fetchData () {
       this.fetchZone()

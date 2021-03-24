@@ -143,6 +143,7 @@ export default {
       })
     }
   },
+  inject: ['parentFetchData'],
   created () {
     this.fetchData()
   },
