@@ -276,7 +276,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 response.setHostTags(tag);
             }
 
-            if (!Boolean.TRUE.equals(response.getHaHost())) {
+            if (Boolean.FALSE.equals(response.getHaHost())) {
                 String haTag = ApiDBUtils.getHaTag();
                 if (StringUtils.isNotEmpty(haTag) && haTag.equalsIgnoreCase(tag)) {
                     response.setHaHost(true);
