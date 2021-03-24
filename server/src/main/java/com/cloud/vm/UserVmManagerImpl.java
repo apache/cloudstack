@@ -340,6 +340,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import java.util.HashSet;
 
 public class UserVmManagerImpl extends ManagerBase implements UserVmManager, VirtualMachineGuru, UserVmService, Configurable {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
@@ -1869,7 +1870,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         Account caller = CallContext.current().getCallingAccount();
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
-        if (vmInstance.getHypervisorType() != HypervisorType.XenServer && vmInstance.getHypervisorType() != HypervisorType.VMware && vmInstance.getHypervisorType() != HypervisorType.Simulator) {
+
+        Set<HypervisorType> supportedHypervisorTypes = new HashSet<>();
+        supportedHypervisorTypes.add(HypervisorType.XenServer);
+        supportedHypervisorTypes.add(HypervisorType.VMware);
+        supportedHypervisorTypes.add(HypervisorType.Simulator);
+        supportedHypervisorTypes.add(HypervisorType.KVM);
+
+        if (!supportedHypervisorTypes.contains(vmInstance.getHypervisorType())) {
             s_logger.info("Scaling the VM dynamically is not supported for VMs running on Hypervisor "+vmInstance.getHypervisorType());
             throw new InvalidParameterValueException("Scaling the VM dynamically is not supported for VMs running on Hypervisor "+vmInstance.getHypervisorType());
         }
