@@ -196,7 +196,7 @@
           <span style="margin-right:5px" :key="idx">
             <span v-if="$store.getters.userInfo.roletype !== 'User'">
               <router-link v-if="'user' in item" :to="{ path: '/accountuser', query: { username: item.user, domainid: record.domainid }}">{{ item.account + '(' + item.user + ')' }}</router-link>
-              <router-link v-else :to="{ path: '/account', query: { name: item.account, domainid: record.domainid } }">{{ item.account }}</router-link>
+              <router-link v-else :to="{ path: '/account', query: { name: item.account, domainid: record.domainid, dataView: true } }">{{ item.account }}</router-link>
             </span>
             <span v-else>{{ item.user ? item.account + '(' + item.user + ')' : item.account }}</span>
           </span>
@@ -207,7 +207,7 @@
           v-if="'quota' in record && $router.resolve(`${$route.path}/${record.account}`) !== '404'"
           :to="{ path: `${$route.path}/${record.account}`, query: { account: record.account, domainid: record.domainid, quota: true } }">{{ text }}</router-link>
         <router-link :to="{ path: '/account/' + record.accountid }" v-else-if="record.accountid">{{ text }}</router-link>
-        <router-link :to="{ path: '/account', query: { name: record.account, domainid: record.domainid } }" v-else-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
+        <router-link :to="{ path: '/account', query: { name: record.account, domainid: record.domainid, dataView: true } }" v-else-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
     </span>

@@ -87,8 +87,9 @@ export default {
           label: 'label.action.edit.instance',
           docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
           dataView: true,
-          args: ['name', 'displayname', 'ostypeid', 'isdynamicallyscalable', 'haenable', 'group'],
-          show: (record) => { return ['Stopped'].includes(record.state) }
+          popup: true,
+          show: (record) => { return ['Stopped'].includes(record.state) },
+          component: () => import('@/views/compute/EditVM.vue')
         },
         {
           api: 'startVirtualMachine',

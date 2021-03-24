@@ -262,7 +262,8 @@
               <a-progress
                 class="progress-bar"
                 size="small"
-                :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeallocatedgb) / parseFloat(resource.disksizetotalgb)).toFixed(2))"
+                :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeallocatedgb) / (parseFloat(resource.disksizetotalgb) *
+                  (parseFloat(resource.overprovisionfactor) || 1.0))).toFixed(2))"
                 :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.disksizeallocatedgb')" />
             </span>
           </div>
@@ -395,10 +396,15 @@
           </span>
         </div>
         <div class="resource-detail-item" v-if="resource.templateid">
-          <div class="resource-detail-item__label">{{ $t('label.templatename') }}</div>
+          <div class="resource-detail-item__label">{{ resource.isoid ? $t('label.iso') : $t('label.templatename') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="picture" />
-            <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatename || resource.templateid }} </router-link>
+            <div v-if="resource.isoid">
+              <router-link :to="{ path: '/iso/' + resource.isoid }">{{ resource.isoname || resource.isoid }} </router-link>
+            </div>
+            <div v-else>
+              <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatename || resource.templateid }} </router-link>
+            </div>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
