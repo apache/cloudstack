@@ -716,16 +716,14 @@ public class LibvirtVMDef {
             } else if (bus == DiskBus.VIRTIO) {
                 return "vd" + getDevLabelSuffix(devId);
             } else if (bus == DiskBus.SATA){
-                if (!forIso) {
-                    return "sda";
-                }
+                return "sd" + getDevLabelSuffix(devId);
             }
             if (forIso) {
                 devId --;
             } else if(devId >= 2) {
                 devId += 2;
             }
-            return (DiskBus.SATA == bus) ? "sd" + getDevLabelSuffix(devId) : "hd" + getDevLabelSuffix(devId);
+            return "hd" + getDevLabelSuffix(devId);
 
         }
 
