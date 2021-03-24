@@ -334,4 +334,9 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     public boolean isCustomCpuSpeedSupported() {
         return isCustomized() && getDetail("minCPU") != null;
     }
+
+    @Override
+    public String toString() {
+        return String.format("Service offering {\"id\": %s, \"name\": \"%s\", \"uuid\": \"%s\"}", getId(), getName(), getUuid());
+    }
 }
