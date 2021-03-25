@@ -1008,8 +1008,17 @@ public class CommandSetupHelper {
         final boolean setupDns = dnsProvided || dhcpProvided;
 
         if (setupDns) {
-            defaultDns1 = guestNic.getIPv4Dns1();
-            defaultDns2 = guestNic.getIPv4Dns2();
+            final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
+            if (guestNic.getIPv4Dns1() != null) {
+                defaultDns1 = guestNic.getIPv4Dns1();
+            } else {
+                defaultDns1 = dcVo.getDns1();
+            }
+            if (guestNic.getIPv4Dns2() != null) {
+                defaultDns2 = guestNic.getIPv4Dns2();
+            } else {
+                defaultDns2 = dcVo.getDns2();
+            }
         }
 
         final Nic nic = _nicDao.findByNtwkIdAndInstanceId(network.getId(), router.getId());

@@ -17,11 +17,11 @@
 
 <template>
   <span class="row-action-button">
-    <a-tooltip arrowPointAtCenter placement="bottomRight">
+    <a-tooltip arrowPointAtCenter placement="bottomRight" v-if="resource && resource.id && dataView">
       <template slot="title">
         {{ $t('label.view.console') }}
       </template>
-      <console :resource="resource" :size="size" v-if="resource && resource.id && dataView" />
+      <console :resource="resource" :size="size" />
     </a-tooltip>
     <a-tooltip
       v-for="(action, actionIndex) in actions"
