@@ -1322,6 +1322,7 @@ class TestCreateTemplateWithDirectDownload(cloudstackTestCase):
         """
         self.template["checksum"]="{MD5}XXXXXXX"
         tmpl = Template.register(self.apiclient, self.template, zoneid=self.zone.id, hypervisor=self.hypervisor, randomize_name=False)
+        self.cleanup.append(tmpl)
 
         try:
             virtual_machine = VirtualMachine.create(
@@ -1332,11 +1333,9 @@ class TestCreateTemplateWithDirectDownload(cloudstackTestCase):
                 domainid=self.account.domainid,
                 serviceofferingid=self.service_offering.id
             )
-            self.cleanup.append(tmpl)
+            self.cleanup.append(virtual_machine)
             self.fail("Expected to fail deployment")
         except Exception as e:
             self.debug("Expected exception")
 
-        self.cleanup.append(virtual_machine)
-        self.cleanup.append(tmpl)
         return

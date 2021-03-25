@@ -131,7 +131,7 @@ function generateRouterMap (section) {
     map.meta.actions = section.actions
     map.meta.filters = section.filters
     map.meta.treeView = section.treeView ? section.treeView : false
-    map.meta.tabs = section.treeView ? section.tabs : {}
+    map.meta.tabs = section.tabs
 
     map.children = [{
       path: '/' + section.name + '/:id',

@@ -189,8 +189,8 @@ export default {
             }
             Login(loginParams)
               .then((res) => this.loginSuccess(res))
-              .catch(err => this.requestFailed(err))
-              .finally(() => {
+              .catch(err => {
+                this.requestFailed(err)
                 state.loginBtn = false
               })
           } else if (customActiveKey === 'saml') {
