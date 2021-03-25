@@ -2293,9 +2293,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw new InvalidParameterValueException("CIDR should be outside of link local cidr " + NetUtils.getLinkLocalCIDR());
         }
 
-        // 3) Verify against deny listed routes
+        // 3) Verify against denied routes
         if (isCidrDenylisted(cidr, vpc.getZoneId())) {
-            throw new InvalidParameterValueException("The static gateway cidr overlaps with one of the deny listed routes of the zone the VPC belongs to");
+            throw new InvalidParameterValueException("The static gateway cidr overlaps with one of the denied routes of the zone the VPC belongs to");
         }
 
         return Transaction.execute(new TransactionCallbackWithException<StaticRouteVO, NetworkRuleConflictException>() {

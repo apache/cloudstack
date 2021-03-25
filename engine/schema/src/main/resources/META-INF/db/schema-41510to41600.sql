@@ -303,3 +303,9 @@ from
         
 -- Update name for global configuration user.vm.readonly.ui.details
 Update configuration set name='user.vm.readonly.details' where name='user.vm.readonly.ui.details';
+
+-- Update name for global configuration 'user.vm.readonly.ui.details' to 'user.vm.denied.details'
+UPDATE `cloud`.`configuration` SET name='user.vm.denied.details' WHERE name='user.vm.blacklisted.details';
+
+-- Update name for global configuration 'blacklisted.routes' to 'denied.routes'
+UPDATE `cloud`.`configuration` SET name='denied.routes', description='Routes that are denied, can not be used for Static Routes creation for the VPC Private Gateway' WHERE name='blacklisted.routes';
