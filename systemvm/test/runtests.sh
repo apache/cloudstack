@@ -27,8 +27,8 @@ export PYTHONPATH="../debian/opt/cloud/bin/"
 export PYTHONDONTWRITEBYTECODE=False
 
 echo "Running pycodestyle to check systemvm/python code for errors"
-python2 -m pycodestyle --max-line-length=179 *py
-python2 -m pycodestyle --max-line-length=179 --exclude=monitorServices.py,baremetal-vr.py,passwd_server_ip.py `find ../debian -name \*.py`
+python -m pycodestyle --max-line-length=179 *py
+python -m pycodestyle --max-line-length=179 --exclude=monitorServices.py,baremetal-vr.py,passwd_server_ip.py `find ../debian -name \*.py`
 if [ $? -gt 0 ]
 then
     echo "pycodestyle failed, please check your code"
