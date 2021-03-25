@@ -32,8 +32,6 @@ tar zxvf apache-maven-3.6.3-bin.tar.gz
 export PATH=`pwd`/apache-maven-3.6.3/bin:$PATH
 cd $DIR
 
-sudo apt-get install python2
-
 echo -e "\nJDK version"
 export JAVA_HOME=$(readlink -f /usr/lib/jvm/java-11-openjdk-amd64/bin/java | sed "s:bin/java::")
 mvn -v

@@ -88,6 +88,8 @@ sudo apt-get -y install python3-dev # in order to be able to pip3 install pycryp
 # for now we need both:
 sudo apt-get -y install python2 python2-pip
 sudo apt-get -y install python2-dev # in order to be able to pip3 install pycrypto
+pip2 install virtualenv
+sudo python2 -m venv ~/py2/
 
 pyenv install `cat /home/travis/build/apache/cloudstack/.python-version`
 
