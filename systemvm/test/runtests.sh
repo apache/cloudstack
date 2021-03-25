@@ -18,6 +18,11 @@
 
 # requires netaddr
 
+source activate ~/py2/
+# alternative
+# source ~/py2/bin/activate
+python --version
+
 export PYTHONPATH="../debian/opt/cloud/bin/"
 export PYTHONDONTWRITEBYTECODE=False
 
