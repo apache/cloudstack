@@ -53,7 +53,9 @@
                 <a-select
                   allowClear
                   v-if="field.type==='list'"
-                  v-decorator="[field.name]"
+                  v-decorator="[field.name, {
+                    initialValue: fieldValues[field.name] || null
+                  }]"
                   :loading="field.loading">
                   <a-select-option
                     v-for="(opt, idx) in field.opts"
@@ -62,7 +64,9 @@
                 </a-select>
                 <a-input
                   v-else-if="field.type==='input'"
-                  v-decorator="[field.name]" />
+                  v-decorator="[field.name, {
+                    initialValue: fieldValues[field.name] || null
+                  }]" />
                 <div v-else-if="field.type==='tag'">
                   <div>
                     <a-input-group
@@ -135,7 +139,8 @@ export default {
       visibleFilter: false,
       fields: [],
       inputKey: null,
-      inputValue: null
+      inputValue: null,
+      fieldValues: {}
     }
   },
   beforeCreate () {
@@ -275,7 +280,6 @@ export default {
         }
         if (clusterIndex > -1) {
           const cluster = response.filter(item => item.type === 'clusterid')
-          console.log(cluster)
           if (cluster && cluster.length > 0) {
             this.fields[clusterIndex].opts = cluster[0].data
           }
@@ -294,7 +298,19 @@ export default {
         if (clusterIndex > -1) {
           this.fields[clusterIndex].loading = false
         }
+        this.fillFormFieldValues()
       })
+    },
+    fillFormFieldValues () {
+      this.fieldValues = {}
+      if (Object.keys(this.$route.query).length > 0) {
+        this.fieldValues = this.$route.query
+      }
+      if (this.$route.meta.params) {
+        Object.assign(this.fieldValues, this.$route.meta.params)
+      }
+      this.inputKey = this.fieldValues['tags[0].key'] || null
+      this.inputValue = this.fieldValues['tags[0].value'] || null
     },
     fetchZones () {
       return new Promise((resolve, reject) => {

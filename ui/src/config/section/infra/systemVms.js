@@ -68,6 +68,7 @@ export default {
       api: 'migrateSystemVm',
       icon: 'drag',
       label: 'label.action.migrate.systemvm',
+      message: 'message.migrate.systemvm.confirm',
       dataView: true,
       show: (record) => { return record.state === 'Running' },
       args: ['virtualmachineid', 'hostid'],

@@ -85,6 +85,7 @@ export default {
           api: 'restartNetwork',
           icon: 'sync',
           label: 'label.restart.network',
+          message: 'message.restart.network',
           dataView: true,
           args: ['cleanup'],
           show: (record) => record.type !== 'L2'
@@ -165,7 +166,7 @@ export default {
           api: 'restartVPC',
           icon: 'sync',
           label: 'label.restart.vpc',
-          message: 'message.restart.vpc',
+          message: (record) => { return record.redundantvpcrouter ? 'message.restart.vpc' : 'message.restart.vpc.remark' },
           dataView: true,
           args: (record) => {
             var fields = ['cleanup']
