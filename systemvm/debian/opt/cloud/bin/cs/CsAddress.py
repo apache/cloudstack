@@ -367,6 +367,8 @@ class CsIP:
         if self.config.is_vpc():
             return
 
+        self.fw.append(["", "front","-A INPUT -i %s -s %s/24 -p tcp -m tcp -m state --state NEW --dport 443 -j ACCEPT" % (self.dev, self.address['public_ip'])])
+
         self.fw.append(["mangle", "front", "-A PREROUTING " +
                         "-m state --state RELATED,ESTABLISHED " +
                         "-j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff"])
