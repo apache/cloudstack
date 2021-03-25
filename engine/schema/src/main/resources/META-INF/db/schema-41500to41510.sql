@@ -19,3 +19,7 @@
 -- Schema upgrade from 4.15.0.0 to 4.15.1.0
 --;
 
+-- Correct guest OS names
+UPDATE `cloud`.`guest_os` SET display_name='Fedora Linux (32 bit)' WHERE id=320;
+UPDATE `cloud`.`guest_os` SET display_name='Mandriva Linux (32 bit)' WHERE id=323;
+UPDATE `cloud`.`guest_os` SET display_name='OpenSUSE Linux (32 bit)' WHERE id=327;

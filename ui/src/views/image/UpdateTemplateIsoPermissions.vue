@@ -164,7 +164,7 @@ export default {
     fetchAccounts () {
       this.loading = true
       api('listAccounts', {
-        listall: true
+        domainid: this.resource.domainid
       }).then(response => {
         this.accounts = response.listaccountsresponse.account.filter(account => account.name !== this.resource.account)
       }).finally(e => {
