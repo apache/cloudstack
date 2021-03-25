@@ -137,7 +137,7 @@ export default {
         response: 'json',
         domainId: this.selectedDomain,
         state: 'Enabled',
-        listAll: true
+        isrecursive: false
       }).then(response => {
         this.accounts = response.listaccountsresponse.account
         this.loading = false
@@ -150,7 +150,7 @@ export default {
         domainId: this.selectedDomain,
         state: 'Active',
         details: 'min',
-        listAll: true
+        isrecursive: false
       }).then(response => {
         this.projects = response.listprojectsresponse.project
         this.loading = false
