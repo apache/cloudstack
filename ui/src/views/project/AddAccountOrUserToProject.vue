@@ -101,7 +101,8 @@
             </span>
             <a-input
               v-decorator="['username']"
-              :placeholder="apiParams.addUserToProject.username.description"/>
+              :placeholder="apiParams.addUserToProject.username.description"
+              autoFocus />
           </a-form-item>
           <a-form-item>
             <span slot="label">

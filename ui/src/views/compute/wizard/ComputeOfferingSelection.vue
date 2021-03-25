@@ -21,7 +21,8 @@
       style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8"
       :placeholder="$t('label.search')"
       v-model="filter"
-      @search="handleSearch" />
+      @search="handleSearch"
+      autoFocus />
     <a-table
       :columns="columns"
       :dataSource="tableSource"
