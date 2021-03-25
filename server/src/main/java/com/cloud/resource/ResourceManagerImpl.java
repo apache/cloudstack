@@ -103,6 +103,7 @@ import com.cloud.event.EventVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.gpu.GPU;
@@ -1252,8 +1253,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     // for the last host in this cluster, destroy SSVM/CPVM and stop all other VMs
                     if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())
                             || VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
-                        s_logger.error(String.format("Maintenance: VM is of type %s. Scheduling destroy for VM %s instead of migration.", vm.getType().toString(), vm.getUuid()));
-                        _haMgr.scheduleDestroy(vm, hostId);
+                        s_logger.error(String.format("Maintenance: VM is of type %s. Destroying for VM %s immediately instead of migration.", vm.getType().toString(), vm.getUuid()));
+                        // Scheduled destroy may not work as HAManager won't find agent
+                        try {
+                            _vmMgr.destroy(vm.getUuid(), true);
+                        } catch (AgentUnavailableException | OperationTimedoutException e) {
+                            s_logger.error(String.format("Failed to destroy VM %s (ID: %s) ", vm.getInstanceName(), vm.getUuid()), e);
+                        }
                         continue;
                     }
                     s_logger.error(String.format("Maintenance: No hosts available for migrations. Scheduling shutdown for VM %s instead of migration.", vm.getUuid()));
