@@ -92,10 +92,10 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     @Inject
     private HostDao hostDao;
 
-    static final ConfigKey<Boolean> VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.min.memory.equals.memory.divided.by.mem.overprovisioning.factor", "true",
+    public static ConfigKey<Boolean> VM_MIN_MEMORY_EQUALS_MEMORY_DIVIDED_BY_MEM_OVERPROVISIONING_FACTOR = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.min.memory.equals.memory.divided.by.mem.overprovisioning.factor", "true",
             "If we set this to 'true', a minimum memory (memory/ mem.overprovisioning.factor) will be set to the VM, independent of using a scalable service offering or not.", true, ConfigKey.Scope.Cluster);
 
-    static final ConfigKey<Boolean> VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.min.cpu.speed.equals.cpu.speed.divided.by.cpu.overprovisioning.factor", "true",
+    public static ConfigKey<Boolean> VM_MIN_CPU_SPEED_EQUALS_CPU_SPEED_DIVIDED_BY_CPU_OVERPROVISIONING_FACTOR = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.min.cpu.speed.equals.cpu.speed.divided.by.cpu.overprovisioning.factor", "true",
             "If we set this to 'true', a minimum CPU speed (cpu speed/ cpu.overprovisioning.factor) will be set on the VM, independent of using a scalable service offering or not.", true, ConfigKey.Scope.Cluster);
 
     @Override
@@ -181,8 +181,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         VirtualMachine vm = vmProfile.getVirtualMachine();
         HostVO host = hostDao.findById(vm.getHostId());
 
-        boolean divideMemoryByOverprovisioning = VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor.valueIn(host.getClusterId());
-        boolean divideCpuByOverprovisioning = VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor.valueIn(host.getClusterId());
+        boolean divideMemoryByOverprovisioning = VM_MIN_MEMORY_EQUALS_MEMORY_DIVIDED_BY_MEM_OVERPROVISIONING_FACTOR.valueIn(host.getClusterId());
+        boolean divideCpuByOverprovisioning = VM_MIN_CPU_SPEED_EQUALS_CPU_SPEED_DIVIDED_BY_CPU_OVERPROVISIONING_FACTOR.valueIn(host.getClusterId());
 
         Long minMemory = (long)(offering.getRamSize() / (divideMemoryByOverprovisioning ? vmProfile.getMemoryOvercommitRatio() : 1));
         int minspeed = (int)(offering.getSpeed() / (divideCpuByOverprovisioning ? vmProfile.getCpuOvercommitRatio() : 1));
@@ -326,7 +326,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor, VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor };
+        return new ConfigKey<?>[] {VM_MIN_MEMORY_EQUALS_MEMORY_DIVIDED_BY_MEM_OVERPROVISIONING_FACTOR, VM_MIN_CPU_SPEED_EQUALS_CPU_SPEED_DIVIDED_BY_CPU_OVERPROVISIONING_FACTOR };
     }
 
 }
