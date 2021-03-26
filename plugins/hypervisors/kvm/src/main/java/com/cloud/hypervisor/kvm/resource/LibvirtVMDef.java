@@ -230,27 +230,22 @@ public class LibvirtVMDef {
     }
 
     public static class GuestResourceDef {
-        private long _mem;
-        private long _currentMem = -1;
-        private String _memBacking;
-        private int _vcpu = -1;
+        private long memory;
+        private long currentMemory = -1;
+        private int vcpu = -1;
         private int maxVcpu = -1;
-        private boolean _memBalloning = false;
+        private boolean memoryBalloning = false;
 
         public void setMemorySize(long mem) {
-            _mem = mem;
+            this.memory = mem;
         }
 
         public void setCurrentMem(long currMem) {
-            _currentMem = currMem;
-        }
-
-        public void setMemBacking(String memBacking) {
-            _memBacking = memBacking;
+            this.currentMemory = currMem;
         }
 
         public void setVcpuNum(int vcpu) {
-            _vcpu = vcpu;
+            this.vcpu = vcpu;
         }
 
         public void setMaxVcpuNum(int maxVcpu) {
@@ -258,24 +253,24 @@ public class LibvirtVMDef {
         }
 
         public int getVcpu() {
-            return _vcpu;
+            return vcpu;
         }
 
         public int getMaxVcpu() {
             return maxVcpu;
         }
 
-        public void setMemBalloning(boolean turnon) {
-            _memBalloning = turnon;
+        public void setMemBalloning(boolean memoryBalloning) {
+            this.memoryBalloning = memoryBalloning;
         }
 
         @Override
         public String toString() {
             StringBuilder response = new StringBuilder();
-            response.append(String.format("<memory>%s</memory>\n", this._mem));
-            response.append(String.format("<currentMemory>%s</currentMemory>\n", this._currentMem));
-            response.append(String.format("<devices>\n<memballoon model='%s'/>\n</devices>\n", this._memBalloning ? "virtio" : "none"));
-            response.append(String.format("<vcpu current=\"%s\">%s</vcpu>\n", this._vcpu, this.maxVcpu));
+            response.append(String.format("<memory>%s</memory>\n", this.memory));
+            response.append(String.format("<currentMemory>%s</currentMemory>\n", this.currentMemory));
+            response.append(String.format("<devices>\n<memballoon model='%s'/>\n</devices>\n", this.memoryBalloning ? "virtio" : "none"));
+            response.append(String.format("<vcpu current=\"%s\">%s</vcpu>\n", this.vcpu, this.maxVcpu));
             return response.toString();
         }
     }
