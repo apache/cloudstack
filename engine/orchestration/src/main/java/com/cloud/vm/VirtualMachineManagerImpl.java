@@ -165,6 +165,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.hypervisor.HypervisorGuruBase;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
@@ -4534,11 +4535,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         upgradeVmDb(vm.getId(), newServiceOffering, oldServiceOffering);
 
         final HostVO hostVo = _hostDao.findById(vm.getHostId());
+        Long clustedId = hostVo.getClusterId();
         final Float memoryOvercommitRatio = CapacityManager.MemOverprovisioningFactor.valueIn(hostVo.getClusterId());
         final Float cpuOvercommitRatio = CapacityManager.CpuOverprovisioningFactor.valueIn(hostVo.getClusterId());
-        final long minMemory = (long)(newServiceOffering.getRamSize() / memoryOvercommitRatio);
+        boolean divideMemoryByOverprovisioning = HypervisorGuruBase.VM_MIN_MEMORY_EQUALS_MEMORY_DIVIDED_BY_MEM_OVERPROVISIONING_FACTOR.valueIn(clustedId);
+        boolean divideCpuByOverprovisioning = HypervisorGuruBase.VM_MIN_CPU_SPEED_EQUALS_CPU_SPEED_DIVIDED_BY_CPU_OVERPROVISIONING_FACTOR.valueIn(clustedId);
+
+        int minMemory = (int)(newServiceOffering.getRamSize() / (divideMemoryByOverprovisioning ? memoryOvercommitRatio : 1));
+        int minSpeed = (int)(newServiceOffering.getSpeed() / (divideCpuByOverprovisioning ? cpuOvercommitRatio : 1));
+
         final ScaleVmCommand reconfigureCmd =
-                new ScaleVmCommand(vm.getInstanceName(), newServiceOffering.getCpu(), (int)(newServiceOffering.getSpeed() / cpuOvercommitRatio),
+                new ScaleVmCommand(vm.getInstanceName(), newServiceOffering.getCpu(), minSpeed,
                         newServiceOffering.getSpeed(), minMemory * 1024L * 1024L, newServiceOffering.getRamSize() * 1024L * 1024L, newServiceOffering.getLimitCpuUse());
 
         final Long dstHostId = vm.getHostId();
