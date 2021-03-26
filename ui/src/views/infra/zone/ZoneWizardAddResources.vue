@@ -351,7 +351,7 @@ export default {
           }
         },
         {
-          title: 'label.SR.name',
+          title: 'label.sr.name',
           key: 'primaryStorageSRLabel',
           placeHolder: 'message.error.sr.namelabel',
           required: true,

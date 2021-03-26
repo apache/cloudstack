@@ -216,26 +216,61 @@ export default {
 
       if (this.hypervisor === 'VMware') {
         this.clustertype = 'ExternalManaged'
+        if ((this.host === null || this.host.length === 0) &&
+          (this.dataCenter === null || this.dataCenter.length === 0)) {
+          api('listVmwareDcs', {
+            zoneid: this.zoneId
+          }).then(response => {
+            var vmwaredcs = response.listvmwaredcsresponse.VMwareDC
+            if (vmwaredcs !== null) {
+              this.host = vmwaredcs[0].vcenter
+              this.dataCenter = vmwaredcs[0].name
+            }
+            this.addCluster()
+          }).catch(error => {
+            this.$notification.error({
+              message: `${this.$t('label.error')} ${error.response.status}`,
+              description: error.response.data.listvmwaredcsresponse.errortext,
+              duration: 0
+            })
+          })
+          return
+        }
+      }
+      this.addCluster()
+    },
+    addCluster () {
+      if (this.hypervisor === 'VMware') {
         const clusternameVal = this.clustername
         this.url = `http://${this.host}/${this.dataCenter}/${clusternameVal}`
         this.clustername = `${this.host}/${this.dataCenter}/${clusternameVal}`
       }
-
       this.loading = true
       this.parentToggleLoading()
-      api('addCluster', {}, 'POST', {
+      var data = {
         zoneId: this.zoneId,
         hypervisor: this.hypervisor,
         clustertype: this.clustertype,
         podId: this.podId,
         clustername: this.clustername,
-        ovm3pool: this.ovm3pool,
-        ovm3cluster: this.ovm3cluster,
-        ovm3vip: this.ovm3vip,
-        username: this.username,
-        password: this.password,
         url: this.url
-      }).then(response => {
+      }
+      if (this.ovm3pool) {
+        data.ovm3pool = this.ovm3pool
+      }
+      if (this.ovm3cluster) {
+        data.ovm3cluster = this.ovm3cluster
+      }
+      if (this.ovm3vip) {
+        data.ovm3vip = this.ovm3vip
+      }
+      if (this.username) {
+        data.username = this.username
+      }
+      if (this.password) {
+        data.password = this.password
+      }
+      api('addCluster', {}, 'POST', data).then(response => {
         const cluster = response.addclusterresponse.cluster[0] || {}
         if (cluster.id && this.showDedicated) {
           this.dedicateCluster(cluster.id)

@@ -53,6 +53,10 @@ export default {
         name: 'virtual.routers',
         component: () => import('@/views/network/RoutersTab.vue'),
         show: (record) => { return (record.type === 'Isolated' || record.type === 'Shared') && 'listRouters' in store.getters.apis }
+      }, {
+        name: 'guest.ip.range',
+        component: () => import('@/views/network/GuestIpRanges.vue'),
+        show: (record) => { return 'listVlanIpRanges' in store.getters.apis && (record.type === 'Shared' || (record.service && record.service.filter(x => x.name === 'SourceNat').count === 0)) }
       }],
       actions: [
         {
@@ -81,8 +85,9 @@ export default {
           api: 'restartNetwork',
           icon: 'sync',
           label: 'label.restart.network',
+          message: 'message.restart.network',
           dataView: true,
-          args: ['cleanup', 'makeredundant'],
+          args: ['cleanup'],
           show: (record) => record.type !== 'L2'
         },
         {
@@ -161,7 +166,7 @@ export default {
           api: 'restartVPC',
           icon: 'sync',
           label: 'label.restart.vpc',
-          message: 'message.restart.vpc',
+          message: (record) => { return record.redundantvpcrouter ? 'message.restart.vpc' : 'message.restart.vpc.remark' },
           dataView: true,
           args: (record) => {
             var fields = ['cleanup']

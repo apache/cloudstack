@@ -19,6 +19,11 @@
 -- Schema upgrade from 4.15.0.0 to 4.15.1.0
 --;
 
+-- Correct guest OS names
+UPDATE `cloud`.`guest_os` SET display_name='Fedora Linux (32 bit)' WHERE id=320;
+UPDATE `cloud`.`guest_os` SET display_name='Mandriva Linux (32 bit)' WHERE id=323;
+UPDATE `cloud`.`guest_os` SET display_name='OpenSUSE Linux (32 bit)' WHERE id=327;
+
 -- Add support for SUSE Linux Enterprise Desktop 12 SP3 (64-bit) for Xenserver 8.1.0
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (330, UUID(), 5, 'SUSE Linux Enterprise Desktop 12 SP3 (64-bit)', now());
 INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '8.1.0', 'SUSE Linux Enterprise Desktop 12 SP3 (64-bit)', 330, now(), 0);

@@ -391,6 +391,7 @@ export default {
       if ('vpcid' in this.resource && 'associatednetworkid' in this.resource) {
         return
       }
+      this.selectedTier = null
       this.tiers.loading = true
       api('listNetworks', {
         account: this.resource.account,
@@ -399,7 +400,9 @@ export default {
         vpcid: this.resource.vpcid
       }).then(json => {
         this.tiers.data = json.listnetworksresponse.network || []
-        this.selectedTier = this.tiers.data && this.tiers.data[0].id ? this.tiers.data[0].id : null
+        if (this.tiers.data && this.tiers.data.length > 0) {
+          this.selectedTier = this.tiers.data[0].id
+        }
         this.$forceUpdate()
       }).catch(error => {
         this.$notifyError(error)
@@ -615,6 +618,10 @@ export default {
       this.vms = []
       this.addVmModalLoading = true
       const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
+      if (!networkId) {
+        this.addVmModalLoading = false
+        return
+      }
       api('listVirtualMachines', {
         listAll: true,
         keyword: this.searchQuery,
