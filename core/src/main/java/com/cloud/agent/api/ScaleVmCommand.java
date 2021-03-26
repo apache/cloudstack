@@ -52,9 +52,6 @@ public class ScaleVmCommand extends Command {
         this.minRam = minRam;
         this.maxRam = maxRam;
         this.vm = new VirtualMachineTO(1L, vmName, null, cpus, minSpeed, maxSpeed, minRam, maxRam, null, null, false, limitCpuUse, null);
-        /*vm.setName(vmName);
-        vm.setCpus(cpus);
-        vm.setRam(minRam, maxRam);*/
     }
 
     public void setCpus(int cpus) {
