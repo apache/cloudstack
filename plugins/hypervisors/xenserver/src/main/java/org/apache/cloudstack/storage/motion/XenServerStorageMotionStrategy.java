@@ -58,18 +58,18 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.Storage;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.StoragePool;
+import com.cloud.hypervisor.xenserver.resource.CitrixHelper;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.VolumeVO;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -328,11 +328,7 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
                 }
                 else {
                     StoragePool pool = (StoragePool)entry.getValue();
-                    String srNameLabel = pool.getUuid();
-                    if (Storage.StoragePoolType.PreSetup.equals(pool.getPoolType()) &&
-                            !pool.getPath().contains(pool.getUuid())) {
-                        srNameLabel = pool.getPath().replaceFirst("/", "");
-                    }
+                    String srNameLabel = CitrixHelper.getSRNameLabel(pool.getUuid(), pool.getPoolType(), pool.getPath());
                     volumeToStorageUuid.add(new Pair<>(volumeTo, srNameLabel));
                 }
             }
