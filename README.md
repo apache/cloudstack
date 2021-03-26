@@ -81,7 +81,7 @@ Mailing lists:
 - [Issues Mailing List](mailto:issues-subscribe@cloudstack.apache.org)
 - [Marketing Mailing List](mailto:marketing-subscribe@cloudstack.apache.org)
 
-IRC, join us on irc.freenode.net on:
+IRC, join us on [webchat.freenode.net](https://webchat.freenode.net) on:
 - `#cloudstack`: General Apache CloudStack conversation and end user support
 - `#cloudstack-dev`: Development discussions
 
