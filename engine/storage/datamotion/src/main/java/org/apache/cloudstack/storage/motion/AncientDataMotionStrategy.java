@@ -147,8 +147,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
     protected Answer copyObject(DataObject srcData, DataObject destData, Host destHost) {
         long dataSize = 0;
-        if(srcData != null){
+        try{
             dataSize = srcData.getSize();
+        }catch(NullPointerException e){
+            s_logger.error("Unable to determine size of src data object with uuid: " + srcData.getUuid(),e);
         }
         int imgSizeGigs = (int)Math.ceil(dataSize * 1.0d / (1024 * 1024 * 1024));
         imgSizeGigs++; // add one just in case
