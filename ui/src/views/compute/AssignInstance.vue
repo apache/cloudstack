@@ -17,13 +17,15 @@
 
 <template>
   <div>
-    <p v-html="$t('message.assign.instance.another')"></p>
-
     <div class="form">
 
       <div v-if="loading" class="loading">
         <a-icon type="loading" style="color: #1890ff;"></a-icon>
       </div>
+
+      <a-alert type="warning" style="margin-bottom: 20px">
+        <span slot="message" v-html="$t('message.assign.instance.another')"></span>
+      </a-alert>
 
       <div class="form__item">
         <p class="form__label">{{ $t('label.accounttype') }}</p>
@@ -226,6 +228,12 @@ export default {
 
 <style scoped lang="scss">
   .form {
+    width: 85vw;
+
+    @media (min-width: 760px) {
+      width: 500px;
+    }
+
     display: flex;
     flex-direction: column;
 
