@@ -16,57 +16,10 @@
 // under the License.
 package org.apache.cloudstack.storage.template;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.security.NoSuchAlgorithmException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import javax.naming.ConfigurationException;
-
-import com.cloud.agent.api.to.OVFInformationTO;
-import com.cloud.storage.template.Processor;
-import com.cloud.storage.template.S3TemplateDownloader;
-import com.cloud.storage.template.TemplateDownloader;
-import com.cloud.storage.template.TemplateLocation;
-import com.cloud.storage.template.MetalinkTemplateDownloader;
-import com.cloud.storage.template.HttpTemplateDownloader;
-import com.cloud.storage.template.LocalTemplateDownloader;
-import com.cloud.storage.template.ScpTemplateDownloader;
-import com.cloud.storage.template.TemplateProp;
-import com.cloud.storage.template.OVAProcessor;
-import com.cloud.storage.template.IsoProcessor;
-import com.cloud.storage.template.QCOW2Processor;
-import com.cloud.storage.template.VmdkProcessor;
-import com.cloud.storage.template.RawImageProcessor;
-import com.cloud.storage.template.TARProcessor;
-import com.cloud.storage.template.VhdProcessor;
-import com.cloud.storage.template.TemplateConstants;
-import org.apache.cloudstack.storage.command.DownloadCommand;
-import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
-import org.apache.cloudstack.storage.command.DownloadProgressCommand;
-import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
-import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
-import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
-import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.exception.InternalErrorException;
@@ -100,9 +53,9 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Proxy;
-import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.QCOW2Utils;
+import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
@@ -114,7 +67,6 @@ import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.log4j.Logger;
 
 import javax.naming.ConfigurationException;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
