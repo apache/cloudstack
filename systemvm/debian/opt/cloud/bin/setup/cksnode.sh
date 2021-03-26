@@ -21,6 +21,11 @@
 setup_k8s_node() {
     log_it "Setting up k8s node"
 
+    update-alternatives --set iptables /usr/sbin/iptables-legacy
+    update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+    update-alternatives --set arptables /usr/sbin/arptables-legacy
+    update-alternatives --set ebtables /usr/sbin/ebtables-legacy
+
     # set default ssh port and restart sshd service
     sed -i 's/3922/22/g' /etc/ssh/sshd_config
 
