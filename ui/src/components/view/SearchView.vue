@@ -104,7 +104,7 @@
             class="filter-button"
             size="small"
             @click="() => { searchQuery = null }">
-            <a-icon type="filter" :theme="Object.keys(searchParams).length > 0 ? 'twoTone' : 'outlined'" />
+            <a-icon type="filter" :theme="isFilter ? 'twoTone' : 'outlined'" />
           </a-button>
         </a-popover>
       </a-input-search>
@@ -179,6 +179,17 @@ export default {
         display: 'table-cell',
         lineHeight: '31px'
       }
+    },
+    isFilter () {
+      let isFiltered = false
+      for (const item in this.searchParams) {
+        if (this.searchFilters.includes(item)) {
+          isFiltered = true
+          break
+        }
+      }
+
+      return isFiltered
     }
   },
   methods: {
