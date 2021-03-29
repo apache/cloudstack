@@ -1647,13 +1647,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         StoragePoolVO pool = _storagePoolDao.findById(poolId);
 
         if (pool == null) {
-            String msg = "Unable to obtain lock on the storage pool record while syncing storage pool with management server";
+            String msg = String.format("Unable to obtain lock on the storage pool record while syncing storage pool [%s] with management server", pool.getUuid());
             s_logger.error(msg);
             throw new InvalidParameterValueException(msg);
         }
 
         if (!pool.getPoolType().equals(StoragePoolType.DatastoreCluster)) {
-            throw new InvalidParameterValueException(String.format("SyncStoragePool API is currently supported only for storage type of datastore cluster"));
+            throw new InvalidParameterValueException("SyncStoragePool API is currently supported only for storage type of datastore cluster");
         }
 
         if (!pool.getStatus().equals(StoragePoolStatus.Up)) {
@@ -1693,6 +1693,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
             }
 
+        } else {
+            throw new CloudRuntimeException(String.format("Unable to sync storage pool [%s] as there no connected hosts to the storage pool", pool.getUuid()));
         }
         return (PrimaryDataStoreInfo) _dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
     }
@@ -1779,7 +1781,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         for (String childDatastoreUUID : childDatastoreUUIDs) {
             StoragePoolVO dataStoreVO = _storagePoolDao.findPoolByUUID(childDatastoreUUID);
             List<VolumeVO> allVolumes = _volumeDao.findByPoolId(dataStoreVO.getId());
-
+            allVolumes.removeIf(volumeVO -> volumeVO.getInstanceId() == null);
+            allVolumes.removeIf(volumeVO -> volumeVO.getState() != Volume.State.Ready);
             for (VolumeVO volume : allVolumes) {
                 VMInstanceVO vmInstance = _vmInstanceDao.findById(volume.getInstanceId());
                 if (vmInstance == null) {
@@ -1798,7 +1801,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 details.put(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
                 disk.setDetails(details);
 
-                SyncVolumePathCommand cmd = new SyncVolumePathCommand(disk, vmInstance.getInstanceName());
+                SyncVolumePathCommand cmd = new SyncVolumePathCommand(disk);
                 final Answer answer = _agentMgr.easySend(hostId, cmd);
                 // validate answer
                 if (answer == null) {

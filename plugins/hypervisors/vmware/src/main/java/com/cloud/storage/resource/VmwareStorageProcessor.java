@@ -3894,7 +3894,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer CheckDataStoreStoragePolicyComplaince(CheckDataStoreStoragePolicyComplainceCommand cmd) {
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd) {
         String primaryStorageNameLabel = cmd.getStoragePool().getUuid();
         String storagePolicyId = cmd.getStoragePolicyId();
         VmwareContext context = hostService.getServiceContext(cmd);
@@ -3966,12 +3966,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer SyncVolumePath(SyncVolumePathCommand cmd) {
+    public Answer syncVolumePath(SyncVolumePathCommand cmd) {
         DiskTO disk = cmd.getDisk();
         VolumeObjectTO volumeTO = (VolumeObjectTO)disk.getData();
         DataStoreTO primaryStore = volumeTO.getDataStore();
         String volumePath = volumeTO.getPath();
-        String vmName = cmd.getVmName();
+        String vmName = volumeTO.getVmName();
 
         boolean datastoreChangeObserved = false;
         boolean volumePathChangeObserved = false;

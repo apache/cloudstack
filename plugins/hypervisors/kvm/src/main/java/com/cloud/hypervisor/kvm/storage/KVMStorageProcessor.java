@@ -1839,14 +1839,14 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer CheckDataStoreStoragePolicyComplaince(CheckDataStoreStoragePolicyComplainceCommand cmd) {
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd) {
         s_logger.info("'CheckDataStoreStoragePolicyComplainceCommand' not currently applicable for KVMStorageProcessor");
         return new Answer(cmd,false,"Not currently applicable for KVMStorageProcessor");
     }
 
     @Override
-    public Answer SyncVolumePath(SyncVolumePathCommand cmd) {
+    public Answer syncVolumePath(SyncVolumePathCommand cmd) {
         s_logger.info("SyncVolumePathCommand not currently applicable for KVMStorageProcessor");
-        return new Answer(cmd,false,"Not currently applicable for KVMStorageProcessor");
+        return new Answer(cmd, false, "Not currently applicable for KVMStorageProcessor");
     }
 }

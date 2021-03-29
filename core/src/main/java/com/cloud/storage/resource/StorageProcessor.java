@@ -82,7 +82,7 @@ public interface StorageProcessor {
 
     Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd);
 
-    public Answer CheckDataStoreStoragePolicyComplaince(CheckDataStoreStoragePolicyComplainceCommand cmd);
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd);
 
-    public Answer SyncVolumePath(SyncVolumePathCommand cmd);
+    public Answer syncVolumePath(SyncVolumePathCommand cmd);
 }

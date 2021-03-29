@@ -141,10 +141,10 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
                     hosts.add(hostId);
                 }
             } catch (SQLException e) {
-                s_logger.warn("findHostsConnectedToPools:Exception: ", e);
+                s_logger.warn(String.format("Unable to retrieve hosts from pools [%s] due to [%s].", poolIdsInStr, e.getMessage()));
             }
         } catch (Exception e) {
-            s_logger.warn("findHostsConnectedToPools:Exception: ", e);
+            s_logger.warn(String.format("Unable to retrieve hosts from pools [%s] due to [%s].", poolIdsInStr, e.getMessage()));
         }
 
         return hosts;

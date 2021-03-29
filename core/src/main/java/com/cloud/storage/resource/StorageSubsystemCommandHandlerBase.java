@@ -74,9 +74,9 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
         } else if (command instanceof DirectDownloadCommand) {
             return processor.handleDownloadTemplateToPrimaryStorage((DirectDownloadCommand) command);
         } else if (command instanceof CheckDataStoreStoragePolicyComplainceCommand) {
-            return processor.CheckDataStoreStoragePolicyComplaince((CheckDataStoreStoragePolicyComplainceCommand) command);
+            return processor.checkDataStoreStoragePolicyCompliance((CheckDataStoreStoragePolicyComplainceCommand) command);
         } else if (command instanceof SyncVolumePathCommand) {
-            return processor.SyncVolumePath((SyncVolumePathCommand) command);
+            return processor.syncVolumePath((SyncVolumePathCommand) command);
         }
 
         return new Answer((Command)command, false, "not implemented yet");

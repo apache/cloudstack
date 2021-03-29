@@ -20,15 +20,13 @@ package org.apache.cloudstack.storage.command;
 
 import com.cloud.agent.api.to.DiskTO;
 
-public class SyncVolumePathCommand extends StorageSubSystemCommand{
+public class SyncVolumePathCommand extends StorageSubSystemCommand {
 
     private DiskTO disk;
-    private String vmName;
 
-    public SyncVolumePathCommand(final DiskTO disk, final String vmName) {
+    public SyncVolumePathCommand(final DiskTO disk) {
         super();
         this.disk = disk;
-        this.vmName = vmName;
     }
 
     public DiskTO getDisk() {
@@ -37,14 +35,6 @@ public class SyncVolumePathCommand extends StorageSubSystemCommand{
 
     public void setDisk(final DiskTO disk) {
         this.disk = disk;
-    }
-
-    public String getVmName() {
-        return vmName;
-    }
-
-    public void setVmName(final String vmName) {
-        this.vmName = vmName;
     }
 
     @Override

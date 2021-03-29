@@ -24,20 +24,15 @@ import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.exception.StorageConflictException;
-import com.cloud.host.dao.HostDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.StoragePoolTagsDao;
-import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
@@ -62,16 +57,6 @@ public class DefaultHostListener implements HypervisorHostListener {
     PrimaryDataStoreDao primaryStoreDao;
     @Inject
     StoragePoolDetailsDao storagePoolDetailsDao;
-    @Inject
-    StoragePoolTagsDao storagePoolTagsDao;
-    @Inject
-    VolumeDao volumeDao;
-    @Inject
-    VMInstanceDao vmInstanceDao;
-    @Inject
-    HostDao hostDao;
-    @Inject
-    private VolumeDataFactory volFactory;
     @Inject
     StorageManager storageManager;
 

@@ -218,15 +218,15 @@ public class XenServerStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer CheckDataStoreStoragePolicyComplaince(CheckDataStoreStoragePolicyComplainceCommand cmd) {
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd) {
         s_logger.info("'CheckDataStoreStoragePolicyComplainceCommand' not applicable used for XenServerStorageProcessor");
         return new Answer(cmd,false,"Not applicable used for XenServerStorageProcessor");
     }
 
     @Override
-    public Answer SyncVolumePath(SyncVolumePathCommand cmd) {
+    public Answer syncVolumePath(SyncVolumePathCommand cmd) {
         s_logger.info("SyncVolumePathCommand not currently applicable for XenServerStorageProcessor");
-        return new Answer(cmd,false,"Not currently applicable for XenServerStorageProcessor");
+        return new Answer(cmd, false, "Not currently applicable for XenServerStorageProcessor");
     }
 
     @Override
