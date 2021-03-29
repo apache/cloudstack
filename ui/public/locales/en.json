@@ -2692,6 +2692,7 @@
 "message.delete.vpn.customer.gateway": "Please confirm that you want to delete this VPN Customer Gateway",
 "message.delete.vpn.gateway": "Please confirm that you want to delete this VPN Gateway",
 "message.deleting.vm": "Deleting VM",
+"message.deployasis": "Selected template is Deploy As-Is i.e., the VM is deployed by importing an OVA with vApps directly into vCenter. Root disk(s) resize is allowed only on stopped VMs for such templates.", 
 "message.desc.add.new.lb.sticky.rule": "Add new LB sticky rule",
 "message.desc.advanced.zone": "For more sophisticated network topologies. This network model provides the most flexibility in defining guest networks and providing custom network offerings such as firewall, VPN, or load balancer support.",
 "message.desc.basic.zone": "Provide a single network where each VM instance is assigned an IP directly from the network. Guest isolation can be provided through layer-3 means such as security groups (IP address source filtering).",

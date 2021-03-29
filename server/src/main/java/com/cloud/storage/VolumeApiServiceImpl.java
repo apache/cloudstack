@@ -962,8 +962,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // if we are to use the existing disk offering
+        ImageFormat format = null;
         if (newDiskOffering == null) {
-            if (volume.getVolumeType().equals(Volume.Type.ROOT) && diskOffering.getDiskSize() > 0) {
+            Long templateId = volume.getTemplateId();
+            if (templateId != null) {
+                VMTemplateVO template = _templateDao.findById(templateId);
+                format = template.getFormat();
+            }
+
+            if (volume.getVolumeType().equals(Volume.Type.ROOT) && diskOffering.getDiskSize() > 0 && format != null && format != ImageFormat.ISO) {
                 throw new InvalidParameterValueException(
                         "Failed to resize Root volume. The service offering of this Volume has been configured with a root disk size; "
                                 + "on such case a Root Volume can only be resized when changing to another Service Offering with a Root disk size. "

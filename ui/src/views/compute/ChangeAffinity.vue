@@ -29,7 +29,8 @@
         style="margin-bottom: 10px;"
         :placeholder="$t('label.search')"
         v-model="filter"
-        @search="handleSearch" />
+        @search="handleSearch"
+        autoFocus />
     </div>
 
     <div class="form__item">

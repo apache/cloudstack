@@ -50,6 +50,7 @@
                   v-decorator="['securityGroupsEnabled', { valuePropName: 'checked' }]"
                   :value="securityGroupsEnabled"
                   :disabled="!isAdvancedZone"
+                  autoFocus
                 />
               </a-form-item>
               <span>{{ $t('label.menu.security.groups') }}</span>
