@@ -105,7 +105,8 @@
                           @update-template-iso="updateFieldValue" />
                         <span>
                           {{ $t('label.override.rootdisk.size') }}
-                          <a-switch @change="val => { this.showRootDiskSizeChanger = val }" style="margin-left: 10px;"/>
+                          <a-switch :disabled="template.deployasis" @change="val => { this.showRootDiskSizeChanger = val }" style="margin-left: 10px;"/>
+                          <div v-if="template.deployasis">  {{ this.$t('message.deployasis') }} </div>
                         </span>
                         <disk-size-selection
                           v-show="showRootDiskSizeChanger"
@@ -183,6 +184,7 @@
                     </a-form-item>
                     <compute-offering-selection
                       :compute-items="options.serviceOfferings"
+                      :selected-template="template"
                       :row-count="rowCount.serviceOfferings"
                       :zoneId="zoneId"
                       :value="serviceOffering ? serviceOffering.id : ''"
@@ -543,6 +545,9 @@
                         :options="keyboardSelectOptions"
                       ></a-select>
                     </a-form-item>
+                    <a-form-item :label="$t('label.action.start.instance')">
+                      <a-switch v-decorator="['startvm', { initialValue: true }]" :checked="this.startvm" @change="checked => { this.startvm = checked }" />
+                    </a-form-item>
                   </div>
                 </template>
               </a-step>
@@ -663,6 +668,7 @@ export default {
       podId: null,
       clusterId: null,
       zoneSelected: false,
+      startvm: true,
       vm: {
         name: null,
         zoneid: null,
@@ -1419,6 +1425,9 @@ export default {
         if (values.hypervisor && values.hypervisor.length > 0) {
           deployVmData.hypervisor = values.hypervisor
         }
+
+        deployVmData.startvm = values.startvm
+
         // step 3: select service offering
         deployVmData.serviceofferingid = values.computeofferingid
         if (this.serviceOffering && this.serviceOffering.iscustomized) {
