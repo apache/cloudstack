@@ -1259,10 +1259,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             _volsDao.update(volume.getId(), volume);
-            if (userVm != null && Volume.Type.ROOT.equals(volume.getVolumeType())) {
-                Long sizeInGB = newSize / (1024 * 1024 * 1024);
-                userVmDetailsDao.addDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(sizeInGB), true);
-            }
 
             /* Update resource count for the account on primary storage resource */
             if (!shrinkOk) {
