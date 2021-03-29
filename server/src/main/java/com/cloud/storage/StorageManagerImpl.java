@@ -1670,13 +1670,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             final Answer answer = _agentMgr.easySend(hostId, modifyStoragePoolCommand);
 
             if (answer == null) {
-                throw new CloudRuntimeException("Unable to get an answer to the modify storage pool command" + pool.getId());
+                throw new CloudRuntimeException(String.format("Unable to get an answer to the modify storage pool command %s", pool.getUuid()));
             }
 
             if (!answer.getResult()) {
-                String msg = "Unable to process ModifyStoragePoolCommand for " + poolId + " to the host" + hostId;
-                throw new CloudRuntimeException("Unable establish connection from storage head to storage pool " + pool.getId() + " due to " + answer.getDetails() +
-                        pool.getId());
+                throw new CloudRuntimeException(String.format("Unable to process ModifyStoragePoolCommand for pool %s on the host %s due to ", pool.getUuid(), hostId, answer.getDetails()));
             }
 
             assert (answer instanceof ModifyStoragePoolAnswer) : "Well, now why won't you actually return the ModifyStoragePoolAnswer when it's ModifyStoragePoolCommand? Pool=" +

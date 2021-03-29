@@ -166,7 +166,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                         s_logger.debug("ModifyStoragePool false succeeded");
                     }
                     if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
-                        s_logger.debug(String.format("Started synchronising datastore cluster storage pool %s with vCenter", pool.getUuid());
+                        s_logger.debug(String.format("Started synchronising datastore cluster storage pool %s with vCenter", pool.getUuid()));
                         storageManager.syncDatastoreClusterStoragePool(pool.getId(), ((ModifyStoragePoolAnswer) answer).getDatastoreClusterChildren(), host.getId());
                     }
                 }
@@ -331,7 +331,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     s_logger.debug("ModifyStoragePool add succeeded");
                 }
                 if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
-                    s_logger.debug(String.format("Started synchronising datastore cluster storage pool %s with vCenter", pool.getUuid());
+                    s_logger.debug(String.format("Started synchronising datastore cluster storage pool %s with vCenter", pool.getUuid()));
                     storageManager.syncDatastoreClusterStoragePool(pool.getId(), ((ModifyStoragePoolAnswer) answer).getDatastoreClusterChildren(), host.getId());
                 }
             }
