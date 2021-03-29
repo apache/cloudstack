@@ -36,7 +36,8 @@
               rules: [{ required: true, message: $t('message.error.select') }]
             }]"
             @change="onChangeVolume"
-            :placeholder="apiParams.volumeid.description">
+            :placeholder="apiParams.volumeid.description"
+            autoFocus>
             <a-select-option
               v-for="volume in listVolumes"
               :key="volume.id">

@@ -31,7 +31,8 @@
               rules: [{ required: true, message: `${$t('label.required')}` }],
             }
           ]"
-          :placeholder="$t('label.vpncustomergatewayname')" />
+          :placeholder="$t('label.vpncustomergatewayname')"
+          autoFocus />
       </a-form-item>
       <a-form-item>
         <span slot="label">

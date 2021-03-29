@@ -33,7 +33,8 @@
             v-decorator="['semanticversion', {
               rules: [{ required: true, message: $t('message.error.kuberversion') }]
             }]"
-            :placeholder="apiParams.semanticversion.description"/>
+            :placeholder="apiParams.semanticversion.description"
+            autoFocus />
         </a-form-item>
         <a-form-item>
           <span slot="label">

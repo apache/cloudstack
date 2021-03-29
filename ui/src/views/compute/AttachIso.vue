@@ -26,7 +26,8 @@
             v-decorator="['id', {
               initialValue: this.selectedIso,
               rules: [{ required: true, message: `${this.$t('label.required')}`}]
-            }]" >
+            }]"
+            autoFocus>
             <a-select-option v-for="iso in isos" :key="iso.id">
               {{ iso.displaytext || iso.name }}
             </a-select-option>

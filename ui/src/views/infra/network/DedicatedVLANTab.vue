@@ -74,6 +74,7 @@
               v-decorator="['range', {
                 rules: [{ required: true, message: `${$t('label.required')}` }]
               }]"
+              autoFocus
             ></a-input>
           </a-form-item>
 

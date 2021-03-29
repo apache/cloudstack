@@ -117,7 +117,7 @@
       <a-spin :spinning="domainsLoading">
         <div style="margin-bottom: 10px;">
           <div class="list__label">{{ $t('label.account') }}:</div>
-          <a-input v-model="addAccount.account"></a-input>
+          <a-input v-model="addAccount.account" autoFocus></a-input>
         </div>
         <div>
           <div class="list__label">{{ $t('label.domain') }}:</div>
@@ -145,6 +145,7 @@
       >
         <a-form-item :label="$t('label.gateway')" class="form__item">
           <a-input
+            autoFocus
             v-decorator="['gateway', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
           </a-input>
         </a-form-item>
