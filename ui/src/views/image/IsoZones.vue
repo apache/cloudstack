@@ -108,7 +108,8 @@
               :filterOption="(input, option) => {
                 return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
-              :loading="zoneLoading">
+              :loading="zoneLoading"
+              autoFocus>
               <a-select-option v-for="zone in zones" :key="zone.id">
                 {{ zone.name }}
               </a-select-option>

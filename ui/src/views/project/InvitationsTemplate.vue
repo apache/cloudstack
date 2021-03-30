@@ -24,7 +24,8 @@
           style="width: unset"
           :placeholder="$t('label.search')"
           v-model="searchQuery"
-          @search="onSearch" />
+          @search="onSearch"
+          autoFocus />
       </a-col>
       <a-col :md="24" :lg="24">
         <a-table
