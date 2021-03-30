@@ -29,7 +29,8 @@
           v-decorator="['name', {
             rules: [{ required: true, message: $t('message.error.volume.name') }]
           }]"
-          :placeholder="$t('label.volumename')"/>
+          :placeholder="$t('label.volumename')"
+          autoFocus />
       </a-form-item>
       <a-form-item>
         <span slot="label">

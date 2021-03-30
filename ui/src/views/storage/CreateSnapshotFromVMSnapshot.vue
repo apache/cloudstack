@@ -20,6 +20,7 @@
     <a-form class="form" :form="form" @submit="handleSubmit" layout="vertical">
       <a-form-item :label="$t('label.name')">
         <a-input
+          autoFocus
           v-decorator="['name', {
             rules: [{ required: true, message: $t('message.error.name') }]
           }]"

@@ -25,6 +25,7 @@
           }]"
           :checked="isSamlEnabled"
           @change="val => { isSamlEnabled = val }"
+          autoFocus
         />
       </a-form-item>
       <a-form-item :label="$t('label.samlentity')">

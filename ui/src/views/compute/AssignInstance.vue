@@ -29,7 +29,7 @@
 
       <div class="form__item">
         <p class="form__label">{{ $t('label.accounttype') }}</p>
-        <a-select v-model="selectedAccountType" defaultValue="account">
+        <a-select v-model="selectedAccountType" defaultValue="account" autoFocus>
           <a-select-option :value="$t('label.account')">{{ $t('label.account') }}</a-select-option>
           <a-select-option :value="$t('label.project')">{{ $t('label.project') }}</a-select-option>
         </a-select>
@@ -77,9 +77,14 @@
         </a-select>
       </div>
 
-      <a-button type="primary" class="submit-btn" @click="submitData">
-        {{ $t('label.submit') }}
-      </a-button>
+      <div class="submit-btn">
+        <a-button @click="closeAction">
+          {{ $t('label.cancel') }}
+        </a-button>
+        <a-button type="primary" @click="submitData">
+          {{ $t('label.submit') }}
+        </a-button>
+      </div>
 
     </div>
 
@@ -183,6 +188,9 @@ export default {
       this.selectedAccount = null
       this.fetchNetworks()
     },
+    closeAction () {
+      this.$emit('close-action')
+    },
     submitData () {
       let variableKey = ''
       let variableValue = ''
@@ -255,6 +263,10 @@ export default {
   .submit-btn {
     margin-top: 10px;
     align-self: flex-end;
+
+    button {
+      margin-left: 10px;
+    }
   }
 
   .required {

@@ -30,7 +30,8 @@
             v-decorator="['username', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
-            :placeholder="apiParams.username.description" />
+            :placeholder="apiParams.username.description"
+            autoFocus/>
         </a-form-item>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">

@@ -79,6 +79,7 @@
       >
         <a-form-item :label="$t('label.podid')" class="form__item">
           <a-select
+            autoFocus
             v-decorator="['pod', {
               rules: [{ required: true, message: `${$t('label.required')}` }]
             }]"

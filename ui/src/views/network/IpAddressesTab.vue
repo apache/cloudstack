@@ -29,6 +29,7 @@
       <div v-if="$route.path.startsWith('/vpc')">
         Select Tier:
         <a-select
+          autoFocus
           style="width: 40%; margin-left: 15px;margin-bottom: 15px"
           :loading="fetchLoading"
           defaultActiveFirstOption
@@ -110,6 +111,7 @@
         <a-alert :message="$t('message.action.acquire.ip')" type="warning" />
         <a-form-item :label="$t('label.ipaddress')">
           <a-select
+            autoFocus
             style="width: 100%;"
             showSearch
             v-model="acquireIp">
