@@ -23,7 +23,11 @@
 
     <div class="form__item">
       <p class="form__label">{{ $t('label.operation') }}</p>
-      <a-select v-model="selectedOperation" :defaultValue="$t('label.add')" @change="fetchData">
+      <a-select
+        v-model="selectedOperation"
+        :defaultValue="$t('label.add')"
+        @change="fetchData"
+        autoFocus>
         <a-select-option :value="$t('label.add')">{{ $t('label.add') }}</a-select-option>
         <a-select-option :value="$t('label.remove')">{{ $t('label.remove') }}</a-select-option>
         <a-select-option :value="$t('label.reset')">{{ $t('label.reset') }}</a-select-option>

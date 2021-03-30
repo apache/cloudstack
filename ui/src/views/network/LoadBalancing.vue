@@ -21,7 +21,7 @@
       <div class="form">
         <div class="form__item" ref="newRuleName">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.name') }}</div>
-          <a-input v-model="newRule.name"></a-input>
+          <a-input autoFocus v-model="newRule.name"></a-input>
           <span class="error-text">{{ $t('label.required') }}</span>
         </div>
         <div class="form__item" ref="newRulePublicPort">
@@ -157,7 +157,9 @@
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.key') }}</p>
           <a-form-item>
-            <a-input v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
+            <a-input
+              autoFocus
+              v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
           </a-form-item>
         </div>
         <div class="add-tags__input">
@@ -199,7 +201,7 @@
 
       <a-form :form="stickinessPolicyForm" @submit="handleSubmitStickinessForm" class="custom-ant-form">
         <a-form-item :label="$t('label.stickiness.method')">
-          <a-select v-decorator="['methodname']" @change="handleStickinessMethodSelectChange">
+          <a-select autoFocus v-decorator="['methodname']" @change="handleStickinessMethodSelectChange">
             <a-select-option value="LbCookie">{{ $t('label.lb.cookie') }}</a-select-option>
             <a-select-option value="AppCookie">{{ $t('label.app.cookie') }}</a-select-option>
             <a-select-option value="SourceBased">{{ $t('label.source.based') }}</a-select-option>
@@ -278,7 +280,7 @@
       <div class="edit-rule" v-if="selectedRule">
         <div class="edit-rule__item">
           <p class="edit-rule__label">{{ $t('label.name') }}</p>
-          <a-input v-model="editRuleDetails.name" />
+          <a-input autoFocus v-model="editRuleDetails.name" />
         </div>
         <div class="edit-rule__item">
           <p class="edit-rule__label">{{ $t('label.algorithm') }}</p>
@@ -320,6 +322,7 @@
           v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
           <strong>{{ $t('label.select.tier') }} </strong>
           <a-select
+            :autoFocus="'vpcid' in resource && !('associatednetworkid' in resource)"
             v-model="selectedTier"
             @change="fetchVirtualMachines()"
             :placeholder="$t('label.select.tier')" >
@@ -332,6 +335,7 @@
           </a-select>
         </span>
         <a-input-search
+          :autoFocus="!('vpcid' in resource && !('associatednetworkid' in resource))"
           class="input-search"
           :placeholder="$t('label.search')"
           v-model="searchQuery"

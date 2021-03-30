@@ -42,6 +42,7 @@
                 rules: [{ required: true, message: $t('message.error.gateway') }]
               }]"
               :placeholder="$t('label.gateway')"
+              autoFocus
             />
           </a-form-item>
           <a-form-item :style="{ display: 'inline-block', width: '14%' }">

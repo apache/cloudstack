@@ -46,6 +46,7 @@
             ]
           }]"
           :allowClear="true"
+          :autoFocus="index === 0"
         >
           <a-select-option
             v-for="option in field.options"
@@ -59,6 +60,7 @@
           v-else-if="field.switch"
           v-decorator="[field.key]"
           :default-checked="isChecked(field)"
+          :autoFocus="index === 0"
         />
         <a-input
           v-else-if="field.password"
@@ -72,6 +74,7 @@
               }
             ]
           }]"
+          :autoFocus="index === 0"
         />
         <a-input
           v-else
@@ -90,6 +93,7 @@
               }
             ]
           }]"
+          :autoFocus="index === 0"
         />
       </a-form-item>
     </a-form>

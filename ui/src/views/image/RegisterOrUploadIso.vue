@@ -30,7 +30,7 @@
         layout="vertical">
         <a-form-item v-if="currentForm === 'Create'" :label="$t('label.url')">
           <a-input
-            autoFocus
+            :autoFocus="currentForm === 'Create'"
             v-decorator="['url', {
               rules: [{ required: true, message: `${this.$t('label.upload.iso.from.local')}` }]
             }]"
@@ -58,7 +58,8 @@
             v-decorator="['name', {
               rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
             }]"
-            :placeholder="apiParams.name.description" />
+            :placeholder="apiParams.name.description"
+            :autoFocus="currentForm !== 'Create'" />
         </a-form-item>
 
         <a-form-item :label="$t('label.displaytext')">

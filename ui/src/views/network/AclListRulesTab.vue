@@ -112,7 +112,9 @@
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
             <a-form-item>
-              <a-input v-decorator="['key', { rules: [{ required: true, message: $t('message.specifiy.tag.key')}] }]" />
+              <a-input
+                autoFocus
+                v-decorator="['key', { rules: [{ required: true, message: $t('message.specifiy.tag.key')}] }]" />
             </a-form-item>
           </div>
           <div class="add-tags__input">
@@ -149,7 +151,7 @@
       v-ctrl-enter="handleRuleModalForm">
       <a-form :form="ruleForm" @submit="handleRuleModalForm">
         <a-form-item :label="$t('label.number')">
-          <a-input-number style="width: 100%" v-decorator="['number']" />
+          <a-input-number autoFocus style="width: 100%" v-decorator="['number']" />
         </a-form-item>
         <a-form-item :label="$t('label.cidrlist')">
           <a-input v-decorator="['cidrlist']" />

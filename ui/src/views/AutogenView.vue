@@ -172,7 +172,7 @@
                   }]"
                   v-model="formModel[field.name]"
                   :placeholder="field.description"
-                  :autoFocus="fieldIndex === 0"
+                  :autoFocus="fieldIndex === firstIndex"
                 />
               </span>
               <span v-else-if="currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].options">
@@ -182,6 +182,7 @@
                     rules: [{ required: field.required, message: `${$t('message.error.select')}` }]
                   }]"
                   :placeholder="field.description"
+                  :autoFocus="fieldIndex === firstIndex"
                 >
                   <a-select-option key="" >{{ }}</a-select-option>
                   <a-select-option v-for="(opt, optIndex) in currentAction.mapping[field.name].options" :key="optIndex">
@@ -203,6 +204,7 @@
                   :filterOption="(input, option) => {
                     return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
+                  :autoFocus="fieldIndex === firstIndex"
                 >
                   <a-select-option key="">{{ }}</a-select-option>
                   <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
@@ -223,6 +225,7 @@
                   :filterOption="(input, option) => {
                     return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
+                  :autoFocus="fieldIndex === firstIndex"
                 >
                   <a-select-option key="">{{ }}</a-select-option>
                   <a-select-option v-for="opt in field.opts" :key="opt.id">
@@ -238,6 +241,7 @@
                     rules: [{ required: field.required, message: `${$t('message.error.select')}` }]
                   }]"
                   :placeholder="field.description"
+                  :autoFocus="fieldIndex === firstIndex"
                 >
                   <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                     {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
@@ -246,7 +250,7 @@
               </span>
               <span v-else-if="field.type==='long'">
                 <a-input-number
-                  :autoFocus="fieldIndex === 0"
+                  :autoFocus="fieldIndex === firstIndex"
                   style="width: 100%;"
                   v-decorator="[field.name, {
                     rules: [{ required: field.required, message: `${$t('message.validate.number')}` }]
@@ -269,6 +273,7 @@
                   }]"
                   :placeholder="field.description"
                   @blur="($event) => handleConfirmBlur($event, field.name)"
+                  :autoFocus="fieldIndex === firstIndex"
                 />
               </span>
               <span v-else-if="field.name==='certificate' || field.name==='privatekey' || field.name==='certchain'">
@@ -278,11 +283,12 @@
                     rules: [{ required: field.required, message: `${$t('message.error.required.input')}` }]
                   }]"
                   :placeholder="field.description"
+                  :autoFocus="fieldIndex === firstIndex"
                 />
               </span>
               <span v-else>
                 <a-input
-                  :autoFocus="fieldIndex === 0"
+                  :autoFocus="fieldIndex === firstIndex"
                   v-decorator="[field.name, {
                     rules: [{ required: field.required, message: `${$t('message.error.required.input')}` }]
                   }]"
@@ -398,7 +404,8 @@ export default {
       searchParams: {},
       actions: [],
       formModel: {},
-      confirmDirty: false
+      confirmDirty: false,
+      firstIndex: 0
     }
   },
   beforeCreate () {
@@ -761,6 +768,7 @@ export default {
           })
         }
       }
+      this.getFirstIndexFocus()
 
       this.showAction = true
       for (const param of this.currentAction.paramFields) {
@@ -774,6 +782,16 @@ export default {
       this.actionLoading = false
       if (action.dataView && ['copy', 'edit', 'share-alt'].includes(action.icon)) {
         this.fillEditFormFieldValues()
+      }
+    },
+    getFirstIndexFocus () {
+      this.firstIndex = 0
+      for (let fieldIndex = 0; fieldIndex < this.currentAction.paramFields.length; fieldIndex++) {
+        const field = this.currentAction.paramFields[fieldIndex]
+        if (!(this.currentAction.mapping && field.name in this.currentAction.mapping && this.currentAction.mapping[field.name].value)) {
+          this.firstIndex = fieldIndex
+          break
+        }
       }
     },
     listUuidOpts (param) {

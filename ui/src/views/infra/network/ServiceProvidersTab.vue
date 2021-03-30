@@ -78,6 +78,7 @@
             :label="$t('label.' + field.name)">
             <span v-if="field.name==='password'">
               <a-input-password
+                :autoFocus="index===0"
                 v-decorator="[field.name, {
                   rules: [
                     {
@@ -90,6 +91,7 @@
             </span>
             <span v-else-if="field.type==='boolean'">
               <a-switch
+                :autoFocus="index===0"
                 v-decorator="[field.name, {
                   rules: [{
                     required: field.required,
@@ -101,6 +103,7 @@
             </span>
             <span v-else-if="field.type==='uuid'">
               <a-select
+                :autoFocus="index===0"
                 v-decorator="[field.name, {
                   rules: [{
                     required: field.required,
@@ -116,6 +119,7 @@
             </span>
             <span v-else>
               <a-input
+                :autoFocus="index===0"
                 v-decorator="[field.name, {
                   rules: [
                     {

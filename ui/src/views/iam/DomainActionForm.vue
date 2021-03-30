@@ -67,6 +67,7 @@
                   rules: [{ required: field.required, message: $t('message.error.select') }]
                 }]"
                 :placeholder="field.description"
+                :autoFocus="fieldIndex === firstIndex"
               >
                 <a-select-option v-for="(opt, optIndex) in action.mapping[field.name].options" :key="optIndex">
                   {{ opt }}
@@ -86,6 +87,7 @@
                 :filterOption="(input, option) => {
                   return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
+                :autoFocus="fieldIndex === firstIndex"
               >
                 <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                   {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
@@ -100,6 +102,7 @@
                   rules: [{ required: field.required, message: $t('message.error.select') }]
                 }]"
                 :placeholder="field.description"
+                :autoFocus="fieldIndex === firstIndex"
               >
                 <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                   {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
@@ -112,6 +115,7 @@
                   rules: [{ required: field.required, message: `${$t('message.validate.number')}` }]
                 }]"
                 :placeholder="field.description"
+                :autoFocus="fieldIndex === firstIndex"
               />
             </span>
             <span v-else>
@@ -119,7 +123,8 @@
                 v-decorator="[field.name, {
                   rules: [{ required: field.required, message: $t('message.error.required.input') }]
                 }]"
-                :placeholder="field.description" />
+                :placeholder="field.description"
+                :autoFocus="fieldIndex === firstIndex" />
             </span>
           </a-form-item>
 
@@ -154,6 +159,16 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
+  },
+  created () {
+    this.firstIndex = 0
+    for (let fieldIndex = 0; fieldIndex < this.action.paramFields.length; fieldIndex++) {
+      const field = this.action.paramFields[fieldIndex]
+      if (!(this.action.mapping && field.name in this.action.mapping && this.action.mapping[field.name].value)) {
+        this.firstIndex = fieldIndex
+        break
+      }
+    }
   },
   mounted () {
     if (this.action.dataView && this.action.icon === 'edit') {

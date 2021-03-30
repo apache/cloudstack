@@ -31,7 +31,8 @@
               initialValue: selectedRole,
               rules: [{ required: true, message: $t('message.error.select') }] }]"
             :loading="roleLoading"
-            :placeholder="apiParams.roleid.description">
+            :placeholder="apiParams.roleid.description"
+            autoFocus>
             <a-select-option v-for="role in roles" :key="role.id">
               {{ role.name + ' (' + role.type + ')' }}
             </a-select-option>

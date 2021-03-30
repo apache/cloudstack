@@ -46,6 +46,7 @@
               }]
             }]"
             style="width: 100%;"
+            autoFocus
           />
         </a-form-item>
         <span :style="{ display: 'inline-block', width: '24px', textAlign: 'center' }">

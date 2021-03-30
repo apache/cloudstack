@@ -32,6 +32,7 @@
             }]"
             :loading="loading"
             @change="val => { selectedStore = val }"
+            autoFocus
           >
             <a-select-option
               v-for="store in imageStores"

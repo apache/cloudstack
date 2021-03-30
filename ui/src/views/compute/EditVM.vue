@@ -30,7 +30,8 @@
           </a-tooltip>
         </span>
         <a-input
-          v-decorator="['name', { initialValue: resource.name || '' }]" />
+          v-decorator="['name', { initialValue: resource.name || '' }]"
+          autoFocus />
       </a-form-item>
       <a-form-item>
         <span slot="label">

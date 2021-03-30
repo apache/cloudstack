@@ -29,7 +29,7 @@
       :pagination="false"
       style="margin-bottom: 24px;">
       <template slot="name" slot-scope="text, record">
-        <a-input :value="text" @change="e => onCellChange(record.key, 'name', e.target.value)" />
+        <a-input :value="text" @change="e => onCellChange(record.key, 'name', e.target.value)" autoFocus />
       </template>
       <template slot="isolationMethod" slot-scope="text, record">
         <a-select

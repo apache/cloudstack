@@ -45,7 +45,8 @@
                 }
               }]
             }]"
-            :placeholder="apiParams.size.description"/>
+            :placeholder="apiParams.size.description"
+            autoFocus />
         </a-form-item>
         <a-form-item>
           <span slot="label">
