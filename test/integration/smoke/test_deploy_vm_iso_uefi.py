@@ -30,6 +30,7 @@ from marvin.lib.base import (Account,
                              )
 from marvin.lib.common import (get_zone,
                                get_domain,
+                               list_hosts,
                                )
 from marvin.codes import PASS
 from marvin.sshClient import SshClient
@@ -52,6 +53,11 @@ class TestDeployVMFromISOWithUefi(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+
+        hosts = list_hosts(cls.apiclient, zoneid = cls.zone.id, type="Routing")
+
+        if not cls.isUefiEnabledOnAtLeastOnHost(hosts):
+            raise unittest.SkipTest("At least one host should support UEFI")
      
         cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
 
@@ -220,3 +226,10 @@ class TestDeployVMFromISOWithUefi(cloudstackTestCase):
         instancename = self.virtual_machine.instancename
         virshxml = self.getVirshXML(host, instancename)
         self.checkBootTypeAndMode(virshxml, bootmodesecure, isWindowsIso)
+
+    @classmethod
+    def isUefiEnabledOnAtLeastOnHost(cls, hosts):
+        for h in hosts:
+            if h.ueficapability:
+                return True
+        return False
