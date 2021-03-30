@@ -809,7 +809,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         try{
             qemu.create(destFile, options);
             Map<String, String> info = qemu.info(destFile);
-            virtualSize = Long.parseLong(info.get("virtual_size"));
+            virtualSize = Long.parseLong(info.get(QemuImg.VIRTUAL_SIZE));
             actualSize = new File(destFile.getFileName()).length();
         } catch (QemuImgException e) {
             s_logger.error("Failed to create " + volPath +
@@ -1287,7 +1287,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 srcFile = new QemuImgFile(sourcePath, sourceFormat);
                 try {
                     Map<String, String> info = qemu.info(srcFile);
-                    String backingFile = info.get("backing_file");
+                    String backingFile = info.get(QemuImg.BACKING_FILE);
                     // qcow2 templates can just be copied into place
                     if (sourceFormat.equals(destFormat) && backingFile == null && sourcePath.endsWith(".qcow2")) {
                         String result = Script.runSimpleBashScript("cp -f " + sourcePath + " " + destPath, timeout);
@@ -1299,7 +1299,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                         try {
                             qemu.convert(srcFile, destFile);
                             Map<String, String> destInfo = qemu.info(destFile);
-                            Long virtualSize = Long.parseLong(destInfo.get("virtual_size"));
+                            Long virtualSize = Long.parseLong(destInfo.get(QemuImg.VIRTUAL_SIZE));
                             newDisk.setVirtualSize(virtualSize);
                             newDisk.setSize(virtualSize);
                         } catch (QemuImgException e) {
