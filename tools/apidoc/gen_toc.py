@@ -95,7 +95,7 @@ known_categories = {
     'StorageMaintenance': 'Storage Pool',
     'StoragePool': 'Storage Pool',
     'StorageProvider': 'Storage Pool',
-    'SyncStoragePool': 'Storage Pool',
+    'syncStoragePool': 'Storage Pool',
     'SecurityGroup': 'Security Group',
     'SSH': 'SSH',
     'register': 'Registration',

@@ -1791,6 +1791,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 if (hostId == null) {
                     hostId = vmInstance.getLastHostId();
                 }
+                HostVO hostVO = _hostDao.findById(hostId);
 
                 // Prepare for the syncvolumepath command
                 DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
@@ -1799,6 +1800,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 details.put(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
                 disk.setDetails(details);
 
+                s_logger.debug(String.format("Attempting to process SyncVolumePathCommand for the volume %d on the host %d with state %s", volumeId, hostId, hostVO.getResourceState()));
                 SyncVolumePathCommand cmd = new SyncVolumePathCommand(disk);
                 final Answer answer = _agentMgr.easySend(hostId, cmd);
                 // validate answer
@@ -1806,7 +1808,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     throw new CloudRuntimeException("Unable to get an answer to the SyncVolumePath command for volume " + volumeId);
                 }
                 if (!answer.getResult()) {
-                    String msg = "Unable to process SyncVolumePathCommand for the volume" + volumeId + " to the host" + hostId;
                     throw new CloudRuntimeException("Unable to process SyncVolumePathCommand for the volume" + volumeId + " to the host " + hostId + " due to " + answer.getDetails());
                 }
                 assert (answer instanceof SyncVolumePathAnswer) : "Well, now why won't you actually return the SyncVolumePathAnswer when it's SyncVolumePathCommand? volume=" +
