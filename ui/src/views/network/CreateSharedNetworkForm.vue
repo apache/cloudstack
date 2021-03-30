@@ -736,7 +736,7 @@ export default {
             message: this.$t('message.request.failed'),
             description: this.$t('message.error.add.guest.network')
           })
-          return;
+          return
         }
         this.actionLoading = true
         var params = {
