@@ -129,6 +129,10 @@ export default {
         this.selectedDomain = this.domains[0].id
         this.fetchAccounts()
         this.fetchProjects()
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
       })
     },
     fetchAccounts () {
@@ -140,6 +144,9 @@ export default {
         isrecursive: false
       }).then(response => {
         this.accounts = response.listaccountsresponse.account
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
         this.loading = false
       })
     },
@@ -153,6 +160,9 @@ export default {
         isrecursive: false
       }).then(response => {
         this.projects = response.listprojectsresponse.project
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
         this.loading = false
       })
     },
@@ -167,6 +177,9 @@ export default {
         projectid: this.selectedProject
       }).then(response => {
         this.networks = response.listnetworksresponse.network
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
         this.loading = false
       })
     },
