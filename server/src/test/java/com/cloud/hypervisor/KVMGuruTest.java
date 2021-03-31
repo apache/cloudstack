@@ -379,8 +379,8 @@ public class KVMGuruTest {
         }
     }
 
-     @Test
-    public void ConfigureVmOsDescription(){
+    @Test
+    public void validateConfigureVmOsDescriptionHostNotNullAndGuestOsMappingNotNullAndGuestOsDisplayNameNotNull(){
         guru._guestOsDao = guestOsDaoMock;
         guru._guestOsHypervisorDao = guestOSHypervisorDaoMock;
 
@@ -397,7 +397,7 @@ public class KVMGuruTest {
     }
 
     @Test
-    public void validateVirtualMachineSetPlatformEmulatorHostNotNullAndGuestOsMappingNullAndGuestOsDisplayNameNull(){
+    public void validateConfigureVmOsDescriptionHostNotNullAndGuestOsMappingNullAndGuestOsDisplayNameNull(){
         guru._guestOsDao = guestOsDaoMock;
         guru._guestOsHypervisorDao = guestOSHypervisorDaoMock;
 
@@ -412,7 +412,7 @@ public class KVMGuruTest {
     }
 
     @Test
-    public void validateVirtualMachineSetPlatformEmulatorHostNotNullAndGuestOsMappingNullAndGuestOsDisplayNameNotNull(){
+    public void validateConfigureVmOsDescriptionHostNotNullAndGuestOsMappingNullAndGuestOsDisplayNameNotNull(){
         guru._guestOsDao = guestOsDaoMock;
         guru._guestOsHypervisorDao = guestOSHypervisorDaoMock;
 
@@ -429,7 +429,7 @@ public class KVMGuruTest {
     }
 
     @Test
-    public void validateVirtualMachineSetPlatformEmulatorHostNullAndGuestOsMappingNullAndGuestOsDisplayNameNull(){
+    public void validateConfigureVmOsDescriptionHostNullAndGuestOsMappingNullAndGuestOsDisplayNameNull(){
         guru._guestOsDao = guestOsDaoMock;
         VirtualMachineTO virtualMachineTo = new VirtualMachineTO() {};
 
@@ -440,7 +440,7 @@ public class KVMGuruTest {
     }
 
     @Test
-    public void validateVirtualMachineSetPlatformEmulatorHostNullAndGuestOsMappingNullAndGuestOsDisplayNameNotNull(){
+    public void validateConfigureVmOsDescriptionHostNullAndGuestOsMappingNullAndGuestOsDisplayNameNotNull(){
         guru._guestOsDao = guestOsDaoMock;
 
         VirtualMachineTO virtualMachineTo = new VirtualMachineTO() {};
