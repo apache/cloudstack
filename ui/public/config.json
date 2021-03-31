@@ -46,5 +46,6 @@
     "jp": "label.japanese.keyboard",
     "sc": "label.simplified.chinese.keyboard"
   },
-  "plugins": []
+  "plugins": [],
+  "basicZoneEnabled": false
 }
