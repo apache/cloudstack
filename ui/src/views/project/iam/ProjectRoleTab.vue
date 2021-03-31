@@ -72,10 +72,10 @@
             @submit="updateProjectRole"
             layout="vertical">
             <a-form-item :label="$t('label.name')">
-              <a-input v-decorator="[ 'name' ]"></a-input>
+              <a-input v-decorator="['name']" autoFocus></a-input>
             </a-form-item>
             <a-form-item :label="$t('label.description')">
-              <a-input v-decorator="[ 'description' ]"></a-input>
+              <a-input v-decorator="['description']"></a-input>
             </a-form-item>
             <div :span="24" class="action-button">
               <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
@@ -119,7 +119,9 @@
             @submit="createProjectRole"
             layout="vertical">
             <a-form-item :label="$t('label.name')">
-              <a-input v-decorator="[ 'name', { rules: [{ required: true, message: 'Please provide input' }] }]"></a-input>
+              <a-input
+                v-decorator="[ 'name', { rules: [{ required: true, message: 'Please provide input' }] }]"
+                autoFocus></a-input>
             </a-form-item>
             <a-form-item :label="$t('label.description')">
               <a-input v-decorator="[ 'description' ]"></a-input>

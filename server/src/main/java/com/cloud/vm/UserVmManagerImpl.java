@@ -514,7 +514,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     private UserVmDeployAsIsDetailsDao userVmDeployAsIsDetailsDao;
     @Inject
-    private StorageManager _storageManager;
+    private StorageManager storageManager;
     @Inject
     private ServiceOfferingJoinDao serviceOfferingJoinDao;
 
@@ -2055,7 +2055,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (poolType == StoragePoolType.PowerFlex) {
                     // Get volume stats from the pool directly instead of sending cmd to host
                     // Added support for ScaleIO/PowerFlex pool only
-                    answer = _storageManager.getVolumeStats(storagePool, cmd);
+                    answer = storageManager.getVolumeStats(storagePool, cmd);
                 } else {
                     if (timeout > 0) {
                         cmd.setWait(timeout/1000);
@@ -3874,8 +3874,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         String instanceName = null;
+        String instanceSuffix = _instance;
         String uuidName = _uuidMgr.generateUuid(UserVm.class, customId);
         if (_instanceNameFlag && HypervisorType.VMware.equals(hypervisorType)) {
+            if (StringUtils.isNotEmpty(hostName)) {
+                instanceSuffix = hostName;
+            }
             if (hostName == null) {
                 if (displayName != null) {
                     hostName = displayName;
@@ -3900,7 +3904,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // Check is hostName is RFC compliant
             checkNameForRFCCompliance(hostName);
         }
-        instanceName = VirtualMachineName.getVmName(id, owner.getId(), _instance);
+        instanceName = VirtualMachineName.getVmName(id, owner.getId(), instanceSuffix);
+        if (_instanceNameFlag && HypervisorType.VMware.equals(hypervisorType) && !instanceSuffix.equals(_instance)) {
+            customParameters.put(VmDetailConstants.NAME_ON_HYPERVISOR, instanceName);
+        }
 
         // Check if VM with instanceName already exists.
         VMInstanceVO vmObj = _vmInstanceDao.findVMByInstanceName(instanceName);
@@ -4129,7 +4136,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 persistVMDeployAsIsProperties(vm, userVmOVFPropertiesMap);
 
-                _vmDao.saveDetails(vm);
+                List<String> hiddenDetails = new ArrayList<>();
+                if (customParameters.containsKey(VmDetailConstants.NAME_ON_HYPERVISOR)) {
+                    hiddenDetails.add(VmDetailConstants.NAME_ON_HYPERVISOR);
+                }
+                _vmDao.saveDetails(vm, hiddenDetails);
                 if (!isImport) {
                     s_logger.debug("Allocating in the DB for vm");
                     DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
@@ -5351,17 +5362,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         ServiceOfferingJoinVO svcOffering = serviceOfferingJoinDao.findById(serviceOfferingId);
 
-        if (template.isDeployAsIs() && svcOffering != null && svcOffering.getRootDiskSize() != null && svcOffering.getRootDiskSize() > 0) {
-            throw new InvalidParameterValueException("Failed to deploy Virtual Machine as a service offering with root disk size specified cannot be used with a deploy as-is template");
-        }
+        if (template.isDeployAsIs()) {
+            if (svcOffering != null && svcOffering.getRootDiskSize() != null && svcOffering.getRootDiskSize() > 0) {
+                throw new InvalidParameterValueException("Failed to deploy Virtual Machine as a service offering with root disk size specified cannot be used with a deploy as-is template");
+            }
 
-        if (template.isDeployAsIs() && cmd.getDetails().get("rootdisksize") != null) {
-            throw new InvalidParameterValueException("Overriding root disk size isn't supported for VMs deployed from defploy as-is templates");
-        }
+            if (cmd.getDetails().get("rootdisksize") != null) {
+                throw new InvalidParameterValueException("Overriding root disk size isn't supported for VMs deployed from defploy as-is templates");
+            }
 
-        // Bootmode and boottype are not supported on VMWare dpeloy-as-is templates (since 4.15)
-        if (template.isDeployAsIs() && (cmd.getBootMode() != null || cmd.getBootType() != null)) {
-            throw new InvalidParameterValueException("Boot type and boot mode are not supported on VMware, as we honour what is defined in the template.");
+            // Bootmode and boottype are not supported on VMWare dpeloy-as-is templates (since 4.15)
+            if ((cmd.getBootMode() != null || cmd.getBootType() != null)) {
+                throw new InvalidParameterValueException("Boot type and boot mode are not supported on VMware, as we honour what is defined in the template.");
+            }
         }
 
         Long diskOfferingId = cmd.getDiskOfferingId();
@@ -6395,7 +6408,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
                 if (hypervisorType.equals(HypervisorType.VMware)) {
                     try {
-                        boolean isStoragePoolStoragepolicyComplaince = _storageManager.isStoragePoolComplaintWithStoragePolicy(Arrays.asList(volume), pool);
+                        boolean isStoragePoolStoragepolicyComplaince = storageManager.isStoragePoolComplaintWithStoragePolicy(Arrays.asList(volume), pool);
                         if (!isStoragePoolStoragepolicyComplaince) {
                             throw new CloudRuntimeException(String.format("Storage pool %s is not storage policy compliance with the volume %s", pool.getUuid(), volume.getUuid()));
                         }

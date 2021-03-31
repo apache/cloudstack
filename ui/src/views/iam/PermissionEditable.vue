@@ -18,7 +18,8 @@
 <template>
   <a-select
     :value="defaultValue"
-    @change="handleChange">
+    @change="handleChange"
+    autoFocus>
     <a-select-option value="allow">{{ $t('label.allow') }}</a-select-option>
     <a-select-option value="deny">{{ $t('label.deny') }}</a-select-option>
   </a-select>
