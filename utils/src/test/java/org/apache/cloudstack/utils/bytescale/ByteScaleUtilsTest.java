@@ -26,15 +26,28 @@ public class ByteScaleUtilsTest extends TestCase {
 
     @Test
     public void validateMibToBytes() {
-        int mib = 3;
-        int b = 1024 * 1024 * mib;
+        long mib = 3000L;
+        long b = 1024L * 1024L * mib;
         assertEquals(b, ByteScaleUtils.mibToBytes(mib));
     }
 
     @Test
     public void validateBytesToKib() {
-        int kib = 1024 * 3;
-        int b = 1024 * kib;
+        long kib = 1024L * 3000L;
+        long b = 1024 * kib;
         assertEquals(kib, ByteScaleUtils.bytesToKib(b));
+    }
+
+    @Test
+    public void validateMibToBytesIfIntTimesIntThenMustExtrapolateIntMaxValue() {
+        int mib = 3000;
+        long b = 1024L * 1024L * mib;
+        assertEquals(b, ByteScaleUtils.mibToBytes(mib));
+    }
+
+    @Test
+    public void validateBytesToKibIfIntByIntThenMustExtrapolateIntMaxValue(){
+        int b = Integer.MAX_VALUE;
+        assertEquals(b, ByteScaleUtils.bytesToKib(b * 1024L));
     }
 }

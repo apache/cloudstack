@@ -22,18 +22,18 @@ package org.apache.cloudstack.utils.bytescale;
  */
 public class ByteScaleUtils {
 
-    public static final int KiB = 1024;
-    public static final int MiB = KiB * 1024;
+    public static final long KiB = 1024;
+    public static final long MiB = KiB * 1024;
 
     private ByteScaleUtils() {}
 
     /**
      * Converts mebibytes to bytes.
      *
-     * @param mib The integer value to convert to bytes (eq: 1, 2, 3, ..., 42,...).
+     * @param mib The value to convert to bytes (eq: 1, 2, 3, ..., 42,...).
      * @return The parameter multiplied by 1048576 (1024 * 1024, 1 MiB).
      */
-    public static long mibToBytes(int mib) {
+    public static long mibToBytes(long mib) {
         return mib * MiB;
     }
 
