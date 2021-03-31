@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.hypervisor.vmware.resource;
 
+import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -45,11 +48,12 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.DeployAsIsInfoTO;
-import com.cloud.agent.api.ValidateVcenterDetailsCommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
+import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
@@ -162,6 +166,7 @@ import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.ValidateSnapshotAnswer;
 import com.cloud.agent.api.ValidateSnapshotCommand;
+import com.cloud.agent.api.ValidateVcenterDetailsCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.VolumeStatsEntry;
@@ -178,12 +183,13 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
 import com.cloud.agent.api.storage.MigrateVolumeCommand;
-import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DeployAsIsInfoTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NfsTO;
@@ -191,6 +197,7 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
@@ -219,8 +226,8 @@ import com.cloud.hypervisor.vmware.mo.HostStorageSystemMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
 import com.cloud.hypervisor.vmware.mo.PbmProfileManagerMO;
-import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.hypervisor.vmware.mo.StoragepodMO;
+import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfoBuilder;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
@@ -289,7 +296,6 @@ import com.vmware.vim25.HostInternetScsiHba;
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.NasDatastoreInfo;
-import com.vmware.vim25.VirtualMachineDefinedProfileSpec;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.OptionValue;
 import com.vmware.vim25.PerfCounterInfo;
@@ -324,6 +330,7 @@ import com.vmware.vim25.VirtualEthernetCardOpaqueNetworkBackingInfo;
 import com.vmware.vim25.VirtualIDEController;
 import com.vmware.vim25.VirtualMachineBootOptions;
 import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualMachineDefinedProfileSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineFileLayoutEx;
 import com.vmware.vim25.VirtualMachineFileLayoutExFileInfo;
@@ -343,13 +350,6 @@ import com.vmware.vim25.VmConfigInfo;
 import com.vmware.vim25.VmConfigSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
-import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-
-import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService, VirtualRouterDeployer {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
@@ -4415,7 +4415,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     private Answer migrateAndAnswer(VirtualMachineMO vmMo, String poolUuid, VmwareHypervisorHost hyperHost, Command cmd) throws Exception {
         ManagedObjectReference morDs = getTargetDatastoreMOReference(poolUuid, hyperHost);
-
+        VmwareHypervisorHost targetHyperHost = null;
+        if (cmd instanceof MigrateVmToPoolCommand) {
+            MigrateVmToPoolCommand vmToPoolCommand = (MigrateVmToPoolCommand) cmd;
+            targetHyperHost = VmwareHelper.getHostMOFromHostName(getServiceContext(),
+                    vmToPoolCommand.getHostGuidInTargetCluster());
+        }
+        if (morDs == null && targetHyperHost != null) {
+            morDs = getTargetDatastoreMOReference(poolUuid, targetHyperHost);
+        }
+        if (morDs == null) {
+            String msg = String.format("Failed to find datastore for pool UUID: %s", poolUuid);
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
         try {
             // OfflineVmwareMigration: getVolumesFromCommand(cmd);
             Map<Integer, Long> volumeDeviceKey = getVolumesFromCommand(vmMo, cmd);
@@ -4424,7 +4437,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     s_logger.trace(String.format("disk to migrate has disk id %d and volumeId %d", diskId, volumeDeviceKey.get(diskId)));
                 }
             }
-            if (vmMo.changeDatastore(morDs)) {
+            if (vmMo.changeDatastore(morDs, targetHyperHost)) {
                 // OfflineVmwareMigration: create target specification to include in answer
                 // Consolidate VM disks after successful VM migration
                 // In case of a linked clone VM, if VM's disks are not consolidated, further VM operations such as volume snapshot, VM snapshot etc. will result in DB inconsistencies.
