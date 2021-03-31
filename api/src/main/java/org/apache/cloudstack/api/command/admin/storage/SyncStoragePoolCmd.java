@@ -36,7 +36,7 @@ import org.apache.cloudstack.context.CallContext;
 import java.util.logging.Logger;
 
 @APICommand(name = SyncStoragePoolCmd.APINAME,
-        description = "Sync storage pool with management server",
+        description = "Sync storage pool with management server (currently supported for Datastore Cluster in VMware and syncs the datastores in it)",
         responseObject = StoragePoolResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
