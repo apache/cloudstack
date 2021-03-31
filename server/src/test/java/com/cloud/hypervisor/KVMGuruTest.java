@@ -301,11 +301,12 @@ public class KVMGuruTest {
     }
 
     @Test
-    public void validateConfigureVmMemoryAndCpuCoresServiceOfferingIsDynamicCallGetMethods(){
+    public void validateConfigureVmMemoryAndCpuCoresServiceOfferingIsDynamicAndVmIsDynamicCallGetMethods(){
         guru.serviceOfferingDao = serviceOfferingDaoMock;
 
         Mockito.doReturn(serviceOfferingVoMock).when(serviceOfferingDaoMock).findById(Mockito.anyLong(), Mockito.anyLong());
         Mockito.doReturn(true).when(serviceOfferingVoMock).isDynamic();
+        Mockito.doReturn(true).when(vmTO).isEnableDynamicallyScaleVm();
 
         guru.configureVmMemoryAndCpuCores(vmTO, host, virtualMachineMock, vmProfile);
 
@@ -314,11 +315,26 @@ public class KVMGuruTest {
     }
 
     @Test
-    public void validateConfigureVmMemoryAndCpuCoresServiceOfferingIsNotDynamicDoNotCallGetMethods(){
+    public void validateConfigureVmMemoryAndCpuCoresServiceOfferingIsNotDynamicAndVmIsDynamicDoNotCallGetMethods(){
         guru.serviceOfferingDao = serviceOfferingDaoMock;
 
         Mockito.doReturn(serviceOfferingVoMock).when(serviceOfferingDaoMock).findById(Mockito.anyLong(), Mockito.anyLong());
         Mockito.doReturn(false).when(serviceOfferingVoMock).isDynamic();
+        Mockito.lenient().doReturn(true).when(vmTO).isEnableDynamicallyScaleVm();
+
+        guru.configureVmMemoryAndCpuCores(vmTO, host, virtualMachineMock, vmProfile);
+
+        Mockito.verify(guru, Mockito.never()).getVmMaxMemory(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyLong());
+        Mockito.verify(guru, Mockito.never()).getVmMaxCpuCores(Mockito.any(ServiceOfferingVO.class), Mockito.anyString(), Mockito.anyInt());
+    }
+
+    @Test
+    public void validateConfigureVmMemoryAndCpuCoresServiceOfferingIsDynamicAndVmIsNotDynamicDoNotCallGetMethods(){
+        guru.serviceOfferingDao = serviceOfferingDaoMock;
+
+        Mockito.doReturn(serviceOfferingVoMock).when(serviceOfferingDaoMock).findById(Mockito.anyLong(), Mockito.anyLong());
+        Mockito.doReturn(true).when(serviceOfferingVoMock).isDynamic();
+        Mockito.doReturn(false).when(vmTO).isEnableDynamicallyScaleVm();
 
         guru.configureVmMemoryAndCpuCores(vmTO, host, virtualMachineMock, vmProfile);
 

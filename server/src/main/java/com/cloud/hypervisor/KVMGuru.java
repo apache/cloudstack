@@ -178,7 +178,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         Integer maxCpuCores = minCpuCores;
 
         ServiceOfferingVO serviceOfferingVO = serviceOfferingDao.findById(virtualMachineProfile.getId(), virtualMachineProfile.getServiceOfferingId());
-        if (serviceOfferingVO.isDynamic()) {
+        if (serviceOfferingVO.isDynamic() && virtualMachineTo.isEnableDynamicallyScaleVm()) {
             serviceOfferingDao.loadDetails(serviceOfferingVO);
 
             maxMemory = getVmMaxMemory(serviceOfferingVO, vmDescription, maxHostMemory);
