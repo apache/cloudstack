@@ -47,5 +47,5 @@
     "sc": "label.simplified.chinese.keyboard"
   },
   "plugins": [],
-  "basicZoneEnabled": false
+  "basicZoneEnabled": true
 }
