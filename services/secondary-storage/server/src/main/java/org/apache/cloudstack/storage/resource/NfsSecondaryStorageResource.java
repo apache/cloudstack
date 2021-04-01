@@ -1167,11 +1167,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             try (FileOutputStream outputStream = new FileOutputStream(destFile);) {
                 entity.writeTo(outputStream);
             } catch (IOException e) {
-                s_logger.error("downloadFromUrlToNfs:Exception:" + e.getMessage(), e);
+                s_logger.error(String.format("Unable to download from url [%s] to nfs path [%s] due to [%s]",
+                        url,destFile.getPath(),e.getMessage()), e);
             }
             return new File(destFile.getAbsolutePath());
         } catch (IOException e) {
-            s_logger.error("Faild to get url:" + url + ", due to " + e.toString());
+            s_logger.error("Failed to get url:" + url + ", due to " + e.toString(), e);
             throw new CloudRuntimeException(e);
         }
     }
@@ -1210,7 +1211,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             try (FileInputStream fs = new FileInputStream(file)) {
                 md5sum = DigestUtils.md5Hex(fs);
             } catch (IOException e) {
-                s_logger.error("Failed to get md5sum: " + file.getAbsoluteFile());
+                s_logger.error("Failed to get md5sum: " + file.getAbsoluteFile(), e);
             }
 
             DownloadAnswer answer = new DownloadAnswer(null, 100, null, VMTemplateStorageResourceAssoc.Status.DOWNLOADED, swiftPath, swiftPath, virtualSize, file.length(), md5sum);

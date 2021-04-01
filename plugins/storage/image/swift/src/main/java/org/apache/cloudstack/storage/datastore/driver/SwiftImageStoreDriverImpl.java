@@ -116,7 +116,7 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         }
 
         if (downloadCommand == null){
-            String errMsg = "Unable to build download command, DataObject is of neither VOLUME or TEMPLATE type";
+            String errMsg = "Unable to build download command, unsupported DataObject is of type " + data.getType().toString();
             s_logger.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }

@@ -237,7 +237,7 @@ public class SwiftVolumeDownloader extends ManagedContextRunnable implements Tem
             return 0;
         }
 
-        LOGGER.info("Starting download from " + downloadUrl + " to staging with size " + remoteSize + " bytes to "+filePath);
+        LOGGER.info("Starting download from " + downloadUrl + " to staging with size " + remoteSize + " bytes to " + srcFile.getPath());
         final Date downloadStart = new Date();
 
         try (FileOutputStream fileOutputStream = new FileOutputStream(srcFile);) {
@@ -257,7 +257,8 @@ public class SwiftVolumeDownloader extends ManagedContextRunnable implements Tem
             outputStream.close();
             inputStream.close();
         } catch (IOException e) {
-            LOGGER.error("Exception when downloading from url to staging nfs:" + e.getMessage(), e);
+            LOGGER.error("Exception when downloading from url " + downloadUrl + " with remote size " + remoteSize
+                    + " to staging nfs path " + srcFile.getPath() + " : " + e.getMessage(), e);
             status = Status.RECOVERABLE_ERROR;
             return 0;
         }
