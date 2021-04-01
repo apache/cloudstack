@@ -134,6 +134,9 @@ export default {
   methods: {
     execAction (action) {
       action.resource = this.resource
+      if (action.docHelp) {
+        action.docHelp = this.$applyDocHelpMappings(action.docHelp)
+      }
       this.$emit('exec-action', action)
     },
     handleShowBadge () {

@@ -1817,6 +1817,7 @@
 "label.rolename": "Role",
 "label.roles": "Roles",
 "label.roletype": "Role Type",
+"label.rootdisksize": "Root disk size (GB)",
 "label.root.certificate": "Root certificate",
 "label.root.disk.offering": "Root Disk Offering",
 "label.root.disk.size": "Root disk size (GB)",

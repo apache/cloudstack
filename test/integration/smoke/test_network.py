@@ -227,7 +227,8 @@ class TestPublicIP(cloudstackTestCase):
         # 1.listPublicIpAddresses should no more return the released address
         list_pub_ip_addr_resp = list_publicIP(
             self.apiclient,
-            id=ip_address.ipaddress.id
+            id=ip_address.ipaddress.id,
+            allocatedonly=True
         )
         if list_pub_ip_addr_resp is None:
             return
@@ -279,7 +280,8 @@ class TestPublicIP(cloudstackTestCase):
 
         list_pub_ip_addr_resp = list_publicIP(
             self.apiclient,
-            id=ip_address.ipaddress.id
+            id=ip_address.ipaddress.id,
+            allocatedonly=True
         )
 
         self.assertEqual(
@@ -883,7 +885,8 @@ class TestReleaseIP(cloudstackTestCase):
         while retriesCount > 0:
             listResponse = list_publicIP(
                 self.apiclient,
-                id=self.ip_addr.id
+                id=self.ip_addr.id,
+                state="Allocated"
             )
             if listResponse is None:
                 isIpAddressDisassociated = True
