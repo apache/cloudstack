@@ -52,7 +52,8 @@
         :rowKey="item => item.id"
         :pagination="false" >
         <template slot="ipaddress" slot-scope="text, record">
-          <router-link :to="{ path: '/publicip/' + record.id }" >{{ text }} </router-link>
+          <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/publicip/' + record.id }" >{{ text }} </router-link>
+          <div v-else>{{ text }}</div>
           <a-tag v-if="record.issourcenat === true">source-nat</a-tag>
         </template>
 
@@ -66,7 +67,8 @@
         </template>
 
         <template slot="associatednetworkname" slot-scope="text, record">
-          <router-link :to="{ path: '/guestnetwork/' + record.associatednetworkid }" > {{ record.associatednetworkname || record.associatednetworkid || record.networkname }} </router-link>
+          <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/guestnetwork/' + record.associatednetworkid }" > {{ record.associatednetworkname || record.associatednetworkid }} </router-link>
+          <div v-else>{{ record.networkname }}</div>
         </template>
 
         <template slot="action" slot-scope="text, record">

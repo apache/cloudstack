@@ -238,7 +238,7 @@
       </div>
 
       <div style="margin-top: 10px; display: flex; justify-content:flex-end;">
-        <a-button :disabled="listIps.opts.length === 0" @click="submitSecondaryIP" type="primary" style="margin-right: 10px;">{{ $t('label.add.secondary.ip') }}</a-button>
+        <a-button @click="submitSecondaryIP" type="primary" style="margin-right: 10px;">{{ $t('label.add.secondary.ip') }}</a-button>
         <a-button @click="closeModals">{{ $t('label.close') }}</a-button>
       </div>
 
@@ -463,11 +463,13 @@ export default {
     },
     onAcquireSecondaryIPAddress (record) {
       if (record.nic.type === 'Shared') {
-        this.editNicResource = record.nic
-        this.editNetworkId = record.nic.networkid
         this.fetchPublicIps(record.nic.networkid)
+      } else {
+        this.listIps.opts = []
       }
 
+      this.editNicResource = record.nic
+      this.editNetworkId = record.nic.networkid
       this.fetchSecondaryIPs(record.nic.id)
     },
     submitAddNetwork () {
