@@ -186,6 +186,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.dao.RouterHealthCheckResultDao;
+import com.cloud.network.dao.RouterHealthCheckResultVO;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
@@ -1258,7 +1259,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<DomainRouterResponse> searchForRouters(ListRoutersCmd cmd) {
         Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(), cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getClusterId(),
-                cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), cmd.getVersion());
+                cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), cmd.getVersion(), cmd.isHealthCheckFailed());
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
         if (VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value()) {
@@ -1278,7 +1279,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd) {
         Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(), cmd.getState(), cmd.getZoneId(), cmd.getPodId(), null, cmd.getHostId(),
-                cmd.getKeyword(), cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), null);
+                cmd.getKeyword(), cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), null, null);
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
         if (VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value()) {
@@ -1297,7 +1298,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     private Pair<List<DomainRouterJoinVO>, Integer> searchForRoutersInternal(BaseListProjectAndAccountResourcesCmd cmd, Long id, String name, String state, Long zoneId, Long podId, Long clusterId,
-            Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc, String role, String version) {
+            Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc, String role, String version, Boolean isHealthCheckFailed) {
 
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1339,6 +1340,27 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (networkId != null) {
             sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        }
+
+        List<Long> routersWithFailures = null;
+        if (VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value() && isHealthCheckFailed != null) {
+            GenericSearchBuilder<RouterHealthCheckResultVO, Long> routerHealthCheckResultSearch = routerHealthCheckResultDao.createSearchBuilder(Long.class);
+            routerHealthCheckResultSearch.and("checkResult", routerHealthCheckResultSearch.entity().getCheckResult(), SearchCriteria.Op.EQ);
+            routerHealthCheckResultSearch.selectFields(routerHealthCheckResultSearch.entity().getRouterId());
+            routerHealthCheckResultSearch.done();
+            SearchCriteria<Long> ssc = routerHealthCheckResultSearch.create();
+            ssc.setParameters("checkResult", false);
+            routersWithFailures = routerHealthCheckResultDao.customSearch(ssc, null);
+
+            if (routersWithFailures != null && ! routersWithFailures.isEmpty()) {
+                if (isHealthCheckFailed) {
+                    sb.and("routerId", sb.entity().getId(), SearchCriteria.Op.IN);
+                } else {
+                    sb.and("routerId", sb.entity().getId(), SearchCriteria.Op.NIN);
+                }
+            } else if (isHealthCheckFailed) {
+                return new Pair<List<DomainRouterJoinVO>, Integer>(Collections.emptyList(), 0);
+            }
         }
 
         SearchCriteria<DomainRouterJoinVO> sc = sb.create();
@@ -1397,6 +1419,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (version != null) {
             sc.setParameters("version", "Cloudstack Release " + version + "%");
+        }
+
+        if (routersWithFailures != null && ! routersWithFailures.isEmpty()) {
+            sc.setParameters("routerId", routersWithFailures.toArray(new Object[routersWithFailures.size()]));
         }
 
         // search VR details by ids

@@ -709,6 +709,7 @@ public class ApiConstants {
     public static final String UCS_BLADE_DN = "bladedn";
     public static final String UCS_BLADE_ID = "bladeid";
     public static final String VM_GUEST_IP = "vmguestip";
+    public static final String HEALTHCHECK_FAILED = "healthchecksfailed";
     public static final String HEALTHCHECK_RESPONSE_TIMEOUT = "responsetimeout";
     public static final String HEALTHCHECK_INTERVAL_TIME = "intervaltime";
     public static final String HEALTHCHECK_HEALTHY_THRESHOLD = "healthythreshold";

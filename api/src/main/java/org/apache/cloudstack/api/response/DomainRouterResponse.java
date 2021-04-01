@@ -225,7 +225,7 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     @Param(description = "true if the router template requires upgrader")
     private boolean requiresUpgrade;
 
-    @SerializedName("healthchecksfailed")
+    @SerializedName(ApiConstants.HEALTHCHECK_FAILED)
     @Param(description = "true if any health checks had failed")
     private boolean healthChecksFailed;
 
