@@ -1,0 +1,30 @@
+{
+  "messages": {
+    "en": { "label.action": "action-en" },
+    "de": { "label.action": "action-de" }
+  },
+  "apis": {
+    "test-api-case-1": {},
+    "test-api-case-2": {},
+    "test-api-case-3": {},
+    "test-api-case-4": {},
+    "test-api-case-5": {},
+    "test-api-case-6": {}
+  },
+  "routes": [
+    {
+      "name": "testRouter1",
+      "path": "/test-router-1",
+      "meta": {
+        "name": "systemvm"
+      }
+    },
+    {
+      "name": "testRouter2",
+      "path": "/test-router-2",
+      "meta": {
+        "name": "test-name"
+      }
+    }
+  ]
+}

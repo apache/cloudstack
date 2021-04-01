@@ -29,7 +29,7 @@ public class KVMPhysicalDisk {
         rbdOpts = "rbd:" + image;
         rbdOpts += ":mon_host=" + monHost;
         if (monPort > 0) {
-            rbdOpts += "\\\\:" + monPort;
+            rbdOpts += "\\:" + monPort;
         }
 
         if (authUserName == null) {

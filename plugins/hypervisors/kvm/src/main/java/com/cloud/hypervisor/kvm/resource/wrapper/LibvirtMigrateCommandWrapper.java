@@ -155,6 +155,14 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             // delete the metadata of vm snapshots before migration
             vmsnapshots = libvirtComputingResource.cleanVMSnapshotMetadata(dm);
 
+            // Verify Format of backing file
+            for (DiskDef disk : disks) {
+                if (disk.getDeviceType() == DiskDef.DeviceType.DISK
+                        && disk.getDiskFormatType() == DiskDef.DiskFmtType.QCOW2) {
+                    libvirtComputingResource.setBackingFileFormat(disk.getDiskPath());
+                }
+            }
+
             Map<String, MigrateCommand.MigrateDiskInfo> mapMigrateStorage = command.getMigrateStorage();
             // migrateStorage is declared as final because the replaceStorage method may mutate mapMigrateStorage, but
             // migrateStorage's value should always only be associated with the initial state of mapMigrateStorage.

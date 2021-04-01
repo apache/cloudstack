@@ -209,7 +209,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private Long memoryKBs;
 
     @SerializedName("memoryintfreekbs")
-    @Param(description = "the internal memory thats free in vm")
+    @Param(description = "the internal memory that's free in vm or zero if it can not be calculated")
     private Long memoryIntFreeKBs;
 
     @SerializedName("memorytargetkbs")

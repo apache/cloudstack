@@ -47,7 +47,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     boolean _storagePoolCleanupEnabled;
 
     @Override
-    public List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+    public List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
         s_logger.debug("GarbageCollectingStoragePoolAllocator looking for storage pool");
         if (!_storagePoolCleanupEnabled) {
             s_logger.debug("Storage pool cleanup is not enabled, so GarbageCollectingStoragePoolAllocator is being skipped.");
@@ -68,7 +68,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
         ExcludeList myAvoids =
             new ExcludeList(avoid.getDataCentersToAvoid(), avoid.getPodsToAvoid(), avoid.getClustersToAvoid(), avoid.getHostsToAvoid(), avoid.getPoolsToAvoid());
 
-        return allocator.allocateToPool(dskCh, vmProfile, plan, myAvoids, returnUpTo);
+        return allocator.allocateToPool(dskCh, vmProfile, plan, myAvoids, returnUpTo, bypassStorageTypeCheck);
     }
 
     @Override

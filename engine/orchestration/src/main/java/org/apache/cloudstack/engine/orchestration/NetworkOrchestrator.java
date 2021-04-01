@@ -2301,10 +2301,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public void expungeNics(final VirtualMachineProfile vm) {
-        final List<NicVO> nics = _nicDao.listByVmIdIncludingRemoved(vm.getId());
+    public void removeNics(final VirtualMachineProfile vm) {
+        final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (final NicVO nic : nics) {
-            _nicDao.expunge(nic.getId());
+            _nicDao.remove(nic.getId());
         }
     }
 
@@ -2352,7 +2352,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         // Validate network offering
         if (ntwkOff.getState() != NetworkOffering.State.Enabled) {
             // see NetworkOfferingVO
-            final InvalidParameterValueException ex = new InvalidParameterValueException("Can't use specified network offering id as its stat is not " + NetworkOffering.State.Enabled);
+            final InvalidParameterValueException ex = new InvalidParameterValueException("Can't use specified network offering id as its state is not " + NetworkOffering.State.Enabled);
             ex.addProxyObject(ntwkOff.getUuid(), "networkOfferingId");
             throw ex;
         }
@@ -2545,8 +2545,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 && (ntwkOff.getGuestType() == GuestType.Shared || (ntwkOff.getGuestType() == GuestType.Isolated
                 && !_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)));
         if (cidr == null && ip6Cidr == null && cidrRequired) {
-            throw new InvalidParameterValueException("StartIp/endIp/gateway/netmask are required when create network of" + " type " + Network.GuestType.Shared
-                    + " and network of type " + GuestType.Isolated + " with service " + Service.SourceNat.getName() + " disabled");
+            if (ntwkOff.getGuestType() == GuestType.Shared) {
+                throw new InvalidParameterValueException("StartIp/endIp/gateway/netmask are required when create network of" + " type " + Network.GuestType.Shared);
+            } else {
+                throw new InvalidParameterValueException("gateway/netmask are required when create network of" + " type " + GuestType.Isolated + " with service " + Service.SourceNat.getName() + " disabled");
+            }
         }
 
         checkL2OfferingServices(ntwkOff);

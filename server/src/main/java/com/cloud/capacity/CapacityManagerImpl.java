@@ -629,7 +629,12 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         for (ServiceOfferingVO offering : offerings) {
             offeringsMap.put(offering.getId(), offering);
         }
+        updateCapacityForHost(host, offeringsMap);
+    }
 
+    @DB
+    @Override
+    public void updateCapacityForHost(final Host host, final Map<Long, ServiceOfferingVO> offeringsMap) {
         long usedCpuCore = 0;
         long reservedCpuCore = 0;
         long usedCpu = 0;
@@ -660,12 +665,13 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             Map<String, String> vmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
             String vmDetailCpu = vmDetails.get("cpuOvercommitRatio");
             String vmDetailRam = vmDetails.get("memoryOvercommitRatio");
-            if (vmDetailCpu != null) {
-                //if vmDetail_cpu is not null it means it is running in a overcommited cluster.
-                cpuOvercommitRatio = Float.parseFloat(vmDetailCpu);
-                ramOvercommitRatio = Float.parseFloat(vmDetailRam);
-            }
+            // if vmDetailCpu or vmDetailRam is not null it means it is running in a overcommitted cluster.
+            cpuOvercommitRatio = (vmDetailCpu != null) ? Float.parseFloat(vmDetailCpu) : clusterCpuOvercommitRatio;
+            ramOvercommitRatio = (vmDetailRam != null) ? Float.parseFloat(vmDetailRam) : clusterRamOvercommitRatio;
             ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
+            if (so == null) {
+                so = _offeringsDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
+            }
             if (so.isDynamic()) {
                 usedMemory +=
                     ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.memory.name())) * 1024L * 1024L) / ramOvercommitRatio) *
@@ -705,6 +711,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 }
                 ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
                 Map<String, String> vmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
+                if (so == null) {
+                    so = _offeringsDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
+                }
                 if (so.isDynamic()) {
                     reservedMemory +=
                         ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.memory.name())) * 1024L * 1024L) / ramOvercommitRatio) *

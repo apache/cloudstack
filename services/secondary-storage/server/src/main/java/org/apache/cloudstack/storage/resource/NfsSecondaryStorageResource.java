@@ -2278,6 +2278,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 answer.setInstallPath(uploadEntity.getTmpltPath());
                 answer.setPhysicalSize(uploadEntity.getPhysicalSize());
                 answer.setDownloadPercent(100);
+                answer.setGuestOsInfo(uploadEntity.getGuestOsInfo());
+                answer.setMinimumHardwareVersion(uploadEntity.getMinimumHardwareVersion());
                 uploadEntityStateMap.remove(entityUuid);
                 return answer;
             } else if (uploadEntity.getUploadState() == UploadEntity.Status.IN_PROGRESS) {
@@ -2345,6 +2347,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             File tmpltPath = new File(absoluteTemplatePath);
             File tmpltParent = null;
             if (tmpltPath.exists() && tmpltPath.isDirectory()) {
+                tmpltParent = tmpltPath;
+            } else if (absoluteTemplatePath.endsWith(File.separator + obj.getId())) {
+                // the path ends with <account id>/<template id>, if upload fails
                 tmpltParent = tmpltPath;
             } else {
                 tmpltParent = tmpltPath.getParentFile();
@@ -2449,6 +2454,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             File tmpltParent = null;
             if (volPath.exists() && volPath.isDirectory()) {
                 // for vmware, absoluteVolumePath represents a directory where volume files are located.
+                tmpltParent = volPath;
+            } else if (absoluteVolumePath.endsWith(File.separator + obj.getId())) {
+                // the path ends with <account id>/<volume id>, if upload fails
                 tmpltParent = volPath;
             } else {
                 // for other hypervisors, the volume .vhd or .qcow2 file path is passed
@@ -3413,6 +3421,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 loc.addFormat(info);
                 uploadEntity.setVirtualSize(info.virtualSize);
                 uploadEntity.setPhysicalSize(info.size);
+                if (info.ovfInformationTO != null) {
+                    if (info.ovfInformationTO.getGuestOsInfo() != null) {
+                        uploadEntity.setGuestOsInfo(info.ovfInformationTO.getGuestOsInfo());
+                    }
+                    if (info.ovfInformationTO.getHardwareSection() != null) {
+                        uploadEntity.setMinimumHardwareVersion(info.ovfInformationTO.getHardwareSection().getMinimiumHardwareVersion());
+                    }
+                }
                 break;
             }
         }
