@@ -651,16 +651,19 @@ public class LibvirtVMDef {
 
         }
 
+        /**
+         * This enum specifies IO Drivers, each option controls specific policies on I/O.
+         * Qemu guests support "threads" and "native" options Since 0.8.8 ; "io_uring" is supported Since 6.3.0 (QEMU 5.0).
+         */
         public enum IoDriver {
-            IOURING("io_uring");
+            NATIVE("native"), THREADS("threads"), IOURING("io_uring");
             String ioDriver;
 
             IoDriver(String driver) {
                 ioDriver = driver;
             }
 
-            @Override
-            public String toString() {
+            @Override public String toString() {
                 return ioDriver;
             }
         }
