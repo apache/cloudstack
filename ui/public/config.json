@@ -46,6 +46,7 @@
     "jp": "label.japanese.keyboard",
     "sc": "label.simplified.chinese.keyboard"
   },
+  "docHelpMappings": {},
   "plugins": [],
   "basicZoneEnabled": true
 }
