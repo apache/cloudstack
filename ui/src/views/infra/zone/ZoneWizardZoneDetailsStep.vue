@@ -35,6 +35,7 @@
               initialValue: name
             }]
           }]"
+          autoFocus
         />
       </a-form-item>
       <a-form-item

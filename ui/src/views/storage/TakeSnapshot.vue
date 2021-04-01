@@ -31,7 +31,8 @@
             <a-form-item :label="$t('label.name')">
               <a-input
                 v-decorator="['name']"
-                :placeholder="apiParams.name.description" />
+                :placeholder="apiParams.name.description"
+                autoFocus />
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="24" v-if="!supportsStorageSnapshot">

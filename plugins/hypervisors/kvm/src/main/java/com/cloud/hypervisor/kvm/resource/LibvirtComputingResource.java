@@ -4304,7 +4304,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             Map<String, String> info = qemu.info(file);
             String backingFilePath = info.get(new String("backing_file"));
             String backingFileFormat = info.get(new String("backing_file_format"));
-            if (org.apache.commons.lang.StringUtils.isEmpty(backingFileFormat)) {
+            if (org.apache.commons.lang.StringUtils.isNotBlank(backingFilePath)
+                    && org.apache.commons.lang.StringUtils.isBlank(backingFileFormat)) {
+                // VMs which are created in CloudStack 4.14 and before cannot be started or migrated
+                // in latest Linux distributions due to missing backing file format
+                // Please refer to https://libvirt.org/kbase/backing_chains.html#vm-refuses-to-start-due-to-misconfigured-backing-store-format
                 s_logger.info("Setting backing file format of " + volPath);
                 QemuImgFile backingFile = new QemuImgFile(backingFilePath);
                 Map<String, String> backingFileinfo = qemu.info(backingFile);

@@ -126,23 +126,23 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
         final Map<Hypervisor.HypervisorType, String> newTemplateUrl = new HashMap<Hypervisor.HypervisorType, String>() {
             {
-                put(Hypervisor.HypervisorType.KVM, "http://sbjenkins-stagingrepo.jenkins.lon/systemvmtemplate/custom/cks-debian/systemvmtemplate-kvm.qcow2.bz2");
-                put(Hypervisor.HypervisorType.VMware, "http://sbjenkins-stagingrepo.jenkins.lon/systemvmtemplate/custom/cks-debian/systemvmtemplate-vmware.ova");
-                put(Hypervisor.HypervisorType.XenServer, "http://sbjenkins-stagingrepo.jenkins.lon/systemvmtemplate/custom/cks-debian/systemvmtemplate-xen.vhd.bz2");
-                put(Hypervisor.HypervisorType.Hyperv, "http://sbjenkins-stagingrepo.jenkins.lon/systemvmtemplate/custom/cks-debian/systemvmtemplate-hyperv.vhd.zip");
-                put(Hypervisor.HypervisorType.LXC, "http://sbjenkins-stagingrepo.jenkins.lon/systemvmtemplate/custom/cks-debian/systemvmtemplate-kvm.qcow2.bz2");
-                put(Hypervisor.HypervisorType.Ovm3, "http://sbjenkins-stagingrepo.jenkins.lon/systemvmtemplate/custom/cks-debian/systemvmtemplate-ovm.raw.bz22");
+                put(Hypervisor.HypervisorType.KVM, "http://sl-sb-repo.sofia.shapeblue.com/systemvmtemplate/custom/cks-debian/systemvmtemplate-kvm.qcow2.bz2");
+                put(Hypervisor.HypervisorType.VMware, "http://sl-sb-repo.sofia.shapeblue.com/systemvmtemplate/custom/cks-debian/systemvmtemplate-vmware.ova");
+                put(Hypervisor.HypervisorType.XenServer, "http://sl-sb-repo.sofia.shapeblue.com/systemvmtemplate/custom/cks-debian/systemvmtemplate-xen.vhd.bz2");
+                put(Hypervisor.HypervisorType.Hyperv, "http://sl-sb-repo.sofia.shapeblue.com/systemvmtemplate/custom/cks-debian/systemvmtemplate-hyperv.vhd.zip");
+                put(Hypervisor.HypervisorType.LXC, "http://sl-sb-repo.sofia.shapeblue.com/systemvmtemplate/custom/cks-debian/systemvmtemplate-kvm.qcow2.bz2");
+                put(Hypervisor.HypervisorType.Ovm3, "http://sl-sb-repo.sofia.shapeblue.com/systemvmtemplate/custom/cks-debian/systemvmtemplate-ovm.raw.bz2");
             }
         };
 
         final Map<Hypervisor.HypervisorType, String> newTemplateChecksum = new HashMap<Hypervisor.HypervisorType, String>() {
             {
-                put(Hypervisor.HypervisorType.KVM, "0493097e888e7bb86c7118d23c5eeb67");
-                put(Hypervisor.HypervisorType.XenServer, "b712722757fffcee0cfcdf63abdbbcff");
-                put(Hypervisor.HypervisorType.VMware, "3d903f31df5324f21a730cab76706786");
-                put(Hypervisor.HypervisorType.Hyperv, "54156ca498d5e96a6eb010c06d10ab55");
-                put(Hypervisor.HypervisorType.LXC, "0493097e888e7bb86c7118d23c5eeb67");
-                put(Hypervisor.HypervisorType.Ovm3, "e956da950052ad5e62098f3a366a6aa1");
+                put(Hypervisor.HypervisorType.KVM, "810b13ad9c095f3a69cfd8285f720507");
+                put(Hypervisor.HypervisorType.XenServer, "30a93ca4c80e929cfc8b806d6751a396");
+                put(Hypervisor.HypervisorType.VMware, "31d386e8abf5234dbbe1cae048bab700");
+                put(Hypervisor.HypervisorType.Hyperv, "474e4d4126cea4a0f55e925bace3457f");
+                put(Hypervisor.HypervisorType.LXC, "810b13ad9c095f3a69cfd8285f720507");
+                put(Hypervisor.HypervisorType.Ovm3, "6c06ec7c6c4b18ab7475d87a75b1edf1");
             }
         };
 

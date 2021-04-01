@@ -33,7 +33,8 @@
             v-decorator="['currentpassword', {
               rules: [{ required: true, message: $t('message.error.current.password') }]
             }]"
-            :placeholder="$t('message.error.current.password')"/>
+            :placeholder="$t('message.error.current.password')"
+            autoFocus />
         </a-form-item>
         <a-form-item>
           <span slot="label">
