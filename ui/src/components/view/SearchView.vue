@@ -60,8 +60,11 @@
                     :key="idx"
                     :value="opt.id">{{ $t(opt.name) }}</a-select-option>
                 </a-select>
+                <a-checkbox
+                  v-if="field.type==='checkbox'"
+                  v-decorator="[field.name]" />
                 <a-input
-                  v-else-if="field.type==='input'"
+                  v-if="field.type==='input'"
                   v-decorator="[field.name]" />
                 <div v-else-if="field.type==='tag'">
                   <div>
@@ -199,6 +202,9 @@ export default {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
+        }
+	if (item === 'accountwide') {
+          type = 'checkbox'
         }
 
         this.fields.push({
@@ -419,7 +425,11 @@ export default {
           if (input === '' || input === null || input === undefined) {
             continue
           }
-          this.paramsFilter[key] = input
+          if (key === 'accountwide' && input) {
+            this.paramsFilter.projectid = -1
+          } else {
+            this.paramsFilter[key] = input
+          }
         }
         if (this.searchFilters.includes('tags')) {
           if (this.inputKey) {
