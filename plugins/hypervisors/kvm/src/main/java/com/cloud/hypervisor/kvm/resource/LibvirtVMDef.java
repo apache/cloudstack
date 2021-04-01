@@ -651,6 +651,20 @@ public class LibvirtVMDef {
 
         }
 
+        public enum IoDriver {
+            IOURING("io_uring");
+            String ioDriver;
+
+            IoDriver(String driver) {
+                ioDriver = driver;
+            }
+
+            @Override
+            public String toString() {
+                return ioDriver;
+            }
+        }
+
         private DeviceType _deviceType; /* floppy, disk, cdrom */
         private DiskType _diskType;
         private DiskProtocol _diskProtocol;
@@ -681,6 +695,7 @@ public class LibvirtVMDef {
         private String _serial;
         private boolean qemuDriver = true;
         private DiscardType _discard = DiscardType.IGNORE;
+        private IoDriver ioDriver;
 
         public DiscardType getDiscard() {
             return _discard;
@@ -688,6 +703,10 @@ public class LibvirtVMDef {
 
         public void setDiscard(DiscardType discard) {
             this._discard = discard;
+        }
+
+        public void setIoDriver(IoDriver ioDriver) {
+            this.ioDriver = ioDriver;
         }
 
         public void setDeviceType(DeviceType deviceType) {
@@ -1001,6 +1020,11 @@ public class LibvirtVMDef {
                 if(_discard != null && _discard != DiscardType.IGNORE) {
                     diskBuilder.append("discard='" + _discard.toString() + "' ");
                 }
+
+                if(ioDriver != null) {
+                    diskBuilder.append("io='" + ioDriver.toString() + "'");
+                }
+
                 diskBuilder.append("/>\n");
             }
 

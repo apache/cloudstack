@@ -2619,6 +2619,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.setDiscard(DiscardType.UNMAP);
                 }
 
+                setDiskIoDriver(disk);
+
                 if (pool.getType() == StoragePoolType.RBD) {
                     /*
                             For RBD pools we use the secret mechanism in libvirt.
@@ -2711,6 +2713,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     }
                 }
             }
+        }
+    }
+
+    private void setDiskIoDriver(DiskDef disk) {
+        /*
+         * IO Driver works for
+         * - Qemu >= 5.0
+         * - Libvirt >= 6.3.0
+         */
+        if(_hypervisorLibvirtVersion >= 6030000 && _hypervisorQemuVersion >= 5000000) {
+            disk.setIoDriver(DiskDef.IoDriver.IOURING);
         }
     }
 
