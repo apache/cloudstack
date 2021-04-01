@@ -37,7 +37,7 @@ Vue.use(toLocaleDatePlugin)
 
 fetch('config.json').then(response => response.json()).then(config => {
   Vue.prototype.$config = config
-  Vue.axios.defaults.baseURL = config.apiBase
+  Vue.axios.defaults.baseURL = (config.servers[0].apiHost || '') + config.servers[0].apiBase
 
   loadLanguageAsync().then(() => {
     new Vue({

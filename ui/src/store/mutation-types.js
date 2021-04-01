@@ -32,6 +32,7 @@ export const ZONES = 'ZONES'
 export const ASYNC_JOB_IDS = 'ASYNC_JOB_IDS'
 export const TIMEZONE_OFFSET = 'TIMEZONE_OFFSET'
 export const USE_BROWSER_TIMEZONE = 'USE_BROWSER_TIMEZONE'
+export const SERVER_MANAGER = 'SERVER_MANAGER'
 
 export const CONTENT_WIDTH_TYPE = {
   Fluid: 'Fluid',
