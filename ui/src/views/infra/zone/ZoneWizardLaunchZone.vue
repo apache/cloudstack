@@ -458,6 +458,12 @@ export default {
               this.stepData.physicalNetworkReturned = physicalNetworkReturned
               this.stepData.physicalNetworkItem['createPhysicalNetwork' + index] = physicalNetworkReturned
               this.stepData.stepMove.push('createPhysicalNetwork' + index)
+
+              if (physicalNetwork.isolationMethod === 'TF' &&
+                physicalNetwork.traffics.findIndex(traffic => traffic.type === 'public') > -1) {
+                this.stepData.isTungstenZone = true
+                this.stepData.tungstenPhysicalNetworkId = physicalNetworkReturned.id
+              }
             } else {
               this.stepData.physicalNetworkReturned = this.stepData.physicalNetworkItem['createPhysicalNetwork' + index]
             }
@@ -935,7 +941,11 @@ export default {
           return
         }
 
-        await this.stepConfigureStorageTraffic()
+        if (this.stepData.isTungstenZone) {
+          await this.stepCreateTungstenPublicNetwork()
+        } else {
+          await this.stepConfigureStorageTraffic()
+        }
       } else if (this.isAdvancedZone && this.sgEnabled) {
         await this.stepConfigureStorageTraffic()
       } else {
@@ -947,6 +957,47 @@ export default {
             await this.stepConfigureGuestTraffic()
           }
         }
+      }
+    },
+    async stepCreateTungstenPublicNetwork () {
+      this.setStepStatus(STATUS_FINISH)
+      this.currentStep++
+      this.addStep('message.create.tungsten.public.network', 'tungsten')
+      if (this.stepData.stepMove.includes('tungsten')) {
+        await this.stepConfigureStorageTraffic()
+        return
+      }
+      try {
+        if (!this.stepData.stepMove.includes('configTungsten')) {
+          const configParams = {}
+          configParams.zoneid = this.stepData.zoneReturned.id
+          configParams.physicalnetworkid = this.stepData.tungstenPhysicalNetworkId
+          await this.configTungstenService(configParams)
+          this.stepData.stepMove.push('configTungsten')
+        }
+        if (!this.stepData.stepMove.includes('createTungstenProvider')) {
+          const providerParams = {}
+          providerParams.zoneid = this.stepData.zoneReturned.id
+          providerParams.tungstenproviderhostname = this.prefillContent.tungstenHostname.value || null
+          providerParams.name = this.prefillContent.tungstenName.value || null
+          providerParams.tungstenproviderport = this.prefillContent.tungstenPort.value || null
+          providerParams.tungstenprovidervrouter = this.prefillContent.tungstenVrouter.value || null
+          providerParams.tungstenprovidervrouterport = this.prefillContent.tungstenVrouterport.value || null
+          await this.createTungstenProvider(providerParams)
+          this.stepData.stepMove.push('createTungstenProvider')
+        }
+        if (!this.stepData.stepMove.includes('createTungstenNetwork')) {
+          const params = {}
+          params.zoneid = this.stepData.zoneReturned.id
+          await this.createTungstenPublicNetwork(params)
+          this.stepData.stepMove.push('createTungstenNetwork')
+        }
+        this.stepData.stepMove.push('tungsten')
+        await this.stepConfigureStorageTraffic()
+      } catch (e) {
+        this.messageError = e
+        this.processStatus = STATUS_FAILED
+        this.setStepStatus(STATUS_FAILED)
       }
     },
     async stepConfigureStorageTraffic () {
@@ -2035,6 +2086,36 @@ export default {
           resolve(result)
         }).catch(error => {
           message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    configTungstenService (args) {
+      return new Promise((resolve, reject) => {
+        api('configTungstenService', {}, 'POST', args).then(json => {
+          resolve()
+        }).catch(error => {
+          const message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    createTungstenProvider (args) {
+      return new Promise((resolve, reject) => {
+        api('createTungstenProvider', {}, 'POST', args).then(json => {
+          resolve()
+        }).catch(error => {
+          const message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    createTungstenPublicNetwork (args) {
+      return new Promise((resolve, reject) => {
+        api('createTungstenPublicNetwork', args).then(json => {
+          resolve()
+        }).catch(error => {
+          const message = error.response.headers['x-description']
           reject(message)
         })
       })

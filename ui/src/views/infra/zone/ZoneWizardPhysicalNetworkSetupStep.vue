@@ -47,6 +47,7 @@
           <a-select-option value="L3VPN"> L3VPN </a-select-option>
           <a-select-option value="VSP"> VSP </a-select-option>
           <a-select-option value="VCS"> VCS </a-select-option>
+          <a-select-option value="TF"> TF </a-select-option>
         </a-select>
       </template>
       <template slot="traffics" slot-scope="traffics, record">
