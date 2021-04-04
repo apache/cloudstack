@@ -4302,8 +4302,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         QemuImg qemu = new QemuImg(timeout);
         try{
             Map<String, String> info = qemu.info(file);
-            String backingFilePath = info.get(new String("backing_file"));
-            String backingFileFormat = info.get(new String("backing_file_format"));
+            String backingFilePath = info.get(QemuImg.BACKING_FILE);
+            String backingFileFormat = info.get(QemuImg.BACKING_FILE_FORMAT);
             if (org.apache.commons.lang.StringUtils.isNotBlank(backingFilePath)
                     && org.apache.commons.lang.StringUtils.isBlank(backingFileFormat)) {
                 // VMs which are created in CloudStack 4.14 and before cannot be started or migrated
@@ -4312,7 +4312,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 s_logger.info("Setting backing file format of " + volPath);
                 QemuImgFile backingFile = new QemuImgFile(backingFilePath);
                 Map<String, String> backingFileinfo = qemu.info(backingFile);
-                String backingFileFmt = backingFileinfo.get(new String("file_format"));
+                String backingFileFmt = backingFileinfo.get(QemuImg.FILE_FORMAT);
                 qemu.rebase(file, backingFile, backingFileFmt, false);
             }
         } catch (QemuImgException | LibvirtException e) {
