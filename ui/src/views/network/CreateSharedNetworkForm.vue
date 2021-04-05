@@ -34,7 +34,8 @@
               v-decorator="['name', {
                 rules: [{ required: true, message: $t('message.error.name') }]
               }]"
-              :placeholder="this.$t('label.name')"/>
+              :placeholder="this.$t('label.name')"
+              autoFocus />
           </a-form-item>
           <a-form-item>
             <span slot="label">
@@ -474,8 +475,6 @@ export default {
     })
   },
   created () {
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

@@ -44,7 +44,8 @@
             v-decorator="['volumeids']"
             :placeholder="$t('label.delete.volumes')"
             mode="multiple"
-            :loading="loading">
+            :loading="loading"
+            :autoFocus="$store.getters.userInfo.roletype !== 'Admin' && !$store.getters.features.allowuserexpungerecovervm">
             <a-select-option v-for="volume in volumes" :key="volume.id">
               {{ volume.name }}
             </a-select-option>
@@ -87,7 +88,7 @@ export default {
       this.apiParams[param.name] = param
     })
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

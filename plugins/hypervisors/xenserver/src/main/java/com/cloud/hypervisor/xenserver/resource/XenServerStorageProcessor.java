@@ -798,7 +798,9 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
         try {
             final Connection conn = hypervisorResource.getConnection();
-            final SR poolSr = hypervisorResource.getStorageRepository(conn, data.getDataStore().getUuid());
+            final PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)data.getDataStore();
+            final SR poolSr = hypervisorResource.getStorageRepository(conn,
+                    CitrixHelper.getSRNameLabel(primaryStore.getUuid(), primaryStore.getPoolType(), primaryStore.getPath()));
             VDI.Record vdir = new VDI.Record();
             vdir.nameLabel = volume.getName();
             vdir.SR = poolSr;
@@ -871,7 +873,9 @@ public class XenServerStorageProcessor implements StorageProcessor {
         if (srcStore instanceof NfsTO) {
             final NfsTO nfsStore = (NfsTO) srcStore;
             try {
-                final SR primaryStoragePool = hypervisorResource.getStorageRepository(conn, destVolume.getDataStore().getUuid());
+                final PrimaryDataStoreTO destStore = (PrimaryDataStoreTO)destVolume.getDataStore();
+                final SR primaryStoragePool = hypervisorResource.getStorageRepository(conn,
+                        CitrixHelper.getSRNameLabel(destStore.getUuid(), destStore.getPoolType(), destStore.getPath()));
                 final String srUuid = primaryStoragePool.getUuid(conn);
                 final URI uri = new URI(nfsStore.getUrl());
                 final String volumePath = uri.getHost() + ":" + uri.getPath() + nfsStore.getPathSeparator() + srcVolume.getPath();
@@ -1153,7 +1157,9 @@ public class XenServerStorageProcessor implements StorageProcessor {
         final DataTO cacheData = cmd.getCacheTO();
         final DataTO destData = cmd.getDestTO();
         final int wait = cmd.getWait();
-        final String primaryStorageNameLabel = srcData.getDataStore().getUuid();
+        final PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)srcData.getDataStore();
+        final String primaryStorageNameLabel = CitrixHelper.getSRNameLabel(primaryStore.getUuid(),
+                primaryStore.getPoolType(), primaryStore.getPath());
         String secondaryStorageUrl = null;
         NfsTO cacheStore = null;
         String destPath = null;

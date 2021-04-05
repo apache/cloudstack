@@ -41,6 +41,7 @@
                         :options="zoneSelectOptions"
                         @change="onSelectZoneId"
                         :loading="loading.zones"
+                        autoFocus
                       ></a-select>
                     </a-form-item>
                     <a-form-item
@@ -105,7 +106,8 @@
                           @update-template-iso="updateFieldValue" />
                         <span>
                           {{ $t('label.override.rootdisk.size') }}
-                          <a-switch @change="val => { this.showRootDiskSizeChanger = val }" style="margin-left: 10px;"/>
+                          <a-switch :disabled="template.deployasis" @change="val => { this.showRootDiskSizeChanger = val }" style="margin-left: 10px;"/>
+                          <div v-if="template.deployasis">  {{ this.$t('message.deployasis') }} </div>
                         </span>
                         <disk-size-selection
                           v-show="showRootDiskSizeChanger"
@@ -183,6 +185,7 @@
                     </a-form-item>
                     <compute-offering-selection
                       :compute-items="options.serviceOfferings"
+                      :selected-template="template"
                       :row-count="rowCount.serviceOfferings"
                       :zoneId="zoneId"
                       :value="serviceOffering ? serviceOffering.id : ''"
@@ -477,6 +480,7 @@
                       v-if="vm.templateid && ['KVM', 'VMware'].includes(hypervisor) && !template.deployasis">
                       <a-form-item :label="$t('label.boottype')">
                         <a-select
+                          :autoFocus="vm.templateid && ['KVM', 'VMware'].includes(hypervisor) && !template.deployasis"
                           v-decorator="['boottype']"
                           @change="fetchBootModes"
                         >
@@ -542,6 +546,9 @@
                         v-decorator="['keyboard']"
                         :options="keyboardSelectOptions"
                       ></a-select>
+                    </a-form-item>
+                    <a-form-item :label="$t('label.action.start.instance')">
+                      <a-switch v-decorator="['startvm', { initialValue: true }]" :checked="this.startvm" @change="checked => { this.startvm = checked }" />
                     </a-form-item>
                   </div>
                 </template>
@@ -663,6 +670,7 @@ export default {
       podId: null,
       clusterId: null,
       zoneSelected: false,
+      startvm: true,
       vm: {
         name: null,
         zoneid: null,
@@ -1101,8 +1109,7 @@ export default {
     this.form.getFieldDecorator('cpunumber', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('cpuSpeed', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('memory', { initialValue: undefined, preserve: true })
-  },
-  mounted () {
+
     this.dataPreFill = this.preFillContent && Object.keys(this.preFillContent).length > 0 ? this.preFillContent : {}
     this.fetchData()
   },
@@ -1419,6 +1426,9 @@ export default {
         if (values.hypervisor && values.hypervisor.length > 0) {
           deployVmData.hypervisor = values.hypervisor
         }
+
+        deployVmData.startvm = values.startvm
+
         // step 3: select service offering
         deployVmData.serviceofferingid = values.computeofferingid
         if (this.serviceOffering && this.serviceOffering.iscustomized) {

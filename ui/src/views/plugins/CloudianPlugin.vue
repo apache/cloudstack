@@ -34,7 +34,7 @@ import { api } from '@/api'
 
 export default {
   name: 'CloudianPlugin',
-  mounted () {
+  created () {
     this.doSso()
   },
   data () {

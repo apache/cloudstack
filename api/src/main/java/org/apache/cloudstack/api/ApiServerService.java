@@ -42,6 +42,4 @@ public interface ApiServerService {
     public String handleRequest(Map<String, Object[]> params, String responseType, StringBuilder auditTrailSb) throws ServerApiException;
 
     public Class<?> getCmdClass(String cmdName);
-
-    public boolean isValidApiName(String apiName);
 }

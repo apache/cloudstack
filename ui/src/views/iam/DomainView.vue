@@ -128,9 +128,6 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
-    this.fetchData()
-  },
   beforeRouteUpdate (to, from, next) {
     next()
   },
@@ -140,6 +137,7 @@ export default {
   },
   created () {
     this.domainStore = store.getters.domainStore
+    this.fetchData()
   },
   watch: {
     '$route' (to, from) {
