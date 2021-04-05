@@ -1607,9 +1607,15 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL, RouterHealthChecksBasicInterval.value().toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL, RouterHealthChecksAdvancedInterval.value().toString());
         String excludedTests = RouterHealthChecksToExclude.valueIn(router.getDataCenterId());
-        if (router.getIsRedundantRouter() && RedundantState.BACKUP.equals(router.getRedundantState())) {
-            excludedTests = excludedTests.isEmpty() ? BACKUP_ROUTER_EXCLUDED_TESTS : excludedTests + "," + BACKUP_ROUTER_EXCLUDED_TESTS;
+        if (router.getIsRedundantRouter()) {
+            // Disable gateway check if VPC has no tiers or no active VM's in it
+            final List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
+            if (RedundantState.BACKUP.equals(router.getRedundantState()) ||
+                    routerGuestNtwkIds == null || routerGuestNtwkIds.isEmpty()) {
+                excludedTests = excludedTests.isEmpty() ? BACKUP_ROUTER_EXCLUDED_TESTS : excludedTests + "," + BACKUP_ROUTER_EXCLUDED_TESTS;
+            }
         }
+
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, excludedTests);
         command.setHealthChecksConfig(getRouterHealthChecksConfig(router));
         command.setReconfigureAfterUpdate(reconfigure);

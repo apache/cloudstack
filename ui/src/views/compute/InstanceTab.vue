@@ -102,7 +102,7 @@
                 icon="environment"
                 shape="circle"
                 :disabled="(!('addIpToNic' in $store.getters.apis) && !('addIpToNic' in $store.getters.apis))"
-                @click="fetchSecondaryIPs(record.nic.id)" />
+                @click="onAcquireSecondaryIPAddress(record)" />
             </a-tooltip>
             <a-tooltip placement="bottom">
               <template slot="title">
@@ -220,7 +220,23 @@
         {{ $t('message.network.secondaryip') }}
       </p>
       <a-divider />
-      <a-input :placeholder="$t('label.new.secondaryip.description')" v-model="newSecondaryIp" autoFocus></a-input>
+      <div class="modal-form">
+        <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
+        <a-select
+          showSearch
+          v-if="editNicResource.type==='Shared'"
+          v-model="newSecondaryIp"
+          :loading="listIps.loading">
+          <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
+            {{ ip.ipaddress }}
+          </a-select-option>
+        </a-select>
+        <a-input
+          v-else
+          :placeholder="$t('label.new.secondaryip.description')"
+          v-model="newSecondaryIp"></a-input>
+      </div>
+
       <div style="margin-top: 10px; display: flex; justify-content:flex-end;">
         <a-button @click="submitSecondaryIP" type="primary" style="margin-right: 10px;">{{ $t('label.add.secondary.ip') }}</a-button>
         <a-button @click="closeModals">{{ $t('label.close') }}</a-button>
@@ -298,6 +314,7 @@ export default {
       loadingNic: false,
       editIpAddressNic: '',
       editIpAddressValue: '',
+      editNetworkId: '',
       secondaryIPs: [],
       selectedNicId: '',
       newSecondaryIp: '',
@@ -443,6 +460,17 @@ export default {
       if (record.nic.type === 'Shared') {
         this.fetchPublicIps(record.nic.networkid)
       }
+    },
+    onAcquireSecondaryIPAddress (record) {
+      if (record.nic.type === 'Shared') {
+        this.fetchPublicIps(record.nic.networkid)
+      } else {
+        this.listIps.opts = []
+      }
+
+      this.editNicResource = record.nic
+      this.editNetworkId = record.nic.networkid
+      this.fetchSecondaryIPs(record.nic.id)
     },
     submitAddNetwork () {
       const params = {}
@@ -613,6 +641,9 @@ export default {
       }).catch(error => {
         this.$notifyError(error)
         this.loadingNic = false
+      }).finally(() => {
+        this.newSecondaryIp = null
+        this.fetchPublicIps(this.editNetworkId)
       })
     },
     removeSecondaryIP (id) {
@@ -625,6 +656,7 @@ export default {
           successMethod: () => {
             this.loadingNic = false
             this.fetchSecondaryIPs(this.selectedNicId)
+            this.fetchPublicIps(this.editNetworkId)
             this.parentFetchData()
           },
           errorMessage: this.$t('message.error.remove.secondary.ipaddress'),
