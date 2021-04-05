@@ -37,6 +37,7 @@ from marvin.codes import PASS, FAILED
 from marvin.lib.base import (Template,
                              ServiceOffering,
                              Account,
+                             StoragePool,
                              Configurations)
 from marvin.lib.utils import (cleanup_resources,
                               validateList,
@@ -81,6 +82,20 @@ class TestKubernetesCluster(cloudstackTestCase):
                                       "cloud.kubernetes.service.enabled",
                                       "true")
                 cls.restartServer()
+            if cls.hypervisor.lower() == 'vmware':
+                cls.create_full_clone = Configurations.list(cls.apiclient, name="vmware.create.full.clone")[0].value
+                if cls.create_full_clone not in ["true", True]:
+                    Configurations.update(cls.apiclient,
+                                          "vmware.create.full.clone",
+                                          "true")
+                allStoragePools = StoragePool.list(
+                    cls.apiclient
+                )
+                for pool in allStoragePools:
+                    Configurations.update(cls.apiclient,
+                                          storageid=pool.id,
+                                          name="vmware.create.full.clone",
+                                          value="true")
 
             cls.cks_template = None
             cls.initial_configuration_cks_template_name = None
@@ -164,6 +179,7 @@ class TestKubernetesCluster(cloudstackTestCase):
             # Restore original CKS template
             if cls.cks_template != None:
                 cls.cks_template.delete(cls.apiclient)
+                cls._cleanup.remove(cls.cks_template)
             if cls.hypervisorNotSupported == False and cls.initial_configuration_cks_template_name != None:
                 Configurations.update(cls.apiclient,
                                       cls.cks_template_name_key,
@@ -175,6 +191,21 @@ class TestKubernetesCluster(cloudstackTestCase):
                                       "cloud.kubernetes.service.enabled",
                                       "false")
                 cls.restartServer()
+
+            if cls.hypervisor.lower() == 'vmware':
+                cls.create_full_clone = Configurations.list(cls.apiclient, name="vmware.create.full.clone")[0].value
+                if cls.create_full_clone in ["true", True]:
+                    Configurations.update(cls.apiclient,
+                                          "vmware.create.full.clone",
+                                          "false")
+                allStoragePools = StoragePool.list(
+                    cls.apiclient
+                )
+                for pool in allStoragePools:
+                    Configurations.update(cls.apiclient,
+                                          storageid=pool.id,
+                                          name="vmware.create.full.clone",
+                                          value="false")
 
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
