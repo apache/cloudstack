@@ -60,31 +60,6 @@
             <a-icon type="delete" class="traffic-type-action" @click="deleteTraffic(record.key, traffic, $event)"/>
           </a-tag>
         </div>
-        <a-modal
-          :title="$t('label.edit.traffic.type')"
-          :visible="showEditTraffic"
-          :closable="true"
-          :maskClosable="false"
-          :okText="$t('label.ok')"
-          :cancelText="$t('label.cancel')"
-          @ok="updateTrafficLabel(trafficInEdit)"
-          @cancel="cancelEditTraffic"
-          centered
-        >
-          <a-form :form="form">
-            <span class="ant-form-text"> {{ $t('message.edit.traffic.type') }} </span>
-            <a-form-item v-bind="formItemLayout" style="margin-top:16px;" :label="$t('label.traffic.label')">
-              <a-input
-                v-decorator="['trafficLabel', {
-                  rules: [{
-                    required: true,
-                    message: $t('message.error.traffic.label'),
-                  }]
-                }]"
-              />
-            </a-form-item>
-          </a-form>
-        </a-modal>
         <div v-if="isShowAddTraffic(record.traffics)">
           <div class="traffic-select-item" v-if="addingTrafficForKey === record.key">
             <a-select
@@ -161,6 +136,31 @@
       centered
     >
       <span>{{ $t('message.required.traffic.type') }}</span>
+    </a-modal>
+    <a-modal
+      :title="$t('label.edit.traffic.type')"
+      :visible="showEditTraffic"
+      :closable="true"
+      :maskClosable="false"
+      :okText="$t('label.ok')"
+      :cancelText="$t('label.cancel')"
+      @ok="updateTrafficLabel(trafficInEdit)"
+      @cancel="cancelEditTraffic"
+      centered
+    >
+      <a-form :form="form">
+        <span class="ant-form-text"> {{ $t('message.edit.traffic.type') }} </span>
+        <a-form-item v-bind="formItemLayout" style="margin-top:16px;" :label="$t('label.traffic.label')">
+          <a-input
+            v-decorator="['trafficLabel', {
+              rules: [{
+                required: true,
+                message: $t('message.error.traffic.label'),
+              }]
+            }]"
+          />
+        </a-form-item>
+      </a-form>
     </a-modal>
   </div>
 </template>
