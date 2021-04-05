@@ -28,7 +28,6 @@ import org.springframework.stereotype.Component;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
@@ -37,8 +36,8 @@ import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -56,22 +55,6 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
     private ClusterDetailsDao clusterDetailsDao;
     @Inject
     private CapacityManager capacityManager;
-
-    private boolean checkHostCapacity(Host host, ServiceOffering offering, boolean considerReservedCapacity) {
-        int cpu_requested = offering.getCpu() * offering.getSpeed();
-        long ram_requested = offering.getRamSize() * 1024L * 1024L;
-        Cluster cluster = clusterDao.findById(host.getClusterId());
-        ClusterDetailsVO clusterDetailsCpuOvercommit = clusterDetailsDao.findDetail(cluster.getId(), "cpuOvercommitRatio");
-        ClusterDetailsVO clusterDetailsRamOvercommmt = clusterDetailsDao.findDetail(cluster.getId(), "memoryOvercommitRatio");
-        Float cpuOvercommitRatio = Float.parseFloat(clusterDetailsCpuOvercommit.getValue());
-        Float memoryOvercommitRatio = Float.parseFloat(clusterDetailsRamOvercommmt.getValue());
-
-        boolean hostHasCpuCapability = capacityManager.checkIfHostHasCpuCapability(host.getId(), offering.getCpu(), offering.getSpeed());
-        boolean hostHasCapacity = capacityManager.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio,
-                considerReservedCapacity);
-
-        return hostHasCpuCapability && hostHasCapacity;
-    }
 
     @Override
     public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo) {
@@ -122,11 +105,15 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
                 }
                 continue;
             }
-            if (!checkHostCapacity(host, offering, considerReservedCapacity)) {
+            Pair<Boolean, Boolean> cpuCapabilityAndCapacity = capacityManager.checkIfHostHasCpuCapabilityAndCapacity(host, offering, considerReservedCapacity);
+            if (!cpuCapabilityAndCapacity.first() || !cpuCapabilityAndCapacity.second()) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId() + " does not have enough capacity, skipping this and trying other available hosts");
+                    s_logger.debug("Not using host " + host.getId() + "; host has cpu capability? " + cpuCapabilityAndCapacity.first() + ", host has capacity?" + cpuCapabilityAndCapacity.second());
                 }
                 continue;
+            }
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Found a suitable host, adding to list: " + host.getId());
             }
             suitableHosts.add(host);
         }
@@ -184,11 +171,15 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
                 }
                 continue;
             }
-            if (!checkHostCapacity(host, offering, considerReservedCapacity)) {
+            Pair<Boolean, Boolean> cpuCapabilityAndCapacity = capacityManager.checkIfHostHasCpuCapabilityAndCapacity(host, offering, considerReservedCapacity);
+            if (!cpuCapabilityAndCapacity.first() || !cpuCapabilityAndCapacity.second()) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId() + " does not have enough capacity, skipping this and trying other available hosts");
+                    s_logger.debug("Not using host " + host.getId() + "; host has cpu capability? " + cpuCapabilityAndCapacity.first() + ", host has capacity?" + cpuCapabilityAndCapacity.second());
                 }
                 continue;
+            }
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Found a suitable host, adding to list: " + host.getId());
             }
             suitableHosts.add(host);
         }
