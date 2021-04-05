@@ -534,7 +534,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ActionTimeout, SyncThreadPoolSize, outOfBandManagementBackgroundTaskExecutionInterval};
+        return new ConfigKey<?>[] {ActionTimeout, SyncThreadPoolSize, OutOfBandManagementBackgroundTaskExecutionInterval};
     }
 
     public List<OutOfBandManagementDriver> getOutOfBandManagementDrivers() {
@@ -578,7 +578,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
 
         @Override
         public Long getDelay() {
-            return outOfBandManagementBackgroundTaskExecutionInterval.value() * 1000L;
+            return OutOfBandManagementBackgroundTaskExecutionInterval.value() * 1000L;
         }
 
     }
