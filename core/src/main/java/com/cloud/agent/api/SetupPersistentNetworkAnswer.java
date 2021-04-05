@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,45 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
 
 package com.cloud.agent.api;
 
-import java.util.Map;
+public class SetupPersistentNetworkAnswer extends Answer {
+    public SetupPersistentNetworkAnswer(){}
 
-import com.cloud.agent.api.to.NicTO;
-
-public class UnPlugNicCommand extends Command {
-    NicTO nic;
-    String instanceName;
-    Map<String, Boolean> vlanToPersistenceMap;
-
-    public NicTO getNic() {
-        return nic;
-    }
-
-    @Override
-    public boolean executeInSequence() {
-        return true;
-    }
-
-    protected UnPlugNicCommand() {
-    }
-
-    public UnPlugNicCommand(NicTO nic, String instanceName) {
-        this.nic = nic;
-        this.instanceName = instanceName;
-    }
-
-    public String getVmName() {
-        return instanceName;
-    }
-
-    public Map<String, Boolean> getVlanToPersistenceMap() {
-        return vlanToPersistenceMap;
-    }
-
-    public void setVlanToPersistenceMap(Map<String, Boolean> vlanToPersistenceMap) {
-        this.vlanToPersistenceMap = vlanToPersistenceMap;
+    public SetupPersistentNetworkAnswer(SetupPersistentNetworkCommand cmd, boolean success, String result) {
+        super(cmd, success, result);
     }
 }

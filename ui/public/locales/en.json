@@ -630,6 +630,7 @@
 "label.create.ssh.key.pair": "Create a SSH Key Pair",
 "label.create.template": "Create template",
 "label.create.user": "Create user",
+"label.create.vpc.tier": "Create VPC tier",
 "label.create.vpn.connection": "Create VPN Connection",
 "label.created": "Created",
 "label.created.by.system": "Created by system",

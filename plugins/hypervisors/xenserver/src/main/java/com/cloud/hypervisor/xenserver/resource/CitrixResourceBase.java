@@ -678,7 +678,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         correctVif.destroy(conn);
 
                         // Disable the VLAN network if necessary
-                        disableVlanNetwork(conn, network);
+                        disableVlanNetwork(conn, network, true);
                     }
                 }
             }
@@ -1574,7 +1574,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    public void disableVlanNetwork(final Connection conn, final Network network) {
+    public void disableVlanNetwork(final Connection conn, final Network network, boolean deleteVlan) {
     }
 
     @Override
@@ -3612,7 +3612,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             for (final Network network : networks) {
                 if (network.getNameLabel(conn).startsWith("VLAN")) {
-                    disableVlanNetwork(conn, network);
+                    disableVlanNetwork(conn, network, true);
                 }
             }
         } catch (final Exception e) {

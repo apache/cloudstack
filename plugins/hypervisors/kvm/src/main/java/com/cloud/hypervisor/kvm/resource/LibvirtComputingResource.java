@@ -1870,7 +1870,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 // We don't know which "traffic type" is associated with
                 // each interface at this point, so inform all vif drivers
                 for (final VifDriver vifDriver : getAllVifDrivers()) {
-                    vifDriver.unplug(pluggedNic);
+                    vifDriver.unplug(pluggedNic, true);
                 }
             }
         }
@@ -3510,7 +3510,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (nics != null) {
             for (final InterfaceDef nic : nics) {
                 for (final VifDriver vifDriver : getAllVifDrivers()) {
-                    vifDriver.unplug(nic);
+                    vifDriver.unplug(nic, true);
                 }
             }
         }
@@ -4217,6 +4217,24 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             snapshot.delete(flags); // clean metadata of vm snapshot
         }
         return vmsnapshots;
+    }
+
+    public String getVlanIdFromBridgeName(String brName) {
+        if (org.apache.commons.lang.StringUtils.isNotBlank(brName)) {
+            String[] s = brName.split("-");
+            if (s.length > 1) {
+                return s[1];
+            }
+            return null;
+        }
+        return null;
+    }
+
+    public boolean shouldDeleteBridge(Map<String, Boolean> vlanToPersistenceMap, String vlanId) {
+        if (MapUtils.isNotEmpty(vlanToPersistenceMap) && vlanId != null && vlanToPersistenceMap.containsKey(vlanId)) {
+            return vlanToPersistenceMap.get(vlanId);
+        }
+        return true;
     }
 
     private static String getTagValue(String tag, Element eElement) {
