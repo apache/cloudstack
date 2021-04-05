@@ -26,6 +26,20 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateWithStorageAnswer;
@@ -52,19 +66,8 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 @Component
 public class VmwareStorageMotionStrategy implements DataMotionStrategy {
@@ -88,9 +91,8 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         if (isOnVmware(srcData, destData)
                 && isOnPrimary(srcData, destData)
                 && isVolumesOnly(srcData, destData)
-                && isDettached(srcData)
-                && isIntraCluster(srcData, destData)
-                && isStoreScopeEqual(srcData, destData)) {
+                && isDetachedOrAttachedToStoppedVM(srcData)
+                && isIntraClusterOrZoneWideStoreInvolved(srcData, destData)) {
             if (s_logger.isDebugEnabled()) {
                 String msg = String.format("%s can handle the request because %d(%s) and %d(%s) share the VMware cluster %s (== %s)"
                         , this.getClass()
@@ -107,9 +109,18 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         return StrategyPriority.CANT_HANDLE;
     }
 
-    private boolean isDettached(DataObject srcData) {
+    private boolean isAttachedToStoppedVM(Volume volume) {
+        VMInstanceVO vm = instanceDao.findById(volume.getInstanceId());
+        if (vm != null && VirtualMachine.State.Stopped.equals(vm.getState())) {
+            List<VolumeVO> volumes = volDao.findByInstance(vm.getId());
+            return volumes.size() == 1;
+        }
+        return false;
+    }
+
+    private boolean isDetachedOrAttachedToStoppedVM(DataObject srcData) {
         VolumeVO volume = volDao.findById(srcData.getId());
-        return volume.getInstanceId() == null;
+        return volume.getInstanceId() == null || isAttachedToStoppedVM(volume);
     }
 
     private boolean isVolumesOnly(DataObject srcData, DataObject destData) {
@@ -127,30 +138,15 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
                 && HypervisorType.VMware.equals(destData.getTO().getHypervisorType());
     }
 
-    private boolean isIntraCluster(DataObject srcData, DataObject destData) {
+    private boolean isIntraClusterOrZoneWideStoreInvolved(DataObject srcData, DataObject destData) {
         DataStore srcStore = srcData.getDataStore();
-        StoragePool srcPool = storagePoolDao.findById(srcStore.getId());
+        StoragePoolVO srcPool = storagePoolDao.findById(srcStore.getId());
         DataStore destStore = destData.getDataStore();
-        StoragePool destPool = storagePoolDao.findById(destStore.getId());
+        StoragePoolVO destPool = storagePoolDao.findById(destStore.getId());
         if (srcPool.getClusterId() != null && destPool.getClusterId() != null) {
             return srcPool.getClusterId().equals(destPool.getClusterId());
         }
-        return false;
-    }
-
-    /**
-     * Ensure that the scope of source and destination storage pools match
-     *
-     * @param srcData
-     * @param destData
-     * @return
-     */
-    private boolean isStoreScopeEqual(DataObject srcData, DataObject destData) {
-        DataStore srcStore = srcData.getDataStore();
-        DataStore destStore = destData.getDataStore();
-        String msg = String.format("Storage scope of source pool is %s and of destination pool is %s", srcStore.getScope().toString(), destStore.getScope().toString());
-        s_logger.debug(msg);
-        return srcStore.getScope().getScopeType() == (destStore.getScope().getScopeType());
+        return ScopeType.ZONE.equals(srcPool.getScope()) || ScopeType.ZONE.equals(destPool.getScope());
     }
 
     @Override

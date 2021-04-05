@@ -31,7 +31,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import com.cloud.dc.Pod;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -100,6 +99,7 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
 import com.cloud.event.ActionEvent;
@@ -2208,13 +2208,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // Check that Vm to which this volume is attached does not have VM Snapshots
-        // OfflineVmwareMigration: considder if this is needed and desirable
+        // OfflineVmwareMigration: consider if this is needed and desirable
         if (vm != null && _vmSnapshotDao.findByVm(vm.getId()).size() > 0) {
             throw new InvalidParameterValueException("Volume cannot be migrated, please remove all VM snapshots for VM to which this volume is attached");
         }
 
         // OfflineVmwareMigration: extract this block as method and check if it is subject to regression
-        if (vm != null && vm.getState() == State.Running) {
+        if (vm != null && State.Running.equals(vm.getState())) {
             // Check if the VM is GPU enabled.
             if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
                 throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
@@ -2244,10 +2244,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (!liveMigrateVolume) {
                 throw new InvalidParameterValueException("Volume needs to be detached from VM");
             }
+
+            if (!cmd.isLiveMigrate()) {
+                throw new InvalidParameterValueException("The volume " + vol + "is attached to a vm and for migrating it " + "the parameter livemigrate should be specified");
+            }
         }
 
-        if (liveMigrateVolume && !cmd.isLiveMigrate()) {
-            throw new InvalidParameterValueException("The volume " + vol + "is attached to a vm and for migrating it " + "the parameter livemigrate should be specified");
+        if (vm != null &&
+                HypervisorType.VMware.equals(vm.getHypervisorType()) &&
+                State.Stopped.equals(vm.getState())) {
+            // For VMware, use liveMigrateVolume=true so that it follows VmwareStorageMotionStrategy
+            liveMigrateVolume = true;
         }
 
         StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
