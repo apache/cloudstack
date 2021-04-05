@@ -424,8 +424,7 @@ export default {
     eventBus.$on('exec-action', (action, isGroupAction) => {
       this.execAction(action, isGroupAction)
     })
-  },
-  mounted () {
+
     if (this.device === 'desktop') {
       this.pageSize = 20
     }

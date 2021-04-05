@@ -408,7 +408,7 @@ export default {
       this.setCurrentTab()
     }
   },
-  mounted () {
+  created () {
     this.handleFetchData()
     this.setCurrentTab()
   },

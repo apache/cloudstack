@@ -256,7 +256,7 @@ export default {
       return val.toUpperCase()
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

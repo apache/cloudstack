@@ -125,14 +125,14 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
-    this.fetchData()
-  },
   beforeRouteUpdate (to, from, next) {
     next()
   },
   beforeRouteLeave (to, from, next) {
     next()
+  },
+  created () {
+    this.fetchData()
   },
   watch: {
     '$route' (to, from) {
