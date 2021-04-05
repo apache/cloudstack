@@ -125,7 +125,7 @@ export default {
       fetchLoading: false
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {
