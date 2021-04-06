@@ -112,6 +112,7 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.dao.UserVmJoinDao;
@@ -136,6 +137,8 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
@@ -199,6 +202,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -283,6 +287,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     MessageBus _messageBus;
     @Inject
     private VMTemplateDetailsDao _tmpltDetailsDao;
+    @Inject
+    private HypervisorGuruManager _hvGuruMgr;
 
     private boolean _disableExtraction = false;
     private List<TemplateAdapter> _adapters;
@@ -1289,11 +1295,16 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         DataTO isoTO = tmplt.getTO();
         DiskTO disk = new DiskTO(isoTO, null, null, Volume.Type.ISO);
+
+        HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+        VirtualMachineTO vmTO = hvGuru.implement(profile);
+
         Command cmd = null;
         if (attach) {
-            cmd = new AttachCommand(disk, vmName);
+            cmd = new AttachCommand(disk, vmName, vmTO.getDetails());
         } else {
-            cmd = new DettachCommand(disk, vmName);
+            cmd = new DettachCommand(disk, vmName, vmTO.getDetails());
         }
         Answer a = _agentMgr.easySend(vm.getHostId(), cmd);
         return (a != null && a.getResult());

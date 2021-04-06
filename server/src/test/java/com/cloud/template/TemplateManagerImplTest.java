@@ -30,6 +30,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.storage.Storage;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.projects.ProjectManager;
@@ -180,6 +181,8 @@ public class TemplateManagerImplTest {
     @Inject
     private VMTemplateDao _tmpltDao;
 
+    @Inject
+    HypervisorGuruManager _hvGuruMgr;
 
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
@@ -695,6 +698,11 @@ public class TemplateManagerImplTest {
         @Bean
         public VMTemplateDetailsDao vmTemplateDetailsDao() {
             return Mockito.mock(VMTemplateDetailsDao.class);
+        }
+
+        @Bean
+        public HypervisorGuruManager hypervisorGuruManager() {
+            return Mockito.mock(HypervisorGuruManager.class);
         }
 
         public static class Library implements TypeFilter {
