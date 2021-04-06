@@ -101,7 +101,7 @@ export default {
       newRoute: null
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {

@@ -475,8 +475,6 @@ export default {
     })
   },
   created () {
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {
