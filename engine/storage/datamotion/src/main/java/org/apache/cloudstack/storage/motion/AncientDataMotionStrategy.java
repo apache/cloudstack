@@ -405,7 +405,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                     return answer;
                 }
             } catch (Exception e) {
-                if (objOnImageStore != null) {
+                if (imageStore.exists(objOnImageStore)) {
                     objOnImageStore.processEvent(Event.OperationFailed);
                     imageStore.delete(objOnImageStore);
                 }
