@@ -71,9 +71,9 @@ class TestHostHA(cloudstackTestCase):
             self.dbclient.execute("delete from data_center_details where name='resourceHAEnabled'")
             self.dbclient.execute("delete from ha_config where resource_type='Host'")
             self.dbclient.execute("update host set resource_state='Enabled' where type='Routing' and resource_state='Maintenance'")
-            cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+            raise Exception("Warning: Exception during db cleanup : %s" % e)
+        super(TestHostHA,self).tearDown()
 
 
     def getFakeMsId(self):
