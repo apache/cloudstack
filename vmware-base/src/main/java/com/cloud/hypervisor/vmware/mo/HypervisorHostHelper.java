@@ -1679,7 +1679,7 @@ public class HypervisorHostHelper {
 
         return controllerSpec;
     }
-    public static VirtualMachineMO createWorkerVM(VmwareHypervisorHost hyperHost, DatastoreMO dsMo, String vmName, String hardwareVersion) throws Exception {
+    public static VirtualMachineMO createWorkerVM(VmwareHypervisorHost hyperHost, DatastoreMO dsMo, String vmName, String vmxFormattedHardwareVersion) throws Exception {
 
         // Allow worker VM to float within cluster so that we will have better chance to
         // create it successfully
@@ -1693,8 +1693,8 @@ public class HypervisorHostHelper {
         VirtualMachineMO workingVM = null;
         VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
         vmConfig.setName(vmName);
-        if (hardwareVersion != null){
-            vmConfig.setVersion(("vmx-" + hardwareVersion));
+        if (StringUtils.isNotBlank(vmxFormattedHardwareVersion)){
+            vmConfig.setVersion(vmxFormattedHardwareVersion);
         }  else {
             ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(), hyperHost.getHyperHostCluster());
             DatacenterMO dataCenterMo = new DatacenterMO(hyperHost.getContext(), hyperHost.getHyperHostDatacenter());
