@@ -127,17 +127,6 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
                 && HypervisorType.VMware.equals(destData.getTO().getHypervisorType());
     }
 
-    private boolean isIntraCluster(DataObject srcData, DataObject destData) {
-        DataStore srcStore = srcData.getDataStore();
-        StoragePool srcPool = storagePoolDao.findById(srcStore.getId());
-        DataStore destStore = destData.getDataStore();
-        StoragePool destPool = storagePoolDao.findById(destStore.getId());
-        if (srcPool.getClusterId() != null && destPool.getClusterId() != null) {
-            return srcPool.getClusterId().equals(destPool.getClusterId());
-        }
-        return false;
-    }
-
     /**
      * Ensure that the scope of source and destination storage pools match
      *
