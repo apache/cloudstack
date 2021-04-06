@@ -82,21 +82,7 @@ class TestKubernetesCluster(cloudstackTestCase):
                                       "cloud.kubernetes.service.enabled",
                                       "true")
                 cls.restartServer()
-            if cls.hypervisor.lower() == 'vmware':
-                cls.create_full_clone = Configurations.list(cls.apiclient, name="vmware.create.full.clone")[0].value
-                if cls.create_full_clone not in ["true", True]:
-                    Configurations.update(cls.apiclient,
-                                          "vmware.create.full.clone",
-                                          "true")
-                allStoragePools = StoragePool.list(
-                    cls.apiclient
-                )
-                for pool in allStoragePools:
-                    Configurations.update(cls.apiclient,
-                                          storageid=pool.id,
-                                          name="vmware.create.full.clone",
-                                          value="true")
-
+            cls.updateVmwareSettings(False)
             cls.cks_template = None
             cls.initial_configuration_cks_template_name = None
             cls.cks_service_offering = None
@@ -177,9 +163,6 @@ class TestKubernetesCluster(cloudstackTestCase):
                 cls.debug("Error: Exception during cleanup for added Kubernetes supported versions: %s" % e)
         try:
             # Restore original CKS template
-            if cls.cks_template != None:
-                cls.cks_template.delete(cls.apiclient)
-                cls._cleanup.remove(cls.cks_template)
             if cls.hypervisorNotSupported == False and cls.initial_configuration_cks_template_name != None:
                 Configurations.update(cls.apiclient,
                                       cls.cks_template_name_key,
@@ -192,20 +175,7 @@ class TestKubernetesCluster(cloudstackTestCase):
                                       "false")
                 cls.restartServer()
 
-            if cls.hypervisor.lower() == 'vmware':
-                cls.create_full_clone = Configurations.list(cls.apiclient, name="vmware.create.full.clone")[0].value
-                if cls.create_full_clone in ["true", True]:
-                    Configurations.update(cls.apiclient,
-                                          "vmware.create.full.clone",
-                                          "false")
-                allStoragePools = StoragePool.list(
-                    cls.apiclient
-                )
-                for pool in allStoragePools:
-                    Configurations.update(cls.apiclient,
-                                          storageid=pool.id,
-                                          name="vmware.create.full.clone",
-                                          value="false")
+            cls.updateVmwareSettings(True)
 
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
@@ -213,6 +183,24 @@ class TestKubernetesCluster(cloudstackTestCase):
         if version_delete_failed == True:
             raise Exception("Warning: Exception during cleanup, unable to delete Kubernetes supported versions")
         return
+
+    @classmethod
+    def updateVmwareSettings(cls, tearDown):
+        value = "false"
+        if not tearDown:
+            value = "true"
+        if cls.hypervisor.lower() == 'vmware':
+            Configurations.update(cls.apiclient,
+                                  "vmware.create.full.clone",
+                                  value)
+            allStoragePools = StoragePool.list(
+                cls.apiclient
+            )
+            for pool in allStoragePools:
+                Configurations.update(cls.apiclient,
+                                      storageid=pool.id,
+                                      name="vmware.create.full.clone",
+                                      value=value)
 
     @classmethod
     def restartServer(cls):
@@ -370,7 +358,7 @@ class TestKubernetesCluster(cloudstackTestCase):
             self.fail("Failed to start Kubernetes cluster due to: %s" % e)
 
         self.verifyKubernetesClusterState(k8s_cluster, 'Running')
-
+        self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
         return
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
@@ -395,6 +383,7 @@ class TestKubernetesCluster(cloudstackTestCase):
             self.fail("Kubernetes cluster upgraded to a lower Kubernetes supported version. Must be an error.")
         except Exception as e:
             self.debug("Upgrading Kubernetes cluster with invalid Kubernetes supported version check successful, API failure: %s" % e)
+            self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
 
         return
 
