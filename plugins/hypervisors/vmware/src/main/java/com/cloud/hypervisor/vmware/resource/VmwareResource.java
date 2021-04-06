@@ -4391,6 +4391,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         final String vmName = cmd.getVmName();
 
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+        VmwareHypervisorHost hyperHostInTargetCluster = null;
+        if (cmd.getHostGuidInTargetCluster() != null) {
+            hyperHostInTargetCluster = VmwareHelper.getHostMOFromHostName(getServiceContext(),
+                    cmd.getHostGuidInTargetCluster());
+        }
         try {
             VirtualMachineMO vmMo = getVirtualMachineMO(vmName, hyperHost);
             if (vmMo == null) {
@@ -4400,7 +4405,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             String poolUuid = cmd.getDestinationPool();
-            return migrateAndAnswer(vmMo, poolUuid, hyperHost, cmd);
+            return migrateAndAnswer(vmMo, poolUuid, hyperHost, hyperHostInTargetCluster, cmd);
         } catch (Throwable e) { // hopefully only CloudRuntimeException :/
             if (e instanceof Exception) {
                 return new Answer(cmd, (Exception) e);
@@ -4413,14 +4418,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    private Answer migrateAndAnswer(VirtualMachineMO vmMo, String poolUuid, VmwareHypervisorHost hyperHost, Command cmd) throws Exception {
-        ManagedObjectReference morDs = getTargetDatastoreMOReference(poolUuid, hyperHost);
-        VmwareHypervisorHost targetHyperHost = null;
-        if (cmd instanceof MigrateVmToPoolCommand) {
-            MigrateVmToPoolCommand vmToPoolCommand = (MigrateVmToPoolCommand) cmd;
-            targetHyperHost = VmwareHelper.getHostMOFromHostName(getServiceContext(),
-                    vmToPoolCommand.getHostGuidInTargetCluster());
-        }
+    private Answer migrateAndAnswer(VirtualMachineMO vmMo, String poolUuid, VmwareHypervisorHost sourceHyperHost,
+                                    VmwareHypervisorHost targetHyperHost, Command cmd) throws Exception {
+        ManagedObjectReference morDs = getTargetDatastoreMOReference(poolUuid, sourceHyperHost);
         if (morDs == null && targetHyperHost != null) {
             morDs = getTargetDatastoreMOReference(poolUuid, targetHyperHost);
         }
@@ -4640,7 +4640,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             morDc = srcHyperHost.getHyperHostDatacenter();
             morDcOfTargetHost = tgtHyperHost.getHyperHostDatacenter();
             if (!morDc.getValue().equalsIgnoreCase(morDcOfTargetHost.getValue())) {
-                String msg = "Source host & target host are in different datacentesr";
+                String msg = "Source host & target host are in different datacenter";
                 throw new CloudRuntimeException(msg);
             }
             VmwareManager mgr = tgtHyperHost.getContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
@@ -4852,6 +4852,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String path = cmd.getVolumePath();
 
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+        VmwareHypervisorHost hyperHostInTargetCluster = null;
+        if (cmd.getHostGuidInTargetCluster() != null) {
+            hyperHostInTargetCluster = VmwareHelper.getHostMOFromHostName(getServiceContext(), cmd.getHostGuidInTargetCluster());
+        }
+        VmwareHypervisorHost targetDSHost = hyperHostInTargetCluster != null ? hyperHostInTargetCluster : hyperHost;
         VirtualMachineMO vmMo = null;
         DatastoreMO dsMo = null;
         DatastoreMO destinationDsMo = null;
@@ -4867,13 +4872,22 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // we need to spawn a worker VM to attach the volume to and move it
             morSourceDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getSourcePool().getUuid());
             dsMo = new DatastoreMO(hyperHost.getContext(), morSourceDS);
-            morDestintionDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getTargetPool().getUuid());
-            destinationDsMo = new DatastoreMO(hyperHost.getContext(), morDestintionDS);
+            morDestintionDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(targetDSHost, cmd.getTargetPool().getUuid());
+            destinationDsMo = new DatastoreMO(targetDSHost.getContext(), morDestintionDS);
 
             vmName = getWorkerName(getServiceContext(), cmd, 0, dsMo);
             if (destinationDsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
                 isvVolsInvolved = true;
                 vmName = getWorkerName(getServiceContext(), cmd, 0, destinationDsMo);
+            }
+
+            String hardwareVersion = null;
+            if (hyperHostInTargetCluster != null) {
+                Integer sourceHardwareVersion = HypervisorHostHelper.getHostHardwareVersion(hyperHost);
+                Integer destinationHardwareVersion = HypervisorHostHelper.getHostHardwareVersion(hyperHostInTargetCluster);
+                if (sourceHardwareVersion != null && destinationHardwareVersion != null && !sourceHardwareVersion.equals(destinationHardwareVersion)) {
+                    hardwareVersion = String.valueOf(Math.min(sourceHardwareVersion, destinationHardwareVersion));
+                }
             }
 
             // OfflineVmwareMigration: refactor for re-use
@@ -4883,7 +4897,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             s_logger.info("Create worker VM " + vmName);
             // OfflineVmwareMigration: 2. create the worker with access to the data(store)
-            vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, vmName, null);
+            vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, vmName, hardwareVersion);
             if (vmMo == null) {
                 // OfflineVmwareMigration: don't throw a general Exception but think of a specific one
                 throw new CloudRuntimeException("Unable to create a worker VM for volume operation");
@@ -4947,7 +4961,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             // OfflineVmwareMigration: this may have to be disected and executed in separate steps
-            answer = migrateAndAnswer(vmMo, cmd.getTargetPool().getUuid(), hyperHost, cmd);
+            answer = migrateAndAnswer(vmMo, cmd.getTargetPool().getUuid(), hyperHost, hyperHostInTargetCluster, cmd);
         } catch (Exception e) {
             String msg = String.format("Migration of volume '%s' failed due to %s", cmd.getVolumePath(), e.getLocalizedMessage());
             s_logger.error(msg, e);
@@ -4956,9 +4970,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             try {
                 // OfflineVmwareMigration: worker *may* have been renamed
                 vmName = vmMo.getVmName();
-                morSourceDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getTargetPool().getUuid());
-                dsMo = new DatastoreMO(hyperHost.getContext(), morSourceDS);
-                s_logger.info("Dettaching disks before destroying worker VM '" + vmName + "' after volume migration");
+                morSourceDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(targetDSHost, cmd.getTargetPool().getUuid());
+                dsMo = new DatastoreMO(targetDSHost.getContext(), morSourceDS);
+                s_logger.info("Detaching disks before destroying worker VM '" + vmName + "' after volume migration");
                 VirtualDisk[] disks = vmMo.getAllDiskDevice();
                 String format = "disk %d was migrated to %s";
                 for (VirtualDisk disk : disks) {
