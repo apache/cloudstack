@@ -1109,8 +1109,7 @@ export default {
     this.form.getFieldDecorator('cpunumber', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('cpuSpeed', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('memory', { initialValue: undefined, preserve: true })
-  },
-  mounted () {
+
     this.dataPreFill = this.preFillContent && Object.keys(this.preFillContent).length > 0 ? this.preFillContent : {}
     this.fetchData()
   },

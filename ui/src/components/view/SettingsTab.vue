@@ -120,7 +120,7 @@ export default {
         this.scopeKey = ''
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {
