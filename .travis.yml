@@ -170,6 +170,7 @@ env:
 
     - TESTS="component/test_regions_accounts
              component/test_routers
+             component/test_router_resources
              component/test_snapshots
              component/test_stopped_vm
              component/test_tags

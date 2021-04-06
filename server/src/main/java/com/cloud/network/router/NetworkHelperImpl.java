@@ -259,7 +259,15 @@ public class NetworkHelperImpl implements NetworkHelper {
             return null;
         }
 
+
+
         _accountMgr.checkAccess(caller, null, true, router);
+
+        final Account owner = _accountMgr.getAccount(router.getAccountId());
+        ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(router.getServiceOfferingId());
+        if (VirtualMachineManager.ResourceCountRouters.valueIn(router.getDomainId())) {
+            _itMgr.decrementVrResourceCount(routerOffering, owner, true);
+        }
 
         _itMgr.expunge(router.getUuid());
         _routerHealthCheckResultDao.expungeHealthChecks(router.getId());
@@ -475,6 +483,14 @@ public class NetworkHelperImpl implements NetworkHelper {
         // failed both times, throw the exception up
         final List<HypervisorType> hypervisors = getHypervisors(routerDeploymentDefinition);
 
+        // Increment the resource count with router offering.
+        // If router can't be deployed or started, decrement the resources.
+        // If resource.count.running.vms is false then increment resource count
+        if (VirtualMachineManager.ResourceCountRouters.valueIn(owner.getDomainId())) {
+            _itMgr.incrementVrResourceCount(routerOffering,
+                    owner, true);
+        }
+
         int allocateRetry = 0;
         int startRetry = 0;
         DomainRouterVO router = null;
@@ -524,6 +540,10 @@ public class NetworkHelperImpl implements NetworkHelper {
                     s_logger.debug("Failed to allocate the VR with hypervisor type " + hType + ", retrying one more time");
                     continue;
                 } else {
+                    // If VR can't be deployed then decrement the resource count
+                    if (VirtualMachineManager.ResourceCountRouters.valueIn(owner.getDomainId())) {
+                        _itMgr.decrementVrResourceCount(routerOffering, owner,true);
+                    }
                     throw ex;
                 }
             } finally {
@@ -541,6 +561,10 @@ public class NetworkHelperImpl implements NetworkHelper {
                         destroyRouter(router.getId(), _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM);
                         continue;
                     } else {
+                        // If router can't be started then decrement the resource count
+                        if (VirtualMachineManager.ResourceCountRouters.valueIn(owner.getDomainId())) {
+                            _itMgr.decrementVrResourceCount(routerOffering, owner,true);
+                        }
                         throw ex;
                     }
                 } finally {

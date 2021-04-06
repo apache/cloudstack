@@ -17,75 +17,6 @@
 
 package com.cloud.vm;
 
-import java.net.URI;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import javax.persistence.EntityExistsException;
-
-import com.cloud.storage.VolumeApiServiceImpl;
-import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
-import org.apache.cloudstack.annotation.AnnotationService;
-import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
-import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
-import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
-import org.apache.cloudstack.ca.CAManager;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.framework.ca.Certificate;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
-import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.framework.jobs.Outcome;
-import org.apache.cloudstack.framework.jobs.dao.VmWorkJobDao;
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
-import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
-import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
-import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
-import org.apache.cloudstack.framework.messagebus.MessageHandler;
-import org.apache.cloudstack.jobs.JobInfo;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.cloudstack.vm.UnmanagedVMsManager;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -165,6 +96,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageAccessException;
 import com.cloud.exception.StorageUnavailableException;
@@ -207,6 +139,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeApiService;
+import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -252,6 +185,73 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
+import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
+import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
+import org.apache.cloudstack.ca.CAManager;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.ca.Certificate;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.Outcome;
+import org.apache.cloudstack.framework.jobs.dao.VmWorkJobDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
+import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
+import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
+import org.apache.cloudstack.framework.messagebus.MessageHandler;
+import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.cloudstack.vm.UnmanagedVMsManager;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.BooleanUtils;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import javax.persistence.EntityExistsException;
+import java.net.URI;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.cloud.configuration.ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS;
 
@@ -368,6 +368,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private DomainRouterJoinDao domainRouterJoinDao;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private ConfigurationDao _configDao;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -1049,6 +1051,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             resourceCountIncrement(owner.getAccountId(),new Long(offering.getCpu()), new Long(offering.getRamSize()));
         }
 
+        // Increment the VR resource count if the global setting is set to true
+        // and resource.count.running.vms is also true
+        if (VirtualMachine.Type.DomainRouter.equals(vm.type) &&
+                ResourceCountRouters.valueIn(owner.getDomainId())) {
+            incrementVrResourceCount(offering, owner, false);
+        }
+
         boolean canRetry = true;
         ExcludeList avoids = null;
         try {
@@ -1345,6 +1354,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 if (VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
                     resourceCountDecrement(owner.getAccountId(),new Long(offering.getCpu()), new Long(offering.getRamSize()));
                 }
+                // Decrement VR resource count if the VR can't be started
+                if (VirtualMachine.Type.DomainRouter.equals(vm.type) &&
+                        ResourceCountRouters.valueIn(owner.getDomainId())) {
+                    decrementVrResourceCount(offering, owner, false);
+                }
+
                 if (canRetry) {
                     try {
                         changeState(vm, Event.OperationFailed, null, work, Step.Done);
@@ -1390,6 +1405,131 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (log) {
             s_logger.info(msgBuf.toString());
         }
+    }
+
+    /**
+     * Function to increment the VR resource count
+     *
+     * If the global setting resource.count.router is true then the VR
+     * resource count will be considered as well
+     * If the global setting resource.count.router.type is "all" then
+     * all VR resource count will be considered else the diff between
+     * the current VR service offering and the default offering will
+     * be considered
+     *
+     * @param offering
+     * @param owner
+     * @param isDeployOrDestroy
+     */
+    @Override
+    public void incrementVrResourceCount(ServiceOffering offering,
+                                         Account owner,
+                                         boolean isDeployOrDestroy) {
+        // During router deployment/destroy, we increment the resource
+        // count only if resource.count.running.vms is false else
+        // we increment it during VR start/stop. Same applies for
+        // decrementing resource count.
+        if (isDeployOrDestroy == ResourceCountRunningVMsonly.value()) {
+            return;
+        }
+        ServiceOffering defaultRouterOffering = null;
+        String globalRouterOffering = _configDao.getValue("router.service.offering");
+        if (globalRouterOffering != null) {
+            defaultRouterOffering = _serviceOfferingDao.findByUuid(globalRouterOffering);
+        }
+
+        if (defaultRouterOffering == null) {
+            defaultRouterOffering =  _serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
+        }
+
+        int cpuCount = 0;
+        int memoryCount = 0;
+        // Count VR resources for domain if global setting is true
+        // if value is "all" count all VR resources else get diff of
+        // current VR offering and default VR offering
+        if (ResourceCountRoutersType.valueIn(owner.getDomainId())
+                .equalsIgnoreCase(COUNT_ALL_VR_RESOURCES)) {
+            cpuCount = offering.getCpu();
+            memoryCount = offering.getRamSize();
+        } else if (ResourceCountRoutersType.valueIn(owner.getDomainId())
+                .equalsIgnoreCase(COUNT_DELTA_VR_RESOURCES)) {
+            // Default offering value can be greater than current offering value
+            if (offering.getCpu() >= defaultRouterOffering.getCpu()) {
+                cpuCount = offering.getCpu() - defaultRouterOffering.getCpu();
+            }
+            if (offering.getRamSize() >= defaultRouterOffering.getRamSize()) {
+                memoryCount = offering.getRamSize() - defaultRouterOffering.getRamSize();
+            }
+        }
+
+        // Check if resource count can be allocated to account/domain
+        try {
+            if (cpuCount > 0) {
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.cpu, cpuCount);
+            }
+            if (memoryCount > 0) {
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.memory, memoryCount);
+            }
+
+        } catch (ResourceAllocationException ex) {
+            throw new CloudRuntimeException("Unable to deploy/start routers due to " + ex.getMessage());
+        }
+
+        // Increment the resource count
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Incrementing the CPU count with value " + cpuCount + " and " +
+                    "RAM value with " + memoryCount);
+        }
+        _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.cpu, new Long(cpuCount));
+        _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.memory, new Long(memoryCount));
+    }
+
+    /**
+     * Function to decrement the VR resource count
+     *
+     * @param offering
+     * @param owner
+     * @param isDeployOrDestroy
+     */
+    @Override
+    public void decrementVrResourceCount(ServiceOffering offering,
+                                         Account owner,
+                                         boolean isDeployOrDestroy) {
+        if (isDeployOrDestroy == ResourceCountRunningVMsonly.value()) {
+            return;
+        }
+
+        ServiceOffering defaultRouterOffering = null;
+        String globalRouterOffering = _configDao.getValue("router.service.offering");
+        if (globalRouterOffering != null) {
+            defaultRouterOffering = _serviceOfferingDao.findByUuid(globalRouterOffering);
+        }
+        if (defaultRouterOffering == null) {
+            defaultRouterOffering =  _serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
+        }
+
+        int cpuCount = 0;
+        int memoryCount = 0;
+
+        // Since we already incremented the resource count for the domain,
+        // decrement it if the VR can't be started
+        if (ResourceCountRoutersType.valueIn(owner.getDomainId())
+                .equalsIgnoreCase(COUNT_ALL_VR_RESOURCES)) {
+            cpuCount = offering.getCpu();
+            memoryCount = offering.getRamSize();
+        } else if (ResourceCountRoutersType.valueIn(owner.getDomainId())
+                .equalsIgnoreCase(COUNT_DELTA_VR_RESOURCES)) {
+            cpuCount = offering.getCpu() - defaultRouterOffering.getCpu();
+            memoryCount = offering.getRamSize() - defaultRouterOffering.getRamSize();
+        }
+
+        // Decrement resource count if flag is true
+        if (s_logger.isDebugEnabled()) {
+            s_logger.error("Decrementing cpu resource count with value " + cpuCount +
+                    " and memory resource with value " + memoryCount);
+        }
+        _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.cpu, new Long(cpuCount));
+        _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.memory, new Long(memoryCount));
     }
 
     private void resetVmNicsDeviceId(Long vmId) {
@@ -2089,9 +2229,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             boolean result = stateTransitTo(vm, Event.OperationSucceeded, null);
             if (result) {
+                ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
                 if (VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
-                    ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+                    //update resource count if stop successfully
                     resourceCountDecrement(vm.getAccountId(),new Long(offering.getCpu()), new Long(offering.getRamSize()));
+                }
+
+                final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
+                // Decrement VR resource count once the VR is stopped
+                if (VirtualMachine.Type.DomainRouter.equals(vm.type) &&
+                        ResourceCountRouters.valueIn(vm.getDomainId())) {
+                    decrementVrResourceCount(offering, owner,false);
                 }
             } else {
                 throw new CloudRuntimeException("unable to stop " + vm);
@@ -4604,7 +4752,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new ConfigKey<?>[] { ClusterDeltaSyncInterval, StartRetry, VmDestroyForcestop, VmOpCancelInterval, VmOpCleanupInterval, VmOpCleanupWait,
                 VmOpLockStateRetry, VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval,
                 VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, VmConfigDriveForceHostCacheUse, VmConfigDriveUseHostCacheOnUnsupportedPool,
-                HaVmRestartHostUp, ResourceCountRunningVMsonly, AllowExposeHypervisorHostname, AllowExposeHypervisorHostnameAccountLevel, SystemVmRootDiskSize };
+                HaVmRestartHostUp, ResourceCountRunningVMsonly, AllowExposeHypervisorHostname, AllowExposeHypervisorHostnameAccountLevel, SystemVmRootDiskSize,
+                VmServiceOfferingMaxCPUCores, VmServiceOfferingMaxRAMSize, ResourceCountRouters, ResourceCountRoutersType };
     }
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
