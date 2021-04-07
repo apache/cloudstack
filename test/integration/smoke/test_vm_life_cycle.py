@@ -1809,32 +1809,6 @@ class TestVAppsVM(cloudstackTestCase):
                 msg="VM NIC(InstanceID: {}) network mismatch, expected = {}, result = {}".format(nic_network["nic"], nic_network["network"], nic.networkid)
             )
 
-    def verify_disks(self, template_disks, vm_id):
-        cmd = listVolumes.listVolumesCmd()
-        cmd.virtualmachineid = vm_id
-        cmd.listall = True
-        vm_volumes =  self.apiclient.listVolumes(cmd)
-        self.assertEqual(
-            isinstance(vm_volumes, list),
-            True,
-            "Check listVolumes response returns a valid list"
-        )
-        self.assertEqual(
-            len(template_disks),
-            len(vm_volumes),
-            msg="VM volumes count is different, expected = {}, result = {}".format(len(template_disks), len(vm_volumes))
-        )
-        template_disks.sort(key=itemgetter('diskNumber'))
-        vm_volumes.sort(key=itemgetter('deviceid'))
-        for j in range(len(vm_volumes)):
-            volume = vm_volumes[j]
-            disk = template_disks[j]
-            self.assertEqual(
-                volume.size,
-                disk["virtualSize"],
-                msg="VM Volume(diskNumber: {}) network mismatch, expected = {}, result = {}".format(disk["diskNumber"], disk["virtualSize"], volume.size)
-            )
-
     @attr(tags=["advanced", "advancedns", "smoke", "sg", "dev"], required_hardware="false")
     @skipTestIf("hypervisorNotSupported")
     def test_01_vapps_vm_cycle(self):
@@ -1864,7 +1838,7 @@ class TestVAppsVM(cloudstackTestCase):
 
             nicnetworklist = []
             networks = []
-            vm_service = self.services["virtual_machine_vapps"][template.name]
+            vm_service = self.services["virtual_machine_vapps"][template['name']]
             network_mappings = vm_service["nicnetworklist"]
             for network_mapping in network_mappings:
                 network_service = self.services["isolated_network"]
@@ -1888,7 +1862,7 @@ class TestVAppsVM(cloudstackTestCase):
                 vm_service,
                 accountid=self.account.name,
                 domainid=self.account.domainid,
-                templateid=template.id,
+                templateid=template['id'],
                 serviceofferingid=self.custom_offering.id,
                 zoneid=self.zone.id,
                 customcpunumber=cpu_number,
