@@ -211,7 +211,7 @@ export default {
       newTagsForm: this.$form.createForm(this)
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   filters: {

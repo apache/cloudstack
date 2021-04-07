@@ -174,8 +174,6 @@ export default {
         scopedSlots: { customRender: 'user' }
       })
     }
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

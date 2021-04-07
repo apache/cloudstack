@@ -93,7 +93,7 @@ export default {
     }
   },
   inject: ['parentFetchData', 'parentToggleLoading'],
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {

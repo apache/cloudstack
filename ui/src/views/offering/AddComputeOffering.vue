@@ -819,8 +819,6 @@ export default {
         name: this.$t('label.all.zone')
       }
     ]
-  },
-  mounted () {
     if (this.$route.meta.name === 'systemoffering') {
       this.isSystem = true
     }

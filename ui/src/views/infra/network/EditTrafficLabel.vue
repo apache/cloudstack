@@ -145,7 +145,7 @@ export default {
     }
   },
   inject: ['parentFetchData'],
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

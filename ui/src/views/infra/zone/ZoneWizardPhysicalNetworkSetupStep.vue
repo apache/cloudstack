@@ -24,10 +24,11 @@
     </a-card>
     <a-table
       bordered
+      :scroll="{ x: 500 }"
       :dataSource="physicalNetworks"
       :columns="columns"
       :pagination="false"
-      style="margin-bottom: 24px;">
+      style="margin-bottom: 24px; width: 100%">
       <template slot="name" slot-scope="text, record">
         <a-input :value="text" @change="e => onCellChange(record.key, 'name', e.target.value)" autoFocus />
       </template>
@@ -59,35 +60,6 @@
             <a-icon type="delete" class="traffic-type-action" @click="deleteTraffic(record.key, traffic, $event)"/>
           </a-tag>
         </div>
-        <a-modal
-          :title="$t('label.edit.traffic.type')"
-          :visible="showEditTraffic"
-          :closable="true"
-          :maskClosable="false"
-          :footer="null"
-          @cancel="cancelEditTraffic"
-          v-ctrl-enter="updateTrafficLabel(trafficInEdit)"
-          centered
-        >
-          <a-form :form="form">
-            <span class="ant-form-text"> {{ $t('message.edit.traffic.type') }} </span>
-            <a-form-item v-bind="formItemLayout" style="margin-top:16px;" :label="$t('label.traffic.label')">
-              <a-input
-                v-decorator="['trafficLabel', {
-                  rules: [{
-                    required: true,
-                    message: $t('message.error.traffic.label'),
-                  }]
-                }]"
-              />
-            </a-form-item>
-
-            <div :span="24" class="action-button">
-              <a-button @click="cancelEditTraffic">{{ $t('label.cancel') }}</a-button>
-              <a-button type="primary" @click="updateTrafficLabel(trafficInEdit)">{{ $t('label.ok') }}</a-button>
-            </div>
-          </a-form>
-        </a-modal>
         <div v-if="isShowAddTraffic(record.traffics)">
           <div class="traffic-select-item" v-if="addingTrafficForKey === record.key">
             <a-select
@@ -168,6 +140,31 @@
         <a-button type="primary" @click="showError = false">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
+    <a-modal
+      :title="$t('label.edit.traffic.type')"
+      :visible="showEditTraffic"
+      :closable="true"
+      :maskClosable="false"
+      :okText="$t('label.ok')"
+      :cancelText="$t('label.cancel')"
+      @ok="updateTrafficLabel(trafficInEdit)"
+      @cancel="cancelEditTraffic"
+      centered
+    >
+      <a-form :form="form">
+        <span class="ant-form-text"> {{ $t('message.edit.traffic.type') }} </span>
+        <a-form-item v-bind="formItemLayout" style="margin-top:16px;" :label="$t('label.traffic.label')">
+          <a-input
+            v-decorator="['trafficLabel', {
+              rules: [{
+                required: true,
+                message: $t('message.error.traffic.label'),
+              }]
+            }]"
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 <script>
@@ -219,19 +216,20 @@ export default {
       columns.push({
         title: this.$t('label.network.name'),
         dataIndex: 'name',
-        width: '30%',
+        width: 175,
         scopedSlots: { customRender: 'name' }
       })
       columns.push({
         title: this.$t('label.isolation.method'),
         dataIndex: 'isolationMethod',
-        width: '20%',
+        width: 150,
         scopedSlots: { customRender: 'isolationMethod' }
       })
       columns.push({
         title: this.$t('label.traffic.types'),
         key: 'traffics',
         dataIndex: 'traffics',
+        width: 250,
         scopedSlots: { customRender: 'traffics' }
       })
       if (this.isAdvancedZone) {
@@ -239,7 +237,7 @@ export default {
           title: '',
           dataIndex: 'actions',
           scopedSlots: { customRender: 'actions' },
-          width: 50
+          width: 70
         })
       }
 

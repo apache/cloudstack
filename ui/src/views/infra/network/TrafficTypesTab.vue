@@ -89,7 +89,7 @@ export default {
       fetchLoading: false
     }
   },
-  mounted () {
+  created () {
     if (this.resource.id) {
       this.fetchData()
     }

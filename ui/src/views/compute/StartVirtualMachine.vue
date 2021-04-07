@@ -149,7 +149,7 @@ export default {
       this.apiParams[param.name] = param
     })
   },
-  mounted () {
+  created () {
     if (this.$store.getters.userInfo.roletype === 'Admin') {
       this.fetchPods()
       this.fetchClusters()

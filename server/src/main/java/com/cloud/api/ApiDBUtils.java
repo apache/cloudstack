@@ -27,6 +27,8 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.vm.NicVO;
+import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -458,6 +460,7 @@ public class ApiDBUtils {
     static BackupDao s_backupDao;
     static BackupScheduleDao s_backupScheduleDao;
     static BackupOfferingDao s_backupOfferingDao;
+    static NicDao s_nicDao;
 
     @Inject
     private ManagementServer ms;
@@ -702,6 +705,8 @@ public class ApiDBUtils {
     private BackupOfferingDao backupOfferingDao;
     @Inject
     private BackupScheduleDao backupScheduleDao;
+    @Inject
+    private NicDao nicDao;
 
     @PostConstruct
     void init() {
@@ -811,6 +816,7 @@ public class ApiDBUtils {
         s_hostDetailsDao = hostDetailsDao;
         s_clusterDetailsDao = clusterDetailsDao;
         s_vmSnapshotDao = vmSnapshotDao;
+        s_nicDao = nicDao;
         s_nicSecondaryIpDao = nicSecondaryIpDao;
         s_vpcProvSvc = vpcProvSvc;
         s_affinityGroupDao = affinityGroupDao;
@@ -2078,5 +2084,13 @@ public class ApiDBUtils {
 
     public static BackupOfferingResponse newBackupOfferingResponse(BackupOffering policy) {
         return s_backupOfferingDao.newBackupOfferingResponse(policy);
+    }
+
+    public static NicVO findByIp4AddressAndNetworkId(String ip4Address, long networkId) {
+        return s_nicDao.findByIp4AddressAndNetworkId(ip4Address, networkId);
+    }
+
+    public static NicSecondaryIpVO findSecondaryIpByIp4AddressAndNetworkId(String ip4Address, long networkId) {
+        return s_nicSecondaryIpDao.findByIp4AddressAndNetworkId(ip4Address, networkId);
     }
 }

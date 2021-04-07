@@ -169,8 +169,6 @@ export default {
         break
       }
     }
-  },
-  mounted () {
     if (this.action.dataView && this.action.icon === 'edit') {
       this.fillEditFormFieldValues()
     }

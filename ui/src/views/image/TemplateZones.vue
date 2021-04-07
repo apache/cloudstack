@@ -211,8 +211,6 @@ export default {
       (userInfo.account !== this.resource.account || userInfo.domain !== this.resource.domain)) {
       this.columns = this.columns.filter(col => { return col.dataIndex !== 'status' })
     }
-  },
-  mounted () {
     this.fetchData()
   },
   watch: {

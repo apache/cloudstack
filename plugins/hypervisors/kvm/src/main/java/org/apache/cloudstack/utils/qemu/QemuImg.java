@@ -28,6 +28,12 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 public class QemuImg {
+    public final static String BACKING_FILE = "backing_file";
+    public final static String BACKING_FILE_FORMAT = "backing_file_format";
+    public final static String CLUSTER_SIZE = "cluster_size";
+    public final static String FILE_FORMAT = "file_format";
+    public final static String IMAGE = "image";
+    public final static String VIRTUAL_SIZE = "virtual_size";
 
     /* The qemu-img binary. We expect this to be in $PATH */
     public String _qemuImgPath = "qemu-img";

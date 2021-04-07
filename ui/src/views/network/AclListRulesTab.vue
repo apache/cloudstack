@@ -250,7 +250,7 @@ export default {
       ruleFormMode: 'edit'
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {

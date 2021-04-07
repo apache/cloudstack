@@ -26,7 +26,7 @@ import './core/lazy_use'
 import './core/ext'
 import './permission' // permission control
 import './utils/filter' // global filter
-import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin } from './utils/plugins'
+import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin } from './utils/plugins'
 import { VueAxios } from './utils/request'
 import './utils/directives'
 
@@ -50,3 +50,5 @@ fetch('config.json').then(response => response.json()).then(config => {
     }).$mount('#app')
   })
 })
+
+Vue.use(configUtilPlugin)

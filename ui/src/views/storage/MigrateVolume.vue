@@ -88,7 +88,7 @@ export default {
       isSubmitted: false
     }
   },
-  mounted () {
+  created () {
     this.fetchStoragePools()
     this.resource.virtualmachineid && this.fetchDiskOfferings()
   },

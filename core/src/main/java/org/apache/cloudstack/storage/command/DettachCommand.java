@@ -19,6 +19,8 @@
 
 package org.apache.cloudstack.storage.command;
 
+import java.util.Map;
+
 import com.cloud.agent.api.to.DiskTO;
 
 public class DettachCommand extends StorageSubSystemCommand {
@@ -28,11 +30,19 @@ public class DettachCommand extends StorageSubSystemCommand {
     private String _iScsiName;
     private String _storageHost;
     private int _storagePort;
+    private Map<String, String> params;
 
     public DettachCommand(final DiskTO disk, final String vmName) {
         super();
         this.disk = disk;
         this.vmName = vmName;
+    }
+
+    public DettachCommand(final DiskTO disk, final String vmName, Map<String, String> params) {
+        super();
+        this.disk = disk;
+        this.vmName = vmName;
+        this.params = params;
     }
 
     @Override
@@ -86,6 +96,14 @@ public class DettachCommand extends StorageSubSystemCommand {
 
     public int getStoragePort() {
         return _storagePort;
+    }
+
+    public Map<String, String> getParams() {
+        return params;
+    }
+
+    public void setParams(Map<String, String> params) {
+        this.params = params;
     }
 
     @Override
