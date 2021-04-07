@@ -21,6 +21,7 @@ import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.resource.LibvirtVmMemoryDeviceDef;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
@@ -37,9 +38,10 @@ public final class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCo
         String vmName = vmSpec.getName();
         Connect conn = null;
 
-        long memory = ByteScaleUtils.bytesToKib(vmSpec.getMaxRam());
-        int vcpus = vmSpec.getCpus();
-        String scallingDetails = String.format("%s memory to [%s KiB] and cpu cores to [%s]", vmSpec.toString(), memory, vcpus);
+        long newMemory = ByteScaleUtils.bytesToKib(vmSpec.getMaxRam());
+        int newVcpus = vmSpec.getCpus();
+        String vmDefinition = vmSpec.toString();
+        String scalingDetails = String.format("%s memory to [%s KiB] and cpu cores to [%s]", vmDefinition, newMemory, newVcpus);
 
         try {
             LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
@@ -47,13 +49,29 @@ public final class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCo
             conn = libvirtUtilitiesHelper.getConnectionByVmName(vmName);
             Domain dm = conn.domainLookupByName(vmName);
 
-            logger.debug(String.format("Scalling %s.", scallingDetails));
-            dm.setMemory(memory);
-            dm.setVcpus(vcpus);
+            long currentMemory = LibvirtComputingResource.getDomainMemory(dm);
+            long runningVcpus = libvirtComputingResource.countDomainRunningVcpus(dm);
+            long memoryToAttach = newMemory - currentMemory;
 
-            return new ScaleVmAnswer(command, true, String.format("Successfully scalled %s.", scallingDetails));
+            logger.debug(String.format("Scaling %s.", scalingDetails));
+
+            if (memoryToAttach > 0) {
+                String memoryDevice = new LibvirtVmMemoryDeviceDef(newMemory - LibvirtComputingResource.getDomainMemory(dm)).toString();
+                logger.debug(String.format("Attaching memory device [%s] to %s.", memoryDevice, vmDefinition));
+                dm.attachDevice(memoryDevice);
+            } else {
+                logger.info(String.format("Not scaling the memory. To scale the memory of the %s, the new memory [%s] must be higher than the current memory [%s]. The current difference is [%s].", vmDefinition, newMemory, currentMemory, memoryToAttach));
+            }
+
+            if (runningVcpus < newVcpus) {
+                dm.setVcpus(newVcpus);
+            } else {
+                logger.info(String.format("Not scaling the cpu cores. To scale the cpu cores of the %s, the new cpu count [%s] must be higher than the current cpu count [%s].", vmDefinition, newVcpus, runningVcpus));
+            }
+
+            return new ScaleVmAnswer(command, true, String.format("Successfully scaled %s.", scalingDetails));
         } catch (LibvirtException e) {
-            String message = String.format("Unable to scale %s due to [%s].", scallingDetails, e.getMessage());
+            String message = String.format("Unable to scale %s due to [%s].", scalingDetails, e.getMessage());
             logger.warn(message, e);
             return new ScaleVmAnswer(command, false, message);
         } finally {

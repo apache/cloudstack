@@ -61,18 +61,20 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
     LibvirtRequestWrapper wrapper;
     VirtualMachineTO vmTo;
 
-    String scallingDetails;
+    String scalingDetails;
+
+    int countCpus = 2;
 
     @Before
     public void init() {
         wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
 
-        vmTo = new VirtualMachineTO(1, "Test 1", VirtualMachine.Type.User, 2, 1000, 67108864, 67108864, VirtualMachineTemplate.BootloaderType.External, "Other Linux (64x)", true, true, "test123");
+        vmTo = new VirtualMachineTO(1, "Test 1", VirtualMachine.Type.User, countCpus, 1000, 67108864, 67108864, VirtualMachineTemplate.BootloaderType.External, "Other Linux (64x)", true, true, "test123");
 
         long memory = ByteScaleUtils.bytesToKib(vmTo.getMaxRam());
         int vcpus = vmTo.getCpus();
-        scallingDetails = String.format("%s memory to [%s KiB] and cpu cores to [%s]", vmTo.toString(), memory, vcpus);
+        scalingDetails = String.format("%s memory to [%s KiB] and cpu cores to [%s]", vmTo.toString(), memory, vcpus);
     }
 
     @Test
@@ -81,12 +83,12 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
         Mockito.when(computingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         Mockito.when(libvirtUtilitiesHelper.getConnectionByVmName(Mockito.anyString())).thenReturn(connect);
         Mockito.when(connect.domainLookupByName(Mockito.anyString())).thenReturn(domain);
-        Mockito.doNothing().when(domain).setMemory(Mockito.anyLong());
-        Mockito.doNothing().when(domain).setVcpus(Mockito.anyInt());
+        Mockito.doReturn((long) countCpus).when(computingResource).countDomainRunningVcpus(domain);
+        Mockito.doNothing().when(domain).attachDevice(Mockito.anyString());
 
         Answer answer = wrapper.execute(command, computingResource);
 
-        String details = String.format("Successfully scalled %s.", scallingDetails);
+        String details = String.format("Successfully scaled %s.", scalingDetails);
         assertTrue(answer.getResult());
         assertEquals(details, answer.getDetails());
     }
@@ -101,7 +103,7 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
 
         Answer answer = wrapper.execute(command, computingResource);
 
-        String details = String.format("Unable to scale %s due to [%s].", scallingDetails, errorMessage);
+        String details = String.format("Unable to scale %s due to [%s].", scalingDetails, errorMessage);
         assertFalse(answer.getResult());
         assertEquals(details, answer.getDetails());
     }
