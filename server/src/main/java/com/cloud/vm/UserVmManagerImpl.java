@@ -1879,7 +1879,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         supportedHypervisorTypes.add(HypervisorType.Simulator);
         supportedHypervisorTypes.add(HypervisorType.KVM);
 
-        if (!supportedHypervisorTypes.contains(vmInstance.getHypervisorType())) {
+        HypervisorType vmHypervisorType = vmInstance.getHypervisorType();
+
+        if (!supportedHypervisorTypes.contains(vmHypervisorType)) {
             String message = String.format("Scaling the VM dynamically is not supported for VMs running on Hypervisor [%s].", vmInstance.getHypervisorType());
             s_logger.info(message);
             throw new InvalidParameterValueException(message);
@@ -1914,6 +1916,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
               + " have at least one value (ram, speed or cpu) greater than the current values {\"memory\": %s, \"speed\": %s, \"cpu\": %s}.", newMemory, newSpeed, newCpu,
               currentMemory, currentSpeed, currentCpu);
 
+            throw new InvalidParameterValueException(message);
+        }
+
+        if (vmHypervisorType.equals(HypervisorType.KVM) && !currentServiceOffering.isDynamic()) {
+            String message = String.format("Unable to live scale VM on KVM when current service offering is a \"Fixed Offering\". KVM needs the tag \"maxMemory\" to live scale and it is only configured when VM is deployed with a custom service offering and \"Dynamic Scalable\" is enabled.");
+            s_logger.info(message);
             throw new InvalidParameterValueException(message);
         }
 
