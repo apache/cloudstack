@@ -121,12 +121,13 @@ class TestKubernetesCluster(cloudstackTestCase):
                         (cls.services["cks_kubernetes_versions"]["1.16.3"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.16.3"]["url"], e))
 
             if cls.setup_failed == False:
-                cls.cks_template = cls.getKubernetesTemplate()
+                cls.cks_template, existAlready = cls.getKubernetesTemplate()
                 if cls.cks_template == FAILED:
                     assert False, "getKubernetesTemplate() failed to return template for hypervisor %s" % cls.hypervisor
                     cls.setup_failed = True
                 else:
-                    cls._cleanup.append(cls.cks_template)
+                    if existAlready == False:
+                        cls._cleanup.append(cls.cks_template)
 
             if cls.setup_failed == False:
                 cls.initial_configuration_cks_template_name = Configurations.list(cls.apiclient,
@@ -246,7 +247,7 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         if hypervisor not in cks_templates.keys():
             cls.debug("Provided hypervisor has no CKS template")
-            return FAILED
+            return FAILED, False
 
         cks_template = cks_templates[hypervisor]
 
@@ -263,13 +264,13 @@ class TestKubernetesCluster(cloudstackTestCase):
                 details = [{"keyboard": "us"}]
             template = Template.register(cls.apiclient, cks_template, zoneid=cls.zone.id, hypervisor=hypervisor.lower(), randomize_name=False, details=details)
             template.download(cls.apiclient)
-            return template
+            return template, False
 
         for template in templates:
             if template.isready and template.ispublic:
-                return Template(template.__dict__)
+                return Template(template.__dict__), True
 
-        return FAILED
+        return FAILED, False
 
     @classmethod
     def waitForKubernetesSupportedVersionIsoReadyState(cls, version_id, retries=30, interval=60):
