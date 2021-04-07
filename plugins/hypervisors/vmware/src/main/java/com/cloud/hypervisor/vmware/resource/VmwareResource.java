@@ -4417,18 +4417,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return new Answer(cmd, false, "unknown problem: " + e.getLocalizedMessage());
         }
     }
-
-    private Answer migrateAndAnswer(VirtualMachineMO vmMo, String poolUuid, VmwareHypervisorHost sourceHyperHost,
-                                    VmwareHypervisorHost targetHyperHost, Command cmd) throws Exception {
-        ManagedObjectReference morDs = getTargetDatastoreMOReference(poolUuid, sourceHyperHost);
-        if (morDs == null && targetHyperHost != null) {
-            morDs = getTargetDatastoreMOReference(poolUuid, targetHyperHost);
-        }
-        if (morDs == null) {
-            String msg = String.format("Failed to find datastore for pool UUID: %s", poolUuid);
-            s_logger.error(msg);
-            throw new CloudRuntimeException(msg);
-        }
+    private Answer migrateAndAnswer(VirtualMachineMO vmMo, String poolUuid,
+                                    VmwareHypervisorHost sourceHyperHost, VmwareHypervisorHost targetHyperHost,
+                                    Command cmd) throws Exception {
+        ManagedObjectReference morDs = getTargetDatastoreMOReference(poolUuid, sourceHyperHost, targetHyperHost);
         try {
             // OfflineVmwareMigration: getVolumesFromCommand(cmd);
             Map<Integer, Long> volumeDeviceKey = getVolumesFromCommand(vmMo, cmd);
@@ -4513,17 +4505,27 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         volumeDeviceKey.put(diskId, volumeId);
     }
 
-    private ManagedObjectReference getTargetDatastoreMOReference(String destinationPool, VmwareHypervisorHost hyperHost) {
+    private ManagedObjectReference getTargetDatastoreMOReference(String destinationPool,
+                                                                 VmwareHypervisorHost hyperHost,
+                                                                 VmwareHypervisorHost targetHyperHost) {
         ManagedObjectReference morDs;
         try {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(String.format("finding datastore %s", destinationPool));
             }
             morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, destinationPool);
+            if (morDs == null && targetHyperHost != null) {
+                morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(targetHyperHost, destinationPool);
+            }
         } catch (Exception e) {
             String msg = "exception while finding data store  " + destinationPool;
             s_logger.error(msg);
             throw new CloudRuntimeException(msg + ": " + e.getLocalizedMessage());
+        }
+        if (morDs == null) {
+            String msg = String.format("Failed to find datastore for pool UUID: %s", destinationPool);
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
         }
         return morDs;
     }
@@ -4881,15 +4883,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 vmName = getWorkerName(getServiceContext(), cmd, 0, destinationDsMo);
             }
 
-            String hardwareVersion = null;
-            if (hyperHostInTargetCluster != null) {
-                Integer sourceHardwareVersion = HypervisorHostHelper.getHostHardwareVersion(hyperHost);
-                Integer destinationHardwareVersion = HypervisorHostHelper.getHostHardwareVersion(hyperHostInTargetCluster);
-                if (sourceHardwareVersion != null && destinationHardwareVersion != null && !sourceHardwareVersion.equals(destinationHardwareVersion)) {
-                    hardwareVersion = String.valueOf(Math.min(sourceHardwareVersion, destinationHardwareVersion));
-                }
-            }
-
             // OfflineVmwareMigration: refactor for re-use
             // OfflineVmwareMigration: 1. find data(store)
             // OfflineVmwareMigration: more robust would be to find the store given the volume as it might have been moved out of band or due to error
@@ -4897,7 +4890,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             s_logger.info("Create worker VM " + vmName);
             // OfflineVmwareMigration: 2. create the worker with access to the data(store)
-            vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, vmName, hardwareVersion);
+            vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, vmName,
+                    HypervisorHostHelper.getMinimumHostHardwareVersion(hyperHost, hyperHostInTargetCluster));
             if (vmMo == null) {
                 // OfflineVmwareMigration: don't throw a general Exception but think of a specific one
                 throw new CloudRuntimeException("Unable to create a worker VM for volume operation");

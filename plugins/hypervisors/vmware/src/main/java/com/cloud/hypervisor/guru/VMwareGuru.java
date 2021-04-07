@@ -209,7 +209,22 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return vmwareVmImplementer.implement(vm, toVirtualMachineTO(vm), getClusterId(vm.getId()));
     }
 
-    Long getClusterId(long vmId) {
+    private Long getClusterIdFromVmVolume(long vmId) {
+        Long clusterId = null;
+        List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
+        if (CollectionUtils.isNotEmpty(volumes)) {
+            VolumeVO rootVolume = volumes.get(0);
+            if (rootVolume.getPoolId() != null) {
+                StoragePoolVO pool = _storagePoolDao.findById(rootVolume.getPoolId());
+                if (pool != null && pool.getClusterId() != null) {
+                    clusterId = pool.getClusterId();
+                }
+            }
+        }
+        return clusterId;
+    }
+
+    private Long getClusterId(long vmId) {
         Long clusterId = null;
         Long hostId = null;
         VMInstanceVO vm = _vmDao.findById(vmId);
@@ -227,16 +242,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         if (host != null) {
             clusterId = host.getClusterId();
         } else {
-            List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
-            if (CollectionUtils.isNotEmpty(volumes)) {
-                VolumeVO rootVolume = volumes.get(0);
-                if (rootVolume.getPoolId() != null) {
-                    StoragePoolVO pool = _storagePoolDao.findById(rootVolume.getPoolId());
-                    if (pool != null && pool.getClusterId() != null) {
-                        clusterId = pool.getClusterId();
-                    }
-                }
-            }
+            clusterId = getClusterIdFromVmVolume(vmId);
         }
 
         return clusterId;
