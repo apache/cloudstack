@@ -61,7 +61,6 @@ from operator import itemgetter
 
 _multiprocess_shared_ = True
 
-
 class TestDeployVM(cloudstackTestCase):
 
     @classmethod
@@ -1745,9 +1744,6 @@ class TestVAppsVM(cloudstackTestCase):
                 cls.l2_network_offering
             ]
 
-            # Uncomment when tests are finished, to cleanup the test templates
-            for template in cls.templates:
-                cls._cleanup.append(template)
 
     @classmethod
     def tearDownClass(cls):
@@ -1769,21 +1765,21 @@ class TestVAppsVM(cloudstackTestCase):
     def get_ova_parsed_information_from_template(self, template):
         if not template:
             return None
-        details = template.details.__dict__
+        details = template['deployasisdetails'].__dict__
         configurations = []
         disks = []
         isos = []
         networks = []
         for propKey in details:
-            if propKey.startswith('ACS-configuration'):
+            if propKey.startswith('configuration'):
                 configurations.append(json.loads(details[propKey]))
-            elif propKey.startswith('ACS-disk'):
+            elif propKey.startswith('disk'):
                 detail = json.loads(details[propKey])
                 if detail['isIso'] == True:
                     isos.append(detail)
                 else:
                     disks.append(detail)
-            elif propKey.startswith('ACS-network'):
+            elif propKey.startswith('network'):
                 networks.append(json.loads(details[propKey]))
 
         return configurations, disks, isos, networks
@@ -1939,8 +1935,6 @@ class TestVAppsVM(cloudstackTestCase):
 
             # Verify nics
             self.verify_nics(nicnetworklist, vm.id)
-            # Verify disks
-            self.verify_disks(disks, vm.id)
             # Verify properties
             original_properties = vm_service['properties']
             vm_properties = get_vm_vapp_configs(self.apiclient, self.config, self.zone, vm.instancename)
