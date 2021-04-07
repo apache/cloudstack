@@ -1411,7 +1411,6 @@ class TestKVMLiveMigration(cloudstackTestCase):
 
 
         for host in self.hosts:
-            print(f"=== setup() === Host.OS = {host.details['Host.OS']}")
             if host.details['Host.OS'] in ['CentOS']:
                 self.skipTest("live migration is not stabily supported on CentOS")
 
