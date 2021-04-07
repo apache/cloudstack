@@ -1083,6 +1083,29 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return null;
     }
 
+    private boolean isInterClusterMigration(Long srcClusterId, Long destClusterId) {
+        return srcClusterId != null && destClusterId != null && ! srcClusterId.equals(destClusterId);
+    }
+
+    private String getHostGuidInTargetCluster(boolean isInterClusterMigration, Long destClusterId) {
+        String hostGuidInTargetCluster = null;
+        if (isInterClusterMigration) {
+            Host hostInTargetCluster = null;
+            // Without host vMotion might fail between non-shared storages with error similar to,
+            // https://kb.vmware.com/s/article/1003795
+            // As this is offline migration VM won't be started on this host
+            List<HostVO> hosts = _hostDao.findHypervisorHostInCluster(destClusterId);
+            if (CollectionUtils.isNotEmpty(hosts)) {
+                hostInTargetCluster = hosts.get(0);
+            }
+            if (hostInTargetCluster == null) {
+                throw new CloudRuntimeException("Migration failed, unable to find suitable target host for VM placement while migrating between storage pools of different clusters without shared storages");
+            }
+            hostGuidInTargetCluster = hostInTargetCluster.getGuid();
+        }
+        return hostGuidInTargetCluster;
+    }
+
     @Override public List<Command> finalizeMigrate(VirtualMachine vm, StoragePool destination) {
         List<Command> commands = new ArrayList<Command>();
 
@@ -1096,22 +1119,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
         final Long destClusterId = destination.getClusterId();
         final Long srcClusterId = getClusterId(vm.getId());
-        final boolean isInterClusterMigration = srcClusterId != null && destClusterId != null && ! srcClusterId.equals(destClusterId);
-        Host hostInTargetCluster = null;
-        if (isInterClusterMigration) {
-            // Without host vMotion might fail between non-shared storages with error similar to,
-            // https://kb.vmware.com/s/article/1003795
-            // As this is offline migration VM won't be started on this host
-            List<HostVO> hosts = _hostDao.findHypervisorHostInCluster(destClusterId);
-            if (CollectionUtils.isNotEmpty(hosts)) {
-                hostInTargetCluster = hosts.get(0);
-            }
-            if (hostInTargetCluster == null) {
-                throw new CloudRuntimeException("Migration failed, unable to find suitable target host for VM placement while migrating between storage pools of different clusters without shared storages");
-            }
-        }
+        final boolean isInterClusterMigration = isInterClusterMigration(destClusterId, srcClusterId);
         MigrateVmToPoolCommand migrateVmToPoolCommand = new MigrateVmToPoolCommand(vm.getInstanceName(),
-                vols, destination.getUuid(), hostInTargetCluster == null ? null : hostInTargetCluster.getGuid(), true);
+                vols, destination.getUuid(), getHostGuidInTargetCluster(isInterClusterMigration, destClusterId), true);
         commands.add(migrateVmToPoolCommand);
 
         // OfflineVmwareMigration: cleanup if needed
