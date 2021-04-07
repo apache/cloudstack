@@ -43,6 +43,9 @@ if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
    # Pylint/pep8 systemvm python codebase
    python3 -m pip install --user --upgrade setuptools pycodestyle pylint flask nose
    source ~/py2/bin/activate
+   which python
+   which python2
+   python --version
    python2 -m pip install --user --upgrade setuptools pycodestyle pylint flask nose
    cd systemvm/test && bash -x runtests.sh
    # Build noredist
