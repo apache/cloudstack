@@ -79,8 +79,9 @@
             <artifactId>jasypt</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.trilead</groupId>
+            <groupId>org.jenkins-ci</groupId>
             <artifactId>trilead-ssh2</artifactId>
+            <version>${cs.trilead.version}</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>

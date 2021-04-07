@@ -962,8 +962,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // if we are to use the existing disk offering
+        ImageFormat format = null;
         if (newDiskOffering == null) {
-            if (volume.getVolumeType().equals(Volume.Type.ROOT) && diskOffering.getDiskSize() > 0) {
+            Long templateId = volume.getTemplateId();
+            if (templateId != null) {
+                VMTemplateVO template = _templateDao.findById(templateId);
+                format = template.getFormat();
+            }
+
+            if (volume.getVolumeType().equals(Volume.Type.ROOT) && diskOffering.getDiskSize() > 0 && format != null && format != ImageFormat.ISO) {
                 throw new InvalidParameterValueException(
                         "Failed to resize Root volume. The service offering of this Volume has been configured with a root disk size; "
                                 + "on such case a Root Volume can only be resized when changing to another Service Offering with a Root disk size. "
@@ -1100,6 +1107,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
              * This will be checked again at the hypervisor level where we can see
              * the actual disk size.
              */
+            if (currentSize > newSize) {
+                VolumeVO vol = _volsDao.findById(cmd.getEntityId());
+                if (vol != null && ImageFormat.QCOW2.equals(vol.getFormat()) && !Volume.State.Allocated.equals(volume.getState())) {
+                    String message = "Unable to shrink volumes of type QCOW2";
+                    s_logger.warn(message);
+                    throw new InvalidParameterValueException(message);
+                }
+            }
             if (currentSize > newSize && !shrinkOk) {
                 throw new InvalidParameterValueException("Going from existing size of " + currentSize + " to size of " + newSize + " would shrink the volume."
                         + "Need to sign off by supplying the shrinkok parameter with value of true.");

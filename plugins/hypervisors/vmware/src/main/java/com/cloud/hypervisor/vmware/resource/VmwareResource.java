@@ -48,6 +48,8 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.cloud.agent.api.SetupPersistentNetworkAnswer;
+import com.cloud.agent.api.SetupPersistentNetworkCommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -578,6 +580,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((PrepareUnmanageVMInstanceCommand) cmd);
             } else if (clz == ValidateVcenterDetailsCommand.class) {
                 answer = execute((ValidateVcenterDetailsCommand) cmd);
+            } else if (clz == SetupPersistentNetworkCommand.class) {
+                answer = execute((SetupPersistentNetworkCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -616,6 +620,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.trace("End executeRequest(), cmd: " + cmd.getClass().getSimpleName());
 
         return answer;
+    }
+
+    private Answer execute(SetupPersistentNetworkCommand cmd) {
+        VmwareHypervisorHost host = getHyperHost(getServiceContext());
+        String hostname = null;
+        VmwareContext context = getServiceContext();
+        HostMO hostMO = new HostMO(context, host.getMor());
+
+        try {
+            prepareNetworkFromNicInfo(hostMO, cmd.getNic(), false, null);
+            hostname =  host.getHyperHostName();
+        } catch (Exception e) {
+            return new SetupPersistentNetworkAnswer(cmd, false, "failed to setup port-group due to: "+ e.getLocalizedMessage());
+        }
+        return new SetupPersistentNetworkAnswer(cmd, true, hostname);
     }
 
     /**
@@ -2072,7 +2091,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // Setup ROOT/DATA disk devices
             //
             for (DiskTO vol : sortedDisks) {
-                if (vol.getType() == Volume.Type.ISO || deployAsIs && vol.getType() == Volume.Type.ROOT) {
+                if (vol.getType() == Volume.Type.ISO) {
+                    continue;
+                }
+
+                if (deployAsIs && vol.getType() == Volume.Type.ROOT) {
+                    rootDiskTO = vol;
+                    resizeRootDiskOnVMStart(vmMo, rootDiskTO, hyperHost, context);
                     continue;
                 }
 
@@ -2986,7 +3011,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private Pair<String, String> composeVmNames(VirtualMachineTO vmSpec) {
         String vmInternalCSName = vmSpec.getName();
         String vmNameOnVcenter = vmSpec.getName();
-        if (_instanceNameFlag && vmSpec.getHostName() != null) {
+        String hostNameInDetails = null;
+        if (_instanceNameFlag && MapUtils.isNotEmpty(vmSpec.getDetails()) && vmSpec.getDetails().containsKey(VmDetailConstants.NAME_ON_HYPERVISOR)) {
+            hostNameInDetails = vmSpec.getDetails().get(VmDetailConstants.NAME_ON_HYPERVISOR);
+        }
+        if (StringUtils.isNotBlank(hostNameInDetails)) {
+            vmNameOnVcenter = hostNameInDetails;
+        } else if (_instanceNameFlag && vmSpec.getHostName() != null) {
             vmNameOnVcenter = vmSpec.getHostName();
         }
         return new Pair<String, String>(vmInternalCSName, vmNameOnVcenter);

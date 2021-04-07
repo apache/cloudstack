@@ -383,12 +383,14 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
                 final RouterNetworkVO routerNtwkMap = new RouterNetworkVO(router.getId(), guestNetwork.getId(), guestNetwork.getGuestType());
                 _routerNetworkDao.persist(routerNtwkMap);
                 //2) create user stats entry for the network
-                UserStatisticsVO stats =
-                        _userStatsDao.findBy(router.getAccountId(), router.getDataCenterId(), guestNetwork.getId(), null, router.getId(), router.getType().toString());
-                if (stats == null) {
-                    stats =
-                            new UserStatisticsVO(router.getAccountId(), router.getDataCenterId(), null, router.getId(), router.getType().toString(), guestNetwork.getId());
-                    _userStatsDao.persist(stats);
+                if (router.getVpcId() == null) {
+                    UserStatisticsVO stats =
+                            _userStatsDao.findBy(router.getAccountId(), router.getDataCenterId(), guestNetwork.getId(), null, router.getId(), router.getType().toString());
+                    if (stats == null) {
+                        stats =
+                                new UserStatisticsVO(router.getAccountId(), router.getDataCenterId(), null, router.getId(), router.getType().toString(), guestNetwork.getId());
+                        _userStatsDao.persist(stats);
+                    }
                 }
                 txn.commit();
             }

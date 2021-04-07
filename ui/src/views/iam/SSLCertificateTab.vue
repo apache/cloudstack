@@ -140,8 +140,6 @@ export default {
       }
     ]
     this.detailColumn = ['name', 'certificate', 'certchain']
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

@@ -28,7 +28,8 @@
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.name') }]
             }]"
-            :placeholder="apiParams.name.description"/>
+            :placeholder="apiParams.name.description"
+            autoFocus />
         </a-form-item>
         <a-form-item :label="$t('label.publickey')">
           <a-input
@@ -112,8 +113,6 @@ export default {
         name: ''
       }
     ]
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

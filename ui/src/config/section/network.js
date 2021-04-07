@@ -48,7 +48,7 @@ export default {
       }, {
         name: 'public.ip.addresses',
         component: () => import('@/views/network/IpAddressesTab.vue'),
-        show: (record) => { return record.type === 'Isolated' && !('vpcid' in record) && 'listPublicIpAddresses' in store.getters.apis }
+        show: (record) => { return (record.type === 'Isolated' || record.type === 'Shared') && !('vpcid' in record) && 'listPublicIpAddresses' in store.getters.apis }
       }, {
         name: 'virtual.routers',
         component: () => import('@/views/network/RoutersTab.vue'),
@@ -85,6 +85,7 @@ export default {
           api: 'restartNetwork',
           icon: 'sync',
           label: 'label.restart.network',
+          message: 'message.restart.network',
           dataView: true,
           args: ['cleanup'],
           show: (record) => record.type !== 'L2'
@@ -165,7 +166,7 @@ export default {
           api: 'restartVPC',
           icon: 'sync',
           label: 'label.restart.vpc',
-          message: 'message.restart.vpc',
+          message: (record) => { return record.redundantvpcrouter ? 'message.restart.vpc' : 'message.restart.vpc.remark' },
           dataView: true,
           args: (record) => {
             var fields = ['cleanup']

@@ -220,6 +220,7 @@ class TestAccounts(cloudstackTestCase):
             account=account.name,
             domainid=account.domainid
         )
+        self.cleanup.append(user)
         self.debug("Created user: %s" % user.id)
         list_users_response = list_users(
             self.apiclient,
@@ -324,20 +325,20 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
         )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
+        cls._cleanup = []
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
             cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
         # Create an account
         cls.account = Account.create(
             cls.api_client,
             cls.services["account"]
         )
+        cls._cleanup.append(cls.account)
 
-        cls._cleanup = [cls.account,
-                        cls.service_offering,
-                        ]
         return
 
     @classmethod
@@ -380,6 +381,7 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
             domainid=self.account.domainid
         )
         self.debug("Created user: %s" % user_1.id)
+        self.cleanup.append(user_1)
 
         user_2 = User.create(
             self.apiclient,
@@ -419,6 +421,7 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
         # Remove one of the user
         self.debug("Deleting user: %s" % user_1.id)
         user_1.delete(self.apiclient)
+        self.cleanup.remove(user_1)
 
         # Account should exist after deleting user
         accounts_response = list_accounts(
@@ -1840,6 +1843,8 @@ class TestDomainForceRemove(cloudstackTestCase):
         )
         self.cleanup.append(self.account_2)
 
+        vm_1 = None
+        vm_2 = None
         try:
             self.debug("Creating a tiny service offering for VM deployment")
             self.service_offering = ServiceOffering.create(
@@ -1942,11 +1947,16 @@ class TestDomainForceRemove(cloudstackTestCase):
         try:
             self.child_domain.delete(self.apiclient, cleanup=True)
             self.cleanup.remove(self.child_domain)
-            self.cleanup.remove(self.account_1)
-            self.cleanup.remove(self.account_2)
-            self.cleanup.remove(self.vm_1)
-            self.cleanup.remove(self.vm_2)
-            self.cleanup.remove(self.nat_rule)
+            if self.account_1 != None:
+                self.cleanup.remove(self.account_1)
+            if self.account_2 != None:
+                self.cleanup.remove(self.account_2)
+            if self.vm_1 != None:
+                self.cleanup.remove(self.vm_1)
+            if self.vm_2 != None:
+                self.cleanup.remove(self.vm_2)
+            if self.nat_rule != None:
+                self.cleanup.remove(self.nat_rule)
 
         except Exception as e:
             self.debug("Waiting for account.cleanup.interval" +

@@ -150,7 +150,7 @@ export default {
       this.updateResource(newItem)
     }
   },
-  mounted () {
+  created () {
     this.updateResource(this.resource)
   },
   methods: {
@@ -175,6 +175,13 @@ export default {
         this.detailOptions = json.listdetailoptionsresponse.detailoptions.details
       })
       this.disableSettings = (this.$route.meta.name === 'vm' && this.resource.state !== 'Stopped')
+    },
+    filterOrReadOnlyDetails () {
+      for (var i = 0; i < this.details.length; i++) {
+        if (!this.allowEditOfDetail(this.details[i].name)) {
+          this.details.splice(i, 1)
+        }
+      }
     },
     allowEditOfDetail (name) {
       if (this.resource.readonlyuidetails) {
@@ -257,13 +264,16 @@ export default {
       }
       this.error = false
       this.details.push({ name: this.newKey, value: this.newValue })
+      this.filterOrReadOnlyDetails()
       this.runApi()
     },
     updateDetail (index) {
+      this.filterOrReadOnlyDetails()
       this.runApi()
     },
     deleteDetail (index) {
       this.details.splice(index, 1)
+      this.filterOrReadOnlyDetails()
       this.runApi()
     },
     onShowAddDetail () {

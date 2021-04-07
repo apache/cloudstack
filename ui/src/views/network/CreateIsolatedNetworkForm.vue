@@ -34,7 +34,8 @@
               v-decorator="['name', {
                 rules: [{ required: true, message: $t('message.error.name') }]
               }]"
-              :placeholder="this.$t('label.name')"/>
+              :placeholder="this.$t('label.name')"
+              autoFocus/>
           </a-form-item>
           <a-form-item>
             <span slot="label">
@@ -125,7 +126,7 @@
               :placeholder="this.$t('label.networkofferingid')"
               @change="val => { this.handleNetworkOfferingChange(this.networkOfferings[val]) }">
               <a-select-option v-for="(opt, optIndex) in this.networkOfferings" :key="optIndex">
-                {{ opt.name || opt.description }}
+                {{ opt.displaytext || opt.name || opt.description }}
               </a-select-option>
             </a-select>
           </a-form-item>
@@ -302,8 +303,6 @@ export default {
         name: ' '
       }
     ]
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

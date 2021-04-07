@@ -21,7 +21,7 @@
       <div class="form">
         <div class="form__item">
           <div class="form__label">{{ $t('label.sourcecidr') }}</div>
-          <a-input v-model="newRule.cidrlist"></a-input>
+          <a-input v-model="newRule.cidrlist" autoFocus></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.destcidr') }}</div>
@@ -156,7 +156,7 @@ export default {
       ]
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   filters: {

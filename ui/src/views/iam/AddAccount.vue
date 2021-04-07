@@ -31,7 +31,8 @@
               initialValue: selectedRole,
               rules: [{ required: true, message: $t('message.error.select') }] }]"
             :loading="roleLoading"
-            :placeholder="apiParams.roleid.description">
+            :placeholder="apiParams.roleid.description"
+            autoFocus>
             <a-select-option v-for="role in roles" :key="role.id">
               {{ role.name + ' (' + role.type + ')' }}
             </a-select-option>
@@ -256,7 +257,7 @@ export default {
       })
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {
@@ -369,7 +370,7 @@ export default {
           params.networkdomain = values.networkdomain
         }
 
-        api('createAccount', params).then(response => {
+        api('createAccount', {}, 'POST', params).then(response => {
           this.$emit('refresh-data')
           this.$notification.success({
             message: this.$t('label.create.account'),

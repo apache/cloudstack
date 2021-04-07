@@ -45,6 +45,8 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State,
 
     List<NetworkVO> getNetworksForOffering(long offeringId, long dataCenterId, long accountId);
 
+    int getOtherPersistentNetworksCount(long id, String broadcastURI, boolean isPersistent);
+
     @Override
     @Deprecated
     NetworkVO persist(NetworkVO vo);
