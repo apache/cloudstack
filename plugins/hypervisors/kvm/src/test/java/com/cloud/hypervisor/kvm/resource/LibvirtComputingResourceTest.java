@@ -248,6 +248,7 @@ public class LibvirtComputingResourceTest {
         to.setVncAddr(vncAddr);
         to.setArch("x86_64");
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+        to.setVcpuMaxLimit(cpus + 1);
 
         final LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(hyperVisorType);
@@ -281,6 +282,7 @@ public class LibvirtComputingResourceTest {
         to.setVncAddr(vncAddr);
         to.setArch("x86_64");
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+        to.setVcpuMaxLimit(cpus + 1);
 
         final LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(hyperVisorType);
@@ -313,6 +315,7 @@ public class LibvirtComputingResourceTest {
         final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+        to.setVcpuMaxLimit(cpus + 1);
 
         final LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(hyperVisorType);
@@ -351,6 +354,7 @@ public class LibvirtComputingResourceTest {
         to.setVncAddr(vncAddr);
         to.setArch("x86_64");
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+        to.setVcpuMaxLimit(cpus + 1);
 
         final LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(hyperVisorType);
@@ -393,11 +397,17 @@ public class LibvirtComputingResourceTest {
         assertXpath(domainDoc, "/domain/devices/channel/source/@path", "/var/run/qemu/" + to.getName() + ".org.qemu.guest_agent.0");
         assertXpath(domainDoc, "/domain/devices/channel/target/@name", "org.qemu.guest_agent.0");
 
-        assertXpath(domainDoc, "/domain/memory/text()", String.valueOf( to.getMaxRam() / 1024 ));
-        assertXpath(domainDoc, "/domain/currentMemory/text()", String.valueOf( to.getMinRam() / 1024 ));
+        String minRam = String.valueOf( to.getMinRam() / 1024 );
+        assertXpath(domainDoc, "/domain/maxMemory/text()", String.valueOf( to.getMaxRam() / 1024 ));
+        assertXpath(domainDoc, "/domain/cpu/numa/cell/@cpus", String.format("0-%s", to.getVcpuMaxLimit() - 1));
+        assertXpath(domainDoc, "/domain/cpu/numa/cell/@memory", minRam);
+        assertXpath(domainDoc, "/domain/memory/text()",minRam);
+        assertXpath(domainDoc, "/domain/currentMemory/text()", minRam);
 
         assertXpath(domainDoc, "/domain/devices/memballoon/@model", "virtio");
-        assertXpath(domainDoc, "/domain/vcpu/text()", String.valueOf(to.getCpus()));
+        assertXpath(domainDoc, "/domain/vcpu/@current", String.valueOf(to.getCpus()));
+        assertXpath(domainDoc, "/domain/vcpu/text()", String.valueOf(to.getVcpuMaxLimit()));
+
 
         assertXpath(domainDoc, "/domain/os/type/@machine", "pc");
         assertXpath(domainDoc, "/domain/os/type/text()", "hvm");

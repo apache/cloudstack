@@ -267,8 +267,14 @@ public class LibvirtVMDef {
         @Override
         public String toString() {
             StringBuilder response = new StringBuilder();
-            response.append(String.format("<memory>%s</memory>\n", this.memory));
+            response.append(String.format("<memory>%s</memory>\n", this.currentMemory));
             response.append(String.format("<currentMemory>%s</currentMemory>\n", this.currentMemory));
+
+            if (this.memory > this.currentMemory) {
+                response.append(String.format("<maxMemory slots='16' unit='KiB'>%s</maxMemory>\n", this.memory));
+                response.append(String.format("<cpu> <numa> <cell id='0' cpus='0-%s' memory='%s' unit='KiB'/> </numa> </cpu>\n", this.maxVcpu - 1, this.currentMemory));
+            }
+
             response.append(String.format("<devices>\n<memballoon model='%s'/>\n</devices>\n", this.memoryBalloning ? "virtio" : "none"));
             response.append(String.format("<vcpu current=\"%s\">%s</vcpu>\n", this.vcpu, this.maxVcpu));
             return response.toString();
