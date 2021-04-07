@@ -333,38 +333,7 @@ class TestKubernetesCluster(cloudstackTestCase):
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     @skipTestIf("hypervisorNotSupported")
-    def test_01_deploy_kubernetes_cluster(self):
-        """Test to deploy a new Kubernetes cluster
-
-        # Validate the following:
-        # 1. createKubernetesCluster should return valid info for new cluster
-        # 2. The Cloud Database contains the valid information
-        # 3. stopKubernetesCluster should stop the cluster
-        """
-        if self.setup_failed == True:
-            self.fail("Setup incomplete")
-        global k8s_cluster
-        k8s_cluster = self.getValidKubernetesCluster()
-
-        self.debug("Kubernetes cluster with ID: %s successfully deployed, now stopping it" % k8s_cluster.id)
-
-        self.stopAndVerifyKubernetesCluster(k8s_cluster.id)
-
-        self.debug("Kubernetes cluster with ID: %s successfully stopped, now starting it again" % k8s_cluster.id)
-
-        try:
-            k8s_cluster = self.startKubernetesCluster(k8s_cluster.id)
-        except Exception as e:
-            self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
-            self.fail("Failed to start Kubernetes cluster due to: %s" % e)
-
-        self.verifyKubernetesClusterState(k8s_cluster, 'Running')
-        self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
-        return
-
-    @attr(tags=["advanced", "smoke"], required_hardware="true")
-    @skipTestIf("hypervisorNotSupported")
-    def test_02_invalid_upgrade_kubernetes_cluster(self):
+    def test_01_invalid_upgrade_kubernetes_cluster(self):
         """Test to check for failure while tying to upgrade a Kubernetes cluster to a lower version
 
         # Validate the following:
@@ -390,7 +359,7 @@ class TestKubernetesCluster(cloudstackTestCase):
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     @skipTestIf("hypervisorNotSupported")
-    def test_03_deploy_and_upgrade_kubernetes_cluster(self):
+    def test_02_deploy_and_upgrade_kubernetes_cluster(self):
         """Test to deploy a new Kubernetes cluster and upgrade it to newer version
 
         # Validate the following:
@@ -416,7 +385,7 @@ class TestKubernetesCluster(cloudstackTestCase):
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     @skipTestIf("hypervisorNotSupported")
-    def test_04_deploy_and_scale_kubernetes_cluster(self):
+    def test_03_deploy_and_scale_kubernetes_cluster(self):
         """Test to deploy a new Kubernetes cluster and check for failure while tying to scale it
 
         # Validate the following:
@@ -450,6 +419,36 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         self.debug("Kubernetes cluster with ID: %s successfully downscaled" % k8s_cluster.id)
 
+        return
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    @skipTestIf("hypervisorNotSupported")
+    def test_04_basic_lifecycle_kubernetes_cluster(self):
+        """Test to deploy a new Kubernetes cluster
+
+        # Validate the following:
+        # 1. createKubernetesCluster should return valid info for new cluster
+        # 2. The Cloud Database contains the valid information
+        # 3. stopKubernetesCluster should stop the cluster
+        """
+        if self.setup_failed == True:
+            self.fail("Setup incomplete")
+        global k8s_cluster
+        k8s_cluster = self.getValidKubernetesCluster()
+
+        self.debug("Kubernetes cluster with ID: %s successfully deployed, now stopping it" % k8s_cluster.id)
+
+        self.stopAndVerifyKubernetesCluster(k8s_cluster.id)
+
+        self.debug("Kubernetes cluster with ID: %s successfully stopped, now starting it again" % k8s_cluster.id)
+
+        try:
+            k8s_cluster = self.startKubernetesCluster(k8s_cluster.id)
+        except Exception as e:
+            self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
+            self.fail("Failed to start Kubernetes cluster due to: %s" % e)
+
+        self.verifyKubernetesClusterState(k8s_cluster, 'Running')
         return
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
