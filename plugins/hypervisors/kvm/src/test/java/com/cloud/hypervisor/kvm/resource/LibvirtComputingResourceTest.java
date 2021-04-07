@@ -190,6 +190,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.Type;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
+import org.libvirt.VcpuInfo;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(value = {MemStat.class})
@@ -202,6 +203,9 @@ public class LibvirtComputingResourceTest {
     VirtualMachineTO vmTO;
     @Mock
     LibvirtVMDef vmDef;
+
+    @Mock
+    Domain domainMock;
 
     String hyperVisorType = "kvm";
     Random random = new Random();
@@ -5273,4 +5277,37 @@ public class LibvirtComputingResourceTest {
         LibvirtVMDef.GuestResourceDef grd = libvirtComputingResource.createGuestResourceDef(vmTo);
         Assert.assertEquals(min, grd.getMaxVcpu());
     }
+
+    @Test
+    public void validateGetDomainMemory() throws LibvirtException{
+        long valueExpected = ByteScaleUtils.KiB;
+
+        Mockito.doReturn(valueExpected).when(domainMock).getMaxMemory();
+        Assert.assertEquals(valueExpected, LibvirtComputingResource.getDomainMemory(domainMock));
+    }
+
+    private VcpuInfo createVcpuInfoWithState(VcpuInfo.VcpuState state) {
+        VcpuInfo vcpu = new VcpuInfo();
+        vcpu.state = state;
+        return vcpu;
+    }
+
+    @Test
+    public void validateCountDomainRunningVcpus() throws LibvirtException{
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+        VcpuInfo vcpus[] = new VcpuInfo[5];
+        long valueExpected = 3; // 3 vcpus with state VIR_VCPU_RUNNING
+
+        vcpus[0] = createVcpuInfoWithState(VcpuInfo.VcpuState.VIR_VCPU_BLOCKED);
+        vcpus[1] = createVcpuInfoWithState(VcpuInfo.VcpuState.VIR_VCPU_OFFLINE);
+        vcpus[2] = createVcpuInfoWithState(VcpuInfo.VcpuState.VIR_VCPU_RUNNING);
+        vcpus[3] = createVcpuInfoWithState(VcpuInfo.VcpuState.VIR_VCPU_RUNNING);
+        vcpus[4] = createVcpuInfoWithState(VcpuInfo.VcpuState.VIR_VCPU_RUNNING);
+
+        Mockito.doReturn(vcpus).when(domainMock).getVcpusInfo();
+        long result =  libvirtComputingResource.countDomainRunningVcpus(domainMock);
+
+        Assert.assertEquals(valueExpected, result);
+    }
+
 }
