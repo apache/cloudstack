@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.api.LdapAccountManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
@@ -192,6 +193,8 @@ public class AccountManagetImplTestBase {
     OrchestrationService _orchSrvc;
     @Mock
     SSHKeyPairDao _sshKeyPairDao;
+    @Mock
+    LdapAccountManager ldapAccountManager;
 
     @Spy
     @InjectMocks
