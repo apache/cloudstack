@@ -146,6 +146,10 @@ public class VirtualMachineTO {
         return type;
     }
 
+    public void setType(Type type) {
+        this.type = type;
+    }
+
     public BootloaderType getBootloader() {
         return bootloader;
     }
