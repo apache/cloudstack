@@ -213,11 +213,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         Long clusterId = null;
         List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
         if (CollectionUtils.isNotEmpty(volumes)) {
-            VolumeVO rootVolume = volumes.get(0);
-            if (rootVolume.getPoolId() != null) {
-                StoragePoolVO pool = _storagePoolDao.findById(rootVolume.getPoolId());
-                if (pool != null && pool.getClusterId() != null) {
-                    clusterId = pool.getClusterId();
+            for (VolumeVO rootVolume : volumes) {
+                if (rootVolume.getPoolId() != null) {
+                    StoragePoolVO pool = _storagePoolDao.findById(rootVolume.getPoolId());
+                    if (pool != null && pool.getClusterId() != null) {
+                        clusterId = pool.getClusterId();
+                        break;
+                    }
                 }
             }
         }
