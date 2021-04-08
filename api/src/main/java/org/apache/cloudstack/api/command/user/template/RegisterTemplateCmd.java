@@ -162,6 +162,11 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
                 description = "true if template should bypass Secondary Storage and be downloaded to Primary Storage on deployment")
     private Boolean directDownload;
 
+    @Parameter(name=ApiConstants.DEPLOY_AS_IS,
+            type = CommandType.BOOLEAN,
+            description = "(Vmware only) true if VM deployments should preserve all the configurations defined for this template")
+    private Boolean deployAsIs;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -275,7 +280,8 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
     }
 
     public Boolean isDeployAsIs() {
-        return hypervisor != null && hypervisor.equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString());
+        return hypervisor != null && hypervisor.equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString())
+                && deployAsIs != null && deployAsIs;
     }
 
     /////////////////////////////////////////////////////
@@ -341,7 +347,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
                     "Parameter directdownload is only allowed for KVM templates");
         }
 
-        if (!getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString()) && osTypeId == null) {
+        if (!isDeployAsIs() && osTypeId == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please provide a guest OS type");
         }
     }
