@@ -117,7 +117,7 @@ public class HostMetricsResponse extends HostResponse {
 
     public void setCpuUsed(final String cpuUsed, final Integer cpuNumber, final Long cpuSpeed) {
         if (cpuUsed != null && cpuNumber != null && cpuSpeed != null) {
-            this.cpuUsed = String.format("%.2f Ghz", Double.valueOf(cpuUsed.replace("%", "")) * cpuNumber * cpuSpeed / (100.0 * 1000.0));
+            this.cpuUsed = String.format("%.2f Ghz", Double.valueOf(cpuUsed.replace(",",".").replace("%", "")) * cpuNumber * cpuSpeed / (100.0 * 1000.0));
         }
     }
 
@@ -129,7 +129,7 @@ public class HostMetricsResponse extends HostResponse {
 
     public void setCpuAllocated(final String cpuAllocated, final Integer cpuNumber, final Long cpuSpeed) {
         if (cpuAllocated != null && cpuNumber != null && cpuSpeed != null) {
-            this.cpuAllocated = String.format("%.2f Ghz", Double.valueOf(cpuAllocated.replace("%", "")) * cpuNumber * cpuSpeed / (100.0 * 1000.0));
+            this.cpuAllocated = String.format("%.2f Ghz", Double.valueOf(cpuAllocated.replace(",",".").replace("%", "")) * cpuNumber * cpuSpeed / (100.0 * 1000.0));
         }
     }
 
@@ -165,25 +165,25 @@ public class HostMetricsResponse extends HostResponse {
 
     public void setCpuUsageThreshold(final String cpuUsed, final Double threshold) {
         if (cpuUsed != null && threshold != null) {
-            this.cpuThresholdExceeded = Double.valueOf(cpuUsed.replace("%", "")) > (100.0 * threshold);
+            this.cpuThresholdExceeded = Double.valueOf(cpuUsed.replace(",",".").replace("%", "")) > (100.0 * threshold);
         }
     }
 
     public void setCpuUsageDisableThreshold(final String cpuUsed, final Float threshold) {
         if (cpuUsed != null && threshold != null) {
-            this.cpuDisableThresholdExceeded = Double.valueOf(cpuUsed.replace("%", "")) > (100.0 * threshold);
+            this.cpuDisableThresholdExceeded = Double.valueOf(cpuUsed.replace(",",".").replace("%", "")) > (100.0 * threshold);
         }
     }
 
     public void setCpuAllocatedThreshold(final String cpuAllocated, final Double overCommitRatio, final Double threshold) {
         if (cpuAllocated != null && overCommitRatio != null && threshold != null) {
-            this.cpuAllocatedThresholdExceeded = Double.valueOf(cpuAllocated.replace("%", "")) > (100.0 * threshold * overCommitRatio);
+            this.cpuAllocatedThresholdExceeded = Double.valueOf(cpuAllocated.replace(",",".").replace("%", "")) > (100.0 * threshold * overCommitRatio);
         }
     }
 
     public void setCpuAllocatedDisableThreshold(final String cpuAllocated, final Double overCommitRatio, final Float threshold) {
         if (cpuAllocated != null && overCommitRatio != null && threshold != null) {
-            this.cpuAllocatedDisableThresholdExceeded = Double.valueOf(cpuAllocated.replace("%", "")) > (100.0 * threshold * overCommitRatio);
+            this.cpuAllocatedDisableThresholdExceeded = Double.valueOf(cpuAllocated.replace(",",".").replace("%", "")) > (100.0 * threshold * overCommitRatio);
         }
     }
 
