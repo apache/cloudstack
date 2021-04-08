@@ -126,7 +126,7 @@ class TestKubernetesCluster(cloudstackTestCase):
                     assert False, "getKubernetesTemplate() failed to return template for hypervisor %s" % cls.hypervisor
                     cls.setup_failed = True
                 else:
-                    if existAlready == False:
+                    if not existAlready:
                         cls._cleanup.append(cls.cks_template)
 
             if cls.setup_failed == False:
