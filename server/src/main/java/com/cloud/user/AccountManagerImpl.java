@@ -45,7 +45,6 @@ import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.api.LdapAccountManager;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
@@ -269,8 +268,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private GlobalLoadBalancerRuleDao _gslbRuleDao;
     @Inject
     private SSHKeyPairDao _sshKeyPairDao;
-    @Inject
-    private LdapAccountManager ldapAccountManager;
 
     private List<QuerySelector> _querySelectors;
 
@@ -931,12 +928,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             for (SSHKeyPairVO keypair : sshkeypairs) {
                 _sshKeyPairDao.remove(keypair.getId());
             }
-
-            // Remove linked LDAP (if any)
-            if (ldapAccountManager.isAccountLinkedToLdap(account.getDomainId(), accountId)) {
-                ldapAccountManager.removeAccountLinkToLdap(account.getDomainId(), accountId);
-            }
-
             return true;
         } catch (Exception ex) {
             s_logger.warn("Failed to cleanup account " + account + " due to ", ex);
