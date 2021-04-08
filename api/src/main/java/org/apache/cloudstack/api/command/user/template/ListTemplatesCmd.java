@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -93,6 +94,9 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
             description = "comma separated list of template details requested, value can be a list of [ all, min]")
     private List<String> viewDetails;
 
+    @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "show templates with matching templatetag", authorized = {RoleType.Admin})
+    private String templateTag;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -159,6 +163,10 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
             (templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.selfexecutable) || (templateFilter == TemplateFilter.sharedexecutable) ||
                 (templateFilter == TemplateFilter.executable && isAccountSpecific) || (templateFilter == TemplateFilter.community);
         return onlyReady;
+    }
+
+    public String getTemplateTag() {
+        return templateTag;
     }
 
     /////////////////////////////////////////////////////

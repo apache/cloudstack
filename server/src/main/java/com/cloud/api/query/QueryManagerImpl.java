@@ -3362,6 +3362,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             listAll = true;
         }
 
+        if (cmd.getTemplateTag() != null && !(caller.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
+            throw new InvalidParameterValueException("Parameter templatetag can only be specified by admins");
+        }
+
         List<Long> permittedAccountIds = new ArrayList<Long>();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject, listAll, false);
@@ -3375,12 +3379,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
         return searchForTemplatesInternal(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType,
-                showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl, cmd.getIds(), parentTemplateId, cmd.getShowUnique());
+                showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl, cmd.getIds(), parentTemplateId, cmd.getShowUnique(), cmd.getTemplateTag());
     }
 
     private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long pageSize,
             Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller,
-            ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags, boolean showRemovedTmpl, List<Long> ids, Long parentTemplateId, Boolean showUnique) {
+            ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags, boolean showRemovedTmpl, List<Long> ids, Long parentTemplateId, Boolean showUnique, final String templateTag) {
 
         // check if zone is configured, if not, just return empty list
         List<HypervisorType> hypers = null;
@@ -3624,6 +3628,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("dataCenterId", SearchCriteria.Op.SC, zoneSc);
         }
 
+        if (templateTag != null && !templateTag.equalsIgnoreCase("")) {
+            sc.addAnd("templateTag", SearchCriteria.Op.EQ, templateTag);
+        }
+
         if (parentTemplateId != null) {
             sc.addAnd("parentTemplateId", SearchCriteria.Op.EQ, parentTemplateId);
         }
@@ -3704,6 +3712,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             listAll = true;
         }
 
+        if (cmd.getTemplateTag() != null && !(caller.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
+            throw new InvalidParameterValueException("Parameter templatetag can only be specified by admins");
+        }
+
         List<Long> permittedAccountIds = new ArrayList<Long>();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject, listAll, false);
@@ -3716,7 +3728,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
         return searchForTemplatesInternal(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(),
-                hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedISO, null, null, cmd.getShowUnique());
+                hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedISO, null, null, cmd.getShowUnique(), cmd.getTemplateTag());
     }
 
     @Override

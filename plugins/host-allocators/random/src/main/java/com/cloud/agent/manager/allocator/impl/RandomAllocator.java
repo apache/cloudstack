@@ -22,6 +22,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.VMTemplateVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -66,17 +67,24 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
         }
 
         String hostTag = offering.getHostTag();
+        String message = "Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId;
         if (hostTag != null) {
-            s_logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + " having host tag:" + hostTag);
-        } else {
-            s_logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
+            message = message + " having host tag:" + hostTag;
         }
+        s_logger.debug(message);
 
         // list all computing hosts, regardless of whether they support routing...it's random after all
         if (hostTag != null) {
             hostsCopy.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, hostTag));
         } else {
             hostsCopy.retainAll(_resourceMgr.listAllUpAndEnabledHosts(type, clusterId, podId, dcId));
+        }
+
+        VMTemplateVO template = (VMTemplateVO)vmProfile.getTemplate();
+        String templateTag = template.getTemplateTag();
+        if (templateTag != null) {
+            s_logger.debug(message + " having host tag:" + templateTag);
+            hostsCopy.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, templateTag));
         }
 
         s_logger.debug("Random Allocator found " + hostsCopy.size() + "  hosts");

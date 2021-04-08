@@ -45,7 +45,7 @@ export default {
       },
       details: () => {
         var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'isready', 'passwordenabled',
-          'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
+          'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type', 'templatetag',
           'account', 'domain', 'created']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.push('templatetype', 'url')
@@ -102,7 +102,7 @@ export default {
           args: (record, store) => {
             var fields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable']
             if (['Admin'].includes(store.userInfo.roletype)) {
-              fields.push('templatetype')
+              fields.push('templatetype', 'templatetag')
             }
             return fields
           },
@@ -192,7 +192,8 @@ export default {
         }
         return fields
       },
-      details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created'],
+      details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'directdownload',
+        'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'templatetag', 'account', 'domain', 'created'],
       searchFilters: ['name', 'zoneid', 'tags'],
       related: [{
         name: 'vm',
@@ -237,7 +238,13 @@ export default {
               !(record.account === 'system' && record.domainid === 1) &&
               record.isready
           },
-          args: ['name', 'displaytext', 'bootable', 'ostypeid']
+          args: (record, store) => {
+            var fields = ['name', 'displaytext', 'bootable', 'ostypeid']
+            if (['Admin'].includes(store.userInfo.roletype)) {
+              fields.push('templatetag')
+            }
+            return fields
+          }
         },
         {
           api: 'updateIsoPermissions',

@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -82,6 +83,9 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     @Parameter(name = ApiConstants.SHOW_UNIQUE, type = CommandType.BOOLEAN, description = "If set to true, list only unique isos across zones", since = "4.13.2")
     private Boolean showUnique;
 
+    @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "show ISO's which matches the tag", authorized = {RoleType.Admin})
+    private String templateTag;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -143,6 +147,10 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         }
 
         return onlyReady;
+    }
+
+    public String getTemplateTag() {
+        return templateTag;
     }
 
     /////////////////////////////////////////////////////

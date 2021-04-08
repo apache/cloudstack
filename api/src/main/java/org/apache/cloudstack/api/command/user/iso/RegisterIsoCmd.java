@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.iso;
 
 import java.util.List;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -118,6 +119,9 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
             type = CommandType.BOOLEAN,
             description = "true if password reset feature is supported; default is false")
     private Boolean passwordEnabled;
+
+    @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "the tag for this template.", authorized = {RoleType.Admin})
+    private String templateTag;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -222,6 +226,8 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
     public boolean isPasswordEnabled() {
         return passwordEnabled == null ? false : passwordEnabled;
     }
+
+    public String getTemplateTag() {return templateTag; }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
