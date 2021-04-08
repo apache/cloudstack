@@ -18,9 +18,9 @@
 <template>
   <div class="take-snapshot">
     <a-spin :spinning="loading || actionLoading">
-      <label>
-        {{ $t('label.header.volume.take.snapshot') }}
-      </label>
+      <a-alert type="warning">
+        <span slot="message" v-html="$t('label.header.volume.take.snapshot')" />
+      </a-alert>
       <a-form
         class="form"
         :form="form"
@@ -31,7 +31,8 @@
             <a-form-item :label="$t('label.name')">
               <a-input
                 v-decorator="['name']"
-                :placeholder="apiParams.name.description" />
+                :placeholder="apiParams.name.description"
+                autoFocus />
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="24">

@@ -277,6 +277,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         UserVm k8sMasterVM = null;
         k8sMasterVM = createKubernetesMaster(network, publicIpAddress);
         addKubernetesClusterVm(kubernetesCluster.getId(), k8sMasterVM.getId());
+        resizeNodeVolume(k8sMasterVM);
         startKubernetesVM(k8sMasterVM);
         k8sMasterVM = userVmDao.findById(k8sMasterVM.getId());
         if (k8sMasterVM == null) {
@@ -296,6 +297,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 UserVm vm = null;
                 vm = createKubernetesAdditionalMaster(publicIpAddress, i);
                 addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId());
+                resizeNodeVolume(vm);
                 startKubernetesVM(vm);
                 vm = userVmDao.findById(vm.getId());
                 if (vm == null) {

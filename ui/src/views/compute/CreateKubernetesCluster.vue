@@ -33,7 +33,8 @@
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.kubecluster.name') }]
             }]"
-            :placeholder="apiParams.name.description"/>
+            :placeholder="apiParams.name.description"
+            autoFocus />
         </a-form-item>
         <a-form-item>
           <span slot="label">
@@ -360,8 +361,6 @@ export default {
         name: ''
       }
     ]
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

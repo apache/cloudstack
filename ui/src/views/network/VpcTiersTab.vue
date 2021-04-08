@@ -164,13 +164,14 @@
           <a-form-item :label="$t('label.name')">
             <a-input
               :placeholder="$t('label.unique.name.tier')"
-              v-decorator="['name',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
+              v-decorator="['name',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+              autoFocus></a-input>
           </a-form-item>
           <a-form-item :label="$t('label.networkofferingid')">
             <a-select
               v-decorator="['networkOffering',{rules: [{ required: true, message: `${$t('label.required')}` }]}]">
               <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id">
-                {{ item.name }}
+                {{ item.displaytext || item.name || item.description }}
               </a-select-option>
             </a-select>
           </a-form-item>
@@ -208,6 +209,7 @@
         <a-form @submit.prevent="handleAddInternalLBSubmit" :form="form">
           <a-form-item :label="$t('label.name')">
             <a-input
+              autoFocus
               :placeholder="$t('label.internallb.name.description')"
               v-decorator="['name', { rules: [{ required: true, message: $t('message.error.internallb.name')}] }]"/>
           </a-form-item>
@@ -371,7 +373,7 @@ export default {
       }
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {
@@ -390,6 +392,9 @@ export default {
     },
     fetchData () {
       this.networks = this.resource.network
+      if (!this.networks || this.networks.length === 0) {
+        return
+      }
       for (const network of this.networks) {
         this.fetchLoadBalancers(network.id)
         this.fetchVMs(network.id)

@@ -79,6 +79,7 @@
       >
         <a-form-item :label="$t('label.podid')" class="form__item">
           <a-select
+            autoFocus
             v-decorator="['pod', {
               rules: [{ required: true, message: `${$t('label.required')}` }]
             }]"
@@ -179,7 +180,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {

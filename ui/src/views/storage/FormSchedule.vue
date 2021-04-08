@@ -18,9 +18,9 @@
 <template>
   <a-spin :spinning="loading">
     <div class="form-layout">
-      <label>
-        {{ $t('label.header.volume.snapshot') }}
-      </label>
+      <a-alert type="warning">
+        <span slot="message" v-html="$t('label.header.volume.snapshot')" />
+      </a-alert>
       <div class="form">
         <a-form
           :form="form"
@@ -61,7 +61,8 @@
                       rules: [{required: true, message: `${this.$t('message.error.required.input')}`}]
                     }]"
                     :min="1"
-                    :max="59"/>
+                    :max="59"
+                    autoFocus />
                 </a-tooltip>
               </a-form-item>
             </a-col>
@@ -237,7 +238,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.volumeId = this.resource.id
     this.fetchTimeZone()
   },
