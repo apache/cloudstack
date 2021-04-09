@@ -89,11 +89,6 @@ sudo apt-get -y install python3-dev # in order to be able to pip3 install pycryp
 sudo apt-get -y install python2
 sudo apt-get -y install python2-dev # in order to be able to pip3 install pycrypto
 sudo apt-get -y install python2-pip
-pip2 install virtualenv
-sudo virtualenv -p `which python2` py2
-#sudo python2 -m venv ~/py2/
-cd py2/
-source bin/activate
 
 echo -e "\nIPMI version"
 ipmitool -V
