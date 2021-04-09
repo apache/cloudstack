@@ -68,7 +68,7 @@
 
             <div :span="24" class="action-button">
               <a-button @click="onCloseGetHealthChecksForm">{{ $t('label.cancel') }}</a-button>
-              <a-button type="primary" @click="handleGetHealthChecksSubmit">{{ $t('label.ok') }}</a-button>
+              <a-button ref="submit" type="primary" @click="handleGetHealthChecksSubmit">{{ $t('label.ok') }}</a-button>
             </div>
           </a-form>
         </a-spin>

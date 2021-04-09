@@ -601,7 +601,7 @@
               <a-button @click="() => this.$router.back()" :disabled="loading.deploy">
                 {{ this.$t('label.cancel') }}
               </a-button>
-              <a-button type="primary" @click="handleSubmit" :loading="loading.deploy">
+              <a-button type="primary" ref="submit" @click="handleSubmit" :loading="loading.deploy">
                 <a-icon type="rocket" />
                 {{ this.$t('label.launch.vm') }}
               </a-button>

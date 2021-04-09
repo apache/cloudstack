@@ -331,7 +331,7 @@
         v-if="!isFixError">
         {{ $t('label.previous') }}
       </a-button>
-      <a-button type="primary" @click="handleSubmit" class="button-next">
+      <a-button ref="submit" type="primary" @click="handleSubmit" class="button-next">
         {{ $t('label.next') }}
       </a-button>
     </div>

@@ -82,7 +82,7 @@
             </a-form-item>
             <div :span="24" class="action-button">
               <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-              <a-button type="primary" @click="updateProjectRole" :loading="loading">{{ $t('label.ok') }}</a-button>
+              <a-button type="primary" ref="submit" @click="updateProjectRole" :loading="loading">{{ $t('label.ok') }}</a-button>
             </div>
           </a-form>
         </a-modal>
@@ -109,7 +109,7 @@
             </a-form-item>
             <div :span="24" class="action-button">
               <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-              <a-button type="primary" @click="createProjectRole" :loading="loading">{{ $t('label.ok') }}</a-button>
+              <a-button type="primary" ref="submit" @click="createProjectRole" :loading="loading">{{ $t('label.ok') }}</a-button>
             </div>
           </a-form>
         </a-modal>

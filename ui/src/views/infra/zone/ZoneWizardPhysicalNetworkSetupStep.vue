@@ -121,6 +121,7 @@
       <a-button
         class="button-next"
         type="primary"
+        ref="submit"
         @click="handleSubmit">
         {{ $t('label.next') }}
       </a-button>
@@ -130,6 +131,7 @@
       :title="`${$t('label.error')}!`"
       :maskClosable="false"
       :closable="true"
+      :footer="null"
       @cancel="() => { showError = false }"
       v-ctrl-enter="showError = false"
       centered
@@ -137,7 +139,7 @@
       <span>{{ $t('message.required.traffic.type') }}</span>
       <div :span="24" class="action-button">
         <a-button @click="showError = false">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" @click="showError = false">{{ $t('label.ok') }}</a-button>
+        <a-button type="primary" ref="submit" @click="showError = false">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
     <a-modal
@@ -145,11 +147,9 @@
       :visible="showEditTraffic"
       :closable="true"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
-      @ok="updateTrafficLabel(trafficInEdit)"
-      @cancel="cancelEditTraffic"
       centered
+      :footer="null"
+      v-ctrl-enter="updateTrafficLabel(trafficInEdit)"
     >
       <a-form :form="form">
         <span class="ant-form-text"> {{ $t('message.edit.traffic.type') }} </span>
@@ -163,6 +163,10 @@
             }]"
           />
         </a-form-item>
+        <div :span="24" class="action-button">
+          <a-button @click="cancelEditTraffic">{{ this.$t('label.cancel') }}</a-button>
+          <a-button type="primary" @click="updateTrafficLabel(trafficInEdit)">{{ this.$t('label.ok') }}</a-button>
+        </div>
       </a-form>
     </a-modal>
   </div>

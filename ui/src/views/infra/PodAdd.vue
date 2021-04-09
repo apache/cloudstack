@@ -102,7 +102,7 @@
 
       <div :span="24" class="action-button">
         <a-button @click="() => this.$parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
-        <a-button @click="handleSubmit" type="primary">{{ $t('label.ok') }}</a-button>
+        <a-button @click="handleSubmit" ref="submit" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
 
     </a-form>

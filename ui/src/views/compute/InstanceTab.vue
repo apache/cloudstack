@@ -183,7 +183,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeModals">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" @click="submitAddNetwork">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" ref="submit" @click="submitAddNetwork">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-modal>
@@ -220,7 +220,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeModals">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" @click="submitUpdateIP">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" ref="submit" @click="submitUpdateIP">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-modal>
@@ -259,7 +259,7 @@
       </div>
 
       <div style="margin-top: 10px; display: flex; justify-content:flex-end;">
-        <a-button @click="submitSecondaryIP" type="primary" style="margin-right: 10px;">{{ $t('label.add.secondary.ip') }}</a-button>
+        <a-button @click="submitSecondaryIP" ref="submit" type="primary" style="margin-right: 10px;">{{ $t('label.add.secondary.ip') }}</a-button>
         <a-button @click="closeModals">{{ $t('label.close') }}</a-button>
       </div>
 

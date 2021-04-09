@@ -90,7 +90,7 @@
 
     <div :span="24" class="action-button">
       <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-      <a-button type="primary" @click="submitData">{{ $t('label.ok') }}</a-button>
+      <a-button type="primary" ref="submit" @click="submitData">{{ $t('label.ok') }}</a-button>
     </div>
   </div>
 </template>

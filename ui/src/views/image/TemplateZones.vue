@@ -109,7 +109,7 @@
 
           <div :span="24" class="action-button">
             <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
-            <a-button type="primary" @click="handleCopyTemplateSubmit">{{ $t('label.ok') }}</a-button>
+            <a-button type="primary" ref="submit" @click="handleCopyTemplateSubmit">{{ $t('label.ok') }}</a-button>
           </div>
         </a-form>
       </a-spin>
@@ -128,11 +128,11 @@
       <a-spin :spinning="deleteLoading">
         <a-alert :message="$t('message.action.delete.template')" type="warning" />
         <a-form-item :label="$t('label.isforced')" style="margin-bottom: 0;">
-          <a-switch v-model="forcedDelete"></a-switch>
+          <a-switch v-model="forcedDelete" autoFocus></a-switch>
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" @click="deleteTemplate">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" ref="submit" @click="deleteTemplate">{{ $t('label.ok') }}</a-button>
         </div>
       </a-spin>
     </a-modal>

@@ -133,7 +133,7 @@
 
             <div class="action-button">
               <a-button @click="handleClose">{{ $t('label.close') }}</a-button>
-              <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.add') }}</a-button>
+              <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.add') }}</a-button>
             </div>
           </a-form>
         </a-card>

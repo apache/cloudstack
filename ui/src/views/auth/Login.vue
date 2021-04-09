@@ -104,6 +104,7 @@
         class="login-button"
         :loading="state.loginBtn"
         :disabled="state.loginBtn"
+        ref="submit"
       >{{ $t('label.login') }}</a-button>
     </a-form-item>
     <translation-menu/>

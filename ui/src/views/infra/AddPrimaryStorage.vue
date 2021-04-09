@@ -291,7 +291,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>

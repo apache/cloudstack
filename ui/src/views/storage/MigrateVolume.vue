@@ -58,7 +58,7 @@
       <a-button @click="closeModal">
         {{ $t('label.cancel') }}
       </a-button>
-      <a-button type="primary" @click="submitMigrateVolume">
+      <a-button type="primary" ref="submit" @click="submitMigrateVolume">
         {{ $t('label.ok') }}
       </a-button>
     </div>

@@ -81,7 +81,7 @@
         <a-button @click="closeAction">
           {{ $t('label.cancel') }}
         </a-button>
-        <a-button type="primary" @click="submitData">
+        <a-button type="primary" @click="submitData" ref="submit">
           {{ $t('label.submit') }}
         </a-button>
       </div>

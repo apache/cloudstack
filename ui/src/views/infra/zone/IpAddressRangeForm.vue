@@ -122,7 +122,7 @@
         @click="handleBack">
         {{ $t('label.previous') }}
       </a-button>
-      <a-button class="button-next" type="primary" @click="handleSubmit">
+      <a-button class="button-next" ref="submit" type="primary" @click="handleSubmit">
         {{ $t('label.next') }}
       </a-button>
     </div>
@@ -138,7 +138,7 @@
       <span>{{ $t('message.required.add.least.ip') }}</span>
       <div :span="24" class="action-button">
         <a-button @click="showError = false">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" @click="showError = false">{{ $t('label.ok') }}</a-button>
+        <a-button type="primary" ref="submit" @click="showError = false">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
   </div>

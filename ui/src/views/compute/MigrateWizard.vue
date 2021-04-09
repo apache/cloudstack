@@ -76,7 +76,7 @@
     </a-pagination>
 
     <div style="margin-top: 20px; display: flex; justify-content:flex-end;">
-      <a-button type="primary" :disabled="!selectedHost.id" @click="submitForm">
+      <a-button type="primary" ref="submit" :disabled="!selectedHost.id" @click="submitForm">
         {{ $t('label.ok') }}
       </a-button>
     </div>

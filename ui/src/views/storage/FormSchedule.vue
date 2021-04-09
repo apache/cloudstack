@@ -185,6 +185,7 @@
               v-if="handleShowButton()"
               :loading="actionLoading"
               type="primary"
+              ref="submit"
               @click="handleSubmit">
               {{ this.$t('label.ok') }}
             </a-button>

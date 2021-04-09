@@ -123,7 +123,7 @@
               <a-input v-decorator="['value', { rules: [{ required: true, message: $t('message.specifiy.tag.value')}] }]" />
             </a-form-item>
           </div>
-          <a-button type="primary">{{ $t('label.add') }}</a-button>
+          <a-button ref="submit" type="primary" @click="handleAddTag">{{ $t('label.add') }}</a-button>
         </a-form>
 
         <a-divider style="margin-top: 0;"></a-divider>
@@ -209,7 +209,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="() => { ruleModalVisible = false } ">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" @click="handleRuleModalForm">{{ $t('label.ok') }}</a-button>
+          <a-button ref="submit" type="primary" @click="handleRuleModalForm">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-modal>

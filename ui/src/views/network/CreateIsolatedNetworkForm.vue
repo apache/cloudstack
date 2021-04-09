@@ -235,6 +235,7 @@
             </a-button>
             <a-button
               :loading="actionLoading"
+              ref="submit"
               type="primary"
               @click="handleSubmit">
               {{ this.$t('label.ok') }}
