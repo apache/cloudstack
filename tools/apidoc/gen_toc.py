@@ -237,7 +237,7 @@ for f in sys.argv:
         categories[category].append({
             'name': name,
             'dirname': dirname_to_dirname[dirname],
-            'async': isAsync == 'true',
+            'isAsync': isAsync == 'true',
             'user': dirname_to_user[dirname],
             })
     except ExpatError as e:
@@ -248,10 +248,10 @@ for f in sys.argv:
 
 def xml_for(command):
     name = command['name']
-    async = command['async'] and ' (A)' or ''
+    isAsync = command['isAsync'] and ' (A)' or ''
     dirname = command['dirname']
     return '''<xsl:if test="name=\'%(name)s\'">
-<li><a href="%(dirname)s/%(name)s.html"><xsl:value-of select="name"/>%(async)s</a></li>
+<li><a href="%(dirname)s/%(name)s.html"><xsl:value-of select="name"/>%(isAsync)s</a></li>
 </xsl:if>
 ''' % locals()
 
