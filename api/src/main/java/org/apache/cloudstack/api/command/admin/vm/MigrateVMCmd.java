@@ -60,7 +60,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = HostResponse.class,
             required = false,
-            description = "Destination Host ID to migrate VM to. Required for live migrating a VM from host to host")
+            description = "Destination Host ID to migrate VM to.")
     private Long hostId;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
@@ -132,10 +132,6 @@ public class MigrateVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        if (getHostId() == null && getStoragePoolId() == null) {
-            throw new InvalidParameterValueException("Either hostId or storageId must be specified");
-        }
-
         if (getHostId() != null && getStoragePoolId() != null) {
             throw new InvalidParameterValueException("Only one of hostId and storageId can be specified");
         }
@@ -169,9 +165,9 @@ public class MigrateVMCmd extends BaseAsyncCmd {
 
         try {
             VirtualMachine migratedVm = null;
-            if (getHostId() != null) {
+            if (getStoragePoolId() == null) {
                 migratedVm = _userVmService.migrateVirtualMachine(getVirtualMachineId(), destinationHost);
-            } else if (getStoragePoolId() != null) {
+            } else {
                 migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), destStoragePool);
             }
             if (migratedVm != null) {
