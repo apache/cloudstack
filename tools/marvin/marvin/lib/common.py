@@ -429,20 +429,20 @@ def get_test_ovf_templates(apiclient, zone_id=None, test_ovf_templates=None, hyp
             template = Template.register(apiclient, test_template, zoneid=zone_id, hypervisor=hypervisor.lower(), randomize_name=False)
             template.download(apiclient)
             retries = 3
-            while (not template.deployasisdetails or len(template.deployasisdetails.__dict__) == 0) and retries > 0:
+            while (not hasattr(template, 'deployasisdetails') or len(template.deployasisdetails.__dict__) == 0) and retries > 0:
                 time.sleep(10)
                 template_list = Template.list(apiclient, id=template.id, zoneid=zone_id, templatefilter='all')
                 if isinstance(template_list, list):
                     template = Template(template_list[0].__dict__)
                 retries = retries - 1
-            if not template.deployasisdetails or len(template.deployasisdetails.__dict__) == 0:
+            if not hasattr(template, 'deployasisdetails') or len(template.deployasisdetails.__dict__) == 0:
                 template.delete(apiclient)
             else:
                 result.append(template)
 
         if templates:
             for template in templates:
-                if template.isready and template.ispublic and template.deployasisdetails != None and len(template.deployasisdetails.__dict__) > 0:
+                if template.isready and template.ispublic and template.deployasisdetails and len(template.deployasisdetails.__dict__) > 0:
                     result.append(template)
 
     return result
