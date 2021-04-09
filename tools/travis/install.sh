@@ -40,9 +40,15 @@ if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
    # npm lint, test and build
    cd ui && npm install && npm run lint && npm run test:unit && npm run build
    cd $DIR
+
    # Pylint/pep8 systemvm python codebase
    python3 -m pip install --user --upgrade setuptools pycodestyle pylint flask nose
-   source ~/py2/bin/activate
+   pip2 install virtualenv
+   sudo virtualenv -p `which python2` py2
+   #sudo python2 -m venv ~/py2/
+   cd py2/
+   source bin/activate
+   cd $DIR
    which python
    which python2
    python --version
