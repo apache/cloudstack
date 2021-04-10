@@ -1765,7 +1765,7 @@ class TestVAppsVM(cloudstackTestCase):
     def get_ova_parsed_information_from_template(self, template):
         if not template:
             return None
-        details = template['deployasisdetails'].__dict__
+        details = template.deployasisdetails.__dict__
         configurations = []
         disks = []
         isos = []
@@ -1838,7 +1838,7 @@ class TestVAppsVM(cloudstackTestCase):
 
             nicnetworklist = []
             networks = []
-            vm_service = self.services["virtual_machine_vapps"][template['name']]
+            vm_service = self.services["virtual_machine_vapps"][template.name]
             network_mappings = vm_service["nicnetworklist"]
             for network_mapping in network_mappings:
                 network_service = self.services["isolated_network"]
@@ -1862,7 +1862,7 @@ class TestVAppsVM(cloudstackTestCase):
                 vm_service,
                 accountid=self.account.name,
                 domainid=self.account.domainid,
-                templateid=template['id'],
+                templateid=template.id,
                 serviceofferingid=self.custom_offering.id,
                 zoneid=self.zone.id,
                 customcpunumber=cpu_number,
