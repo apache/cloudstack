@@ -43,7 +43,7 @@ if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
 
    # Pylint/pep8 systemvm python codebase
    python3 -m pip install --user --upgrade setuptools pycodestyle pylint flask nose
-   pip2 install virtualenv
+   pip install virtualenv
    sudo virtualenv -p `which python2` py2
    #sudo python2 -m venv ~/py2/
    cd py2/
