@@ -2302,7 +2302,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     getStoragePoolTags(destPool), vol.getName(), vol.getUuid(), diskOffering.getTags()));
         }
 
-        if (liveMigrateVolume && destPool.getClusterId() != null && srcClusterId != null) {
+        if (liveMigrateVolume && State.Running.equals(vm.getState()) &&
+                destPool.getClusterId() != null && srcClusterId != null) {
             if (!srcClusterId.equals(destPool.getClusterId())) {
                 throw new InvalidParameterValueException("Cannot migrate a volume of a virtual machine to a storage pool in a different cluster");
             }
