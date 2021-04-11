@@ -250,7 +250,6 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
             return getHostIdForVmAndHostGuidInTargetClusterForAttachedVm(vm, targetPool, targetScopeType);
         }
         return getHostIdForVmAndHostGuidInTargetClusterForWorkerVm(sourcePool, sourceScopeType, targetPool, targetScopeType);
-
     }
 
     @Override
