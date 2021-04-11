@@ -18,6 +18,7 @@ package com.cloud.api.query.dao;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Iterator;
@@ -91,6 +92,18 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         ClusterSearch.done();
 
         this._count = "select count(distinct id) from host_view WHERE ";
+    }
+
+    private boolean containsHostHATag(final String tags) {
+        boolean result = false;
+        String haTag = ApiDBUtils.getHaTag();
+        if (StringUtils.isNotEmpty(haTag) && StringUtils.isNotEmpty(tags)) {
+            List<String> tagsList = Arrays.asList(tags.split(","));
+            if (tagsList.contains(haTag)) {
+                result = true;
+            }
+        }
+        return result;
     }
 
     @Override
@@ -178,13 +191,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
                 String hostTags = host.getTag();
                 hostResponse.setHostTags(hostTags);
-
-                hostResponse.setHaHost(false);
-                String haTag = ApiDBUtils.getHaTag();
-                if (StringUtils.isNotEmpty(haTag) && StringUtils.isNotEmpty(hostTags) &&
-                        haTag.equalsIgnoreCase(hostTags)) {
-                    hostResponse.setHaHost(true);
-                }
+                hostResponse.setHaHost(containsHostHATag(hostTags));
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
 
@@ -267,26 +274,6 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     }
 
     @Override
-    public HostResponse setHostResponse(HostResponse response, HostJoinVO host) {
-        String tag = host.getTag();
-        if (StringUtils.isNotEmpty(tag)) {
-            if (StringUtils.isNotEmpty(response.getHostTags())) {
-                response.setHostTags(response.getHostTags() + "," + tag);
-            } else {
-                response.setHostTags(tag);
-            }
-
-            if (Boolean.FALSE.equals(response.getHaHost())) {
-                String haTag = ApiDBUtils.getHaTag();
-                if (StringUtils.isNotEmpty(haTag) && haTag.equalsIgnoreCase(tag)) {
-                    response.setHaHost(true);
-                }
-            }
-        }
-        return response;
-    }
-
-    @Override
     public HostForMigrationResponse newHostForMigrationResponse(HostJoinVO host, EnumSet<HostDetails> details) {
         HostForMigrationResponse hostResponse = new HostForMigrationResponse();
         hostResponse.setId(host.getUuid());
@@ -337,13 +324,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
                 String hostTags = host.getTag();
                 hostResponse.setHostTags(hostTags);
-
-                hostResponse.setHaHost(false);
-                String haTag = ApiDBUtils.getHaTag();
-                if (StringUtils.isNotEmpty(haTag) && StringUtils.isNotEmpty(hostTags) &&
-                        haTag.equalsIgnoreCase(hostTags)) {
-                    hostResponse.setHaHost(true);
-                }
+                hostResponse.setHaHost(containsHostHATag(hostTags));
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
 
@@ -406,26 +387,6 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         hostResponse.setObjectName("host");
 
         return hostResponse;
-    }
-
-    @Override
-    public HostForMigrationResponse setHostForMigrationResponse(HostForMigrationResponse response, HostJoinVO host) {
-        String tag = host.getTag();
-        if (tag != null) {
-            if (response.getHostTags() != null && response.getHostTags().length() > 0) {
-                response.setHostTags(response.getHostTags() + "," + tag);
-            } else {
-                response.setHostTags(tag);
-            }
-
-            if (Boolean.FALSE.equals(response.getHaHost())) {
-                String haTag = ApiDBUtils.getHaTag();
-                if (StringUtils.isNotEmpty(haTag) && haTag.equalsIgnoreCase(tag)) {
-                    response.setHaHost(true);
-                }
-            }
-        }
-        return response;
     }
 
     @Override
