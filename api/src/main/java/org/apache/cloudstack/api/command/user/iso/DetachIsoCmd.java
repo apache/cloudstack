@@ -48,12 +48,19 @@ public class DetachIsoCmd extends BaseAsyncCmd implements UserCmd {
             required=true, description="The ID of the virtual machine")
     protected Long virtualMachineId;
 
+    @Parameter(name=ApiConstants.FORCED, type=CommandType.BOOLEAN, description="If true, ejects the iso before detaching on vmware. Default: false", since = "4.15.1")
+    protected Boolean forced;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getVirtualMachineId() {
         return virtualMachineId;
+    }
+
+    public Boolean isForced() {
+        return forced != null;
     }
 
     /////////////////////////////////////////////////////
@@ -87,7 +94,7 @@ public class DetachIsoCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public void execute() {
-        boolean result = _templateService.detachIso(virtualMachineId);
+        boolean result = _templateService.detachIso(virtualMachineId, isForced());
         if (result) {
             UserVm userVm = _entityMgr.findById(UserVm.class, virtualMachineId);
             UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", userVm).get(0);

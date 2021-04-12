@@ -33,6 +33,9 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item :label="$t('label.forced')" v-if="resource && resource.hypervisor === 'VMware'">
+          <a-switch v-decorator="['forced']" :auto-focus="true" />
+        </a-form-item>
       </a-form>
       <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
@@ -116,6 +119,11 @@ export default {
           id: values.id,
           virtualmachineid: this.resource.id
         }
+
+        if (values.forced) {
+          params.forced = values.forced
+        }
+
         this.loading = true
         const title = this.$t('label.action.attach.iso')
         api('attachIso', params).then(json => {

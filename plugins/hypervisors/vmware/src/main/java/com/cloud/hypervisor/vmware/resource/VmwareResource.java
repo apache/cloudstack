@@ -5371,7 +5371,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                         "Failed to unmount vmware-tools installer ISO as the corresponding CDROM device is locked by VM. Please unmount the CDROM device inside the VM and ret-try.");
                             }
                         } catch (Throwable e) {
-                            vmMo.detachIso(null);
+                            vmMo.detachIso(null, cmd.isForce());
                         }
                     }
 
@@ -5400,7 +5400,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             String isoDatastorePath = String.format("[%s] %s%s", storeName, isoStorePathFromRoot, isoFileName);
 
             if (cmd.isAttach()) {
-                vmMo.attachIso(isoDatastorePath, morSecondaryDs, true, false, cmd.getDeviceKey());
+                vmMo.attachIso(isoDatastorePath, morSecondaryDs, true, false, cmd.getDeviceKey(), cmd.isForce());
                 return new AttachIsoAnswer(cmd);
             } else {
                 int key = vmMo.detachIso(isoDatastorePath, cmd.isForce());

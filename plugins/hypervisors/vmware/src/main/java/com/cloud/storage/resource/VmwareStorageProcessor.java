@@ -2045,7 +2045,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer attachIso(AttachCommand cmd) {
-        return this.attachIso(cmd.getDisk(), true, cmd.getVmName());
+        return this.attachIso(cmd.getDisk(), true, cmd.getVmName(), cmd.isForced());
     }
 
     @Override
@@ -2411,7 +2411,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return morDatastore;
     }
 
-    private Answer attachIso(DiskTO disk, boolean isAttach, String vmName) {
+    private Answer attachIso(DiskTO disk, boolean isAttach, String vmName, boolean force) {
         try {
             VmwareContext context = hostService.getServiceContext(null);
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
@@ -2441,7 +2441,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                                 return new AttachAnswer("Failed to unmount vmware-tools installer ISO as the corresponding CDROM device is locked by VM. Please unmount the CDROM device inside the VM and ret-try.");
                             }
                         } catch(Throwable e){
-                            vmMo.detachIso(null);
+                            vmMo.detachIso(null, force);
                         }
                     }
 
@@ -2469,9 +2469,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
             String isoDatastorePath = String.format("[%s] %s/%s", storeName, isoStorePathFromRoot, isoFileName);
 
             if (isAttach) {
-                vmMo.attachIso(isoDatastorePath, morSecondaryDs, true, false);
+                vmMo.attachIso(isoDatastorePath, morSecondaryDs, true, false, force);
             } else {
-                vmMo.detachIso(isoDatastorePath);
+                vmMo.detachIso(isoDatastorePath, force);
             }
 
             return new AttachAnswer(disk);
@@ -2497,7 +2497,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer dettachIso(DettachCommand cmd) {
-        return this.attachIso(cmd.getDisk(), false, cmd.getVmName());
+        return this.attachIso(cmd.getDisk(), false, cmd.getVmName(), cmd.isForced());
     }
 
     @Override
