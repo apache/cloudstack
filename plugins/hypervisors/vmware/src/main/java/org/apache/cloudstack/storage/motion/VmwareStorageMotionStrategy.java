@@ -31,7 +31,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -68,6 +67,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
@@ -78,13 +78,13 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
     @Inject
     VolumeDao volDao;
     @Inject
-    VolumeDataFactory volFactory;
-    @Inject
     PrimaryDataStoreDao storagePoolDao;
     @Inject
     VMInstanceDao instanceDao;
     @Inject
-    private HostDao hostDao;
+    HostDao hostDao;
+    @Inject
+    VirtualMachineManager vmManager;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
@@ -144,43 +144,6 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
                 && HypervisorType.VMware.equals(destData.getTO().getHypervisorType());
     }
 
-    private Pair<Long, Long> findClusterAndHostIdForVm(VirtualMachine vm) {
-        Long hostId = vm.getHostId();
-        Long clusterId = null;
-        // OfflineVmwareMigration: probably this is null when vm is stopped
-        if(hostId == null) {
-            hostId = vm.getLastHostId();
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("host id is null, using last host id %d", hostId) );
-            }
-        }
-        if (hostId == null) {
-            List<VolumeVO> volumes = volDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
-            if (CollectionUtils.isNotEmpty(volumes)) {
-                for (VolumeVO rootVolume : volumes) {
-                    if (rootVolume.getPoolId() != null) {
-                        StoragePoolVO pool = storagePoolDao.findById(rootVolume.getPoolId());
-                        if (pool != null && pool.getClusterId() != null) {
-                            clusterId = pool.getClusterId();
-                            List<HostVO> hosts = hostDao.findHypervisorHostInCluster(pool.getClusterId());
-                            if (CollectionUtils.isNotEmpty(hosts)) {
-                                hostId = hosts.get(0).getId();
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (clusterId == null && hostId != null) {
-            HostVO host = hostDao.findById(hostId);
-            if (host != null) {
-                clusterId = host.getClusterId();
-            }
-        }
-        return new Pair<>(clusterId, hostId);
-    }
-
     private String getHostGuidInTargetCluster (Long sourceClusterId,
                                                StoragePool targetPool,
                                                ScopeType targetScopeType) {
@@ -210,7 +173,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
     private Pair<Long, String> getHostIdForVmAndHostGuidInTargetClusterForAttachedVm(VirtualMachine vm,
                                                                                      StoragePool targetPool,
                                                                                      ScopeType targetScopeType) {
-        Pair<Long, Long> clusterAndHostId = findClusterAndHostIdForVm(vm);
+        Pair<Long, Long> clusterAndHostId = vmManager.findClusterAndHostIdForVm(vm);
         if (clusterAndHostId.second() == null) {
             throw new CloudRuntimeException(String.format("Offline Migration failed, unable to find host for VM: %s", vm.getUuid()));
         }
