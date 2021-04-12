@@ -1443,6 +1443,11 @@ class TestKVMLiveMigration(cloudstackTestCase):
         if len(self.hosts) < 2:
             self.skipTest("Requires at least two hosts for performing migration related tests")
 
+
+        for host in self.hosts:
+            if host.details['Host.OS'] in ['CentOS']:
+                self.skipTest("live migration is not stabily supported on CentOS")
+
     def tearDown(self):
         try:
             cleanup_resources(self.apiclient, self.cleanup)

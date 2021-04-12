@@ -48,8 +48,6 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import com.cloud.agent.api.SetupPersistentNetworkAnswer;
-import com.cloud.agent.api.SetupPersistentNetworkCommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -154,6 +152,8 @@ import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
+import com.cloud.agent.api.SetupPersistentNetworkAnswer;
+import com.cloud.agent.api.SetupPersistentNetworkCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -4511,7 +4511,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         volumeDeviceKey.put(diskId, volumeId);
     }
 
-    private ManagedObjectReference getTargetDatastoreMOReference(String destinationPool, VmwareHypervisorHost hyperHost) {
+    private ManagedObjectReference getTargetDatastoreMOReference(String destinationPool,
+                                                                 VmwareHypervisorHost hyperHost) {
         ManagedObjectReference morDs;
         try {
             if (s_logger.isDebugEnabled()) {
@@ -4632,9 +4633,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // we need to spawn a worker VM to attach the volume to and move it
             morSourceDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getSourcePool().getUuid());
             sourceDsMo = new DatastoreMO(hyperHost.getContext(), morSourceDS);
-            VmwareHypervisorHost hostInTargetCluster = VmwareHelper.getHostMOFromHostName(getServiceContext(),
+            VmwareHypervisorHost hyperHostInTargetCluster = VmwareHelper.getHostMOFromHostName(getServiceContext(),
                     cmd.getHostGuidInTargetCluster());
-            VmwareHypervisorHost dsHost = hostInTargetCluster == null ? hyperHost : hostInTargetCluster;
+            VmwareHypervisorHost dsHost = hyperHostInTargetCluster == null ? hyperHost : hyperHostInTargetCluster;
             String targetDsName = cmd.getTargetPool().getUuid();
             morDestinationDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(dsHost, targetDsName);
             if(morDestinationDS == null) {
@@ -4649,14 +4650,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 isvVolsInvolved = true;
                 vmName = getWorkerName(getServiceContext(), cmd, 0, destinationDsMo);
             }
-            String hardwareVersion = null;
-            if (hostInTargetCluster != null) {
-                Integer sourceHardwareVersion = HypervisorHostHelper.getHostHardwareVersion(hyperHost);
-                Integer destinationHardwareVersion = HypervisorHostHelper.getHostHardwareVersion(dsHost);
-                if (sourceHardwareVersion != null && destinationHardwareVersion != null && !sourceHardwareVersion.equals(destinationHardwareVersion)) {
-                    hardwareVersion = String.valueOf(Math.min(sourceHardwareVersion, destinationHardwareVersion));
-                }
-            }
 
             // OfflineVmwareMigration: refactor for re-use
             // OfflineVmwareMigration: 1. find data(store)
@@ -4665,7 +4658,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             s_logger.info("Create worker VM " + vmName);
             // OfflineVmwareMigration: 2. create the worker with access to the data(store)
-            vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, sourceDsMo, vmName, hardwareVersion);
+            vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, sourceDsMo, vmName,
+                    HypervisorHostHelper.getMinimumHostHardwareVersion(hyperHost, hyperHostInTargetCluster));
             if (vmMo == null) {
                 // OfflineVmwareMigration: don't throw a general Exception but think of a specific one
                 throw new CloudRuntimeException("Unable to create a worker VM for volume operation");
