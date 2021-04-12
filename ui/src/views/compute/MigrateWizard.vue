@@ -21,7 +21,8 @@
       :placeholder="$t('label.search')"
       v-model="searchQuery"
       style="margin-bottom: 10px;"
-      @search="fetchData" />
+      @search="fetchData"
+      autoFocus />
     <a-table
       size="small"
       style="overflow-y: auto"
@@ -131,7 +132,7 @@ export default {
       ]
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

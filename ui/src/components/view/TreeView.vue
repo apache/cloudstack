@@ -36,11 +36,11 @@
             :loadData="onLoadData"
             :expandAction="false"
             :showIcon="true"
-            :defaultSelectedKeys="defaultSelected"
+            :selectedKeys="defaultSelected"
             :checkStrictly="true"
             @select="onSelect"
             @expand="onExpand"
-            :defaultExpandedKeys="arrExpand">
+            :expandedKeys="arrExpand">
             <a-icon slot="parent" type="folder" />
             <a-icon slot="leaf" type="block" />
           </a-tree>
@@ -121,6 +121,12 @@ export default {
       type: Array,
       default () {
         return []
+      }
+    },
+    treeStore: {
+      type: Object,
+      default () {
+        return {}
       }
     }
   },
@@ -213,6 +219,39 @@ export default {
       }
 
       this.reloadTreeData(newData)
+    },
+    treeVerticalData () {
+      if (!this.treeStore.isExpand) {
+        return
+      }
+      if (this.treeStore.expands && this.treeStore.expands.length > 0) {
+        for (const expandKey of this.treeStore.expands) {
+          if (this.arrExpand.includes(expandKey)) {
+            continue
+          }
+          const keyVisible = this.treeVerticalData.findIndex(item => item.key === expandKey)
+          if (keyVisible > -1) this.arrExpand.push(expandKey)
+        }
+      }
+
+      if (this.treeStore.selected) {
+        this.selectedTreeKey = this.treeStore.selected
+        this.defaultSelected = [this.selectedTreeKey]
+
+        const resource = this.treeVerticalData.filter(item => item.id === this.selectedTreeKey)
+        if (resource.length > 0) {
+          this.resource = resource[0]
+          this.$emit('change-resource', this.resource)
+        } else {
+          const rootResource = this.treeVerticalData[0]
+          if (rootResource) {
+            this.resource = rootResource
+            this.selectedTreeKey = this.resource.key
+            this.defaultSelected = [this.selectedTreeKey]
+            this.$emit('change-resource', this.resource)
+          }
+        }
+      }
     }
   },
   methods: {
@@ -273,10 +312,21 @@ export default {
         this.selectedTreeKey = selectedKeys[0]
       }
 
+      this.defaultSelected = []
+      this.defaultSelected.push(this.selectedTreeKey)
+
+      this.treeStore.expands = this.arrExpand
+      this.treeStore.selected = this.selectedTreeKey
+      this.$emit('change-tree-store', this.treeStore)
+
       this.getDetailResource(this.selectedTreeKey)
     },
     onExpand (treeExpand) {
       this.arrExpand = treeExpand
+      this.treeStore.isExpand = true
+      this.treeStore.expands = this.arrExpand
+      this.treeStore.selected = this.selectedTreeKey
+      this.$emit('change-tree-store', this.treeStore)
     },
     onSearch (value) {
       if (this.searchQuery === '' && this.oldSearchQuery === '') {
@@ -303,6 +353,7 @@ export default {
       this.arrExpand = []
       this.treeViewData = []
       this.loadingSearch = true
+      this.$emit('change-tree-store', {})
 
       api(this.apiList, params).then(json => {
         const listDomains = this.getResponseJsonData(json)

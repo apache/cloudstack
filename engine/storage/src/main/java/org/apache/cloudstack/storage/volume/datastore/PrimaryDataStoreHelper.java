@@ -173,6 +173,7 @@ public class PrimaryDataStoreHelper {
 
     public DataStore attachZone(DataStore store) {
         StoragePoolVO pool = this.dataStoreDao.findById(store.getId());
+        storageMgr.createCapacityEntry(pool.getId());
         pool.setScope(ScopeType.ZONE);
         pool.setStatus(StoragePoolStatus.Up);
         this.dataStoreDao.update(pool.getId(), pool);
@@ -181,6 +182,7 @@ public class PrimaryDataStoreHelper {
 
     public DataStore attachZone(DataStore store, HypervisorType hypervisor) {
         StoragePoolVO pool = this.dataStoreDao.findById(store.getId());
+        storageMgr.createCapacityEntry(pool.getId());
         pool.setScope(ScopeType.ZONE);
         pool.setHypervisor(hypervisor);
         pool.setStatus(StoragePoolStatus.Up);

@@ -32,6 +32,7 @@ export const ZONES = 'ZONES'
 export const HEADER_NOTICES = 'HEADER_NOTICES'
 export const TIMEZONE_OFFSET = 'TIMEZONE_OFFSET'
 export const USE_BROWSER_TIMEZONE = 'USE_BROWSER_TIMEZONE'
+export const DOMAIN_STORE = 'DOMAIN_STORE'
 
 export const CONTENT_WIDTH_TYPE = {
   Fluid: 'Fluid',

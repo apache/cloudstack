@@ -74,6 +74,7 @@
               v-decorator="['range', {
                 rules: [{ required: true, message: `${$t('label.required')}` }]
               }]"
+              autoFocus
             ></a-input>
           </a-form-item>
 
@@ -183,7 +184,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {

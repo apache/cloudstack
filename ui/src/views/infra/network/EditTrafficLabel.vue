@@ -27,6 +27,7 @@
             </a-tooltip>
           </span>
           <a-select
+            autoFocus
             v-decorator="['id', {
               initialValue: selectedType,
               rules: [{ required: true, message: $t('message.error.select') }] }]"
@@ -143,7 +144,8 @@ export default {
       })
     }
   },
-  mounted () {
+  inject: ['parentFetchData'],
+  created () {
     this.fetchData()
   },
   methods: {

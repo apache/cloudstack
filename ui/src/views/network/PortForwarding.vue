@@ -23,6 +23,7 @@
           <div class="form__label">{{ $t('label.privateport') }}</div>
           <a-input-group class="form__item__input-container" compact>
             <a-input
+              autoFocus
               v-model="newRule.privateport"
               :placeholder="$t('label.start')"
               style="border-right: 0; width: 60px; margin-right: 0;"></a-input>
@@ -136,7 +137,7 @@
       <div class="add-tags">
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.key') }}</p>
-          <a-input v-model="newTag.key"></a-input>
+          <a-input autoFocus v-model="newTag.key"></a-input>
         </div>
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.value') }}</p>
@@ -176,6 +177,7 @@
           v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
           <strong>{{ $t('label.select.tier') }} </strong>
           <a-select
+            :autoFocu="'vpcid' in resource && !('associatednetworkid' in resource)"
             v-model="selectedTier"
             @change="fetchVirtualMachines()"
             :placeholder="$t('label.select.tier')" >
@@ -188,6 +190,7 @@
           </a-select>
         </span>
         <a-input-search
+          :autoFocu="!('vpcid' in resource && !('associatednetworkid' in resource))"
           class="input-search"
           :placeholder="$t('label.search')"
           v-model="searchQuery"
@@ -364,7 +367,7 @@ export default {
       searchQuery: null
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {

@@ -26,6 +26,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -98,6 +99,8 @@ public class VirtualNetworkApplianceFactory {
 
     @Inject
     private NetworkTopologyContext _networkTopologyContext;
+    @Inject
+    private VpcVirtualNetworkApplianceService _routerService;
 
     public NetworkModel getNetworkModel() {
         return _networkModel;
@@ -189,5 +192,9 @@ public class VirtualNetworkApplianceFactory {
 
     public FirewallRulesDao getFirewallRulesDao() {
         return _rulesDao;
+    }
+
+    public VpcVirtualNetworkApplianceService getRouterService() {
+        return _routerService;
     }
 }

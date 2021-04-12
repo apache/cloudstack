@@ -31,7 +31,7 @@
           <a-row :gutter="12">
             <a-form-item :label="$t('label.url')">
               <a-input
-                autoFocus
+                :autoFocus="currentForm === 'Create'"
                 v-decorator="['url', {
                   rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
                 }]"
@@ -64,7 +64,8 @@
               v-decorator="['name', {
                 rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
               }]"
-              :placeholder="apiParams.name.description" />
+              :placeholder="apiParams.name.description"
+              :autoFocus="currentForm !== 'Create'"/>
           </a-form-item>
         </a-row>
         <a-row :gutter="12">
@@ -410,8 +411,6 @@ export default {
     this.$set(this.format, 'opts', [])
     this.$set(this.osTypes, 'loading', false)
     this.$set(this.osTypes, 'opts', [])
-  },
-  mounted () {
     this.fetchData()
   },
   computed: {

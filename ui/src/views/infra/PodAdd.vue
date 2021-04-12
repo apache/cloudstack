@@ -24,7 +24,8 @@
           v-decorator="['zoneid', {
             initialValue: this.zoneId,
             rules: [{ required: true, message: `${$t('label.required')}` }] }
-          ]">
+          ]"
+          autoFocus>
           <a-select-option
             v-for="zone in zonesList"
             :value="zone.id"
@@ -146,7 +147,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {
