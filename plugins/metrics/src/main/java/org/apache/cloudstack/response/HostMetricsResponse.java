@@ -218,7 +218,7 @@ public class HostMetricsResponse extends HostResponse {
     private Double parseCPU(String cpu) {
         DecimalFormat decimalFormat = new DecimalFormat("#.##");
         try {
-            return (Double)decimalFormat.parse(cpu);
+            return decimalFormat.parse(cpu).doubleValue();
         } catch (ParseException e) {
             throw new CloudRuntimeException(e);
         }
