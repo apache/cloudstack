@@ -699,7 +699,7 @@ export default {
       options: ['primaryStorageScope', 'primaryStorageProtocol', 'provider']
     }
   },
-  mounted () {
+  created () {
     this.currentStep = this.prefillContent.resourceStep ? this.prefillContent.resourceStep : 0
     if (this.stepChild && this.stepChild !== '') {
       this.currentStep = this.steps.findIndex(item => item.fromKey === this.stepChild)

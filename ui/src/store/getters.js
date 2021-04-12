@@ -36,7 +36,8 @@ const getters = {
   zones: state => state.user.zones,
   timezoneoffset: state => state.user.timezoneoffset,
   usebrowsertimezone: state => state.user.usebrowsertimezone,
-  server: state => state.app.server
+  server: state => state.app.server,
+  domainStore: state => state.user.domainStore
 }
 
 export default getters

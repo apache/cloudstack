@@ -37,6 +37,7 @@ from marvin.codes import PASS, FAILED
 from marvin.lib.base import (Template,
                              ServiceOffering,
                              Account,
+                             StoragePool,
                              Configurations)
 from marvin.lib.utils import (cleanup_resources,
                               validateList,
@@ -81,7 +82,7 @@ class TestKubernetesCluster(cloudstackTestCase):
                                       "cloud.kubernetes.service.enabled",
                                       "true")
                 cls.restartServer()
-
+            cls.updateVmwareSettings(False)
             cls.cks_template = None
             cls.initial_configuration_cks_template_name = None
             cls.cks_service_offering = None
@@ -120,12 +121,13 @@ class TestKubernetesCluster(cloudstackTestCase):
                         (cls.services["cks_kubernetes_versions"]["1.16.3"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.16.3"]["url"], e))
 
             if cls.setup_failed == False:
-                cls.cks_template = cls.getKubernetesTemplate()
+                cls.cks_template, existAlready = cls.getKubernetesTemplate()
                 if cls.cks_template == FAILED:
                     assert False, "getKubernetesTemplate() failed to return template for hypervisor %s" % cls.hypervisor
                     cls.setup_failed = True
                 else:
-                    cls._cleanup.append(cls.cks_template)
+                    if not existAlready:
+                        cls._cleanup.append(cls.cks_template)
 
             if cls.setup_failed == False:
                 cls.initial_configuration_cks_template_name = Configurations.list(cls.apiclient,
@@ -162,8 +164,6 @@ class TestKubernetesCluster(cloudstackTestCase):
                 cls.debug("Error: Exception during cleanup for added Kubernetes supported versions: %s" % e)
         try:
             # Restore original CKS template
-            if cls.cks_template != None:
-                cls.cks_template.delete(cls.apiclient)
             if cls.hypervisorNotSupported == False and cls.initial_configuration_cks_template_name != None:
                 Configurations.update(cls.apiclient,
                                       cls.cks_template_name_key,
@@ -176,12 +176,32 @@ class TestKubernetesCluster(cloudstackTestCase):
                                       "false")
                 cls.restartServer()
 
+            cls.updateVmwareSettings(True)
+
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         if version_delete_failed == True:
             raise Exception("Warning: Exception during cleanup, unable to delete Kubernetes supported versions")
         return
+
+    @classmethod
+    def updateVmwareSettings(cls, tearDown):
+        value = "false"
+        if not tearDown:
+            value = "true"
+        if cls.hypervisor.lower() == 'vmware':
+            Configurations.update(cls.apiclient,
+                                  "vmware.create.full.clone",
+                                  value)
+            allStoragePools = StoragePool.list(
+                cls.apiclient
+            )
+            for pool in allStoragePools:
+                Configurations.update(cls.apiclient,
+                                      storageid=pool.id,
+                                      name="vmware.create.full.clone",
+                                      value=value)
 
     @classmethod
     def restartServer(cls):
@@ -227,7 +247,7 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         if hypervisor not in cks_templates.keys():
             cls.debug("Provided hypervisor has no CKS template")
-            return FAILED
+            return FAILED, False
 
         cks_template = cks_templates[hypervisor]
 
@@ -244,13 +264,13 @@ class TestKubernetesCluster(cloudstackTestCase):
                 details = [{"keyboard": "us"}]
             template = Template.register(cls.apiclient, cks_template, zoneid=cls.zone.id, hypervisor=hypervisor.lower(), randomize_name=False, details=details)
             template.download(cls.apiclient)
-            return template
+            return template, False
 
         for template in templates:
             if template.isready and template.ispublic:
-                return Template(template.__dict__)
+                return Template(template.__dict__), True
 
-        return FAILED
+        return FAILED, False
 
     @classmethod
     def waitForKubernetesSupportedVersionIsoReadyState(cls, version_id, retries=30, interval=60):
@@ -313,38 +333,7 @@ class TestKubernetesCluster(cloudstackTestCase):
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     @skipTestIf("hypervisorNotSupported")
-    def test_01_deploy_kubernetes_cluster(self):
-        """Test to deploy a new Kubernetes cluster
-
-        # Validate the following:
-        # 1. createKubernetesCluster should return valid info for new cluster
-        # 2. The Cloud Database contains the valid information
-        # 3. stopKubernetesCluster should stop the cluster
-        """
-        if self.setup_failed == True:
-            self.fail("Setup incomplete")
-        global k8s_cluster
-        k8s_cluster = self.getValidKubernetesCluster()
-
-        self.debug("Kubernetes cluster with ID: %s successfully deployed, now stopping it" % k8s_cluster.id)
-
-        self.stopAndVerifyKubernetesCluster(k8s_cluster.id)
-
-        self.debug("Kubernetes cluster with ID: %s successfully stopped, now starting it again" % k8s_cluster.id)
-
-        try:
-            k8s_cluster = self.startKubernetesCluster(k8s_cluster.id)
-        except Exception as e:
-            self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
-            self.fail("Failed to start Kubernetes cluster due to: %s" % e)
-
-        self.verifyKubernetesClusterState(k8s_cluster, 'Running')
-
-        return
-
-    @attr(tags=["advanced", "smoke"], required_hardware="true")
-    @skipTestIf("hypervisorNotSupported")
-    def test_02_invalid_upgrade_kubernetes_cluster(self):
+    def test_01_invalid_upgrade_kubernetes_cluster(self):
         """Test to check for failure while tying to upgrade a Kubernetes cluster to a lower version
 
         # Validate the following:
@@ -364,12 +353,13 @@ class TestKubernetesCluster(cloudstackTestCase):
             self.fail("Kubernetes cluster upgraded to a lower Kubernetes supported version. Must be an error.")
         except Exception as e:
             self.debug("Upgrading Kubernetes cluster with invalid Kubernetes supported version check successful, API failure: %s" % e)
+            self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
 
         return
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     @skipTestIf("hypervisorNotSupported")
-    def test_03_deploy_and_upgrade_kubernetes_cluster(self):
+    def test_02_deploy_and_upgrade_kubernetes_cluster(self):
         """Test to deploy a new Kubernetes cluster and upgrade it to newer version
 
         # Validate the following:
@@ -395,7 +385,7 @@ class TestKubernetesCluster(cloudstackTestCase):
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     @skipTestIf("hypervisorNotSupported")
-    def test_04_deploy_and_scale_kubernetes_cluster(self):
+    def test_03_deploy_and_scale_kubernetes_cluster(self):
         """Test to deploy a new Kubernetes cluster and check for failure while tying to scale it
 
         # Validate the following:
@@ -429,6 +419,36 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         self.debug("Kubernetes cluster with ID: %s successfully downscaled" % k8s_cluster.id)
 
+        return
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    @skipTestIf("hypervisorNotSupported")
+    def test_04_basic_lifecycle_kubernetes_cluster(self):
+        """Test to deploy a new Kubernetes cluster
+
+        # Validate the following:
+        # 1. createKubernetesCluster should return valid info for new cluster
+        # 2. The Cloud Database contains the valid information
+        # 3. stopKubernetesCluster should stop the cluster
+        """
+        if self.setup_failed == True:
+            self.fail("Setup incomplete")
+        global k8s_cluster
+        k8s_cluster = self.getValidKubernetesCluster()
+
+        self.debug("Kubernetes cluster with ID: %s successfully deployed, now stopping it" % k8s_cluster.id)
+
+        self.stopAndVerifyKubernetesCluster(k8s_cluster.id)
+
+        self.debug("Kubernetes cluster with ID: %s successfully stopped, now starting it again" % k8s_cluster.id)
+
+        try:
+            k8s_cluster = self.startKubernetesCluster(k8s_cluster.id)
+        except Exception as e:
+            self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
+            self.fail("Failed to start Kubernetes cluster due to: %s" % e)
+
+        self.verifyKubernetesClusterState(k8s_cluster, 'Running')
         return
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")

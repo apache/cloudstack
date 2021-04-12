@@ -173,8 +173,6 @@ export default {
   },
   created () {
     this.server = Vue.ls.get(SERVER_MANAGER) || this.$config.servers[0]
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

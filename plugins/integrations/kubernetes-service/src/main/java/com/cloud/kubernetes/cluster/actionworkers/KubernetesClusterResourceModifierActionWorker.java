@@ -307,7 +307,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             Field f = startVm.getClass().getDeclaredField("id");
             f.setAccessible(true);
             f.set(startVm, vm.getId());
-            resizeNodeVolume(vm);
             userVmService.startVirtualMachine(startVm);
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info(String.format("Started VM : %s in the Kubernetes cluster : %s", vm.getDisplayName(), kubernetesCluster.getName()));

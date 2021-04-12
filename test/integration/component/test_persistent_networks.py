@@ -2780,7 +2780,8 @@ class TestVPCNetworkOperations(cloudstackTestCase):
             # Check if source nat IP address is released
             ipaddresses = PublicIPAddress.list(
                 self.apiclient,
-                id=publicipaddresses[0].id)
+                id=publicipaddresses[0].id,
+                state="Allocated")
             self.assertEqual(
                 validateList(ipaddresses)[0],
                 FAIL,

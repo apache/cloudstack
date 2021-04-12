@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.hypervisor.vmware.resource;
 
+import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -45,11 +48,12 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.DeployAsIsInfoTO;
-import com.cloud.agent.api.ValidateVcenterDetailsCommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
+import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
@@ -162,6 +166,7 @@ import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.ValidateSnapshotAnswer;
 import com.cloud.agent.api.ValidateSnapshotCommand;
+import com.cloud.agent.api.ValidateVcenterDetailsCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.VolumeStatsEntry;
@@ -178,12 +183,13 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
 import com.cloud.agent.api.storage.MigrateVolumeCommand;
-import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DeployAsIsInfoTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NfsTO;
@@ -191,6 +197,7 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
@@ -219,8 +226,8 @@ import com.cloud.hypervisor.vmware.mo.HostStorageSystemMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
 import com.cloud.hypervisor.vmware.mo.PbmProfileManagerMO;
-import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.hypervisor.vmware.mo.StoragepodMO;
+import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfoBuilder;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
@@ -289,7 +296,6 @@ import com.vmware.vim25.HostInternetScsiHba;
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.NasDatastoreInfo;
-import com.vmware.vim25.VirtualMachineDefinedProfileSpec;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.OptionValue;
 import com.vmware.vim25.PerfCounterInfo;
@@ -324,6 +330,7 @@ import com.vmware.vim25.VirtualEthernetCardOpaqueNetworkBackingInfo;
 import com.vmware.vim25.VirtualIDEController;
 import com.vmware.vim25.VirtualMachineBootOptions;
 import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualMachineDefinedProfileSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineFileLayoutEx;
 import com.vmware.vim25.VirtualMachineFileLayoutExFileInfo;
@@ -343,13 +350,6 @@ import com.vmware.vim25.VmConfigInfo;
 import com.vmware.vim25.VmConfigSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
-import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-
-import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService, VirtualRouterDeployer {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
@@ -4391,6 +4391,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         final String vmName = cmd.getVmName();
 
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+        VmwareHypervisorHost hyperHostInTargetCluster = null;
+        if (cmd.getHostGuidInTargetCluster() != null) {
+            hyperHostInTargetCluster = VmwareHelper.getHostMOFromHostName(getServiceContext(),
+                    cmd.getHostGuidInTargetCluster());
+        }
         try {
             VirtualMachineMO vmMo = getVirtualMachineMO(vmName, hyperHost);
             if (vmMo == null) {
@@ -4400,7 +4405,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             String poolUuid = cmd.getDestinationPool();
-            return migrateAndAnswer(vmMo, poolUuid, hyperHost, cmd);
+            return migrateAndAnswer(vmMo, poolUuid, hyperHost, hyperHostInTargetCluster, cmd);
         } catch (Throwable e) { // hopefully only CloudRuntimeException :/
             if (e instanceof Exception) {
                 return new Answer(cmd, (Exception) e);
@@ -4412,10 +4417,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return new Answer(cmd, false, "unknown problem: " + e.getLocalizedMessage());
         }
     }
-
-    private Answer migrateAndAnswer(VirtualMachineMO vmMo, String poolUuid, VmwareHypervisorHost hyperHost, Command cmd) throws Exception {
-        ManagedObjectReference morDs = getTargetDatastoreMOReference(poolUuid, hyperHost);
-
+    private Answer migrateAndAnswer(VirtualMachineMO vmMo, String poolUuid,
+                                    VmwareHypervisorHost sourceHyperHost, VmwareHypervisorHost targetHyperHost,
+                                    Command cmd) throws Exception {
+        ManagedObjectReference morDs = getTargetDatastoreMOReference(poolUuid, sourceHyperHost, targetHyperHost);
         try {
             // OfflineVmwareMigration: getVolumesFromCommand(cmd);
             Map<Integer, Long> volumeDeviceKey = getVolumesFromCommand(vmMo, cmd);
@@ -4424,7 +4429,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     s_logger.trace(String.format("disk to migrate has disk id %d and volumeId %d", diskId, volumeDeviceKey.get(diskId)));
                 }
             }
-            if (vmMo.changeDatastore(morDs)) {
+            if (vmMo.changeDatastore(morDs, targetHyperHost)) {
                 // OfflineVmwareMigration: create target specification to include in answer
                 // Consolidate VM disks after successful VM migration
                 // In case of a linked clone VM, if VM's disks are not consolidated, further VM operations such as volume snapshot, VM snapshot etc. will result in DB inconsistencies.
@@ -4500,17 +4505,27 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         volumeDeviceKey.put(diskId, volumeId);
     }
 
-    private ManagedObjectReference getTargetDatastoreMOReference(String destinationPool, VmwareHypervisorHost hyperHost) {
+    private ManagedObjectReference getTargetDatastoreMOReference(String destinationPool,
+                                                                 VmwareHypervisorHost hyperHost,
+                                                                 VmwareHypervisorHost targetHyperHost) {
         ManagedObjectReference morDs;
         try {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(String.format("finding datastore %s", destinationPool));
             }
             morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, destinationPool);
+            if (morDs == null && targetHyperHost != null) {
+                morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(targetHyperHost, destinationPool);
+            }
         } catch (Exception e) {
             String msg = "exception while finding data store  " + destinationPool;
             s_logger.error(msg);
             throw new CloudRuntimeException(msg + ": " + e.getLocalizedMessage());
+        }
+        if (morDs == null) {
+            String msg = String.format("Failed to find datastore for pool UUID: %s", destinationPool);
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
         }
         return morDs;
     }
@@ -4627,7 +4642,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             morDc = srcHyperHost.getHyperHostDatacenter();
             morDcOfTargetHost = tgtHyperHost.getHyperHostDatacenter();
             if (!morDc.getValue().equalsIgnoreCase(morDcOfTargetHost.getValue())) {
-                String msg = "Source host & target host are in different datacentesr";
+                String msg = "Source host & target host are in different datacenter";
                 throw new CloudRuntimeException(msg);
             }
             VmwareManager mgr = tgtHyperHost.getContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
@@ -4839,6 +4854,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String path = cmd.getVolumePath();
 
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+        VmwareHypervisorHost hyperHostInTargetCluster = null;
+        if (cmd.getHostGuidInTargetCluster() != null) {
+            hyperHostInTargetCluster = VmwareHelper.getHostMOFromHostName(getServiceContext(), cmd.getHostGuidInTargetCluster());
+        }
+        VmwareHypervisorHost targetDSHost = hyperHostInTargetCluster != null ? hyperHostInTargetCluster : hyperHost;
         VirtualMachineMO vmMo = null;
         DatastoreMO dsMo = null;
         DatastoreMO destinationDsMo = null;
@@ -4854,8 +4874,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // we need to spawn a worker VM to attach the volume to and move it
             morSourceDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getSourcePool().getUuid());
             dsMo = new DatastoreMO(hyperHost.getContext(), morSourceDS);
-            morDestintionDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getTargetPool().getUuid());
-            destinationDsMo = new DatastoreMO(hyperHost.getContext(), morDestintionDS);
+            morDestintionDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(targetDSHost, cmd.getTargetPool().getUuid());
+            destinationDsMo = new DatastoreMO(targetDSHost.getContext(), morDestintionDS);
 
             vmName = getWorkerName(getServiceContext(), cmd, 0, dsMo);
             if (destinationDsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
@@ -4870,7 +4890,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             s_logger.info("Create worker VM " + vmName);
             // OfflineVmwareMigration: 2. create the worker with access to the data(store)
-            vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, vmName, null);
+            vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, vmName,
+                    HypervisorHostHelper.getMinimumHostHardwareVersion(hyperHost, hyperHostInTargetCluster));
             if (vmMo == null) {
                 // OfflineVmwareMigration: don't throw a general Exception but think of a specific one
                 throw new CloudRuntimeException("Unable to create a worker VM for volume operation");
@@ -4934,7 +4955,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             // OfflineVmwareMigration: this may have to be disected and executed in separate steps
-            answer = migrateAndAnswer(vmMo, cmd.getTargetPool().getUuid(), hyperHost, cmd);
+            answer = migrateAndAnswer(vmMo, cmd.getTargetPool().getUuid(), hyperHost, hyperHostInTargetCluster, cmd);
         } catch (Exception e) {
             String msg = String.format("Migration of volume '%s' failed due to %s", cmd.getVolumePath(), e.getLocalizedMessage());
             s_logger.error(msg, e);
@@ -4943,9 +4964,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             try {
                 // OfflineVmwareMigration: worker *may* have been renamed
                 vmName = vmMo.getVmName();
-                morSourceDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getTargetPool().getUuid());
-                dsMo = new DatastoreMO(hyperHost.getContext(), morSourceDS);
-                s_logger.info("Dettaching disks before destroying worker VM '" + vmName + "' after volume migration");
+                morSourceDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(targetDSHost, cmd.getTargetPool().getUuid());
+                dsMo = new DatastoreMO(targetDSHost.getContext(), morSourceDS);
+                s_logger.info("Detaching disks before destroying worker VM '" + vmName + "' after volume migration");
                 VirtualDisk[] disks = vmMo.getAllDiskDevice();
                 String format = "disk %d was migrated to %s";
                 for (VirtualDisk disk : disks) {

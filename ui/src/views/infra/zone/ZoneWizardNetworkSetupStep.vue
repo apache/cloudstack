@@ -369,7 +369,7 @@ export default {
       ]
     }
   },
-  mounted () {
+  created () {
     this.physicalNetworks = this.prefillContent.physicalNetworks
     this.steps = this.filteredSteps()
     this.currentStep = this.prefillContent.networkStep ? this.prefillContent.networkStep : 0

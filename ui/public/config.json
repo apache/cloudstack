@@ -54,5 +54,6 @@
     "sc": "label.simplified.chinese.keyboard"
   },
   "docHelpMappings": {},
-  "plugins": []
+  "plugins": [],
+  "basicZoneEnabled": true
 }
