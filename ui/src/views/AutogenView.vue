@@ -989,7 +989,7 @@ export default {
               }
               break
             }
-            if (!input) {
+            if (!input && input !== 0) {
               continue
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {
