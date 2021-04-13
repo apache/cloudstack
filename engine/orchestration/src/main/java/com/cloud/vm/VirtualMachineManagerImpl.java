@@ -948,20 +948,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             retrieveVmFromJobOutcome(outcome, vmUuid, "startVm");
 
-            final Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
-            if (jobResult != null) {
-                if (jobResult instanceof ConcurrentOperationException) {
-                    throw (ConcurrentOperationException)jobResult;
-                } else if (jobResult instanceof ResourceUnavailableException) {
-                    throw (ResourceUnavailableException)jobResult;
-                } else if (jobResult instanceof InsufficientCapacityException) {
-                    throw (InsufficientCapacityException)jobResult;
-                } else if (jobResult instanceof RuntimeException) {
-                    throw (RuntimeException)jobResult;
-                } else if (jobResult instanceof Throwable) {
-                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
-                }
-            }
+            retrieveResultFromJobOutcomeAndThrowExceptionIfNeeded(outcome);
         }
     }
 
@@ -1808,19 +1795,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             retrieveVmFromJobOutcome(outcome, vmUuid, "stopVm");
 
-            final Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
-            if (jobResult != null) {
-                if (jobResult instanceof AgentUnavailableException) {
-                    throw (AgentUnavailableException)jobResult;
-                } else if (jobResult instanceof ConcurrentOperationException) {
-                    throw (ConcurrentOperationException)jobResult;
-                } else if (jobResult instanceof OperationTimedoutException) {
-                    throw (OperationTimedoutException)jobResult;
-                } else if (jobResult instanceof RuntimeException) {
-                    throw (RuntimeException)jobResult;
-                } else if (jobResult instanceof Throwable) {
-                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
-                }
+            try {
+                retrieveResultFromJobOutcomeAndThrowExceptionIfNeeded(outcome);
+            } catch (ResourceUnavailableException | InsufficientCapacityException ex) {
+                throw new RuntimeException("Unexpected exception", ex);
             }
         }
     }
@@ -2219,13 +2197,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             retrieveVmFromJobOutcome(outcome, vmUuid, "migrateVmStorage");
 
-            final Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
-            if (jobResult != null) {
-                if (jobResult instanceof RuntimeException) {
-                    throw (RuntimeException)jobResult;
-                } else if (jobResult instanceof Throwable) {
-                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
-                }
+            try {
+                retrieveResultFromJobOutcomeAndThrowExceptionIfNeeded(outcome);
+            } catch (ResourceUnavailableException | InsufficientCapacityException ex) {
+                throw new RuntimeException("Unexpected exception", ex);
             }
         }
     }
@@ -2526,18 +2501,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             retrieveVmFromJobOutcome(outcome, vmUuid, "migrateVm");
 
-            final Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
-            if (jobResult != null) {
-                if (jobResult instanceof ResourceUnavailableException) {
-                    throw (ResourceUnavailableException)jobResult;
-                } else if (jobResult instanceof ConcurrentOperationException) {
-                    throw (ConcurrentOperationException)jobResult;
-                } else if (jobResult instanceof RuntimeException) {
-                    throw (RuntimeException)jobResult;
-                } else if (jobResult instanceof Throwable) {
-                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
-                }
-
+            try {
+                retrieveResultFromJobOutcomeAndThrowExceptionIfNeeded(outcome);
+            } catch (InsufficientCapacityException ex) {
+                throw new RuntimeException("Unexpected exception", ex);
             }
         }
     }
@@ -2994,17 +2961,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             retrieveVmFromJobOutcome(outcome, vmUuid, "migrateVmWithStorage");
 
-            final Object jobException = _jobMgr.unmarshallResultObject(outcome.getJob());
-            if (jobException != null) {
-                if (jobException instanceof ResourceUnavailableException) {
-                    throw (ResourceUnavailableException)jobException;
-                } else if (jobException instanceof ConcurrentOperationException) {
-                    throw (ConcurrentOperationException)jobException;
-                } else if (jobException instanceof RuntimeException) {
-                    throw (RuntimeException)jobException;
-                } else if (jobException instanceof Throwable) {
-                    throw new RuntimeException("Unexpected exception", (Throwable)jobException);
-                }
+            try {
+                retrieveResultFromJobOutcomeAndThrowExceptionIfNeeded(outcome);
+            } catch (InsufficientCapacityException ex) {
+                throw new RuntimeException("Unexpected exception", ex);
             }
         }
     }
@@ -3216,17 +3176,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             retrieveVmFromJobOutcome(outcome, vmUuid, "migrateVmAway");
 
-            final Object jobException = _jobMgr.unmarshallResultObject(outcome.getJob());
-            if (jobException != null) {
-                if (jobException instanceof InsufficientServerCapacityException) {
-                    throw (InsufficientServerCapacityException)jobException;
-                } else if (jobException instanceof ConcurrentOperationException) {
-                    throw (ConcurrentOperationException)jobException;
-                } else if (jobException instanceof RuntimeException) {
-                    throw (RuntimeException)jobException;
-                } else if (jobException instanceof Throwable) {
-                    throw new RuntimeException("Unexpected exception", (Throwable)jobException);
-                }
+            try {
+                retrieveResultFromJobOutcomeAndThrowExceptionIfNeeded(outcome);
+            } catch (ResourceUnavailableException | InsufficientCapacityException ex) {
+                throw new RuntimeException("Unexpected exception", ex);
             }
         }
     }
@@ -3371,20 +3324,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             retrieveVmFromJobOutcome(outcome, vmUuid, "rebootVm");
 
-            final Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
-            if (jobResult != null) {
-                if (jobResult instanceof ResourceUnavailableException) {
-                    throw (ResourceUnavailableException)jobResult;
-                } else if (jobResult instanceof ConcurrentOperationException) {
-                    throw (ConcurrentOperationException)jobResult;
-                } else if (jobResult instanceof InsufficientCapacityException) {
-                    throw (InsufficientCapacityException)jobResult;
-                } else if (jobResult instanceof RuntimeException) {
-                    throw (RuntimeException)jobResult;
-                } else if (jobResult instanceof Throwable) {
-                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
-                }
-            }
+            retrieveResultFromJobOutcomeAndThrowExceptionIfNeeded(outcome);
         }
     }
 
@@ -3811,21 +3751,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             retrieveVmFromJobOutcome(outcome, vm.getUuid(), "addVmToNetwork");
 
-            final Object jobException = _jobMgr.unmarshallResultObject(outcome.getJob());
-            if (jobException != null) {
-                if (jobException instanceof ResourceUnavailableException) {
-                    throw (ResourceUnavailableException)jobException;
-                } else if (jobException instanceof ConcurrentOperationException) {
-                    throw (ConcurrentOperationException)jobException;
-                } else if (jobException instanceof InsufficientCapacityException) {
-                    throw (InsufficientCapacityException)jobException;
-                } else if (jobException instanceof RuntimeException) {
-                    throw (RuntimeException)jobException;
-                } else if (jobException instanceof Throwable) {
-                    throw new RuntimeException("Unexpected exception", (Throwable)jobException);
-                } else if (jobException instanceof NicProfile) {
-                    return (NicProfile)jobException;
-                }
+            Object jobResult = retrieveResultFromJobOutcomeAndThrowExceptionIfNeeded(outcome);
+
+            if (jobResult != null && jobResult instanceof NicProfile) {
+                return (NicProfile) jobResult;
             }
 
             throw new RuntimeException("Unexpected job execution result");
@@ -3926,19 +3855,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             retrieveVmFromJobOutcome(outcome, vm.getUuid(), "removeNicFromVm");
 
-            final Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
-            if (jobResult != null) {
-                if (jobResult instanceof ResourceUnavailableException) {
-                    throw (ResourceUnavailableException)jobResult;
-                } else if (jobResult instanceof ConcurrentOperationException) {
-                    throw (ConcurrentOperationException)jobResult;
-                } else if (jobResult instanceof RuntimeException) {
-                    throw (RuntimeException)jobResult;
-                } else if (jobResult instanceof Throwable) {
-                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
-                } else if (jobResult instanceof Boolean) {
-                    return (Boolean)jobResult;
+            try {
+                Object jobResult = retrieveResultFromJobOutcomeAndThrowExceptionIfNeeded(outcome);
+                if (jobResult != null && jobResult instanceof Boolean) {
+                    return (Boolean) jobResult;
                 }
+            } catch (InsufficientCapacityException ex) {
+                throw new RuntimeException("Unexpected exception", ex);
             }
 
             throw new RuntimeException("Job failed with un-handled exception");
@@ -4151,17 +4074,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             retrieveVmFromJobOutcome(outcome, vmUuid, "migrateVmForScale");
 
-            final Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
-            if (jobResult != null) {
-                if (jobResult instanceof ResourceUnavailableException) {
-                    throw (ResourceUnavailableException)jobResult;
-                } else if (jobResult instanceof ConcurrentOperationException) {
-                    throw (ConcurrentOperationException)jobResult;
-                } else if (jobResult instanceof RuntimeException) {
-                    throw (RuntimeException)jobResult;
-                } else if (jobResult instanceof Throwable) {
-                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
-                }
+            try {
+                retrieveResultFromJobOutcomeAndThrowExceptionIfNeeded(outcome);
+            } catch (InsufficientCapacityException ex) {
+                throw new RuntimeException("Unexpected exception", ex);
             }
         }
     }
@@ -4471,18 +4387,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             VirtualMachine vm = retrieveVmFromJobOutcome(outcome, vmUuid, "reconfigureVm");
 
-            final Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
-            if (jobResult != null) {
-                if (jobResult instanceof ResourceUnavailableException) {
-                    throw (ResourceUnavailableException)jobResult;
-                } else if (jobResult instanceof ConcurrentOperationException) {
-                    throw (ConcurrentOperationException)jobResult;
-                } else if (jobResult instanceof InsufficientServerCapacityException) {
-                    throw (InsufficientServerCapacityException)jobResult;
-                } else if (jobResult instanceof Throwable) {
-                    s_logger.error("Unhandled exception", (Throwable)jobResult);
-                    throw new RuntimeException("Unhandled exception", (Throwable)jobResult);
-                }
+            try {
+                retrieveResultFromJobOutcomeAndThrowExceptionIfNeeded(outcome);
+            } catch (InsufficientCapacityException ex) {
+                throw new RuntimeException("Unhandled exception", ex);
             }
 
             return (VMInstanceVO)vm;
@@ -5712,23 +5620,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             retrieveVmFromJobOutcome(outcome, String.valueOf(vmId), "restoreVirtualMachine");
 
-            final Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
-            if (jobResult != null) {
-                if (jobResult instanceof ResourceUnavailableException) {
-                    throw (ResourceUnavailableException)jobResult;
-                } else if (jobResult instanceof ConcurrentOperationException) {
-                    throw (ConcurrentOperationException)jobResult;
-                } else if (jobResult instanceof RuntimeException) {
-                    throw (RuntimeException)jobResult;
-                } else if (jobResult instanceof Throwable) {
-                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
-                } else if (jobResult instanceof HashMap) {
-                    HashMap<Long, String> passwordMap = (HashMap<Long, String>)jobResult;
-                    UserVmVO userVm = _userVmDao.findById(vmId);
-                    userVm.setPassword(passwordMap.get(vmId));
-                    return userVm;
-                }
+            Object jobResult = retrieveResultFromJobOutcomeAndThrowExceptionIfNeeded(outcome);
+
+            if (jobResult != null && jobResult instanceof HashMap) {
+                HashMap<Long, String> passwordMap = (HashMap<Long, String>)jobResult;
+                UserVmVO userVm = _userVmDao.findById(vmId);
+                userVm.setPassword(passwordMap.get(vmId));
+                return userVm;
             }
+
             throw new RuntimeException("Unexpected job execution result");
         }
     }
@@ -5810,11 +5710,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             retrieveVmFromJobOutcome(outcome, vm.getUuid(), "updateDefaultNicForVM");
 
-            final Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
-            if (jobResult != null) {
-                if (jobResult instanceof Boolean) {
+            try {
+                Object jobResult = retrieveResultFromJobOutcomeAndThrowExceptionIfNeeded(outcome);
+
+                if (jobResult != null && jobResult instanceof Boolean) {
                     return (Boolean)jobResult;
                 }
+            } catch (ResourceUnavailableException | InsufficientCapacityException ex) {
+                throw new RuntimeException("Unhandled exception", ex);
             }
 
             throw new RuntimeException("Unexpected job execution result");
@@ -5953,5 +5856,43 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         } catch (InterruptedException | java.util.concurrent.ExecutionException e) {
             throw new RuntimeException(String.format("Unable to retrieve result from job \"%s\" due to [%s]. VM {\"uuid\": \"%s\"}.", jobName, e.getMessage(), vmUuid), e);
         }
+    }
+
+    protected Object retrieveResultFromJobOutcomeAndThrowExceptionIfNeeded(Outcome<VirtualMachine> outcome) throws ResourceUnavailableException, InsufficientCapacityException{
+        Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+
+        if (jobResult == null) {
+            return null;
+        }
+
+        if (jobResult instanceof AgentUnavailableException) {
+           throw (AgentUnavailableException) jobResult;
+        }
+
+        if (jobResult instanceof InsufficientServerCapacityException) {
+           throw (InsufficientServerCapacityException) jobResult;
+        }
+
+        if (jobResult instanceof ResourceUnavailableException) {
+           throw (ResourceUnavailableException) jobResult;
+        }
+
+        if (jobResult instanceof InsufficientCapacityException) {
+           throw (InsufficientCapacityException) jobResult;
+        }
+
+        if (jobResult instanceof ConcurrentOperationException) {
+           throw (ConcurrentOperationException) jobResult;
+        }
+
+        if (jobResult instanceof RuntimeException) {
+           throw (RuntimeException) jobResult;
+        }
+
+        if (jobResult instanceof Throwable) {
+           throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
+        }
+
+        return jobResult;
     }
 }
