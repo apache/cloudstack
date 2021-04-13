@@ -40,7 +40,7 @@
           slot="addonBefore"
           trigger="click"
           v-model="visibleFilter">
-          <template slot="content">
+          <template slot="content" v-if="visibleFilter">
             <a-form
               style="min-width: 170px"
               :form="form"
@@ -158,6 +158,13 @@ export default {
       if (to && to.query && 'q' in to.query) {
         this.searchQuery = to.query.q
       }
+      this.isFiltered = false
+      this.searchFilters.some(item => {
+        if (this.searchParams[item]) {
+          this.isFiltered = true
+          return true
+        }
+      })
     }
   },
   mounted () {
@@ -165,13 +172,6 @@ export default {
     if (this.$route && this.$route.query && 'q' in this.$route.query) {
       this.searchQuery = this.$route.query.q
     }
-    this.isFiltered = false
-    this.searchFilters.some(item => {
-      if (this.searchParams[item]) {
-        this.isFiltered = true
-        return true
-      }
-    })
   },
   computed: {
     styleSearch () {
