@@ -18,9 +18,6 @@
 
 # requires netaddr
 
-#source activate ~/py2/
-# alternative
-# source ~/py2/bin/activate
 which python
 python --version
 
@@ -38,7 +35,6 @@ fi
 
 echo "Running pylint to check systemvm/python code for errors"
 python --version
-pyenv versions
 pylint --version
 pylint --disable=R,C,W,E *.py
 pylint --disable=R,C,W,E `find ../debian -name \*.py`
