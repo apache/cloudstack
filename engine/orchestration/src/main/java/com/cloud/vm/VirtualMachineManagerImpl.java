@@ -1051,7 +1051,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     final List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vm.getId());
                     for (final VolumeVO vol : vols) {
                         final Long volTemplateId = vol.getTemplateId();
-                        if (volTemplateId != null && volTemplateId.longValue() != template.getId()) {
+                        if (volTemplateId != null && volTemplateId != template.getId()) {
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug(vol + " of " + vm + " is READY, but template ids don't match, let the planner reassign a new pool");
                             }
@@ -1069,7 +1069,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             if (planToDeploy != null && planToDeploy.getDataCenterId() != 0) {
                                 final Long clusterIdSpecified = planToDeploy.getClusterId();
                                 if (clusterIdSpecified != null && rootVolClusterId != null) {
-                                    if (rootVolClusterId.longValue() != clusterIdSpecified.longValue()) {
+                                    if (!rootVolClusterId.equals(clusterIdSpecified)) {
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Cannot satisfy the deployment plan passed in since the ready Root volume is in different cluster. volume's cluster: " +
                                                     rootVolClusterId + ", cluster specified: " + clusterIdSpecified);
@@ -2563,7 +2563,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new CloudRuntimeException("Unable to find the host to migrate from: " + srcHostId);
         }
 
-        if (fromHost.getClusterId().longValue() != dest.getCluster().getId() && vm.getHypervisorType() != HypervisorType.VMware) {
+        if (fromHost.getClusterId() != dest.getCluster().getId() && vm.getHypervisorType() != HypervisorType.VMware) {
             final List<VolumeVO> volumes = _volsDao.findCreatedByInstance(vm.getId());
             for (final VolumeVO volume : volumes) {
                 if (!_storagePoolDao.findById(volume.getPoolId()).getScope().equals(ScopeType.ZONE)) {
@@ -4669,8 +4669,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         case Running:
             try {
-                if (vm.getHostId() != null && vm.getHostId().longValue() != vm.getPowerHostId().longValue()) {
-                    s_logger.info(String.format("Detected out of band VM migration from %s to %s", host, poweredHost));
+                if (vm.getHostId() != null && !vm.getHostId().equals(vm.getPowerHostId())) {
+                    s_logger.info("Detected out of band VM migration from host " + vm.getHostId() + " to host " + vm.getPowerHostId());
                 }
                 stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOnReport, vm.getPowerHostId());
             } catch (final NoTransitionException e) {
