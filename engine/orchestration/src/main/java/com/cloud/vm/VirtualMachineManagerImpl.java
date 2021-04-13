@@ -369,7 +369,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
-    Map<VirtualMachine.Type, VirtualMachineGuru> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru>();
+    Map<VirtualMachine.Type, VirtualMachineGuru> _vmGurus = new HashMap<>();
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
 
     static final ConfigKey<Integer> StartRetry = new ConfigKey<Integer>("Advanced", Integer.class, "start.retry", "10",
@@ -511,7 +511,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public void allocate(final String vmInstanceName, final VirtualMachineTemplate template, final ServiceOffering serviceOffering,
             final LinkedHashMap<? extends Network, List<? extends NicProfile>> networks, final DeploymentPlan plan, final HypervisorType hyperType) throws InsufficientCapacityException {
-        allocate(vmInstanceName, template, serviceOffering, new DiskOfferingInfo(serviceOffering), new ArrayList<DiskOfferingInfo>(), networks, plan, hyperType, null, null);
+        allocate(vmInstanceName, template, serviceOffering, new DiskOfferingInfo(serviceOffering), new ArrayList<>(), networks, plan, hyperType, null, null);
     }
 
     private VirtualMachineGuru getVmGuru(final VirtualMachine vm) {
@@ -831,10 +831,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                     if (s_logger.isDebugEnabled()) {
                                         s_logger.debug("Successfully transitioned to start state for " + vm + " reservation id = " + work.getId());
                                     }
-                                    return new Ternary<VMInstanceVO, ReservationContext, ItWorkVO>(vm, context, work);
+                                    return new Ternary<>(vm, context, work);
                                 }
 
-                                return new Ternary<VMInstanceVO, ReservationContext, ItWorkVO>(null, null, work);
+                                return new Ternary<>(null, null, work);
                             }
                         });
 
@@ -1254,7 +1254,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 if (vm.getType() == VirtualMachine.Type.User) {
                                     final String platform = stopAns.getPlatform();
                                     if (platform != null) {
-                                        final Map<String,String> vmmetadata = new HashMap<String,String>();
+                                        final Map<String,String> vmmetadata = new HashMap<>();
                                         vmmetadata.put(vm.getInstanceName(), platform);
                                         syncVMMetaData(vmmetadata);
                                     }
@@ -2088,7 +2088,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     protected boolean stateTransitTo(final VMInstanceVO vm, final VirtualMachine.Event e, final Long hostId, final String reservationId) throws NoTransitionException {
         vm.setReservationId(reservationId);
-        return _stateMachine.transitTo(vm, e, new Pair<Long, Long>(vm.getHostId(), hostId), _vmDao);
+        return _stateMachine.transitTo(vm, e, new Pair<>(vm.getHostId(), hostId), _vmDao);
     }
 
     @Override
@@ -2105,7 +2105,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 vm.setLastHostId(vm.getHostId());
             }
         }
-        return _stateMachine.transitTo(vm, e, new Pair<Long, Long>(vm.getHostId(), hostId), _vmDao);
+        return _stateMachine.transitTo(vm, e, new Pair<>(vm.getHostId(), hostId), _vmDao);
     }
 
     @Override
@@ -3417,7 +3417,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (rebootAnswer != null && rebootAnswer.getResult()) {
                 boolean isVmSecurityGroupEnabled = _securityGroupManager.isVmSecurityGroupEnabled(vm.getId());
                 if (isVmSecurityGroupEnabled && vm.getType() == VirtualMachine.Type.User) {
-                    List<Long> affectedVms = new ArrayList<Long>();
+                    List<Long> affectedVms = new ArrayList<>();
                     affectedVms.add(vm.getId());
                     _securityGroupManager.scheduleRulesetUpdateToHosts(affectedVms, true, null);
                 }
@@ -4565,7 +4565,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         details.remove(UsageEventVO.DynamicParameters.cpuNumber.name());
         details.remove(UsageEventVO.DynamicParameters.cpuSpeed.name());
         details.remove(UsageEventVO.DynamicParameters.memory.name());
-        List<UserVmDetailVO> detailList = new ArrayList<UserVmDetailVO>();
+        List<UserVmDetailVO> detailList = new ArrayList<>();
         for(Map.Entry<String, String> entry: details.entrySet()) {
             UserVmDetailVO detailVO = new UserVmDetailVO(vmId, entry.getKey(), entry.getValue(), true);
             detailList.add(detailVO);
@@ -4578,7 +4578,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         details.put(UsageEventVO.DynamicParameters.cpuNumber.name(), serviceOffering.getCpu().toString());
         details.put(UsageEventVO.DynamicParameters.cpuSpeed.name(), serviceOffering.getSpeed().toString());
         details.put(UsageEventVO.DynamicParameters.memory.name(), serviceOffering.getRamSize().toString());
-        List<UserVmDetailVO> detailList = new ArrayList<UserVmDetailVO>();
+        List<UserVmDetailVO> detailList = new ArrayList<>();
         for (Map.Entry<String, String> entry: details.entrySet()) {
             UserVmDetailVO detailVO = new UserVmDetailVO(vmId, entry.getKey(), entry.getValue(), true);
             detailList.add(detailVO);
@@ -4824,7 +4824,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 "AND i.id NOT IN (SELECT w.vm_instance_id FROM vm_work_job AS w JOIN async_job AS j ON w.id = j.id WHERE j.job_status = ?)" +
                 "AND i.removed IS NULL";
 
-        final List<Long> l = new ArrayList<Long>();
+        final List<Long> l = new ArrayList<>();
         TransactionLegacy txn = null;
         try {
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -4859,7 +4859,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 "AND i.id NOT IN (SELECT w.vm_instance_id FROM vm_work_job AS w JOIN async_job AS j ON w.id = j.id WHERE j.job_status = ?)" +
                 "AND i.removed IS NULL";
 
-        final List<Long> l = new ArrayList<Long>();
+        final List<Long> l = new ArrayList<>();
         TransactionLegacy txn = null;
         try {
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -4892,7 +4892,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 "AND i.id NOT IN (SELECT w.vm_instance_id FROM vm_work_job AS w JOIN async_job AS j ON w.id = j.id WHERE j.job_status = ?)" +
                 "AND i.removed IS NULL";
 
-        final List<Long> l = new ArrayList<Long>();
+        final List<Long> l = new ArrayList<>();
         TransactionLegacy txn = null;
         try {
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -5500,9 +5500,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             String message = String.format("Unable to orchestrate start %s due to [%s].", vm.toString(), e.getMessage());
             s_logger.warn(message, e);
             CloudRuntimeException ex = new CloudRuntimeException(message);
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.FAILED, JobSerializerHelper.toObjectSerializedString(ex));
+            return new Pair<>(JobInfo.Status.FAILED, JobSerializerHelper.toObjectSerializedString(ex));
         }
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        return new Pair<>(JobInfo.Status.SUCCEEDED, null);
     }
 
     @ReflectionUse
@@ -5515,7 +5515,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         orchestrateStop(vm.getUuid(), work.isCleanup());
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        return new Pair<>(JobInfo.Status.SUCCEEDED, null);
     }
 
     @ReflectionUse
@@ -5527,7 +5527,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         assert vm != null;
 
         orchestrateMigrate(vm.getUuid(), work.getSrcHostId(), work.getDeployDestination());
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        return new Pair<>(JobInfo.Status.SUCCEEDED, null);
     }
 
     @ReflectionUse
@@ -5545,7 +5545,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             orchestrateMigrateAway(vm.getUuid(), work.getSrcHostId(), _haMgr.getHAPlanner());
         }
 
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        return new Pair<>(JobInfo.Status.SUCCEEDED, null);
     }
 
     @ReflectionUse
@@ -5559,7 +5559,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 work.getSrcHostId(),
                 work.getDestHostId(),
                 work.getVolumeToPool());
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        return new Pair<>(JobInfo.Status.SUCCEEDED, null);
     }
 
     @ReflectionUse
@@ -5573,7 +5573,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 work.getSrcHostId(),
                 work.getDeployDestination(),
                 work.getNewServiceOfferringId());
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        return new Pair<>(JobInfo.Status.SUCCEEDED, null);
     }
 
     @ReflectionUse
@@ -5584,7 +5584,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         assert vm != null;
         orchestrateReboot(vm.getUuid(), work.getParams());
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        return new Pair<>(JobInfo.Status.SUCCEEDED, null);
     }
 
     @ReflectionUse
@@ -5599,7 +5599,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final NicProfile nic = orchestrateAddVmToNetwork(vm, network,
                 work.getRequestedNicProfile());
 
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(nic));
+        return new Pair<>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(nic));
     }
 
     @ReflectionUse
@@ -5611,7 +5611,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         assert vm != null;
         final NicVO nic = _entityMgr.findById(NicVO.class, work.getNicId());
         final boolean result = orchestrateRemoveNicFromVm(vm, nic);
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
+        return new Pair<>(JobInfo.Status.SUCCEEDED,
                 _jobMgr.marshallResultObject(result));
     }
 
@@ -5624,7 +5624,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         assert vm != null;
         final boolean result = orchestrateRemoveVmFromNetwork(vm,
                 work.getNetwork(), work.getBroadcastUri());
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
+        return new Pair<>(JobInfo.Status.SUCCEEDED,
                 _jobMgr.marshallResultObject(result));
     }
 
@@ -5643,7 +5643,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         reConfigureVm(vm.getUuid(), oldServiceOffering, newServiceOffering, work.getCustomParameters(),
                 work.isSameHost());
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        return new Pair<>(JobInfo.Status.SUCCEEDED, null);
     }
 
     @ReflectionUse
@@ -5655,7 +5655,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         assert vm != null;
         orchestrateStorageMigration(vm.getUuid(), work.getVolumeToPool());
 
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        return new Pair<>(JobInfo.Status.SUCCEEDED, null);
     }
 
     @Override
@@ -5786,9 +5786,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         assert vm != null;
         UserVm uservm = orchestrateRestoreVirtualMachine(vm.getId(), work.getTemplateId());
-        HashMap<Long, String> passwordMap = new HashMap<Long, String>();
+        HashMap<Long, String> passwordMap = new HashMap<>();
         passwordMap.put(uservm.getId(), uservm.getPassword());
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(passwordMap));
+        return new Pair<>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(passwordMap));
     }
 
     @Override
@@ -5893,7 +5893,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new CloudRuntimeException("Unable to find default nic " + work.getDefaultNicId());
         }
         final boolean result = orchestrateUpdateDefaultNicForVM(vm, nic, defaultNic);
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
+        return new Pair<>(JobInfo.Status.SUCCEEDED,
                 _jobMgr.marshallResultObject(result));
     }
 
