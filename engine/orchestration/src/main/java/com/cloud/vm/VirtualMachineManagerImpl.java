@@ -2025,7 +2025,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
         } catch (AgentUnavailableException | OperationTimedoutException e) {
-            s_logger.warn(String.format("Unable to stop % due to [%s].", profile.toString(), e.toString()), e);
+            s_logger.warn(String.format("Unable to stop %s due to [%s].", profile.toString(), e.toString()), e);
         } finally {
             if (!stopped) {
                 if (!cleanUpEvenIfUnableToStop) {
@@ -2191,7 +2191,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (command != null) {
                 RestoreVMSnapshotAnswer restoreVMSnapshotAnswer = (RestoreVMSnapshotAnswer) _agentMgr.send(hostId, command);
                 if (restoreVMSnapshotAnswer == null || !restoreVMSnapshotAnswer.getResult()) {
-                    s_logger.warn("Unable to restore the vm snapshot from image file after live migration of vm with vmsnapshots: " + restoreVMSnapshotAnswer.getDetails());
+                    s_logger.warn("Unable to restore the vm snapshot from image file after live migration of vm with vmsnapshots: " + restoreVMSnapshotAnswer == null ? "null answer" : restoreVMSnapshotAnswer.getDetails());
                 }
             }
         }
@@ -5509,7 +5509,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private Pair<JobInfo.Status, String> orchestrateStop(final VmWorkStop work) throws Exception {
         final VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
         if (vm == null) {
-            String message = String.format("Unable to find %s.", vm.toString());
+            String message = String.format("Unable to find VM [%s].", work.getVmId());
             s_logger.warn(message);
             throw new CloudRuntimeException(message);
         }
