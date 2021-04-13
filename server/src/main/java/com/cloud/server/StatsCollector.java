@@ -1020,14 +1020,18 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         if (answer != null && answer.getResult()) {
                             storagePoolStats.put(pool.getId(), (StorageStats)answer);
 
+                            boolean poolNeedsUpdating = false;
                             // Seems like we have dynamically updated the pool size since the prev. size and the current do not match
-                            if (pool.getCapacityBytes() != ((StorageStats)answer).getCapacityBytes() ||
-                                    pool.getUsedBytes() != ((StorageStats)answer).getByteUsed()) {
+                            if (_storagePoolStats.get(poolId) != null && _storagePoolStats.get(poolId).getCapacityBytes() != ((StorageStats)answer).getCapacityBytes()) {
                                 pool.setCapacityBytes(((StorageStats)answer).getCapacityBytes());
-                                if (pool.getStorageProviderName().equalsIgnoreCase(DataStoreProvider.DEFAULT_PRIMARY)) {
-                                    pool.setUsedBytes(((StorageStats) answer).getByteUsed());
-                                    pool.setUpdateTime(new Date());
-                                }
+                                poolNeedsUpdating = true;
+                            }
+                            if (pool.getUsedBytes() != ((StorageStats)answer).getByteUsed() && pool.getStorageProviderName().equalsIgnoreCase(DataStoreProvider.DEFAULT_PRIMARY)) {
+                                pool.setUsedBytes(((StorageStats) answer).getByteUsed());
+                                poolNeedsUpdating = true;
+                            }
+                            if (poolNeedsUpdating) {
+                                pool.setUpdateTime(new Date());
                                 _storagePoolDao.update(pool.getId(), pool);
                             }
                         }
