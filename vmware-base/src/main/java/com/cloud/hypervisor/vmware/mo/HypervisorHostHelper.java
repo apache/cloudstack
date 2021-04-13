@@ -2267,4 +2267,21 @@ public class HypervisorHostHelper {
         version = apiVersionHardwareVersionMap.get(hostApiVersion);
         return version;
     }
+
+    /*
+      Finds minimum host hardware version as String, of two hosts when both of them are not null
+      and hardware version of both hosts is different.
+      Return null otherwise
+     */
+    public static String getMinimumHostHardwareVersion(VmwareHypervisorHost host1, VmwareHypervisorHost host2) {
+        String hardwareVersion = null;
+        if (host1 != null & host2 != null) {
+            Integer host1Version = getHostHardwareVersion(host1);
+            Integer host2Version = getHostHardwareVersion(host2);
+            if (host1Version != null && host2Version != null && !host1Version.equals(host2Version)) {
+                hardwareVersion = String.valueOf(Math.min(host1Version, host2Version));
+            }
+        }
+        return hardwareVersion;
+    }
 }

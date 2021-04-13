@@ -2566,7 +2566,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         final List<String> userBlacklistedSettings = Stream.of(QueryService.UserVMBlacklistedDetails.value().split(","))
                 .map(item -> (item).trim())
                 .collect(Collectors.toList());
-        final List<String> userReadOnlySettings = Stream.of(QueryService.UserVMReadOnlyUIDetails.value().split(","))
+        final List<String> userReadOnlySettings = Stream.of(QueryService.UserVMReadOnlyDetails.value().split(","))
                 .map(item -> (item).trim())
                 .collect(Collectors.toList());
         if (cleanupDetails){
@@ -7083,6 +7083,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     newVol = volumeMgr.allocateDuplicateVolume(root, null);
                 }
                 newVols.add(newVol);
+
+                if (userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.ROOT_DISK_SIZE) == null && !newVol.getSize().equals(template.getSize())) {
+                    VolumeVO resizedVolume = (VolumeVO) newVol;
+                    resizedVolume.setSize(template.getSize());
+                    _volsDao.update(resizedVolume.getId(), resizedVolume);
+                }
 
                 // 1. Save usage event and update resource count for user vm volumes
                 _resourceLimitMgr.incrementResourceCount(newVol.getAccountId(), ResourceType.volume, newVol.isDisplay());

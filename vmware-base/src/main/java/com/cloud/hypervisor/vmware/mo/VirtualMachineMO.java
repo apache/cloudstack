@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -39,6 +41,14 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.hypervisor.vmware.mo.SnapshotDescriptor.SnapshotInfo;
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.utils.ActionDelegate;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
+import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.script.Script;
 import com.google.gson.Gson;
 import com.vmware.vim25.ArrayOfManagedObjectReference;
 import com.vmware.vim25.ChoiceOption;
@@ -92,6 +102,7 @@ import com.vmware.vim25.VirtualMachineConfigInfo;
 import com.vmware.vim25.VirtualMachineConfigOption;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineConfigSummary;
+import com.vmware.vim25.VirtualMachineDefinedProfileSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineFileLayoutEx;
 import com.vmware.vim25.VirtualMachineMessage;
@@ -106,18 +117,6 @@ import com.vmware.vim25.VirtualMachineSnapshotInfo;
 import com.vmware.vim25.VirtualMachineSnapshotTree;
 import com.vmware.vim25.VirtualSCSIController;
 import com.vmware.vim25.VirtualSCSISharing;
-import com.vmware.vim25.VirtualMachineDefinedProfileSpec;
-
-import com.cloud.hypervisor.vmware.mo.SnapshotDescriptor.SnapshotInfo;
-import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.hypervisor.vmware.util.VmwareHelper;
-import com.cloud.utils.ActionDelegate;
-import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
-import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.script.Script;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class VirtualMachineMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineMO.class);
@@ -460,9 +459,13 @@ public class VirtualMachineMO extends BaseMO {
         return false;
     }
 
-    public boolean changeDatastore(ManagedObjectReference morDataStore) throws Exception {
+    public boolean changeDatastore(ManagedObjectReference morDataStore, VmwareHypervisorHost targetHost) throws Exception {
         VirtualMachineRelocateSpec relocateSpec = new VirtualMachineRelocateSpec();
         relocateSpec.setDatastore(morDataStore);
+        if (targetHost != null) {
+            relocateSpec.setHost(targetHost.getMor());
+            relocateSpec.setPool(targetHost.getHyperHostOwnerResourcePool());
+        }
 
         ManagedObjectReference morTask = _context.getService().relocateVMTask(_mor, relocateSpec, null);
 

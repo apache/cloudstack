@@ -185,6 +185,7 @@ import com.cloud.vm.VmWorkResizeVolume;
 import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.VmWorkTakeVolumeSnapshot;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
@@ -227,6 +228,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     private UserVmDao _userVmDao;
+    @Inject
+    private UserVmDetailsDao userVmDetailsDao;
     @Inject
     private UserVmService _userVmService;
     @Inject
@@ -952,9 +955,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
 
-        if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.XenServer && hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.Any
+        if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.XenServer
+                && hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.Any
                 && hypervisorType != HypervisorType.None) {
-            throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support  rootdisksize override");
+            throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support volume resize");
         }
 
         if (volume.getState() != Volume.State.Ready && volume.getState() != Volume.State.Allocated) {

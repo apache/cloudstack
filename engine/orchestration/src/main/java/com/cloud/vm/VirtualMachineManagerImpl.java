@@ -43,11 +43,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.api.query.dao.DomainRouterJoinDao;
-import com.cloud.api.query.dao.UserVmJoinDao;
-import com.cloud.api.query.vo.DomainRouterJoinVO;
-import com.cloud.api.query.vo.UserVmJoinVO;
-import com.cloud.deployasis.dao.UserVmDeployAsIsDetailsDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
@@ -131,6 +126,10 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.AlertManager;
+import com.cloud.api.query.dao.DomainRouterJoinDao;
+import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.api.query.vo.DomainRouterJoinVO;
+import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterDetailsDao;
@@ -148,6 +147,7 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.DeploymentPlanningManager;
+import com.cloud.deployasis.dao.UserVmDeployAsIsDetailsDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.event.UsageEventVO;
@@ -2346,7 +2346,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 String msg = String.format("Resetting lastHost for VM %s(%s)", vm.getInstanceName(), vm.getUuid());
                 s_logger.debug(msg);
             }
-
             vm.setLastHostId(null);
             vm.setPodIdToDeployIn(rootVolumePool.getPodId());
             // OfflineVmwareMigration: a consecutive migration will fail probably (no host not pod)
@@ -2409,14 +2408,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (hostId == null) {
             List<VolumeVO> volumes = _volsDao.findByInstanceAndType(vm.getId(), Type.ROOT);
             if (CollectionUtils.isNotEmpty(volumes)) {
-                VolumeVO rootVolume = volumes.get(0);
-                if (rootVolume.getPoolId() != null) {
-                    StoragePoolVO pool = _storagePoolDao.findById(rootVolume.getPoolId());
-                    if (pool != null && pool.getClusterId() != null) {
-                        clusterId = pool.getClusterId();
-                        List<HostVO> hosts = _hostDao.findHypervisorHostInCluster(pool.getClusterId());
-                        if (CollectionUtils.isNotEmpty(hosts)) {
-                            hostId = hosts.get(0).getId();
+                for (VolumeVO rootVolume : volumes) {
+                    if (rootVolume.getPoolId() != null) {
+                        StoragePoolVO pool = _storagePoolDao.findById(rootVolume.getPoolId());
+                        if (pool != null && pool.getClusterId() != null) {
+                            clusterId = pool.getClusterId();
+                            List<HostVO> hosts = _hostDao.findHypervisorHostInCluster(pool.getClusterId());
+                            if (CollectionUtils.isNotEmpty(hosts)) {
+                                hostId = hosts.get(0).getId();
+                                break;
+                            }
                         }
                     }
                 }
@@ -2527,7 +2528,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return result;
     }
 
-
     private void postStorageMigrationCleanup(VMInstanceVO vm, Map<Volume, StoragePool> volumeToPool, HostVO srcHost, Long srcClusterId) throws InsufficientCapacityException {
         StoragePool rootVolumePool = null;
         if (MapUtils.isNotEmpty(volumeToPool)) {
@@ -2549,7 +2549,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         // If VM was cold migrated between clusters belonging to two different VMware DCs,
         // unregister the VM from the source host and cleanup the associated VM files.
         if (vm.getHypervisorType().equals(HypervisorType.VMware)) {
-            afterStorageMigrationVmwareVMcleanup(rootVolumePool, vm, srcHost, srcClusterId);
+            afterStorageMigrationVmwareVMCleanup(rootVolumePool, vm, srcHost, srcClusterId);
         }
     }
 
@@ -2567,7 +2567,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private void afterStorageMigrationVmwareVMcleanup(StoragePool destPool, VMInstanceVO vm, HostVO srcHost, Long srcClusterId) {
+    private void afterStorageMigrationVmwareVMCleanup(StoragePool destPool, VMInstanceVO vm, HostVO srcHost, Long srcClusterId) {
         // OfflineVmwareMigration: this should only happen on storage migration, else the guru would already have issued the command
         final Long destClusterId = destPool.getClusterId();
         if (srcClusterId != null && destClusterId != null && ! srcClusterId.equals(destClusterId) && srcHost != null) {
