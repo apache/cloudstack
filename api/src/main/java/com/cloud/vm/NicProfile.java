@@ -430,16 +430,6 @@ public class NicProfile implements InternalIdentity, Serializable {
 
     @Override
     public String toString() {
-        return new StringBuilder("NicProfile[").append(id)
-                .append("-")
-                .append(vmId)
-                .append("-")
-                .append(reservationId)
-                .append("-")
-                .append(iPv4Address)
-                .append("-")
-                .append(broadcastUri)
-                .append("]")
-                .toString();
+        return String.format("NicProfile {\"id\": %s, \"vmId\": %s, \"reservationId\": \"%s\", \"iPv4Address\": \"%s\", \"broadcastUri\": \"%s\"}", id, vmId, reservationId, iPv4Address, broadcastUri);
     }
 }
