@@ -34,7 +34,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -92,8 +91,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         if (isOnVmware(srcData, destData)
                 && isOnPrimary(srcData, destData)
                 && isVolumesOnly(srcData, destData)
-                && isDetachedOrAttachedToStoppedVM(srcData)
-                && isIntraPodOrZoneWideStoreInvolved(srcData, destData)) {
+                && isDetachedOrAttachedToStoppedVM(srcData)) {
             if (s_logger.isDebugEnabled()) {
                 String msg = String.format("%s can handle the request because %d(%s) and %d(%s) share the pod"
                         , this.getClass()
@@ -116,17 +114,6 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
     private boolean isDetachedOrAttachedToStoppedVM(DataObject srcData) {
         VolumeVO volume = volDao.findById(srcData.getId());
         return volume.getInstanceId() == null || isAttachedToStoppedVM(volume);
-    }
-
-    private boolean isIntraPodOrZoneWideStoreInvolved(DataObject srcData, DataObject destData) {
-        DataStore srcStore = srcData.getDataStore();
-        StoragePoolVO srcPool = storagePoolDao.findById(srcStore.getId());
-        DataStore destStore = destData.getDataStore();
-        StoragePoolVO destPool = storagePoolDao.findById(destStore.getId());
-        if (srcPool.getPodId() != null && destPool.getPodId() != null) {
-            return srcPool.getPodId().equals(destPool.getPodId());
-        }
-        return (ScopeType.ZONE.equals(srcPool.getScope()) || ScopeType.ZONE.equals(destPool.getScope()));
     }
 
     private boolean isVolumesOnly(DataObject srcData, DataObject destData) {
