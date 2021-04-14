@@ -911,8 +911,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if ( jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("start parameter value of %s == %s during dispatching",
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("start parameter value of %s == %s during dispatching",
                         VirtualMachineProfile.Param.BootIntoSetup.getName(),
                         (params == null?"<very null>":params.get(VirtualMachineProfile.Param.BootIntoSetup))));
             }
@@ -927,8 +927,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
             }
         } else {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("start parameter value of %s == %s during processing of queued job",
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("start parameter value of %s == %s during processing of queued job",
                         VirtualMachineProfile.Param.BootIntoSetup.getName(),
                         (params == null?"<very null>":params.get(VirtualMachineProfile.Param.BootIntoSetup))));
             }
@@ -3245,7 +3245,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected class CleanupTask extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
-            s_logger.trace("VM Operation Thread Running");
+            s_logger.debug("VM Operation Thread Running");
             try {
                 _workDao.cleanup(VmOpCleanupWait.value());
                 final Date cutDate = new Date(DateUtil.currentGMTTime().getTime() - VmOpCleanupInterval.value() * 1000);
@@ -3287,8 +3287,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             final VirtualMachine vm = _vmDao.findByUuid(vmUuid);
             VmWorkJobVO placeHolder = createPlaceHolderWork(vm.getId());
             try {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(String.format("reboot parameter value of %s == %s at orchestration", VirtualMachineProfile.Param.BootIntoSetup.getName(),
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("reboot parameter value of %s == %s at orchestration", VirtualMachineProfile.Param.BootIntoSetup.getName(),
                             (params == null? "<very null>":params.get(VirtualMachineProfile.Param.BootIntoSetup))));
                 }
                 orchestrateReboot(vmUuid, params);
@@ -3298,8 +3298,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
             }
         } else {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("reboot parameter value of %s == %s through job-queue", VirtualMachineProfile.Param.BootIntoSetup.getName(),
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("reboot parameter value of %s == %s through job-queue", VirtualMachineProfile.Param.BootIntoSetup.getName(),
                         (params == null? "<very null>":params.get(VirtualMachineProfile.Param.BootIntoSetup))));
             }
             final Outcome<VirtualMachine> outcome = rebootVmThroughJobQueue(vmUuid, params);
@@ -5130,8 +5130,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VMInstanceVO vm = findVmById(work.getVmId());
 
         Boolean enterSetup = (Boolean)work.getParams().get(VirtualMachineProfile.Param.BootIntoSetup);
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("orchestrating VM start for '%s' %s set to %s", vm.getInstanceName(), VirtualMachineProfile.Param.BootIntoSetup, enterSetup));
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("orchestrating VM start for '%s' %s set to %s", vm.getInstanceName(), VirtualMachineProfile.Param.BootIntoSetup, enterSetup));
         }
 
         try {
