@@ -893,7 +893,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
             Long offeringId = null;
 
-            if (offering.getType() == DiskOffering.Type.Disk) {
+            if (!offering.isComputeOnly()) {
                 offeringId = offering.getId();
             }
 

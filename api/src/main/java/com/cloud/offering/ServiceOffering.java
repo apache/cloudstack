@@ -33,6 +33,10 @@ public interface ServiceOffering extends DiskOffering, InfrastructureEntity, Int
     public static final String internalLbVmDefaultOffUniqueName = "Cloud.Com-InternalLBVm";
     // leaving cloud.com references as these are identifyers and no real world addresses (check against DB)
 
+    enum State {
+        Inactive, Active,
+    }
+
     public enum StorageType {
         local, shared
     }
@@ -116,6 +120,8 @@ public interface ServiceOffering extends DiskOffering, InfrastructureEntity, Int
     String getDeploymentPlanner();
 
     boolean isDynamic();
+
+    DiskOffering.State getState();
 
     boolean isDynamicScalingEnabled();
 }

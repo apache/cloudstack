@@ -29,7 +29,6 @@ import javax.persistence.EntityExistsException;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.springframework.stereotype.Component;
 
-import com.cloud.offering.DiskOffering.Type;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.utils.db.Attribute;
@@ -53,7 +52,7 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     private final String SizeDiskOfferingSearch = "SELECT * FROM disk_offering WHERE " +
             "disk_size = ? AND provisioning_type = ? AND removed IS NULL";
 
-    private final Attribute _typeAttr;
+    private final Attribute _computeOnlyAttr;
     protected final static long GB_UNIT_BYTES = 1024 * 1024 * 1024;
 
     protected DiskOfferingDaoImpl() {
@@ -70,7 +69,7 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         UniqueNameSearch.and("name", UniqueNameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
         UniqueNameSearch.done();
 
-        _typeAttr = _allAttributes.get("type");
+        _computeOnlyAttr = _allAttributes.get("compute_only");
     }
 
     @Override
@@ -82,13 +81,13 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
 
     @Override
     public List<DiskOfferingVO> searchIncludingRemoved(SearchCriteria<DiskOfferingVO> sc, final Filter filter, final Boolean lock, final boolean cache) {
-        sc.addAnd(_typeAttr, Op.EQ, Type.Disk);
+        sc.addAnd(_computeOnlyAttr, Op.EQ, false);
         return super.searchIncludingRemoved(sc, filter, lock, cache);
     }
 
     @Override
     public <K> List<K> customSearchIncludingRemoved(SearchCriteria<K> sc, final Filter filter) {
-        sc.addAnd(_typeAttr, Op.EQ, Type.Disk);
+        sc.addAnd(_computeOnlyAttr, Op.EQ, false);
         return super.customSearchIncludingRemoved(sc, filter);
     }
 
@@ -97,12 +96,12 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         StringBuilder builder = new StringBuilder(sql);
         int index = builder.indexOf("WHERE");
         if (index == -1) {
-            builder.append(" WHERE type=?");
+            builder.append(" WHERE compute_only=?");
         } else {
-            builder.insert(index + 6, "type=? ");
+            builder.insert(index + 6, "compute_only=? ");
         }
 
-        return super.executeList(sql, Type.Disk, params);
+        return super.executeList(sql, false, params);
     }
 
     @Override

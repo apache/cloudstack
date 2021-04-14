@@ -65,8 +65,8 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name = "tags", length = 4096)
     String tags;
 
-    @Column(name = "type")
-    Type type;
+    @Column(name = "compute_only")
+    boolean computeOnly;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     @Temporal(TemporalType.TIMESTAMP)
@@ -168,7 +168,7 @@ public class DiskOfferingVO implements DiskOffering {
         this.diskSize = diskSize;
         this.tags = tags;
         recreatable = false;
-        type = Type.Disk;
+        computeOnly = false;
         useLocalStorage = false;
         customized = isCustomized;
         uuid = UUID.randomUUID().toString();
@@ -186,7 +186,7 @@ public class DiskOfferingVO implements DiskOffering {
         this.diskSize = diskSize;
         this.tags = tags;
         recreatable = false;
-        type = Type.Disk;
+        computeOnly = false;
         useLocalStorage = false;
         customized = isCustomized;
         uuid = UUID.randomUUID().toString();
@@ -198,7 +198,7 @@ public class DiskOfferingVO implements DiskOffering {
 
     public DiskOfferingVO(String name, String displayText, Storage.ProvisioningType provisioningType, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage, boolean systemUse,
             boolean customized) {
-        type = Type.Service;
+        computeOnly = true;
         this.name = name;
         this.displayText = displayText;
         this.provisioningType = provisioningType;
@@ -214,7 +214,7 @@ public class DiskOfferingVO implements DiskOffering {
     public DiskOfferingVO(long id, String name, String displayText, Storage.ProvisioningType provisioningType, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage,
             boolean systemUse, boolean customized, boolean customizedIops, Long minIops, Long maxIops) {
         this.id = id;
-        type = Type.Service;
+        computeOnly = true;
         this.name = name;
         this.displayText = displayText;
         this.provisioningType = provisioningType;
@@ -304,8 +304,8 @@ public class DiskOfferingVO implements DiskOffering {
     }
 
     @Override
-    public Type getType() {
-        return type;
+    public boolean isComputeOnly() {
+        return computeOnly;
     }
 
     @Override

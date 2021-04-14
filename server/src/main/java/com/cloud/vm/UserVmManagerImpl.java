@@ -2258,7 +2258,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         Long offeringId = null;
                         if (diskOfferingId != null) {
                             DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
-                            if (offering != null && (offering.getType() == DiskOfferingVO.Type.Disk)) {
+                            if (offering != null && !offering.isComputeOnly()) {
                                 offeringId = offering.getId();
                             }
                         }
