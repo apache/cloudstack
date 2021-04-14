@@ -58,7 +58,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -337,8 +336,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     private UserVmDetailsDao userVmDetailsDao;
     @Inject
-    private ConfigurationDao _configDao;
-    @Inject
     private VolumeOrchestrationService volumeMgr;
     @Inject
     private DeploymentPlanningManager _dpMgr;
@@ -476,9 +473,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 if (template.getFormat() == ImageFormat.ISO) {
                     volumeMgr.allocateRawVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
                             rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), vmFinal, template, owner, null);
-                } else if (template.getFormat() == ImageFormat.BAREMETAL) {
-
-                } else {
+                } else if (template.getFormat() != ImageFormat.BAREMETAL) {
                     volumeMgr.allocateTemplatedVolumes(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
                             rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), template, vmFinal, owner);
                 }
@@ -904,10 +899,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VirtualMachine vm = vmProfile.getVirtualMachine();
         final long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
 
-        if (vmGroupCount > 0) {
-            return true;
-        }
-        return false;
+        return vmGroupCount > 0;
     }
 
     @Override
@@ -928,9 +920,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         (params == null?"<very null>":params.get(VirtualMachineProfile.Param.BootIntoSetup))));
             }
 
-            VmWorkJobVO placeHolder = null;
             final VirtualMachine vm = _vmDao.findByUuid(vmUuid);
-            placeHolder = createPlaceHolderWork(vm.getId());
+            VmWorkJobVO placeHolder = createPlaceHolderWork(vm.getId());
             try {
                 orchestrateStart(vmUuid, params, planToDeploy, planner);
             } finally {
@@ -1102,11 +1093,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             areAffinityGroupsAssociated(vmProfile));
                 }
 
-                if (dest != null) {
-                    avoids.addHost(dest.getHost().getId());
-                    if (!template.isDeployAsIs()) {
-                        journal.record("Deployment found - Attempt #" + (StartRetry.value() - retry), vmProfile, dest);
-                    }
+                avoids.addHost(dest.getHost().getId());
+                if (!template.isDeployAsIs()) {
+                    journal.record("Deployment found - Attempt #" + (StartRetry.value() - retry), vmProfile, dest);
                 }
 
                 long destHostId = dest.getHost().getId();
@@ -1147,7 +1136,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         reuseVolume = true;
                     }
 
-                    Commands cmds = null;
                     vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, ctx);
 
                     final VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
@@ -1156,7 +1144,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     handlePath(vmTO.getDisks(), vm.getHypervisorType());
 
-                    cmds = new Commands(Command.OnError.Stop);
+                    Commands cmds = new Commands(Command.OnError.Stop);
 
                     cmds.addCommand(new StartCommand(vmTO, dest.getHost(), getExecuteInSequence(vm.getHypervisorType())));
 
@@ -1333,7 +1321,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (params == null) {
           return;
         }
-        StringBuffer msgBuf = new StringBuffer("Uefi params ");
+
+        StringBuilder msgBuf = new StringBuilder("Uefi params ");
         boolean log = false;
         if (params.get(VirtualMachineProfile.Param.UefiFlag) != null) {
             msgBuf.append(String.format("UefiFlag: %s ", params.get(VirtualMachineProfile.Param.UefiFlag)));
@@ -1502,13 +1491,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public boolean getExecuteInSequence(final HypervisorType hypervisorType) {
-        if (HypervisorType.KVM == hypervisorType || HypervisorType.XenServer == hypervisorType || HypervisorType.Hyperv == hypervisorType || HypervisorType.LXC == hypervisorType) {
-            return false;
-        } else if (HypervisorType.VMware == hypervisorType) {
-            final Boolean fullClone = HypervisorGuru.VmwareFullClone.value();
-            return fullClone;
-        } else {
+        if (null == hypervisorType) {
             return ExecuteInSequence.value();
+        }
+
+        switch (hypervisorType) {
+            case KVM:
+            case XenServer:
+            case Hyperv:
+            case LXC:
+                return false;
+            case VMware:
+                final Boolean fullClone = HypervisorGuru.VmwareFullClone.value();
+                return fullClone;
+            default:
+                return ExecuteInSequence.value();
         }
     }
 
@@ -1535,7 +1532,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-                final HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
                 final VirtualMachineGuru guru = getVmGuru(vm);
 
                 try {
@@ -2182,9 +2178,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
 
-            VmWorkJobVO placeHolder = null;
             final VirtualMachine vm = _vmDao.findByUuid(vmUuid);
-            placeHolder = createPlaceHolderWork(vm.getId());
+            VmWorkJobVO placeHolder = createPlaceHolderWork(vm.getId());
             try {
                 orchestrateStorageMigration(vmUuid, volumeToPool);
             } finally {
@@ -2486,9 +2481,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-            VmWorkJobVO placeHolder = null;
             final VirtualMachine vm = _vmDao.findByUuid(vmUuid);
-            placeHolder = createPlaceHolderWork(vm.getId());
+            VmWorkJobVO placeHolder = createPlaceHolderWork(vm.getId());
             try {
                 orchestrateMigrate(vmUuid, srcHostId, dest);
             } finally {
@@ -2522,7 +2516,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     protected void migrate(final VMInstanceVO vm, final long srcHostId, final DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException {
         s_logger.info("Migrating " + vm + " to " + dest);
-        final UserVmVO userVm = _userVmDao.findById(vm.getId());
         final long dstHostId = dest.getHost().getId();
         final Host fromHost = _hostDao.findById(srcHostId);
         if (fromHost == null) {
@@ -2603,7 +2596,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         vm.setLastHostId(srcHostId);
         try {
-            if (vm == null || vm.getHostId() == null || vm.getHostId() != srcHostId || !changeState(vm, Event.MigrationRequested, dstHostId, work, Step.Migrating)) {
+            if (vm.getHostId() == null || vm.getHostId() != srcHostId || !changeState(vm, Event.MigrationRequested, dstHostId, work, Step.Migrating)) {
                 _networkMgr.rollbackNicForMigration(vmSrc, profile);
                 if (vm != null) {
                     volumeMgr.release(vm.getId(), dstHostId);
@@ -2944,10 +2937,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-
-            VmWorkJobVO placeHolder = null;
             final VirtualMachine vm = _vmDao.findByUuid(vmUuid);
-            placeHolder = createPlaceHolderWork(vm.getId());
+            VmWorkJobVO placeHolder = createPlaceHolderWork(vm.getId());
             try {
                 orchestrateMigrateWithStorage(vmUuid, srcHostId, destHostId, volumeToPool);
             } finally {
@@ -2955,7 +2946,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     _workJobDao.expunge(placeHolder.getId());
                 }
             }
-
         } else {
             final Outcome<VirtualMachine> outcome = migrateVmWithStorageThroughJobQueue(vmUuid, srcHostId, destHostId, volumeToPool);
 
@@ -3020,7 +3010,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         vm.setLastHostId(srcHostId);
         vm.setPodIdToDeployIn(destHost.getPodId());
         moveVmToMigratingState(vm, destHostId, work);
-        List<String[]> vmData = null;
 
         boolean migrated = false;
         try {
@@ -3035,7 +3024,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 if (_networkModel.isSharedNetworkWithoutServices(network.getId())) {
                     final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
                     boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
-                    vmData = _networkModel.generateVmData(userVm.getUserData(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getHostName(), vm.getId(),
+                    List<String[]> vmData = _networkModel.generateVmData(userVm.getUserData(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getHostName(), vm.getId(),
                             vm.getUuid(), defaultNic.getMacAddress(), userVm.getDetail("SSH.PublicKey"), (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows,
                             VirtualMachineManager.getHypervisorHostname(destination.getHost() != null ? destination.getHost().getName() : ""));
                     String vmName = vm.getInstanceName();
@@ -3158,9 +3147,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public void migrateAway(final String vmUuid, final long srcHostId) throws InsufficientServerCapacityException {
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-            VmWorkJobVO placeHolder = null;
             final VirtualMachine vm = _vmDao.findByUuid(vmUuid);
-            placeHolder = createPlaceHolderWork(vm.getId());
+            VmWorkJobVO placeHolder = createPlaceHolderWork(vm.getId());
             try {
                 try {
                     orchestrateMigrateAway(vmUuid, srcHostId, null);
@@ -3276,9 +3264,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         boolean isMachineUpgradable = true;
         for (final HostAllocator allocator : hostAllocators) {
             isMachineUpgradable = allocator.isVirtualMachineUpgradable(vm, offering);
-            if (isMachineUpgradable) {
-                continue;
-            } else {
+            if (!isMachineUpgradable) {
                 break;
             }
         }
@@ -3301,9 +3287,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if ( jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-            VmWorkJobVO placeHolder = null;
             final VirtualMachine vm = _vmDao.findByUuid(vmUuid);
-            placeHolder = createPlaceHolderWork(vm.getId());
+            VmWorkJobVO placeHolder = createPlaceHolderWork(vm.getId());
             try {
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace(String.format("reboot parameter value of %s == %s at orchestration", VirtualMachineProfile.Param.BootIntoSetup.getName(),
@@ -3421,13 +3406,19 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private String getControlNicIpForVM(VirtualMachine vm) {
-        if (vm.getType() == VirtualMachine.Type.ConsoleProxy || vm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
-            NicVO nic = _nicsDao.getControlNicForVM(vm.getId());
-            return nic.getIPv4Address();
-        } else if (vm.getType() == VirtualMachine.Type.DomainRouter) {
-            return vm.getPrivateIpAddress();
-        } else {
+        if (null == vm.getType()) {
             return null;
+        }
+
+        switch (vm.getType()) {
+            case ConsoleProxy:
+            case SecondaryStorageVm:
+                NicVO nic = _nicsDao.getControlNicForVM(vm.getId());
+                return nic.getIPv4Address();
+            case DomainRouter:
+                return vm.getPrivateIpAddress();
+            default:
+                return null;
         }
     }
     public Command cleanup(final String vmName) {
@@ -3737,8 +3728,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-            VmWorkJobVO placeHolder = null;
-            placeHolder = createPlaceHolderWork(vm.getId());
+            VmWorkJobVO placeHolder = createPlaceHolderWork(vm.getId());
             try {
                 return orchestrateAddVmToNetwork(vm, network, requested);
             } finally {
@@ -3783,15 +3773,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             final NicTO nicTO = toNicTO(nic, vmProfile.getVirtualMachine().getHypervisorType());
 
-            if (network != null) {
-                final Map<NetworkOffering.Detail, String> details = networkOfferingDetailsDao.getNtwkOffDetails(network.getNetworkOfferingId());
-                if (details != null) {
-                    details.putIfAbsent(NetworkOffering.Detail.PromiscuousMode, NetworkOrchestrationService.PromiscuousMode.value().toString());
-                    details.putIfAbsent(NetworkOffering.Detail.MacAddressChanges, NetworkOrchestrationService.MacAddressChanges.value().toString());
-                    details.putIfAbsent(NetworkOffering.Detail.ForgedTransmits, NetworkOrchestrationService.ForgedTransmits.value().toString());
-                }
-                nicTO.setDetails(details);
+            final Map<NetworkOffering.Detail, String> details = networkOfferingDetailsDao.getNtwkOffDetails(network.getNetworkOfferingId());
+            if (details != null) {
+                details.putIfAbsent(NetworkOffering.Detail.PromiscuousMode, NetworkOrchestrationService.PromiscuousMode.value().toString());
+                details.putIfAbsent(NetworkOffering.Detail.MacAddressChanges, NetworkOrchestrationService.MacAddressChanges.value().toString());
+                details.putIfAbsent(NetworkOffering.Detail.ForgedTransmits, NetworkOrchestrationService.ForgedTransmits.value().toString());
             }
+            nicTO.setDetails(details);
 
             s_logger.debug("Plugging nic for vm " + vm + " in network " + network);
 
@@ -3829,9 +3817,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public NicTO toNicTO(final NicProfile nic, final HypervisorType hypervisorType) {
         final HypervisorGuru hvGuru = _hvGuruMgr.getGuru(hypervisorType);
-
-        final NicTO nicTO = hvGuru.toNicTO(nic);
-        return nicTO;
+        return hvGuru.toNicTO(nic);
     }
 
     @Override
@@ -3840,8 +3826,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-            VmWorkJobVO placeHolder = null;
-            placeHolder = createPlaceHolderWork(vm.getId());
+            VmWorkJobVO placeHolder = createPlaceHolderWork(vm.getId());
             try {
                 return orchestrateRemoveNicFromVm(vm, nic);
             } finally {
@@ -3991,11 +3976,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             _networkMgr.removeNic(vmProfile, nic);
             return true;
         } finally {
-            if (lock != null) {
-                _nicsDao.releaseFromLockTable(lock.getId());
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Lock is released for nic id " + lock.getId() + " as a part of remove vm " + vm + " from network " + network);
-                }
+            _nicsDao.releaseFromLockTable(lock.getId());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Lock is released for nic id " + lock.getId() + " as a part of remove vm " + vm + " from network " + network);
             }
         }
     }
@@ -4059,9 +4042,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throws ResourceUnavailableException, ConcurrentOperationException {
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-            VmWorkJobVO placeHolder = null;
             final VirtualMachine vm = _vmDao.findByUuid(vmUuid);
-            placeHolder = createPlaceHolderWork(vm.getId());
+            VmWorkJobVO placeHolder = createPlaceHolderWork(vm.getId());
             try {
                 orchestrateMigrateForScale(vmUuid, srcHostId, dest, oldSvcOfferingId);
             } finally {
@@ -4109,7 +4091,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VirtualMachineGuru vmGuru = getVmGuru(vm);
 
-        final long vmId = vm.getId();
         vm = _vmDao.findByUuid(vmUuid);
         if (vm == null) {
             String message = String.format("Unable to find VM {\"uuid\": \"%s\"}.", vmUuid);
@@ -4372,9 +4353,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-            VmWorkJobVO placeHolder = null;
             final VirtualMachine vm = _vmDao.findByUuid(vmUuid);
-            placeHolder = createPlaceHolderWork(vm.getId());
+            VmWorkJobVO placeHolder = createPlaceHolderWork(vm.getId());
             try {
                 return orchestrateReConfigureVm(vmUuid, oldServiceOffering, newServiceOffering, reconfiguringOnExistingHost);
             } finally {
@@ -4528,7 +4508,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
                 VirtualMachine.Type.Instance, vmId);
-        if (pendingWorkJobs.size() == 0 && !_haMgr.hasPendingHaWork(vmId)) {
+        if (CollectionUtils.isEmpty(pendingWorkJobs) && !_haMgr.hasPendingHaWork(vmId)) {
             final VMInstanceVO vm = _vmDao.findById(vmId);
             if (vm != null) {
                 switch (vm.getPowerState()) {
@@ -4733,28 +4713,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 "AND i.removed IS NULL";
 
         final List<Long> l = new ArrayList<>();
-        TransactionLegacy txn = null;
-        try {
-            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB)) {
+            String cutTimeStr = DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutTime);
 
-            PreparedStatement pstmt = null;
             try {
-                pstmt = txn.prepareAutoCloseStatement(sql);
+                PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
 
                 pstmt.setLong(1, hostId);
-                pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutTime));
+                pstmt.setString(2, cutTimeStr);
                 pstmt.setInt(3, JobInfo.Status.IN_PROGRESS.ordinal());
                 final ResultSet rs = pstmt.executeQuery();
                 while (rs.next()) {
                     l.add(rs.getLong(1));
                 }
-            } catch (final SQLException e) {
-            } catch (final Throwable e) {
-            }
-
-        } finally {
-            if (txn != null) {
-                txn.close();
+            } catch (SQLException e) {
+                s_logger.error(String.format("Unable to execute SQL [%s] with params {\"h.id\": %s, \"i.power_state_update_time\": \"%s\"} due to [%s].", sql, hostId, cutTimeStr, e.getMessage()), e);
             }
         }
         return l;
@@ -4768,28 +4741,24 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 "AND i.removed IS NULL";
 
         final List<Long> l = new ArrayList<>();
-        TransactionLegacy txn = null;
-        try {
-            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-            PreparedStatement pstmt = null;
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB)) {
+            String cutTimeStr = DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutTime);
+            int jobStatusInProgress = JobInfo.Status.IN_PROGRESS.ordinal();
+
             try {
-                pstmt = txn.prepareAutoCloseStatement(sql);
+                PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
 
                 pstmt.setLong(1, hostId);
-                pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutTime));
-                pstmt.setInt(3, JobInfo.Status.IN_PROGRESS.ordinal());
+                pstmt.setString(2, cutTimeStr);
+                pstmt.setInt(3, jobStatusInProgress);
                 final ResultSet rs = pstmt.executeQuery();
                 while (rs.next()) {
                     l.add(rs.getLong(1));
                 }
             } catch (final SQLException e) {
-            } catch (final Throwable e) {
+                s_logger.error(String.format("Unable to execute SQL [%s] with params {\"h.id\": %s, \"i.power_state_update_time\": \"%s\", \"j.job_status\": %s} due to [%s].", sql, hostId, cutTimeStr, jobStatusInProgress, e.getMessage()), e);
             }
             return l;
-        } finally {
-            if (txn != null) {
-                txn.close();
-            }
         }
     }
 
@@ -4801,27 +4770,23 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 "AND i.removed IS NULL";
 
         final List<Long> l = new ArrayList<>();
-        TransactionLegacy txn = null;
-        try {
-            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-            PreparedStatement pstmt = null;
-            try {
-                pstmt = txn.prepareAutoCloseStatement(sql);
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB)) {
+            String cutTimeStr = DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutTime);
+            int jobStatusInProgress = JobInfo.Status.IN_PROGRESS.ordinal();
 
-                pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutTime));
-                pstmt.setInt(2, JobInfo.Status.IN_PROGRESS.ordinal());
+            try {
+                PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
+
+                pstmt.setString(1, cutTimeStr);
+                pstmt.setInt(2, jobStatusInProgress);
                 final ResultSet rs = pstmt.executeQuery();
                 while (rs.next()) {
                     l.add(rs.getLong(1));
                 }
             } catch (final SQLException e) {
-            } catch (final Throwable e) {
+                s_logger.error(String.format("Unable to execute SQL [%s] with params {\"i.power_state_update_time\": \"%s\", \"j.job_status\": %s} due to [%s].", sql, cutTimeStr, jobStatusInProgress, e.getMessage()), e);
             }
             return l;
-        } finally {
-            if (txn != null) {
-                txn.close();
-            }
         }
     }
 
@@ -4834,10 +4799,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 public boolean checkCondition() {
                     final AsyncJobVO jobVo = _entityMgr.findById(AsyncJobVO.class, job.getId());
                     assert jobVo != null;
-                    if (jobVo == null || jobVo.getStatus() != JobInfo.Status.IN_PROGRESS) {
-                        return true;
-                    }
-                    return false;
+                    return jobVo.getStatus() != JobInfo.Status.IN_PROGRESS;
                 }
             }, Topics.VM_POWER_STATE, AsyncJob.Topics.JOB_STATE);
             _vmId = vmId;
@@ -4858,11 +4820,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 public boolean checkCondition() {
                     final AsyncJobVO jobVo = _entityMgr.findById(AsyncJobVO.class, job.getId());
                     assert jobVo != null;
-                    if (jobVo == null || jobVo.getStatus() != JobInfo.Status.IN_PROGRESS) {
-                        return true;
-                    }
-
-                    return false;
+                    return jobVo.getStatus() != JobInfo.Status.IN_PROGRESS;
                 }
             }, AsyncJob.Topics.JOB_STATE);
             _vmId = vmId;
@@ -5696,8 +5654,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-            VmWorkJobVO placeHolder = null;
-            placeHolder = createPlaceHolderWork(vm.getId());
+            VmWorkJobVO placeHolder = createPlaceHolderWork(vm.getId());
             try {
                 return orchestrateUpdateDefaultNicForVM(vm, nic, defaultNic);
             } finally {
