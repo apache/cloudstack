@@ -584,7 +584,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         List<Map<String, String>> targets = getTargets(hostId, vm.getId());
 
-        if (volumeExpungeCommands != null && volumeExpungeCommands.size() > 0 && hostId != null) {
+        if (CollectionUtils.isNotEmpty(volumeExpungeCommands) && hostId != null) {
             final Commands cmds = new Commands(Command.OnError.Stop);
 
             for (final Command volumeExpungeCommand : volumeExpungeCommands) {
@@ -614,7 +614,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         userVmDeployAsIsDetailsDao.removeDetails(vm.getId());
 
         final List<Command> finalizeExpungeCommands = hvGuru.finalizeExpunge(vm);
-        if (finalizeExpungeCommands != null && finalizeExpungeCommands.size() > 0) {
+        if (CollectionUtils.isNotEmpty(finalizeExpungeCommands)) {
             if (hostId != null) {
                 final Commands cmds = new Commands(Command.OnError.Stop);
                 for (final Command command : finalizeExpungeCommands) {
@@ -4843,7 +4843,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(VirtualMachine.Type.Instance,
                 vm.getId(), VmWorkStart.class.getName());
 
-        if (pendingWorkJobs.size() > 0) {
+        if (CollectionUtils.isNotEmpty(pendingWorkJobs)) {
             assert pendingWorkJobs.size() == 1;
             workJob = pendingWorkJobs.get(0);
         } else {
@@ -4888,7 +4888,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VmWorkStop.class.getName());
 
         VmWorkJobVO workJob = null;
-        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+        if (CollectionUtils.isNotEmpty(pendingWorkJobs)) {
             assert pendingWorkJobs.size() == 1;
             workJob = pendingWorkJobs.get(0);
         } else {
@@ -4930,7 +4930,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VmWorkReboot.class.getName());
 
         VmWorkJobVO workJob = null;
-        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+        if (CollectionUtils.isNotEmpty(pendingWorkJobs)) {
             assert pendingWorkJobs.size() == 1;
             workJob = pendingWorkJobs.get(0);
         } else {
@@ -4977,7 +4977,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VmWorkMigrate.class.getName());
 
         VmWorkJobVO workJob = null;
-        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+        if (CollectionUtils.isNotEmpty(pendingWorkJobs)) {
             assert pendingWorkJobs.size() == 1;
             workJob = pendingWorkJobs.get(0);
         } else {
@@ -5017,7 +5017,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VmWorkMigrateAway.class.getName());
 
         VmWorkJobVO workJob = null;
-        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+        if (CollectionUtils.isNotEmpty(pendingWorkJobs)) {
             assert pendingWorkJobs.size() == 1;
             workJob = pendingWorkJobs.get(0);
         } else {
@@ -5058,7 +5058,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VmWorkMigrateWithStorage.class.getName());
 
         VmWorkJobVO workJob = null;
-        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+        if (CollectionUtils.isNotEmpty(pendingWorkJobs)) {
             assert pendingWorkJobs.size() == 1;
             workJob = pendingWorkJobs.get(0);
         } else {
@@ -5100,7 +5100,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VmWorkMigrateForScale.class.getName());
 
         VmWorkJobVO workJob = null;
-        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+        if (CollectionUtils.isNotEmpty(pendingWorkJobs)) {
             assert pendingWorkJobs.size() == 1;
             workJob = pendingWorkJobs.get(0);
         } else {
@@ -5158,7 +5158,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VmWorkStorageMigration.class.getName());
 
         VmWorkJobVO workJob = null;
-        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+        if (CollectionUtils.isNotEmpty(pendingWorkJobs)) {
             assert pendingWorkJobs.size() == 1;
             workJob = pendingWorkJobs.get(0);
         } else {
@@ -5197,7 +5197,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VmWorkAddVmToNetwork.class.getName());
 
         VmWorkJobVO workJob = null;
-        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+        if (CollectionUtils.isNotEmpty(pendingWorkJobs)) {
             assert pendingWorkJobs.size() == 1;
             workJob = pendingWorkJobs.get(0);
         } else {
@@ -5236,7 +5236,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VmWorkRemoveNicFromVm.class.getName());
 
         VmWorkJobVO workJob = null;
-        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+        if (CollectionUtils.isNotEmpty(pendingWorkJobs)) {
             assert pendingWorkJobs.size() == 1;
             workJob = pendingWorkJobs.get(0);
         } else {
@@ -5275,7 +5275,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VmWorkRemoveVmFromNetwork.class.getName());
 
         VmWorkJobVO workJob = null;
-        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+        if (CollectionUtils.isNotEmpty(pendingWorkJobs)) {
             assert pendingWorkJobs.size() == 1;
             workJob = pendingWorkJobs.get(0);
         } else {
@@ -5317,7 +5317,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VmWorkReconfigure.class.getName());
 
         VmWorkJobVO workJob = null;
-        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+        if (CollectionUtils.isNotEmpty(pendingWorkJobs)) {
             assert pendingWorkJobs.size() == 1;
             workJob = pendingWorkJobs.get(0);
         } else {
@@ -5606,7 +5606,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VmWorkRestore.class.getName());
 
         VmWorkJobVO workJob = null;
-        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+        if (CollectionUtils.isNotEmpty(pendingWorkJobs)) {
             assert pendingWorkJobs.size() == 1;
             workJob = pendingWorkJobs.get(0);
         } else {
@@ -5707,7 +5707,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VmWorkUpdateDefaultNic.class.getName());
 
         VmWorkJobVO workJob = null;
-        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+        if (CollectionUtils.isNotEmpty(pendingWorkJobs)) {
             assert pendingWorkJobs.size() == 1;
             workJob = pendingWorkJobs.get(0);
         } else {
