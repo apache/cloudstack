@@ -4849,9 +4849,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (planner != null) {
                 workInfo.setDeploymentPlanner(planner.getName());
             }
-            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-
-            _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
+            setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
         }
 
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
@@ -4873,9 +4871,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             workJob = newVmWorkJobAndInfo.first();
             VmWorkStop workInfo = new VmWorkStop(newVmWorkJobAndInfo.second(), cleanup);
 
-            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-
-            _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
+            setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
         }
 
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
@@ -4898,9 +4894,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             workJob = newVmWorkJobAndInfo.first();
             VmWorkReboot workInfo = new VmWorkReboot(newVmWorkJobAndInfo.second(), params);
 
-            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-
-            _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
+            setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
         }
 
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
@@ -4931,9 +4925,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             workJob = newVmWorkJobAndInfo.first();
             VmWorkMigrate workInfo = new VmWorkMigrate(newVmWorkJobAndInfo.second(), srcHostId, dest);
 
-            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-
-            _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
+            setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
         }
 
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
@@ -4982,9 +4974,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             workJob = newVmWorkJobAndInfo.first();
             VmWorkMigrateWithStorage workInfo = new VmWorkMigrateWithStorage(newVmWorkJobAndInfo.second(), srcHostId, destHostId, volumeToPool);
 
-            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-
-            _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
+            setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
         }
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
 
@@ -5006,9 +4996,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             workJob = newVmWorkJobAndInfo.first();
             VmWorkMigrateForScale workInfo = new VmWorkMigrateForScale(newVmWorkJobAndInfo.second(), srcHostId, dest, newSvcOfferingId);
 
-            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-
-            _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
+            setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
         }
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
 
@@ -5045,9 +5033,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             workJob = newVmWorkJobAndInfo.first();
             VmWorkStorageMigration workInfo = new VmWorkStorageMigration(newVmWorkJobAndInfo.second(),  volumeToPool);
 
-            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-
-            _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
+            setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
         }
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
 
@@ -5068,9 +5054,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             workJob = newVmWorkJobAndInfo.first();
             VmWorkAddVmToNetwork workInfo = new VmWorkAddVmToNetwork(newVmWorkJobAndInfo.second(), network.getId(), requested);
 
-            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-
-            _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
+            setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
         }
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
 
@@ -5091,9 +5075,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             workJob = newVmWorkJobAndInfo.first();
             VmWorkRemoveNicFromVm workInfo = new VmWorkRemoveNicFromVm(newVmWorkJobAndInfo.second(), nic.getId());
 
-            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-
-            _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
+            setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
         }
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
 
@@ -5114,9 +5096,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             workJob = newVmWorkJobAndInfo.first();
             VmWorkRemoveVmFromNetwork workInfo = new VmWorkRemoveVmFromNetwork(newVmWorkJobAndInfo.second(), network, broadcastUri);
 
-            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-
-            _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
+            setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
         }
 
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
@@ -5138,9 +5118,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             workJob = newVmWorkJobAndInfo.first();
             VmWorkReconfigure workInfo = new VmWorkReconfigure(newVmWorkJobAndInfo.second(), oldServiceOffering.getId(), newServiceOffering.getId(), customParameters, reconfiguringOnExistingHost);
 
-            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-
-            _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
+            setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
         }
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
 
@@ -5410,9 +5388,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             workJob = newVmWorkJobAndInfo.first();
             VmWorkRestore workInfo = new VmWorkRestore(newVmWorkJobAndInfo.second(), newTemplateId);
 
-            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-
-            _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
+            setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
         }
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
 
@@ -5495,9 +5471,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             workJob = newVmWorkJobAndInfo.first();
             VmWorkUpdateDefaultNic workInfo = new VmWorkUpdateDefaultNic(newVmWorkJobAndInfo.second(), nic.getId(), defaultNic.getId());
 
-            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-
-            _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
+            setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
         }
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
 
@@ -5681,5 +5655,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VmWork workInfo = new VmWork(userId,  accountId, vmId, VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER);
 
         return new Pair<>(workJob, workInfo);
+    }
+
+    protected void setCmdInfoAndSubmitAsyncJob(VmWorkJobVO workJob, VmWork workInfo, Long vmId) {
+        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+        _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
     }
 }
