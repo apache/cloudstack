@@ -261,7 +261,7 @@ export default {
   },
   methods: {
     fetchData () {
-      this.tabType = this.$parent.tab === 'Ingress Rule' ? 'ingress' : 'egress'
+      this.tabType = this.$parent.tab === this.$t('label.ingress.rule') ? 'ingress' : 'egress'
       this.rules = this.tabType === 'ingress' ? this.resource.ingressrule : this.resource.egressrule
     },
     handleAddRule () {
