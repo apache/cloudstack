@@ -573,7 +573,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         List<NicProfile> vmNics = profile.getNics();
         s_logger.debug(String.format("Cleaning up NICS [%s] of %s.", vmNics.stream().map(nic -> nic.toString()).collect(Collectors.joining(", ")),vm.toString()));
-        final List<Command> nicExpungeCommands = hvGuru.finalizeExpungeNics(vm, vmNics);
         _networkMgr.cleanupNics(profile);
 
         s_logger.debug(String.format("Cleaning up hypervisor data structures (ex. SRs in XenServer) for managed storage. Data from %s.", vm.toString()));
@@ -613,39 +612,37 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         userVmDeployAsIsDetailsDao.removeDetails(vm.getId());
 
-        final List<Command> finalizeExpungeCommands = hvGuru.finalizeExpunge(vm);
-        if (CollectionUtils.isNotEmpty(finalizeExpungeCommands)) {
-            if (hostId != null) {
-                final Commands cmds = new Commands(Command.OnError.Stop);
-                for (final Command command : finalizeExpungeCommands) {
-                    command.setBypassHostMaintenance(expungeCommandCanBypassHostMaintenance(vm));
-                    cmds.addCommand(command);
-                }
-                if (nicExpungeCommands != null) {
-                    for (final Command command : nicExpungeCommands) {
-                        command.setBypassHostMaintenance(expungeCommandCanBypassHostMaintenance(vm));
-                        cmds.addCommand(command);
-                    }
-                }
-                _agentMgr.send(hostId, cmds);
-                handleUnsuccessfulCommands(cmds, vm);
-            }
-        }
-
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Expunged " + vm);
         }
     }
 
     protected void handleUnsuccessfulCommands(Commands cmds, VMInstanceVO vm) throws CloudRuntimeException {
-        if (!cmds.isSuccessful()) {
-            for (Answer answer : cmds.getAnswers()) {
-                if (!answer.getResult()) {
-                    String message = String.format("Unable to expunge %s due to [%s].", vm.toString(), answer.getDetails());
-                    s_logger.warn(message);
-                    throw new CloudRuntimeException(message);
-                }
+        String cmdsStr = cmds.toString();
+        String vmToString = vm.toString();
+
+        if (cmds.isSuccessful()) {
+            s_logger.debug(String.format("The commands [%s] to %s were successful.", cmdsStr, vmToString));
+            return;
+        }
+
+        s_logger.info(String.format("The commands [%s] to %s were unsuccessful. Handling answers.", cmdsStr, vmToString));
+
+        Answer[] answers = cmds.getAnswers();
+        if (answers == null) {
+            s_logger.debug(String.format("There are no answers to commands [%s] to %s.", cmdsStr, vmToString));
+            return;
+        }
+
+        for (Answer answer : answers) {
+            String details = answer.getDetails();
+            if (!answer.getResult()) {
+                String message = String.format("Unable to expunge %s due to [%s].", vmToString, details);
+                s_logger.warn(message);
+                throw new CloudRuntimeException(message);
             }
+
+            s_logger.debug(String.format("Commands [%s] to %s got answer [%s].", cmdsStr, vmToString, details));
         }
     }
 
@@ -3415,6 +3412,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             case DomainRouter:
                 return vm.getPrivateIpAddress();
             default:
+                s_logger.debug(String.format("% is a [%s], returning null for control Nic IP.", vm.toString(), vm.getType()));
                 return null;
         }
     }
