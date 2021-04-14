@@ -5127,11 +5127,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateStart(final VmWorkStart work) throws Exception {
-        final VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
-        if (vm == null) {
-            s_logger.info("Unable to find vm " + work.getVmId());
-        }
-        assert vm != null;
+        VMInstanceVO vm = findVmById(work.getVmId());
 
         Boolean enterSetup = (Boolean)work.getParams().get(VirtualMachineProfile.Param.BootIntoSetup);
         if (s_logger.isTraceEnabled()) {
@@ -5164,11 +5160,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateMigrate(final VmWorkMigrate work) throws Exception {
-        final VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
-        if (vm == null) {
-            s_logger.info("Unable to find vm " + work.getVmId());
-        }
-        assert vm != null;
+        VMInstanceVO vm = findVmById(work.getVmId());
 
         orchestrateMigrate(vm.getUuid(), work.getSrcHostId(), work.getDeployDestination());
         return new Pair<>(JobInfo.Status.SUCCEEDED, null);
@@ -5176,11 +5168,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateMigrateAway(final VmWorkMigrateAway work) throws Exception {
-        final VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
-        if (vm == null) {
-            s_logger.info("Unable to find vm " + work.getVmId());
-        }
-        assert vm != null;
+        VMInstanceVO vm = findVmById(work.getVmId());
 
         try {
             orchestrateMigrateAway(vm.getUuid(), work.getSrcHostId(), null);
@@ -5194,11 +5182,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateMigrateWithStorage(final VmWorkMigrateWithStorage work) throws Exception {
-        final VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
-        if (vm == null) {
-            s_logger.info("Unable to find vm " + work.getVmId());
-        }
-        assert vm != null;
+        VMInstanceVO vm = findVmById(work.getVmId());
         orchestrateMigrateWithStorage(vm.getUuid(),
                 work.getSrcHostId(),
                 work.getDestHostId(),
@@ -5208,11 +5192,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateMigrateForScale(final VmWorkMigrateForScale work) throws Exception {
-        final VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
-        if (vm == null) {
-            s_logger.info("Unable to find vm " + work.getVmId());
-        }
-        assert vm != null;
+        VMInstanceVO vm = findVmById(work.getVmId());
         orchestrateMigrateForScale(vm.getUuid(),
                 work.getSrcHostId(),
                 work.getDeployDestination(),
@@ -5222,22 +5202,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateReboot(final VmWorkReboot work) throws Exception {
-        final VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
-        if (vm == null) {
-            s_logger.info("Unable to find vm " + work.getVmId());
-        }
-        assert vm != null;
+        VMInstanceVO vm = findVmById(work.getVmId());
         orchestrateReboot(vm.getUuid(), work.getParams());
         return new Pair<>(JobInfo.Status.SUCCEEDED, null);
     }
 
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateAddVmToNetwork(final VmWorkAddVmToNetwork work) throws Exception {
-        final VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
-        if (vm == null) {
-            s_logger.info("Unable to find vm " + work.getVmId());
-        }
-        assert vm != null;
+        VMInstanceVO vm = findVmById(work.getVmId());
 
         final Network network = _networkDao.findById(work.getNetworkId());
         final NicProfile nic = orchestrateAddVmToNetwork(vm, network,
@@ -5248,11 +5220,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateRemoveNicFromVm(final VmWorkRemoveNicFromVm work) throws Exception {
-        final VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
-        if (vm == null) {
-            s_logger.info("Unable to find vm " + work.getVmId());
-        }
-        assert vm != null;
+        VMInstanceVO vm = findVmById(work.getVmId());
         final NicVO nic = _entityMgr.findById(NicVO.class, work.getNicId());
         final boolean result = orchestrateRemoveNicFromVm(vm, nic);
         return new Pair<>(JobInfo.Status.SUCCEEDED,
@@ -5261,11 +5229,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateRemoveVmFromNetwork(final VmWorkRemoveVmFromNetwork work) throws Exception {
-        final VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
-        if (vm == null) {
-            s_logger.info("Unable to find vm " + work.getVmId());
-        }
-        assert vm != null;
+        VMInstanceVO vm = findVmById(work.getVmId());
         final boolean result = orchestrateRemoveVmFromNetwork(vm,
                 work.getNetwork(), work.getBroadcastUri());
         return new Pair<>(JobInfo.Status.SUCCEEDED,
@@ -5274,11 +5238,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateReconfigure(final VmWorkReconfigure work) throws Exception {
-        final VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
-        if (vm == null) {
-            s_logger.info("Unable to find vm " + work.getVmId());
-        }
-        assert vm != null;
+        VMInstanceVO vm = findVmById(work.getVmId());
         ServiceOfferingVO oldServiceOffering = _offeringDao.findById(work.getOldServiceOfferingId());
         ServiceOfferingVO newServiceOffering = _offeringDao.findById(work.getNewServiceOfferingId());
         if (newServiceOffering.isDynamic()) {
@@ -5292,13 +5252,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateStorageMigration(final VmWorkStorageMigration work) throws Exception {
-        final VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
-        if (vm == null) {
-            s_logger.info("Unable to find vm " + work.getVmId());
-        }
-        assert vm != null;
+        VMInstanceVO vm = findVmById(work.getVmId());
         orchestrateStorageMigration(vm.getUuid(), work.getVolumeToPool());
-
         return new Pair<>(JobInfo.Status.SUCCEEDED, null);
     }
 
@@ -5397,11 +5352,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateRestoreVirtualMachine(final VmWorkRestore work) throws Exception {
-        final VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
-        if (vm == null) {
-            s_logger.info("Unable to find vm " + work.getVmId());
-        }
-        assert vm != null;
+        VMInstanceVO vm = findVmById(work.getVmId());
         UserVm uservm = orchestrateRestoreVirtualMachine(vm.getId(), work.getTemplateId());
         HashMap<Long, String> passwordMap = new HashMap<>();
         passwordMap.put(uservm.getId(), uservm.getPassword());
@@ -5480,11 +5431,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateUpdateDefaultNic(final VmWorkUpdateDefaultNic work) throws Exception {
-        final VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
-        if (vm == null) {
-            s_logger.info("Unable to find vm " + work.getVmId());
-        }
-        assert vm != null;
+        VMInstanceVO vm = findVmById(work.getVmId());
         final NicVO nic = _entityMgr.findById(NicVO.class, work.getNicId());
         if (nic == null) {
             throw new CloudRuntimeException("Unable to find nic " + work.getNicId());
@@ -5660,5 +5607,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected void setCmdInfoAndSubmitAsyncJob(VmWorkJobVO workJob, VmWork workInfo, Long vmId) {
         workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
+    }
+
+    protected VMInstanceVO findVmById(Long vmId) {
+        VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, vmId);
+
+        if (vm == null) {
+            s_logger.warn(String.format("Could not find VM [%s].", vmId));
+        }
+
+        assert vm != null;
+        return vm;
     }
 }
