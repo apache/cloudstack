@@ -4832,32 +4832,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public Outcome<VirtualMachine> startVmThroughJobQueue(final String vmUuid,
             final Map<VirtualMachineProfile.Param, Object> params,
             final DeploymentPlan planToDeploy, final DeploymentPlanner planner) {
-
-        final CallContext context = CallContext.current();
-        final User callingUser = context.getCallingUser();
-        final Account callingAccount = context.getCallingAccount();
-
-        VirtualMachine.Type vmType = VirtualMachine.Type.Instance;
         String commandName = VmWorkStart.class.getName();
-        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmUuid, vmType, commandName);
+        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmUuid, commandName);
 
         VmWorkJobVO workJob = pendingWorkJob.first();
         Long vmId = pendingWorkJob.second();
 
         if (workJob == null) {
-            workJob = new VmWorkJobVO(context.getContextId());
+            Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, VmWorkJobVO.Step.Starting, vmId);
 
-            workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-            workJob.setCmd(commandName);
+            workJob = newVmWorkJobAndInfo.first();
+            VmWorkStart workInfo = new VmWorkStart(newVmWorkJobAndInfo.second());
 
-            workJob.setAccountId(callingAccount.getId());
-            workJob.setUserId(callingUser.getId());
-            workJob.setStep(VmWorkJobVO.Step.Starting);
-            workJob.setVmType(vmType);
-            workJob.setVmInstanceId(vmId);
-            workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
-
-            final VmWorkStart workInfo = new VmWorkStart(callingUser.getId(), callingAccount.getId(), vmId, VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER);
             workInfo.setPlan(planToDeploy);
             workInfo.setParams(params);
             if (planner != null) {
@@ -4875,30 +4861,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public Outcome<VirtualMachine> stopVmThroughJobQueue(final String vmUuid, final boolean cleanup) {
-        final CallContext context = CallContext.current();
-        final Account account = context.getCallingAccount();
-        final User user = context.getCallingUser();
-
         String commandName = VmWorkStop.class.getName();
-        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmUuid, null, commandName);
+        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(null, vmUuid, null, commandName);
 
         VmWorkJobVO workJob = pendingWorkJob.first();
         Long vmId = pendingWorkJob.second();
 
         if (workJob == null) {
-            workJob = new VmWorkJobVO(context.getContextId());
+            Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, VmWorkJobVO.Step.Prepare, vmId);
 
-            workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-            workJob.setCmd(commandName);
+            workJob = newVmWorkJobAndInfo.first();
+            VmWorkStop workInfo = new VmWorkStop(newVmWorkJobAndInfo.second(), cleanup);
 
-            workJob.setAccountId(account.getId());
-            workJob.setUserId(user.getId());
-            workJob.setStep(VmWorkJobVO.Step.Prepare);
-            workJob.setVmType(VirtualMachine.Type.Instance);
-            workJob.setVmInstanceId(vmId);
-            workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
-
-            final VmWorkStop workInfo = new VmWorkStop(user.getId(), account.getId(), vmId, VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, cleanup);
             workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
             _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
@@ -4912,32 +4886,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     public Outcome<VirtualMachine> rebootVmThroughJobQueue(final String vmUuid,
             final Map<VirtualMachineProfile.Param, Object> params) {
-
-        final CallContext context = CallContext.current();
-        final Account account = context.getCallingAccount();
-        final User user = context.getCallingUser();
-
-        VirtualMachine.Type vmType = VirtualMachine.Type.Instance;
         String commandName = VmWorkReboot.class.getName();
-        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmUuid, vmType, commandName);
+        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmUuid, commandName);
 
         VmWorkJobVO workJob = pendingWorkJob.first();
         Long vmId = pendingWorkJob.second();
 
         if (workJob == null) {
-            workJob = new VmWorkJobVO(context.getContextId());
+            Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, VmWorkJobVO.Step.Prepare, vmId);
 
-            workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-            workJob.setCmd(commandName);
+            workJob = newVmWorkJobAndInfo.first();
+            VmWorkReboot workInfo = new VmWorkReboot(newVmWorkJobAndInfo.second(), params);
 
-            workJob.setAccountId(account.getId());
-            workJob.setUserId(user.getId());
-            workJob.setStep(VmWorkJobVO.Step.Prepare);
-            workJob.setVmType(vmType);
-            workJob.setVmInstanceId(vmId);
-            workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
-
-            final VmWorkReboot workInfo = new VmWorkReboot(user.getId(), account.getId(), vmId, VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, params);
             workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
             _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
@@ -4950,10 +4910,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public Outcome<VirtualMachine> migrateVmThroughJobQueue(final String vmUuid, final long srcHostId, final DeployDestination dest) {
-        final CallContext context = CallContext.current();
-        final User user = context.getCallingUser();
-        final Account account = context.getCallingAccount();
-
         Map<Volume, StoragePool> volumeStorageMap = dest.getStorageForDisks();
         if (volumeStorageMap != null) {
             for (Volume vol : volumeStorageMap.keySet()) {
@@ -4964,25 +4920,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         Long vmId = vm.getId();
 
-        VirtualMachine.Type vmType = VirtualMachine.Type.Instance;
         String commandName = VmWorkMigrate.class.getName();
-        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmId, vmUuid, vmType, commandName);
+        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmId, vmUuid, VirtualMachine.Type.Instance, commandName);
 
         VmWorkJobVO workJob = pendingWorkJob.first();
 
         if (workJob == null) {
-            workJob = new VmWorkJobVO(context.getContextId());
+            Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, vmId);
 
-            workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-            workJob.setCmd(commandName);
+            workJob = newVmWorkJobAndInfo.first();
+            VmWorkMigrate workInfo = new VmWorkMigrate(newVmWorkJobAndInfo.second(), srcHostId, dest);
 
-            workJob.setAccountId(account.getId());
-            workJob.setUserId(user.getId());
-            workJob.setVmType(vmType);
-            workJob.setVmInstanceId(vmId);
-            workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
-
-            final VmWorkMigrate workInfo = new VmWorkMigrate(user.getId(), account.getId(), vmId, VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, srcHostId, dest);
             workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
             _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
@@ -4995,32 +4943,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public Outcome<VirtualMachine> migrateVmAwayThroughJobQueue(final String vmUuid, final long srcHostId) {
-        final CallContext context = CallContext.current();
-        final User user = context.getCallingUser();
-        final Account account = context.getCallingAccount();
-
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         Long vmId = vm.getId();
 
-        VirtualMachine.Type vmType = VirtualMachine.Type.Instance;
         String commandName = VmWorkMigrateAway.class.getName();
-        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmId, vmUuid, vmType, commandName);
+        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmId, vmUuid, VirtualMachine.Type.Instance, commandName);
 
         VmWorkJobVO workJob = pendingWorkJob.first();
 
         if (workJob == null) {
-            workJob = new VmWorkJobVO(context.getContextId());
+            Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, vmId);
 
-            workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-            workJob.setCmd(commandName);
+            workJob = newVmWorkJobAndInfo.first();
+            VmWorkMigrateAway workInfo = new VmWorkMigrateAway(newVmWorkJobAndInfo.second(), srcHostId);
 
-            workJob.setAccountId(account.getId());
-            workJob.setUserId(user.getId());
-            workJob.setVmType(vmType);
-            workJob.setVmInstanceId(vmId);
-            workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
-
-            final VmWorkMigrateAway workInfo = new VmWorkMigrateAway(user.getId(), account.getId(), vmId, VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, srcHostId);
             workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
         }
 
@@ -5034,32 +4970,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public Outcome<VirtualMachine> migrateVmWithStorageThroughJobQueue(
             final String vmUuid, final long srcHostId, final long destHostId,
             final Map<Long, Long> volumeToPool) {
-
-        final CallContext context = CallContext.current();
-        final User user = context.getCallingUser();
-        final Account account = context.getCallingAccount();
-
-        VirtualMachine.Type vmType = VirtualMachine.Type.Instance;
         String commandName = VmWorkMigrateWithStorage.class.getName();
-        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmUuid, vmType, commandName);
+        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmUuid, commandName);
 
         VmWorkJobVO workJob = pendingWorkJob.first();
         Long vmId = pendingWorkJob.second();
 
         if (workJob == null) {
-            workJob = new VmWorkJobVO(context.getContextId());
+            Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, vmId);
 
-            workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-            workJob.setCmd(commandName);
+            workJob = newVmWorkJobAndInfo.first();
+            VmWorkMigrateWithStorage workInfo = new VmWorkMigrateWithStorage(newVmWorkJobAndInfo.second(), srcHostId, destHostId, volumeToPool);
 
-            workJob.setAccountId(account.getId());
-            workJob.setUserId(user.getId());
-            workJob.setVmType(vmType);
-            workJob.setVmInstanceId(vmId);
-            workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
-
-            final VmWorkMigrateWithStorage workInfo = new VmWorkMigrateWithStorage(user.getId(), account.getId(), vmId,
-                    VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, srcHostId, destHostId, volumeToPool);
             workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
             _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
@@ -5072,32 +4994,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     public Outcome<VirtualMachine> migrateVmForScaleThroughJobQueue(
             final String vmUuid, final long srcHostId, final DeployDestination dest, final Long newSvcOfferingId) {
-
-        final CallContext context = CallContext.current();
-        final User user = context.getCallingUser();
-        final Account account = context.getCallingAccount();
-
-        VirtualMachine.Type vmType = VirtualMachine.Type.Instance;
         String commandName = VmWorkMigrateForScale.class.getName();
-        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmUuid, vmType, commandName);
+        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmUuid, commandName);
 
         VmWorkJobVO workJob = pendingWorkJob.first();
         Long vmId = pendingWorkJob.second();
 
         if (workJob == null) {
-            workJob = new VmWorkJobVO(context.getContextId());
+            Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, vmId);
 
-            workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-            workJob.setCmd(commandName);
+            workJob = newVmWorkJobAndInfo.first();
+            VmWorkMigrateForScale workInfo = new VmWorkMigrateForScale(newVmWorkJobAndInfo.second(), srcHostId, dest, newSvcOfferingId);
 
-            workJob.setAccountId(account.getId());
-            workJob.setUserId(user.getId());
-            workJob.setVmType(vmType);
-            workJob.setVmInstanceId(vmId);
-            workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
-
-            final VmWorkMigrateForScale workInfo = new VmWorkMigrateForScale(user.getId(), account.getId(), vmId,
-                    VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, srcHostId, dest, newSvcOfferingId);
             workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
             _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
@@ -5117,13 +5025,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    public Outcome<VirtualMachine> migrateVmStorageThroughJobQueue(
-            final String vmUuid, final Map<Long, Long> volumeToPool) {
-
-        final CallContext context = CallContext.current();
-        final User user = context.getCallingUser();
-        final Account account = context.getCallingAccount();
-
+    public Outcome<VirtualMachine> migrateVmStorageThroughJobQueue(final String vmUuid, final Map<Long, Long> volumeToPool) {
         Collection<Long> poolIds = volumeToPool.values();
         Set<Long> uniquePoolIds = new HashSet<>(poolIds);
         for (Long poolId : uniquePoolIds) {
@@ -5131,26 +5033,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             checkConcurrentJobsPerDatastoreThreshhold(pool);
         }
 
-        VirtualMachine.Type vmType = VirtualMachine.Type.Instance;
         String commandName = VmWorkStorageMigration.class.getName();
-        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmUuid, vmType, commandName);
+        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmUuid, commandName);
 
         VmWorkJobVO workJob = pendingWorkJob.first();
         Long vmId = pendingWorkJob.second();
 
         if (workJob == null) {
-            workJob = new VmWorkJobVO(context.getContextId());
+            Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, vmId);
 
-            workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-            workJob.setCmd(commandName);
-
-            workJob.setAccountId(account.getId());
-            workJob.setUserId(user.getId());
-            workJob.setVmType(vmType);
-            workJob.setVmInstanceId(vmId);
-            workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
-
-            final VmWorkStorageMigration workInfo = new VmWorkStorageMigration(user.getId(), account.getId(), vmId, VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, volumeToPool);
+            workJob = newVmWorkJobAndInfo.first();
+            VmWorkStorageMigration workInfo = new VmWorkStorageMigration(newVmWorkJobAndInfo.second(),  volumeToPool);
 
             workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
@@ -5163,32 +5056,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     public Outcome<VirtualMachine> addVmToNetworkThroughJobQueue(
             final VirtualMachine vm, final Network network, final NicProfile requested) {
-
-        final CallContext context = CallContext.current();
-        final User user = context.getCallingUser();
-        final Account account = context.getCallingAccount();
-
         Long vmId = vm.getId();
-        VirtualMachine.Type vmType = VirtualMachine.Type.Instance;
         String commandName = VmWorkAddVmToNetwork.class.getName();
-        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmId, null, vmType, commandName);
+        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmId, commandName);
 
         VmWorkJobVO workJob = pendingWorkJob.first();
 
         if (workJob == null) {
-            workJob = new VmWorkJobVO(context.getContextId());
+            Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, vmId);
 
-            workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-            workJob.setCmd(commandName);
+            workJob = newVmWorkJobAndInfo.first();
+            VmWorkAddVmToNetwork workInfo = new VmWorkAddVmToNetwork(newVmWorkJobAndInfo.second(), network.getId(), requested);
 
-            workJob.setAccountId(account.getId());
-            workJob.setUserId(user.getId());
-            workJob.setVmType(vmType);
-            workJob.setVmInstanceId(vmId);
-            workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
-
-            final VmWorkAddVmToNetwork workInfo = new VmWorkAddVmToNetwork(user.getId(), account.getId(), vmId,
-                    VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, network.getId(), requested);
             workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
             _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
@@ -5200,32 +5079,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     public Outcome<VirtualMachine> removeNicFromVmThroughJobQueue(
             final VirtualMachine vm, final Nic nic) {
-
-        final CallContext context = CallContext.current();
-        final User user = context.getCallingUser();
-        final Account account = context.getCallingAccount();
-
         Long vmId = vm.getId();
-        VirtualMachine.Type vmType = VirtualMachine.Type.Instance;
         String commandName = VmWorkRemoveNicFromVm.class.getName();
-        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmId, null, vmType, commandName);
+        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmId, commandName);
 
         VmWorkJobVO workJob = pendingWorkJob.first();
 
         if (workJob == null) {
-            workJob = new VmWorkJobVO(context.getContextId());
+            Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, vmId);
 
-            workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-            workJob.setCmd(commandName);
+            workJob = newVmWorkJobAndInfo.first();
+            VmWorkRemoveNicFromVm workInfo = new VmWorkRemoveNicFromVm(newVmWorkJobAndInfo.second(), nic.getId());
 
-            workJob.setAccountId(account.getId());
-            workJob.setUserId(user.getId());
-            workJob.setVmType(vmType);
-            workJob.setVmInstanceId(vmId);
-            workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
-
-            final VmWorkRemoveNicFromVm workInfo = new VmWorkRemoveNicFromVm(user.getId(), account.getId(), vmId,
-                    VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, nic.getId());
             workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
             _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
@@ -5237,32 +5102,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     public Outcome<VirtualMachine> removeVmFromNetworkThroughJobQueue(
             final VirtualMachine vm, final Network network, final URI broadcastUri) {
-
-        final CallContext context = CallContext.current();
-        final User user = context.getCallingUser();
-        final Account account = context.getCallingAccount();
-
         Long vmId = vm.getId();
-        VirtualMachine.Type vmType = VirtualMachine.Type.Instance;
         String commandName = VmWorkRemoveVmFromNetwork.class.getName();
-        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmId, null, vmType, commandName);
+        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmId, commandName);
 
         VmWorkJobVO workJob = pendingWorkJob.first();
 
         if (workJob == null) {
-            workJob = new VmWorkJobVO(context.getContextId());
+            Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, vmId);
 
-            workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-            workJob.setCmd(commandName);
+            workJob = newVmWorkJobAndInfo.first();
+            VmWorkRemoveVmFromNetwork workInfo = new VmWorkRemoveVmFromNetwork(newVmWorkJobAndInfo.second(), network, broadcastUri);
 
-            workJob.setAccountId(account.getId());
-            workJob.setUserId(user.getId());
-            workJob.setVmType(vmType);
-            workJob.setVmInstanceId(vmId);
-            workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
-
-            final VmWorkRemoveVmFromNetwork workInfo = new VmWorkRemoveVmFromNetwork(user.getId(), account.getId(), vmId,
-                    VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, network, broadcastUri);
             workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
             _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
@@ -5275,32 +5126,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     public Outcome<VirtualMachine> reconfigureVmThroughJobQueue(
             final String vmUuid, final ServiceOffering oldServiceOffering, final ServiceOffering newServiceOffering, Map<String, String> customParameters, final boolean reconfiguringOnExistingHost) {
-
-        final CallContext context = CallContext.current();
-        final User user = context.getCallingUser();
-        final Account account = context.getCallingAccount();
-
-        VirtualMachine.Type vmType = VirtualMachine.Type.Instance;
         String commandName = VmWorkReconfigure.class.getName();
-        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmUuid, vmType, commandName);
+        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmUuid, commandName);
 
         VmWorkJobVO workJob = pendingWorkJob.first();
         Long vmId = pendingWorkJob.second();
 
         if (workJob == null) {
-            workJob = new VmWorkJobVO(context.getContextId());
+            Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, vmId);
 
-            workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-            workJob.setCmd(commandName);
+            workJob = newVmWorkJobAndInfo.first();
+            VmWorkReconfigure workInfo = new VmWorkReconfigure(newVmWorkJobAndInfo.second(), oldServiceOffering.getId(), newServiceOffering.getId(), customParameters, reconfiguringOnExistingHost);
 
-            workJob.setAccountId(account.getId());
-            workJob.setUserId(user.getId());
-            workJob.setVmType(vmType);
-            workJob.setVmInstanceId(vmId);
-            workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
-
-            final VmWorkReconfigure workInfo = new VmWorkReconfigure(user.getId(), account.getId(), vmId,
-                    VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, oldServiceOffering.getId(), newServiceOffering.getId(), customParameters, reconfiguringOnExistingHost);
             workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
             _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
@@ -5562,31 +5399,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public Outcome<VirtualMachine> restoreVirtualMachineThroughJobQueue(final long vmId, final Long newTemplateId) {
-
-        final CallContext context = CallContext.current();
-        final User user = context.getCallingUser();
-        final Account account = context.getCallingAccount();
-
-        VirtualMachine.Type vmType = VirtualMachine.Type.Instance;
         String commandName = VmWorkRestore.class.getName();
-        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmId, null, vmType, commandName);
+        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmId, commandName);
 
         VmWorkJobVO workJob = pendingWorkJob.first();
 
         if (workJob == null) {
-            workJob = new VmWorkJobVO(context.getContextId());
+            Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, vmId);
 
-            workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-            workJob.setCmd(commandName);
+            workJob = newVmWorkJobAndInfo.first();
+            VmWorkRestore workInfo = new VmWorkRestore(newVmWorkJobAndInfo.second(), newTemplateId);
 
-            workJob.setAccountId(account.getId());
-            workJob.setUserId(user.getId());
-            workJob.setVmType(vmType);
-            workJob.setVmInstanceId(vmId);
-            workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
-
-            final VmWorkRestore workInfo = new VmWorkRestore(user.getId(), account.getId(), vmId,
-                    VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, newTemplateId);
             workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
             _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
@@ -5660,32 +5483,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public Outcome<VirtualMachine> updateDefaultNicForVMThroughJobQueue(final VirtualMachine vm, final Nic nic, final Nic defaultNic) {
-
-        final CallContext context = CallContext.current();
-        final User user = context.getCallingUser();
-        final Account account = context.getCallingAccount();
-
         Long vmId = vm.getId();
-        VirtualMachine.Type vmType = VirtualMachine.Type.Instance;
         String commandName = VmWorkUpdateDefaultNic.class.getName();
-        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmId, null, vmType, commandName);
+        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmId, commandName);
 
         VmWorkJobVO workJob = pendingWorkJob.first();
 
         if (workJob == null) {
-            workJob = new VmWorkJobVO(context.getContextId());
+            Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, vmId);
 
-            workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
-            workJob.setCmd(commandName);
+            workJob = newVmWorkJobAndInfo.first();
+            VmWorkUpdateDefaultNic workInfo = new VmWorkUpdateDefaultNic(newVmWorkJobAndInfo.second(), nic.getId(), defaultNic.getId());
 
-            workJob.setAccountId(account.getId());
-            workJob.setUserId(user.getId());
-            workJob.setVmType(vmType);
-            workJob.setVmInstanceId(vmId);
-            workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
-
-            final VmWorkUpdateDefaultNic workInfo = new VmWorkUpdateDefaultNic(user.getId(), account.getId(), vmId,
-                    VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, nic.getId(), defaultNic.getId());
             workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
             _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
@@ -5811,8 +5620,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return jobResult;
     }
 
-    protected Pair<VmWorkJobVO, Long> retrievePendingWorkJob(String vmUuid, VirtualMachine.Type vmType, String commandName) {
-        return retrievePendingWorkJob(null, vmUuid, vmType, commandName);
+    protected Pair<VmWorkJobVO, Long> retrievePendingWorkJob(String vmUuid, String commandName) {
+        return retrievePendingWorkJob(null, vmUuid, VirtualMachine.Type.Instance, commandName);
+    }
+
+    protected Pair<VmWorkJobVO, Long> retrievePendingWorkJob(Long id, String commandName) {
+        return retrievePendingWorkJob(id, null, VirtualMachine.Type.Instance, commandName);
     }
 
     protected Pair<VmWorkJobVO, Long> retrievePendingWorkJob(Long vmId, String vmUuid, VirtualMachine.Type vmType, String commandName) {
@@ -5840,5 +5653,33 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         return new Pair<>(null, vmId);
+    }
+
+    protected Pair<VmWorkJobVO, VmWork> createWorkJobAndWorkInfo(String commandName, Long vmId) {
+        return createWorkJobAndWorkInfo(commandName, null, vmId);
+    }
+
+    protected Pair<VmWorkJobVO, VmWork> createWorkJobAndWorkInfo(String commandName, VmWorkJobVO.Step step, Long vmId) {
+        CallContext context = CallContext.current();
+        long userId = context.getCallingUser().getId();
+        long accountId = context.getCallingAccount().getId();
+
+        VmWorkJobVO workJob = new VmWorkJobVO(context.getContextId());
+        workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+        workJob.setCmd(commandName);
+        workJob.setAccountId(accountId);
+        workJob.setUserId(userId);
+
+        if (step != null) {
+            workJob.setStep(step);
+        }
+
+        workJob.setVmType(VirtualMachine.Type.Instance);
+        workJob.setVmInstanceId(vmId);
+        workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
+
+        VmWork workInfo = new VmWork(userId,  accountId, vmId, VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER);
+
+        return new Pair<>(workJob, workInfo);
     }
 }
