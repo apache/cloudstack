@@ -470,11 +470,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     s_logger.debug("Allocating disks for " + vmFinal);
                 }
 
+                String rootVolumeName = String.format("ROOT-%s", vmFinal.getId());
                 if (template.getFormat() == ImageFormat.ISO) {
-                    volumeMgr.allocateRawVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
+                    volumeMgr.allocateRawVolume(Type.ROOT, rootVolumeName, rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
                             rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), vmFinal, template, owner, null);
-                } else if (template.getFormat() != ImageFormat.BAREMETAL) {
-                    volumeMgr.allocateTemplatedVolumes(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
+                } else if (template.getFormat() == ImageFormat.BAREMETAL) {
+                    s_logger.debug(String.format("Template [%s] has format [%s]. Skipping ROOT volume [%s] allocation.", template.toString(), ImageFormat.BAREMETAL, rootVolumeName));
+                } else {
+                    volumeMgr.allocateTemplatedVolumes(Type.ROOT, rootVolumeName, rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
                             rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), template, vmFinal, owner);
                 }
 
@@ -573,7 +576,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final List<Command> nicExpungeCommands = hvGuru.finalizeExpungeNics(vm, vmNics);
         _networkMgr.cleanupNics(profile);
 
-        s_logger.debug("Cleaning up hypervisor data structures (ex. SRs in XenServer) for managed storage");
+        s_logger.debug(String.format("Cleaning up hypervisor data structures (ex. SRs in XenServer) for managed storage. Data from %s.", vm.toString()));
 
         final List<Command> volumeExpungeCommands = hvGuru.finalizeExpungeVolumes(vm);
 
@@ -590,16 +593,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
             _agentMgr.send(hostId, cmds);
-
-            if (!cmds.isSuccessful()) {
-                for (final Answer answer : cmds.getAnswers()) {
-                    if (!answer.getResult()) {
-                        String message = String.format("Unable to expunge %s due to [%s].", vm.toString(), answer.getDetails());
-                        s_logger.warn(message);
-                        throw new CloudRuntimeException(message);
-                    }
-                }
-            }
+            handleUnsuccessfulCommands(cmds, vm);
         }
 
         if (hostId != null) {
@@ -634,22 +628,25 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 }
                 _agentMgr.send(hostId, cmds);
-                if (!cmds.isSuccessful()) {
-                    for (final Answer answer : cmds.getAnswers()) {
-                        if (!answer.getResult()) {
-                            String message = String.format("Unable to expunge %s due to [%s].", vm.toString(), answer.getDetails());
-                            s_logger.warn(message);
-                            throw new CloudRuntimeException(message);
-                        }
-                    }
-                }
+                handleUnsuccessfulCommands(cmds, vm);
             }
         }
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Expunged " + vm);
         }
+    }
 
+    protected void handleUnsuccessfulCommands(Commands cmds, VMInstanceVO vm) throws CloudRuntimeException {
+        if (!cmds.isSuccessful()) {
+            for (Answer answer : cmds.getAnswers()) {
+                if (!answer.getResult()) {
+                    String message = String.format("Unable to expunge %s due to [%s].", vm.toString(), answer.getDetails());
+                    s_logger.warn(message);
+                    throw new CloudRuntimeException(message);
+                }
+            }
+        }
     }
 
     private List<Map<String, String>> getTargets(Long hostId, long vmId) {

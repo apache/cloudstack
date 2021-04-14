@@ -551,15 +551,9 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         return uniqueName.hashCode();
     }
 
-    @Transient
-    String toString;
-
     @Override
     public String toString() {
-        if (toString == null) {
-            toString = new StringBuilder("Tmpl[").append(id).append("-").append(format).append("-").append(uniqueName).toString();
-        }
-        return toString;
+        return String.format("Template {\"id\": %s, \"uniqueName\": \"%s\", \"format\": \"%s\"}", id, uniqueName, format);
     }
 
     public void setRemoved(Date removed) {
