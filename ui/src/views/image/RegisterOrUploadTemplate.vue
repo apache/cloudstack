@@ -806,14 +806,8 @@ export default {
               continue
             }
             params[key] = input.join()
-          } else if (key === 'zoneid') {
-            params[key] = input
-          } else if (key === 'ostypeid') {
-            params[key] = input
           } else if (key === 'hypervisor') {
             params[key] = this.hyperVisor.opts[input].name
-          } else if (key === 'deployasis') {
-            params[key] = input
           } else if (key === 'groupenabled') {
             for (const index in input) {
               const name = input[index]
