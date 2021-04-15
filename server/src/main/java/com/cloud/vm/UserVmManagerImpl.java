@@ -2962,15 +2962,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         checkForUnattachedVolumes(vmId, volumesToBeDeleted);
         validateVolumes(volumesToBeDeleted);
 
+        List<VolumeVO> allVolumes = null;
+        if (vm.getHypervisorType() == HypervisorType.VMware) {
+            allVolumes = _volsDao.findByInstance(vm.getId());
+            allVolumes.removeIf(vol -> vol.getVolumeType() == Volume.Type.ROOT);
+        }else {
+            allVolumes = volumesToBeDeleted;
+        }
+        for (VolumeVO volume : allVolumes) {
+             _accountMgr.checkAccess(ctx.getCallingAccount(), null, true, volume);
+        }
+
         stopVirtualMachine(vmId, VmDestroyForcestop.value());
 
-        if (vm.getHypervisorType() == HypervisorType.VMware) {
-            List<VolumeVO> allVolumes = _volsDao.findByInstance(vm.getId());
-            allVolumes.removeIf(vol -> vol.getVolumeType() == Volume.Type.ROOT);
-            detachVolumesFromVm(allVolumes);
-        } else {
-            detachVolumesFromVm(volumesToBeDeleted);
-        }
+        detachVolumesFromVm(allVolumes);
 
         UserVm destroyedVm = destroyVm(vmId, expunge);
         if (expunge) {
