@@ -257,9 +257,5 @@ public interface VirtualMachineManager extends Manager {
 
     UserVm restoreVirtualMachine(long vmId, Long newTemplateId) throws ResourceUnavailableException, InsufficientCapacityException;
 
-    Pair<Long, Long> findClusterAndHostIdForVmFromVolumes(long vmId);
-
-    Pair<Long, Long> findClusterAndHostIdForVm(VirtualMachine vm);
-
     Pair<Long, Long> findClusterAndHostIdForVm(long vmId);
 }

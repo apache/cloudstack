@@ -5876,8 +5876,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _jobMgr.marshallResultObject(result));
     }
 
-    @Override
-    public Pair<Long, Long> findClusterAndHostIdForVmFromVolumes(long vmId) {
+    private Pair<Long, Long> findClusterAndHostIdForVmFromVolumes(long vmId) {
         Long clusterId = null;
         Long hostId = null;
         List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
@@ -5899,8 +5898,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new Pair<>(clusterId, hostId);
     }
 
-    @Override
-    public Pair<Long, Long> findClusterAndHostIdForVm(VirtualMachine vm) {
+    private Pair<Long, Long> findClusterAndHostIdForVm(VirtualMachine vm) {
         Long hostId = vm.getHostId();
         Long clusterId = null;
         if(hostId == null) {

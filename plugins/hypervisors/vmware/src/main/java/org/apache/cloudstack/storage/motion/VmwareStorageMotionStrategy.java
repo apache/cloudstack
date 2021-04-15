@@ -160,7 +160,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
     private Pair<Long, String> getHostIdForVmAndHostGuidInTargetClusterForAttachedVm(VirtualMachine vm,
                                                                                      StoragePool targetPool,
                                                                                      ScopeType targetScopeType) {
-        Pair<Long, Long> clusterAndHostId = vmManager.findClusterAndHostIdForVm(vm);
+        Pair<Long, Long> clusterAndHostId = vmManager.findClusterAndHostIdForVm(vm.getId());
         if (clusterAndHostId.second() == null) {
             throw new CloudRuntimeException(String.format("Offline Migration failed, unable to find host for VM: %s", vm.getUuid()));
         }
