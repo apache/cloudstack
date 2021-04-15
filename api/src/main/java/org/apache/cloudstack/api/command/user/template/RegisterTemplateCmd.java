@@ -280,8 +280,8 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
     }
 
     public Boolean isDeployAsIs() {
-        return hypervisor != null && hypervisor.equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString())
-                && deployAsIs != null && deployAsIs;
+        return Hypervisor.HypervisorType.VMware.toString().equalsIgnoreCase(hypervisor) &&
+                Boolean.TRUE.equals(deployAsIs);
     }
 
     /////////////////////////////////////////////////////
