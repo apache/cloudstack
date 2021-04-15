@@ -23,11 +23,14 @@ from marvin.cloudstackAPI import scaleVirtualMachine
 from marvin.lib.utils import cleanup_resources
 from marvin.lib.base import (Account,
                              VirtualMachine,
-                             ServiceOffering)
+                             ServiceOffering,
+                             Template,
+                             Configurations)
 from marvin.lib.common import (get_zone,
                                get_template,
                                get_domain)
 from nose.plugins.attrib import attr
+import time
 
 _multiprocess_shared_ = True
 
@@ -50,15 +53,14 @@ class TestScaleVm(cloudstackTestCase):
         domain = get_domain(cls.apiclient)
         zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = zone.networktype
+        template = Template.register(
+                   cls.apiclient,
+                   cls.services["CentOS7template"],
+                   zoneid=zone.id
+                )
 
-        template = get_template(
-            cls.apiclient,
-            zone.id,
-            cls.services["ostype"]
-        )
-        if template == FAILED:
-            assert False, "get_template() failed to return template\
-                    with description %s" % cls.services["ostype"]
+        template.download(cls.apiclient)
+        time.sleep(60)
 
         # Set Zones and disk offerings ??
         cls.services["small"]["zoneid"] = zone.id
@@ -81,6 +83,12 @@ class TestScaleVm(cloudstackTestCase):
             cls.services["service_offerings"]["big"]
         )
 
+        Configurations.update(
+                    cls.apiclient,
+                    name="enable.dynamic.scale.vm",
+                    value="true"
+                )
+
         # create a virtual machine
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
@@ -91,6 +99,7 @@ class TestScaleVm(cloudstackTestCase):
             mode=cls.services["mode"]
         )
         cls._cleanup = [
+            template,
             cls.small_offering,
             cls.account
         ]
@@ -100,6 +109,12 @@ class TestScaleVm(cloudstackTestCase):
         cls.apiclient = super(
             TestScaleVm,
             cls).getClsTestClient().getApiClient()
+        Configurations.update(
+                    cls.apiclient,
+                    name="enable.dynamic.scale.vm",
+                    value="false"
+                )
+
         cleanup_resources(cls.apiclient, cls._cleanup)
         return
 
