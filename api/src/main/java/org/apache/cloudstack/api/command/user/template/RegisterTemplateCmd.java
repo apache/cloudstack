@@ -164,7 +164,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name=ApiConstants.DEPLOY_AS_IS,
             type = CommandType.BOOLEAN,
-            description = "(Vmware only) true if VM deployments should preserve all the configurations defined for this template")
+            description = "(VMware only) true if VM deployments should preserve all the configurations defined for this template", since = "4.15.1")
     private Boolean deployAsIs;
 
     /////////////////////////////////////////////////////
