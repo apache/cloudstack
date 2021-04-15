@@ -187,17 +187,6 @@ export default {
         display: 'table-cell',
         lineHeight: '31px'
       }
-    },
-    isFilter () {
-      let isFiltered = false
-      for (const item in this.searchParams) {
-        if (this.searchFilters.includes(item)) {
-          isFiltered = true
-          break
-        }
-      }
-
-      return isFiltered
     }
   },
   methods: {
