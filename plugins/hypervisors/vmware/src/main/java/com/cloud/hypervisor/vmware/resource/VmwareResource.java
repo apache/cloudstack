@@ -101,6 +101,8 @@ import com.cloud.agent.api.GetUnmanagedInstancesCommand;
 import com.cloud.agent.api.GetVmDiskStatsAnswer;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmIpAddressCommand;
+import com.cloud.agent.api.GetVmVncTicketCommand;
+import com.cloud.agent.api.GetVmVncTicketAnswer;
 import com.cloud.agent.api.GetVmNetworkStatsAnswer;
 import com.cloud.agent.api.GetVmNetworkStatsCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
@@ -578,6 +580,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((PrepareUnmanageVMInstanceCommand) cmd);
             } else if (clz == ValidateVcenterDetailsCommand.class) {
                 answer = execute((ValidateVcenterDetailsCommand) cmd);
+            } else if (clz == GetVmVncTicketCommand.class) {
+                answer = execute((GetVmVncTicketCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -7560,6 +7564,27 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return new Answer(cmd, true, "success");
         } else {
             return new Answer(cmd, false, "Provided vCenter server address is invalid");
+        }
+    }
+
+    public String acquireVirtualMachineVncTicket(String vmInternalCSName) throws Exception {
+        VmwareContext context = getServiceContext();
+        VmwareHypervisorHost hyperHost = getHyperHost(context);
+        DatacenterMO dcMo = new DatacenterMO(hyperHost.getContext(), hyperHost.getHyperHostDatacenter());
+        VirtualMachineMO vmMo = dcMo.findVm(vmInternalCSName);
+        return vmMo.acquireVncTicket();
+    }
+
+    private GetVmVncTicketAnswer execute(GetVmVncTicketCommand cmd) {
+        String vmInternalName = cmd.getVmInternalName();
+        s_logger.info("Getting VNC ticket for VM " + vmInternalName);
+        try {
+            String ticket = acquireVirtualMachineVncTicket(vmInternalName);
+            boolean result = StringUtils.isNotBlank(ticket);
+            return new GetVmVncTicketAnswer(ticket, result, result ? "" : "Empty ticket obtained");
+        } catch (Exception e) {
+            s_logger.error("Error getting VNC ticket for VM " + vmInternalName, e);
+            return new GetVmVncTicketAnswer(null, false, e.getLocalizedMessage());
         }
     }
 }
