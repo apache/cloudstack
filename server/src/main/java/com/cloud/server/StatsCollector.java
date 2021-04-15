@@ -1023,10 +1023,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                             boolean poolNeedsUpdating = false;
                             // Seems like we have dynamically updated the pool size since the prev. size and the current do not match
                             if (_storagePoolStats.get(poolId) != null && _storagePoolStats.get(poolId).getCapacityBytes() != ((StorageStats)answer).getCapacityBytes()) {
-                                pool.setCapacityBytes(((StorageStats)answer).getCapacityBytes());
-                                poolNeedsUpdating = true;
+                                if (((StorageStats)answer).getCapacityBytes() > 0) {
+                                    pool.setCapacityBytes(((StorageStats)answer).getCapacityBytes());
+                                    poolNeedsUpdating = true;
+                                } else {
+                                    s_logger.warn("Received 0 capacity for pool ID " + poolId);
+                                }
                             }
-                            if (pool.getUsedBytes() != ((StorageStats)answer).getByteUsed() && pool.getStorageProviderName().equalsIgnoreCase(DataStoreProvider.DEFAULT_PRIMARY) && ((StorageStats)answer).getByteUsed() > 0) {
+                            if (pool.getUsedBytes() != ((StorageStats)answer).getByteUsed() && pool.getStorageProviderName().equalsIgnoreCase(DataStoreProvider.DEFAULT_PRIMARY) && !pool.isManaged()) {
                                 pool.setUsedBytes(((StorageStats) answer).getByteUsed());
                                 poolNeedsUpdating = true;
                             }
