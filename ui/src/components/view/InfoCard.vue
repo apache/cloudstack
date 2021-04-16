@@ -262,7 +262,8 @@
               <a-progress
                 class="progress-bar"
                 size="small"
-                :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeallocatedgb) / parseFloat(resource.disksizetotalgb)).toFixed(2))"
+                :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeallocatedgb) / (parseFloat(resource.disksizetotalgb) *
+                  (parseFloat(resource.overprovisionfactor) || 1.0))).toFixed(2))"
                 :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.disksizeallocatedgb')" />
             </span>
           </div>

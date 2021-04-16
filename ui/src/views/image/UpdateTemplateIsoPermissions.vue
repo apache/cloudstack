@@ -23,7 +23,11 @@
 
     <div class="form__item">
       <p class="form__label">{{ $t('label.operation') }}</p>
-      <a-select v-model="selectedOperation" :defaultValue="$t('label.add')" @change="fetchData">
+      <a-select
+        v-model="selectedOperation"
+        :defaultValue="$t('label.add')"
+        @change="fetchData"
+        autoFocus>
         <a-select-option :value="$t('label.add')">{{ $t('label.add') }}</a-select-option>
         <a-select-option :value="$t('label.remove')">{{ $t('label.remove') }}</a-select-option>
         <a-select-option :value="$t('label.reset')">{{ $t('label.reset') }}</a-select-option>
@@ -141,7 +145,7 @@ export default {
         ) : this.projects
     }
   },
-  mounted () {
+  created () {
     this.isImageTypeIso = this.$route.meta.name === 'iso'
     this.fetchData()
   },
@@ -164,7 +168,7 @@ export default {
     fetchAccounts () {
       this.loading = true
       api('listAccounts', {
-        listall: true
+        domainid: this.resource.domainid
       }).then(response => {
         this.accounts = response.listaccountsresponse.account.filter(account => account.name !== this.resource.account)
       }).finally(e => {

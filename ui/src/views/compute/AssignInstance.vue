@@ -29,7 +29,7 @@
 
       <div class="form__item">
         <p class="form__label">{{ $t('label.accounttype') }}</p>
-        <a-select v-model="selectedAccountType" defaultValue="account">
+        <a-select v-model="selectedAccountType" defaultValue="account" autoFocus>
           <a-select-option :value="$t('label.account')">{{ $t('label.account') }}</a-select-option>
           <a-select-option :value="$t('label.project')">{{ $t('label.project') }}</a-select-option>
         </a-select>
@@ -77,9 +77,14 @@
         </a-select>
       </div>
 
-      <a-button type="primary" class="submit-btn" @click="submitData">
-        {{ $t('label.submit') }}
-      </a-button>
+      <div class="submit-btn">
+        <a-button @click="closeAction">
+          {{ $t('label.cancel') }}
+        </a-button>
+        <a-button type="primary" @click="submitData">
+          {{ $t('label.submit') }}
+        </a-button>
+      </div>
 
     </div>
 
@@ -114,7 +119,7 @@ export default {
       loading: false
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {
@@ -129,6 +134,10 @@ export default {
         this.selectedDomain = this.domains[0].id
         this.fetchAccounts()
         this.fetchProjects()
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
       })
     },
     fetchAccounts () {
@@ -137,9 +146,12 @@ export default {
         response: 'json',
         domainId: this.selectedDomain,
         state: 'Enabled',
-        listAll: true
+        isrecursive: false
       }).then(response => {
         this.accounts = response.listaccountsresponse.account
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
         this.loading = false
       })
     },
@@ -150,9 +162,12 @@ export default {
         domainId: this.selectedDomain,
         state: 'Active',
         details: 'min',
-        listAll: true
+        isrecursive: false
       }).then(response => {
         this.projects = response.listprojectsresponse.project
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
         this.loading = false
       })
     },
@@ -167,6 +182,9 @@ export default {
         projectid: this.selectedProject
       }).then(response => {
         this.networks = response.listnetworksresponse.network
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
         this.loading = false
       })
     },
@@ -182,6 +200,9 @@ export default {
     changeProject () {
       this.selectedAccount = null
       this.fetchNetworks()
+    },
+    closeAction () {
+      this.$emit('close-action')
     },
     submitData () {
       let variableKey = ''
@@ -255,6 +276,10 @@ export default {
   .submit-btn {
     margin-top: 10px;
     align-self: flex-end;
+
+    button {
+      margin-left: 10px;
+    }
   }
 
   .required {
