@@ -255,4 +255,9 @@ public interface VirtualMachineManager extends Manager {
     boolean unmanage(String vmUuid);
 
     UserVm restoreVirtualMachine(long vmId, Long newTemplateId) throws ResourceUnavailableException, InsufficientCapacityException;
+
+    /**
+     * Returns true if the VM's Root volume is allocated at a local storage pool
+     */
+    boolean isRootVolumeOnLocalStorage(long vmId);
 }
