@@ -285,7 +285,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             metricsResponse.setInstances(upInstances, totalInstances);
             metricsResponse.setCpuTotal(hostResponse.getCpuNumber(), hostResponse.getCpuSpeed(), cpuOvercommitRatio);
             metricsResponse.setCpuUsed(hostResponse.getCpuUsed(), hostResponse.getCpuNumber(), hostResponse.getCpuSpeed());
-            metricsResponse.setCpuAllocated(hostResponse.getCpuAllocated(), hostResponse.getCpuNumber(), hostResponse.getCpuSpeed());
+            metricsResponse.setCpuAllocated(hostResponse.getCpuAllocatedWithOverprovisioning(), hostResponse.getCpuNumber(), hostResponse.getCpuSpeed());
             metricsResponse.setLoadAverage(hostResponse.getAverageLoad());
             metricsResponse.setMemTotal(hostResponse.getMemoryTotal(), memoryOvercommitRatio);
             metricsResponse.setMemAllocated(hostResponse.getMemoryAllocated());
