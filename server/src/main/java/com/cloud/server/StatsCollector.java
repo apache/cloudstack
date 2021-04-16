@@ -1027,7 +1027,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     pool.setCapacityBytes(((StorageStats)answer).getCapacityBytes());
                                     poolNeedsUpdating = true;
                                 } else {
-                                    s_logger.warn("Received 0 capacity for pool ID " + poolId);
+                                    s_logger.warn("Not setting capacity bytes, received " + ((StorageStats)answer).getCapacityBytes()  + " capacity for pool ID " + poolId);
                                 }
                             }
                             if (pool.getUsedBytes() != ((StorageStats)answer).getByteUsed() && pool.getStorageProviderName().equalsIgnoreCase(DataStoreProvider.DEFAULT_PRIMARY) && !pool.isManaged()) {
