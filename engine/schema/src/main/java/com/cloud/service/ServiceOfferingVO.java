@@ -19,7 +19,6 @@ package com.cloud.service;
 import java.util.Map;
 
 import javax.persistence.Column;
-import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
@@ -32,7 +31,6 @@ import com.cloud.vm.VirtualMachine;
 
 @Entity
 @Table(name = "service_offering")
-@DiscriminatorValue(value = "Service")
 @PrimaryKeyJoinColumn(name = "id")
 public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering {
 
