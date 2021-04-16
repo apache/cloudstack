@@ -150,7 +150,7 @@ export default {
         label: 'label.edit',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
-        args: ['name', 'displaytext']
+        args: ['name', 'displaytext', 'tags']
       }, {
         api: 'updateDiskOffering',
         icon: 'lock',
@@ -216,7 +216,7 @@ export default {
         label: 'label.edit',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
-        args: ['name', 'displaytext', 'availability'],
+        args: ['name', 'displaytext', 'availability', 'tags'],
         mapping: {
           availability: {
             options: ['Optional', 'Required']

@@ -37,6 +37,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.vmware.vim25.InvalidStateFaultMsg;
+import com.vmware.vim25.RuntimeFaultFaultMsg;
+import com.vmware.vim25.VirtualMachineTicket;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -3533,5 +3536,14 @@ public class VirtualMachineMO extends BaseMO {
             s_logger.error(msg, e);
             return false;
         }
+    }
+
+    /**
+     * Acquire VNC ticket for console proxy.
+     * Since VMware version 7
+     */
+    public String acquireVncTicket() throws InvalidStateFaultMsg, RuntimeFaultFaultMsg {
+        VirtualMachineTicket ticket = _context.getService().acquireTicket(_mor, "webmks");
+        return ticket.getTicket();
     }
 }
