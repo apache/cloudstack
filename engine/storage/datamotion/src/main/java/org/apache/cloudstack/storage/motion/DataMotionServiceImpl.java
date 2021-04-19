@@ -32,6 +32,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -110,6 +111,7 @@ public class DataMotionServiceImpl implements DataMotionService {
             List<String> volumeIds = new LinkedList<String>();
             for (final VolumeInfo volumeInfo : volumeMap.keySet()) {
                 volumeIds.add(volumeInfo.getUuid());
+                volumeInfo.processEvent(Event.OperationFailed);
             }
 
             throw new CloudRuntimeException("Can't find strategy to move data. " + "Source Host: " + srcHost.getName() + ", Destination Host: " + destHost.getName() +
