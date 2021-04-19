@@ -44,11 +44,12 @@ public class DetachIsoCmd extends BaseAsyncCmd implements UserCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class,
-            required=true, description="The ID of the virtual machine")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class,
+            required = true, description = "The ID of the virtual machine")
     protected Long virtualMachineId;
 
-    @Parameter(name=ApiConstants.FORCED, type=CommandType.BOOLEAN, description="If true, ejects the iso before detaching on vmware. Default: false", since = "4.15.1")
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN,
+            description = "If true, ejects the ISO before detaching on VMware. Default: false", since = "4.15.1")
     protected Boolean forced;
 
     /////////////////////////////////////////////////////

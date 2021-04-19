@@ -54,7 +54,8 @@ public class AttachIsoCmd extends BaseAsyncCmd implements UserCmd {
             required = true, description = "the ID of the virtual machine")
     protected Long virtualMachineId;
 
-    @Parameter(name=ApiConstants.FORCED, type=CommandType.BOOLEAN, description="If true, ejects existing iso before attaching on vmware. Default: false", since = "4.15.1")
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN,
+            description = "If true, ejects existing ISO before attaching on VMware. Default: false", since = "4.15.1")
     protected Boolean forced;
 
     /////////////////////////////////////////////////////
