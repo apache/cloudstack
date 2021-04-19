@@ -267,9 +267,16 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         final boolean allowExpiredCertificate = rootCAAllowExpiredCert.value();
 
         TrustManager[] tms = new TrustManager[]{new RootCACustomTrustManager(remoteAddress, authStrictness, allowExpiredCertificate, certMap, caCertificate, crlDao)};
+
         sslContext.init(kmf.getKeyManagers(), tms, new SecureRandom());
         final SSLEngine sslEngine = sslContext.createSSLEngine();
-        sslEngine.setNeedClientAuth(authStrictness);
+        // If authStrictness require SSL and validate client cert, otherwise prefer SSL but don't validate client cert
+        if (authStrictness) {
+            sslEngine.setNeedClientAuth(true);  // Require SSL and client cert validation
+        } else {
+            sslEngine.setWantClientAuth(true);  // Prefer SSL but don't validate client cert
+        }
+
         return sslEngine;
     }
 
