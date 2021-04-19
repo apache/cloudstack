@@ -96,6 +96,8 @@ public interface UserVmManager extends UserVmService {
 
     void removeInstanceFromInstanceGroup(long vmId);
 
+    boolean isVMUsingLocalStorage(VMInstanceVO vm);
+
     boolean expunge(UserVmVO vm, long callerUserId, Account caller);
 
     Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)

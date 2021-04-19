@@ -30,6 +30,18 @@ import java.util.Random;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.deploy.DeploymentPlanningManager;
+import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.vm.UserVmManager;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -206,6 +218,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Inject
     private CapacityDao _capacityDao;
     @Inject
+    private DiskOfferingDao diskOfferingDao;
+    @Inject
+    private ServiceOfferingDao serviceOfferingDao;
+    @Inject
     private HostDao _hostDao;
     @Inject
     private HostDetailsDao _hostDetailsDao;
@@ -226,6 +242,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Inject
     private IPAddressDao _publicIPAddressDao;
     @Inject
+    private DeploymentPlanningManager deploymentManager;
+    @Inject
     private VirtualMachineManager _vmMgr;
     @Inject
     private VMInstanceDao _vmDao;
@@ -239,6 +257,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private DedicatedResourceDao _dedicatedDao;
     @Inject
     private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+    @Inject
+    private UserVmManager userVmManager;
 
     private List<? extends Discoverer> _discoverers;
 
@@ -1273,6 +1293,19 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 } else if (HypervisorType.LXC.equals(host.getHypervisorType()) && VirtualMachine.Type.User.equals(vm.getType())){
                     //Migration is not supported for LXC Vms. Schedule restart instead.
                     _haMgr.scheduleRestart(vm, false);
+                } else if (userVmManager.isVMUsingLocalStorage(vm)) {
+                    if (isMaintenanceLocalStrategyForceStop()) {
+                        _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
+                    } else if (isMaintenanceLocalStrategyMigrate()) {
+                        migrateAwayVmWithVolumes(host, vm);
+                    } else if (!isMaintenanceLocalStrategyDefault()){
+                        String logMessage = String.format(
+                                "Unsupported host.maintenance.local.storage.strategy: %s. Please set a strategy according to the global settings description: "
+                                        + "'Error', 'Migration', or 'ForceStop'.",
+                                HOST_MAINTENANCE_LOCAL_STRATEGY.value().toString());
+                        s_logger.error(logMessage);
+                        throw new CloudRuntimeException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
+                    }
                 } else {
                     s_logger.info("Maintenance: scheduling migration of VM " + vm.getUuid() + " from host " + host.getUuid());
                     _haMgr.scheduleMigration(vm);
@@ -1280,6 +1313,32 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
         return true;
+    }
+
+    /**
+     * Looks for Hosts able to allocate the VM and migrates the VM with its volume.
+     */
+    private void migrateAwayVmWithVolumes(HostVO host, VMInstanceVO vm) {
+        final DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null, null);
+        ServiceOfferingVO offeringVO = serviceOfferingDao.findById(vm.getServiceOfferingId());
+        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, offeringVO, null, null);
+        plan.setMigrationPlan(true);
+        DeployDestination dest = null;
+        try {
+            dest = deploymentManager.planDeployment(profile, plan, new DeploymentPlanner.ExcludeList(), null);
+        } catch (InsufficientServerCapacityException e) {
+            throw new CloudRuntimeException(String.format("Maintenance failed, could not find deployment destination for VM [id=%s, name=%s].", vm.getId(), vm.getInstanceName()),
+                    e);
+        }
+        Host destHost = dest.getHost();
+
+        try {
+            _vmMgr.migrateWithStorage(vm.getUuid(), host.getId(), destHost.getId(), null);
+        } catch (ResourceUnavailableException e) {
+            throw new CloudRuntimeException(
+                    String.format("Maintenance failed, could not migrate VM [id=%s, name=%s] with local storage from host [id=%s, name=%s] to host [id=%s, name=%s].", vm.getId(),
+                            vm.getInstanceName(), host.getId(), host.getName(), destHost.getId(), destHost.getName()), e);
+        }
     }
 
     @Override
@@ -1322,9 +1381,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         if (_storageMgr.isLocalStorageActiveOnHost(host.getId())) {
-            throw new CloudRuntimeException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
+            if(!isMaintenanceLocalStrategyMigrate() && !isMaintenanceLocalStrategyForceStop()) {
+                throw new CloudRuntimeException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
+            }
         }
+
         List<VMInstanceVO> migratingInVMs = _vmDao.findByHostInStates(hostId, State.Migrating);
+
         if (migratingInVMs.size() > 0) {
             throw new CloudRuntimeException("Host contains incoming VMs migrating. Please wait for them to complete before putting to maintenance.");
         }
@@ -1348,6 +1411,31 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         } catch (final AgentUnavailableException e) {
             throw new CloudRuntimeException("Unable to prepare for maintenance host " + hostId);
         }
+    }
+
+    protected boolean isMaintenanceLocalStrategyMigrate() {
+        if(org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value())) {
+            return false;
+        }
+        return HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(WorkType.Migration.toString().toLowerCase());
+    }
+
+    protected boolean isMaintenanceLocalStrategyForceStop() {
+        if(org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value())) {
+            return false;
+        }
+        return HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(WorkType.ForceStop.toString().toLowerCase());
+    }
+
+    /**
+     * Returns true if the host.maintenance.local.storage.strategy is the Default: "Error", blank, empty, or null.
+     */
+    protected boolean isMaintenanceLocalStrategyDefault() {
+        if (org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value().toString())
+                || HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(State.Error.toString().toLowerCase())) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -3094,6 +3182,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[0];
+        return new ConfigKey<?>[] {KvmSshToAgentEnabled, HOST_MAINTENANCE_LOCAL_STRATEGY};
     }
 }
