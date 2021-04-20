@@ -264,9 +264,6 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             final Double memoryThreshold = AlertManager.MemoryCapacityThreshold.valueIn(clusterId);
             final Float cpuDisableThreshold = DeploymentClusterPlanner.ClusterCPUCapacityDisableThreshold.valueIn(clusterId);
             final Float memoryDisableThreshold = DeploymentClusterPlanner.ClusterMemoryCapacityDisableThreshold.valueIn(clusterId);
-            // Over commit ratios
-            final Double cpuOvercommitRatio = findRatioValue(ApiDBUtils.findClusterDetails(clusterId, "cpuOvercommitRatio"));
-            final Double memoryOvercommitRatio = findRatioValue(ApiDBUtils.findClusterDetails(clusterId, "memoryOvercommitRatio"));
 
             Long upInstances = 0L;
             Long totalInstances = 0L;
