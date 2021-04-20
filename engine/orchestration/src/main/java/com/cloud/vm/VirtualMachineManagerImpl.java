@@ -3691,6 +3691,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
+    /**
+     * Throws an InvalidParameterValueException in case the new service offerings does not match the storage scope (e.g. local or shared).
+     */
     protected void checkIfNewOfferingStorageScopeMatchesStoragePool(VirtualMachine vmInstance, ServiceOffering newServiceOffering) {
         boolean isRootVolumeOnLocalStorage = isRootVolumeOnLocalStorage(vmInstance.getId());
 
@@ -3698,7 +3701,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             String message = String .format("Unable to upgrade virtual machine %s, target offering use local storage but the storage pool where "
                     + "the volume is allocated is a shared storage.", vmInstance.toString());
             throw new InvalidParameterValueException(message);
-        } else if (!newServiceOffering.isUseLocalStorage() && isRootVolumeOnLocalStorage) {
+        }
+
+        if (!newServiceOffering.isUseLocalStorage() && isRootVolumeOnLocalStorage) {
             String message = String.format("Unable to upgrade virtual machine %s, target offering use shared storage but the storage pool where "
                     + "the volume is allocated is a local storage.", vmInstance.toString());
             throw new InvalidParameterValueException(message);
