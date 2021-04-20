@@ -22,6 +22,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import scaleVirtualMachine
 from marvin.lib.utils import cleanup_resources
 from marvin.lib.base import (Account,
+                             Host,
                              VirtualMachine,
                              ServiceOffering,
                              Template,
@@ -30,6 +31,7 @@ from marvin.lib.common import (get_zone,
                                get_template,
                                get_domain)
 from nose.plugins.attrib import attr
+from marvin.sshClient import SshClient
 import time
 
 _multiprocess_shared_ = True
@@ -42,6 +44,8 @@ class TestScaleVm(cloudstackTestCase):
         testClient = super(TestScaleVm, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][
+                    0].__dict__
         cls._cleanup = []
         cls.unsupportedHypervisor = False
         cls.hypervisor = cls.testClient.getHypervisorInfo()
@@ -51,19 +55,20 @@ class TestScaleVm(cloudstackTestCase):
 
         # Get Zone, Domain and templates
         domain = get_domain(cls.apiclient)
-        zone = get_zone(cls.apiclient, testClient.getZoneForTests())
-        cls.services['mode'] = zone.networktype
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.services['mode'] = cls.zone.networktype
         template = Template.register(
                    cls.apiclient,
                    cls.services["CentOS7template"],
-                   zoneid=zone.id
+                   zoneid=cls.zone.id
                 )
 
         template.download(cls.apiclient)
         time.sleep(60)
+        cls._cleanup.append(template)
 
-        # Set Zones and disk offerings ??
-        cls.services["small"]["zoneid"] = zone.id
+        # Set Zones and disk offerings
+        cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id
 
         # Create account, service offerings, vm.
@@ -72,16 +77,19 @@ class TestScaleVm(cloudstackTestCase):
             cls.services["account"],
             domainid=domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.small_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["small"]
         )
+        cls._cleanup.append(cls.small_offering)
 
         cls.big_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["big"]
         )
+        cls._cleanup.append(cls.big_offering)
 
         Configurations.update(
                     cls.apiclient,
@@ -98,11 +106,6 @@ class TestScaleVm(cloudstackTestCase):
             serviceofferingid=cls.small_offering.id,
             mode=cls.services["mode"]
         )
-        cls._cleanup = [
-            template,
-            cls.small_offering,
-            cls.account
-        ]
 
     @classmethod
     def tearDownClass(cls):
@@ -115,7 +118,7 @@ class TestScaleVm(cloudstackTestCase):
                     value="false"
                 )
 
-        cleanup_resources(cls.apiclient, cls._cleanup)
+        super(TestScaleVm,cls).tearDownClass()
         return
 
     def setUp(self):
@@ -129,8 +132,20 @@ class TestScaleVm(cloudstackTestCase):
 
     def tearDown(self):
         # Clean up, terminate the created ISOs
-        cleanup_resources(self.apiclient, self.cleanup)
+        super(TestScaleVm,self).tearDown()
         return
+
+    def get_ssh_client(self, ip, username, password, retries=10):
+        """ Setup ssh client connection and return connection """
+        try:
+            ssh_client = SshClient(ip, 22, username, password, retries)
+        except Exception as e:
+            raise self.skipTest("Unable to create ssh connection: " % e)
+
+        self.assertIsNotNone(
+            ssh_client, "Failed to setup ssh connection to ip=%s" % ip)
+
+        return ssh_client
 
     @attr(hypervisor="xenserver")
     @attr(tags=["advanced", "basic"], required_hardware="false")
@@ -160,6 +175,25 @@ class TestScaleVm(cloudstackTestCase):
             if not "running" in result:
                 self.skipTest("Skipping scale VM operation because\
                     VMware tools are not installed on the VM")
+
+        hostid = self.virtual_machine.hostid
+        host = Host.list(
+                   self.apiclient,
+                   zoneid=self.zone.id,
+                   hostid=hostid,
+                   type='Routing'
+               )[0]
+
+        try:
+            username = self.hostConfig["username"]
+            password = self.hostConfig["password"]
+            ssh_client = self.get_ssh_client(host.ipaddress, username, password)
+            res = ssh_client.execute("hostnamectl | grep 'Operating System' | cut -d':' -f2")
+        except Exception as e:
+            pass
+
+        if 'XenServer' in res[0]:
+            self.skipTest("Skipping test for XenServer as it's License does not allow scaling")
 
         self.virtual_machine.update(
             self.apiclient,
