@@ -622,10 +622,6 @@ public class HostResponse extends BaseResponse {
         return cpuAllocated;
     }
 
-    public String getCpuAllocatedWithOverprovisioning() {
-        return cpuAllocatedWithOverprovisioning;
-    }
-
     public Double getAverageLoad() {
         return cpuloadaverage;
     }
