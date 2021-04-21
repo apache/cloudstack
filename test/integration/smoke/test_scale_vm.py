@@ -57,19 +57,29 @@ class TestScaleVm(cloudstackTestCase):
         domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
-        template = Template.register(
-                   cls.apiclient,
-                   cls.services["CentOS7template"],
-                   zoneid=cls.zone.id
-                )
 
-        template.download(cls.apiclient)
-        time.sleep(60)
-        cls._cleanup.append(template)
+        if cls.hypervisor.lower() == 'simulator':
+            cls.template = get_template(
+                cls.apiclient,
+                cls.zone.id,
+                cls.services["ostype"]
+            )
+            if cls.template == FAILED:
+                assert False, "get_template() failed to return template\
+                        with description %s" % cls.services["ostype"]
+        else:
+            cls.template = Template.register(
+                       cls.apiclient,
+                       cls.services["CentOS7template"],
+                       zoneid=cls.zone.id
+                    )
+            cls._cleanup.append(cls.template)
+            cls.template.download(cls.apiclient)
+            time.sleep(60)
 
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
-        cls.services["small"]["template"] = template.id
+        cls.services["small"]["template"] = cls.template.id
 
         # Create account, service offerings, vm.
         cls.account = Account.create(
@@ -175,25 +185,25 @@ class TestScaleVm(cloudstackTestCase):
             if not "running" in result:
                 self.skipTest("Skipping scale VM operation because\
                     VMware tools are not installed on the VM")
+        if self.hypervisor.lower() != 'simulator':
+            hostid = self.virtual_machine.hostid
+            host = Host.list(
+                       self.apiclient,
+                       zoneid=self.zone.id,
+                       hostid=hostid,
+                       type='Routing'
+                   )[0]
 
-        hostid = self.virtual_machine.hostid
-        host = Host.list(
-                   self.apiclient,
-                   zoneid=self.zone.id,
-                   hostid=hostid,
-                   type='Routing'
-               )[0]
+            try:
+                username = self.hostConfig["username"]
+                password = self.hostConfig["password"]
+                ssh_client = self.get_ssh_client(host.ipaddress, username, password)
+                res = ssh_client.execute("hostnamectl | grep 'Operating System' | cut -d':' -f2")
+            except Exception as e:
+                pass
 
-        try:
-            username = self.hostConfig["username"]
-            password = self.hostConfig["password"]
-            ssh_client = self.get_ssh_client(host.ipaddress, username, password)
-            res = ssh_client.execute("hostnamectl | grep 'Operating System' | cut -d':' -f2")
-        except Exception as e:
-            pass
-
-        if 'XenServer' in res[0]:
-            self.skipTest("Skipping test for XenServer as it's License does not allow scaling")
+            if 'XenServer' in res[0]:
+                self.skipTest("Skipping test for XenServer as it's License does not allow scaling")
 
         self.virtual_machine.update(
             self.apiclient,
