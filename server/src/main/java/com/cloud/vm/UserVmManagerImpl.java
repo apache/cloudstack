@@ -56,6 +56,7 @@ import com.cloud.deployasis.dao.UserVmDeployAsIsDetailsDao;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -2966,20 +2967,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         checkForUnattachedVolumes(vmId, volumesToBeDeleted);
         validateVolumes(volumesToBeDeleted);
 
-        List<VolumeVO> allVolumes = null;
-        if (vm.getHypervisorType() == HypervisorType.VMware) {
-            allVolumes = _volsDao.findByInstance(vm.getId());
-            allVolumes.removeIf(vol -> vol.getVolumeType() == Volume.Type.ROOT);
-        }else {
-            allVolumes = volumesToBeDeleted;
-        }
-        for (VolumeVO volume : allVolumes) {
-             _accountMgr.checkAccess(ctx.getCallingAccount(), null, true, volume);
-        }
+        final ControlledEntity[] volumesToDelete = volumesToBeDeleted.toArray(new ControlledEntity[0]);
+        _accountMgr.checkAccess(ctx.getCallingAccount(), null, true, volumesToDelete);
 
         stopVirtualMachine(vmId, VmDestroyForcestop.value());
 
-        detachVolumesFromVm(allVolumes);
+        detachVolumesFromVm(volumesToBeDeleted);
 
         UserVm destroyedVm = destroyVm(vmId, expunge);
         if (expunge) {
