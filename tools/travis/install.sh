@@ -46,9 +46,8 @@ if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
    pip install virtualenv
    sudo virtualenv -p `which python2` py2
    #sudo python2 -m venv ~/py2/
-   cd ~/py2/
-   source bin/activate
-   cd $DIR
+   source py2/bin/activate
+
    which python
    which python2
    python --version
