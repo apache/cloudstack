@@ -126,6 +126,10 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.AlertManager;
+import com.cloud.api.query.dao.DomainRouterJoinDao;
+import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.api.query.vo.DomainRouterJoinVO;
+import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterDetailsDao;
@@ -169,6 +173,7 @@ import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
@@ -179,6 +184,8 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
@@ -350,6 +357,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private SecurityGroupManager _securityGroupManager;
     @Inject
     private UserVmDeployAsIsDetailsDao userVmDeployAsIsDetailsDao;
+    @Inject
+    private UserVmJoinDao userVmJoinDao;
+    @Inject
+    private NetworkOfferingDao networkOfferingDao;
+    @Inject
+    private DomainRouterJoinDao domainRouterJoinDao;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -1247,6 +1260,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             }
                             StopCommand stopCmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
                             stopCmd.setControlIp(getControlNicIpForVM(vm));
+                            Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
+                            if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
+                                stopCmd.setVlanToPersistenceMap(vlanToPersistenceMap);
+                            }
                             final StopCommand cmd = stopCmd;
                             final Answer answer = _agentMgr.easySend(destHostId, cmd);
                             if (answer != null && answer instanceof StopAnswer) {
@@ -1646,7 +1663,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     protected boolean sendStop(final VirtualMachineGuru guru, final VirtualMachineProfile profile, final boolean force, final boolean checkBeforeCleanup) {
         final VirtualMachine vm = profile.getVirtualMachine();
+        Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
         StopCommand stpCmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), checkBeforeCleanup);
+        if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
+            stpCmd.setVlanToPersistenceMap(vlanToPersistenceMap);
+        }
         stpCmd.setControlIp(getControlNicIpForVM(vm));
         stpCmd.setVolumesToDisconnect(getVolumesToDisconnect(vm));
         final StopCommand stop = stpCmd;
@@ -1847,6 +1868,64 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         advanceStop(vm, cleanUpEvenIfUnableToStop);
     }
 
+    private void updatePersistenceMap(Map<String, Boolean> vlanToPersistenceMap, NetworkVO networkVO) {
+        NetworkOfferingVO offeringVO = networkOfferingDao.findById(networkVO.getNetworkOfferingId());
+        if (offeringVO != null) {
+            Pair<String, Boolean> data = getVMNetworkDetails(networkVO, offeringVO.isPersistent());
+            Boolean shouldDeleteNwResource = (MapUtils.isNotEmpty(vlanToPersistenceMap) && data != null) ? vlanToPersistenceMap.get(data.first()) : null;
+            if (data != null && (shouldDeleteNwResource == null || shouldDeleteNwResource)) {
+                vlanToPersistenceMap.put(data.first(), data.second());
+            }
+        }
+    }
+
+    private Map<String, Boolean> getVlanToPersistenceMapForVM(long vmId) {
+        List<UserVmJoinVO> userVmJoinVOs = userVmJoinDao.searchByIds(vmId);
+        Map<String, Boolean> vlanToPersistenceMap = new HashMap<>();
+        if (userVmJoinVOs != null && !userVmJoinVOs.isEmpty()) {
+            for (UserVmJoinVO userVmJoinVO : userVmJoinVOs) {
+                NetworkVO networkVO = _networkDao.findById(userVmJoinVO.getNetworkId());
+                updatePersistenceMap(vlanToPersistenceMap, networkVO);
+            }
+        } else {
+            VMInstanceVO vmInstanceVO = _vmDao.findById(vmId);
+            if (vmInstanceVO != null && vmInstanceVO.getType() == VirtualMachine.Type.DomainRouter) {
+                DomainRouterJoinVO routerVO = domainRouterJoinDao.findById(vmId);
+                NetworkVO networkVO = _networkDao.findById(routerVO.getNetworkId());
+                updatePersistenceMap(vlanToPersistenceMap, networkVO);
+            }
+        }
+        return vlanToPersistenceMap;
+    }
+
+    /**
+     *
+     * @param networkVO - the network object used to determine the vlanId from the broadcast URI
+     * @param isPersistent - indicates if the corresponding network's network offering is Persistent
+     *
+     * @return <VlanId, ShouldKVMBridgeBeDeleted> - basically returns the vlan ID which is used to determine the
+     * bridge name for KVM hypervisor and based on the network and isolation type and persistent setting of the offering
+     * we decide whether the bridge is to be deleted (KVM) if the last VM in that host is destroyed / migrated
+     */
+    private Pair<String, Boolean> getVMNetworkDetails(NetworkVO networkVO, boolean isPersistent) {
+        URI broadcastUri = networkVO.getBroadcastUri();
+        if (broadcastUri != null) {
+            String scheme = broadcastUri.getScheme();
+            String vlanId = Networks.BroadcastDomainType.getValue(broadcastUri);
+            boolean shouldDelete = !((networkVO.getGuestType() == Network.GuestType.L2 || networkVO.getGuestType() == Network.GuestType.Isolated) &&
+                    (scheme != null && scheme.equalsIgnoreCase("vlan"))
+                    && isPersistent);
+            if (shouldDelete) {
+                int persistentNetworksCount = _networkDao.getOtherPersistentNetworksCount(networkVO.getId(), networkVO.getBroadcastUri().toString(), true);
+                if (persistentNetworksCount > 0) {
+                    shouldDelete = false;
+                }
+            }
+            return new Pair<>(vlanId, shouldDelete);
+        }
+        return null;
+    }
+
     private void advanceStop(final VMInstanceVO vm, final boolean cleanUpEvenIfUnableToStop) throws AgentUnavailableException, OperationTimedoutException,
     ConcurrentOperationException {
         final State state = vm.getState();
@@ -1945,8 +2024,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         vmGuru.prepareStop(profile);
 
+        Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
         final StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false, cleanUpEvenIfUnableToStop);
         stop.setControlIp(getControlNicIpForVM(vm));
+        if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
+            stop.setVlanToPersistenceMap(vlanToPersistenceMap);
+        }
 
         boolean stopped = false;
         Answer answer = null;
@@ -2263,7 +2346,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 String msg = String.format("Resetting lastHost for VM %s(%s)", vm.getInstanceName(), vm.getUuid());
                 s_logger.debug(msg);
             }
-
             vm.setLastHostId(null);
             vm.setPodIdToDeployIn(rootVolumePool.getPodId());
             // OfflineVmwareMigration: a consecutive migration will fail probably (no host not pod)
@@ -2326,14 +2408,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (hostId == null) {
             List<VolumeVO> volumes = _volsDao.findByInstanceAndType(vm.getId(), Type.ROOT);
             if (CollectionUtils.isNotEmpty(volumes)) {
-                VolumeVO rootVolume = volumes.get(0);
-                if (rootVolume.getPoolId() != null) {
-                    StoragePoolVO pool = _storagePoolDao.findById(rootVolume.getPoolId());
-                    if (pool != null && pool.getClusterId() != null) {
-                        clusterId = pool.getClusterId();
-                        List<HostVO> hosts = _hostDao.findHypervisorHostInCluster(pool.getClusterId());
-                        if (CollectionUtils.isNotEmpty(hosts)) {
-                            hostId = hosts.get(0).getId();
+                for (VolumeVO rootVolume : volumes) {
+                    if (rootVolume.getPoolId() != null) {
+                        StoragePoolVO pool = _storagePoolDao.findById(rootVolume.getPoolId());
+                        if (pool != null && pool.getClusterId() != null) {
+                            clusterId = pool.getClusterId();
+                            List<HostVO> hosts = _hostDao.findHypervisorHostInCluster(pool.getClusterId());
+                            if (CollectionUtils.isNotEmpty(hosts)) {
+                                hostId = hosts.get(0).getId();
+                                break;
+                            }
                         }
                     }
                 }
@@ -2444,7 +2528,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return result;
     }
 
-
     private void postStorageMigrationCleanup(VMInstanceVO vm, Map<Volume, StoragePool> volumeToPool, HostVO srcHost, Long srcClusterId) throws InsufficientCapacityException {
         StoragePool rootVolumePool = null;
         if (MapUtils.isNotEmpty(volumeToPool)) {
@@ -2466,7 +2549,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         // If VM was cold migrated between clusters belonging to two different VMware DCs,
         // unregister the VM from the source host and cleanup the associated VM files.
         if (vm.getHypervisorType().equals(HypervisorType.VMware)) {
-            afterStorageMigrationVmwareVMcleanup(rootVolumePool, vm, srcHost, srcClusterId);
+            afterStorageMigrationVmwareVMCleanup(rootVolumePool, vm, srcHost, srcClusterId);
         }
     }
 
@@ -2484,7 +2567,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private void afterStorageMigrationVmwareVMcleanup(StoragePool destPool, VMInstanceVO vm, HostVO srcHost, Long srcClusterId) {
+    private void afterStorageMigrationVmwareVMCleanup(StoragePool destPool, VMInstanceVO vm, HostVO srcHost, Long srcClusterId) {
         // OfflineVmwareMigration: this should only happen on storage migration, else the guru would already have issued the command
         final Long destClusterId = destPool.getClusterId();
         if (srcClusterId != null && destClusterId != null && ! srcClusterId.equals(destClusterId) && srcHost != null) {
@@ -2682,7 +2765,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         Map<String, DpdkTO> dpdkInterfaceMapping = null;
         try {
             final boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
+            Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
             final MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows, to, getExecuteInSequence(vm.getHypervisorType()));
+            if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
+                mc.setVlanToPersistenceMap(vlanToPersistenceMap);
+            }
 
             boolean kvmAutoConvergence = StorageManager.KvmAutoConvergence.value();
             mc.setAutoConvergence(kvmAutoConvergence);
@@ -3525,6 +3612,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
             cmd.setDpdkInterfaceMapping(dpdkInterfaceMapping);
         }
+        Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
+        if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
+            cmd.setVlanToPersistenceMap(vlanToPersistenceMap);
+        }
         return cmd;
     }
 
@@ -3543,6 +3634,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         StopCommand cmd = new StopCommand(vmName, getExecuteInSequence(null), false);
         cmd.setControlIp(getControlNicIpForVM(vm));
+        Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
+        if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
+            cmd.setVlanToPersistenceMap(vlanToPersistenceMap);
+        }
         return cmd;
     }
 
@@ -4329,8 +4424,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         boolean migrated = false;
         try {
+            Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
             final boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
             final MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows, to, getExecuteInSequence(vm.getHypervisorType()));
+            if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
+                mc.setVlanToPersistenceMap(vlanToPersistenceMap);
+            }
 
             boolean kvmAutoConvergence = StorageManager.KvmAutoConvergence.value();
             mc.setAutoConvergence(kvmAutoConvergence);
@@ -4487,6 +4586,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 final Commands cmds = new Commands(Command.OnError.Stop);
                 final UnPlugNicCommand unplugNicCmd = new UnPlugNicCommand(nic, vm.getName());
+                Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
+                if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
+                    unplugNicCmd.setVlanToPersistenceMap(vlanToPersistenceMap);
+                }
                 cmds.addCommand("unplugnic", unplugNicCmd);
                 _agentMgr.send(dest.getHost().getId(), cmds);
 

@@ -26,7 +26,10 @@
               <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </span>
-          <a-select v-decorator="['scope', { initialValue: 'cluster' }]" @change="val => { this.scope = val }">
+          <a-select
+            v-decorator="['scope', { initialValue: 'cluster' }]"
+            @change="val => { this.scope = val }"
+            autoFocus>
             <a-select-option :value="'cluster'"> {{ $t('label.clusterid') }} </a-select-option>
             <a-select-option :value="'zone'"> {{ $t('label.zoneid') }} </a-select-option>
           </a-select>
@@ -378,7 +381,7 @@ export default {
       this.apiParams[param.name] = param
     })
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

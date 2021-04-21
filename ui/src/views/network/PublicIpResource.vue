@@ -85,7 +85,7 @@ export default {
       }
     }
   },
-  mounted () {
+  created () {
     if ('id' in this.resource) {
       this.fetchData()
     }

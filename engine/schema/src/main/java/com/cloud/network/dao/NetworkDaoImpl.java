@@ -79,6 +79,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     SearchBuilder<NetworkVO> SourceNATSearch;
     GenericSearchBuilder<NetworkVO, Long> VpcNetworksCount;
     SearchBuilder<NetworkVO> OfferingAccountNetworkSearch;
+    SearchBuilder<NetworkVO> PersistentNetworkSearch;
 
     GenericSearchBuilder<NetworkVO, Long> GarbageCollectedSearch;
     SearchBuilder<NetworkVO> PrivateNetworkSearch;
@@ -180,6 +181,16 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         ntwkOffJoin.and("isSystem", ntwkOffJoin.entity().isSystemOnly(), Op.EQ);
         CountBy.join("offerings", ntwkOffJoin, CountBy.entity().getNetworkOfferingId(), ntwkOffJoin.entity().getId(), JoinBuilder.JoinType.INNER);
         CountBy.done();
+
+        PersistentNetworkSearch = createSearchBuilder();
+        PersistentNetworkSearch.and("id", PersistentNetworkSearch.entity().getId(), Op.NEQ);
+        PersistentNetworkSearch.and("guestType", PersistentNetworkSearch.entity().getGuestType(), Op.IN);
+        PersistentNetworkSearch.and("broadcastUri", PersistentNetworkSearch.entity().getBroadcastUri(), Op.EQ);
+        PersistentNetworkSearch.and("removed", PersistentNetworkSearch.entity().getRemoved(), Op.NULL);
+        final SearchBuilder<NetworkOfferingVO> persistentNtwkOffJoin = _ntwkOffDao.createSearchBuilder();
+        persistentNtwkOffJoin.and("persistent", persistentNtwkOffJoin.entity().isPersistent(), Op.EQ);
+        PersistentNetworkSearch.join("persistent", persistentNtwkOffJoin, PersistentNetworkSearch.entity().getNetworkOfferingId(), persistentNtwkOffJoin.entity().getId(), JoinType.INNER);
+        PersistentNetworkSearch.done();
 
         PhysicalNetworkSearch = createSearchBuilder();
         PhysicalNetworkSearch.and("physicalNetworkId", PhysicalNetworkSearch.entity().getPhysicalNetworkId(), Op.EQ);
@@ -388,6 +399,18 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         sc.setParameters("dc", dataCenterId);
         sc.setJoinParameters("account", "account", accountId);
         return search(sc, null);
+    }
+
+    @Override
+    public int getOtherPersistentNetworksCount(long id, String broadcastURI, boolean isPersistent) {
+        Object[] guestTypes = {"Isolated", "L2"};
+        final SearchCriteria<NetworkVO> sc = PersistentNetworkSearch.create();
+        sc.setParameters("id", id);
+        sc.setParameters("broadcastUri", broadcastURI);
+        sc.setParameters("guestType", guestTypes);
+        sc.setJoinParameters("persistent", "persistent", isPersistent);
+        List<NetworkVO> persistentNetworks = search(sc, null);
+        return persistentNetworks.size();
     }
 
     @Override

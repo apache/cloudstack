@@ -522,7 +522,7 @@ class VirtualMachine:
                method='GET', hypervisor=None, customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None,
                rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
-               properties=None, nicnetworklist=None):
+               properties=None, nicnetworklist=None, bootmode=None, boottype=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -656,6 +656,12 @@ class VirtualMachine:
 
         if nicnetworklist:
             cmd.nicnetworklist = nicnetworklist
+
+        if bootmode:
+            cmd.bootmode = bootmode
+
+        if boottype:
+            cmd.boottype = boottype
 
         virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 

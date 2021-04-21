@@ -64,7 +64,7 @@ export default {
       this.domainError = this.error
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

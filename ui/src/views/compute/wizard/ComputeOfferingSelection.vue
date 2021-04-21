@@ -21,7 +21,8 @@
       style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8"
       :placeholder="$t('label.search')"
       v-model="filter"
-      @search="handleSearch" />
+      @search="handleSearch"
+      autoFocus />
     <a-table
       :columns="columns"
       :dataSource="tableSource"
@@ -62,6 +63,10 @@ export default {
     computeItems: {
       type: Array,
       default: () => []
+    },
+    selectedTemplate: {
+      type: Object,
+      default: () => {}
     },
     rowCount: {
       type: Number,
@@ -161,6 +166,9 @@ export default {
             (item.iscustomized === true && maxMemory < this.minimumMemory))) {
           disabled = true
         }
+        if (this.selectedTemplate && this.selectedTemplate.hypervisor === 'VMware' && this.selectedTemplate.deployasis && item.rootdisksize) {
+          disabled = true
+        }
         return {
           key: item.id,
           name: item.name,
@@ -238,6 +246,9 @@ export default {
       return {
         on: {
           click: () => {
+            if (record.disabled) {
+              return
+            }
             this.selectedRowKeys = [record.key]
             this.$emit('select-compute-item', record.key)
           }

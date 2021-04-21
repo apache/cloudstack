@@ -921,6 +921,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
+        // show vm info for shared networks
+        showVmInfoForSharedNetworks(forVirtualNetworks, ipAddr, ipResponse);
+
         // show this info to full view only
         if (view == ResponseView.Full) {
             VlanVO vl = ApiDBUtils.findVlanById(ipAddr.getVlanId());
@@ -953,6 +956,42 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         ipResponse.setObjectName("ipaddress");
         return ipResponse;
+    }
+
+    private void showVmInfoForSharedNetworks(boolean forVirtualNetworks, IpAddress ipAddr, IPAddressResponse ipResponse) {
+        if (!forVirtualNetworks) {
+            NicVO nic = ApiDBUtils.findByIp4AddressAndNetworkId(ipAddr.getAddress().toString(), ipAddr.getNetworkId());
+
+            if (nic == null) {  // find in nic_secondary_ips, user vm only
+                NicSecondaryIpVO secondaryIp =
+                        ApiDBUtils.findSecondaryIpByIp4AddressAndNetworkId(ipAddr.getAddress().toString(), ipAddr.getNetworkId());
+                if (secondaryIp != null) {
+                    UserVm vm = ApiDBUtils.findUserVmById(secondaryIp.getVmId());
+                    if (vm != null) {
+                        ipResponse.setVirtualMachineId(vm.getUuid());
+                        ipResponse.setVirtualMachineName(vm.getHostName());
+                        if (vm.getDisplayName() != null) {
+                            ipResponse.setVirtualMachineDisplayName(vm.getDisplayName());
+                        } else {
+                            ipResponse.setVirtualMachineDisplayName(vm.getHostName());
+                        }
+                    }
+                }
+            } else if (nic.getVmType() == VirtualMachine.Type.User) {
+                UserVm vm = ApiDBUtils.findUserVmById(nic.getInstanceId());
+                if (vm != null) {
+                    ipResponse.setVirtualMachineId(vm.getUuid());
+                    ipResponse.setVirtualMachineName(vm.getHostName());
+                    if (vm.getDisplayName() != null) {
+                        ipResponse.setVirtualMachineDisplayName(vm.getDisplayName());
+                    } else {
+                        ipResponse.setVirtualMachineDisplayName(vm.getHostName());
+                    }
+                }
+            } else if (nic.getVmType() == VirtualMachine.Type.DomainRouter) {
+                ipResponse.setIsSystem(true);
+            }
+        }
     }
 
     @Override

@@ -62,7 +62,7 @@ public class DirectVifDriver extends VifDriverBase {
     }
 
     @Override
-    public void unplug(LibvirtVMDef.InterfaceDef iface) {
+    public void unplug(LibvirtVMDef.InterfaceDef iface, boolean deleteBr) {
         // not needed, libvirt will cleanup
     }
 
@@ -80,4 +80,7 @@ public class DirectVifDriver extends VifDriverBase {
     public void createControlNetwork(String privBrName) {
     }
 
+    @Override
+    public void deleteBr(NicTO nic) {
+    }
 }

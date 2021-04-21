@@ -34,7 +34,8 @@
               v-decorator="['name', {
                 rules: [{ required: true, message: $t('message.error.name') }]
               }]"
-              :placeholder="this.$t('label.name')"/>
+              :placeholder="this.$t('label.name')"
+              autoFocus />
           </a-form-item>
           <a-form-item>
             <span slot="label">
@@ -498,8 +499,6 @@ export default {
     })
   },
   created () {
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {
@@ -591,7 +590,7 @@ export default {
           var networks = json.listphysicalnetworksresponse.physicalnetwork
           if (this.arrayHasItems(networks)) {
             for (const i in networks) {
-              this.addPhysicalNetworkForGuestTrafficType(networks[i], i * 1 === networks.length - 1)
+              this.addPhysicalNetworkForGuestTrafficType(networks[i])
             }
           } else {
             this.formPhysicalNetworkLoading = false
@@ -600,7 +599,7 @@ export default {
         })
       }
     },
-    addPhysicalNetworkForGuestTrafficType (physicalNetwork, isLastNetwork) {
+    addPhysicalNetworkForGuestTrafficType (physicalNetwork) {
       const params = {}
       params.physicalnetworkid = physicalNetwork.id
       api('listTrafficTypes', params).then(json => {
@@ -616,7 +615,7 @@ export default {
           this.formPhysicalNetworkLoading = false
         }
       }).finally(() => {
-        if (isLastNetwork) {
+        if (this.formPhysicalNetworks.length > 0 && this.isObjectEmpty(this.formSelectedPhysicalNetwork)) {
           this.form.setFieldsValue({
             physicalnetworkid: 0
           })
@@ -781,6 +780,7 @@ export default {
             message: this.$t('message.request.failed'),
             description: this.$t('message.error.add.guest.network')
           })
+          return
         }
         this.actionLoading = true
         var params = {

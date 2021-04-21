@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 
@@ -35,12 +34,14 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.hypervisor.xenserver.resource.CitrixHelper;
 import com.cloud.hypervisor.xenserver.resource.XenServer610Resource;
 import com.cloud.hypervisor.xenserver.resource.XsHost;
 import com.cloud.hypervisor.xenserver.resource.XsLocalNetwork;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
@@ -88,7 +89,9 @@ public final class XenServer610MigrateWithStorageCommandWrapper extends CommandW
             for (final Pair<VolumeTO, StorageFilerTO> entry : volumeToFiler) {
                 final StorageFilerTO storageFiler = entry.second();
                 final VolumeTO volume = entry.first();
-                vdiMap.put(xenServer610Resource.getVDIbyUuid(connection, volume.getPath()), xenServer610Resource.getStorageRepository(connection, storageFiler.getUuid()));
+                vdiMap.put(xenServer610Resource.getVDIbyUuid(connection, volume.getPath()),
+                        xenServer610Resource.getStorageRepository(connection,
+                                CitrixHelper.getSRNameLabel(storageFiler.getUuid(), storageFiler.getType(), storageFiler.getPath())));
             }
 
             // Get the vm to migrate.

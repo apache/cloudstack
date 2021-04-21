@@ -210,7 +210,24 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return vmwareVmImplementer.implement(vm, toVirtualMachineTO(vm), getClusterId(vm.getId()));
     }
 
-    Long getClusterId(long vmId) {
+    private Long getClusterIdFromVmVolume(long vmId) {
+        Long clusterId = null;
+        List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
+        if (CollectionUtils.isNotEmpty(volumes)) {
+            for (VolumeVO rootVolume : volumes) {
+                if (rootVolume.getPoolId() != null) {
+                    StoragePoolVO pool = _storagePoolDao.findById(rootVolume.getPoolId());
+                    if (pool != null && pool.getClusterId() != null) {
+                        clusterId = pool.getClusterId();
+                        break;
+                    }
+                }
+            }
+        }
+        return clusterId;
+    }
+
+    private Long getClusterId(long vmId) {
         Long clusterId = null;
         Long hostId = null;
         VMInstanceVO vm = _vmDao.findById(vmId);
@@ -228,16 +245,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         if (host != null) {
             clusterId = host.getClusterId();
         } else {
-            List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
-            if (CollectionUtils.isNotEmpty(volumes)) {
-                VolumeVO rootVolume = volumes.get(0);
-                if (rootVolume.getPoolId() != null) {
-                    StoragePoolVO pool = _storagePoolDao.findById(rootVolume.getPoolId());
-                    if (pool != null && pool.getClusterId() != null) {
-                        clusterId = pool.getClusterId();
-                    }
-                }
-            }
+            clusterId = getClusterIdFromVmVolume(vmId);
         }
 
         return clusterId;
@@ -1078,14 +1086,37 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return null;
     }
 
-    @Override public List<Command> finalizeMigrate(VirtualMachine vm, Map<Volume, StoragePool> volumeToPool) {
+    private boolean isInterClusterMigration(Long srcClusterId, Long destClusterId) {
+        return srcClusterId != null && destClusterId != null && ! srcClusterId.equals(destClusterId);
+    }
+
+    private String getHostGuidInTargetCluster(boolean isInterClusterMigration, Long destClusterId) {
+        String hostGuidInTargetCluster = null;
+        if (isInterClusterMigration) {
+            Host hostInTargetCluster = null;
+            // Without host vMotion might fail between non-shared storages with error similar to,
+            // https://kb.vmware.com/s/article/1003795
+            // As this is offline migration VM won't be started on this host
+            List<HostVO> hosts = _hostDao.findHypervisorHostInCluster(destClusterId);
+            if (CollectionUtils.isNotEmpty(hosts)) {
+                hostInTargetCluster = hosts.get(0);
+            }
+            if (hostInTargetCluster == null) {
+                throw new CloudRuntimeException("Migration failed, unable to find suitable target host for VM placement while migrating between storage pools of different clusters without shared storages");
+            }
+            hostGuidInTargetCluster = hostInTargetCluster.getGuid();
+        }
+        return hostGuidInTargetCluster;
+    }
+
+    @Override
+    public List<Command> finalizeMigrate(VirtualMachine vm, Map<Volume, StoragePool> volumeToPool) {
         List<Command> commands = new ArrayList<Command>();
 
         // OfflineVmwareMigration: specialised migration command
         List<VolumeTO> vols = new ArrayList<>();
         List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerTo = new ArrayList<Pair<VolumeTO, StorageFilerTO>>();
         Long poolClusterId = null;
-        Host hostInTargetCluster = null;
         for (Map.Entry<Volume, StoragePool> entry : volumeToPool.entrySet()) {
             Volume volume = entry.getKey();
             StoragePool pool = entry.getValue();
@@ -1099,21 +1130,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         }
         final Long destClusterId = poolClusterId;
         final Long srcClusterId = getClusterId(vm.getId());
-        final boolean isInterClusterMigration = srcClusterId != null && destClusterId != null && ! srcClusterId.equals(destClusterId);
-        if (isInterClusterMigration) {
-            // Without host vMotion might fail between non-shared storages with error similar to,
-            // https://kb.vmware.com/s/article/1003795
-            // As this is offline migration VM won't be started on this host
-            List<HostVO> hosts = _hostDao.findHypervisorHostInCluster(destClusterId);
-            if (CollectionUtils.isNotEmpty(hosts)) {
-                hostInTargetCluster = hosts.get(0);
-            }
-            if (hostInTargetCluster == null) {
-                throw new CloudRuntimeException("Migration failed, unable to find suitable target host for VM placement while migrating between storage pools of different clusters without shared storages");
-            }
-        }
+        final boolean isInterClusterMigration = isInterClusterMigration(destClusterId, srcClusterId);
         MigrateVmToPoolCommand migrateVmToPoolCommand = new MigrateVmToPoolCommand(vm.getInstanceName(),
-                volumeToFilerTo, hostInTargetCluster == null ? null : hostInTargetCluster.getGuid(), true);
+                volumeToFilerTo, getHostGuidInTargetCluster(isInterClusterMigration, destClusterId), true);
         commands.add(migrateVmToPoolCommand);
 
         // OfflineVmwareMigration: cleanup if needed
