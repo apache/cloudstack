@@ -55,6 +55,7 @@ public class ApiConstants {
     public static final String CERTIFICATE_CHAIN = "certchain";
     public static final String CERTIFICATE_FINGERPRINT = "fingerprint";
     public static final String CERTIFICATE_ID = "certid";
+    public static final String ENABLED_REVOCATION_CHECK = "enabledrevocationcheck";
     public static final String CONTROLLER = "controller";
     public static final String CONTROLLER_UNIT = "controllerunit";
     public static final String COPY_IMAGE_TAGS = "copyimagetags";
@@ -113,6 +114,7 @@ public class ApiConstants {
     public static final String DISK_IO_WRITE = "diskiowrite";
     public static final String DISK_IO_PSTOTAL = "diskiopstotal";
     public static final String DISK_SIZE = "disksize";
+    public static final String DOWNLOAD_DETAILS = "downloaddetails";
     public static final String UTILIZATION = "utilization";
     public static final String DRIVER = "driver";
     public static final String ROOT_DISK_SIZE = "rootdisksize";
@@ -183,6 +185,7 @@ public class ApiConstants {
     public static final String ICMP_TYPE = "icmptype";
     public static final String ID = "id";
     public static final String IDS = "ids";
+    public static final String INDEX = "index";
     public static final String PREVIOUS_ACL_RULE_ID = "previousaclruleid";
     public static final String NEXT_ACL_RULE_ID = "nextaclruleid";
     public static final String MOVE_ACL_CONSISTENCY_HASH = "aclconsistencyhash";
@@ -234,6 +237,7 @@ public class ApiConstants {
     public static final String MAX_MEMORY = "maxmemory";
     public static final String MIN_CPU_NUMBER = "mincpunumber";
     public static final String MIN_MEMORY = "minmemory";
+    public static final String MIGRATION_TYPE = "migrationtype";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
     public static final String KEEPALIVE_ENABLED = "keepaliveenabled";
@@ -252,6 +256,7 @@ public class ApiConstants {
     public static final String OLD_FORMAT = "oldformat";
     public static final String OP = "op";
     public static final String OS_CATEGORY_ID = "oscategoryid";
+    public static final String OS_CATEGORY_NAME = "oscategoryname";
     public static final String OS_ID = "osid";
     public static final String OS_TYPE_ID = "ostypeid";
     public static final String OS_DISPLAY_NAME = "osdisplayname";
@@ -259,7 +264,7 @@ public class ApiConstants {
     public static final String OUTOFBANDMANAGEMENT_POWERSTATE = "outofbandmanagementpowerstate";
     public static final String OUTOFBANDMANAGEMENT_ENABLED = "outofbandmanagementenabled";
     public static final String OUTPUT = "output";
-    public static final String OVF_PROPERTIES = "ovfproperties";
+    public static final String PROPERTIES = "properties";
     public static final String PARAMS = "params";
     public static final String PARENT_ID = "parentid";
     public static final String PARENT_DOMAIN_ID = "parentdomainid";
@@ -347,11 +352,14 @@ public class ApiConstants {
     public static final String STORAGE_POLICY = "storagepolicy";
     public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
     public static final String STORAGE_CAPABILITIES = "storagecapabilities";
+    public static final String OWNER = "owner";
+    public static final String SWAP_OWNER = "swapowner";
     public static final String SYSTEM_VM_TYPE = "systemvmtype";
     public static final String TAGS = "tags";
     public static final String TARGET_IQN = "targetiqn";
     public static final String TEMPLATE_FILTER = "templatefilter";
     public static final String TEMPLATE_ID = "templateid";
+    public static final String TEMPLATE_IDS = "templateids";
     public static final String TEMPLATE_NAME = "templatename";
     public static final String ISO_ID = "isoid";
     public static final String TIMEOUT = "timeout";
@@ -379,6 +387,7 @@ public class ApiConstants {
     public static final String VIRTUAL_MACHINE_NAME = "virtualmachinename";
     public static final String VIRTUAL_MACHINE_ID_IP = "vmidipmap";
     public static final String VIRTUAL_MACHINE_COUNT = "virtualmachinecount";
+    public static final String VIRTUAL_MACHINES = "virtualmachines";
     public static final String USAGE_ID = "usageid";
     public static final String USAGE_TYPE = "usagetype";
     public static final String INCLUDE_TAGS = "includetags";
@@ -473,11 +482,15 @@ public class ApiConstants {
     public static final String PROJECT = "project";
     public static final String ROLE = "role";
     public static final String ROLE_ID = "roleid";
+    public static final String PROJECT_ROLE_ID = "projectroleid";
+    public static final String PROJECT_ROLE_NAME = "projectrolename";
     public static final String ROLE_TYPE = "roletype";
     public static final String ROLE_NAME = "rolename";
     public static final String PERMISSION = "permission";
     public static final String RULE = "rule";
+    public static final String RULES = "rules";
     public static final String RULE_ID = "ruleid";
+    public static final String PROJECT_ROLE_PERMISSION_ID = "projectrolepermissionid";
     public static final String RULE_ORDER = "ruleorder";
     public static final String USER = "user";
     public static final String ACTIVE_ONLY = "activeonly";
@@ -712,6 +725,7 @@ public class ApiConstants {
     public static final String AFFINITY_GROUP_ID = "affinitygroupid";
     public static final String DEPLOYMENT_PLANNER = "deploymentplanner";
     public static final String ACL_ID = "aclid";
+    public static final String ACL_NAME = "aclname";
     public static final String NUMBER = "number";
     public static final String IS_DYNAMICALLY_SCALABLE = "isdynamicallyscalable";
     public static final String ROUTING = "isrouting";
@@ -781,6 +795,8 @@ public class ApiConstants {
     public static final String EXITCODE = "exitcode";
     public static final String TARGET_ID = "targetid";
     public static final String FILES = "files";
+    public static final String SRC_POOL = "srcpool";
+    public static final String DEST_POOLS = "destpools";
     public static final String VOLUME_IDS = "volumeids";
 
     public static final String ROUTER_ID = "routerid";
@@ -808,8 +824,14 @@ public class ApiConstants {
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
     public static final String SUPPORTS_HA = "supportsha";
 
-    public static final String BOOT_TYPE ="boottype";
-    public static final String BOOT_MODE ="bootmode";
+    public static final String BOOT_TYPE = "boottype";
+    public static final String BOOT_MODE = "bootmode";
+    public static final String BOOT_INTO_SETUP = "bootintosetup";
+    public static final String DEPLOY_AS_IS = "deployasis";
+    public static final String DEPLOY_AS_IS_DETAILS = "deployasisdetails";
+    public static final String CROSS_ZONES = "crossZones";
+    public static final String TEMPLATETYPE = "templatetype";
+    public static final String SOURCETEMPLATEID = "sourcetemplateid";
 
     public enum BootType {
         UEFI, BIOS;

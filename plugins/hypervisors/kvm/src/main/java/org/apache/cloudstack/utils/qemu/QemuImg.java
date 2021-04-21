@@ -28,6 +28,12 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 public class QemuImg {
+    public final static String BACKING_FILE = "backing_file";
+    public final static String BACKING_FILE_FORMAT = "backing_file_format";
+    public final static String CLUSTER_SIZE = "cluster_size";
+    public final static String FILE_FORMAT = "file_format";
+    public final static String IMAGE = "image";
+    public final static String VIRTUAL_SIZE = "virtual_size";
 
     /* The qemu-img binary. We expect this to be in $PATH */
     public String _qemuImgPath = "qemu-img";
@@ -149,6 +155,8 @@ public class QemuImg {
          */
         s.add("-f");
         if (backingFile != null) {
+            s.add(backingFile.getFormat().toString());
+            s.add("-F");
             s.add(backingFile.getFormat().toString());
             s.add("-b");
             s.add(backingFile.getFileName());
@@ -377,8 +385,29 @@ public class QemuImg {
     }
 
     /* Changes the backing file of an image */
-    public void rebase() throws QemuImgException {
+    public void rebase(final QemuImgFile file, final QemuImgFile backingFile, final String backingFileFormat, final boolean secure) throws QemuImgException {
+        if (backingFile == null) {
+            throw new QemuImgException("No backing file was passed");
+        }
+        final Script s = new Script(_qemuImgPath, timeout);
+        s.add("rebase");
+        if (! secure) {
+            s.add("-u");
+        }
+        s.add("-F");
+        if (backingFileFormat != null) {
+            s.add(backingFileFormat);
+        } else {
+            s.add(backingFile.getFormat().toString());
+        }
+        s.add("-b");
+        s.add(backingFile.getFileName());
 
+        s.add(file.getFileName());
+        final String result = s.execute();
+        if (result != null) {
+            throw new QemuImgException(result);
+        }
     }
 
     /**

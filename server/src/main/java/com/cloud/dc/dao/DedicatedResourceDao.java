@@ -55,4 +55,7 @@ public interface DedicatedResourceDao extends GenericDao<DedicatedResourceVO, Lo
 
     List<DedicatedResourceVO> listByAffinityGroupId(Long affinityGroupId);
 
+    List<Long> findHostsByCluster(Long clusterId);
+
+    List<Long> findHostsByZone(Long zoneId);
 }

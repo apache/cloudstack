@@ -726,10 +726,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String ip6addr = null;
         //Isolated network can exist in Basic zone only, so no need to verify the zone type
         if (network.getGuestType() == Network.GuestType.Isolated) {
-            if ((ipv4Address != null || NetUtils.isIpv4(network.getGateway()) && org.apache.commons.lang3.StringUtils.isBlank(ipv6Address))) {
+            if ((ipv4Address != null || NetUtils.isIpv4(network.getGateway()) && isBlank(ipv6Address))) {
                 ipaddr = _ipAddrMgr.allocateGuestIP(network, ipv4Address);
             }
-            if (ipv6Address != null) {
+            if (isNotBlank(ipv6Address)) {
                 ip6addr = ipv6AddrMgr.allocateGuestIpv6(network, ipv6Address);
             }
         } else if (network.getGuestType() == Network.GuestType.Shared) {
@@ -763,7 +763,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             return null;
         }
 
-        if (ipaddr != null || ip6addr != null) {
+        if (isNotBlank(ipaddr) || isNotBlank(ip6addr)) {
             // we got the ip addr so up the nics table and secodary ip
             final String ip4AddrFinal = ipaddr;
             final String ip6AddrFinal = ip6addr;
@@ -1195,7 +1195,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (startIP != null) {
             ipv4 = true;
         }
-        if (startIPv6 != null) {
+        if (isNotBlank(ip6Cidr) && isNotBlank(ip6Gateway)) {
             ipv6 = true;
         }
 
@@ -1272,6 +1272,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
             if (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() != Network.GuestType.Shared) {
                 throw new InvalidParameterValueException("Can only support create IPv6 network with advance shared network!");
+            }
+
+            if(isBlank(zone.getIp6Dns1()) && isBlank(zone.getIp6Dns2())) {
+                throw new InvalidParameterValueException("Can only create IPv6 network if the zone has IPv6 DNS! Please configure the zone IPv6 DNS1 and/or IPv6 DNS2.");
             }
         }
 
@@ -1551,6 +1555,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Map<String, String> tags = cmd.getTags();
         Boolean forVpc = cmd.getForVpc();
         Boolean display = cmd.getDisplay();
+        Long networkOfferingId = cmd.getNetworkOfferingId();
 
         // 1) default is system to false if not specified
         // 2) reset parameter to false if it's specified by the regular user
@@ -1679,29 +1684,29 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (isSystem == null || !isSystem) {
             if (!permittedAccounts.isEmpty()) {
                 //get account level networks
-                networksToReturn.addAll(listAccountSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType,
-                        skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, permittedAccounts));
+                networksToReturn.addAll(listAccountSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
+                        aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, permittedAccounts));
                 //get domain level networks
                 if (domainId != null) {
-                    networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, true,
-                            restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, domainId, false));
+                    networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
+                            aclType, true, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, domainId, false));
                 }
             } else {
                 //add account specific networks
-                networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType,
-                        skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, path, isRecursive));
+                networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
+                        aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, path, isRecursive));
                 //add domain specific networks of domain + parent domains
-                networksToReturn.addAll(listDomainSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType,
-                        skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, path, isRecursive));
+                networksToReturn.addAll(listDomainSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
+                        aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, path, isRecursive));
                 //add networks of subdomains
                 if (domainId == null) {
-                    networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, true,
-                            restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, caller.getDomainId(), true));
+                    networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
+                            aclType, true, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, caller.getDomainId(), true));
                 }
             }
         } else {
-            networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks,
-                    restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter);
+            networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
+                    null, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter);
         }
 
         if (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !networksToReturn.isEmpty()) {
@@ -1748,8 +1753,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return new Pair<List<? extends Network>, Integer>(networksToReturn, networksToReturn.size());
     }
 
-    private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, Boolean isSystem, Long zoneId, String guestIpType, String trafficType,
-            Long physicalNetworkId, String aclType, boolean skipProjectNetworks, Boolean restartRequired, Boolean specifyIpRanges, Long vpcId, Map<String, String> tags, Boolean display) {
+    private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id,
+            Boolean isSystem, Long zoneId, String guestIpType, String trafficType, Long physicalNetworkId,
+            Long networkOfferingId, String aclType, boolean skipProjectNetworks, Boolean restartRequired,
+            Boolean specifyIpRanges, Long vpcId, Map<String, String> tags, Boolean display) {
 
         SearchCriteria<NetworkVO> sc = sb.create();
 
@@ -1817,6 +1824,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), entry.getValue());
                 count++;
             }
+        }
+
+        if (networkOfferingId != null) {
+            sc.addAnd("networkOfferingId", SearchCriteria.Op.EQ, networkOfferingId);
         }
 
         return sc;
@@ -2752,7 +2763,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         for (Network tier : migratedTiers) {
             String tierNetworkOfferingUuid = networkToOffering.get(tier.getUuid());
 
-            if (!StringUtils.isNotBlank(tierNetworkOfferingUuid)) {
+            if (!isNotBlank(tierNetworkOfferingUuid)) {
                 throwInvalidIdException("Failed to resume migrating VPC as the specified tierNetworkOfferings is not complete", String.valueOf(tier.getUuid()), "networkUuid");
             }
 
@@ -3055,6 +3066,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+        }
+
+        if (keyword != null) {
+            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         }
 
         Pair<List<PhysicalNetworkVO>, Integer> result = _physicalNetworkDao.searchAndCount(sc, searchFilter);

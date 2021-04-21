@@ -36,6 +36,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -141,6 +142,8 @@ import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 /**
  * Provides real time stats for various agent resources up to x seconds
@@ -684,18 +687,17 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 return;
             }
             // collect the vm disk statistics(total) from hypervisor. added by weizhou, 2013.03.
-            s_logger.trace("Running VM disk stats ...");
-            try {
-                Transaction.execute(new TransactionCallbackNoReturn() {
-                    @Override
-                    public void doInTransactionWithoutResult(TransactionStatus status) {
-                        s_logger.debug("VmDiskStatsTask is running...");
+            s_logger.debug("VmDiskStatsTask is running...");
 
-                        SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
-                        sc.addAnd("hypervisorType", SearchCriteria.Op.IN, HypervisorType.KVM, HypervisorType.VMware);
-                        List<HostVO> hosts = _hostDao.search(sc, null);
+            SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
+            sc.addAnd("hypervisorType", SearchCriteria.Op.IN, HypervisorType.KVM, HypervisorType.VMware);
+            List<HostVO> hosts = _hostDao.search(sc, null);
 
-                        for (HostVO host : hosts) {
+            for (HostVO host : hosts) {
+                try {
+                    Transaction.execute(new TransactionCallbackNoReturn() {
+                        @Override
+                        public void doInTransactionWithoutResult(TransactionStatus status) {
                             List<UserVmVO> vms = _userVmDao.listRunningByHostId(host.getId());
                             List<Long> vmIds = new ArrayList<Long>();
 
@@ -706,7 +708,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
                             HashMap<Long, List<VmDiskStatsEntry>> vmDiskStatsById = _userVmMgr.getVmDiskStatistics(host.getId(), host.getName(), vmIds);
                             if (vmDiskStatsById == null)
-                                continue;
+                                return;
 
                             Set<Long> vmIdSet = vmDiskStatsById.keySet();
                             for (Long vmId : vmIdSet) {
@@ -739,15 +741,15 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
                                     if (isCurrentVmDiskStatsDifferentFromPrevious(previousVmDiskStats, vmDiskStat_lock)) {
                                         s_logger.debug("vm disk stats changed from the time GetVmDiskStatsCommand was sent. " + "Ignoring current answer. Host: " + host.getName()
-                                                + " . VM: " + vmDiskStat.getVmName() + " Read(Bytes): " + vmDiskStat.getBytesRead() + " write(Bytes): " + vmDiskStat.getBytesWrite()
-                                                + " Read(IO): " + vmDiskStat.getIORead() + " write(IO): " + vmDiskStat.getIOWrite());
+                                                + " . VM: " + vmDiskStat.getVmName() + " Read(Bytes): " + toHumanReadableSize(vmDiskStat.getBytesRead()) + " write(Bytes): " + toHumanReadableSize(vmDiskStat.getBytesWrite())
+                                                + " Read(IO): " + toHumanReadableSize(vmDiskStat.getIORead()) + " write(IO): " + toHumanReadableSize(vmDiskStat.getIOWrite()));
                                         continue;
                                     }
 
                                     if (vmDiskStat_lock.getCurrentBytesRead() > vmDiskStat.getBytesRead()) {
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Read # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
-                                                    + host.getName() + " . VM: " + vmDiskStat.getVmName() + " Reported: " + vmDiskStat.getBytesRead() + " Stored: "
+                                                    + host.getName() + " . VM: " + vmDiskStat.getVmName() + " Reported: " + toHumanReadableSize(vmDiskStat.getBytesRead()) + " Stored: "
                                                     + vmDiskStat_lock.getCurrentBytesRead());
                                         }
                                         vmDiskStat_lock.setNetBytesRead(vmDiskStat_lock.getNetBytesRead() + vmDiskStat_lock.getCurrentBytesRead());
@@ -756,8 +758,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     if (vmDiskStat_lock.getCurrentBytesWrite() > vmDiskStat.getBytesWrite()) {
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Write # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
-                                                    + host.getName() + " . VM: " + vmDiskStat.getVmName() + " Reported: " + vmDiskStat.getBytesWrite() + " Stored: "
-                                                    + vmDiskStat_lock.getCurrentBytesWrite());
+                                                    + host.getName() + " . VM: " + vmDiskStat.getVmName() + " Reported: " + toHumanReadableSize(vmDiskStat.getBytesWrite()) + " Stored: "
+                                                    + toHumanReadableSize(vmDiskStat_lock.getCurrentBytesWrite()));
                                         }
                                         vmDiskStat_lock.setNetBytesWrite(vmDiskStat_lock.getNetBytesWrite() + vmDiskStat_lock.getCurrentBytesWrite());
                                     }
@@ -793,10 +795,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                 }
                             }
                         }
-                    }
-                });
-            } catch (Exception e) {
-                s_logger.warn("Error while collecting vm disk stats from hosts", e);
+                    });
+                } catch (Exception e) {
+                    s_logger.warn(String.format("Error while collecting vm disk stats from host %s : ", host.getName()), e);
+                }
             }
         }
     }
@@ -812,16 +814,16 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 return;
             }
             // collect the vm network statistics(total) from hypervisor
-            try {
-                Transaction.execute(new TransactionCallbackNoReturn() {
-                    @Override
-                    public void doInTransactionWithoutResult(TransactionStatus status) {
-                        s_logger.debug("VmNetworkStatsTask is running...");
+            s_logger.debug("VmNetworkStatsTask is running...");
 
-                        SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
-                        List<HostVO> hosts = _hostDao.search(sc, null);
+            SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
+            List<HostVO> hosts = _hostDao.search(sc, null);
 
-                        for (HostVO host : hosts) {
+            for (HostVO host : hosts) {
+                try {
+                    Transaction.execute(new TransactionCallbackNoReturn() {
+                        @Override
+                        public void doInTransactionWithoutResult(TransactionStatus status) {
                             List<UserVmVO> vms = _userVmDao.listRunningByHostId(host.getId());
                             List<Long> vmIds = new ArrayList<Long>();
 
@@ -832,7 +834,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
                             HashMap<Long, List<VmNetworkStatsEntry>> vmNetworkStatsById = _userVmMgr.getVmNetworkStatistics(host.getId(), host.getName(), vmIds);
                             if (vmNetworkStatsById == null)
-                                continue;
+                                return;
 
                             Set<Long> vmIdSet = vmNetworkStatsById.keySet();
                             for (Long vmId : vmIdSet) {
@@ -885,8 +887,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     if (vmNetworkStat_lock.getCurrentBytesSent() > vmNetworkStat.getBytesSent()) {
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Sent # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
-                                                    + host.getName() + " . VM: " + vmNetworkStat.getVmName() + " Reported: " + vmNetworkStat.getBytesSent() + " Stored: "
-                                                    + vmNetworkStat_lock.getCurrentBytesSent());
+                                                    + host.getName() + " . VM: " + vmNetworkStat.getVmName() + " Reported: " + toHumanReadableSize(vmNetworkStat.getBytesSent()) + " Stored: "
+                                                    + toHumanReadableSize(vmNetworkStat_lock.getCurrentBytesSent()));
                                         }
                                         vmNetworkStat_lock.setNetBytesSent(vmNetworkStat_lock.getNetBytesSent() + vmNetworkStat_lock.getCurrentBytesSent());
                                     }
@@ -895,8 +897,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     if (vmNetworkStat_lock.getCurrentBytesReceived() > vmNetworkStat.getBytesReceived()) {
                                         if (s_logger.isDebugEnabled()) {
                                             s_logger.debug("Received # of bytes that's less than the last one.  " + "Assuming something went wrong and persisting it. Host: "
-                                                    + host.getName() + " . VM: " + vmNetworkStat.getVmName() + " Reported: " + vmNetworkStat.getBytesReceived() + " Stored: "
-                                                    + vmNetworkStat_lock.getCurrentBytesReceived());
+                                                    + host.getName() + " . VM: " + vmNetworkStat.getVmName() + " Reported: " + toHumanReadableSize(vmNetworkStat.getBytesReceived()) + " Stored: "
+                                                    + toHumanReadableSize(vmNetworkStat_lock.getCurrentBytesReceived()));
                                         }
                                         vmNetworkStat_lock.setNetBytesReceived(vmNetworkStat_lock.getNetBytesReceived() + vmNetworkStat_lock.getCurrentBytesReceived());
                                     }
@@ -912,10 +914,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                 }
                             }
                         }
-                    }
-                });
-            } catch (Exception e) {
-                s_logger.warn("Error while collecting vm network stats from hosts", e);
+                    });
+                } catch (Exception e) {
+                    s_logger.warn(String.format("Error while collecting vm network stats from host %s : ", host.getName()), e);
+                }
             }
         }
     }
@@ -988,7 +990,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         continue;
                     }
 
-                    Integer nfsVersion = imageStoreDetailsUtil.getNfsVersion(store.getId());
+                    String nfsVersion = imageStoreDetailsUtil.getNfsVersion(store.getId());
                     GetStorageStatsCommand command = new GetStorageStatsCommand(store.getTO(), nfsVersion);
                     EndPoint ssAhost = _epSelector.select(store);
                     if (ssAhost == null) {
@@ -999,7 +1001,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     Answer answer = ssAhost.sendMessage(command);
                     if (answer != null && answer.getResult()) {
                         storageStats.put(storeId, (StorageStats)answer);
-                        s_logger.trace("HostId: " + storeId + " Used: " + ((StorageStats)answer).getByteUsed() + " Total Available: " + ((StorageStats)answer).getCapacityBytes());
+                        s_logger.trace("HostId: " + storeId + " Used: " + toHumanReadableSize(((StorageStats)answer).getByteUsed()) + " Total Available: " + toHumanReadableSize(((StorageStats)answer).getCapacityBytes()));
                     }
                 }
                 _storageStats = storageStats;
@@ -1018,9 +1020,22 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         if (answer != null && answer.getResult()) {
                             storagePoolStats.put(pool.getId(), (StorageStats)answer);
 
+                            boolean poolNeedsUpdating = false;
                             // Seems like we have dynamically updated the pool size since the prev. size and the current do not match
                             if (_storagePoolStats.get(poolId) != null && _storagePoolStats.get(poolId).getCapacityBytes() != ((StorageStats)answer).getCapacityBytes()) {
-                                pool.setCapacityBytes(((StorageStats)answer).getCapacityBytes());
+                                if (((StorageStats)answer).getCapacityBytes() > 0) {
+                                    pool.setCapacityBytes(((StorageStats)answer).getCapacityBytes());
+                                    poolNeedsUpdating = true;
+                                } else {
+                                    s_logger.warn("Not setting capacity bytes, received " + ((StorageStats)answer).getCapacityBytes()  + " capacity for pool ID " + poolId);
+                                }
+                            }
+                            if (pool.getUsedBytes() != ((StorageStats)answer).getByteUsed() && pool.getStorageProviderName().equalsIgnoreCase(DataStoreProvider.DEFAULT_PRIMARY)) {
+                                pool.setUsedBytes(((StorageStats) answer).getByteUsed());
+                                poolNeedsUpdating = true;
+                            }
+                            if (poolNeedsUpdating) {
+                                pool.setUpdateTime(new Date());
                                 _storagePoolDao.update(pool.getId(), pool);
                             }
                         }

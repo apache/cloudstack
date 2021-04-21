@@ -57,6 +57,8 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class UserConcentratedAllocator extends AdapterBase implements PodAllocator {
     private final static Logger s_logger = Logger.getLogger(UserConcentratedAllocator.class);
 
@@ -262,7 +264,7 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
 
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Counting memory capacity used by vm: " + vm.getId() + ", size: " + so.getRamSize() + "MB, host: " + hostId + ", currently counted: " +
-                                usedCapacity + " Bytes");
+                                toHumanReadableSize(usedCapacity) + " Bytes");
                     }
                 } else if (capacityType == Capacity.CAPACITY_TYPE_CPU) {
                     usedCapacity += so.getCpu() * so.getSpeed();

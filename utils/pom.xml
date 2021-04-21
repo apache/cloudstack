@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.14.1.0-SNAPSHOT</version>
+        <version>4.15.1.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <dependencies>
@@ -49,14 +49,6 @@
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
         </dependency>
         <dependency>
             <groupId>cglib</groupId>
@@ -87,8 +79,9 @@
             <artifactId>jasypt</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.trilead</groupId>
+            <groupId>org.jenkins-ci</groupId>
             <artifactId>trilead-ssh2</artifactId>
+            <version>${cs.trilead.version}</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
@@ -185,6 +178,10 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${cs.jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
         </dependency>
     </dependencies>
     <build>

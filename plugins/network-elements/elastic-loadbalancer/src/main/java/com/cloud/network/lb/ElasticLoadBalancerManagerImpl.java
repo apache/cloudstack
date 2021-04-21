@@ -596,4 +596,8 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     public void prepareStop(VirtualMachineProfile profile) {
     }
 
+    @Override
+    public void finalizeUnmanage(VirtualMachine vm) {
+    }
+
 }

@@ -16,39 +16,29 @@
 // under the License.
 package com.cloud.template;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.host.HostVO;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.resource.ResourceManager;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.configuration.Config;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionStatus;
 import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
 import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
-import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
-import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
-import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.log4j.Logger;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
@@ -62,23 +52,31 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.org.Grouping;
+import com.cloud.resource.ResourceManager;
 import com.cloud.server.StatsCollector;
-import com.cloud.template.VirtualMachineTemplate.State;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
@@ -87,11 +85,18 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.download.DownloadMonitor;
+import com.cloud.template.VirtualMachineTemplate.State;
+import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class HypervisorTemplateAdapter extends TemplateAdapterBase {
@@ -126,6 +131,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     ResourceManager resourceManager;
     @Inject
     VMTemplateDao templateDao;
+    @Inject
+    private VMTemplateDetailsDao templateDetailsDao;
+    @Inject
+    private TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
 
     @Override
     public String getName() {
@@ -149,6 +158,12 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         }
         CheckUrlAnswer ans = (CheckUrlAnswer) answer;
         return ans.getTemplateSize();
+    }
+
+    private void checkZoneImageStores(final List<Long> zoneIdList) {
+        if (zoneIdList != null && CollectionUtils.isEmpty(storeMgr.getImageStoresByScope(new ZoneScope(zoneIdList.get(0))))) {
+            throw new InvalidParameterValueException("Failed to find a secondary storage in the specified zone.");
+        }
     }
 
     @Override
@@ -241,7 +256,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
     private void createTemplateWithinZone(Long zId, TemplateProfile profile, VMTemplateVO template) {
         // find all eligible image stores for this zone scope
-        List<DataStore> imageStores = storeMgr.getImageStoresByScope(new ZoneScope(zId));
+        List<DataStore> imageStores = storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(zId));
         if (imageStores == null || imageStores.size() == 0) {
             throw new CloudRuntimeException("Unable to find image store to download template " + profile.getTemplate());
         }
@@ -308,7 +323,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     zoneId = profile.getZoneIdList().get(0);
 
                 // find all eligible image stores for this zone scope
-                List<DataStore> imageStores = storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+                List<DataStore> imageStores = storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(zoneId));
                 if (imageStores == null || imageStores.size() == 0) {
                     throw new CloudRuntimeException("Unable to find image store to download template " + profile.getTemplate());
                 }
@@ -443,6 +458,18 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         return null;
     }
 
+    boolean cleanupTemplate(VMTemplateVO template, boolean success) {
+        List<VMTemplateZoneVO> templateZones = templateZoneDao.listByTemplateId(template.getId());
+        List<Long> zoneIds = templateZones.stream().map(VMTemplateZoneVO::getZoneId).collect(Collectors.toList());
+        if (zoneIds.size() > 0) {
+            return success;
+        }
+        template.setRemoved(new Date());
+        template.setState(State.Inactive);
+        templateDao.update(template.getId(), template);
+        return success;
+    }
+
     @Override
     @DB
     public boolean delete(TemplateProfile profile) {
@@ -564,7 +591,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         if (success) {
             if ((imageStores != null && imageStores.size() > 1) && (profile.getZoneIdList() != null)) {
                 //if template is stored in more than one image stores, and the zone id is not null, then don't delete other templates.
-                return success;
+                return cleanupTemplate(template, success);
             }
 
             // delete all cache entries for this template
@@ -579,6 +606,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             if (iStores == null || iStores.size() == 0) {
                 // Mark template as Inactive.
                 template.setState(VirtualMachineTemplate.State.Inactive);
+                _tmpltDao.remove(template.getId());
                 _tmpltDao.update(template.getId(), template);
 
                     // Decrement the number of templates and total secondary storage
@@ -592,6 +620,12 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             Pair<Class<?>, Long> tmplt = new Pair<Class<?>, Long>(VirtualMachineTemplate.class, template.getId());
             _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, tmplt);
 
+            // Remove template details
+            templateDetailsDao.removeDetails(template.getId());
+
+            // Remove deploy-as-is details (if any)
+            templateDeployAsIsDetailsDao.removeDetails(template.getId());
+
         }
         return success;
 
@@ -601,29 +635,17 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     public TemplateProfile prepareDelete(DeleteTemplateCmd cmd) {
         TemplateProfile profile = super.prepareDelete(cmd);
         VMTemplateVO template = profile.getTemplate();
-        List<Long> zoneIdList = profile.getZoneIdList();
-
         if (template.getTemplateType() == TemplateType.SYSTEM) {
             throw new InvalidParameterValueException("The DomR template cannot be deleted.");
         }
-
-        if (zoneIdList != null && (storeMgr.getImageStoreWithFreeCapacity(zoneIdList.get(0)) == null)) {
-            throw new InvalidParameterValueException("Failed to find a secondary storage in the specified zone.");
-        }
-
+        checkZoneImageStores(profile.getZoneIdList());
         return profile;
     }
 
     @Override
     public TemplateProfile prepareDelete(DeleteIsoCmd cmd) {
         TemplateProfile profile = super.prepareDelete(cmd);
-        List<Long> zoneIdList = profile.getZoneIdList();
-
-        if (zoneIdList != null &&
-                (storeMgr.getImageStoreWithFreeCapacity(zoneIdList.get(0)) == null)) {
-            throw new InvalidParameterValueException("Failed to find a secondary storage in the specified zone.");
-        }
-
+        checkZoneImageStores(profile.getZoneIdList());
         return profile;
     }
 }

@@ -1,4 +1,4 @@
-#!/usr/bin/python -W ignore::DeprecationWarning
+#!/usr/bin/python3 -W ignore::DeprecationWarning
 # -*- coding: utf-8 -*-
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -65,7 +65,7 @@ def getknownhosts(host,username,password):
 	usernames = dict(cur.fetchall())
 	cur.execute("SELECT h.private_ip_address,d.value FROM cloud.host h inner join cloud.host_details d on (h.id = d.host_id) where d.name = 'password' and setup = 1")
 	passwords = dict(cur.fetchall())
-	creds = dict( [ [x,(usernames[x],passwords[x])] for x in usernames.keys() ] )
+	creds = dict( [ [x,(usernames[x],passwords[x])] for x in list(usernames.keys()) ] )
 	cur.close()
 	conn.close()
 	return creds
@@ -121,7 +121,7 @@ class XenServerConfigurator(Thread):
 			if self.retval != 0: self.state = 'failed'
 			else: self.state = 'finished'
 			
-		except Exception,e:
+		except Exception as e:
 			self.state = 'failed'
 			self.retval = e
 			#raise
@@ -144,7 +144,7 @@ if options.all:
 	if len(args) != 0: e("IP addresses cannot be specified if -a is specified")
 	config = read_properties(cfg)
 	creds = getknownhosts(config["db.cloud.host"],config["db.cloud.username"],config["db.cloud.password"])
-	hosts = creds.keys()
+	hosts = list(creds.keys())
 else:
 	if not args: e("You must specify at least one IP address, or -a")
 	hosts = args
@@ -152,31 +152,31 @@ else:
 
 try:
 	keyfiledata = file(licensefile).read(-1)
-except OSError,e:
+except OSError as e:
 	sys.stderr.write("The file %s cannot be opened"%licensefile)
 	sys.exit(1)
 
 configurators = []
-for host,(user,password) in creds.items():
+for host,(user,password) in list(creds.items()):
 	configurators.append ( XenServerConfigurator(host,user,password,keyfiledata ) )
 
 
 for c in configurators: c.start()
 	
 for c in configurators:
-	print c.host + "...",
+	print(c.host + "...", end=' ')
 	c.join()
 	if c.state == 'failed':
 		if c.retval:
 			msg = "failed with return code %s: %s%s"%(c.retval,c.stdout,c.stderr)
 			msg = msg.strip()
-			print msg
-		else: print "failed: %s"%c.retval
+			print(msg)
+		else: print("failed: %s"%c.retval)
 	else:
-		print "done"
+		print("done")
 
 successes = len( [ a for a in configurators if not a.state == 'failed' ] )
 failures = len( [ a for a in configurators if a.state == 'failed' ] )
 
-print "%3s successes"%successes
-print "%3s failures"%failures
+print("%3s successes"%successes)
+print("%3s failures"%failures)

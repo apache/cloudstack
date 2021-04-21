@@ -36,6 +36,8 @@ import com.xensource.xenapi.VDI;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 @ResourceWrapper(handles =  ResizeVolumeCommand.class)
 public final class CitrixResizeVolumeCommandWrapper extends CommandWrapper<ResizeVolumeCommand, Answer, CitrixResourceBase> {
     private static final Logger s_logger = Logger.getLogger(CitrixResizeVolumeCommandWrapper.class);
@@ -50,7 +52,7 @@ public final class CitrixResizeVolumeCommandWrapper extends CommandWrapper<Resiz
         try {
 
             if (command.getCurrentSize() >= newSize) {
-                s_logger.info("No need to resize volume: " + volId +", current size " + command.getCurrentSize() + " is same as  new size " + newSize);
+                s_logger.info("No need to resize volume: " + volId +", current size " + toHumanReadableSize(command.getCurrentSize()) + " is same as  new size " + toHumanReadableSize(newSize));
                 return new ResizeVolumeAnswer(command, true, "success", newSize);
             }
             if (command.isManaged()) {

@@ -56,6 +56,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     private final SearchBuilder<StoragePoolVO> DeleteLvmSearch;
     private final SearchBuilder<StoragePoolVO> DcLocalStorageSearch;
     private final GenericSearchBuilder<StoragePoolVO, Long> StatusCountSearch;
+    private final SearchBuilder<StoragePoolVO> ClustersSearch;
 
     @Inject
     private StoragePoolDetailsDao _detailsDao;
@@ -132,6 +133,11 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         DcLocalStorageSearch.and("path", DcLocalStorageSearch.entity().getPath(), SearchCriteria.Op.EQ);
         DcLocalStorageSearch.and("scope", DcLocalStorageSearch.entity().getScope(), SearchCriteria.Op.EQ);
         DcLocalStorageSearch.done();
+
+        ClustersSearch = createSearchBuilder();
+        ClustersSearch.and("clusterIds", ClustersSearch.entity().getClusterId(), Op.IN);
+        ClustersSearch.and("status", ClustersSearch.entity().getStatus(), Op.EQ);
+
     }
 
     @Override
@@ -551,5 +557,28 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     @Override
     public void deletePoolTags(long poolId) {
         _tagsDao.deleteTags(poolId);
+    }
+
+    @Override
+    public List<StoragePoolVO> listChildStoragePoolsInDatastoreCluster(long poolId) {
+        QueryBuilder<StoragePoolVO> sc = QueryBuilder.create(StoragePoolVO.class);
+        sc.and(sc.entity().getParent(), Op.EQ, poolId);
+        return sc.list();
+    }
+
+    @Override
+    public Integer countAll() {
+        SearchCriteria<StoragePoolVO> sc = createSearchCriteria();
+        sc.addAnd("parent", SearchCriteria.Op.EQ, 0);
+        sc.addAnd("removed", SearchCriteria.Op.NULL);
+        return getCount(sc);
+    }
+
+    @Override
+    public List<StoragePoolVO> findPoolsInClusters(List<Long> clusterIds) {
+        SearchCriteria<StoragePoolVO> sc = ClustersSearch.create();
+        sc.setParameters("clusterIds", clusterIds.toArray());
+        sc.setParameters("status", StoragePoolStatus.Up);
+        return listBy(sc);
     }
 }

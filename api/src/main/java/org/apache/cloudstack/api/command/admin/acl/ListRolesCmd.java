@@ -98,6 +98,7 @@ public class ListRolesCmd extends BaseListCmd {
             roleResponse.setRoleName(role.getName());
             roleResponse.setRoleType(role.getRoleType());
             roleResponse.setDescription(role.getDescription());
+            roleResponse.setIsDefault(role.isDefault());
             roleResponse.setObjectName("role");
             roleResponses.add(roleResponse);
         }

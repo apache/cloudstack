@@ -46,8 +46,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 import com.cloud.utils.PropertiesUtil;
 import com.google.common.base.Strings;
@@ -58,7 +57,7 @@ import com.google.common.base.Strings;
  * Configuration parameters are read from server.properties file available on the classpath.
  */
 public class ServerDaemon implements Daemon {
-    private static final Logger LOG = LoggerFactory.getLogger(ServerDaemon.class);
+    private static final Logger LOG = Logger.getLogger(ServerDaemon.class);
     private static final String WEB_XML = "META-INF/webapp/WEB-INF/web.xml";
 
     /////////////////////////////////////////////////////

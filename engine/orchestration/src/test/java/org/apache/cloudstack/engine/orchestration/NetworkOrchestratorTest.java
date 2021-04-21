@@ -467,6 +467,25 @@ public class NetworkOrchestratorTest extends TestCase {
     }
 
     @Test
+    public void testDontReleaseNicWhenPreserveNicsSettingEnabled() {
+        VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+        NicVO nic = mock(NicVO.class);
+        NetworkVO network = mock(NetworkVO.class);
+
+        when(vm.getType()).thenReturn(Type.User);
+        when(network.getGuruName()).thenReturn(guruName);
+        when(testOrchastrator._networksDao.findById(nic.getNetworkId())).thenReturn(network);
+
+        Long nicId = 1L;
+        when(nic.getId()).thenReturn(nicId);
+        when(vm.getParameter(VirtualMachineProfile.Param.PreserveNics)).thenReturn(true);
+
+        testOrchastrator.removeNic(vm, nic);
+
+        verify(nic, never()).setState(Nic.State.Deallocating);
+        verify(testOrchastrator._nicDao, never()).remove(nicId);
+    }
+
     public void encodeVlanIdIntoBroadcastUriTestVxlan() {
         encodeVlanIdIntoBroadcastUriPrepareAndTest("123", "VXLAN", "vxlan", "vxlan://123");
     }

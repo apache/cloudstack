@@ -47,6 +47,8 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
+import com.cloud.projects.Project;
+import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
@@ -75,6 +77,8 @@ public class ApiServlet extends HttpServlet {
     ManagedContext managedContext;
     @Inject
     APIAuthenticationManager authManager;
+    @Inject
+    private ProjectDao projectDao;
 
     public ApiServlet() {
     }
@@ -202,6 +206,7 @@ public class ApiServlet extends HttpServlet {
                             }
                         }
                         session = req.getSession(true);
+
                         if (ApiServer.EnableSecureSessionCookie.value()) {
                             resp.setHeader("SET-COOKIE", String.format("JSESSIONID=%s;Secure;HttpOnly;Path=/client", session.getId()));
                             if (s_logger.isDebugEnabled()) {
@@ -213,7 +218,7 @@ public class ApiServlet extends HttpServlet {
                     try {
                         responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, req, resp);
                         if (session != null && session.getAttribute(ApiConstants.SESSIONKEY) != null) {
-                            resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly;Path=/", ApiConstants.SESSIONKEY, session.getAttribute(ApiConstants.SESSIONKEY)));
+                            resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly", ApiConstants.SESSIONKEY, session.getAttribute(ApiConstants.SESSIONKEY)));
                         }
                     } catch (ServerApiException e) {
                         httpResponseCode = e.getErrorCode().getHttpCode();
@@ -305,13 +310,14 @@ public class ApiServlet extends HttpServlet {
             } else {
                 CallContext.register(accountMgr.getSystemUser(), accountMgr.getSystemAccount());
             }
-
+            setProjectContext(params);
             if (apiServer.verifyRequest(params, userId, remoteAddress)) {
                 auditTrailSb.insert(0, "(userId=" + CallContext.current().getCallingUserId() + " accountId=" + CallContext.current().getCallingAccount().getId() +
                         " sessionId=" + (session != null ? session.getId() : null) + ")");
 
                 // Add the HTTP method (GET/POST/PUT/DELETE) as well into the params map.
                 params.put("httpmethod", new String[]{req.getMethod()});
+                setProjectContext(params);
                 final String response = apiServer.handleRequest(params, responseType, auditTrailSb);
                 HttpUtils.writeHttpResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType, ApiServer.JSONcontentType.value());
             } else {
@@ -347,8 +353,43 @@ public class ApiServlet extends HttpServlet {
         }
     }
 
+    private void setProjectContext(Map<String, Object[]> requestParameters) {
+        final String[] command = (String[])requestParameters.get(ApiConstants.COMMAND);
+        if (command == null) {
+            s_logger.info("missing command, ignoring request...");
+            return;
+        }
+
+        final String commandName = command[0];
+        CallContext.current().setApiName(commandName);
+        for (Map.Entry<String, Object[]> entry: requestParameters.entrySet()) {
+            if (entry.getKey().equals(ApiConstants.PROJECT_ID) || isSpecificAPI(commandName)) {
+                String projectId = null;
+                if (isSpecificAPI(commandName)) {
+                    projectId = String.valueOf(requestParameters.entrySet().stream()
+                            .filter(e -> e.getKey().equals(ApiConstants.ID))
+                            .map(Map.Entry::getValue).findFirst().get()[0]);
+                } else {
+                    projectId = String.valueOf(entry.getValue()[0]);
+                }
+                Project project = projectDao.findByUuid(projectId);
+                if (project != null) {
+                    CallContext.current().setProject(project);
+                }
+            }
+        }
+    }
+
+    private boolean isSpecificAPI(String commandName) {
+        List<String> commands = Arrays.asList("suspendProject", "updateProject", "activateProject", "deleteProject");
+        if (commands.contains(commandName)) {
+            return true;
+        }
+        return false;
+    }
+
     //This method will try to get login IP of user even if servlet is behind reverseProxy or loadBalancer
-    static InetAddress getClientAddress(final HttpServletRequest request) throws UnknownHostException {
+    public static InetAddress getClientAddress(final HttpServletRequest request) throws UnknownHostException {
         for(final String header : s_clientAddressHeaders) {
             final String ip = getCorrectIPAddress(request.getHeader(header));
             if (ip != null) {

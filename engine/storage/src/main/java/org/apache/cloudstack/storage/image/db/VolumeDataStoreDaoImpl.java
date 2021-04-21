@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -103,6 +104,7 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         downloadVolumeSearch.and("download_url", downloadVolumeSearch.entity().getExtractUrl(), Op.NNULL);
         downloadVolumeSearch.and("download_url_created", downloadVolumeSearch.entity().getExtractUrlCreated(), Op.NNULL);
         downloadVolumeSearch.and("destroyed", downloadVolumeSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        downloadVolumeSearch.and("zone_id", downloadVolumeSearch.entity().getZoneId(), Op.EQ);
         downloadVolumeSearch.done();
 
         uploadVolumeSearch = createSearchBuilder();
@@ -213,7 +215,13 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         SearchCriteria<VolumeDataStoreVO> sc = volumeSearch.create();
         sc.setParameters("volume_id", volumeId);
         sc.setParameters("destroyed", false);
-        return findOneBy(sc);
+        return findVolumeby(sc);
+    }
+
+    private VolumeDataStoreVO findVolumeby(SearchCriteria<VolumeDataStoreVO> sc) {
+        Filter filter = new Filter(VolumeDataStoreVO.class, "created", false, 0L, 1L);
+        List<VolumeDataStoreVO> results = searchIncludingRemoved(sc, filter, null, false);
+        return results.size() == 0 ? null : results.get(0);
     }
 
     @Override
@@ -313,6 +321,14 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     public List<VolumeDataStoreVO> listVolumeDownloadUrls() {
         SearchCriteria<VolumeDataStoreVO> sc = downloadVolumeSearch.create();
         sc.setParameters("destroyed", false);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VolumeDataStoreVO> listVolumeDownloadUrlsByZoneId(long zoneId) {
+        SearchCriteria<VolumeDataStoreVO> sc = downloadVolumeSearch.create();
+        sc.setParameters("destroyed", false);
+        sc.setParameters("zone_id", zoneId);
         return listBy(sc);
     }
 

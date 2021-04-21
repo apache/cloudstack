@@ -134,6 +134,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Preconditions;
+import java.util.stream.Collectors;
 
 public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private static final Logger LOGGER = Logger.getLogger(StorageSystemDataMotionStrategy.class);
@@ -1710,7 +1711,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
      * Return expected MigrationOptions for a linked clone volume live storage migration
      */
     protected MigrationOptions createLinkedCloneMigrationOptions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo, String srcVolumeBackingFile, String srcPoolUuid, Storage.StoragePoolType srcPoolType) {
-        VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(destVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId());
+        VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(destVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId(), null);
         boolean updateBackingFileReference = ref == null;
         String backingFile = ref != null ? ref.getInstallPath() : srcVolumeBackingFile;
         return new MigrationOptions(srcPoolUuid, srcPoolType, backingFile, updateBackingFileReference);
@@ -1790,7 +1791,12 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     continue;
                 }
 
-                copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
+                if (srcVolumeInfo.getTemplateId() != null) {
+                    LOGGER.debug(String.format("Copying template [%s] of volume [%s] from source storage pool [%s] to target storage pool [%s].", srcVolumeInfo.getTemplateId(), srcVolumeInfo.getId(), sourceStoragePool.getId(), destStoragePool.getId()));
+                    copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
+                } else {
+                    LOGGER.debug(String.format("Skipping copy template from source storage pool [%s] to target storage pool [%s] before migration due to volume [%s] does not have a template.", sourceStoragePool.getId(), destStoragePool.getId(), srcVolumeInfo.getId()));
+                }
 
                 VolumeVO destVolume = duplicateVolumeOnAnotherStorage(srcVolume, destStoragePool);
                 VolumeInfo destVolumeInfo = _volumeDataFactory.getVolume(destVolume.getId(), destDataStore);
@@ -1894,9 +1900,11 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 throw new CloudRuntimeException(errMsg);
             }
-        }
-        catch (Exception ex) {
-            errMsg = "Copy operation failed in 'StorageSystemDataMotionStrategy.copyAsync': " + ex.getMessage();
+        } catch (AgentUnavailableException | OperationTimedoutException | CloudRuntimeException ex) {
+            String volumesAndStorages = volumeDataStoreMap.entrySet().stream().map(entry -> formatEntryOfVolumesAndStoragesAsJsonToDisplayOnLog(entry)).collect(Collectors.joining(","));
+
+            errMsg = String.format("Copy volume(s) to storage(s) [%s] and VM to host [%s] failed in StorageSystemDataMotionStrategy.copyAsync. Error message: [%s].", volumesAndStorages, formatMigrationElementsAsJsonToDisplayOnLog("vm", vmTO.getId(), srcHost.getId(), destHost.getId()), ex.getMessage());
+            LOGGER.error(errMsg, ex);
 
             throw new CloudRuntimeException(errMsg);
         }
@@ -1909,6 +1917,16 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             callback.complete(result);
         }
+    }
+
+    protected String formatMigrationElementsAsJsonToDisplayOnLog(String objectName, Object object, Object from, Object to){
+        return String.format("{%s: \"%s\", from: \"%s\", to:\"%s\"}", objectName, object, from, to);
+    }
+
+    protected String formatEntryOfVolumesAndStoragesAsJsonToDisplayOnLog(Map.Entry<VolumeInfo, DataStore> entry ){
+        VolumeInfo srcVolumeInfo = entry.getKey();
+        DataStore destDataStore = entry.getValue();
+        return formatMigrationElementsAsJsonToDisplayOnLog("volume", srcVolumeInfo.getId(), srcVolumeInfo.getPoolId(), destDataStore.getId());
     }
 
     /**
@@ -1983,7 +2001,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 srcVolumeInfo.getTemplateId() != null && srcVolumeInfo.getPoolId() != null) {
             VMTemplateVO template = _vmTemplateDao.findById(srcVolumeInfo.getTemplateId());
             if (template.getFormat() != null && template.getFormat() != Storage.ImageFormat.ISO) {
-                VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(srcVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId());
+                VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(srcVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId(), null);
                 return ref != null ? ref.getInstallPath() : null;
             }
         }
@@ -2157,8 +2175,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
      * Update reference on template_spool_ref table of copied template to destination storage
      */
     protected void updateCopiedTemplateReference(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo) {
-        VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(srcVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId());
-        VMTemplateStoragePoolVO newRef = new VMTemplateStoragePoolVO(destVolumeInfo.getPoolId(), ref.getTemplateId());
+        VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(srcVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId(), null);
+        VMTemplateStoragePoolVO newRef = new VMTemplateStoragePoolVO(destVolumeInfo.getPoolId(), ref.getTemplateId(), null);
         newRef.setDownloadPercent(100);
         newRef.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
         newRef.setState(ObjectInDataStoreStateMachine.State.Ready);

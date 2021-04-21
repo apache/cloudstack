@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -56,6 +57,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 import com.cloud.api.query.dao.NetworkOfferingJoinDao;
 import com.cloud.api.query.vo.NetworkOfferingJoinVO;
@@ -87,6 +89,7 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.projects.ProjectManager;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
@@ -108,6 +111,7 @@ public class ConfigurationManagerTest {
 
     private static final Logger s_logger = Logger.getLogger(ConfigurationManagerTest.class);
 
+    @Spy
     @InjectMocks
     ConfigurationManagerImpl configurationMgr = new ConfigurationManagerImpl();
 
@@ -163,11 +167,12 @@ public class ConfigurationManagerTest {
     ImageStoreDao _imageStoreDao;
     @Mock
     ConfigurationDao _configDao;
+    @Mock
+    DiskOfferingVO diskOfferingVOMock;
 
     VlanVO vlan = new VlanVO(Vlan.VlanType.VirtualNetwork, "vlantag", "vlangateway", "vlannetmask", 1L, "iprange", 1L, 1L, null, null, null);
 
     private static final String MAXIMUM_DURATION_ALLOWED = "3600";
-
     @Mock
     Network network;
     @Mock
@@ -694,7 +699,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
-        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
+        Mockito.when(_imageStoreDao.findByZone(any(ZoneScope.class), anyBoolean())).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -712,7 +717,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
-        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
+        Mockito.when(_imageStoreDao.findByZone(any(ZoneScope.class), anyBoolean())).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -730,7 +735,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
-        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
+        Mockito.when(_imageStoreDao.findByZone(any(ZoneScope.class), anyBoolean())).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -744,7 +749,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
-        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
+        Mockito.when(_imageStoreDao.findByZone(any(ZoneScope.class), anyBoolean())).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -758,7 +763,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
-        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
+        Mockito.when(_imageStoreDao.findByZone(any(ZoneScope.class), anyBoolean())).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -776,7 +781,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(arrayList);
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
-        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
+        Mockito.when(_imageStoreDao.findByZone(any(ZoneScope.class), anyBoolean())).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -794,7 +799,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(arrayList);
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(new ArrayList<PhysicalNetworkVO>());
-        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
+        Mockito.when(_imageStoreDao.findByZone(any(ZoneScope.class), anyBoolean())).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -812,7 +817,7 @@ public class ConfigurationManagerTest {
         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
         Mockito.when(_physicalNetworkDao.listByZone(anyLong())).thenReturn(arrayList);
-        Mockito.when(_imageStoreDao.findByScope(any(ZoneScope.class))).thenReturn(new ArrayList<ImageStoreVO>());
+        Mockito.when(_imageStoreDao.findByZone(any(ZoneScope.class), anyBoolean())).thenReturn(new ArrayList<ImageStoreVO>());
 
         configurationMgr.checkIfZoneIsDeletable(new Random().nextLong());
     }
@@ -937,5 +942,64 @@ public class ConfigurationManagerTest {
     @Test
     public void validateMaximumIopsAndBytesLengthTestDefaultLengthConfigs() {
         configurationMgr.validateMaximumIopsAndBytesLength(36000l, 36000l, 36000l, 36000l);
+    }
+
+    @Test
+    public void shouldUpdateDiskOfferingTests(){
+        Assert.assertTrue(configurationMgr.shouldUpdateDiskOffering(Mockito.anyString(), Mockito.anyString(), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyString(), Mockito.anyString()));
+        Assert.assertTrue(configurationMgr.shouldUpdateDiskOffering(Mockito.anyString(), nullable(String.class), nullable(Integer.class), nullable(Boolean.class), nullable(String.class), nullable(String.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), Mockito.anyString(), nullable(Integer.class), nullable(Boolean.class), nullable(String.class), nullable(String.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), nullable(String.class), Mockito.anyInt(), nullable(Boolean.class), nullable(String.class), nullable(String.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), nullable(String.class), nullable(int.class), Mockito.anyBoolean(), nullable(String.class), nullable(String.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), nullable(String.class), nullable(int.class), nullable(Boolean.class), Mockito.anyString(), Mockito.anyString()));
+    }
+
+    @Test
+    public void shouldUpdateDiskOfferingTestFalse(){
+        Assert.assertFalse(configurationMgr.shouldUpdateDiskOffering(null, null, null, null, null, null));
+    }
+
+    @Test
+    public void shouldUpdateIopsRateParametersTestFalse() {
+        Assert.assertFalse(configurationMgr.shouldUpdateIopsRateParameters(null, null, null, null, null, null));
+    }
+
+    @Test
+    public void shouldUpdateIopsRateParametersTests(){
+        Assert.assertTrue(configurationMgr.shouldUpdateIopsRateParameters(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong()));
+        Assert.assertTrue(configurationMgr.shouldUpdateIopsRateParameters(nullable(Long.class), Mockito.anyLong(), nullable(Long.class), nullable(Long.class), nullable(Long.class), nullable(Long.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateIopsRateParameters(nullable(Long.class), nullable(Long.class), Mockito.anyLong(), nullable(Long.class), nullable(Long.class), nullable(Long.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateIopsRateParameters(nullable(Long.class), nullable(Long.class), nullable(Long.class), Mockito.anyLong(), nullable(Long.class), nullable(Long.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateIopsRateParameters(nullable(Long.class), nullable(Long.class), nullable(Long.class), nullable(Long.class), Mockito.anyLong(), nullable(Long.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateIopsRateParameters(nullable(Long.class), nullable(Long.class), nullable(Long.class), nullable(Long.class), nullable(Long.class), Mockito.anyLong()));
+    }
+
+    @Test
+    public void shouldUpdateBytesRateParametersTestFalse() {
+        Assert.assertFalse(configurationMgr.shouldUpdateBytesRateParameters(null, null, null, null, null, null));
+    }
+
+    @Test
+    public void shouldUpdateBytesRateParametersTests(){
+        Assert.assertTrue(configurationMgr.shouldUpdateBytesRateParameters(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong()));
+        Assert.assertTrue(configurationMgr.shouldUpdateBytesRateParameters(nullable(Long.class), Mockito.anyLong(), nullable(Long.class), nullable(Long.class), nullable(Long.class), nullable(Long.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateBytesRateParameters(nullable(Long.class), nullable(Long.class), Mockito.anyLong(), nullable(Long.class), nullable(Long.class), nullable(Long.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateBytesRateParameters(nullable(Long.class), nullable(Long.class), nullable(Long.class), Mockito.anyLong(), nullable(Long.class), nullable(Long.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateBytesRateParameters(nullable(Long.class), nullable(Long.class), nullable(Long.class), nullable(Long.class), Mockito.anyLong(), nullable(Long.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateBytesRateParameters(nullable(Long.class), nullable(Long.class), nullable(Long.class), nullable(Long.class), nullable(Long.class), Mockito.anyLong()));
+    }
+
+    @Test
+    public void updateDiskOfferingTagsIfIsNotNullTestWhenTagsIsNull(){
+        Mockito.doNothing().when(configurationMgr).updateDiskOfferingTagsIfIsNotNull(null, diskOfferingVOMock);
+        this.configurationMgr.updateDiskOfferingTagsIfIsNotNull(null, diskOfferingVOMock);
+        Mockito.verify(configurationMgr, Mockito.times(1)).updateDiskOfferingTagsIfIsNotNull(null, diskOfferingVOMock);
+    }
+    @Test
+    public void updateDiskOfferingTagsIfIsNotNullTestWhenTagsIsNotNull(){
+        String tags = "tags";
+        Mockito.doNothing().when(configurationMgr).updateDiskOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
+        this.configurationMgr.updateDiskOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
+        Mockito.verify(configurationMgr, Mockito.times(1)).updateDiskOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
     }
 }

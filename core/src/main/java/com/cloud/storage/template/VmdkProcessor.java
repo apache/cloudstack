@@ -37,6 +37,8 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.component.AdapterBase;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 public class VmdkProcessor extends AdapterBase implements Processor {
     private static final Logger s_logger = Logger.getLogger(VmdkProcessor.class);
 
@@ -114,7 +116,7 @@ public class VmdkProcessor extends AdapterBase implements Processor {
             throw new InternalErrorException(msg);
         }
 
-        s_logger.debug("vmdk file had size="+virtualSize);
+        s_logger.debug("vmdk file had size=" + toHumanReadableSize(virtualSize));
         return virtualSize;
     }
 

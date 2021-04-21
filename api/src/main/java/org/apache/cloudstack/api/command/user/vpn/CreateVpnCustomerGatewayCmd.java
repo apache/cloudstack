@@ -48,7 +48,7 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, required = true, description = "public ip address id of the customer gateway")
     private String gatewayIp;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.STRING, required = true, description = "guest cidr list of the customer gateway")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.STRING, required = true, description = "guest cidr list of the customer gateway. Multiple entries must be separated by a single comma character (,).")
     private String peerCidrList;
 
     @Parameter(name = ApiConstants.IPSEC_PSK, type = CommandType.STRING, required = true, description = "IPsec Preshared-Key of the customer gateway. Cannot contain newline or double quotes.")

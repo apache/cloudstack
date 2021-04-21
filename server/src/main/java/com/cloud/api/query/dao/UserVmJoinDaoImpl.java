@@ -222,8 +222,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 userVmResponse.setDiskKbsWrite((long)vmStats.getDiskWriteKBs());
                 userVmResponse.setDiskIORead((long)vmStats.getDiskReadIOs());
                 userVmResponse.setDiskIOWrite((long)vmStats.getDiskWriteIOs());
-                userVmResponse.setMemoryKBs((long)vmStats.getMemoryKBs());
-                userVmResponse.setMemoryIntFreeKBs((long)vmStats.getIntFreeMemoryKBs());
+                long totalMemory = (long)vmStats.getMemoryKBs();
+                long freeMemory = (long)vmStats.getIntFreeMemoryKBs();
+                long correctedFreeMemory = freeMemory >= totalMemory ? 0 : freeMemory;
+                userVmResponse.setMemoryKBs(totalMemory);
+                userVmResponse.setMemoryIntFreeKBs(correctedFreeMemory);
                 userVmResponse.setMemoryTargetKBs((long)vmStats.getTargetMemoryKBs());
 
             }
@@ -322,8 +325,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         if (vmDetails != null) {
             Map<String, String> resourceDetails = new HashMap<String, String>();
             for (UserVmDetailVO userVmDetailVO : vmDetails) {
-                if (!userVmDetailVO.getName().startsWith(ApiConstants.OVF_PROPERTIES) ||
-                        (UserVmManager.DisplayVMOVFProperties.value() && userVmDetailVO.getName().startsWith(ApiConstants.OVF_PROPERTIES))) {
+                if (!userVmDetailVO.getName().startsWith(ApiConstants.PROPERTIES) ||
+                        (UserVmManager.DisplayVMOVFProperties.value() && userVmDetailVO.getName().startsWith(ApiConstants.PROPERTIES))) {
                     resourceDetails.put(userVmDetailVO.getName(), userVmDetailVO.getValue());
                 }
                 if ((ApiConstants.BootType.UEFI.toString()).equalsIgnoreCase(userVmDetailVO.getName())) {

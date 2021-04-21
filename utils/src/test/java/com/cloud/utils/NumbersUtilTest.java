@@ -31,10 +31,10 @@ public class NumbersUtilTest {
     public void toReadableSize() {
         Locale.setDefault(Locale.US); // Fixed locale for the test
         assertEquals("1.0000 TB", NumbersUtil.toReadableSize((1024l * 1024l * 1024l * 1024l)));
-        assertEquals("1.00 GB", NumbersUtil.toReadableSize(1024 * 1024 * 1024));
-        assertEquals("1.00 MB", NumbersUtil.toReadableSize(1024 * 1024));
-        assertEquals("1.00 KB", NumbersUtil.toReadableSize((1024)));
-        assertEquals("1023 bytes", NumbersUtil.toReadableSize((1023)));
+        assertEquals("1.00 GB", NumbersUtil.toReadableSize(1024L * 1024 * 1024));
+        assertEquals("1.00 MB", NumbersUtil.toReadableSize(1024L * 1024));
+        assertEquals("1.00 KB", NumbersUtil.toReadableSize((1024L)));
+        assertEquals("1023 bytes", NumbersUtil.toReadableSize((1023L)));
     }
 
     @Test
@@ -42,6 +42,11 @@ public class NumbersUtilTest {
         assertEquals(0, NumbersUtil.bytesToLong(new byte[] {0, 0, 0, 0, 0, 0, 0, 0}));
         assertEquals(1, NumbersUtil.bytesToLong(new byte[] {0, 0, 0, 0, 0, 0, 0, 1}));
         assertEquals(257, NumbersUtil.bytesToLong(new byte[] {0, 0, 0, 0, 0, 0, 1, 1}));
+    }
+
+    @Test
+    public void nullToLong() {
+        assertEquals("null", NumbersUtil.toReadableSize(null));
     }
 
 }

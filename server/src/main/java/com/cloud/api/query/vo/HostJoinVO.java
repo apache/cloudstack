@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api.query.vo;
 
+import java.util.Arrays;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -401,5 +402,11 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
 
     public boolean isAnnotated() {
         return StringUtils.isNotBlank(annotation);
+    }
+
+    public boolean isInMaintenanceStates() {
+        return Arrays.asList(
+                    ResourceState.Maintenance, ResourceState.ErrorInMaintenance, ResourceState.PrepareForMaintenance)
+                .contains(getResourceState());
     }
 }

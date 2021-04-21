@@ -22,6 +22,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.RoleVO;
 import org.springframework.stereotype.Component;
@@ -32,6 +33,7 @@ import java.util.List;
 public class RoleDaoImpl extends GenericDaoBase<RoleVO, Long> implements RoleDao {
     private final SearchBuilder<RoleVO> RoleByNameSearch;
     private final SearchBuilder<RoleVO> RoleByTypeSearch;
+    private final SearchBuilder<RoleVO> RoleByNameAndTypeSearch;
 
     public RoleDaoImpl() {
         super();
@@ -43,6 +45,11 @@ public class RoleDaoImpl extends GenericDaoBase<RoleVO, Long> implements RoleDao
         RoleByTypeSearch = createSearchBuilder();
         RoleByTypeSearch.and("roleType", RoleByTypeSearch.entity().getRoleType(), SearchCriteria.Op.EQ);
         RoleByTypeSearch.done();
+
+        RoleByNameAndTypeSearch = createSearchBuilder();
+        RoleByNameAndTypeSearch.and("roleName", RoleByNameAndTypeSearch.entity().getName(), SearchCriteria.Op.EQ);
+        RoleByNameAndTypeSearch.and("roleType", RoleByNameAndTypeSearch.entity().getRoleType(), SearchCriteria.Op.EQ);
+        RoleByNameAndTypeSearch.done();
     }
 
     @Override
@@ -66,5 +73,20 @@ public class RoleDaoImpl extends GenericDaoBase<RoleVO, Long> implements RoleDao
         SearchCriteria<RoleVO> sc = RoleByTypeSearch.create();
         sc.setParameters("roleType", type);
         return searchAndCount(sc, new Filter(RoleVO.class, "id", true, offset, limit));
+    }
+
+    @Override
+    public List<RoleVO> findByName(String roleName) {
+        SearchCriteria<RoleVO> sc = RoleByNameSearch.create();
+        sc.setParameters("roleName", roleName);
+        return listBy(sc);
+    }
+
+    @Override
+    public RoleVO findByNameAndType(String roleName, RoleType type) {
+        SearchCriteria<RoleVO> sc = RoleByNameAndTypeSearch.create();
+        sc.setParameters("roleName", roleName);
+        sc.setParameters("roleType", type);
+        return findOneBy(sc);
     }
 }

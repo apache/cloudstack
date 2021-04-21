@@ -6,7 +6,7 @@ SYSCONFDIR = "/etc"
 DESTDIR = "debian/tmp"
 
 %:
-	dh $@ --with python2,systemd
+	dh $@ --with systemd
 
 override_dh_auto_configure:
 	cp packaging/debian/replace.properties replace.properties.tmp
@@ -38,7 +38,7 @@ override_dh_auto_install:
 	mkdir $(DESTDIR)/$(SYSCONFDIR)/profile.d
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-agent
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-agent/plugins
-	install -D agent/target/cloud-agent-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/$(PACKAGE)-agent.jar
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib
 	install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 	install -D plugins/hypervisors/kvm/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 
@@ -92,6 +92,20 @@ override_dh_auto_install:
 	install -d -m0755 debian/$(PACKAGE)-management/lib/systemd/system
 	install -m0644 packaging/systemd/$(PACKAGE)-management.service debian/$(PACKAGE)-management/lib/systemd/system/$(PACKAGE)-management.service
 	install -m0644 packaging/systemd/$(PACKAGE)-management.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-management
+
+	# cloudstack-ui
+	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/ui
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-ui
+	cd ui && npm install && npm run build && cd ..
+	cp -r ui/dist/config.json $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/ui/
+	cp -r ui/dist/* $(DESTDIR)/usr/share/$(PACKAGE)-ui/
+	rm -f $(DESTDIR)/usr/share/$(PACKAGE)-ui/config.json
+	ln -s /$(SYSCONFDIR)/$(PACKAGE)/ui/config.json $(DESTDIR)/usr/share/$(PACKAGE)-ui/config.json
+	# copy ui to cloudstack-management
+	cp -r ui/dist/config.json $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/
+	cp -r ui/dist/* $(DESTDIR)/usr/share/$(PACKAGE)-management/webapp/
+	rm -f $(DESTDIR)/usr/share/$(PACKAGE)-management/webapp/config.json
+	ln -s /$(SYSCONFDIR)/$(PACKAGE)/management/config.json $(DESTDIR)/usr/share/$(PACKAGE)-management/webapp/config.json
 
 	# cloudstack-common
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-common

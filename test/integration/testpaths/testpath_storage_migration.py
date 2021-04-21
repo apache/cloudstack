@@ -324,7 +324,7 @@ class TestStorageMigration(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
+            cleanup_resources(cls.apiclient, reversed(cls._cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -335,13 +335,9 @@ class TestStorageMigration(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        try:
-            for storagePool in self.pools:
-                StoragePool.update(self.apiclient, id=storagePool.id, tags="")
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        for storagePool in self.pools:
+            StoragePool.update(self.apiclient, id=storagePool.id, tags="")
+        super(TestStorageMigration,self).tearDown()
 
     @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_01_migrate_root_and_data_disk_nonlive(self):

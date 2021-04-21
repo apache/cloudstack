@@ -39,6 +39,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     Integer countAllByType(final Host.Type type);
 
+    Integer countAllByTypeInZone(long zoneId, final Host.Type type);
+
     /**
      * Mark all hosts associated with a certain management server
      * as disconnected.
@@ -97,6 +99,12 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> listByType(Type type);
 
+    /**
+     * Finds a host by ip address, excludes removed hosts.
+     *
+     * @param ip The ip address to match on
+     * @return One matched host
+     */
     HostVO findByIp(String ip);
 
     /**
@@ -115,4 +123,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<HostVO> listByHostCapability(Host.Type type, Long clusterId, Long podId, long dcId, String hostCapabilty);
 
     List<HostVO> listByClusterAndHypervisorType(long clusterId, HypervisorType hypervisorType);
+
+    HostVO findByName(String name);
 }

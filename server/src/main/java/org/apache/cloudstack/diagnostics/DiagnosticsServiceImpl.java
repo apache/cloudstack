@@ -372,7 +372,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
      * @return a valid secondary storage with less than DiskQuotaPercentageThreshold set by global config
      */
     private DataStore getImageStore(Long zoneId) {
-        List<DataStore> stores = storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        List<DataStore> stores = storeMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(zoneId));
         if (CollectionUtils.isEmpty(stores)) {
             throw new CloudRuntimeException("No Secondary storage found in Zone with Id: " + zoneId);
         }

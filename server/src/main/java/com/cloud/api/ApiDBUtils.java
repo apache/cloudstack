@@ -27,6 +27,8 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.vm.NicVO;
+import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -458,6 +460,7 @@ public class ApiDBUtils {
     static BackupDao s_backupDao;
     static BackupScheduleDao s_backupScheduleDao;
     static BackupOfferingDao s_backupOfferingDao;
+    static NicDao s_nicDao;
 
     @Inject
     private ManagementServer ms;
@@ -702,6 +705,8 @@ public class ApiDBUtils {
     private BackupOfferingDao backupOfferingDao;
     @Inject
     private BackupScheduleDao backupScheduleDao;
+    @Inject
+    private NicDao nicDao;
 
     @PostConstruct
     void init() {
@@ -811,6 +816,7 @@ public class ApiDBUtils {
         s_hostDetailsDao = hostDetailsDao;
         s_clusterDetailsDao = clusterDetailsDao;
         s_vmSnapshotDao = vmSnapshotDao;
+        s_nicDao = nicDao;
         s_nicSecondaryIpDao = nicSecondaryIpDao;
         s_vpcProvSvc = vpcProvSvc;
         s_affinityGroupDao = affinityGroupDao;
@@ -1140,6 +1146,10 @@ public class ApiDBUtils {
 
     public static User findUserById(Long userId) {
         return s_userDao.findById(userId);
+    }
+
+    public static UserAccountJoinVO findUserAccountById(Long id) {
+        return s_userAccountJoinDao.findById(id);
     }
 
     public static UserVm findUserVmById(Long vmId) {
@@ -1567,6 +1577,10 @@ public class ApiDBUtils {
         return s_vpcDao.findById(vpcId);
     }
 
+    public static VpcVO findVpcByIdIncludingRemoved(long vpcId) {
+        return s_vpcDao.findByIdIncludingRemoved(vpcId);
+    }
+
     public static SnapshotPolicy findSnapshotPolicyById(long policyId) {
         return s_snapshotPolicyDao.findById(policyId);
     }
@@ -1833,6 +1847,7 @@ public class ApiDBUtils {
     }
 
     public static List<ProjectJoinVO> newProjectView(Project proj) {
+
         return s_projectJoinDao.newProjectView(proj);
     }
 
@@ -1999,16 +2014,16 @@ public class ApiDBUtils {
         return s_templateJoinDao.newUpdateResponse(vr);
     }
 
-    public static TemplateResponse newTemplateResponse(ResponseView view, TemplateJoinVO vr) {
-        return s_templateJoinDao.newTemplateResponse(view, vr);
+    public static TemplateResponse newTemplateResponse(EnumSet<DomainDetails> detailsView, ResponseView view, TemplateJoinVO vr) {
+        return s_templateJoinDao.newTemplateResponse(detailsView, view, vr);
     }
 
     public static TemplateResponse newIsoResponse(TemplateJoinVO vr) {
         return s_templateJoinDao.newIsoResponse(vr);
     }
 
-    public static TemplateResponse fillTemplateDetails(ResponseView view, TemplateResponse vrData, TemplateJoinVO vr) {
-        return s_templateJoinDao.setTemplateResponse(view, vrData, vr);
+    public static TemplateResponse fillTemplateDetails(EnumSet<DomainDetails> detailsView, ResponseView view, TemplateResponse vrData, TemplateJoinVO vr) {
+        return s_templateJoinDao.setTemplateResponse(detailsView, view, vrData, vr);
     }
 
     public static List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate vr) {
@@ -2069,5 +2084,13 @@ public class ApiDBUtils {
 
     public static BackupOfferingResponse newBackupOfferingResponse(BackupOffering policy) {
         return s_backupOfferingDao.newBackupOfferingResponse(policy);
+    }
+
+    public static NicVO findByIp4AddressAndNetworkId(String ip4Address, long networkId) {
+        return s_nicDao.findByIp4AddressAndNetworkId(ip4Address, networkId);
+    }
+
+    public static NicSecondaryIpVO findSecondaryIpByIp4AddressAndNetworkId(String ip4Address, long networkId) {
+        return s_nicSecondaryIpDao.findByIp4AddressAndNetworkId(ip4Address, networkId);
     }
 }

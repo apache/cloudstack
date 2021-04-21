@@ -206,5 +206,24 @@ public interface IpAddressManager {
     public boolean isIpEqualsGatewayOrNetworkOfferingsEmpty(Network network, String requestedIp);
 
     void releasePodIp(Long id) throws CloudRuntimeException;
+
+    boolean isUsageHidden(IPAddressVO address);
+
+    List<IPAddressVO> listAvailablePublicIps(final long dcId,
+                                             final Long podId,
+                                             final List<Long> vlanDbIds,
+                                             final Account owner,
+                                             final VlanType vlanUse,
+                                             final Long guestNetworkId,
+                                             final boolean sourceNat,
+                                             final boolean assign,
+                                             final boolean allocate,
+                                             final String requestedIp,
+                                             final boolean isSystem,
+                                             final Long vpcId,
+                                             final Boolean displayIp,
+                                             final boolean forSystemVms,
+                                             final boolean lockOneRow)
+            throws InsufficientAddressCapacityException;
 }
 

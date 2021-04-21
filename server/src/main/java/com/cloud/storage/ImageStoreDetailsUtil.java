@@ -42,11 +42,10 @@ public class ImageStoreDetailsUtil {
      * Retrieve global secondary storage NFS version default value
      * @return global default value
      */
-    protected Integer getGlobalDefaultNfsVersion(){
+    protected String getGlobalDefaultNfsVersion(){
         ConfigurationVO globalNfsVersion = configurationDao.findByName(CapacityManager.ImageStoreNFSVersion.key());
         Preconditions.checkState(globalNfsVersion != null, "Unable to find global NFS version for version key " + CapacityManager.ImageStoreNFSVersion.key());
-        String value = globalNfsVersion.getValue();
-        return (value != null ? Integer.valueOf(value) : null);
+        return globalNfsVersion.getValue();
     }
     /**
      * Obtain NFS protocol version (if provided) for a store id, if not use default config value<br/>
@@ -54,12 +53,11 @@ public class ImageStoreDetailsUtil {
      * @return {@code null} if {@code secstorage.nfs.version} is not found for storeId <br/>
      * {@code X} if {@code secstorage.nfs.version} is found found for storeId
      */
-    public Integer getNfsVersion(long storeId) throws NumberFormatException {
+    public String getNfsVersion(long storeId) throws NumberFormatException {
 
         final Map<String, String> storeDetails = imageStoreDetailsDao.getDetails(storeId);
         if (storeDetails != null && storeDetails.containsKey(CapacityManager.ImageStoreNFSVersion.key())) {
-            final String version = storeDetails.get(CapacityManager.ImageStoreNFSVersion.key());
-            return (version != null ? Integer.valueOf(version) : null);
+            return storeDetails.get(CapacityManager.ImageStoreNFSVersion.key());
         }
 
         return getGlobalDefaultNfsVersion();
@@ -68,11 +66,11 @@ public class ImageStoreDetailsUtil {
 
     /**
      * Obtain NFS protocol version (if provided) for a store uuid.<br/>
-     * @param resourceId image store id
+     * @param storeUuid image store id
      * @return {@code null} if {@code secstorage.nfs.version} is not found for storeUuid <br/>
      * {@code X} if {@code secstorage.nfs.version} is found found for storeUuid
      */
-    public Integer getNfsVersionByUuid(String storeUuid){
+    public String getNfsVersionByUuid(String storeUuid){
         ImageStoreVO imageStore = imageStoreDao.findByUuid(storeUuid);
         if (imageStore != null){
             return getNfsVersion(imageStore.getId());

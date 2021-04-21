@@ -195,7 +195,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
     @Override
     protected void copyTemplateToTargetFilesystemStorageIfNeeded(VolumeInfo srcVolumeInfo, StoragePool srcStoragePool, DataStore destDataStore, StoragePool destStoragePool,
             Host destHost) {
-        VMTemplateStoragePoolVO sourceVolumeTemplateStoragePoolVO = vmTemplatePoolDao.findByPoolTemplate(destStoragePool.getId(), srcVolumeInfo.getTemplateId());
+        VMTemplateStoragePoolVO sourceVolumeTemplateStoragePoolVO = vmTemplatePoolDao.findByPoolTemplate(destStoragePool.getId(), srcVolumeInfo.getTemplateId(), null);
         if (sourceVolumeTemplateStoragePoolVO == null && destStoragePool.getPoolType() == StoragePoolType.Filesystem) {
             DataStore sourceTemplateDataStore = dataStoreManagerImpl.getRandomImageStore(srcVolumeInfo.getDataCenterId());
             if (sourceTemplateDataStore != null) {
@@ -212,16 +212,18 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
                 if (copyCommandAnswer != null && copyCommandAnswer.getResult()) {
                     updateTemplateReferenceIfSuccessfulCopy(srcVolumeInfo, srcStoragePool, destTemplateInfo, destDataStore);
                 }
+                return;
             }
         }
+        LOGGER.debug(String.format("Skipping 'copy template to target filesystem storage before migration' due to the template [%s] already exist on the storage pool [%s].", srcVolumeInfo.getTemplateId(), destStoragePool.getId()));
     }
 
     /**
      *  Update the template reference on table "template_spool_ref" (VMTemplateStoragePoolVO).
      */
     protected void updateTemplateReferenceIfSuccessfulCopy(VolumeInfo srcVolumeInfo, StoragePool srcStoragePool, TemplateInfo destTemplateInfo, DataStore destDataStore) {
-        VMTemplateStoragePoolVO srcVolumeTemplateStoragePoolVO = vmTemplatePoolDao.findByPoolTemplate(srcStoragePool.getId(), srcVolumeInfo.getTemplateId());
-        VMTemplateStoragePoolVO destVolumeTemplateStoragePoolVO = new VMTemplateStoragePoolVO(destDataStore.getId(), srcVolumeInfo.getTemplateId());
+        VMTemplateStoragePoolVO srcVolumeTemplateStoragePoolVO = vmTemplatePoolDao.findByPoolTemplate(srcStoragePool.getId(), srcVolumeInfo.getTemplateId(), null);
+        VMTemplateStoragePoolVO destVolumeTemplateStoragePoolVO = new VMTemplateStoragePoolVO(destDataStore.getId(), srcVolumeInfo.getTemplateId(), null);
         destVolumeTemplateStoragePoolVO.setDownloadPercent(100);
         destVolumeTemplateStoragePoolVO.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
         destVolumeTemplateStoragePoolVO.setState(ObjectInDataStoreStateMachine.State.Ready);
