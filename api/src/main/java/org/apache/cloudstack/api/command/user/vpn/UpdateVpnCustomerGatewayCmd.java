@@ -147,7 +147,7 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     public Boolean getEncap() { return encap; }
 
     public boolean getSplitConnections() {
-        return splitConnections;
+        return null == splitConnections ? false : splitConnections;
     }
 
     public String getIkeVersion() {
