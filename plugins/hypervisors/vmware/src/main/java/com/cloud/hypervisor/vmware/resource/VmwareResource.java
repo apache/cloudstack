@@ -2047,9 +2047,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             //
             // Setup ROOT/DATA disk devices
             //
-            if (Arrays.stream(sortedDisks).filter(disk -> disk.getType() == Volume.Type.ISO).count() > 1 && deployAsIs) {
-                sortedDisks = Arrays.stream(sortedDisks).filter(vol -> ((vol.getPath() != null &&
-                        vol.getPath().contains("configdrive")))).toArray(DiskTO[]::new);
+            if (multipleIsosAtached(sortedDisks) && deployAsIs) {
+                sortedDisks = getDisks(sortedDisks);
             }
 
             for (DiskTO vol : sortedDisks) {
@@ -2438,6 +2437,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    private boolean multipleIsosAtached(DiskTO[] sortedDisks) {
+        return Arrays.stream(sortedDisks).filter(disk -> disk.getType() == Volume.Type.ISO).count() > 1;
+    }
+
+    private DiskTO[] getDisks(DiskTO[] sortedDisks) {
+       return Arrays.stream(sortedDisks).filter(vol -> ((vol.getPath() != null &&
+                vol.getPath().contains("configdrive"))) || (vol.getType() != Volume.Type.ISO)).toArray(DiskTO[]::new);
+    }
     private void configureIso(VmwareHypervisorHost hyperHost, VirtualMachineMO vmMo, DiskTO vol,
                               VirtualDeviceConfigSpec[] deviceConfigSpecArray, int ideUnitNumber, int i) throws Exception {
         TemplateObjectTO iso = (TemplateObjectTO) vol.getData();
