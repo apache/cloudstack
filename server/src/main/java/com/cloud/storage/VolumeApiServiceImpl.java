@@ -911,8 +911,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.XenServer
                 && hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.Any
-                && hypervisorType != HypervisorType.None) {
-            throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support volume resize");
+                && hypervisorType != HypervisorType.None && hypervisorType != HypervisorType.Simulator) {
+            throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support  rootdisksize override");
         }
 
         if (volume.getState() != Volume.State.Ready && volume.getState() != Volume.State.Allocated) {

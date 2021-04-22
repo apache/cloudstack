@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
@@ -70,6 +71,14 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<Boolean> AllowExposeHypervisorHostname = new ConfigKey<Boolean>("Advanced", Boolean.class, "global.allow.expose.host.hostname",
             "false", "If set to true, it allows the hypervisor host name on which the VM is spawned on to be exposed to the VM", true, ConfigKey.Scope.Global);
 
+    ConfigKey<Boolean> ResourceCountRouters = new ConfigKey<>("Advanced", Boolean.class, "resource.count.routers",
+            "false","Count the CPU and memory resource count of virtual routers towards domain resource calculation",
+            true, ConfigKey.Scope.Domain);
+
+    ConfigKey<String> ResourceCountRoutersType = new ConfigKey<>("Advanced", String.class, "resource.count.routers.type", "all",
+            "Possible values are all and delta. If value is all then entire VR cpu and ram are counted else diff " +
+                    "between current VR offering and default VR offering is considered", true, ConfigKey.Scope.Domain);
+
     static final ConfigKey<Integer> VmServiceOfferingMaxCPUCores = new ConfigKey<Integer>("Advanced",
             Integer.class,
             "vm.serviceoffering.cpu.cores.max",
@@ -89,6 +98,9 @@ public interface VirtualMachineManager extends Manager {
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
     }
+
+    static final String COUNT_ALL_VR_RESOURCES = "all";
+    static final String COUNT_DELTA_VR_RESOURCES = "delta";
 
     /**
      * Allocates a new virtual machine instance in the CloudStack DB.  This
@@ -255,4 +267,8 @@ public interface VirtualMachineManager extends Manager {
     boolean unmanage(String vmUuid);
 
     UserVm restoreVirtualMachine(long vmId, Long newTemplateId) throws ResourceUnavailableException, InsufficientCapacityException;
+
+    void incrementVrResourceCount(ServiceOffering offering, Account owner, boolean isDeployOrDestroy) throws CloudRuntimeException;
+
+    void decrementVrResourceCount(ServiceOffering offering, Account owner, boolean isDeployOrDestroy) throws CloudRuntimeException;
 }

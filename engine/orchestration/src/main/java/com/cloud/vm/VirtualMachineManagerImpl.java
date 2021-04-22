@@ -40,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.deployasis.dao.UserVmDeployAsIsDetailsDao;
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
@@ -1013,6 +1015,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             resourceCountIncrement(owner.getAccountId(),new Long(offering.getCpu()), new Long(offering.getRamSize()));
         }
 
+        // Increment the VR resource count if the global setting is set to true
+        // and resource.count.running.vms is also true
+        if (VirtualMachine.Type.DomainRouter.equals(vm.type) &&
+                ResourceCountRouters.valueIn(owner.getDomainId())) {
+            incrementVrResourceCount(offering, owner, false);
+        }
+
         boolean canRetry = true;
         ExcludeList avoids = null;
         try {
@@ -1322,6 +1331,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 if (VirtualMachine.Type.User.equals(vm.type) && ResoureCountRunningVMsonly.value()) {
                     resourceCountDecrement(owner.getAccountId(),new Long(offering.getCpu()), new Long(offering.getRamSize()));
                 }
+                // Decrement VR resource count if the VR can't be started
+                if (VirtualMachine.Type.DomainRouter.equals(vm.type) &&
+                        ResourceCountRouters.valueIn(owner.getDomainId())) {
+                    decrementVrResourceCount(offering, owner, false);
+                }
+
                 if (canRetry) {
                     try {
                         changeState(vm, Event.OperationFailed, null, work, Step.Done);
@@ -1366,6 +1381,131 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (log) {
             s_logger.info(msgBuf.toString());
         }
+    }
+
+    /**
+     * Function to increment the VR resource count
+     *
+     * If the global setting resource.count.router is true then the VR
+     * resource count will be considered as well
+     * If the global setting resource.count.router.type is "all" then
+     * all VR resource count will be considered else the diff between
+     * the current VR service offering and the default offering will
+     * be considered
+     *
+     * @param offering
+     * @param owner
+     * @param isDeployOrDestroy
+     */
+    @Override
+    public void incrementVrResourceCount(ServiceOffering offering,
+                                         Account owner,
+                                         boolean isDeployOrDestroy) {
+        // During router deployment/destroy, we increment the resource
+        // count only if resource.count.running.vms is false else we
+        // we increment it during VR start/stop. Same applies for
+        // decrementing resource count.
+        if (isDeployOrDestroy == ResoureCountRunningVMsonly.value()) {
+            return;
+        }
+        ServiceOffering defaultRouterOffering = null;
+        String globalRouterOffering = _configDao.getValue("router.service.offering");
+        if (globalRouterOffering != null) {
+            defaultRouterOffering = _serviceOfferingDao.findByUuid(globalRouterOffering);
+        }
+
+        if (defaultRouterOffering == null) {
+            defaultRouterOffering =  _serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
+        }
+
+        int cpuCount = 0;
+        int memoryCount = 0;
+        // Count VR resources for domain if global setting is true
+        // if value is "all" count all VR resources else get diff of
+        // current VR offering and default VR offering
+        if (ResourceCountRoutersType.valueIn(owner.getDomainId())
+                .equalsIgnoreCase(COUNT_ALL_VR_RESOURCES)) {
+            cpuCount = offering.getCpu();
+            memoryCount = offering.getRamSize();
+        } else if (ResourceCountRoutersType.valueIn(owner.getDomainId())
+                .equalsIgnoreCase(COUNT_DELTA_VR_RESOURCES)) {
+            // Default offering value can be greater than current offering value
+            if (offering.getCpu() >= defaultRouterOffering.getCpu()) {
+                cpuCount = offering.getCpu() - defaultRouterOffering.getCpu();
+            }
+            if (offering.getRamSize() >= defaultRouterOffering.getRamSize()) {
+                memoryCount = offering.getRamSize() - defaultRouterOffering.getRamSize();
+            }
+        }
+
+        // Check if resource count can be allocated to account/domain
+        try {
+            if (cpuCount > 0) {
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.cpu, cpuCount);
+            }
+            if (memoryCount > 0) {
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.memory, memoryCount);
+            }
+
+        } catch (ResourceAllocationException ex) {
+            throw new CloudRuntimeException("Unable to deploy/start routers due to " + ex.getMessage());
+        }
+
+        // Increment the resource count
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Incrementing the CPU count with value " + cpuCount + " and " +
+                    "RAM value with " + memoryCount);
+        }
+        _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.cpu, new Long(cpuCount));
+        _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.memory, new Long(memoryCount));
+    }
+
+    /**
+     * Function to decrement the VR resource count
+     *
+     * @param offering
+     * @param owner
+     * @param isDeployOrDestroy
+     */
+    @Override
+    public void decrementVrResourceCount(ServiceOffering offering,
+                                         Account owner,
+                                         boolean isDeployOrDestroy) {
+        if (isDeployOrDestroy == ResoureCountRunningVMsonly.value()) {
+            return;
+        }
+
+        ServiceOffering defaultRouterOffering = null;
+        String globalRouterOffering = _configDao.getValue("router.service.offering");
+        if (globalRouterOffering != null) {
+            defaultRouterOffering = _serviceOfferingDao.findByUuid(globalRouterOffering);
+        }
+        if (defaultRouterOffering == null) {
+            defaultRouterOffering =  _serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
+        }
+
+        int cpuCount = 0;
+        int memoryCount = 0;
+
+        // Since we already incremented the resource count for the domain,
+        // decrement it if the VR can't be started
+        if (ResourceCountRoutersType.valueIn(owner.getDomainId())
+                .equalsIgnoreCase(COUNT_ALL_VR_RESOURCES)) {
+            cpuCount = offering.getCpu();
+            memoryCount = offering.getRamSize();
+        } else if (ResourceCountRoutersType.valueIn(owner.getDomainId())
+                .equalsIgnoreCase(COUNT_DELTA_VR_RESOURCES)) {
+            cpuCount = offering.getCpu() - defaultRouterOffering.getCpu();
+            memoryCount = offering.getRamSize() - defaultRouterOffering.getRamSize();
+        }
+
+        // Decrement resource count if flag is true
+        if (s_logger.isDebugEnabled()) {
+            s_logger.error("Decrementing cpu resource count with value " + cpuCount +
+                    " and memory resource with value " + memoryCount);
+        }
+        _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.cpu, new Long(cpuCount));
+        _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.memory, new Long(memoryCount));
     }
 
     private void resetVmNicsDeviceId(Long vmId) {
@@ -2010,10 +2150,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             boolean result = stateTransitTo(vm, Event.OperationSucceeded, null);
             if (result) {
+                ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
                 if (VirtualMachine.Type.User.equals(vm.type) && ResoureCountRunningVMsonly.value()) {
                     //update resource count if stop successfully
-                    ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
                     resourceCountDecrement(vm.getAccountId(),new Long(offering.getCpu()), new Long(offering.getRamSize()));
+                }
+
+                final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
+                // Decrement VR resource count once the VR is stopped
+                if (VirtualMachine.Type.DomainRouter.equals(vm.type) &&
+                        ResourceCountRouters.valueIn(vm.getDomainId())) {
+                    decrementVrResourceCount(offering, owner,false);
                 }
             } else {
                 throw new CloudRuntimeException("unable to stop " + vm);
@@ -4556,7 +4703,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             VmOpLockStateRetry,
             VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval, VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, HaVmRestartHostUp,
             ResoureCountRunningVMsonly, AllowExposeHypervisorHostname, AllowExposeHypervisorHostnameAccountLevel,
-            VmServiceOfferingMaxCPUCores, VmServiceOfferingMaxRAMSize };
+            VmServiceOfferingMaxCPUCores, VmServiceOfferingMaxRAMSize, ResourceCountRouters, ResourceCountRoutersType };
     }
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
