@@ -2019,35 +2019,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (volIso != null) {
                     for (DiskTO vol : disks) {
                         if (vol.getType() == Volume.Type.ISO) {
-
-                            TemplateObjectTO iso = (TemplateObjectTO) vol.getData();
-
-                            if (iso.getPath() != null && !iso.getPath().isEmpty()) {
-                                DataStoreTO imageStore = iso.getDataStore();
-                                if (!(imageStore instanceof NfsTO)) {
-                                    s_logger.debug("unsupported protocol");
-                                    throw new Exception("unsupported protocol");
-                                }
-                                NfsTO nfsImageStore = (NfsTO) imageStore;
-                                String isoPath = nfsImageStore.getUrl() + File.separator + iso.getPath();
-                                Pair<String, ManagedObjectReference> isoDatastoreInfo = getIsoDatastoreInfo(hyperHost, isoPath);
-                                assert (isoDatastoreInfo != null);
-                                assert (isoDatastoreInfo.second() != null);
-
-                                deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
-                                Pair<VirtualDevice, Boolean> isoInfo =
-                                        VmwareHelper.prepareIsoDevice(vmMo, isoDatastoreInfo.first(), isoDatastoreInfo.second(), true, true, ideUnitNumber++, i + 1);
-                                deviceConfigSpecArray[i].setDevice(isoInfo.first());
-                                if (isoInfo.second()) {
-                                    if (s_logger.isDebugEnabled())
-                                        s_logger.debug("Prepare ISO volume at new device " + _gson.toJson(isoInfo.first()));
-                                    deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
-                                } else {
-                                    if (s_logger.isDebugEnabled())
-                                        s_logger.debug("Prepare ISO volume at existing device " + _gson.toJson(isoInfo.first()));
-                                    deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
-                                }
-                            }
+                            configureIso(hyperHost, vmMo, vol, deviceConfigSpecArray, ideUnitNumber++, i);
                             i++;
                         }
                     }
@@ -2075,8 +2047,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             //
             // Setup ROOT/DATA disk devices
             //
+            if (Arrays.stream(sortedDisks).filter(disk -> disk.getType() == Volume.Type.ISO).count() > 1 && deployAsIs) {
+                sortedDisks = Arrays.stream(sortedDisks).filter(vol -> ((vol.getPath() != null &&
+                        vol.getPath().contains("configdrive")))).toArray(DiskTO[]::new);
+            }
+
             for (DiskTO vol : sortedDisks) {
                 if (vol.getType() == Volume.Type.ISO) {
+                    if (deployAsIs) {
+                        configureIso(hyperHost, vmMo, vol, deviceConfigSpecArray, ideUnitNumber++, i);
+                        i++;
+                    }
                     continue;
                 }
 
@@ -2454,6 +2435,38 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             return startAnswer;
         } finally {
+        }
+    }
+
+    private void configureIso(VmwareHypervisorHost hyperHost, VirtualMachineMO vmMo, DiskTO vol,
+                              VirtualDeviceConfigSpec[] deviceConfigSpecArray, int ideUnitNumber, int i) throws Exception {
+        TemplateObjectTO iso = (TemplateObjectTO) vol.getData();
+
+        if (iso.getPath() != null && !iso.getPath().isEmpty()) {
+            DataStoreTO imageStore = iso.getDataStore();
+            if (!(imageStore instanceof NfsTO)) {
+                s_logger.debug("unsupported protocol");
+                throw new Exception("unsupported protocol");
+            }
+            NfsTO nfsImageStore = (NfsTO) imageStore;
+            String isoPath = nfsImageStore.getUrl() + File.separator + iso.getPath();
+            Pair<String, ManagedObjectReference> isoDatastoreInfo = getIsoDatastoreInfo(hyperHost, isoPath);
+            assert (isoDatastoreInfo != null);
+            assert (isoDatastoreInfo.second() != null);
+
+            deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
+            Pair<VirtualDevice, Boolean> isoInfo =
+                    VmwareHelper.prepareIsoDevice(vmMo, isoDatastoreInfo.first(), isoDatastoreInfo.second(), true, true, ideUnitNumber, i + 1);
+            deviceConfigSpecArray[i].setDevice(isoInfo.first());
+            if (isoInfo.second()) {
+                if (s_logger.isDebugEnabled())
+                    s_logger.debug("Prepare ISO volume at new device " + _gson.toJson(isoInfo.first()));
+                deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
+            } else {
+                if (s_logger.isDebugEnabled())
+                    s_logger.debug("Prepare ISO volume at existing device " + _gson.toJson(isoInfo.first()));
+                deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
+            }
         }
     }
 
