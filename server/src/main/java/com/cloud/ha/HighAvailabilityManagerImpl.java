@@ -130,7 +130,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     @Inject
     ServiceOfferingDao _serviceOfferingDao;
     @Inject
-    private ConsoleProxyManager consoleProxyMgr;
+    private ConsoleProxyManager consoleProxyManager;
     @Inject
     private SecondaryStorageVmManager secondaryStorageVmManager;
 
@@ -704,7 +704,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             if (!VirtualMachine.State.Expunging.equals(work.getPreviousState())) {
                 s_logger.info("Destroying " + vm.getUuid());
                 if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
-                    consoleProxyMgr.destroyProxy(vm.getId());
+                    consoleProxyManager.destroyProxy(vm.getId());
                 } else if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())) {
                     secondaryStorageVmManager.destroySecStorageVm(vm.getId());
                 } else {
