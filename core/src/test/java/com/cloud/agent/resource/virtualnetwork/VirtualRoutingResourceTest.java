@@ -545,21 +545,21 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
     }
 
     protected RemoteAccessVpnCfgCommand generateRemoteAccessVpnCfgCommand1() {
-        final RemoteAccessVpnCfgCommand cmd = new RemoteAccessVpnCfgCommand(true, "124.10.10.10", "10.10.1.1", "10.10.1.10-10.10.1.20", "sharedkey", false);
+        final RemoteAccessVpnCfgCommand cmd = new RemoteAccessVpnCfgCommand(true, "124.10.10.10", "10.10.1.1", "10.10.1.10-10.10.1.20", "sharedkey", false, null, null, null, null);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTERNAME);
         cmd.setLocalCidr("10.1.1.1/24");
         return cmd;
     }
 
     protected RemoteAccessVpnCfgCommand generateRemoteAccessVpnCfgCommand2() {
-        final RemoteAccessVpnCfgCommand cmd = new RemoteAccessVpnCfgCommand(false, "124.10.10.10", "10.10.1.1", "10.10.1.10-10.10.1.20", "sharedkey", false);
+        final RemoteAccessVpnCfgCommand cmd = new RemoteAccessVpnCfgCommand(false, "124.10.10.10", "10.10.1.1", "10.10.1.10-10.10.1.20", "sharedkey", false, null, null, null, null);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTERNAME);
         cmd.setLocalCidr("10.1.1.1/24");
         return cmd;
     }
 
     protected RemoteAccessVpnCfgCommand generateRemoteAccessVpnCfgCommand3() {
-        final RemoteAccessVpnCfgCommand cmd = new RemoteAccessVpnCfgCommand(true, "124.10.10.10", "10.10.1.1", "10.10.1.10-10.10.1.20", "sharedkey", true);
+        final RemoteAccessVpnCfgCommand cmd = new RemoteAccessVpnCfgCommand(true, "124.10.10.10", "10.10.1.1", "10.10.1.10-10.10.1.20", "sharedkey", true, null, null, null, null);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTERNAME);
         cmd.setLocalCidr("10.1.1.1/24");
         return cmd;

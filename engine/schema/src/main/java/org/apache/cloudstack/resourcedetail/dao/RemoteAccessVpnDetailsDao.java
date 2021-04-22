@@ -16,11 +16,13 @@
 // under the License.
 package org.apache.cloudstack.resourcedetail.dao;
 
+import java.util.Map;
+
 import org.apache.cloudstack.resourcedetail.RemoteAccessVpnDetailVO;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
 import com.cloud.utils.db.GenericDao;
 
 public interface RemoteAccessVpnDetailsDao extends GenericDao<RemoteAccessVpnDetailVO, Long>, ResourceDetailsDao<RemoteAccessVpnDetailVO> {
-
+    Map<String, String> getDetails(long vpnId);
 }

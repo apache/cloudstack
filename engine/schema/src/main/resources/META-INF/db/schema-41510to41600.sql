@@ -303,3 +303,11 @@ from
         
 -- Update name for global configuration user.vm.readonly.ui.details
 Update configuration set name='user.vm.readonly.details' where name='user.vm.readonly.ui.details';
+
+-- VPN IKEv2 implementation
+ALTER TABLE `cloud`.`remote_access_vpn` CHANGE COLUMN `ipsec_psk` `ipsec_psk` VARCHAR(256) NULL ;
+ALTER TABLE `cloud`.`remote_access_vpn`
+    ADD COLUMN `vpn_type` VARCHAR(8) NOT NULL AFTER `display`,
+    ADD COLUMN `ca_certificate` VARCHAR(8191) NULL AFTER `vpn_type`;
+ALTER TABLE `cloud`.`remote_access_vpn_details` CHANGE COLUMN `value` `value` VARCHAR(8191) NOT NULL ;
+

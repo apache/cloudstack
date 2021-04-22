@@ -77,6 +77,14 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
     @Param(description = "is vpn for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
+    @SerializedName(ApiConstants.TYPE)
+    @Param(description = "the type of remote access vpn implementation")
+    private String type;
+
+    @SerializedName(ApiConstants.CERTIFICATE)
+    @Param(description = "the client certificate")
+    private String certificate;
+
     public void setPublicIp(String publicIp) {
         this.publicIp = publicIp;
     }
@@ -128,5 +136,13 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
 
     public void setForDisplay(Boolean forDisplay) {
         this.forDisplay = forDisplay;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public void setCertificate(String certificate) {
+        this.certificate = certificate;
     }
 }

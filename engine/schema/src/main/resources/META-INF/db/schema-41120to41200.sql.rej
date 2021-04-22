@@ -1,0 +1,15 @@
+diff a/engine/schema/src/main/resources/META-INF/db/schema-41120to41200.sql b/engine/schema/src/main/resources/META-INF/db/schema-41120to41200.sql	(rejected hunks)
+@@ -34,4 +34,11 @@ INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`,
+ INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 3, 'moveNetworkAclItem', 'ALLOW', 302) ON DUPLICATE KEY UPDATE rule=rule;
+ INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 4, 'moveNetworkAclItem', 'ALLOW', 260) ON DUPLICATE KEY UPDATE rule=rule;
+ 
+-UPDATE `cloud`.`async_job` SET `removed` = now() WHERE `removed` IS NULL;
+\ No newline at end of file
++UPDATE `cloud`.`async_job` SET `removed` = now() WHERE `removed` IS NULL;
++
++-- VPN IKEv2 implementation
++ALTER TABLE `cloud`.`remote_access_vpn` CHANGE COLUMN `ipsec_psk` `ipsec_psk` VARCHAR(256) NULL ;
++ALTER TABLE `cloud`.`remote_access_vpn`
++    ADD COLUMN `vpn_type` VARCHAR(8) NOT NULL AFTER `display`,
++    ADD COLUMN `ca_certificate` VARCHAR(8191) NULL AFTER `vpn_type`;
++ALTER TABLE `cloud`.`remote_access_vpn_details` CHANGE COLUMN `value` `value` VARCHAR(8191) NOT NULL ;

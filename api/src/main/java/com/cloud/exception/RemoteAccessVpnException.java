@@ -14,36 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package com.cloud.exception;
 
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.Displayable;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+/**
+ * @since 4.12.0.0
+ */
+public class RemoteAccessVpnException extends ManagementServerException {
+    private static final long serialVersionUID = -5851224796385227880L;
 
-public interface RemoteAccessVpn extends ControlledEntity, InternalIdentity, Identity, Displayable {
-    enum State {
-        Added, Running, Removed
+    public RemoteAccessVpnException(String message) {
+        super(message);
     }
-
-    long getServerAddressId();
-
-    String getIpRange();
-
-    String getIpsecPresharedKey();
-
-    String getCaCertificate();
-
-    String getLocalIp();
-
-    Long getNetworkId();
-
-    Long getVpcId();
-
-    State getState();
-
-    @Override
-    boolean isDisplay();
-
-    String getVpnType();
 }
