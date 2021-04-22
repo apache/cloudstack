@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.resource;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.SET_HOST_DOWN_TO_MAINTENANCE;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -104,7 +106,6 @@ import com.cloud.event.EventVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.gpu.GPU;
@@ -180,9 +181,6 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
-
-
-import static com.cloud.configuration.ConfigurationManagerImpl.SET_HOST_DOWN_TO_MAINTENANCE;
 
 @Component
 public class ResourceManagerImpl extends ManagerBase implements ResourceManager, ResourceService, Manager {
@@ -1271,13 +1269,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     // for the last host in this cluster, destroy SSVM/CPVM and stop all other VMs
                     if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())
                             || VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
-                        s_logger.error(String.format("Maintenance: VM is of type %s. Destroying for VM %s immediately instead of migration.", vm.getType().toString(), vm.getUuid()));
-                        // Scheduled destroy may not work as HAManager won't find agent
-                        try {
-                            _vmMgr.destroy(vm.getUuid(), true);
-                        } catch (AgentUnavailableException | OperationTimedoutException e) {
-                            s_logger.error(String.format("Failed to destroy VM %s (ID: %s) ", vm.getInstanceName(), vm.getUuid()), e);
-                        }
+                        s_logger.error(String.format("Maintenance: VM is of type %s. Destroying VM %s (ID: %s) immediately instead of migration.", vm.getType().toString(), vm.getInstanceName(), vm.getUuid()));
+                        _haMgr.scheduleDestroy(vm, host.getId());
                         continue;
                     }
                     s_logger.error(String.format("Maintenance: No hosts available for migrations. Scheduling shutdown for VM %s instead of migration.", vm.getUuid()));

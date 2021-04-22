@@ -41,6 +41,7 @@ import org.apache.log4j.NDC;
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManagerListener;
+import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -68,6 +69,7 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -125,9 +127,12 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     HostPodDao _podDao;
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
-
     @Inject
     ServiceOfferingDao _serviceOfferingDao;
+    @Inject
+    private ConsoleProxyManager consoleProxyMgr;
+    @Inject
+    private SecondaryStorageVmManager secondaryStorageVmManager;
 
     long _serverId;
 
@@ -698,7 +703,13 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         try {
             if (!VirtualMachine.State.Expunging.equals(work.getPreviousState())) {
                 s_logger.info("Destroying " + vm.getUuid());
-                _itMgr.destroy(vm.getUuid(), expunge);
+                if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
+                    consoleProxyMgr.destroyProxy(vm.getId());
+                } else if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())) {
+                    secondaryStorageVmManager.destroySecStorageVm(vm.getId());
+                } else {
+                    _itMgr.destroy(vm.getUuid(), expunge);
+                }
             } else {
                 s_logger.info("VM " + vm.getUuid() + " still in " + vm.getState() + " state.");
             }
