@@ -4585,12 +4585,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
             success = true;
         } catch (OperationTimedoutException e) {
-            String msg = String.format("Unable to scale %s due to [%s].", vm.toString(), e.getMessage());
-            s_logger.error(msg, e);
-            throw new AgentUnavailableException(msg, dstHostId);
-        } catch (AgentUnavailableException e) {
-            String msg = String.format("Unable to scale %s due to [%s].", vm.toString(), e.getMessage());
-            s_logger.error(msg, e);
+            throw new AgentUnavailableException(String.format("Unable to scale %s due to [%s].", vm.toString(), e.getMessage()), dstHostId, e);
+        } catch (final AgentUnavailableException e) {
             throw e;
         } finally {
             if (!success) {
