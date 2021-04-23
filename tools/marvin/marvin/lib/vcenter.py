@@ -137,6 +137,8 @@ class Vcenter():
             parsedObject['dvportgroup'] = Vcenter._parse_dvportgroup(obj)
         elif vim.VirtualMachine in vimtype:
             parsedObject['vm'] = Vcenter._parse_vm(obj)
+        elif vim.HostSystem in vimtype:
+            parsedObject['host'] = obj
         else:
             parsedObject['name'] = obj.name
         return parsedObject

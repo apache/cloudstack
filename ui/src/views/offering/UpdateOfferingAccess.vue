@@ -29,6 +29,7 @@
 
         <a-form-item :label="$t('label.domainid')" v-if="!this.offeringIsPublic">
           <a-select
+            :autoFocus="!this.offeringIsPublic"
             mode="multiple"
             v-decorator="['domainid', {
               rules: [
@@ -54,6 +55,7 @@
 
         <a-form-item :label="$t('label.zoneid')">
           <a-select
+            :autoFocus="this.offeringIsPublic"
             id="zone-selection"
             mode="multiple"
             v-decorator="['zoneid', {
@@ -146,8 +148,6 @@ export default {
         name: this.$t('label.all.zone')
       }
     ]
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

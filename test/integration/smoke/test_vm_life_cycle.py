@@ -61,7 +61,6 @@ from operator import itemgetter
 
 _multiprocess_shared_ = True
 
-
 class TestDeployVM(cloudstackTestCase):
 
     @classmethod
@@ -1443,6 +1442,11 @@ class TestKVMLiveMigration(cloudstackTestCase):
         if len(self.hosts) < 2:
             self.skipTest("Requires at least two hosts for performing migration related tests")
 
+
+        for host in self.hosts:
+            if host.details['Host.OS'] in ['CentOS']:
+                self.skipTest("live migration is not stabily supported on CentOS")
+
     def tearDown(self):
         try:
             cleanup_resources(self.apiclient, self.cleanup)
@@ -1779,9 +1783,6 @@ class TestVAppsVM(cloudstackTestCase):
                 cls.l2_network_offering
             ]
 
-            # Uncomment when tests are finished, to cleanup the test templates
-            for template in cls.templates:
-                cls._cleanup.append(template)
 
     @classmethod
     def tearDownClass(cls):
@@ -1803,21 +1804,21 @@ class TestVAppsVM(cloudstackTestCase):
     def get_ova_parsed_information_from_template(self, template):
         if not template:
             return None
-        details = template.details.__dict__
+        details = template.deployasisdetails.__dict__
         configurations = []
         disks = []
         isos = []
         networks = []
         for propKey in details:
-            if propKey.startswith('ACS-configuration'):
+            if propKey.startswith('configuration'):
                 configurations.append(json.loads(details[propKey]))
-            elif propKey.startswith('ACS-disk'):
+            elif propKey.startswith('disk'):
                 detail = json.loads(details[propKey])
                 if detail['isIso'] == True:
                     isos.append(detail)
                 else:
                     disks.append(detail)
-            elif propKey.startswith('ACS-network'):
+            elif propKey.startswith('network'):
                 networks.append(json.loads(details[propKey]))
 
         return configurations, disks, isos, networks
@@ -1845,32 +1846,6 @@ class TestVAppsVM(cloudstackTestCase):
                 nic.networkid,
                 nic_network["network"],
                 msg="VM NIC(InstanceID: {}) network mismatch, expected = {}, result = {}".format(nic_network["nic"], nic_network["network"], nic.networkid)
-            )
-
-    def verify_disks(self, template_disks, vm_id):
-        cmd = listVolumes.listVolumesCmd()
-        cmd.virtualmachineid = vm_id
-        cmd.listall = True
-        vm_volumes =  self.apiclient.listVolumes(cmd)
-        self.assertEqual(
-            isinstance(vm_volumes, list),
-            True,
-            "Check listVolumes response returns a valid list"
-        )
-        self.assertEqual(
-            len(template_disks),
-            len(vm_volumes),
-            msg="VM volumes count is different, expected = {}, result = {}".format(len(template_disks), len(vm_volumes))
-        )
-        template_disks.sort(key=itemgetter('diskNumber'))
-        vm_volumes.sort(key=itemgetter('deviceid'))
-        for j in range(len(vm_volumes)):
-            volume = vm_volumes[j]
-            disk = template_disks[j]
-            self.assertEqual(
-                volume.size,
-                disk["virtualSize"],
-                msg="VM Volume(diskNumber: {}) network mismatch, expected = {}, result = {}".format(disk["diskNumber"], disk["virtualSize"], volume.size)
             )
 
     @attr(tags=["advanced", "advancedns", "smoke", "sg", "dev"], required_hardware="false")
@@ -1973,8 +1948,6 @@ class TestVAppsVM(cloudstackTestCase):
 
             # Verify nics
             self.verify_nics(nicnetworklist, vm.id)
-            # Verify disks
-            self.verify_disks(disks, vm.id)
             # Verify properties
             original_properties = vm_service['properties']
             vm_properties = get_vm_vapp_configs(self.apiclient, self.config, self.zone, vm.instancename)

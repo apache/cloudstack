@@ -30,6 +30,7 @@
             </a-tooltip>
           </span>
           <a-input
+            autoFocus
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.name') }]
             }]"
@@ -204,8 +205,6 @@ export default {
         name: this.$t('label.all.zone')
       }
     ]
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

@@ -31,6 +31,7 @@
               </a-tooltip>
             </span>
             <a-input
+              autoFocus
               v-decorator="['gateway', {
                 rules: [{ required: true, message: $t('message.error.gateway') }]
               }]"
