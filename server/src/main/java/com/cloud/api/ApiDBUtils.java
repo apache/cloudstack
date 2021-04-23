@@ -27,8 +27,6 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import com.cloud.vm.NicVO;
-import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -318,6 +316,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
@@ -327,6 +326,7 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
@@ -1115,6 +1115,10 @@ public class ApiDBUtils {
 
     public static ServiceOffering findServiceOfferingById(Long serviceOfferingId) {
         return s_serviceOfferingDao.findByIdIncludingRemoved(serviceOfferingId);
+    }
+
+    public static ServiceOffering findServiceOfferingByUuid(String serviceOfferingUuid) {
+        return s_serviceOfferingDao.findByUuidIncludingRemoved(serviceOfferingUuid);
     }
 
     public static ServiceOfferingDetailsVO findServiceOfferingDetail(long serviceOfferingId, String key) {
