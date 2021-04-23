@@ -119,15 +119,6 @@ class TestScaleVm(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.apiclient = super(
-            TestScaleVm,
-            cls).getClsTestClient().getApiClient()
-        Configurations.update(
-                    cls.apiclient,
-                    name="enable.dynamic.scale.vm",
-                    value="false"
-                )
-
         super(TestScaleVm,cls).tearDownClass()
         return
 
@@ -141,6 +132,11 @@ class TestScaleVm(cloudstackTestCase):
                     %s" % self.hypervisor)
 
     def tearDown(self):
+        Configurations.update(
+            self.apiclient,
+            name="enable.dynamic.scale.vm",
+            value="false"
+        )
         # Clean up, terminate the created ISOs
         super(TestScaleVm,self).tearDown()
         return
