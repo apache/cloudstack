@@ -1340,8 +1340,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         Long hostId = cmd.getId();
         HostVO host = _hostDao.findById(hostId);
 
-        if (host == null || host.getRemoved() != null) {
-            throw new InvalidParameterValueException(String.format("Host [id:%s] does not exist", host.getId()));
+        if (host == null || StringUtils.isBlank(host.getName())) {
+            throw new InvalidParameterValueException(String.format("Host [id:%s] does not exist.", hostId));
+        } else if (host.getRemoved() != null){
+            throw new InvalidParameterValueException(String.format("Host [id:%s, name:%s] does not exist or it has been removed.", hostId, host.getName()));
         }
 
         if (host.getResourceState() == ResourceState.Degraded) {

@@ -34,7 +34,7 @@ import org.apache.cloudstack.context.CallContext;
 
 @APICommand(name = "cancelHostAsDegraded",
         description = "Cancel host status from 'Degraded'. Host will transit back to status 'Enabled'.",
-        since = "4.15.0.0",
+        since = "4.16.0.0",
         responseObject = HostResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
