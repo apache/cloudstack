@@ -4539,8 +4539,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         Long clustedId = hostVo.getClusterId();
         Float memoryOvercommitRatio = CapacityManager.MemOverprovisioningFactor.valueIn(clustedId);
         Float cpuOvercommitRatio = CapacityManager.CpuOverprovisioningFactor.valueIn(clustedId);
-        boolean divideMemoryByOverprovisioning = HypervisorGuruBase.VM_MIN_MEMORY_EQUALS_MEMORY_DIVIDED_BY_MEM_OVERPROVISIONING_FACTOR.valueIn(clustedId);
-        boolean divideCpuByOverprovisioning = HypervisorGuruBase.VM_MIN_CPU_SPEED_EQUALS_CPU_SPEED_DIVIDED_BY_CPU_OVERPROVISIONING_FACTOR.valueIn(clustedId);
+        boolean divideMemoryByOverprovisioning = HypervisorGuruBase.VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor.valueIn(clustedId);
+        boolean divideCpuByOverprovisioning = HypervisorGuruBase.VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor.valueIn(clustedId);
 
         int minMemory = (int)(newServiceOffering.getRamSize() / (divideMemoryByOverprovisioning ? memoryOvercommitRatio : 1));
         int minSpeed = (int)(newServiceOffering.getSpeed() / (divideCpuByOverprovisioning ? cpuOvercommitRatio : 1));
