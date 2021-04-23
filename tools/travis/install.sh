@@ -51,7 +51,7 @@ if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
    which python
    which python2
    python --version
-   python2 -m pip install --upgrade setuptools pycodestyle pylint flask nose
+   sudo python2 -m pip install --upgrade setuptools pycodestyle pylint flask nose
    cd systemvm/test && bash -x runtests.sh
    # Build noredist
    git clone https://github.com/rhtyd/cloudstack-nonoss.git nonoss && cd nonoss && bash -x install-non-oss.sh
