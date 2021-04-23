@@ -21,6 +21,8 @@
 which python2
 python2 --version
 
+sudo python2 -m pip install --user --upgrade pycodestyle
+
 export PYTHONPATH="../debian/opt/cloud/bin/"
 export PYTHONDONTWRITEBYTECODE=False
 
