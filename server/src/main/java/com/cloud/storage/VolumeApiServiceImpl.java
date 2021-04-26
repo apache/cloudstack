@@ -31,7 +31,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import com.cloud.dc.Pod;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -104,6 +103,7 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
 import com.cloud.event.ActionEvent;
@@ -1835,12 +1835,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_UPDATE, eventDescription = "updating volume", async = true)
     public Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume, String customId, long entityOwnerId, String chainInfo) {
-
+        Account caller = CallContext.current().getCallingAccount();
         VolumeVO volume = _volsDao.findById(volumeId);
 
         if (volume == null) {
             throw new InvalidParameterValueException("The volume id doesn't exist");
         }
+
+        /* Does the caller have authority to act on this volume? */
+        _accountMgr.checkAccess(caller, null, true, volume);
 
         if (path != null) {
             volume.setPath(path);
@@ -2065,6 +2068,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "detaching volume")
     public Volume detachVolumeViaDestroyVM(long vmId, long volumeId) {
+        Account caller = CallContext.current().getCallingAccount();
+        Volume volume = _volsDao.findById(volumeId);
+        // Permissions check
+        _accountMgr.checkAccess(caller, null, true, volume);
         return orchestrateDetachVolumeFromVM(vmId, volumeId);
     }
 
@@ -2254,6 +2261,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_MIGRATE, eventDescription = "migrating volume", async = true)
     public Volume migrateVolume(MigrateVolumeCmd cmd) {
+        Account caller = CallContext.current().getCallingAccount();
         Long volumeId = cmd.getVolumeId();
         Long storagePoolId = cmd.getStoragePoolId();
 
@@ -2261,6 +2269,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (vol == null) {
             throw new InvalidParameterValueException("Failed to find the volume id: " + volumeId);
         }
+
+        _accountMgr.checkAccess(caller, null, true, vol);
 
         if (vol.getState() != Volume.State.Ready) {
             throw new InvalidParameterValueException("Volume must be in ready state");
@@ -2279,13 +2289,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // Check that Vm to which this volume is attached does not have VM Snapshots
-        // OfflineVmwareMigration: considder if this is needed and desirable
+        // OfflineVmwareMigration: consider if this is needed and desirable
         if (vm != null && _vmSnapshotDao.findByVm(vm.getId()).size() > 0) {
             throw new InvalidParameterValueException("Volume cannot be migrated, please remove all VM snapshots for VM to which this volume is attached");
         }
 
         // OfflineVmwareMigration: extract this block as method and check if it is subject to regression
-        if (vm != null && vm.getState() == State.Running) {
+        if (vm != null && State.Running.equals(vm.getState())) {
             // Check if the VM is GPU enabled.
             if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
                 throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
@@ -2321,10 +2331,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (!liveMigrateVolume) {
                 throw new InvalidParameterValueException("Volume needs to be detached from VM");
             }
+
+            if (!cmd.isLiveMigrate()) {
+                throw new InvalidParameterValueException("The volume " + vol + "is attached to a vm and for migrating it " + "the parameter livemigrate should be specified");
+            }
         }
 
-        if (liveMigrateVolume && !cmd.isLiveMigrate()) {
-            throw new InvalidParameterValueException("The volume " + vol + "is attached to a vm and for migrating it " + "the parameter livemigrate should be specified");
+        if (vm != null &&
+                HypervisorType.VMware.equals(vm.getHypervisorType()) &&
+                State.Stopped.equals(vm.getState())) {
+            // For VMware, use liveMigrateVolume=true so that it follows VmwareStorageMotionStrategy
+            liveMigrateVolume = true;
         }
 
         StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
@@ -2361,7 +2378,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     getStoragePoolTags(destPool), vol.getName(), vol.getUuid(), diskOffering.getTags()));
         }
 
-        if (liveMigrateVolume && destPool.getClusterId() != null && srcClusterId != null) {
+        if (liveMigrateVolume && State.Running.equals(vm.getState()) &&
+                destPool.getClusterId() != null && srcClusterId != null) {
             if (!srcClusterId.equals(destPool.getClusterId())) {
                 throw new InvalidParameterValueException("Cannot migrate a volume of a virtual machine to a storage pool in a different cluster");
             }
@@ -2629,10 +2647,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private Snapshot takeSnapshotInternal(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup)
             throws ResourceAllocationException {
+        Account caller = CallContext.current().getCallingAccount();
         VolumeInfo volume = volFactory.getVolume(volumeId);
         if (volume == null) {
             throw new InvalidParameterValueException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
         }
+
+        _accountMgr.checkAccess(caller, null, true, volume);
 
         if (volume.getState() != Volume.State.Ready) {
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
@@ -2650,6 +2671,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         if (vm != null) {
+            _accountMgr.checkAccess(caller, null, true, vm);
             // serialize VM operation
             AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
             if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {

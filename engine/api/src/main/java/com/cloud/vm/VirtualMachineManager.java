@@ -43,6 +43,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -260,4 +261,6 @@ public interface VirtualMachineManager extends Manager {
     boolean unmanage(String vmUuid);
 
     UserVm restoreVirtualMachine(long vmId, Long newTemplateId) throws ResourceUnavailableException, InsufficientCapacityException;
+
+    Pair<Long, Long> findClusterAndHostIdForVm(long vmId);
 }

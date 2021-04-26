@@ -2395,43 +2395,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private Pair<Long, Long> findClusterAndHostIdForVm(VMInstanceVO vm) {
-        Long hostId = vm.getHostId();
-        Long clusterId = null;
-        // OfflineVmwareMigration: probably this is null when vm is stopped
-        if(hostId == null) {
-            hostId = vm.getLastHostId();
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("host id is null, using last host id %d", hostId) );
-            }
-        }
-        if (hostId == null) {
-            List<VolumeVO> volumes = _volsDao.findByInstanceAndType(vm.getId(), Type.ROOT);
-            if (CollectionUtils.isNotEmpty(volumes)) {
-                for (VolumeVO rootVolume : volumes) {
-                    if (rootVolume.getPoolId() != null) {
-                        StoragePoolVO pool = _storagePoolDao.findById(rootVolume.getPoolId());
-                        if (pool != null && pool.getClusterId() != null) {
-                            clusterId = pool.getClusterId();
-                            List<HostVO> hosts = _hostDao.findHypervisorHostInCluster(pool.getClusterId());
-                            if (CollectionUtils.isNotEmpty(hosts)) {
-                                hostId = hosts.get(0).getId();
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (clusterId == null && hostId != null) {
-            HostVO host = _hostDao.findById(hostId);
-            if (host != null) {
-                clusterId = host.getClusterId();
-            }
-        }
-        return new Pair<>(clusterId, hostId);
-    }
-
     private void migrateThroughHypervisorOrStorage(VMInstanceVO vm, Map<Volume, StoragePool> volumeToPool) throws StorageUnavailableException, InsufficientCapacityException {
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         Pair<Long, Long> vmClusterAndHost = findClusterAndHostIdForVm(vm);
@@ -6129,4 +6092,53 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _jobMgr.marshallResultObject(result));
     }
 
+    private Pair<Long, Long> findClusterAndHostIdForVmFromVolumes(long vmId) {
+        Long clusterId = null;
+        Long hostId = null;
+        List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
+        for (VolumeVO volume : volumes) {
+            if (Volume.State.Ready.equals(volume.getState()) &&
+                    volume.getPoolId() != null) {
+                StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
+                if (pool != null && pool.getClusterId() != null) {
+                    clusterId = pool.getClusterId();
+                    // hostId to be used only for sending commands, capacity check skipped
+                    List<HostVO> hosts = _hostDao.findHypervisorHostInCluster(pool.getClusterId());
+                    if (CollectionUtils.isNotEmpty(hosts)) {
+                        hostId = hosts.get(0).getId();
+                        break;
+                    }
+                }
+            }
+        }
+        return new Pair<>(clusterId, hostId);
+    }
+
+    private Pair<Long, Long> findClusterAndHostIdForVm(VirtualMachine vm) {
+        Long hostId = vm.getHostId();
+        Long clusterId = null;
+        if(hostId == null) {
+            hostId = vm.getLastHostId();
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("host id is null, using last host id %d", hostId) );
+            }
+        }
+        if (hostId == null) {
+            return findClusterAndHostIdForVmFromVolumes(vm.getId());
+        }
+        HostVO host = _hostDao.findById(hostId);
+        if (host != null) {
+            clusterId = host.getClusterId();
+        }
+        return new Pair<>(clusterId, hostId);
+    }
+
+    @Override
+    public Pair<Long, Long> findClusterAndHostIdForVm(long vmId) {
+        VMInstanceVO vm = _vmDao.findById(vmId);
+        if (vm == null) {
+            return new Pair<>(null, null);
+        }
+        return findClusterAndHostIdForVm(vm);
+    }
 }

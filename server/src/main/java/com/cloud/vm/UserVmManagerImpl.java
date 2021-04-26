@@ -50,6 +50,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -2999,6 +3000,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         checkForUnattachedVolumes(vmId, volumesToBeDeleted);
         validateVolumes(volumesToBeDeleted);
+
+        final ControlledEntity[] volumesToDelete = volumesToBeDeleted.toArray(new ControlledEntity[0]);
+        _accountMgr.checkAccess(ctx.getCallingAccount(), null, true, volumesToDelete);
 
         stopVirtualMachine(vmId, VmDestroyForcestop.value());
 
