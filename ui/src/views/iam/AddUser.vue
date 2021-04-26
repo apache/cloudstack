@@ -218,7 +218,7 @@ export default {
       domainid: null
     }
   },
-  beforeCreate () {
+  created () {
     this.form = this.$form.createForm(this)
     this.apiConfig = this.$store.getters.apis.createUser || {}
     this.apiParams = {}
