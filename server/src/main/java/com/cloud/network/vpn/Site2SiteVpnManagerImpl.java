@@ -480,14 +480,8 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         }
 
         Boolean splitConnections = cmd.getSplitConnections();
-        if (splitConnections == null) {
-            splitConnections = false;
-        }
 
         String ikeVersion = cmd.getIkeVersion();
-        if (ikeVersion == null) {
-            ikeVersion = "ike";
-        }
 
         checkCustomerGatewayCidrList(guestCidrList);
 
@@ -508,7 +502,9 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         gw.setDpd(dpd);
         gw.setEncap(encap);
         gw.setSplitConnections(splitConnections);
-        gw.setIkeVersion(ikeVersion);
+        if (ikeVersion != null) {
+            gw.setIkeVersion(ikeVersion);
+        }
         _customerGatewayDao.persist(gw);
 
         List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByCustomerGatewayId(id);

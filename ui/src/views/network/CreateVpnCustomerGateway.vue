@@ -108,7 +108,13 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item :label="$t('label.ikeversion')">
+      <a-form-item>
+        <span slot="label">
+          {{ $t('label.ikeversion') }}
+          <a-tooltip :title="apiParams.ikeversion.description">
+            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+          </a-tooltip>
+        </span>
         <a-select
           v-decorator="[
             'ikeversion',
