@@ -170,12 +170,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         ResourceStateAdapter, Configurable {
     private static final Logger s_logger = Logger.getLogger(SecondaryStorageManagerImpl.class);
 
-    private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30
-    // seconds
-    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC = 180; // 3
-    // minutes
-
-    private static final int STARTUP_DELAY = 60000; // 60 seconds
+    private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000;
+    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC = 180;
+    private static final int STARTUP_DELAY = 60000;
 
     private int _mgmtPort = 8250;
 
@@ -259,7 +256,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     protected long _nodeId = ManagementServerNode.getManagementServerId();
 
     private SystemVmLoadScanner<Long> _loadScanner;
-    private Map<Long, ZoneHostInfo> _zoneHostInfoMap; // map <zone id, info about running host in zone>
+    private Map<Long, ZoneHostInfo> _zoneHostInfoMap;
 
     private final GlobalLock _allocLock = GlobalLock.getInternLock(getAllocLockName());
 
@@ -307,7 +304,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             List<DataStore> ssStores = _dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
             for (DataStore ssStore : ssStores) {
                 if (!(ssStore.getTO() instanceof NfsTO)) {
-                    continue; // only do this for Nfs
+                    continue;
                 }
                 String secUrl = ssStore.getUri();
                 SecStorageSetupCommand setupCmd = null;
@@ -321,7 +318,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 String nfsVersion = imageStoreDetailsUtil.getNfsVersion(ssStore.getId());
                 setupCmd.setNfsVersion(nfsVersion);
 
-                //template/volume file upload key
                 String postUploadKey = _configDao.getValue(Config.SSVMPSK.key());
                 setupCmd.setPostUploadKey(postUploadKey);
 
@@ -331,7 +327,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 if (answer != null && answer.getResult()) {
                     SecStorageSetupAnswer an = (SecStorageSetupAnswer)answer;
                     if (an.get_dir() != null) {
-                        // update the parent path in image_store table for this image store
                         ImageStoreVO svo = _imageStoreDao.findById(ssStore.getId());
                         svo.setParent(an.get_dir());
                         _imageStoreDao.update(ssStore.getId(), svo);
@@ -344,27 +339,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 }
             }
         }
-        /* After removing SecondaryStorage entries from host table, control should never come here!!
-        else if( cssHost.getType() == Host.Type.SecondaryStorage ) {
-            List<SecondaryStorageVmVO> alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, zoneId, State.Running);
-            String secUrl = cssHost.getStorageUrl();
-            SecStorageSetupCommand setupCmd = new SecStorageSetupCommand(secUrl, null);
-            for ( SecondaryStorageVmVO ssVm : alreadyRunning ) {
-                HostVO host = _resourceMgr.findHostByName(ssVm.getInstanceName());
-                Answer answer = _agentMgr.easySend(host.getId(), setupCmd);
-                if (answer != null && answer.getResult()) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Successfully programmed secondary storage " + host.getName() + " in secondary storage VM " + ssVm.getInstanceName());
-                    }
-                } else {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Successfully programmed secondary storage " + host.getName() + " in secondary storage VM " + ssVm.getInstanceName());
-                    }
-                    return false;
-                }
-            }
-        }
-         */
+
         return true;
     }
 
@@ -514,8 +489,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
 
         SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(secStorageVmId);
-        // SecondaryStorageVmVO secStorageVm =
-        // allocSecStorageVmStorage(dataCenterId, secStorageVmId);
+
         if (secStorageVm != null) {
             SubscriptionMgr.getInstance().notifySubscribers(ALERT_SUBJECT, this,
                 new SecStorageVmAlertEventArgs(SecStorageVmAlertEventArgs.SSVM_CREATED, dataCenterId, secStorageVmId, secStorageVm, null));
@@ -569,7 +543,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         else {
             TrafficType defaultTrafficType = TrafficType.Public;
             List<NetworkVO> defaultNetworks = _networkDao.listByZoneAndTrafficType(dc.getId(), defaultTrafficType);
-            // api should never allow this situation to happen
+
             int networksSize = defaultNetworks.size();
             if (networksSize != 1) {
                 throw new CloudRuntimeException(String.format("Found [%s] networks of type [%s] when expect to find 1.", networksSize, defaultTrafficType));
@@ -593,7 +567,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         TrafficType defaultTrafficType = TrafficType.Guest;
         List<NetworkVO> defaultNetworks = _networkDao.listByZoneAndTrafficType(dc.getId(), defaultTrafficType);
-        // api should never allow this situation to happen
+
         int networksSize = defaultNetworks.size();
         if (networksSize != 1) {
             throw new CloudRuntimeException(String.format("Found [%s] networks of type [%s] when expect to find 1.", networksSize, defaultTrafficType));
@@ -792,8 +766,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             errorString = String.format("Unable to allocate capacity on zone [%s] due to [%s].", dataCenterId, errorString);
             throw e;
         } finally {
-            // TODO - For now put all the alerts as creation failure. Distinguish between creation vs start failure in future.
-            // Also add failure reason since startvm masks some of them.
             if(secStorageVm == null || secStorageVm.getState() != State.Running)
                 SubscriptionMgr.getInstance().notifySubscribers(ALERT_SUBJECT, this,
                         new SecStorageVmAlertEventArgs(SecStorageVmAlertEventArgs.SSVM_CREATE_FAILURE, dataCenterId, 0l, null, errorString));
@@ -895,7 +867,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             _useSSlCopy = true;
         }
 
-        //default to HTTP in case of missing domain
         String ssvmUrlDomain = _configDao.getValue("secstorage.ssl.cert.domain");
         if(_useSSlCopy && (ssvmUrlDomain == null || ssvmUrlDomain.isEmpty())){
             s_logger.warn("Empty secondary storage url domain, explicitly disabling SSL");
@@ -922,7 +893,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         _itMgr.registerGuru(VirtualMachine.Type.SecondaryStorageVm, this);
 
-        //check if there is a default service offering configured
         String configKey = Config.SecondaryStorageServiceOffering.key();
         String ssvmSrvcOffIdStr = configs.get(configKey);
         if (ssvmSrvcOffIdStr != null) {
@@ -947,7 +917,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             List<ServiceOfferingVO> offerings = _offeringDao.createSystemServiceOfferings("System Offering For Secondary Storage VM",
                     ServiceOffering.ssvmDefaultOffUniqueName, 1, ramSize, cpuFreq, null, null, false, null,
                     Storage.ProvisioningType.THIN, true, null, true, VirtualMachine.Type.SecondaryStorageVm, true);
-            // this can sometimes happen, if DB is manually or programmatically manipulated
+
             if (offerings == null || offerings.size() < 2) {
                 String msg = "Unable to set a service offering for secondary storage VM. Verify if it was removed.";
                 s_logger.error(msg);
@@ -1024,7 +994,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 }
             }
 
-            // vm was already stopped, return true
             return true;
         } catch (ResourceUnavailableException e) {
             s_logger.error(String.format("Unable to stop secondary storage VM [%s] due to [%s].", secStorageVm.getHostName(), e.toString()), e);
@@ -1077,7 +1046,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             if (host != null) {
                 s_logger.debug(String.format("Removing host entry for secondary storage VM [%s].", vmId));
                 _hostDao.remove(host.getId());
-                //Expire the download urls in the entire zone for templates and volumes.
+
                 _tmplStoreDao.expireDnldUrlsForZone(host.getDataCenterId());
                 _volumeStoreDao.expireDnldUrlsForZone(host.getDataCenterId());
                 return true;
@@ -1094,8 +1063,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     private String getAllocLockName() {
-        // to improve security, it may be better to return a unique mashed
-        // name(for example MD5 hashed)
         return "secStorageVm.alloc";
     }
 
@@ -1251,7 +1218,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             controlNic = managementNic;
         }
 
-        // verify ssh access on management nic for system vm running on HyperV
         if(profile.getHypervisorType() == HypervisorType.Hyperv) {
             controlNic = managementNic;
         }
@@ -1271,12 +1237,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
 
         try {
-            //get system ip and create static nat rule for the vm in case of basic networking with EIP/ELB
             _rulesMgr.getSystemIpAndEnableStaticNatForVm(profile.getVirtualMachine(), false);
             IPAddressVO ipaddr = _ipAddressDao.findByAssociatedVmId(profile.getVirtualMachine().getId());
             if (ipaddr != null && ipaddr.getSystem()) {
                 SecondaryStorageVmVO secVm = _secStorageVmDao.findById(profile.getId());
-                // override SSVM guest IP with EIP, so that download url's with be prepared with EIP
                 secVm.setPublicIpAddress(ipaddr.getAddress().addr());
                 _secStorageVmDao.update(secVm.getId(), secVm);
             }
@@ -1290,7 +1254,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Override
     public void finalizeStop(VirtualMachineProfile profile, Answer answer) {
-        //release elastic IP here
         IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(profile.getId());
         if (ip != null && ip.getSystem()) {
             CallContext ctx = CallContext.current();
@@ -1342,7 +1305,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Override
     public boolean isPoolReadyForScan(Long pool) {
-        // pool is at zone basis
         long dataCenterId = pool.longValue();
 
         if (!isZoneReady(_zoneHostInfoMap, dataCenterId)) {
@@ -1392,7 +1354,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Override
     public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
-        /* Called when Secondary Storage VM connected */
         StartupCommand firstCmd = cmd[0];
         if (!(firstCmd instanceof StartupSecondaryStorageCommand)) {
             return null;
@@ -1404,55 +1365,11 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Override
     public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details, List<String> hostTags) {
-        // Used to be Called when add secondary storage on UI through DummySecondaryStorageResource to update that host entry for Secondary Storage.
-        // Now since we move secondary storage from host table, this code is not needed to be invoked anymore.
-        /*
-        StartupCommand firstCmd = startup[0];
-        if (!(firstCmd instanceof StartupStorageCommand)) {
-            return null;
-        }
-
-        com.cloud.host.Host.Type type = null;
-        StartupStorageCommand ssCmd = ((StartupStorageCommand) firstCmd);
-        if (ssCmd.getHostType() == Host.Type.SecondaryStorageCmdExecutor) {
-            type = ssCmd.getHostType();
-        } else {
-            if (ssCmd.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE) {
-                type = Host.Type.SecondaryStorage;
-                if (resource != null && resource instanceof DummySecondaryStorageResource) {
-                    host.setResource(null);
-                }
-            } else if (ssCmd.getResourceType() == Storage.StorageResourceType.LOCAL_SECONDARY_STORAGE) {
-                type = Host.Type.LocalSecondaryStorage;
-            } else {
-                type = Host.Type.Storage;
-            }
-
-            final Map<String, String> hostDetails = ssCmd.getHostDetails();
-            if (hostDetails != null) {
-                if (details != null) {
-                    details.putAll(hostDetails);
-                } else {
-                    details = hostDetails;
-                }
-            }
-
-            host.setDetails(details);
-            host.setParent(ssCmd.getParent());
-            host.setTotalSize(ssCmd.getTotalSize());
-            host.setHypervisorType(HypervisorType.None);
-            host.setType(type);
-            if (ssCmd.getNfsShare() != null) {
-                host.setStorageUrl(ssCmd.getNfsShare());
-            }
-        }
-         */
-        return null; // no need to handle this event anymore since secondary storage is not in host table anymore.
+        return null;
     }
 
     @Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
-        // Since secondary storage is moved out of host table, this class should not handle delete secondary storage anymore.
         return null;
     }
 
