@@ -169,9 +169,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         ResourceStateAdapter, Configurable {
     private static final Logger s_logger = Logger.getLogger(SecondaryStorageManagerImpl.class);
 
-    private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000;
-    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC = 180;
-    private static final int STARTUP_DELAY = 60000;
+    private static final int DEFAULT_CAPACITY_SCAN_INTERVAL_IN_MILLISECONDS = 30000;
+    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC_IN_SECONDS = 180;
+    private static final int STARTUP_DELAY_IN_MILLISECONDS = 60000;
 
     private int _mgmtPort = 8250;
 
@@ -245,7 +245,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     @Inject
     private IndirectAgentLB indirectAgentLB;
 
-    private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
+    private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL_IN_MILLISECONDS;
     private int _secStorageVmMtuSize;
 
     private String _instance;
@@ -706,7 +706,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                     s_logger.info("No stopped secondary storage VM is available, need to allocate a new secondary storage VM.");
                 }
 
-                if (_allocLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
+                if (_allocLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC_IN_SECONDS)) {
                     try {
                         secStorageVm = startNew(dataCenterId, role);
                     } finally {
@@ -729,7 +729,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 long secStorageVmId = secStorageVm.getId();
                 GlobalLock secStorageVmLock = GlobalLock.getInternLock(getSecStorageVmLockName(secStorageVmId));
                 try {
-                    if (secStorageVmLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
+                    if (secStorageVmLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC_IN_SECONDS)) {
                         try {
                             secStorageVm = startSecStorageVm(secStorageVmId);
                         } finally {
@@ -875,7 +875,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         _allowedInternalSites = _configDao.getValue("secstorage.allowed.internal.sites");
 
         String value = configs.get("secstorage.capacityscan.interval");
-        _capacityScanInterval = NumbersUtil.parseLong(value, DEFAULT_CAPACITY_SCAN_INTERVAL);
+        _capacityScanInterval = NumbersUtil.parseLong(value, DEFAULT_CAPACITY_SCAN_INTERVAL_IN_MILLISECONDS);
 
         _instance = configs.get("instance.name");
         if (_instance == null) {
@@ -926,7 +926,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         if (_useServiceVM) {
             _loadScanner = new SystemVmLoadScanner<Long>(this);
-            _loadScanner.initScan(STARTUP_DELAY, _capacityScanInterval);
+            _loadScanner.initScan(STARTUP_DELAY_IN_MILLISECONDS, _capacityScanInterval);
         }
 
         _httpProxy = configs.get(Config.SecStorageProxy.key());
@@ -977,7 +977,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             if (secStorageVm.getHostId() != null) {
                 GlobalLock secStorageVmLock = GlobalLock.getInternLock(getSecStorageVmLockName(secStorageVm.getId()));
                 try {
-                    if (secStorageVmLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
+                    if (secStorageVmLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC_IN_SECONDS)) {
                         try {
                             _itMgr.stop(secStorageVm.getUuid());
                             return true;
