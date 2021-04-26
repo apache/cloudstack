@@ -41,17 +41,20 @@ import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenProvider
 import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenPublicNetworkCmd;
 import org.apache.cloudstack.network.tungsten.api.command.GetLoadBalancerSslCertificateCmd;
 import org.apache.cloudstack.network.tungsten.api.command.ListTungstenProvidersCmd;
+import org.apache.cloudstack.network.tungsten.api.command.SynchronizeTungstenDataCmd;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenProviderResponse;
 import org.apache.cloudstack.network.tungsten.resource.TungstenResource;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 @Component
 public class TungstenProviderServiceImpl extends ManagerBase implements TungstenProviderService {
@@ -77,7 +80,8 @@ public class TungstenProviderServiceImpl extends ManagerBase implements Tungsten
     public List<Class<?>> getCommands() {
         return Lists.<Class<?>>newArrayList(CreateTungstenProviderCmd.class, ConfigTungstenServiceCmd.class,
             CreateTungstenPublicNetworkCmd.class, ListTungstenProvidersCmd.class,
-            CreateTungstenManagementNetworkCmd.class, GetLoadBalancerSslCertificateCmd.class);
+            CreateTungstenManagementNetworkCmd.class, GetLoadBalancerSslCertificateCmd.class,
+            SynchronizeTungstenDataCmd.class);
     }
 
     @Override
@@ -86,9 +90,14 @@ public class TungstenProviderServiceImpl extends ManagerBase implements Tungsten
         final Long zoneId = cmd.getZoneId();
         final String name = cmd.getName();
         final String hostname = cmd.getHostname();
-        final String port = cmd.getPort();
-        final String vrouter = cmd.getVrouter();
-        final String vrouterPort = cmd.getVrouterPort();
+        final String gateway = cmd.getGateway();
+        final String port = cmd.getPort() == null || cmd.getPort().equals(StringUtils.EMPTY) ? "8082" : cmd.getPort();
+        final String vrouterPort =
+            cmd.getVrouterPort() == null || cmd.getVrouterPort().equals(StringUtils.EMPTY) ? "9091" :
+                cmd.getVrouterPort();
+        final String introspectPort =
+            cmd.getIntrospectPort() == null || cmd.getIntrospectPort().equals(StringUtils.EMPTY) ? "8085" :
+                cmd.getIntrospectPort();
 
         TungstenResource tungstenResource = new TungstenResource();
 
@@ -106,8 +115,9 @@ public class TungstenProviderServiceImpl extends ManagerBase implements Tungsten
         params.put("name", "TungstenDevice - " + cmd.getName());
         params.put("hostname", cmd.getHostname());
         params.put("port", cmd.getPort());
-        params.put("vrouter", cmd.getVrouter());
-        params.put("vrouterPort", cmd.getVrouterPort());
+        params.put("gateway", cmd.getGateway());
+        params.put("vrouterPort", vrouterPort);
+        params.put("introspectPort", introspectPort);
         Map<String, Object> hostdetails = new HashMap<String, Object>();
         hostdetails.putAll(params);
 
@@ -119,7 +129,7 @@ public class TungstenProviderServiceImpl extends ManagerBase implements Tungsten
                     @Override
                     public TungstenProviderVO doInTransaction(TransactionStatus status) {
                         TungstenProviderVO tungstenProviderVO = new TungstenProviderVO(zoneId, name, host.getId(), port,
-                            hostname, vrouter, vrouterPort);
+                            hostname, gateway, vrouterPort, introspectPort);
                         _tungstenProviderDao.persist(tungstenProviderVO);
 
                         DetailVO detail = new DetailVO(host.getId(), "tungstendeviceid",
@@ -156,7 +166,8 @@ public class TungstenProviderServiceImpl extends ManagerBase implements Tungsten
         tungstenProviderResponse.setName(tungstenProviderVO.getProviderName());
         tungstenProviderResponse.setPort(tungstenProviderVO.getPort());
         tungstenProviderResponse.setUuid(tungstenProviderVO.getUuid());
-        tungstenProviderResponse.setVrouter(tungstenProviderVO.getVrouter());
+        tungstenProviderResponse.setGateway(tungstenProviderVO.getGateway());
+        tungstenProviderResponse.setIntrospectPort(tungstenProviderVO.getIntrospectPort());
         tungstenProviderResponse.setVrouterPort(tungstenProviderVO.getVrouterPort());
         tungstenProviderResponse.setObjectName("tungstenProvider");
         return tungstenProviderResponse;

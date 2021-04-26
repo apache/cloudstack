@@ -23,16 +23,25 @@ public class UpdateTungstenLoadBalancerPoolCommand extends TungstenCommand {
     private final String lbSessionPersistence;
     private final String lbPersistenceCookieName;
     private final String lbProtocol;
+    private final boolean lbStatsEnable;
+    private final String lbStatsPort;
+    private final String lbStatsUri;
+    private final String lbStatsAuth;
 
     public UpdateTungstenLoadBalancerPoolCommand(final String projectFqn, final String lbPoolName,
         final String lbMethod, final String lbSessionPersistence, final String lbPersistenceCookieName,
-        final String lbProtocol) {
+        final String lbProtocol, final boolean lbStatsEnable, final String lbStatsPort, final String lbStatsUri,
+        final String lbStatsAuth) {
         this.projectFqn = projectFqn;
         this.lbPoolName = lbPoolName;
         this.lbMethod = lbMethod;
         this.lbSessionPersistence = lbSessionPersistence;
         this.lbPersistenceCookieName = lbPersistenceCookieName;
         this.lbProtocol = lbProtocol;
+        this.lbStatsEnable = lbStatsEnable;
+        this.lbStatsPort = lbStatsPort;
+        this.lbStatsUri = lbStatsUri;
+        this.lbStatsAuth = lbStatsAuth;
     }
 
     public String getProjectFqn() {
@@ -57,5 +66,21 @@ public class UpdateTungstenLoadBalancerPoolCommand extends TungstenCommand {
 
     public String getLbProtocol() {
         return lbProtocol;
+    }
+
+    public boolean isLbStatsEnable() {
+        return lbStatsEnable;
+    }
+
+    public String getLbStatsPort() {
+        return lbStatsPort;
+    }
+
+    public String getLbStatsUri() {
+        return lbStatsUri;
+    }
+
+    public String getLbStatsAuth() {
+        return lbStatsAuth;
     }
 }

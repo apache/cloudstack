@@ -36,8 +36,8 @@ public class VRouterApiConnectorImpl implements VRouterApiConnector {
     private static final Logger s_logger = Logger.getLogger(VRouterApiConnector.class);
     private String _url;
 
-    public VRouterApiConnectorImpl(String host, String port) {
-        _url = "http://" + host + ":" + port + "/";
+    public VRouterApiConnectorImpl(VRouter vRouter) {
+        _url = "http://" + vRouter.getHost() + ":" + vRouter.getPort() + "/";
     }
 
     @Override

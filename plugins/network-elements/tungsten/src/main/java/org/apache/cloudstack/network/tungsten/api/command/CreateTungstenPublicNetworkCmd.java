@@ -27,29 +27,18 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
-import com.cloud.utils.TungstenUtils;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.network.tungsten.agent.api.ApplyTungstenNetworkPolicyCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIpPoolCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkPolicyCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenFabricNetworkCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
-import org.apache.cloudstack.network.tungsten.model.TungstenRule;
-import org.apache.cloudstack.network.tungsten.service.TungstenFabricUtils;
+import org.apache.cloudstack.network.tungsten.service.TungstenService;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -66,7 +55,7 @@ public class CreateTungstenPublicNetworkCmd extends BaseCmd {
     @Inject
     NetworkModel _networkModel;
     @Inject
-    TungstenFabricUtils _tungstenFabricUtils;
+    TungstenService _tungstenService;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true
         , description = "the ID of zone")
@@ -84,96 +73,18 @@ public class CreateTungstenPublicNetworkCmd extends BaseCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         Network publicNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Public);
-
-        // create public ip address
         SearchCriteria<VlanVO> sc = _vlanDao.createSearchCriteria();
         sc.setParameters("network_id", publicNetwork.getId());
-        VlanVO pubVlanVO = _vlanDao.findOneBy(sc);
-        String[] ipAddress = pubVlanVO.getIpRange().split("-");
-        String publicNetworkCidr = NetUtils.getCidrFromGatewayAndNetmask(pubVlanVO.getVlanGateway(),
-            pubVlanVO.getVlanNetmask());
-        Pair<String, Integer> publicPair = NetUtils.getCidr(publicNetworkCidr);
+        List<VlanVO> pubVlanVOList = _vlanDao.listVlansByNetworkId(publicNetwork.getId());
 
-        // create public network
-        CreateTungstenNetworkCommand createTungstenPublicNetworkCommand = new CreateTungstenNetworkCommand(
-            publicNetwork.getUuid(), TungstenUtils.getPublicNetworkName(zoneId),
-            TungstenUtils.getPublicNetworkName(zoneId), null, true, false, publicPair.first(), publicPair.second(),
-            pubVlanVO.getVlanGateway(), true, null, ipAddress[0], ipAddress[1], false, false,
-            TungstenUtils.getSubnetName(publicNetwork.getId()));
-        TungstenAnswer createPublicNetworkAnswer = _tungstenFabricUtils.sendTungstenCommand(
-            createTungstenPublicNetworkCommand, zoneId);
-        if (!createPublicNetworkAnswer.getResult()) {
-            throw new CloudRuntimeException("can not create tungsten public network");
+        if (!_tungstenService.createPublicNetwork(zoneId)) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to create tungsten public network");
         }
 
-        List<TungstenRule> tungstenRuleList = new ArrayList<>();
-        tungstenRuleList.add(
-            new TungstenRule(null, TungstenUtils.DENY_ACTION, TungstenUtils.ONE_WAY_DIRECTION, TungstenUtils.ANY_PROTO,
-                TungstenUtils.ALL_IP4_PREFIX, 0, -1, -1, publicPair.first(), publicPair.second(), -1, -1));
-
-        // create default public network policy rule
-        CreateTungstenNetworkPolicyCommand createTungstenNetworkPolicyCommand = new CreateTungstenNetworkPolicyCommand(
-            TungstenUtils.getVirtualNetworkPolicyName(publicNetwork.getId()), null, tungstenRuleList);
-        TungstenAnswer createTungstenNetworkPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
-            createTungstenNetworkPolicyCommand, zoneId);
-        if (!createTungstenNetworkPolicyAnswer.getResult()) {
-            throw new CloudRuntimeException("can not create tungsten public network policy");
-        }
-
-        // apply network policy
-        ApplyTungstenNetworkPolicyCommand applyTungstenNetworkPolicyCommand = new ApplyTungstenNetworkPolicyCommand(
-            null, TungstenUtils.getVirtualNetworkPolicyName(publicNetwork.getId()), publicNetwork.getUuid(), false);
-        TungstenAnswer applyNetworkPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
-            applyTungstenNetworkPolicyCommand, zoneId);
-        if (!applyNetworkPolicyAnswer.getResult()) {
-            throw new CloudRuntimeException("can not apply default tungsten public network policy");
-        }
-
-        // change default tungsten security group
-        // change default forwarding mode
-
-        // consider policy to protect fabric network
-        List<TungstenRule> fabricRuleList = new ArrayList<>();
-        fabricRuleList.add(
-            new TungstenRule(null, TungstenUtils.PASS_ACTION, TungstenUtils.TWO_WAY_DIRECTION, TungstenUtils.ANY_PROTO,
-                TungstenUtils.ALL_IP4_PREFIX, 0, -1, -1, TungstenUtils.ALL_IP4_PREFIX, 0, -1, -1));
-
-
-        GetTungstenFabricNetworkCommand getTungstenFabricNetworkCommand = new GetTungstenFabricNetworkCommand();
-        TungstenAnswer getTungstenFabricNetworkAnswer = _tungstenFabricUtils.sendTungstenCommand(
-            getTungstenFabricNetworkCommand, zoneId);
-        if (!getTungstenFabricNetworkAnswer.getResult()) {
-            throw new CloudRuntimeException("can not get tungsten fabric network");
-        }
-
-        // create default public network policy rule
-        CreateTungstenNetworkPolicyCommand createFabricNetworkPolicyCommand = new CreateTungstenNetworkPolicyCommand(
-            TungstenUtils.getFabricNetworkPolicyName(), null, fabricRuleList);
-        TungstenAnswer createfabricNetworkPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
-            createFabricNetworkPolicyCommand, zoneId);
-        if (!createfabricNetworkPolicyAnswer.getResult()) {
-            throw new CloudRuntimeException("can not create default tungsten fabric network policy");
-        }
-
-        // apply fabric network policy
-        ApplyTungstenNetworkPolicyCommand applyTungstenFabricNetworkPolicyCommand =
-            new ApplyTungstenNetworkPolicyCommand(
-            null, TungstenUtils.getFabricNetworkPolicyName(),
-            getTungstenFabricNetworkAnswer.getApiObjectBase().getUuid(), false);
-        TungstenAnswer applyNetworkFabricNetworkPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
-            applyTungstenFabricNetworkPolicyCommand, zoneId);
-        if (!applyNetworkFabricNetworkPolicyAnswer.getResult()) {
-            throw new CloudRuntimeException("can not apply default tungsten fabric network policy");
-        }
-
-        // create floating ip pool
-        CreateTungstenFloatingIpPoolCommand createTungstenFloatingIpPoolCommand =
-            new CreateTungstenFloatingIpPoolCommand(
-            publicNetwork.getUuid(), TungstenUtils.getFloatingIpPoolName(zoneId));
-        TungstenAnswer createFloatingIpPoolAnswer = _tungstenFabricUtils.sendTungstenCommand(
-            createTungstenFloatingIpPoolCommand, zoneId);
-        if (!createFloatingIpPoolAnswer.getResult()) {
-            throw new CloudRuntimeException("can not create tungsten floating ip pool");
+        for (VlanVO vlanVO : pubVlanVOList) {
+            if (!_tungstenService.addPublicNetworkSubnet(vlanVO)) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to add public network subnet");
+            }
         }
 
         SuccessResponse response = new SuccessResponse(getCommandName());

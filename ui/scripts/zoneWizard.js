@@ -824,19 +824,26 @@
                         },
                         desc: 'Tungsten provider port'
                     },
-                    tungstenprovidervrouter: {
-                        label: 'Tungsten provider vrouter',
+                    tungstengateway: {
+                        label: 'Tungsten gateway',
                         validation: {
                             required: true
                         },
-                        desc: 'Tungsten provider vrouter'
+                        desc: 'Tungsten gateway'
                     },
                     tungstenprovidervrouterport: {
                         label: 'Tungsten provider vrouter port',
                         validation: {
-                            required: true
+                            required: false
                         },
                         desc: 'Tungsten provider vrouter port'
+                    },
+                    tungstenproviderintrospectport: {
+                        label: 'Tungsten provider introspect port',
+                        validation: {
+                            required: false
+                        },
+                        desc: 'Tungsten provider introspect port'
                     }
                 }
             },
@@ -4180,8 +4187,9 @@
                             name: args.data.tungstenProvider.name,
                             zoneid: args.data.returnedZone.id,
                             tungstenproviderport: args.data.tungstenProvider.tungstenproviderport,
-                            tungstenprovidervrouter: args.data.tungstenProvider.tungstenprovidervrouter,
-                            tungstenprovidervrouterport: args.data.tungstenProvider.tungstenprovidervrouterport
+                            tungstengateway: args.data.tungstenProvider.tungstengateway,
+                            tungstenprovidervrouterport: args.data.tungstenProvider.tungstenprovidervrouterport,
+                            tungstenproviderintrospectport: args.data.tungstenProvider.tungstenproviderintrospectport
                         },
                         type: "POST",
                         async: false,

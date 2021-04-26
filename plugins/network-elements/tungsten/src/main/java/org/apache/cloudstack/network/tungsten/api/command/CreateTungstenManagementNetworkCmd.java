@@ -26,6 +26,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -64,14 +65,17 @@ public class CreateTungstenManagementNetworkCmd extends BaseCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         HostPodVO pod = _podDao.findById(podId);
-        boolean result = _tungstenService.createManagementNetwork(pod);
-        SuccessResponse response = new SuccessResponse(getCommandName());
-        if (result) {
-            response.setDisplayText("create tungsten management network successfully");
-        } else {
-            response.setDisplayText("failed to create tungsten management network");
+
+        if (!_tungstenService.createManagementNetwork(pod.getDataCenterId())) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to create tungsten management network");
         }
-        response.setSuccess(result);
+
+        if (!_tungstenService.addManagementNetworkSubnet(pod)) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to add management network subnet");
+        }
+
+        SuccessResponse response = new SuccessResponse(getCommandName());
+        response.setDisplayText("create tungsten management network successfully");
         setResponseObject(response);
     }
 

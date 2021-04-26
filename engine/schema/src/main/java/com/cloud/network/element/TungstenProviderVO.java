@@ -53,24 +53,28 @@ public class TungstenProviderVO implements TungstenProvider {
     @Column(name = "hostname")
     private String hostname;
 
-    @Column(name = "vrouter")
-    private String vrouter;
+    @Column(name = "gateway")
+    private String gateway;
 
     @Column(name = "vrouter_port")
     private String vrouterPort;
+
+    @Column(name = "introspect_port")
+    private String introspectPort;
 
     public TungstenProviderVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public TungstenProviderVO(long zoneId, String providerName, long hostId, String port, String hostname, String vrouter, String vrouterPort) {
+    public TungstenProviderVO(long zoneId, String providerName, long hostId, String port, String hostname, String gateway, String vrouterPort, String introspectPort) {
         this.zoneId = zoneId;
         this.uuid = UUID.randomUUID().toString();
         this.providerName = providerName;
         this.port = port;
         this.hostname = hostname;
-        this.vrouter = vrouter;
+        this.gateway = gateway;
         this.vrouterPort = vrouterPort;
+        this.introspectPort = introspectPort;
         this.hostId = hostId;
     }
 
@@ -126,12 +130,20 @@ public class TungstenProviderVO implements TungstenProvider {
         this.zoneId = zoneId;
     }
 
-    public String getVrouter() {
-        return vrouter;
+    public String getGateway() {
+        return gateway;
     }
 
-    public void setVrouter(final String vrouter) {
-        this.vrouter = vrouter;
+    public void setGateway(final String gateway) {
+        this.gateway = gateway;
+    }
+
+    public String getIntrospectPort() {
+        return introspectPort;
+    }
+
+    public void setIntrospectPort(final String introspectPort) {
+        this.introspectPort = introspectPort;
     }
 
     public String getVrouterPort() {

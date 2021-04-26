@@ -21,48 +21,42 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.user.Account;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.network.tungsten.api.response.TlsDataResponse;
-import org.apache.commons.codec.binary.Base64;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.network.tungsten.api.response.TungstenProviderResponse;
+import org.apache.cloudstack.network.tungsten.service.TungstenService;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = "getLoadBalancerSslCertificate", description = "get load balancer certificate", responseObject =
-    TlsDataResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class GetLoadBalancerSslCertificateCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(GetLoadBalancerSslCertificateCmd.class.getName());
-    private static final String s_name = "response";
+@APICommand(name = "synchronizeTungstenData", description = "Synchronize tungsten data", responseObject =
+    SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class SynchronizeTungstenDataCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(SynchronizeTungstenDataCmd.class.getName());
+    private static final String s_name = "synchronizetungstendataresponse";
+
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TungstenProviderResponse.class,
+        required = true, description = "provider id")
+    private Long tungstenProviderId;
 
     @Inject
-    private LoadBalancingRulesManager _lbMgr;
-
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TlsDataResponse.class, required = true,
-        description = "the ID of Lb")
-    private Long id;
+    TungstenService _tungstenService;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        LoadBalancingRule.LbSslCert lbSslCert = _lbMgr.getLbSslCert(id);
-        if (lbSslCert != null) {
-            TlsDataResponse tlsDataResponse = new TlsDataResponse();
-            tlsDataResponse.setCrt(Base64.encodeBase64String(lbSslCert.getCert().getBytes()));
-            tlsDataResponse.setKey(Base64.encodeBase64String(lbSslCert.getKey().getBytes()));
-            tlsDataResponse.setResponseName(s_name);
-            tlsDataResponse.setObjectName("data");
-            setResponseObject(tlsDataResponse);
+        boolean result = _tungstenService.synchronizeTungstenData(tungstenProviderId);
+        if (result) {
+            SuccessResponse successResponse = new SuccessResponse(getCommandName());
+            setResponseObject(successResponse);
         } else {
-            throw new CloudRuntimeException("can not get tls data");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to synchronize tungsten data");
         }
     }
 
@@ -73,10 +67,14 @@ public class GetLoadBalancerSslCertificateCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = CallContext.current().getCallingAccount();
-        if (account != null) {
-            return account.getId();
-        }
         return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    public Long getTungstenProviderId() {
+        return tungstenProviderId;
+    }
+
+    public void setTungstenProviderId(final Long tungstenProviderId) {
+        this.tungstenProviderId = tungstenProviderId;
     }
 }

@@ -25,12 +25,12 @@ import org.w3c.dom.NodeList;
 public class TungstenIntrospectApi {
     private static final Logger S_LOGGER = Logger.getLogger(TungstenIntrospectApi.class);
 
-    private static IntrospectApiConnector getIntrospectConnector(String host) {
-        return IntrospectApiConnectorFactory.getInstance(host);
+    private static IntrospectApiConnector getIntrospectConnector(String host, String port) {
+        return IntrospectApiConnectorFactory.getInstance(host, port);
     }
 
-    public static String getLinkLocalIp(String host, String uuid) {
-        Document document = getIntrospectConnector(host).getSnhItfReq(uuid);
+    public static String getLinkLocalIp(String host, String port, String uuid) {
+        Document document = getIntrospectConnector(host, port).getSnhItfReq(uuid);
         NodeList nodeList = document.getElementsByTagName("mdata_ip_addr");
         if (nodeList.getLength() == 1) {
             return nodeList.item(0).getTextContent();

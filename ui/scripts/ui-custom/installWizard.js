@@ -540,11 +540,11 @@
                     tungstenproviderport: {
                         label: 'Tungsten provider port',
                         validation: {
-                            required: true
+                            required: false
                         }
                     },
-                    tungstenprovidervrouter: {
-                        label: 'Tungsten provider vrouter',
+                    tungstengateway: {
+                        label: 'Tungsten gateway',
                         validation: {
                             required: true
                         }
@@ -552,7 +552,13 @@
                     tungstenprovidervrouterport: {
                         label: 'Tungsten provider vrouter port',
                         validation: {
-                            required: true
+                            required: false
+                        }
+                    },
+                    tungstenproviderintrospectport: {
+                        label: 'Tungsten provider introspect port',
+                        validation: {
+                            required: false
                         }
                     }
                 }

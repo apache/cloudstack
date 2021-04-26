@@ -14,22 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.network.tungsten.api.response;
+package org.apache.cloudstack.network.tungsten.agent.api;
 
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.BaseResponse;
+import net.juniper.tungsten.api.ApiObjectBase;
 
-public class PemDataResponse extends BaseResponse {
-    @SerializedName("pemData")
-    @Param(description = "pem data")
-    private String pemData;
+public class DeleteTungstenObjectCommand extends TungstenCommand {
+    private final ApiObjectBase apiObjectBase;
 
-    public String getPemData() {
-        return pemData;
+    public DeleteTungstenObjectCommand(final ApiObjectBase apiObjectBase) {
+        this.apiObjectBase = apiObjectBase;
     }
 
-    public void setPemData(final String pemData) {
-        this.pemData = pemData;
+    public ApiObjectBase getApiObjectBase() {
+        return apiObjectBase;
     }
 }

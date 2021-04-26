@@ -26,19 +26,19 @@ import java.io.IOException;
 public class TungstenVRouterApi {
     private static final Logger S_LOGGER = Logger.getLogger(TungstenVRouterApi.class);
 
-    private static VRouterApiConnector getvRouterApiConnector(String host) {
-        return VRouterApiConnectorFactory.getInstance(host);
+    private static VRouterApiConnector getvRouterApiConnector(String host, String vrouterPort) {
+        return VRouterApiConnectorFactory.getInstance(host, vrouterPort);
     }
 
-    public static boolean addTungstenVrouterPort(String host, Port port) {
+    public static boolean addTungstenVrouterPort(String host, String vrouterPort, Port port) {
         try {
-            return getvRouterApiConnector(host).addPort(port);
+            return getvRouterApiConnector(host, vrouterPort).addPort(port);
         } catch (IOException ex) {
             return false;
         }
     }
 
-    public static boolean deleteTungstenVrouterPort(String host, String portId) {
-        return getvRouterApiConnector(host).deletePort(portId);
+    public static boolean deleteTungstenVrouterPort(String host, String vrouterPort, String portId) {
+        return getvRouterApiConnector(host, vrouterPort).deletePort(portId);
     }
 }

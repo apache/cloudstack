@@ -14,19 +14,37 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.network.tungsten.vrouter;
+package org.apache.cloudstack.network.tungsten.api.response;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
 
-public class VRouterApiConnectorFactory {
-    private static Map<VRouter, VRouterApiConnector> vrouterApiConnectors = new HashMap<>();
+@EntityReference(value = FirewallRule.class)
+public class TlsDataResponse extends BaseResponse {
+    @SerializedName("crt")
+    @Param(description = "crt")
+    private String crt;
 
-    public static VRouterApiConnector getInstance(String host, String vrouterPort) {
-        VRouter vRouter = new VRouter(host, vrouterPort);
-        if (vrouterApiConnectors.get(vRouter) == null) {
-            vrouterApiConnectors.put(vRouter, new VRouterApiConnectorImpl(vRouter));
-        }
-        return vrouterApiConnectors.get(vRouter);
+    @SerializedName("key")
+    @Param(description = "key")
+    private String key;
+
+    public String getCrt() {
+        return crt;
+    }
+
+    public void setCrt(final String crt) {
+        this.crt = crt;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(final String key) {
+        this.key = key;
     }
 }

@@ -35,8 +35,8 @@ public class IntrospectApiConnectorImpl implements IntrospectApiConnector {
     private static final Logger s_logger = Logger.getLogger(IntrospectApiConnectorImpl.class);
     private String _url;
 
-    public IntrospectApiConnectorImpl(String host, String port) {
-        _url = "http://" + host + ":" + port + "/";
+    public IntrospectApiConnectorImpl(VRouter vRouter) {
+        _url = "http://" + vRouter.getHost() + ":" + vRouter.getPort() + "/";
     }
 
     public Document getSnhItfReq(String uuid) {

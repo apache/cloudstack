@@ -16,13 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
-public class CreateTungstenNetworkCommand extends TungstenCommand {
-    private final String uuid;
-    private final String name;
-    private final String displayName;
-    private final String projectFqn;
-    private final boolean routerExternal;
-    private final boolean shared;
+public class AddTungstenNetworkSubnetCommand extends TungstenCommand {
+    private final String networkUuid;
     private final String ipPrefix;
     private final int ipPrefixLen;
     private final String gateway;
@@ -31,20 +26,12 @@ public class CreateTungstenNetworkCommand extends TungstenCommand {
     private final String allocationStart;
     private final String allocationEnd;
     private final boolean ipFromStart;
-    private final boolean isManagementNetwork;
     private final String subnetName;
 
-    public CreateTungstenNetworkCommand(final String uuid, final String name, final String displayName,
-        final String projectFqn, final boolean routerExternal, final boolean shared, final String ipPrefix,
-        final int ipPrefixLen, final String gateway, final boolean dhcpEnable, final String dnsServer,
-        final String allocationStart, final String allocationEnd, final boolean ipFromStart,
-        final boolean isManagementNetwork, final String subnetName) {
-        this.uuid = uuid;
-        this.name = name;
-        this.displayName = displayName;
-        this.projectFqn = projectFqn;
-        this.routerExternal = routerExternal;
-        this.shared = shared;
+    public AddTungstenNetworkSubnetCommand(final String networkUuid, final String ipPrefix, final int ipPrefixLen,
+        final String gateway, final boolean dhcpEnable, final String dnsServer, final String allocationStart,
+        final String allocationEnd, final boolean ipFromStart, final String subnetName) {
+        this.networkUuid = networkUuid;
         this.ipPrefix = ipPrefix;
         this.ipPrefixLen = ipPrefixLen;
         this.gateway = gateway;
@@ -53,32 +40,11 @@ public class CreateTungstenNetworkCommand extends TungstenCommand {
         this.allocationStart = allocationStart;
         this.allocationEnd = allocationEnd;
         this.ipFromStart = ipFromStart;
-        this.isManagementNetwork = isManagementNetwork;
         this.subnetName = subnetName;
     }
 
-    public String getUuid() {
-        return uuid;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public String getProjectFqn() {
-        return projectFqn;
-    }
-
-    public boolean isRouterExternal() {
-        return routerExternal;
-    }
-
-    public boolean isShared() {
-        return shared;
+    public String getNetworkUuid() {
+        return networkUuid;
     }
 
     public String getIpPrefix() {
@@ -111,10 +77,6 @@ public class CreateTungstenNetworkCommand extends TungstenCommand {
 
     public boolean isIpFromStart() {
         return ipFromStart;
-    }
-
-    public boolean isManagementNetwork() {
-        return isManagementNetwork;
     }
 
     public String getSubnetName() {

@@ -14,19 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.network.tungsten.vrouter;
+package org.apache.cloudstack.network.tungsten.model;
 
-import java.util.HashMap;
-import java.util.Map;
-
-public class VRouterApiConnectorFactory {
-    private static Map<VRouter, VRouterApiConnector> vrouterApiConnectors = new HashMap<>();
-
-    public static VRouterApiConnector getInstance(String host, String vrouterPort) {
-        VRouter vRouter = new VRouter(host, vrouterPort);
-        if (vrouterApiConnectors.get(vRouter) == null) {
-            vrouterApiConnectors.put(vRouter, new VRouterApiConnectorImpl(vRouter));
-        }
-        return vrouterApiConnectors.get(vRouter);
-    }
+public interface TungstenModel {
 }

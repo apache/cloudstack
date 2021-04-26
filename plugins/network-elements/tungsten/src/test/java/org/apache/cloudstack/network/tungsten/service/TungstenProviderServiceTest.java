@@ -89,10 +89,11 @@ public class TungstenProviderServiceTest {
         CreateTungstenProviderCmd cmd = Mockito.mock(CreateTungstenProviderCmd.class);
         when(cmd.getZoneId()).thenReturn(1l);
         when(cmd.getName()).thenReturn("TungstenProviderName");
-        when(cmd.getHostname()).thenReturn("TungstenProviderHostname");
+        when(cmd.getHostname()).thenReturn("192.168.0.100");
         when(cmd.getPort()).thenReturn("8082");
-        when(cmd.getVrouter()).thenReturn("TungstenProviderVrouter");
-        when(cmd.getVrouterPort()).thenReturn("8091");
+        when(cmd.getGateway()).thenReturn("192.168.0.101");
+        when(cmd.getVrouterPort()).thenReturn("9091");
+        when(cmd.getIntrospectPort()).thenReturn("8085");
 
         try {
             TungstenProvider tungstenProvider = tungstenProviderService.addProvider(cmd);

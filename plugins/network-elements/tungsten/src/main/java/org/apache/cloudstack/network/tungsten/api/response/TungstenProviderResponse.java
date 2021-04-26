@@ -42,13 +42,17 @@ public class TungstenProviderResponse extends BaseResponse {
     @Param(description = "tungsten provider port")
     private String port;
 
-    @SerializedName(ApiConstants.TUNGSTEN_PROVIDER_VROUTER)
-    @Param(description = "tungsten provider vrouter")
-    private String vrouter;
+    @SerializedName(ApiConstants.TUNGSTEN_GATEWAY)
+    @Param(description = "tungsten gateway")
+    private String gateway;
 
     @SerializedName(ApiConstants.TUNGSTEN_PROVIDER_VROUTER_PORT)
     @Param(description = "tungsten provider vrouter port")
     private String vrouterPort;
+
+    @SerializedName(ApiConstants.TUNGSTEN_PROVIDER_INTROSPECT_PORT)
+    @Param(description = "tungsten provider introspect port")
+    private String introspectPort;
 
     public String getHostname() {
         return hostname;
@@ -82,12 +86,20 @@ public class TungstenProviderResponse extends BaseResponse {
         this.uuid = uuid;
     }
 
-    public String getVrouter() {
-        return vrouter;
+    public String getGateway() {
+        return gateway;
     }
 
-    public void setVrouter(final String vrouter) {
-        this.vrouter = vrouter;
+    public void setGateway(final String gateway) {
+        this.gateway = gateway;
+    }
+
+    public String getIntrospectPort() {
+        return introspectPort;
+    }
+
+    public void setIntrospectPort(final String introspectPort) {
+        this.introspectPort = introspectPort;
     }
 
     public String getVrouterPort() {

@@ -85,7 +85,7 @@ public class TungstenUtils {
         return "publicNetwork" + zoneId;
     }
 
-    public static String getGuestNetworkName(String networkName){
+    public static String getGuestNetworkName(String networkName) {
         return networkName + "-" + RandomStringUtils.random(6, true, true);
     }
 
@@ -121,10 +121,6 @@ public class TungstenUtils {
         return managementType;
     }
 
-    public static String getControlType() {
-        return controlType;
-    }
-
     public static String getVgwName(long zoneId) {
         return "vgw" + zoneId;
     }
@@ -157,6 +153,10 @@ public class TungstenUtils {
 
     public static String getVirtualNetworkPolicyName(long networkId) {
         return "virtual-network-policy" + networkId;
+    }
+
+    public static String getDefaultPublicNetworkPolicyName(long vlanId) {
+        return "default-public-network-policy" + vlanId;
     }
 
     public static String getFabricNetworkPolicyName() {

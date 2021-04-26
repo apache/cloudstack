@@ -53,17 +53,21 @@ public class CreateTungstenProviderCmd extends BaseCmd {
         description = "Tungsten provider hostname")
     private String hostname;
 
-    @Parameter(name = ApiConstants.TUNGSTEN_PROVIDER_PORT, type = CommandType.STRING, required = true, description =
+    @Parameter(name = ApiConstants.TUNGSTEN_PROVIDER_PORT, type = CommandType.STRING, required = false, description =
         "Tungsten provider port")
     private String port;
 
-    @Parameter(name = ApiConstants.TUNGSTEN_PROVIDER_VROUTER, type = CommandType.STRING, required = true,
-        description = "Tungsten provider vrouter")
-    private String vrouter;
+    @Parameter(name = ApiConstants.TUNGSTEN_GATEWAY, type = CommandType.STRING, required = true,
+        description = "Tungsten gateway")
+    private String gateway;
 
-    @Parameter(name = ApiConstants.TUNGSTEN_PROVIDER_VROUTER_PORT, type = CommandType.STRING, required = true,
+    @Parameter(name = ApiConstants.TUNGSTEN_PROVIDER_VROUTER_PORT, type = CommandType.STRING, required = false,
         description = "Tungsten provider vrouter port")
     private String vrouterPort;
+
+    @Parameter(name = ApiConstants.TUNGSTEN_PROVIDER_INTROSPECT_PORT, type = CommandType.STRING, required = false,
+        description = "Tungsten provider introspect port")
+    private String introspectPort;
 
     public String getName() {
         return name;
@@ -77,8 +81,20 @@ public class CreateTungstenProviderCmd extends BaseCmd {
         return port;
     }
 
-    public String getVrouter() {
-        return vrouter;
+    public String getGateway() {
+        return gateway;
+    }
+
+    public void setGateway(final String gateway) {
+        this.gateway = gateway;
+    }
+
+    public String getIntrospectPort() {
+        return introspectPort;
+    }
+
+    public void setIntrospectPort(final String introspectPort) {
+        this.introspectPort = introspectPort;
     }
 
     public String getVrouterPort() {

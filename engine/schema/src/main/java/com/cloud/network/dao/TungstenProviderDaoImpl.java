@@ -47,10 +47,12 @@ public class TungstenProviderDaoImpl extends GenericDaoBase<TungstenProviderVO, 
                 SearchCriteria.Op.EQ);
         AllFieldsSearch.and("zone_id", AllFieldsSearch.entity().getZoneId(),
                 SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("vrouter", AllFieldsSearch.entity().getVrouter(),
+        AllFieldsSearch.and("gateway", AllFieldsSearch.entity().getGateway(),
                 SearchCriteria.Op.EQ);
         AllFieldsSearch.and("vrouter_port", AllFieldsSearch.entity().getVrouterPort(),
                 SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("introspect_port", AllFieldsSearch.entity().getIntrospectPort(),
+            SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
 

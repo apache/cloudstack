@@ -4877,11 +4877,14 @@
                                         tungstenproviderport: {
                                             label: 'label.tungsten.provider.port'
                                         },
-                                        tungstenprovidervrouter: {
-                                            label: 'label.tungsten.provider.vrouter'
+                                        tungstengateway: {
+                                            label: 'label.tungsten.gateway'
                                         },
                                         tungstenprovidervrouterport: {
                                             label: 'label.tungsten.provider.vrouterport'
+                                        },
+                                        tungstenproviderintrospectport: {
+                                          label: 'label.tungsten.provider.introspectport'
                                         }
                                     },
                                     dataProvider: function (args) {
@@ -4912,11 +4915,14 @@
                                                     tungstenproviderport: {
                                                         label: 'label.tungsten.provider.port'
                                                     },
-                                                    tungstenprovidervrouter: {
-                                                        label: 'label.tungsten.provider.vrouter'
+                                                    tungstengateway: {
+                                                        label: 'label.tungsten.gateway'
                                                     },
                                                     tungstenprovidervrouterport: {
                                                         label: 'label.tungsten.provider.vrouterport'
+                                                    },
+                                                    tungstenproviderintrospectport: {
+                                                      label: 'label.tungsten.provider.introspectport'
                                                     }
                                                 }],
                                                 dataProvider: function (args) {
@@ -21897,8 +21903,9 @@
                 zoneid: args.context.zones[0].id,
                 physicalnetworkid: selectedPhysicalNetworkObj.id,
                 tungstenproviderport: args.data.port,
-                tungstenprovidervrouter: args.data.vrouter,
-                tungstenprovidervrouterport: args.data.vrouterport
+                tungstengateway: args.data.gateway,
+                tungstenprovidervrouterport: args.data.vrouterport,
+                tungstenproviderintrospectport: args.data.introspectport
             },
             type: "POST",
             success: function (json) {

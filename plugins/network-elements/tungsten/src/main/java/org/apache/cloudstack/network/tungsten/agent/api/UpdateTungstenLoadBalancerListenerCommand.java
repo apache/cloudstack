@@ -16,20 +16,39 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
-public class GetTungstenPublicNetworkCommand extends TungstenCommand {
+public class UpdateTungstenLoadBalancerListenerCommand extends TungstenCommand {
     private final String projectFqn;
-    private final String name;
+    private final String listenerName;
+    private final String protocol;
+    private final int port;
+    private final String url;
 
-    public GetTungstenPublicNetworkCommand(final String projectFqn, final String name) {
+    public UpdateTungstenLoadBalancerListenerCommand(final String projectFqn, final String listenerName,
+        final String protocol, final int port, final String url) {
         this.projectFqn = projectFqn;
-        this.name = name;
+        this.listenerName = listenerName;
+        this.protocol = protocol;
+        this.port = port;
+        this.url = url;
     }
 
     public String getProjectFqn() {
         return projectFqn;
     }
 
-    public String getName() {
-        return name;
+    public String getListenerName() {
+        return listenerName;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public String getUrl() {
+        return url;
     }
 }

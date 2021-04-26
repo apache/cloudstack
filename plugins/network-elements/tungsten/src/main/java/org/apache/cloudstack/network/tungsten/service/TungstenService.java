@@ -17,6 +17,8 @@
 package org.apache.cloudstack.network.tungsten.service;
 
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Vlan;
+import com.cloud.dc.VlanVO;
 import com.cloud.network.Network;
 import com.cloud.network.lb.LoadBalancingRule;
 
@@ -25,11 +27,27 @@ public interface TungstenService {
 
     String getTungstenProjectFqn(Network network);
 
-    boolean createManagementNetwork(HostPodVO pod);
+    boolean createPublicNetwork(long zoneId);
 
-    boolean deleteManagementNetwork(HostPodVO pod);
+    boolean addPublicNetworkSubnet(Vlan vlan);
+
+    boolean removePublicNetworkSubnet(VlanVO vlanVO);
+
+    boolean deletePublicNetwork(long zoneId);
+
+    boolean createManagementNetwork(long zoneId);
+
+    boolean deleteManagementNetwork(long zoneId);
+
+    boolean addManagementNetworkSubnet(HostPodVO pod);
+
+    boolean removeManagementNetworkSubnet(HostPodVO pod);
 
     boolean updateLoadBalancer(Network network, LoadBalancingRule rule);
+
+    boolean synchronizeTungstenData(Long tungstenProviderId);
+
+    void subscribeTungstenEvent();
 
     String MESSAGE_APPLY_NETWORK_POLICY_EVENT = "Message.ApplyNetworkPolicy.Event";
     String MESSAGE_CREATE_TUNGSTEN_NETWORK_EVENT = "Message.CreateTungstenNetwork.Event";

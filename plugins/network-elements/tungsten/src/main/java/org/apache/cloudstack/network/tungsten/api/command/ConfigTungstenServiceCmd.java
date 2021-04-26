@@ -121,6 +121,7 @@ public class ConfigTungstenServiceCmd extends BaseCmd {
                     tungstenServiceProvider.put(Network.Service.Connectivity, Network.Provider.Tungsten);
                     tungstenServiceProvider.put(Network.Service.Firewall, Network.Provider.Tungsten);
                     tungstenServiceProvider.put(Network.Service.Lb, Network.Provider.Tungsten);
+                    tungstenServiceProvider.put(Network.Service.PortForwarding, Network.Provider.Tungsten);
 
                     for (Network.Service service : tungstenServiceProvider.keySet()) {
                         NetworkOfferingServiceMapVO networkOfferingServiceMapVO = new NetworkOfferingServiceMapVO(
