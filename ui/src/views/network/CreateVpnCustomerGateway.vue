@@ -111,11 +111,12 @@
       <a-form-item :label="$t('label.ikeversion')">
         <a-select
           v-decorator="[
-            'ikeVersions',
+            'ikeversion',
             {
               initialValue: 'ike',
             },
-          ]">
+          ]"
+          @change="val => { ikeversion = val }">
           <a-select-option :value="vers" v-for="(vers, idx) in ikeVersions" :key="idx">
             {{ vers }}
           </a-select-option>
@@ -231,7 +232,7 @@
             },
           ]"/>
       </a-form-item>
-      <a-form-item>
+      <a-form-item v-if="ikeversion !== 'ikev1'">
         <span slot="label">
           {{ $t('label.splitconnections') }}
           <a-tooltip :title="apiParams.splitconnections.description">
@@ -313,7 +314,8 @@ export default {
         'Group 17': 'modp6144',
         'Group 18': 'modp8192'
       },
-      ikeDhGroupInitialValue: 'Group 5(modp1536)'
+      ikeDhGroupInitialValue: 'Group 5(modp1536)',
+      ikeversion: 'ike'
     }
   },
   beforeCreate () {

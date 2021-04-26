@@ -611,7 +611,12 @@ export default {
           label: 'label.edit',
           docHelp: 'adminguide/networking_and_traffic.html#updating-and-removing-a-vpn-customer-gateway',
           dataView: true,
-          args: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'ikeversion', 'esppolicy', 'esplifetime', 'dpd', 'splitconnections', 'forceencap']
+          args: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'ikeversion', 'esppolicy', 'esplifetime', 'dpd', 'splitconnections', 'forceencap'],
+          mapping: {
+            ikeversion: {
+              options: ['ike', 'ikev1', 'ikev2']
+            }
+          }
         },
         {
           api: 'deleteVpnCustomerGateway',
