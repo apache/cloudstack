@@ -92,7 +92,7 @@
                 rules: [{ required: true, message: `${$t('label.required')}` }]
               }]"
             >
-              <a-select-option v-for="domain in domains" :key="domain.id" :value="domain.id">{{ domain.name }}</a-select-option>
+              <a-select-option v-for="domain in domains" :key="domain.id" :value="domain.id">{{ domain.path || domain.name || domain.description }}</a-select-option>
             </a-select>
           </a-form-item>
 
