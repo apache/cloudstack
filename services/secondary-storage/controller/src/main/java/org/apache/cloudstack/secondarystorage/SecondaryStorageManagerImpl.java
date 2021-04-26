@@ -148,24 +148,23 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-//
-// Possible secondary storage vm state transition cases
-//        Creating -> Destroyed
-//        Creating -> Stopped --> Starting -> Running
-//        HA -> Stopped -> Starting -> Running
-//        Migrating -> Running    (if previous state is Running before it enters into Migrating state
-//        Migrating -> Stopped    (if previous state is not Running before it enters into Migrating state)
-//        Running -> HA            (if agent lost connection)
-//        Stopped -> Destroyed
-//
-//        Creating state indicates of record creating and IP address allocation are ready, it is a transient
-//         state which will soon be switching towards Running if everything goes well.
-//        Stopped state indicates the readiness of being able to start (has storage and IP resources allocated)
-//        Starting state can only be entered from Stopped states
-//
-// Starting, HA, Migrating, Creating and Running state are all counted as "Open" for available capacity calculation
-// because sooner or later, it will be driven into Running state
-//
+/**
+* Class to manage secondary storages. <br><br>
+* Possible secondary storage VM state transition cases:<br>
+*    - Creating -> Destroyed<br>
+*    - Creating -> Stopped -> Starting -> Running<br>
+*    - HA -> Stopped -> Starting -> Running<br>
+*    - Migrating -> Running    (if previous state is Running before it enters into Migrating state<br>
+*    - Migrating -> Stopped    (if previous state is not Running before it enters into Migrating state)<br>
+*    - Running -> HA           (if agent lost connection)<br>
+*    - Stopped -> Destroyed<br><br>
+*
+* <b>Creating</b> state indicates of record creating and IP address allocation are ready, it is a transient state which will soon be switching towards <b>Running</b> if everything goes well.<br><br>
+* <b>Stopped</b> state indicates the readiness of being able to start (has storage and IP resources allocated).<br><br>
+* <b>Starting</b> state can only be entered from <b>Stopped</b> states.<br><br><br>
+*
+* <b>Starting</b>, <b>HA</b>, <b>Migrating</b>, <b>Creating</b> and <b>Running</b> states are all counted as <b>Open</b> for available capacity calculation  because sooner or later, it will be driven into <b>Running</b> state.
+*/
 public class SecondaryStorageManagerImpl extends ManagerBase implements SecondaryStorageVmManager, VirtualMachineGuru, SystemVmLoadScanHandler<Long>,
         ResourceStateAdapter, Configurable {
     private static final Logger s_logger = Logger.getLogger(SecondaryStorageManagerImpl.class);
@@ -1331,7 +1330,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         List<DataStore> ssStores = _dataStoreMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(dataCenterId));
         int storeSize = (ssStores == null) ? 0 : ssStores.size();
         if (storeSize > vmSize) {
-            s_logger.info(String.format("No secondary storage VM found in zone [%s], starting a new one.", dataCenterId));
+                s_logger.info(String.format("No secondary storage VM found in zone [%s], starting a new one.", dataCenterId));
             return new Pair<AfterScanAction, Object>(AfterScanAction.expand, SecondaryStorageVm.Role.templateProcessor);
         }
 
@@ -1363,11 +1362,16 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         return host;
     }
 
+    /** Used to be called when add secondary storage on UI through DummySecondaryStorageResource to update that host entry for Secondary Storage.<br><br>
+     *  Now since we move secondary storage from host table, this method, in this class, is not needed to be invoked anymore.
+     */
     @Override
     public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details, List<String> hostTags) {
         return null;
     }
 
+    /** Since secondary storage is moved out of host table, this class should not handle delete secondary storage anymore.
+     */
     @Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
         return null;
