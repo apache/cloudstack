@@ -357,7 +357,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         SecStorageVMSetupCommand setupCmd = new SecStorageVMSetupCommand();
         if (_allowedInternalSites != null) {
-            List<String> allowedCidrs = new ArrayList<String>();
+            List<String> allowedCidrs = new ArrayList<>();
             String[] cidrs = _allowedInternalSites.split(",");
             for (String cidr : cidrs) {
                 if (NetUtils.isValidIp4Cidr(cidr) || NetUtils.isValidIp4(cidr) || !cidr.startsWith("0.0.0.0")) {
@@ -598,19 +598,19 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         } else {
             offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork, NetworkOffering.SystemManagementNetwork);
         }
-        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(offerings.size() + 1);
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<>(offerings.size() + 1);
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);
         try {
             networks.put(_networkMgr.setupNetwork(systemAcct, _networkOfferingDao.findById(defaultNetwork.getNetworkOfferingId()), plan, null, null, false).get(0),
-                    new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
+                    new ArrayList<>(Arrays.asList(defaultNic)));
             for (NetworkOffering offering : offerings) {
-                networks.put(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), new ArrayList<NicProfile>());
+                networks.put(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), new ArrayList<>());
             }
         } catch (ConcurrentOperationException e) {
             s_logger.error(String.format("Unable to setup networks on %s due [%s].", dc.toString(), e.getMessage()), e);
-            return new HashMap<String, Object>();
+            return new HashMap<>();
         }
 
         VMTemplateVO template = null;
@@ -638,14 +638,12 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             throw new CloudRuntimeException(errorMessage, e);
         }
 
-        Map<String, Object> context = new HashMap<String, Object>();
+        Map<String, Object> context = new HashMap<>();
         context.put("secStorageVmId", secStorageVm.getId());
         return context;
     }
 
     private SecondaryStorageVmAllocator getCurrentAllocator() {
-
-        // for now, only one adapter is supported
         if (_ssVmAllocators.size() > 0) {
             return _ssVmAllocators.get(0);
         }
@@ -669,7 +667,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 s_logger.debug(String.format("Running secondary storage %s.", secStorageVm.toString()));
             }
 
-            Map<Long, Integer> loadInfo = new HashMap<Long, Integer>();
+            Map<Long, Integer> loadInfo = new HashMap<>();
 
             return allocator.allocSecondaryStorageVm(runningList, loadInfo, dataCenterId);
         } else {
@@ -925,7 +923,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
 
         if (_useServiceVM) {
-            _loadScanner = new SystemVmLoadScanner<Long>(this);
+            _loadScanner = new SystemVmLoadScanner<>(this);
             _loadScanner.initScan(STARTUP_DELAY_IN_MILLISECONDS, _capacityScanInterval);
         }
 
@@ -1331,10 +1329,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         int storeSize = (ssStores == null) ? 0 : ssStores.size();
         if (storeSize > vmSize) {
                 s_logger.info(String.format("No secondary storage VM found in zone [%s], starting a new one.", dataCenterId));
-            return new Pair<AfterScanAction, Object>(AfterScanAction.expand, SecondaryStorageVm.Role.templateProcessor);
+            return new Pair<>(AfterScanAction.expand, SecondaryStorageVm.Role.templateProcessor);
         }
 
-        return new Pair<AfterScanAction, Object>(AfterScanAction.nop, SecondaryStorageVm.Role.templateProcessor);
+        return new Pair<>(AfterScanAction.nop, SecondaryStorageVm.Role.templateProcessor);
     }
 
     @Override
