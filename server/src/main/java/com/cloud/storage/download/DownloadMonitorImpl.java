@@ -222,7 +222,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         start();
         DownloadCommand dcmd = new DownloadCommand((VolumeObjectTO)(volume.getTO()), maxVolumeSizeInBytes, checkSum, url, format);
         DataStore cacheStore = cacheManager.getCacheStorage(store.getScope());
-            dcmd.setCacheStore(cacheStore.getTO());dcmd.setProxy(getHttpProxy());
+        dcmd.setCacheStore(cacheStore.getTO());dcmd.setProxy(getHttpProxy());
         if (downloadJobExists) {
             dcmd = new DownloadProgressCommand(dcmd, volumeHost.getJobId(), RequestType.GET_OR_RESTART);
             dcmd.setResourceType(ResourceType.VOLUME);
