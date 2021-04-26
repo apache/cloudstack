@@ -206,48 +206,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Override public VirtualMachineTO implement(VirtualMachineProfile vm) {
         vmwareVmImplementer.setGlobalNestedVirtualisationEnabled(VmwareEnableNestedVirtualization.value());
         vmwareVmImplementer.setGlobalNestedVPerVMEnabled(VmwareEnableNestedVirtualizationPerVM.value());
-        return vmwareVmImplementer.implement(vm, toVirtualMachineTO(vm), getClusterId(vm.getId()));
-    }
-
-    private Long getClusterIdFromVmVolume(long vmId) {
-        Long clusterId = null;
-        List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
-        if (CollectionUtils.isNotEmpty(volumes)) {
-            for (VolumeVO rootVolume : volumes) {
-                if (rootVolume.getPoolId() != null) {
-                    StoragePoolVO pool = _storagePoolDao.findById(rootVolume.getPoolId());
-                    if (pool != null && pool.getClusterId() != null) {
-                        clusterId = pool.getClusterId();
-                        break;
-                    }
-                }
-            }
-        }
-        return clusterId;
-    }
-
-    private Long getClusterId(long vmId) {
-        Long clusterId = null;
-        Long hostId = null;
-        VMInstanceVO vm = _vmDao.findById(vmId);
-        if (vm != null) {
-            hostId = _vmDao.findById(vmId).getHostId();
-        }
-        if (vm != null && hostId == null) {
-            // If VM is in stopped state then hostId would be undefined. Hence read last host's Id instead.
-            hostId = _vmDao.findById(vmId).getLastHostId();
-        }
-        HostVO host = null;
-        if (hostId != null) {
-            host = _hostDao.findById(hostId);
-        }
-        if (host != null) {
-            clusterId = host.getClusterId();
-        } else {
-            clusterId = getClusterIdFromVmVolume(vmId);
-        }
-
-        return clusterId;
+        return vmwareVmImplementer.implement(vm, toVirtualMachineTO(vm), vmManager.findClusterAndHostIdForVm(vm.getId()).first());
     }
 
     @Override @DB public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
@@ -445,7 +404,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
     @Override public Map<String, String> getClusterSettings(long vmId) {
         Map<String, String> details = new HashMap<String, String>();
-        Long clusterId = getClusterId(vmId);
+        Long clusterId = vmManager.findClusterAndHostIdForVm(vmId).first();
         if (clusterId != null) {
             details.put(VmwareReserveCpu.key(), VmwareReserveCpu.valueIn(clusterId).toString());
             details.put(VmwareReserveMemory.key(), VmwareReserveMemory.valueIn(clusterId).toString());
@@ -1120,7 +1079,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         }
 
         final Long destClusterId = destination.getClusterId();
-        final Long srcClusterId = getClusterId(vm.getId());
+        final Long srcClusterId = vmManager.findClusterAndHostIdForVm(vm.getId()).first();
         final boolean isInterClusterMigration = isInterClusterMigration(destClusterId, srcClusterId);
         MigrateVmToPoolCommand migrateVmToPoolCommand = new MigrateVmToPoolCommand(vm.getInstanceName(),
                 vols, destination.getUuid(), getHostGuidInTargetCluster(isInterClusterMigration, destClusterId), true);
