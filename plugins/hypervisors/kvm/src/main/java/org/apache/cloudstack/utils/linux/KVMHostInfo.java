@@ -42,6 +42,8 @@ public class KVMHostInfo {
     private long overCommitMemory;
     private List<String> capabilities = new ArrayList<>();
 
+    public static String CPU_INFO_MAX_FREQ_FILE_NAME = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq";
+
     public KVMHostInfo(long reservedMemory, long overCommitMemory) {
         this.reservedMemory = reservedMemory;
         this.overCommitMemory = overCommitMemory;
@@ -78,8 +80,7 @@ public class KVMHostInfo {
     }
 
     protected static long getCpuSpeed(final NodeInfo nodeInfo) {
-        try (final Reader reader = new FileReader(
-                "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq")) {
+        try (final Reader reader = new FileReader(CPU_INFO_MAX_FREQ_FILE_NAME)) {
             return Long.parseLong(IOUtils.toString(reader).trim()) / 1000;
         } catch (IOException | NumberFormatException e) {
             LOGGER.info("Could not read cpuinfo_max_freq, falling back on libvirt");
