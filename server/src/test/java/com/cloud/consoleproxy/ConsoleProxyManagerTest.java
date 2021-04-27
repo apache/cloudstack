@@ -39,12 +39,16 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.info.ConsoleProxyStatus;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ConsoleProxyVO;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParseException;
 
 public class ConsoleProxyManagerTest {
 
@@ -245,5 +249,30 @@ public class ConsoleProxyManagerTest {
                     .thenReturn(Collections.singletonList(network));
 
         cpvmManager.getDefaultNetworkForAdvancedZone(dc);
+    }
+
+    @Test
+    public void validateParseJsonToConsoleProxyStatusWithValidParamMustReturnValue() {
+        ConsoleProxyStatus expectedResult = new ConsoleProxyStatus();
+
+        GsonBuilder gb = new GsonBuilder();
+        gb.setVersion(1.3);
+        Gson gson = gb.create();
+
+        ConsoleProxyStatus result = new ConsoleProxyManagerImpl().parseJsonToConsoleProxyStatus(gson.toJson(expectedResult));
+
+        Assert.assertArrayEquals(expectedResult.getConnections(), result.getConnections());
+    }
+
+    @Test (expected = JsonParseException.class)
+    public void validateParseJsonToConsoleProxyStatusWithInvalidParamMustThrowJsonParseException() {
+        new ConsoleProxyManagerImpl().parseJsonToConsoleProxyStatus("Invalid format to throw exception");
+    }
+
+    @Test
+    public void validateParseJsonToConsoleProxyStatusWithNullParamMustReturnNull() {
+        ConsoleProxyStatus expectedResult = null;
+        ConsoleProxyStatus result = new ConsoleProxyManagerImpl().parseJsonToConsoleProxyStatus(null);
+        Assert.assertEquals(expectedResult, result);
     }
 }

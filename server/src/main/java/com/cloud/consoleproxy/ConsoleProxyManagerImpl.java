@@ -143,6 +143,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParseException;
 
 //
 // Possible console proxy state transition cases
@@ -248,6 +249,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private int _staticPort;
 
     private final GlobalLock _allocProxyLock = GlobalLock.getInternLock(getAllocProxyLockName());
+    
+    protected Gson jsonParser = new GsonBuilder().setVersion(1.3).create();
 
     @Inject
     private KeystoreDao _ksDao;
@@ -262,38 +265,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         @Override
         public void onLoadReport(ConsoleProxyLoadReportCommand cmd) {
-            if (cmd.getLoadInfo() == null) {
-                return;
-            }
-
-            ConsoleProxyStatus status = null;
-            try {
-                GsonBuilder gb = new GsonBuilder();
-                gb.setVersion(1.3);
-                Gson gson = gb.create();
-                status = gson.fromJson(cmd.getLoadInfo(), ConsoleProxyStatus.class);
-            } catch (Throwable e) {
-                s_logger.warn("Unable to parse load info from proxy, proxy vm id : " + cmd.getProxyVmId() + ", info : " + cmd.getLoadInfo());
-            }
-
-            if (status != null) {
-                int count = 0;
-                if (status.getConnections() != null) {
-                    count = status.getConnections().length;
-                }
-
-                byte[] details = null;
-                if (cmd.getLoadInfo() != null) {
-                    details = cmd.getLoadInfo().getBytes(Charset.forName("US-ASCII"));
-                }
-                _consoleProxyDao.update(cmd.getProxyVmId(), count, DateUtil.currentGMTTime(), details);
-            } else {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Unable to get console proxy load info, id : " + cmd.getProxyVmId());
-                }
-
-                _consoleProxyDao.update(cmd.getProxyVmId(), 0, DateUtil.currentGMTTime(), null);
-            }
+            updateConsoleProxyStatus(cmd.getLoadInfo(), cmd.getProxyVmId());
         }
 
         @Override
@@ -807,39 +779,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     public void onLoadAnswer(ConsoleProxyLoadAnswer answer) {
-        if (answer.getDetails() == null) {
-            return;
-        }
-
-        ConsoleProxyStatus status = null;
-        try {
-            GsonBuilder gb = new GsonBuilder();
-            gb.setVersion(1.3);
-            Gson gson = gb.create();
-            status = gson.fromJson(answer.getDetails(), ConsoleProxyStatus.class);
-        } catch (Throwable e) {
-            s_logger.warn("Unable to parse load info from proxy, proxy vm id : " + answer.getProxyVmId() + ", info : " + answer.getDetails());
-        }
-
-        if (status != null) {
-            int count = 0;
-            if (status.getConnections() != null) {
-                count = status.getConnections().length;
-            }
-
-            byte[] details = null;
-            if (answer.getDetails() != null) {
-                details = answer.getDetails().getBytes(Charset.forName("US-ASCII"));
-            }
-            _consoleProxyDao.update(answer.getProxyVmId(), count, DateUtil.currentGMTTime(), details);
-        } else {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Unable to get console proxy load info, id : " + answer.getProxyVmId());
-            }
-
-            _consoleProxyDao.update(answer.getProxyVmId(), 0, DateUtil.currentGMTTime(), null);
-            // TODO : something is wrong with the VM, restart it?
-        }
+        updateConsoleProxyStatus(answer.getDetails(), answer.getProxyVmId());
     }
 
     public void handleAgentDisconnect(long agentId, com.cloud.host.Status state) {
@@ -1765,4 +1705,33 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return new ConfigKey<?>[] { NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled };
     }
 
+    protected ConsoleProxyStatus parseJsonToConsoleProxyStatus(String json) throws JsonParseException {
+        return jsonParser.fromJson(json, ConsoleProxyStatus.class);
+    }
+
+    protected void updateConsoleProxyStatus(String statusInfo, Long proxyVmId) {
+        if (statusInfo == null) return;
+
+        ConsoleProxyStatus status = null;
+        try {
+            status = parseJsonToConsoleProxyStatus(statusInfo);
+        } catch (JsonParseException e) {
+            s_logger.warn(String.format("Unable to parse load info [%s] from proxy {\"vmId\": %s} due to [%s].", statusInfo, proxyVmId, e.getMessage()), e);
+        }
+
+        int count = 0;
+        byte[] details = null;
+
+        if (status != null) {
+            if (status.getConnections() != null) {
+                count = status.getConnections().length;
+            }
+
+            details = statusInfo.getBytes(Charset.forName("US-ASCII"));
+        } else {
+            s_logger.debug(String.format("Unable to retrieve load info from proxy {\"vmId\": %s}. Invalid load info [%s].", proxyVmId, statusInfo));
+        }
+
+        _consoleProxyDao.update(proxyVmId, count, DateUtil.currentGMTTime(), details);
+    }
 }
