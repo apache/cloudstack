@@ -42,7 +42,7 @@ if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
    cd $DIR
 
    # Pylint/pep8 systemvm python codebase
-   python3 -m pip install --upgrade setuptools pycodestyle pylint flask nose
+   python3 -m pip install --user --upgrade setuptools pycodestyle pylint flask nose
    pip install virtualenv
    sudo virtualenv -p `which python2` py2
    #sudo python2 -m venv ~/py2/
@@ -51,7 +51,7 @@ if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
    which python
    which python2
    python --version
-   python2 -m pip install --upgrade setuptools pycodestyle pylint flask nose
+   python2 -m pip install --user --upgrade setuptools pycodestyle pylint flask nose
    # TODO reinstate this test script once the system vm is running python3 and is fully functional again
    #cd systemvm/test && bash -x runtests.sh
    # Build noredist
@@ -66,10 +66,10 @@ else
 fi
 
 # Install mysql-connector-python
-python3 -m pip install --upgrade http://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-2.0.4.zip#md5=3df394d89300db95163f17c843ef49df 2>&1 > /dev/null
+python3 -m pip install --user --upgrade http://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-2.0.4.zip#md5=3df394d89300db95163f17c843ef49df 2>&1 > /dev/null
 
 # Install marvin
-python3 -m pip install --upgrade tools/marvin/dist/Marvin-*.tar.gz
+python3 -m pip install --user --upgrade tools/marvin/dist/Marvin-*.tar.gz
 
 # Deploy the database
 mvn -q -Pdeveloper -pl developer -Ddeploydb
