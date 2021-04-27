@@ -145,18 +145,18 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 
-//
-// Possible console proxy state transition cases
-//        Stopped --> Starting -> Running
-//        HA -> Stopped -> Starting -> Running
-//        Migrating -> Running    (if previous state is Running before it enters into Migrating state
-//        Migrating -> Stopped    (if previous state is not Running before it enters into Migrating state)
-//        Running -> HA            (if agent lost connection)
-//        Stopped -> Destroyed
-//
-// Starting, HA, Migrating, Running state are all counted as "Open" for available capacity calculation
-// because sooner or later, it will be driven into Running state
-//
+/**
+ * Class to manage console proxys. <br><br>
+ * Possible console proxy state transition cases:<br>
+ * - Stopped -> Starting -> Running <br>
+ * - HA -> Stopped -> Starting -> Running <br>
+ * - Migrating -> Running    (if previous state is Running before it enters into Migrating state) <br>
+ * - Migrating -> Stopped    (if previous state is not Running before it enters into Migrating state) <br>
+ * - Running -> HA           (if agent lost connection) <br>
+ * - Stopped -> Destroyed <br>
+ *
+ * <b>Starting</b>, <b>HA</b>, <b>Migrating</b> and <b>Running</b> states are all counted as <b>Open</b> for available capacity calculation  because sooner or later, it will be driven into <b>Running</b> state
+ **/
 public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxyManager, VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter, Configurable {
 
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
