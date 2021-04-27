@@ -96,24 +96,14 @@
       </template>
       <template slot="actions" slot-scope="record">
         <div class="actions">
-          <a-tooltip arrowPointAtCenter placement="bottomRight">
-            <template slot="title">
-              {{ $t('label.edit.tags') }}
-            </template>
-            <a-button shape="circle" icon="tag" class="rule-action" @click="() => openTagsModal(record.id)" />
-          </a-tooltip>
-          <a-tooltip arrowPointAtCenter placement="bottomRight">
-            <template slot="title">
-              {{ $t('label.remove.rule') }}
-            </template>
-            <a-button
-              shape="circle"
-              type="danger"
-              icon="delete"
-              class="rule-action"
-              :disabled="!('deletePortForwardingRule' in $store.getters.apis)"
-              @click="deleteRule(record)" />
-          </a-tooltip>
+          <tooltip-button :tooltip="$t('label.edit.tags')" shape="circle" icon="tag" buttonClass="rule-action" @click="() => openTagsModal(record.id)" />
+          <tooltip-button
+            :tooltip="$t('label.remove.rule')"
+            type="danger"
+            icon="delete"
+            buttonClass="rule-action"
+            :disabled="!('deletePortForwardingRule' in $store.getters.apis)"
+            @click="deleteRule(record)" />
         </div>
       </template>
     </a-table>
@@ -259,10 +249,12 @@
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   components: {
-    Status
+    Status,
+    TooltipButton
   },
   props: {
     resource: {

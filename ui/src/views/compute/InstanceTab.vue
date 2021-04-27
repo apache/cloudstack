@@ -84,26 +84,18 @@
                   shape="circle" />
               </a-popconfirm>
             </a-tooltip>
-            <a-tooltip placement="bottom" v-if="record.nic.type !== 'L2'">
-              <template slot="title">
-                {{ $t('label.change.ip.addess') }}
-              </template>
-              <a-button
-                icon="swap"
-                shape="circle"
-                :disabled="!('updateVmNicIp' in $store.getters.apis)"
-                @click="onChangeIPAddress(record)" />
-            </a-tooltip>
-            <a-tooltip placement="bottom" v-if="record.nic.type !== 'L2'">
-              <template slot="title">
-                {{ $t('label.edit.secondary.ips') }}
-              </template>
-              <a-button
-                icon="environment"
-                shape="circle"
-                :disabled="(!('addIpToNic' in $store.getters.apis) && !('addIpToNic' in $store.getters.apis))"
-                @click="fetchSecondaryIPs(record.nic.id)" />
-            </a-tooltip>
+            <tooltip-button
+              :tooltip="$t('label.change.ip.addess')"
+              v-if="record.nic.type !== 'L2'"
+              icon="swap"
+              :disabled="!('updateVmNicIp' in $store.getters.apis)"
+              @click="onChangeIPAddress(record)" />
+            <tooltip-button
+              :tooltip="$t('label.edit.secondary.ips')"
+              v-if="record.nic.type !== 'L2'"
+              icon="environment"
+              :disabled="(!('addIpToNic' in $store.getters.apis) && !('addIpToNic' in $store.getters.apis))"
+              @click="fetchSecondaryIPs(record.nic.id)" />
             <a-tooltip placement="bottom">
               <template slot="title">
                 {{ $t('label.action.delete.nic') }}
@@ -256,6 +248,7 @@ import DetailsTab from '@/components/view/DetailsTab'
 import DetailSettings from '@/components/view/DetailSettings'
 import NicsTable from '@/views/network/NicsTable'
 import ListResourceTable from '@/components/view/ListResourceTable'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'InstanceTab',
@@ -265,7 +258,8 @@ export default {
     DetailSettings,
     NicsTable,
     Status,
-    ListResourceTable
+    ListResourceTable,
+    TooltipButton
   },
   mixins: [mixinDevice],
   props: {
