@@ -67,7 +67,7 @@ export default {
         }
         return fields
       },
-      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags', 'accountwide'],
+      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags', 'projectwide'],
       details: ['displayname', 'name', 'id', 'state', 'ipaddress', 'templatename', 'ostypename', 'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account', 'domain', 'zonename'],
       tabs: [{
         component: () => import('@/views/compute/InstanceTab.vue')

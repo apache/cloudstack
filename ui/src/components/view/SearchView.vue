@@ -203,7 +203,7 @@ export default {
         } else if (item === 'tags') {
           type = 'tag'
         }
-	if (item === 'accountwide') {
+	if (item === 'projectwide') {
           type = 'checkbox'
         }
 
@@ -425,7 +425,7 @@ export default {
           if (input === '' || input === null || input === undefined) {
             continue
           }
-          if (key === 'accountwide' && input) {
+          if (key === 'projectwide' && input) {
             this.paramsFilter.projectid = -1
           } else {
             this.paramsFilter[key] = input
