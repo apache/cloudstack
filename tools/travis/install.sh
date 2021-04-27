@@ -51,7 +51,7 @@ if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
    which python
    which python2
    python --version
-   sudo python2 -m pip install --upgrade setuptools pycodestyle pylint flask nose
+   python2 -m pip install --upgrade setuptools pycodestyle pylint flask nose
    # TODO reinstate this test script once the system vm is running python3 and is fully functional again
    #cd systemvm/test && bash -x runtests.sh
    # Build noredist
