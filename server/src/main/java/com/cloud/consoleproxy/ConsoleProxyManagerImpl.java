@@ -161,10 +161,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
 
-    private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30 seconds
-    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC = 180; // 3 minutes
-
-    private static final int STARTUP_DELAY = 60000; // 60 seconds
+    private static final int DEFAULT_CAPACITY_SCAN_INTERVAL_IN_MILLISECONDS = 30000; // 30 seconds
+    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC_IN_SECONDS = 180; // 3 minutes
+    private static final int STARTUP_DELAY_IN_MILLISECONDS = 60000; // 60 seconds
 
     private int _consoleProxyPort = ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT;
 
@@ -227,7 +226,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
      * private final ExecutorService _requestHandlerScheduler = Executors.newCachedThreadPool(new
      * NamedThreadFactory("Request-handler"));
      */
-    private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
+    private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL_IN_MILLISECONDS;
     private int _capacityPerProxy = ConsoleProxyManager.DEFAULT_PROXY_CAPACITY;
     private int _standbyCapacity = ConsoleProxyManager.DEFAULT_STANDBY_CAPACITY;
 
@@ -385,7 +384,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             return null;
         }
 
-        if (_allocProxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
+        if (_allocProxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC_IN_SECONDS)) {
             try {
                 if (vm.getProxyId() != null) {
                     proxy = _consoleProxyDao.findById(vm.getProxyId());
@@ -893,7 +892,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                     s_logger.info("No stopped console proxy is available, need to allocate a new console proxy");
                 }
 
-                if (_allocProxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
+                if (_allocProxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC_IN_SECONDS)) {
                     try {
                         proxy = startNew(dataCenterId);
                     } catch (ConcurrentOperationException e) {
@@ -1215,7 +1214,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
 
         value = configs.get(Config.ConsoleProxyCapacityScanInterval.key());
-        _capacityScanInterval = NumbersUtil.parseLong(value, DEFAULT_CAPACITY_SCAN_INTERVAL);
+        _capacityScanInterval = NumbersUtil.parseLong(value, DEFAULT_CAPACITY_SCAN_INTERVAL_IN_MILLISECONDS);
 
         _capacityPerProxy = NumbersUtil.parseInt(configs.get("consoleproxy.session.max"), DEFAULT_PROXY_CAPACITY);
         _standbyCapacity = NumbersUtil.parseInt(configs.get("consoleproxy.capacity.standby"), DEFAULT_STANDBY_CAPACITY);
@@ -1287,7 +1286,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
 
         _loadScanner = new SystemVmLoadScanner<Long>(this);
-        _loadScanner.initScan(STARTUP_DELAY, _capacityScanInterval);
+        _loadScanner.initScan(STARTUP_DELAY_IN_MILLISECONDS, _capacityScanInterval);
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
 
         _staticPublicIp = _configDao.getValue("consoleproxy.static.publicIp");
