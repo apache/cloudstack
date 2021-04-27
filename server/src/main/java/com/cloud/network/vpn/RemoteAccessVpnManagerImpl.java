@@ -92,6 +92,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import java.lang.reflect.InvocationTargetException;
+import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 
 public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAccessVpnService, Configurable {
@@ -145,7 +146,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         final PublicIpAddress ipAddr = _networkMgr.getPublicIpAddress(publicIpId);
         if (ipAddr == null) {
-            throw new InvalidParameterValueException("Unable to create remote access vpn, invalid public IP address id" + publicIpId);
+            throw new InvalidParameterValueException(String.format("Unable to create remote access VPN, invalid public IP address {\"id\": %s}.", publicIpId));
         }
 
         _accountMgr.checkAccess(caller, null, true, ipAddr);
@@ -180,7 +181,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
             if (vpnVO.getState() == RemoteAccessVpn.State.Added) {
                 return vpnVO;
             }
-            throw new InvalidParameterValueException("A Remote Access VPN already exists for this public Ip address");
+
+            throw new InvalidParameterValueException(String.format("A remote Access VPN already exists for the public IP address [%s].", ipAddr.getAddress().toString()));
         }
 
         if (ipRange == null) {
@@ -194,12 +196,14 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         Pair<String, Integer> cidr = null;
 
         if (networkId != null) {
-            vpnVO = _remoteAccessVpnDao.findByAccountAndNetwork(ipAddr.getAccountId(), networkId);
+            long ipAddressOwner = ipAddr.getAccountId();
+            vpnVO = _remoteAccessVpnDao.findByAccountAndNetwork(ipAddressOwner, networkId);
             if (vpnVO != null) {
                 if (vpnVO.getState() == RemoteAccessVpn.State.Added) {
                     return vpnVO;
                 }
-                throw new InvalidParameterValueException("A Remote Access VPN already exists for this account");
+
+                throw new InvalidParameterValueException(String.format("A remote access VPN already exists for the account [%s].", ipAddressOwner));
             }
             Network network = _networkMgr.getNetwork(networkId);
             if (!_networkMgr.areServicesSupportedInNetwork(network.getId(), Service.Vpn)) {
@@ -242,17 +246,17 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     private void validateRemoteAccessVpnConfiguration() throws ConfigurationException {
         String ipRange = RemoteAccessVpnClientIpRange.value();
         if (ipRange == null) {
-            s_logger.warn("Remote Access VPN global configuration missing client ip range -- ignoring");
+            s_logger.warn(String.format("Remote access VPN configuration: Global configuration [%s] missing client IP range.", RemoteAccessVpnClientIpRange.key()));
             return;
         }
 
         if (_pskLength < 8 || _pskLength > 256) {
-            throw new ConfigurationException("Remote Access VPN: IPSec preshared key length should be between 8 and 256");
+            throw new ConfigurationException(String.format("Remote access VPN configuration: IPSec preshared key length [%s] should be between 8 and 256.", _pskLength));
         }
 
         validateIpRange(ipRange, ConfigurationException.class);
     }
-    
+
     protected <T extends Throwable> void validateIpRange(String ipRange, Class<T> exceptionClass) throws T {
         String[] range = ipRange.split("-");
 
@@ -359,7 +363,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                             }
                         });
                     } catch (Exception ex) {
-                        s_logger.warn("Unable to release the three vpn ports from the firewall rules", ex);
+                        s_logger.warn(String.format("Unable to release the VPN ports from the firewall rules [%s] due to [%s]", fwRules.stream().map(rule ->
+                          String.format("{\"ipId\": %s, \"port\": %s}", rule.getSourceIpAddressId(), rule.getSourcePortStart())).collect(Collectors.joining(", ")), ex.getMessage()), ex);
                     }
                 }
             }
@@ -373,7 +378,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         final Account caller = CallContext.current().getCallingAccount();
 
         if (!username.matches("^[a-zA-Z0-9][a-zA-Z0-9@._-]{2,63}$")) {
-            throw new InvalidParameterValueException("Username has to be begin with an alphabet have 3-64 characters including alphabets, numbers and the set '@.-_'");
+            throw new InvalidParameterValueException(String.format("Username [%s] is invalid. Username has to begin with an alphabet have 3-64 characters including alphabets, numbers and the set '@.-_'.", username));
         }
         if (!password.matches("^[a-zA-Z0-9][a-zA-Z0-9@+=._-]{2,31}$")) {
             throw new InvalidParameterValueException("Password has to be 3-32 characters including alphabets, numbers and the set '@+=.-_'");
@@ -384,18 +389,18 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
             public VpnUser doInTransaction(TransactionStatus status) {
                 Account owner = _accountDao.lockRow(vpnOwnerId, true);
                 if (owner == null) {
-                    throw new InvalidParameterValueException("Unable to add vpn user: Another operation active");
+                    throw new InvalidParameterValueException(String.format("Unable to add VPN user {\"id\": %s, \"username\": \"%s\"}: Another operation is active.", vpnOwnerId, username));
                 }
                 _accountMgr.checkAccess(caller, null, true, owner);
 
                 VpnUserVO vpnUser = _vpnUsersDao.findByAccountAndUsername(owner.getId(), username);
                 if (vpnUser != null) {
-                    throw new InvalidParameterValueException("VPN User with name " + username + " is already added for account " + owner);
+                     throw new InvalidParameterValueException("VPN User with name " + username + " is already added for account " + owner);
                 }
 
                 long userCount = _vpnUsersDao.getVpnUserCount(owner.getId());
                 if (userCount >= _userLimit) {
-                    throw new AccountLimitException("Cannot add more than " + _userLimit + " remote access vpn users");
+                    throw new AccountLimitException(String.format("Cannot add more than [%s] remote access VPN users to %s.", _userLimit, owner.toString()));
                 }
 
                 VpnUser user = _vpnUsersDao.persist(new VpnUserVO(vpnOwnerId, owner.getDomainId(), username, password));
@@ -412,7 +417,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     public boolean removeVpnUser(long vpnOwnerId, String username, Account caller) {
         final VpnUserVO user = _vpnUsersDao.findByAccountAndUsername(vpnOwnerId, username);
         if (user == null) {
-            throw new InvalidParameterValueException("Could not find vpn user " + username);
+            throw new InvalidParameterValueException(String.format("Could not find VPN user=[%s]. VPN owner id=[%s]", username, vpnOwnerId));
         }
         _accountMgr.checkAccess(caller, null, true, user);
 
@@ -499,11 +504,11 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         Account owner = _accountDao.findById(vpnOwnerId);
         _accountMgr.checkAccess(caller, null, true, owner);
 
-        s_logger.debug("Applying vpn users for " + owner);
+        s_logger.debug(String.format("Applying VPN users for %s.", owner.toString()));
         List<RemoteAccessVpnVO> vpns = _remoteAccessVpnDao.findByAccount(vpnOwnerId);
 
         if (CollectionUtils.isEmpty(vpns)) {
-            s_logger.debug("There are no remote access vpns configured on this account  " + owner +" to apply vpn user, failing add vpn user ");
+            s_logger.debug(String.format("Unable to add VPN user due to there are no remote access VPNs configured on %s to apply VPN user.", owner.toString()));
             return false;
         }
 
@@ -545,8 +550,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                             }
                         }
                     }
-                } catch (Exception e) {
-                    s_logger.warn("Unable to apply vpn users ", e);
+                } catch (ResourceUnavailableException e) {
+                    s_logger.warn(String.format("Unable to apply VPN users [%s] due to [%s].", users.stream().map(user -> user.toString()).collect(Collectors.joining(", ")), e.getMessage()), e);
                     success = false;
                     vpnTemp = vpn;
 
@@ -577,7 +582,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                         }
                     });
                 }
-                s_logger.warn("Failed to apply vpn for user " + user.getUsername() + ", accountId=" + user.getAccountId());
+
+                s_logger.warn(String.format("Failed to apply VPN for %s.", user.toString()));
             }
         }
 
