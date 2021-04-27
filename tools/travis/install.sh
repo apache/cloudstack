@@ -41,19 +41,18 @@ if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
    cd ui && npm install && npm run lint && npm run test:unit && npm run build
    cd $DIR
 
-   # Pylint/pep8 systemvm python codebase
-   python3 -m pip install --user --upgrade setuptools pycodestyle pylint flask nose
-   pip install virtualenv
-   sudo virtualenv -p `which python2` py2
-   #sudo python2 -m venv ~/py2/
-   source py2/bin/activate
-
-   which python
-   which python2
-   python --version
-   python2 -m pip install --user --upgrade setuptools pycodestyle pylint flask nose
    # TODO reinstate this test script once the system vm is running python3 and is fully functional again
-   #cd systemvm/test && bash -x runtests.sh
+   # Pylint/pep8 systemvm python codebase
+#   python3 -m pip install --user --upgrade setuptools pycodestyle pylint flask nose
+#   pip install virtualenv
+#   sudo virtualenv -p `which python2` py2
+#   source py2/bin/activate
+#   which python
+#   which python2
+#   python --version
+#   python2 -m pip install --user --upgrade setuptools pycodestyle pylint flask nose
+#   cd systemvm/test && bash -x runtests.sh
+
    # Build noredist
    git clone https://github.com/rhtyd/cloudstack-nonoss.git nonoss && cd nonoss && bash -x install-non-oss.sh
    cd $DIR && echo $DIR
