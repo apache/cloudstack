@@ -2436,6 +2436,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         host.setHypervisorType(hyType);
         host.setHypervisorVersion(ssCmd.getHypervisorVersion());
         host.setGpuGroups(ssCmd.getGpuGroupDetails());
+
+        s_logger.info(String.format("Filling %s with the following information retrieved from the agent {\"cpus\": %s, \"cpuSpeed\": %s, \"cpuSockets\": %s, "
+          + "\"totalMemory\": \"%s\"}.", host.toString(), ssCmd.getCpus(), ssCmd.getSpeed(), ssCmd.getCpuSockets(), ssCmd.getCapabilities(), ssCmd.getMemory()));
         return host;
     }
 

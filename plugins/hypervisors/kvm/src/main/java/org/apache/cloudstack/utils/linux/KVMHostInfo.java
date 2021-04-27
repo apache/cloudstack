@@ -80,10 +80,12 @@ public class KVMHostInfo {
     }
 
     protected static long getCpuSpeed(final NodeInfo nodeInfo) {
-        try (final Reader reader = new FileReader(CPU_INFO_MAX_FREQ_FILE_NAME)) {
-            return Long.parseLong(IOUtils.toString(reader).trim()) / 1000;
+        try (Reader reader = new FileReader(CPU_INFO_MAX_FREQ_FILE_NAME)) {
+            Long cpuInfoMaxFreq = Long.parseLong(IOUtils.toString(reader).trim());
+            LOGGER.info(String.format("Retrieved value [%s] from file [%s]. Using the value divided by 1000 [%s] as CPU speed value.", cpuInfoMaxFreq, CPU_INFO_MAX_FREQ_FILE_NAME, cpuInfoMaxFreq / 1000));
+            return cpuInfoMaxFreq / 1000;
         } catch (IOException | NumberFormatException e) {
-            LOGGER.info("Could not read cpuinfo_max_freq, falling back on libvirt");
+            LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s]. Using using the value [%s] provided by the Libvirt.", CPU_INFO_MAX_FREQ_FILE_NAME, nodeInfo.mhz), e);
             return nodeInfo.mhz;
         }
     }
@@ -126,7 +128,10 @@ public class KVMHostInfo {
             */
             this.capabilities.add("snapshot");
             conn.close();
-        } catch (final LibvirtException e) {
+
+            LOGGER.info(String.format("Fetched the following host's information {\"cpus\": %s, \"cpuSpeed\": %s, \"cpuSockets\": %s, \"cpuNodes\": %s, \"capabilities\": \"%s\"}.",
+              hosts.cpus,this.cpuSpeed, hosts.sockets, hosts.nodes, this.capabilities.toString()));
+        } catch (LibvirtException e) {
             LOGGER.error("Caught libvirt exception while fetching host information", e);
         }
     }
