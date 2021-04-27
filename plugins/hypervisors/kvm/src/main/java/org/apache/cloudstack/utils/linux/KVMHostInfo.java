@@ -42,7 +42,7 @@ public class KVMHostInfo {
     private long overCommitMemory;
     private List<String> capabilities = new ArrayList<>();
 
-    public static String CPU_INFO_MAX_FREQ_FILE_NAME = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq";
+    public static String cpuInfoMaxFreqFileName = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq";
 
     public KVMHostInfo(long reservedMemory, long overCommitMemory) {
         this.reservedMemory = reservedMemory;
@@ -80,12 +80,12 @@ public class KVMHostInfo {
     }
 
     protected static long getCpuSpeed(final NodeInfo nodeInfo) {
-        try (Reader reader = new FileReader(CPU_INFO_MAX_FREQ_FILE_NAME)) {
+        try (Reader reader = new FileReader(cpuInfoMaxFreqFileName)) {
             Long cpuInfoMaxFreq = Long.parseLong(IOUtils.toString(reader).trim());
-            LOGGER.info(String.format("Retrieved value [%s] from file [%s]. Using the value divided by 1000 [%s] as CPU speed value.", cpuInfoMaxFreq, CPU_INFO_MAX_FREQ_FILE_NAME, cpuInfoMaxFreq / 1000));
+            LOGGER.info(String.format("Retrieved value [%s] from file [%s]. Using the value divided by 1000 [%s] as CPU speed value.", cpuInfoMaxFreq, cpuInfoMaxFreqFileName, cpuInfoMaxFreq / 1000));
             return cpuInfoMaxFreq / 1000;
         } catch (IOException | NumberFormatException e) {
-            LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s]. Using using the value [%s] provided by the Libvirt.", CPU_INFO_MAX_FREQ_FILE_NAME, nodeInfo.mhz), e);
+            LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s]. Using using the value [%s] provided by the Libvirt.", cpuInfoMaxFreqFileName, nodeInfo.mhz), e);
             return nodeInfo.mhz;
         }
     }
