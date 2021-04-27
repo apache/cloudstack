@@ -89,7 +89,9 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import java.lang.reflect.InvocationTargetException;
 import org.apache.commons.collections.CollectionUtils;
 
 public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAccessVpnService, Configurable {
@@ -190,16 +192,10 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         if (ipRange == null) {
             ipRange = RemoteAccessVpnClientIpRange.valueIn(ipAddr.getAccountId());
         }
-        final String[] range = ipRange.split("-");
-        if (range.length != 2) {
-            throw new InvalidParameterValueException("Invalid ip range");
-        }
-        if (!NetUtils.isValidIp4(range[0]) || !NetUtils.isValidIp4(range[1])) {
-            throw new InvalidParameterValueException("Invalid ip in range specification " + ipRange);
-        }
-        if (!NetUtils.validIpRange(range[0], range[1])) {
-            throw new InvalidParameterValueException("Invalid ip range " + ipRange);
-        }
+
+        validateIpRange(ipRange, InvalidParameterValueException.class);
+
+        String[] range = ipRange.split("-");
 
         Pair<String, Integer> cidr = null;
 
@@ -267,15 +263,30 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
             throw new ConfigurationException("Remote Access VPN: IPSec preshared key length should be between 8 and 256");
         }
 
+        validateIpRange(ipRange, ConfigurationException.class);
+    }
+    
+        protected <T extends Throwable> void validateIpRange(String ipRange, Class<T> exceptionClass) throws T {
         String[] range = ipRange.split("-");
+
         if (range.length != 2) {
-            throw new ConfigurationException("Remote Access VPN: Invalid ip range " + ipRange);
+            throwExceptionOnValidateIpRangeError(exceptionClass, String.format("IP range [%s] is an invalid IP range.", ipRange));
         }
+
         if (!NetUtils.isValidIp4(range[0]) || !NetUtils.isValidIp4(range[1])) {
-            throw new ConfigurationException("Remote Access VPN: Invalid ip in range specification " + ipRange);
+            throwExceptionOnValidateIpRangeError(exceptionClass, String.format("One or both IPs sets in the range [%s] are invalid IPs.", ipRange));
         }
+
         if (!NetUtils.validIpRange(range[0], range[1])) {
-            throw new ConfigurationException("Remote Access VPN: Invalid ip range " + ipRange);
+            throwExceptionOnValidateIpRangeError(exceptionClass, String.format("Range of IPs [%s] is invalid.", ipRange));
+        }
+    }
+
+    protected <T extends Throwable> void throwExceptionOnValidateIpRangeError(Class<T> exceptionClass, String errorMessage) throws T {
+        try {
+            throw exceptionClass.getConstructor(String.class).newInstance(errorMessage);
+        } catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+            throw new CloudRuntimeException(String.format("Unexpected exception [%s] while throwing error [%s] on validateIpRange.", ex.getMessage(), errorMessage), ex);
         }
     }
 
