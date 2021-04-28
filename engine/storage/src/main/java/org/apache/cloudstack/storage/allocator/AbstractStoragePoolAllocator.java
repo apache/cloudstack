@@ -194,7 +194,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     }
 
     private List<StoragePool> reorderPoolsByDiskProvisioningType(List<StoragePool> pools, DiskProfile diskProfile) {
-        if (diskProfile != null && !diskProfile.getProvisioningType().equals(Storage.ProvisioningType.THIN)) {
+        if (diskProfile != null && diskProfile.getProvisioningType() != null && !diskProfile.getProvisioningType().equals(Storage.ProvisioningType.THIN)) {
             List<StoragePool> reorderedPools = new ArrayList<>();
             int preferredIndex = 0;
             for (StoragePool pool : pools) {
