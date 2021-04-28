@@ -165,15 +165,17 @@ export default {
     setActiveTab () {
       if (this.$route.query.tab) {
         this.activeTab = this.$route.query.tab
-      } else if (!this.historyTab) {
+        return
+      }
+      if (!this.historyTab || !this.$route.meta.tabs || this.$route.meta.tabs.length === 0) {
+        this.activeTab = this.tabs[0].name
+        return
+      }
+      const tabIdx = this.$route.meta.tabs.findIndex(tab => tab.name === this.historyTab)
+      if (tabIdx === -1) {
         this.activeTab = this.tabs[0].name
       } else {
-        const tabIdx = this.$route.meta.tabs.findIndex(tab => tab.name === this.historyTab)
-        if (tabIdx === -1) {
-          this.activeTab = this.tabs[0].name
-        } else {
-          this.activeTab = this.historyTab
-        }
+        this.activeTab = this.historyTab
       }
     }
   }

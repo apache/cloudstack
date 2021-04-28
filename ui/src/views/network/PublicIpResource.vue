@@ -30,12 +30,12 @@
       </div>
       <div slot="resource">
         <resource-view
-          v-if="isPublicIpAddress"
+          v-if="isPublicIpAddress && 'id' in resource"
           :loading="loading"
           :resource="resource"
           :historyTab="activeTab"
           :tabs="tabs"
-          @onTabChange="setActiveTab" />
+          @onTabChange="(tab) => { this.activeTab = tab }" />
       </div>
     </autogen-view>
   </div>
@@ -171,9 +171,6 @@ export default {
     },
     execAction (action, isGroupAction) {
       eventBus.$emit('exec-action', action, isGroupAction)
-    },
-    setActiveTab (tab) {
-      this.activeTab = tab
     }
   }
 }
