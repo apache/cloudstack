@@ -321,8 +321,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 String postUploadKey = _configDao.getValue(Config.SSVMPSK.key());
                 setupCmd.setPostUploadKey(postUploadKey);
 
-                String debugMessage = String.format("Successfully programmed secondary storage [%s] in secondary storage VM [%s].", ssStore.getName(), secStorageVm.getInstanceName());
-
                 Answer answer = _agentMgr.easySend(ssHostId, setupCmd);
                 if (answer != null && answer.getResult()) {
                     SecStorageSetupAnswer an = (SecStorageSetupAnswer)answer;
@@ -332,9 +330,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                         _imageStoreDao.update(ssStore.getId(), svo);
                     }
 
-                    s_logger.debug(debugMessage);
+                    s_logger.debug(String.format("Successfully programmed secondary storage [%s] in secondary storage VM [%s].", ssStore.getName(), secStorageVm.getInstanceName()));
                 } else {
-                    s_logger.debug(debugMessage);
+                    s_logger.debug(String.format("Unable to program secondary storage [%s] in secondary storage VM [%s] due to [%s].", ssStore.getName(), secStorageVm.getInstanceName(), answer == null ? "null answer" : answer.getDetails()));
                     return false;
                 }
             }
