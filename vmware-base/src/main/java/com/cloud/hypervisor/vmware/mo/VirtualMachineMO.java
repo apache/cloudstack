@@ -1498,117 +1498,11 @@ public class VirtualMachineMO extends BaseMO {
             s_logger.trace("vCenter API trace - detachAllDisk() done(successfully)");
     }
 
-    // isoDatastorePath: [datastore name] isoFilePath
-    public void attachIso(String isoDatastorePath, ManagedObjectReference morDs, boolean connect, boolean connectAtBoot) throws Exception {
-        attachIso(isoDatastorePath, morDs, connect, connectAtBoot, null);
-    }
-
-    // isoDatastorePath: [datastore name] isoFilePath
-    public void attachIso(String isoDatastorePath, ManagedObjectReference morDs,
-    boolean connect, boolean connectAtBoot, Integer key) throws Exception {
-
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - attachIso(). target MOR: " + _mor.getValue() + ", isoDatastorePath: " + isoDatastorePath + ", datastore: " +
-                    morDs.getValue() + ", connect: " + connect + ", connectAtBoot: " + connectAtBoot);
-
-        assert (isoDatastorePath != null);
-        assert (morDs != null);
-
-        boolean newCdRom = false;
-        VirtualCdrom cdRom;
-        if (key == null) {
-            cdRom = (VirtualCdrom) getIsoDevice();
-        } else {
-            cdRom = (VirtualCdrom) getIsoDevice(key);
-        }
-        if (cdRom == null) {
-            newCdRom = true;
-            cdRom = new VirtualCdrom();
-            cdRom.setControllerKey(getIDEDeviceControllerKey());
-
-            int deviceNumber = getNextIDEDeviceNumber();
-            cdRom.setUnitNumber(deviceNumber);
-            cdRom.setKey(-deviceNumber);
-        }
-
-        VirtualDeviceConnectInfo cInfo = new VirtualDeviceConnectInfo();
-        cInfo.setConnected(connect);
-        cInfo.setStartConnected(connectAtBoot);
-        cdRom.setConnectable(cInfo);
-
-        VirtualCdromIsoBackingInfo backingInfo = new VirtualCdromIsoBackingInfo();
-        backingInfo.setFileName(isoDatastorePath);
-        backingInfo.setDatastore(morDs);
-        cdRom.setBacking(backingInfo);
-
-        VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-        //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
-        VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
-
-        deviceConfigSpec.setDevice(cdRom);
-        if (newCdRom) {
-            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
-        } else {
-            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
-        }
-
-        //deviceConfigSpecArray[0] = deviceConfigSpec;
-        reConfigSpec.getDeviceChange().add(deviceConfigSpec);
-
-        ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
-        boolean result = _context.getVimClient().waitForTask(morTask);
-
-        if (!result) {
-            if (s_logger.isTraceEnabled())
-                s_logger.trace("vCenter API trace - attachIso() done(failed)");
-            throw new Exception("Failed to attach ISO due to " + TaskMO.getTaskFailureInfo(_context, morTask));
-        }
-
-        _context.waitForTaskProgressDone(morTask);
-
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - attachIso() done(successfully)");
-    }
-
-    public int detachIso(String isoDatastorePath) throws Exception {
-        return detachIso(isoDatastorePath, false);
-    }
-
-    public int detachIso(String isoDatastorePath, final boolean force) throws Exception {
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - detachIso(). target MOR: " + _mor.getValue() + ", isoDatastorePath: " + isoDatastorePath);
-
-        VirtualDevice device = getIsoDevice(isoDatastorePath);
-        if (device == null) {
-            if (s_logger.isTraceEnabled())
-                s_logger.trace("vCenter API trace - detachIso() done(failed)");
-            throw new Exception("Unable to find a CDROM device");
-        }
-
-        VirtualCdromRemotePassthroughBackingInfo backingInfo = new VirtualCdromRemotePassthroughBackingInfo();
-        backingInfo.setDeviceName("");
-        device.setBacking(backingInfo);
-
-        VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
-        //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
-        VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
-
-        deviceConfigSpec.setDevice(device);
-        deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
-
-        //deviceConfigSpecArray[0] = deviceConfigSpec;
-        reConfigSpec.getDeviceChange().add(deviceConfigSpec);
-
-        ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
-
-        // Monitor VM questions
-        final Boolean[] flags = {false};
-        final VirtualMachineMO vmMo = this;
+    private Future<?> answerVmwareQuestion(Boolean[] flags, VirtualMachineMO vmMo, boolean force) {
         Future<?> future = MonitorServiceExecutor.submit(new Runnable() {
             @Override
             public void run() {
                 s_logger.info("VM Question monitor started...");
-
                 while (!flags[0]) {
                     try {
                         VirtualMachineRuntimeInfo runtimeInfo = vmMo.getRuntimeInfo();
@@ -1670,6 +1564,119 @@ public class VirtualMachineMO extends BaseMO {
                 s_logger.info("VM Question monitor stopped");
             }
         });
+        return future;
+    }
+    // isoDatastorePath: [datastore name] isoFilePath
+    public void attachIso(String isoDatastorePath, ManagedObjectReference morDs, boolean connect, boolean connectAtBoot, boolean forced) throws Exception {
+        attachIso(isoDatastorePath, morDs, connect, connectAtBoot, null, forced);
+    }
+
+    // isoDatastorePath: [datastore name] isoFilePath
+    public void attachIso(String isoDatastorePath, ManagedObjectReference morDs,
+    boolean connect, boolean connectAtBoot, Integer key, boolean force) throws Exception {
+
+        if (s_logger.isTraceEnabled())
+            s_logger.trace("vCenter API trace - attachIso(). target MOR: " + _mor.getValue() + ", isoDatastorePath: " + isoDatastorePath + ", datastore: " +
+                    morDs.getValue() + ", connect: " + connect + ", connectAtBoot: " + connectAtBoot);
+
+        assert (isoDatastorePath != null);
+        assert (morDs != null);
+
+        boolean newCdRom = false;
+        VirtualCdrom cdRom;
+        if (key == null) {
+            cdRom = (VirtualCdrom) getIsoDevice();
+        } else {
+            cdRom = (VirtualCdrom) getIsoDevice(key);
+        }
+        if (cdRom == null) {
+            newCdRom = true;
+            cdRom = new VirtualCdrom();
+            cdRom.setControllerKey(getIDEDeviceControllerKey());
+
+            int deviceNumber = getNextIDEDeviceNumber();
+            cdRom.setUnitNumber(deviceNumber);
+            cdRom.setKey(-deviceNumber);
+        }
+
+        VirtualDeviceConnectInfo cInfo = new VirtualDeviceConnectInfo();
+        cInfo.setConnected(connect);
+        cInfo.setStartConnected(connectAtBoot);
+        cdRom.setConnectable(cInfo);
+
+        VirtualCdromIsoBackingInfo backingInfo = new VirtualCdromIsoBackingInfo();
+        backingInfo.setFileName(isoDatastorePath);
+        backingInfo.setDatastore(morDs);
+        cdRom.setBacking(backingInfo);
+
+        VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
+        //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
+        VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+
+        deviceConfigSpec.setDevice(cdRom);
+        if (newCdRom) {
+            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+        } else {
+            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
+        }
+
+        //deviceConfigSpecArray[0] = deviceConfigSpec;
+        reConfigSpec.getDeviceChange().add(deviceConfigSpec);
+
+        ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
+
+        final Boolean[] flags = {false};
+        final VirtualMachineMO vmMo = this;
+        Future<?> future = answerVmwareQuestion(flags, vmMo, force);
+        try {
+            boolean result = _context.getVimClient().waitForTask(morTask);
+
+            if (!result) {
+                if (s_logger.isTraceEnabled())
+                    s_logger.trace("vCenter API trace - attachIso() done(failed)");
+                throw new Exception("Failed to attach ISO due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            }
+            _context.waitForTaskProgressDone(morTask);
+
+            if (s_logger.isTraceEnabled())
+                s_logger.trace("vCenter API trace - attachIso() done(successfully)");
+        } finally {
+            flags[0] = true;
+            future.cancel(true);
+        }
+    }
+
+    public int detachIso(String isoDatastorePath, final boolean force) throws Exception {
+        if (s_logger.isTraceEnabled())
+            s_logger.trace("vCenter API trace - detachIso(). target MOR: " + _mor.getValue() + ", isoDatastorePath: " + isoDatastorePath);
+
+        VirtualDevice device = getIsoDevice(isoDatastorePath);
+        if (device == null) {
+            if (s_logger.isTraceEnabled())
+                s_logger.trace("vCenter API trace - detachIso() done(failed)");
+            throw new Exception("Unable to find a CDROM device");
+        }
+
+        VirtualCdromRemotePassthroughBackingInfo backingInfo = new VirtualCdromRemotePassthroughBackingInfo();
+        backingInfo.setDeviceName("");
+        device.setBacking(backingInfo);
+
+        VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
+        //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
+        VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+
+        deviceConfigSpec.setDevice(device);
+        deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
+
+        //deviceConfigSpecArray[0] = deviceConfigSpec;
+        reConfigSpec.getDeviceChange().add(deviceConfigSpec);
+
+        ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
+
+        // Monitor VM questions
+        final Boolean[] flags = {false};
+        final VirtualMachineMO vmMo = this;
+        Future<?> future = answerVmwareQuestion(flags, vmMo, force);
         try {
             boolean result = _context.getVimClient().waitForTask(morTask);
             if (!result) {
