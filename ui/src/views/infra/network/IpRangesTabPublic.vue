@@ -125,7 +125,7 @@
             <a-select-option
               v-for="domain in domains"
               :key="domain.id"
-              :value="domain.id">{{ domain.name }}
+              :value="domain.id">{{ domain.path || domain.name || domain.description }}
             </a-select-option>
           </a-select>
         </div>
@@ -187,7 +187,7 @@
                 <a-select-option
                   v-for="domain in domains"
                   :key="domain.id"
-                  :value="domain.id">{{ domain.name }}
+                  :value="domain.id">{{ domain.path || domain.name || domain.description }}
                 </a-select-option>
               </a-select>
             </a-form-item>

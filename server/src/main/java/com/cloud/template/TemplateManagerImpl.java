@@ -1648,6 +1648,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         final Long accountId = CallContext.current().getCallingAccountId();
         SnapshotVO snapshot = null;
         VolumeVO volume = null;
+        Account caller = CallContext.current().getCallingAccount();
 
         try {
             TemplateInfo tmplInfo = _tmplFactory.getTemplate(templateId, DataStoreRole.Image);
@@ -1686,6 +1687,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                             throw new CloudRuntimeException("Cannot find snapshot " + snapshotId + " on secondary and could not create backup");
                         }
                     }
+                    _accountMgr.checkAccess(caller, null, true, snapInfo);
                     DataStore snapStore = snapInfo.getDataStore();
 
                     if (snapStore != null) {
@@ -1696,7 +1698,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 future = _tmpltSvr.createTemplateFromSnapshotAsync(snapInfo, tmplInfo, store);
             } else if (volumeId != null) {
                 VolumeInfo volInfo = _volFactory.getVolume(volumeId);
+                if (volInfo == null) {
+                    throw new InvalidParameterValueException("No such volume exist");
+                }
 
+                _accountMgr.checkAccess(caller, null, true, volInfo);
                 future = _tmpltSvr.createTemplateFromVolumeAsync(volInfo, tmplInfo, store);
             } else {
                 throw new CloudRuntimeException("Creating private Template need to specify snapshotId or volumeId");

@@ -50,6 +50,13 @@
         </div>
       </div>
     </a-list-item>
+    <a-list-item slot="renderItem" slot-scope="item" v-else-if="item === 'ip6address' && ipV6Address.length > 0">
+      <div>
+        <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
+        <br/>
+        <div>{{ ipV6Address }}</div>
+      </div>
+    </a-list-item>
     <HostInfo :resource="resource" v-if="$route.meta.name === 'host' && 'listHosts' in $store.getters.apis" />
     <DedicateData :resource="resource" v-if="dedicatedSectionActive" />
     <VmwareData :resource="resource" v-if="$route.meta.name === 'zone' && 'listVmwareDcs' in $store.getters.apis" />
@@ -87,6 +94,15 @@ export default {
   },
   mounted () {
     this.dedicatedSectionActive = this.dedicatedRoutes.includes(this.$route.meta.name)
+  },
+  computed: {
+    ipV6Address () {
+      if (this.resource.nic && this.resource.nic.length > 0) {
+        return this.resource.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ')
+      }
+
+      return null
+    }
   },
   created () {
     this.dedicatedSectionActive = this.dedicatedRoutes.includes(this.$route.meta.name)
