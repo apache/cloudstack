@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.kubernetes.cluster;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -156,8 +158,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class KubernetesClusterManagerImpl extends ManagerBase implements KubernetesClusterService {
 
@@ -587,6 +587,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         response.setClusterSize(kubernetesCluster.getNodeCount());
         VMTemplateVO template = ApiDBUtils.findTemplateById(kubernetesCluster.getTemplateId());
         response.setTemplateId(template.getUuid());
+        response.setTemplateName(template.getName());
         ServiceOfferingVO offering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
         response.setServiceOfferingId(offering.getUuid());
         response.setServiceOfferingName(offering.getName());

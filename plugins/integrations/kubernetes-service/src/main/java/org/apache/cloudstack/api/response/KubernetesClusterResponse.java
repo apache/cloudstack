@@ -61,6 +61,10 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
     @Param(description = "the ID of the template of the Kubernetes cluster")
     private String templateId;
 
+    @SerializedName(ApiConstants.TEMPLATE_NAME)
+    @Param(description = "the name of the template of the Kubernetes cluster", since = "4.15.1")
+    private String templateName;
+
     @SerializedName(ApiConstants.NETWORK_ID)
     @Param(description = "the ID of the network of the Kubernetes cluster")
     private String networkId;
@@ -190,6 +194,14 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
 
     public void setTemplateId(String templateId) {
         this.templateId = templateId;
+    }
+
+    public String getTemplateName() {
+        return templateName;
+    }
+
+    public void setTemplateName(String templateName) {
+        this.templateName = templateName;
     }
 
     public String getNetworkId() {
