@@ -85,7 +85,7 @@ public class KVMHostInfo {
             LOGGER.info(String.format("Retrieved value [%s] from file [%s]. Using the value divided by 1000 [%s] as CPU speed value.", cpuInfoMaxFreq, cpuInfoMaxFreqFileName, cpuInfoMaxFreq / 1000));
             return cpuInfoMaxFreq / 1000;
         } catch (IOException | NumberFormatException e) {
-            LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s]. Using using the value [%s] provided by the Libvirt.", cpuInfoMaxFreqFileName, nodeInfo.mhz), e);
+            LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s]. Using the value [%s] provided by the Libvirt.", cpuInfoMaxFreqFileName, nodeInfo.mhz), e);
             return nodeInfo.mhz;
         }
     }
