@@ -83,6 +83,10 @@ export default {
           component: DetailsTab
         }]
       }
+    },
+    historyTab: {
+      type: String,
+      default: ''
     }
   },
   data () {
@@ -128,6 +132,7 @@ export default {
           )
         }).join('&')
       )
+      this.$emit('onTabChange', key)
     },
     showTab (tab) {
       if ('networkServiceFilter' in tab) {
@@ -158,7 +163,18 @@ export default {
       }
     },
     setActiveTab () {
-      this.activeTab = this.$route.query.tab ? this.$route.query.tab : this.tabs[0].name
+      if (this.$route.query.tab) {
+        this.activeTab = this.$route.query.tab
+      } else if (!this.historyTab) {
+        this.activeTab = this.tabs[0].name
+      } else {
+        const tabIdx = this.$route.meta.tabs.findIndex(tab => tab.name === this.historyTab)
+        if (tabIdx === -1) {
+          this.activeTab = this.tabs[0].name
+        } else {
+          this.activeTab = this.historyTab
+        }
+      }
     }
   }
 }

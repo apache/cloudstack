@@ -30,10 +30,12 @@
       </div>
       <div slot="resource">
         <resource-view
-          v-if="isPublicIpAddress && 'id' in resource"
+          v-if="isPublicIpAddress"
           :loading="loading"
           :resource="resource"
-          :tabs="tabs" />
+          :historyTab="activeTab"
+          :tabs="tabs"
+          @onTabChange="setActiveTab" />
       </div>
     </autogen-view>
   </div>
@@ -63,7 +65,8 @@ export default {
       tabs: [{
         name: 'details',
         component: () => import('@/components/view/DetailsTab.vue')
-      }]
+      }],
+      activeTab: ''
     }
   },
   mixins: [mixinDevice],
@@ -168,6 +171,9 @@ export default {
     },
     execAction (action, isGroupAction) {
       eventBus.$emit('exec-action', action, isGroupAction)
+    },
+    setActiveTab (tab) {
+      this.activeTab = tab
     }
   }
 }
