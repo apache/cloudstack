@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
- 
+
 
 
 import sys, os, subprocess, errno, re
@@ -72,7 +72,7 @@ class Command:
         else: return l
     def __str__(self):
         return '<Command %r>'%self.__get_recursive_name(sep=" ")
-        
+
     def __repr__(self): return self.__str__()
 
 
@@ -134,13 +134,13 @@ def reboot(args):
     if o.ret:
         print o.stderr
         return 1
-    
+
 
     if "is on" in o.stdout:
         o = ipmitool("-H", hostname, "-U", usrname, "-P", password, "chassis", "power", "cycle")
     else:
         o = ipmitool("-H", hostname, "-U", usrname, "-P", password, "chassis", "power", "reset")
-        
+
     if o.ret:
         print o.stderr
         return 1
@@ -172,7 +172,7 @@ def boot_or_reboot(args):
     if o.ret:
         print o.stderr
         return 1
-    
+
     if "is on" in o.stdout:
         return reboot(args)
     elif "is off" in o.stdout:
@@ -181,7 +181,7 @@ def boot_or_reboot(args):
     else:
         print "unknown power status:" + o.stdout
         return 1
-    
+
 
 call_table = {"ping":ping, "boot_dev":boot_dev, "reboot":reboot, "power":power, "boot_or_reboot":boot_or_reboot}
 def dispatch(args):

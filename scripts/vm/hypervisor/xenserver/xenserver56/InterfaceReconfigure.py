@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -339,12 +339,12 @@ def db_init_from_cache(cache):
     global _db
     assert(_db is None)
     _db = DatabaseCache(cache_file=cache)
-    
+
 def db_init_from_xenapi(session):
-    global _db 
+    global _db
     assert(_db is None)
     _db  = DatabaseCache(session_ref=session)
-    
+
 class DatabaseCache(object):
     def __read_xensource_inventory(self):
         filename = root_prefix() + "/etc/xensource-inventory"
@@ -626,7 +626,7 @@ def ethtool_settings(oc):
 # {VIF,PIF,Network}.other-config:mtu.
 #
 # type parameter is a string describing the object that the oc parameter
-# is from. e.g. "PIF", "Network" 
+# is from. e.g. "PIF", "Network"
 def mtu_setting(nw, type, oc):
     mtu = None
 
@@ -635,7 +635,7 @@ def mtu_setting(nw, type, oc):
         mtu = nwrec['MTU']
     else:
         mtu = "1500"
-        
+
     if oc.has_key('mtu'):
         log("Override Network.MTU setting on bridge %s from %s.MTU is %s" % \
             (nwrec['bridge'], type, mtu))
@@ -796,7 +796,7 @@ class Datapath(object):
        datapath for a given PIF. Does not include configuration of the
        IP address on the ipdev.
     """
-    
+
     def __init__(self, pif):
         self._pif = pif
 
@@ -804,7 +804,7 @@ class Datapath(object):
         """Write ifcfg TYPE field for an IPdev, plus any type specific
            fields to cfg
         """
-        raise NotImplementedError        
+        raise NotImplementedError
 
     def preconfigure(self, parent):
         """Prepare datapath configuration for PIF, but do not actually
@@ -813,7 +813,7 @@ class Datapath(object):
            Any configuration files should be attached to parent.
         """
         raise NotImplementedError
-    
+
     def bring_down_existing(self):
         """Tear down any existing network device configuration which
            needs to be undone in order to bring this PIF up.
@@ -831,7 +831,7 @@ class Datapath(object):
            Should not bring up the IPdev.
         """
         raise NotImplementedError
-    
+
     def post(self):
         """Called after the IPdev has been brought up.
 
@@ -846,17 +846,17 @@ class Datapath(object):
            IPdev has already been brought down.
         """
         raise NotImplementedError
-        
+
 def DatapathFactory(pif):
     # XXX Need a datapath object for bridgeless PIFs
 
     try:
         network_conf = open(root_prefix() + "/etc/xensource/network.conf", 'r')
         network_backend = network_conf.readline().strip()
-        network_conf.close()                
+        network_conf.close()
     except Exception, e:
         raise Error("failed to determine network backend:" + e)
-    
+
     if network_backend == "bridge":
         from InterfaceReconfigureBridge import DatapathBridge
         return DatapathBridge(pif)

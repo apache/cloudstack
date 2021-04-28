@@ -566,7 +566,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
         )
 
         return
-    
+
     @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_02_root_volume_attach_detach(self):
         """Test Root Volume attach/detach to VM
@@ -581,7 +581,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
         # 6. Verify root volume detached
         # 7. Attach root volume
         # 8. Start VM
-        
+
         # Verify we are using a supported hypervisor
         if (self.hypervisor.lower() == 'vmware'
                 or self.hypervisor.lower() == 'kvm'
@@ -691,7 +691,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
                     'Running',
                     "Ensure the state of VM is running"
                 )
-                
+
         else:
             self.skipTest("Root Volume attach/detach is not supported on %s " % self.hypervisor)
         return

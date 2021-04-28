@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -36,7 +36,7 @@ class OvmDiskEncoder(json.JSONEncoder):
         dct = {}
         safeDictSet(obj, dct, 'path')
         safeDictSet(obj, dct, 'type')
-        return dct    
+        return dct
 
 def fromOvmDisk(disk):
     return normalizeToGson(json.dumps(disk, cls=OvmDiskEncoder))
@@ -58,8 +58,8 @@ class OvmDisk(OvmObject):
     path = ''
     type = ''
     isIso = False
-   
-    
+
+
 if __name__ == "__main__":
     print toOvmDisk('''{"type":"w","path":"/data/data.raw"}''')
     print toOvmDisk('''{"path":"/data/data.raw'","type":"w"}''')

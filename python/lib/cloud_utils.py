@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,7 +18,7 @@
 
 
 
- 
+
 
 # -*- coding: utf-8 -*-
 """CloudStack Python utility library"""
@@ -894,10 +894,10 @@ def remove_backup(targetdir):
 
 def list_zonespods(host):
 	text = urllib.request.urlopen('http://%s:8096/client/api?command=listPods'%host).read(-1)
-	dom = xml.dom.minidom.parseString(text) 
+	dom = xml.dom.minidom.parseString(text)
 	x = [ (zonename,podname)
-		for pod in dom.childNodes[0].childNodes  
-		for podname in [ x.childNodes[0].wholeText for x in pod.childNodes if x.tagName == "name" ] 
+		for pod in dom.childNodes[0].childNodes
+		for podname in [ x.childNodes[0].wholeText for x in pod.childNodes if x.tagName == "name" ]
 		for zonename in  [ x.childNodes[0].wholeText for x in pod.childNodes if x.tagName == "zonename" ]
 		]
 	return x
@@ -907,7 +907,7 @@ def prompt_for_hostpods(zonespods):
 	Returns (zone,pod) or None if the user made the default selection."""
 	while True:
 		stderr("Type the number of the zone and pod combination this host belongs to (hit ENTER to skip this step)")
-		print("  N) ZONE, POD") 
+		print("  N) ZONE, POD")
 		print("================")
 		for n,(z,p) in enumerate(zonespods):
 			print("%3d) %s, %s"%(n,z,p))

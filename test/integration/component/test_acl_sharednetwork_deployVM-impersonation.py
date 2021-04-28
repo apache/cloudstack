@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """
- Test cases for deploying Virtual Machine using impersonation (passing account and domainId parameters) for shared network 
+ Test cases for deploying Virtual Machine using impersonation (passing account and domainId parameters) for shared network
 """
 #Import Local Modules
 import marvin
@@ -66,7 +66,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
             cls.default_apikey = cls.apiclient.connection.apiKey
             cls.default_secretkey = cls.apiclient.connection.securityKey
     	
-            # Create domains 
+            # Create domains
             cls.domain_1 = Domain.create(
                                        cls.apiclient,
                                        cls.acldata["domain1"]
@@ -97,154 +97,154 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
                                 admin=True,
                                 domainid=cls.domain_1.id
                                 )
-    
+
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d1)
             cls.user_d1_apikey = user.apikey
             cls.user_d1_secretkey = user.secretkey
-            
+
             cls.account_d1a = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD1A"],
                                 admin=False,
                                 domainid=cls.domain_1.id
-                                )        
+                                )
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d1a)
             cls.user_d1a_apikey = user.apikey
             cls.user_d1a_secretkey = user.secretkey
-            
-    
+
+
             cls.account_d1b = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD1B"],
                                 admin=False,
                                 domainid=cls.domain_1.id
                                 )
-    
+
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d1b)
             cls.user_d1b_apikey = user.apikey
             cls.user_d1b_secretkey = user.secretkey
-      
+
             # Create  1 admin and 2 user accounts for doamin_11
             cls.account_d11 = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD11"],
                                 admin=True,
                                 domainid=cls.domain_11.id
-                                )        
+                                )
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d11)
             cls.user_d11_apikey = user.apikey
             cls.user_d11_secretkey = user.secretkey
-    
+
             cls.account_d11a = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD11A"],
                                 admin=False,
                                 domainid=cls.domain_11.id
-                                )        
+                                )
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d11a)
             cls.user_d11a_apikey = user.apikey
             cls.user_d11a_secretkey = user.secretkey
-    
+
             cls.account_d11b = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD11B"],
                                 admin=False,
                                 domainid=cls.domain_11.id
-                                )  
+                                )
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d11b)
             cls.user_d11b_apikey = user.apikey
             cls.user_d11b_secretkey = user.secretkey
-    
+
             # Create  2 user accounts and 1 admin account for doamin_111
-    
+
             cls.account_d111 = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD111"],
                                 admin=True,
                                 domainid=cls.domain_111.id
-                                )        
+                                )
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d111)
             cls.user_d111_apikey = user.apikey
             cls.user_d111_secretkey = user.secretkey
-          
+
             cls.account_d111a = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD111A"],
                                 admin=False,
                                 domainid=cls.domain_111.id
-                                )        
+                                )
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d111a)
             cls.user_d111a_apikey = user.apikey
             cls.user_d111a_secretkey = user.secretkey
-          
+
             cls.account_d111b = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD111B"],
                                 admin=False,
                                 domainid=cls.domain_111.id
-                                )        
+                                )
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d111b)
             cls.user_d111b_apikey = user.apikey
             cls.user_d111b_secretkey = user.secretkey
-          
+
             # Create  2 user accounts for doamin_12
             cls.account_d12a = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD12A"],
                                 admin=False,
                                 domainid=cls.domain_12.id
-                                )        
+                                )
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d12a)
             cls.user_d12a_apikey = user.apikey
             cls.user_d12a_secretkey = user.secretkey
-    
+
             cls.account_d12b = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD12B"],
                                 admin=False,
                                 domainid=cls.domain_12.id
-                                )  
-          
+                                )
+
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d12b)
             cls.user_d12b_apikey = user.apikey
             cls.user_d12b_secretkey = user.secretkey
-          
+
             # Create 1 user account for domain_2
-    
+
             cls.account_d2a = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD2"],
                                 admin=False,
                                 domainid=cls.domain_2.id
                                 )
-            
+
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d2a)
             cls.user_d2a_apikey = user.apikey
             cls.user_d2a_secretkey = user.secretkey
-                             
-                    
+
+
             # Create 1 user account and admin account in "ROOT" domain
-    
+
             cls.account_roota = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountROOTA"],
                                 admin=False,
                                 )
-            
+
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_roota)
             cls.user_roota_apikey = user.apikey
             cls.user_roota_secretkey = user.secretkey
-    
+
             cls.account_root = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountROOTA"],
                                 admin=True,
                                 )
-            
+
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_root)
             cls.user_root_apikey = user.apikey
             cls.user_root_secretkey = user.secretkey
-    
+
             # create service offering
             cls.service_offering = ServiceOffering.create(
                                     cls.apiclient,
@@ -253,12 +253,12 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
             cls.zone = get_zone(cls.apiclient,cls.testclient.getZoneForTests())
             cls.acldata['mode'] = cls.zone.networktype
             cls.template = get_template(cls.apiclient, cls.zone.id, cls.acldata["ostype"])
-    
+
     	    ## As admin user , create shared network with scope "all","domain" with subdomain access , "domain" without subdomain access and "account"
-    
+
     	    cls.apiclient.connection.apiKey = cls.default_apikey
             cls.apiclient.connection.securityKey = cls.default_secretkey
-    
+
             list_shared_network_offerings_response = NetworkOffering.list(
                                                              cls.apiclient,
 							     name="DefaultSharedNetworkOffering",
@@ -277,7 +277,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
                              networkofferingid=cls.shared_network_offering_id,
                              zoneid=cls.zone.id
                              )
-    
+
             cls.shared_network_domain_d11 =  Network.create(
                              cls.apiclient,
                              cls.acldata["network_domain_with_no_subdomain_access"],
@@ -286,7 +286,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
                              domainid=cls.domain_11.id,
                              subdomainaccess=False
                              )
-    
+
             cls.shared_network_domain_with_subdomain_d11 =  Network.create(
                              cls.apiclient,
                              cls.acldata["network_domain_with_subdomain_access"],
@@ -295,7 +295,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
                              domainid=cls.domain_11.id,
                             subdomainaccess=True
                              )
-    
+
             cls.shared_network_account_d111a =  Network.create(
                              cls.apiclient,
                              cls.acldata["network_account"],
@@ -307,7 +307,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
 	    cls.vmdata = {"name": "test",
 			  "displayname" : "test"
 			  }
-      
+
             cls.cleanup = [
     			cls.account_root,
     			cls.account_roota,
@@ -405,7 +405,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
 	"""
 	Valiate that ROOT admin is able to deploy a VM for any user in a subdomain in a shared network with scope=all
 	"""
-        # Deploy VM as user in a subdomain under ROOT 
+        # Deploy VM as user in a subdomain under ROOT
 
 	self.apiclient.connection.apiKey = self.default_apikey
         self.apiclient.connection.securityKey = self.default_secretkey
@@ -432,7 +432,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
 	Valiate that ROOT admin is able to deploy a VM for admin user in a domain in a shared network with scope=all
 
 	"""
-        #Deploy VM as an admin user in a subdomain under ROOT 
+        #Deploy VM as an admin user in a subdomain under ROOT
 
 	self.apiclient.connection.apiKey = self.default_apikey
         self.apiclient.connection.securityKey = self.default_secretkey
@@ -987,7 +987,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
 	Valiate that ROOT admin is NOT able to deploy a VM for a admin user in a shared network with scope=account which the admin user does not have access to
 	"""
 
-        # Deploy VM as an admin user in a subdomain under ROOT 
+        # Deploy VM as an admin user in a subdomain under ROOT
 
 	self.apiclient.connection.apiKey = self.default_apikey
         self.apiclient.connection.securityKey = self.default_secretkey
@@ -1104,7 +1104,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
 	Valiate that Domain admin is able to deploy a VM for a sub domain user in a shared network with scope=all
 	"""
 
-        # Deploy VM as user in a subdomain under ROOT 
+        # Deploy VM as user in a subdomain under ROOT
 	self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
 	self.vmdata["name"] = self.acldata["vmD11A"]["name"] +"-shared-scope-all-domain-admin"
@@ -1130,7 +1130,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
 	Valiate that Domain admin is able to deploy a VM for a sub domain admin user in a shared network with scope=all
 	"""
 
-        # Deploy VM as an admin user in a subdomain under ROOT 
+        # Deploy VM as an admin user in a subdomain under ROOT
 	self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
 	self.vmdata["name"] = self.acldata["vmD11"]["name"] +"-shared-scope-all-domain-admin"
@@ -1161,7 +1161,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
         self.apiclient.connection.securityKey = self.user_d1_secretkey
         self.vmdata["name"] = self.acldata["vmROOTA"]["name"] + "-shared-scope-all"
         self.vmdata["displayname"] = self.acldata["vmROOTA"]["displayname"] + "-shared-scope-all"
-    	try: 
+    	try:
 		vm = VirtualMachine.create(
             	self.apiclient,
             	self.vmdata,
@@ -1705,7 +1705,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
 	Valiate that Domain admin is able NOT able to deploy a VM for an regular user from a differnt domain in a shared network with scope=account
 	"""
 
-        # Deploy VM as an admin user in a subdomain under ROOT 
+        # Deploy VM as an admin user in a subdomain under ROOT
 	self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
 	self.vmdata["name"] = self.acldata["vmD2A"]["name"] +"-shared-scope-account-domain-admin"

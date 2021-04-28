@@ -539,7 +539,7 @@ class TestVPCOffering(cloudstackTestCase):
 
         self.logger.debug("Enabling the VPC offering created")
         vpc_off.update(self.apiclient, state='Enabled')
-        
+
         self.cleanup.insert(0, vpc_off)
 
         self.logger.debug("creating a VPC network in the account: %s" %

@@ -1663,7 +1663,7 @@ class TestLbAlgoSbLc(cloudstackTestCase):
         except Exception as e:
             if cls.exception_string.lower() in e.lower():
                 cls.skiptest = True
-                cls.exception_msg =e 
+                cls.exception_msg =e
             else:
                 cls.tearDownClass()
                 raise Exception("Warning: Exception in setUpClass: %s" % e)

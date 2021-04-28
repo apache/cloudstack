@@ -32,7 +32,7 @@ def getOrCreateWebdriver():
     DRIVER = DRIVER or webdriver.PhantomJS('phantomjs')  # phantomjs executable must be in PATH.
     return DRIVER
 
-    
+
 def getMSip():
     global MS_ip
     if len(sys.argv) >= 3:

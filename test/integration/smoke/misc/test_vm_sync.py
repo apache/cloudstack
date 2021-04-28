@@ -137,7 +137,7 @@ class TestDeployVMSync(cloudstackTestCase):
 
         list_vms = VirtualMachine.list(self.apiclient, ids=[self.vm1.id, self.vm2.id, self.vm3.id], listAll=True)
         self.assertTrue(isinstance(list_vms, list) and len(list_vms) == 3, msg = "List VM response is empty")
-        for vm in list_vms:        
+        for vm in list_vms:
             if vm.id == self.vm1.id:
                 self.assertTrue(vm.state == "Running", msg = "VM {0} is expected to be in running state".format(vm.name))
             elif vm.id == self.vm2.id or vm.id == self.vm3.id:

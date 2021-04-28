@@ -70,13 +70,13 @@ def initLogging(logFile=None, lvl=logging.INFO):
         if logFile is None:
             logging.basicConfig(level=lvl, \
                                 format="'%(asctime)-6s: %(name)s \
-                                (%(threadName)s) - %(levelname)s - %(message)s'") 
-        else: 
+                                (%(threadName)s) - %(levelname)s - %(message)s'")
+        else:
             logging.basicConfig(filename=logFile, level=lvl, \
                                 format="'%(asctime)-6s: %(name)s \
-                                (%(threadName)s) - %(levelname)s - %(message)s'") 
+                                (%(threadName)s) - %(levelname)s - %(message)s'")
     except:
-        logging.basicConfig(level=lvl) 
+        logging.basicConfig(level=lvl)
 
 def mkdirs(path):
     dir = bash("mkdir -p %s" % path)
@@ -148,7 +148,7 @@ def mountAndClean(host, path):
     mnt = bash("mount -t nfs %s:%s %s" % (host, path, mnt_path))
     erase = bash("rm -rf %s/*" % mnt_path)
     umnt = bash("umount %s" % mnt_path)
-   
+
 def cleanPrimaryStorage(cscfg):
     """
     Clean all the NFS primary stores and prepare them for the next run
@@ -181,7 +181,7 @@ def seedSecondaryStorage(cscfg, hypervisor):
 
 def refreshHosts(cscfg, hypervisor="xenserver", profile="xenserver602"):
     """
-    Removes cobbler system from previous run. 
+    Removes cobbler system from previous run.
     Creates a new system for current run.
     Ipmi boots from PXE - default to Xenserver profile
     """
@@ -240,7 +240,7 @@ def _isPortListening(host, port, timeout=120):
             timeout = timeout - 5
     if tn is None:
         logging.error("No service listening on port %s:%d"%(host, port))
-        return False 
+        return False
     else:
         logging.info("Unrecognizable service up on %s:%d"%(host, port))
         return True
@@ -342,10 +342,10 @@ def prepareManagementServer(mgmt_host):
         return
     else:
         raise Exception("Reqd service for integration port on management server %s is not open. Aborting"%mgmt_host)
-    
+
 def init(lvl=logging.INFO):
     initLogging(logFile=None, lvl=lvl)
-        
+
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("-l", "--logging", action="store", default="INFO",
@@ -366,7 +366,7 @@ if __name__ == '__main__':
         init(logging.INFO)
     else:
         init(logging.INFO)
-        
+
     if options.system is None:
         logging.error("no environment properties given. exiting")
         sys.exit(-1)
@@ -401,7 +401,7 @@ if __name__ == '__main__':
 
     waitForHostReady(hosts)
     delay(30)
-    # Re-check because ssh connect works soon as post-installation occurs. But 
+    # Re-check because ssh connect works soon as post-installation occurs. But
     # server is rebooted after post-installation. Assuming the server is up is
     # wrong in these cases. To avoid this we will check again before continuing
     # to add the hosts to cloudstack

@@ -5,16 +5,16 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-""" 
+"""
 Test cases relating to listVolumes() relating to parameters - id,listall,isrecursive,account and domainid
 """
 #Import Local Modules
@@ -59,7 +59,7 @@ class TestVolumeList(cloudstackTestCase):
             cls.default_apikey = cls.apiclient.connection.apiKey
             cls.default_secretkey = cls.apiclient.connection.securityKey
     	
-            # Create domains 
+            # Create domains
             cls.domain_1 = Domain.create(
                                        cls.apiclient,
                                        cls.acldata["domain1"]
@@ -90,120 +90,120 @@ class TestVolumeList(cloudstackTestCase):
                                 admin=True,
                                 domainid=cls.domain_1.id
                                 )
-    
+
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d1)
             cls.user_d1_apikey = user.apikey
             cls.user_d1_secretkey = user.secretkey
-            
+
             cls.account_d1a = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD1A"],
                                 admin=False,
                                 domainid=cls.domain_1.id
-                                )        
+                                )
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d1a)
             cls.user_d1a_apikey = user.apikey
             cls.user_d1a_secretkey = user.secretkey
-            
-    
+
+
             cls.account_d1b = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD1B"],
                                 admin=False,
                                 domainid=cls.domain_1.id
                                 )
-    
+
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d1b)
             cls.user_d1b_apikey = user.apikey
             cls.user_d1b_secretkey = user.secretkey
-      
+
             # Create  1 admin and 2 user accounts for doamin_11
             cls.account_d11 = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD11"],
                                 admin=True,
                                 domainid=cls.domain_11.id
-                                )        
+                                )
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d11)
             cls.user_d11_apikey = user.apikey
             cls.user_d11_secretkey = user.secretkey
-    
+
             cls.account_d11a = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD11A"],
                                 admin=False,
                                 domainid=cls.domain_11.id
-                                )        
+                                )
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d11a)
             cls.user_d11a_apikey = user.apikey
             cls.user_d11a_secretkey = user.secretkey
-    
+
             cls.account_d11b = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD11B"],
                                 admin=False,
                                 domainid=cls.domain_11.id
-                                )  
+                                )
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d11b)
             cls.user_d11b_apikey = user.apikey
             cls.user_d11b_secretkey = user.secretkey
-    
+
             # Create  1 user account for doamin_111
-    
+
             cls.account_d111a = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD111A"],
                                 admin=False,
                                 domainid=cls.domain_111.id
-                                )        
+                                )
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d111a)
             cls.user_d111a_apikey = user.apikey
             cls.user_d111a_secretkey = user.secretkey
-          
+
             # Create  2 user accounts for doamin_12
             cls.account_d12a = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD12A"],
                                 admin=False,
                                 domainid=cls.domain_12.id
-                                )        
+                                )
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d12a)
             cls.user_d12a_apikey = user.apikey
             cls.user_d12a_secretkey = user.secretkey
-    
+
             cls.account_d12b = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD12B"],
                                 admin=False,
                                 domainid=cls.domain_12.id
-                                )  
-          
+                                )
+
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d12b)
             cls.user_d12b_apikey = user.apikey
             cls.user_d12b_secretkey = user.secretkey
-          
+
             # Create 1 user account for domain_2
-    
+
             cls.account_d2a = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountD2"],
                                 admin=False,
                                 domainid=cls.domain_2.id
                                 )
-            
+
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_d2a)
             cls.user_d2a_apikey = user.apikey
             cls.user_d2a_secretkey = user.secretkey
-                             
-                    
-            # Create admin user account 
-    
+
+
+            # Create admin user account
+
             cls.account_a = Account.create(
                                 cls.apiclient,
                                 cls.acldata["accountROOTA"],
                                 admin=True,
                                 )
-            
+
     	    user = cls.generateKeysForUser(cls.apiclient,cls.account_a)
             cls.user_a_apikey = user.apikey
             cls.user_a_secretkey = user.secretkey
@@ -212,13 +212,13 @@ class TestVolumeList(cloudstackTestCase):
                                     cls.apiclient,
                                     cls.acldata["service_offering"]["small"]
                                     )
-            
+
             cls.zone = get_zone(cls.apiclient,cls.testclient.getZoneForTests())
             cls.acldata['mode'] = cls.zone.networktype
             cls.template = get_template(cls.apiclient, cls.zone.id, cls.acldata["ostype"])
-    
+
             # deploy VM
-    
+
     	    cls.apiclient.connection.apiKey = cls.user_d1_apikey
             cls.apiclient.connection.securityKey = cls.user_d1_secretkey
             cls.vm_d1 = VirtualMachine.create(
@@ -229,7 +229,7 @@ class TestVolumeList(cloudstackTestCase):
                 templateid=cls.template.id
             )
     	    cls.vm_d1_volume=Volume.list(cls.apiclient,virtualmachineid=cls.vm_d1.id)
-      
+
     	    cls.apiclient.connection.apiKey = cls.user_d1a_apikey
             cls.apiclient.connection.securityKey = cls.user_d1a_secretkey
             cls.vm_d1a = VirtualMachine.create(
@@ -240,7 +240,7 @@ class TestVolumeList(cloudstackTestCase):
                 templateid=cls.template.id
             )
     	    cls.vm_d1a_volume=Volume.list(cls.apiclient,virtualmachineid=cls.vm_d1a.id)
-      
+
     	    cls.apiclient.connection.apiKey = cls.user_d1b_apikey
             cls.apiclient.connection.securityKey = cls.user_d1b_secretkey
             cls.vm_d1b = VirtualMachine.create(
@@ -249,9 +249,9 @@ class TestVolumeList(cloudstackTestCase):
                 zoneid=cls.zone.id,
                 serviceofferingid=cls.service_offering.id,
                 templateid=cls.template.id
-            )  
+            )
     	    cls.vm_d1b_volume=Volume.list(cls.apiclient,virtualmachineid=cls.vm_d1b.id)
-    
+
     	    cls.apiclient.connection.apiKey = cls.user_d11_apikey
             cls.apiclient.connection.securityKey = cls.user_d11_secretkey
             cls.vm_d11 = VirtualMachine.create(
@@ -260,9 +260,9 @@ class TestVolumeList(cloudstackTestCase):
                 zoneid=cls.zone.id,
                 serviceofferingid=cls.service_offering.id,
                 templateid=cls.template.id
-            )  
+            )
     	    cls.vm_d11_volume=Volume.list(cls.apiclient,virtualmachineid=cls.vm_d11.id)
-            
+
     	    cls.apiclient.connection.apiKey = cls.user_d11a_apikey
             cls.apiclient.connection.securityKey = cls.user_d11a_secretkey
             cls.vm_d11a = VirtualMachine.create(
@@ -271,9 +271,9 @@ class TestVolumeList(cloudstackTestCase):
                 zoneid=cls.zone.id,
                 serviceofferingid=cls.service_offering.id,
                 templateid=cls.template.id
-            )  
+            )
     	    cls.vm_d11a_volume=Volume.list(cls.apiclient,virtualmachineid=cls.vm_d11a.id)
-            
+
     	    cls.apiclient.connection.apiKey = cls.user_d11b_apikey
             cls.apiclient.connection.securityKey = cls.user_d11b_secretkey
             cls.vm_d11b = VirtualMachine.create(
@@ -284,7 +284,7 @@ class TestVolumeList(cloudstackTestCase):
                 templateid=cls.template.id
             )
     	    cls.vm_d11b_volume=Volume.list(cls.apiclient,virtualmachineid=cls.vm_d11b.id)
-      
+
     	    cls.apiclient.connection.apiKey = cls.user_d111a_apikey
             cls.apiclient.connection.securityKey = cls.user_d111a_secretkey
             cls.vm_d111a = VirtualMachine.create(
@@ -293,9 +293,9 @@ class TestVolumeList(cloudstackTestCase):
                 zoneid=cls.zone.id,
                 serviceofferingid=cls.service_offering.id,
                 templateid=cls.template.id
-            )  
+            )
             cls.vm_d111a_volume=Volume.list(cls.apiclient,virtualmachineid=cls.vm_d111a.id)
-    
+
     	    cls.apiclient.connection.apiKey = cls.user_d12a_apikey
             cls.apiclient.connection.securityKey = cls.user_d12a_secretkey
             cls.vm_d12a = VirtualMachine.create(
@@ -304,9 +304,9 @@ class TestVolumeList(cloudstackTestCase):
                 zoneid=cls.zone.id,
                 serviceofferingid=cls.service_offering.id,
                 templateid=cls.template.id
-            )  
+            )
             cls.vm_d12a_volume=Volume.list(cls.apiclient,virtualmachineid=cls.vm_d12a.id)
-    
+
     	    cls.apiclient.connection.apiKey = cls.user_d12b_apikey
             cls.apiclient.connection.securityKey = cls.user_d12b_secretkey
             cls.vm_d12b = VirtualMachine.create(
@@ -317,7 +317,7 @@ class TestVolumeList(cloudstackTestCase):
                 templateid=cls.template.id
             )
      	    cls.vm_d12b_volume=Volume.list(cls.apiclient,virtualmachineid=cls.vm_d12b.id)
-     
+
     	    cls.apiclient.connection.apiKey = cls.user_d2a_apikey
             cls.apiclient.connection.securityKey = cls.user_d2a_secretkey
             cls.vm_d2 = VirtualMachine.create(
@@ -328,7 +328,7 @@ class TestVolumeList(cloudstackTestCase):
                 templateid=cls.template.id
             )
     	    cls.vm_d2_volume=Volume.list(cls.apiclient,virtualmachineid=cls.vm_d2.id)
-    
+
     	    cls.apiclient.connection.apiKey = cls.user_a_apikey
             cls.apiclient.connection.securityKey = cls.user_a_secretkey
             cls.vm_a = VirtualMachine.create(
@@ -339,7 +339,7 @@ class TestVolumeList(cloudstackTestCase):
                 templateid=cls.template.id
             )
      	    cls.vm_a_volume =Volume.list(cls.apiclient,virtualmachineid=cls.vm_a.id)
-     
+
             cls.cleanup = [
                             cls.account_a,
                             cls.service_offering,
@@ -373,7 +373,7 @@ class TestVolumeList(cloudstackTestCase):
         cls.apiclient.connection.securityKey = cls.default_secretkey
         return
 
-## Domain Admin - Test cases  with listall =true 
+## Domain Admin - Test cases  with listall =true
 
     @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_listall_true(self):
@@ -391,7 +391,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id), 
+	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id),
 	   self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d1b_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
@@ -424,7 +424,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id), 
+	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id),
 	   self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d1b_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
@@ -457,7 +457,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id), 
+	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id),
 	   self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d1b_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
@@ -492,7 +492,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id)): 
+	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id)):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -517,7 +517,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id)): 
+	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id)):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -541,7 +541,7 @@ class TestVolumeList(cloudstackTestCase):
 	self.assertEqual(len(volumeList) == 1,
 			True,
 			"Number of items in list response check failed!!")
-	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id)): 
+	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id)):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -550,7 +550,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-## Domain Admin - Test cases  without passing listall paramter 
+## Domain Admin - Test cases  without passing listall paramter
 
     @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin(self):
@@ -568,7 +568,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id)): 
+	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id)):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -593,7 +593,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id)): 
+	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id)):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -618,7 +618,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id)): 
+	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id)):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -627,7 +627,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-## Domain Admin - Test cases when domainId is passed with listall =true 
+## Domain Admin - Test cases when domainId is passed with listall =true
 
     @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid_listall_true(self):
@@ -645,9 +645,9 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and 
+	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11a_volume[0].id) and
-	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ): 
+	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -675,7 +675,7 @@ class TestVolumeList(cloudstackTestCase):
 	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11a_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) and
-	   self.checkForExistenceOfValue(volumeList,self.vm_d111a_volume[0].id) ): 
+	   self.checkForExistenceOfValue(volumeList,self.vm_d111a_volume[0].id) ):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -702,7 +702,7 @@ class TestVolumeList(cloudstackTestCase):
 
 	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11a_volume[0].id) and
-	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ): 
+	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -728,9 +728,9 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and 
+	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11a_volume[0].id) and
-	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ): 
+	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -758,7 +758,7 @@ class TestVolumeList(cloudstackTestCase):
 	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11a_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) and
-	   self.checkForExistenceOfValue(volumeList,self.vm_d111a_volume[0].id) ): 
+	   self.checkForExistenceOfValue(volumeList,self.vm_d111a_volume[0].id) ):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -785,7 +785,7 @@ class TestVolumeList(cloudstackTestCase):
 
 	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11a_volume[0].id) and
-	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ): 
+	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -793,7 +793,7 @@ class TestVolumeList(cloudstackTestCase):
 	self.assertEqual(accountAccess,
 			True,
 			"Account access check failed!!")
- 
+
 
 ## Domain Admin - Test cases  when domainId is passed with no listall parameter
 
@@ -812,9 +812,9 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and 
+	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11a_volume[0].id) and
-	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ): 
+	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -842,7 +842,7 @@ class TestVolumeList(cloudstackTestCase):
 	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11a_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) and
-	   self.checkForExistenceOfValue(volumeList,self.vm_d111a_volume[0].id) ): 
+	   self.checkForExistenceOfValue(volumeList,self.vm_d111a_volume[0].id) ):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -869,7 +869,7 @@ class TestVolumeList(cloudstackTestCase):
 
 	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11a_volume[0].id) and
-	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ): 
+	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -879,7 +879,7 @@ class TestVolumeList(cloudstackTestCase):
 			"Account access check failed!!")
 
 
-## Domain Admin - Test cases  when account and domainId is passed with listall =true 
+## Domain Admin - Test cases  when account and domainId is passed with listall =true
 
     @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_domainadmin_domainid_accountid_listall_true(self):
@@ -897,7 +897,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -922,7 +922,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -947,7 +947,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -975,7 +975,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1000,7 +1000,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1025,7 +1025,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1051,7 +1051,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1076,7 +1076,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1101,7 +1101,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1110,7 +1110,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-## ROOT Admin - Test cases  with listall =true 
+## ROOT Admin - Test cases  with listall =true
 
     @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_listall_true(self):
@@ -1128,7 +1128,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id), 
+	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id),
 	   self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d1b_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
@@ -1164,7 +1164,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id), 
+	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id),
 	   self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d1b_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
@@ -1200,7 +1200,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id), 
+	if (self.checkForExistenceOfValue(volumeList,self.vm_d1_volume[0].id),
 	   self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d1b_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
@@ -1220,7 +1220,7 @@ class TestVolumeList(cloudstackTestCase):
 			"Account access check failed!!")
 
 ## ROOT Admin - Test cases  with listall=false
- 
+
     @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_listall_false(self):
 	"""
@@ -1237,7 +1237,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_a_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_a_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1262,7 +1262,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_a_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_a_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1289,7 +1289,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_a_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_a_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1299,7 +1299,7 @@ class TestVolumeList(cloudstackTestCase):
 			"Account access check failed!!")
 
 
-## ROOT Admin - Test cases  without passing listall paramter 
+## ROOT Admin - Test cases  without passing listall paramter
 
     @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin(self):
@@ -1318,7 +1318,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_a_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_a_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1343,7 +1343,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_a_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_a_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1368,7 +1368,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_a_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_a_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1377,13 +1377,13 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-## ROOT Admin - Test cases when domainId is passed with listall =true 
+## ROOT Admin - Test cases when domainId is passed with listall =true
 
     @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid_listall_true(self):
 	"""
 	# Test listing of Volumes by passing domainid and listall="true" parameter as admin
-	# Validate that it returns all the Volumes in the domain passed 
+	# Validate that it returns all the Volumes in the domain passed
 	"""
 
         self.apiclient.connection.apiKey = self.user_a_apikey
@@ -1395,9 +1395,9 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and 
+	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11a_volume[0].id) and
-	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ): 
+	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1425,7 +1425,7 @@ class TestVolumeList(cloudstackTestCase):
 	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11a_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) and
-	   self.checkForExistenceOfValue(volumeList,self.vm_d111a_volume[0].id) ): 
+	   self.checkForExistenceOfValue(volumeList,self.vm_d111a_volume[0].id) ):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1452,7 +1452,7 @@ class TestVolumeList(cloudstackTestCase):
 
 	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11a_volume[0].id) and
-	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ): 
+	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1480,9 +1480,9 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and 
+	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11a_volume[0].id) and
-	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ): 
+	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1510,7 +1510,7 @@ class TestVolumeList(cloudstackTestCase):
 	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11a_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) and
-	   self.checkForExistenceOfValue(volumeList,self.vm_d111a_volume[0].id) ): 
+	   self.checkForExistenceOfValue(volumeList,self.vm_d111a_volume[0].id) ):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1537,7 +1537,7 @@ class TestVolumeList(cloudstackTestCase):
 
 	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11a_volume[0].id) and
-	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ): 
+	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1545,7 +1545,7 @@ class TestVolumeList(cloudstackTestCase):
 	self.assertEqual(accountAccess,
 			True,
 			"Account access check failed!!")
- 
+
 
 ## ROOT Admin - Test cases  when domainId is passed with no listall parameter
 
@@ -1565,9 +1565,9 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and 
+	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11a_volume[0].id) and
-	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ): 
+	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1595,7 +1595,7 @@ class TestVolumeList(cloudstackTestCase):
 	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11a_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) and
-	   self.checkForExistenceOfValue(volumeList,self.vm_d111a_volume[0].id) ): 
+	   self.checkForExistenceOfValue(volumeList,self.vm_d111a_volume[0].id) ):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1622,7 +1622,7 @@ class TestVolumeList(cloudstackTestCase):
 
 	if ( self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id) and
 	   self.checkForExistenceOfValue(volumeList,self.vm_d11a_volume[0].id) and
-	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ): 
+	   self.checkForExistenceOfValue(volumeList,self.vm_d11b_volume[0].id) ):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1632,7 +1632,7 @@ class TestVolumeList(cloudstackTestCase):
 			"Account access check failed!!")
 
 
-## ROOT Admin - Test cases  when account and domainId is passed with listall =true 
+## ROOT Admin - Test cases  when account and domainId is passed with listall =true
 
     @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_rootadmin_domainid_accountid_listall_true(self):
@@ -1650,7 +1650,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1675,7 +1675,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1700,7 +1700,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1728,7 +1728,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1753,7 +1753,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1778,7 +1778,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1786,7 +1786,7 @@ class TestVolumeList(cloudstackTestCase):
 	self.assertEqual(accountAccess,
 			True,
 			"Account access check failed!!")
- 
+
 
 ## ROOT Admin - Test cases  when account and domainId is passed with listall not passed
 
@@ -1806,7 +1806,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1831,7 +1831,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1856,7 +1856,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d11_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1866,13 +1866,13 @@ class TestVolumeList(cloudstackTestCase):
 			"Account access check failed!!")
 
 
-## Regular User - Test cases  with listall =true 
+## Regular User - Test cases  with listall =true
 
     @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_listall_true(self):
 	"""
 	# Test listing of Volumes by passing listall="true"  parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -1884,7 +1884,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1897,7 +1897,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_regularuser_listall_true_rec_true(self):
 	"""
 	# Test listing of Volumes by passing listall="true" and isrecusrive="true" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -1909,7 +1909,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1922,7 +1922,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_regularuser_listall_true_rec_false(self):
 	"""
 	# Test listing of Volumes by passing listall="true" and isrecusrive="false" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -1934,7 +1934,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1944,12 +1944,12 @@ class TestVolumeList(cloudstackTestCase):
 			"Account access check failed!!")
 
 ##  Regular User  - Test cases  with listall=false
- 
+
     @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_listall_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,account,listall="false" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -1961,7 +1961,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -1974,7 +1974,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_regularuser_listall_false_rec_true(self):
 	"""
 	# Test listing of Volumes by passing listall="false" and isrecusrive="true" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -1986,7 +1986,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -2000,7 +2000,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_regularuser_listall_false_rec_false(self):
 	"""
 	# Test listing of Volumes by passing listall="false" and isrecusrive="false" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2013,7 +2013,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -2023,13 +2023,13 @@ class TestVolumeList(cloudstackTestCase):
 			"Account access check failed!!")
 
 
-##  Regular User  - Test cases  without passing listall paramter 
+##  Regular User  - Test cases  without passing listall paramter
 
     @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser(self):
 	"""
 	# Test listing of Volumes by passing no parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2042,7 +2042,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -2055,7 +2055,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_regularuser_rec_true(self):
 	"""
 	# Test listing of Volumes by passing isrecusrive="true" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2067,7 +2067,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -2080,7 +2080,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_regularuser_rec_false(self):
 	"""
 	# Test listing of Volumes by passing isrecusrive="false" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2092,7 +2092,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -2101,13 +2101,13 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Account access check failed!!")
 
-##  Regular User  - Test cases when domainId is passed with listall =true 
+##  Regular User  - Test cases when domainId is passed with listall =true
 
     @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_listall_true(self):
 	"""
 	# Test listing of Volumes by passing domainid,listall="true" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2132,7 +2132,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_regularuser_domainid_listall_true_rec_true(self):
 	"""
 	# Test listing of Volumes by passing domainid,listall="true" and isrecusrive="true" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2157,7 +2157,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_regularuser_domainid_listall_true_rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,listall="true" and isrecusrive="false" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2180,12 +2180,12 @@ class TestVolumeList(cloudstackTestCase):
 
 
 ##  Regular User  - Test cases  when domainId is passed with listall=false
- 
+
     @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_listall_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,listall="false" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2211,7 +2211,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_regularuser_domainid_listall_false_rec_true(self):
 	"""
 	# Test listing of Volumes by passing domainid,listall="false" and isrecusrive="true" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2238,7 +2238,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_regularuser_domainid_listall_false_rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,listall="false" and isrecusrive="false" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2266,7 +2266,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_regularuser_domainid(self):
 	"""
 	# Test listing of Volumes by passing domainid parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2292,7 +2292,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_regularuser_domainid_true_rec_true(self):
 	"""
 	# Test listing of Volumes by passing domainid and isrecusrive="true" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2319,7 +2319,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_regularuser_domainid__rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,isrecusrive="false" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2341,13 +2341,13 @@ class TestVolumeList(cloudstackTestCase):
 			"Account access check failed!!")
 
 
-##  Regular User  - Test cases  when account and domainId is passed with listall =true 
+##  Regular User  - Test cases  when account and domainId is passed with listall =true
 
     @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_accountid_listall_true(self):
 	"""
 	# Test listing of Volumes by passing domainid,account,listall="true" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2359,7 +2359,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -2372,7 +2372,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_regularuser_domainid_accountid_listall_true_rec_true(self):
 	"""
 	# Test listing of Volumes by passing domainid,account,listall="true" and isrecusrive="true" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2384,7 +2384,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -2397,7 +2397,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_regularuser_domainid_accountid_listall_true_rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,account,listall="true" and isrecusrive="false" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2409,7 +2409,7 @@ class TestVolumeList(cloudstackTestCase):
 			True,
 			"Number of items in list response check failed!!")
 
-	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id): 
+	if self.checkForExistenceOfValue(volumeList,self.vm_d1a_volume[0].id):
 	    accountAccess = True
 	else:
 	    accountAccess = False
@@ -2420,12 +2420,12 @@ class TestVolumeList(cloudstackTestCase):
 
 
 ##  Regular User - Test cases  when account and domainId is passed with listall=false
- 
+
     @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_accountid_listall_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,account,listall="false" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2450,7 +2450,7 @@ class TestVolumeList(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"],required_hardware="false")
     def test_listVolume_as_regularuser_domainid_accountid_listall_false_rec_true(self):
 	# Test listing of Volumes by passing domainid,account,listall="false" and isrecusrive="true" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
         self.apiclient.connection.securityKey = self.user_d1a_secretkey
@@ -2474,7 +2474,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_regularuser_domainid_accountid_listall_false_rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,account,listall="false" and isrecusrive="false" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2502,7 +2502,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_regularuser_domainid_accountid(self):
 	"""
 	# Test listing of Volumes by passing domainid,account parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2528,7 +2528,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_regularuser_domainid_accountid_rec_true(self):
 	"""
 	# Test listing of Volumes by passing domainid,account and isrecusrive="true" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2554,7 +2554,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_regularuser_domainid_accountid_rec_false(self):
 	"""
 	# Test listing of Volumes by passing domainid,account isrecusrive="false" parameter as regular user
-	# Validate that it returns all the Volumes of the account the user belongs to 
+	# Validate that it returns all the Volumes of the account the user belongs to
 	"""
 
         self.apiclient.connection.apiKey = self.user_d1a_apikey
@@ -2819,11 +2819,11 @@ class TestVolumeList(cloudstackTestCase):
                           account=account.name,
                           domainid=account.domainid
                           )[0]
-       
+
         return (User.registerUserKeys(
                         apiclient,
                         user.id
-                      ))  
+                      ))
 
     @staticmethod
     def checkForExistenceOfValue(list,attributeValue):

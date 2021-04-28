@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,7 +17,7 @@
 # under the License.
 '''
 ############################################################
-# Experimental state of scripts 
+# Experimental state of scripts
 #    * Need to be reviewed
 #    * Only a sandbox
 ############################################################
@@ -47,13 +47,13 @@ def describeResources(config):
     z.networktype = 'Advanced'
     z.guestcidraddress = '10.1.1.0/24'
     z.securitygroupenabled = 'false'
-    
+
     vpcprovider = provider()
     vpcprovider.name = 'VpcVirtualRouter'
 
     lbprovider = provider()
     lbprovider.name = 'InternalLbVm'
-    
+
     pn = physicalNetwork()
     pn.name = "Sandbox-pnet"
     pn.vlan = config.get('cloudstack', 'pnet.vlan')
@@ -73,7 +73,7 @@ def describeResources(config):
     pn2.isolationmethods = ["VLAN"]
     pn2.providers.append(vpcprovider)
     pn2.providers.append(lbprovider)
-    
+
     z.physical_networks.append(pn)
     z.physical_networks.append(pn2)
 
@@ -87,7 +87,7 @@ def describeResources(config):
     v = iprange()
     v.gateway = config.get('cloudstack', 'public.gateway')
     v.startip = config.get('cloudstack', 'public.vlan.startip')
-    v.endip = config.get('cloudstack', 'public.vlan.endip') 
+    v.endip = config.get('cloudstack', 'public.vlan.endip')
     v.netmask = config.get('cloudstack', 'public.netmask')
     v.vlan = config.get('cloudstack', 'public.vlan')
     z.ipranges.append(v)

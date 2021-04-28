@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -32,16 +32,16 @@ class networkConfig:
             self.type = type
             self.name = name
             #dhcp or static
-            self.method = None 
-     
+            self.method = None
+
     @staticmethod
     def listNetworks():
-        devs = os.listdir("/sys/class/net/") 
-        devs = list(filter(networkConfig.isBridge, devs)) 
+        devs = os.listdir("/sys/class/net/")
+        devs = list(filter(networkConfig.isBridge, devs))
         return devs
     @staticmethod
     def getDefaultNetwork():
-        cmd = bash("route -n|awk \'/^0.0.0.0/ {print $2,$8}\'") 
+        cmd = bash("route -n|awk \'/^0.0.0.0/ {print $2,$8}\'")
         if not cmd.isSuccess():
             logging.debug("Failed to get default route")
             raise CloudRuntimeException("Failed to get default route")
@@ -67,7 +67,7 @@ class networkConfig:
         cmds = ""
         if not networkConfig.isBridge(brName):
             cmds = "ip link add name %s type bridge ;"%brName
-    
+
         cmds += "ifconfig %s up;"%brName
         cmds += "ip link set dev %s master %s"%(dev, brName)
         return bash(cmds).isSuccess()
@@ -75,10 +75,10 @@ class networkConfig:
     @staticmethod
     def isBridgeEnslavedWithDevices(brName):
         if not networkConfig.isBridge(brName):
-            return False        
+            return False
 
         if not os.listdir("/sys/class/net/%s/brif"%brName):
-            return False           
+            return False
 
         return True
 
@@ -96,7 +96,7 @@ class networkConfig:
     @staticmethod
     def isBridgePort(devName):
         return os.path.exists("/sys/class/net/%s/brport" % devName)
-    
+
     @staticmethod
     def isBridge(devName):
         return os.path.exists("/sys/class/net/%s/bridge" % devName)
@@ -116,7 +116,7 @@ class networkConfig:
         bridgeName = None
         if os.path.exists("/sys/class/net/%s/brport/bridge"%devName):
             realPath = os.path.realpath("/sys/class/net/%s/brport/bridge"%devName)
-            bridgeName = realPath.split("/")[-1] 
+            bridgeName = realPath.split("/")[-1]
         return bridgeName
 
     @staticmethod
@@ -130,7 +130,7 @@ class networkConfig:
                 return dev
 
         return None
-        
+
     @staticmethod
     def getDevInfo(dev):
         if not networkConfig.isNetworkDev(dev):

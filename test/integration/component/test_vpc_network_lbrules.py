@@ -581,7 +581,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_03_VPC_CreateLBRuleInMultipleNetworksVRStoppedState(self):
-        """ Test case no 222 : Create LB rules for a two/multiple virtual networks of a 
+        """ Test case no 222 : Create LB rules for a two/multiple virtual networks of a
             VPC using a new Public IP Address available with the VPC when the Virtual Router is in Stopped State
         """
 
@@ -613,7 +613,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         self.start_VPC_VRouter(router)
 
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
-        return    
+        return
 
     @attr(tags=["advanced","advancedns", "intervlan"], required_hardware="true")
     def test_04_VPC_CreateLBRuleInMultipleNetworksVRStoppedState(self):
@@ -711,7 +711,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         lb_rule_nat.delete(self.apiclient)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=True)
-        return    
+        return
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_07_VPC_CreateAndDeleteAllLBRule(self):
@@ -778,7 +778,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=True)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
         return
-    
+
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_09_VPC_LBRuleCreateFailMultipleVPC(self):
         """ Test User should not be allowed to create a LB rule for a VM that belongs to a different VPC.

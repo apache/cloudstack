@@ -5,16 +5,16 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-""" 
+"""
 
 Test cases relating to enabling/diabling of zone/pod/cluster/host
 
@@ -58,7 +58,7 @@ class TestOrganizationStates(cloudstackTestCase):
 	  	
 	    podList = Pod.list(cls.apiclient,id= hostList[0].podid)
 	    cls.pod = Pod(podList[0].__dict__)
-	    
+
 	    cls.serviceOffering = ServiceOffering.create(
                                     cls.apiclient,
                                     cls.testdata["service_offering"],
@@ -68,7 +68,7 @@ class TestOrganizationStates(cloudstackTestCase):
             hostupdResp = Host.update(cls.apiclient,
 				      id=cls.host.id,
 				      hosttags="test")
-	    
+
 	    userAccountName = "-".join(("TestOrgUser", random_gen()))
 	    adminAccountName = "-".join(("TestOrgAdmin", random_gen()))
 		

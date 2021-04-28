@@ -224,7 +224,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         # 4 - Migrate volume V to PS
         # 5 - Take volume V snapshot -> S
         # 6 - List snapshot and verify it gets properly listed although Primary Storage was removed
-        
+
         # Create new volume
         vol = Volume.create(
             self.apiclient,
@@ -245,7 +245,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             PASS,
             "Invalid response returned for list volumes")
         vol_uuid = vol_res[0].id
-        
+
         # Create new Primary Storage
         clusters = list_clusters(
             self.apiclient,

@@ -133,7 +133,7 @@ class Shared(object):
         from threading import Timer
         t = Timer(20,self.wait_for_invisible)
         t.start()
- 
+
     @staticmethod
     #wait until something disappears
     def wait_for_invisible(browser, element_type, name, waittime=30):

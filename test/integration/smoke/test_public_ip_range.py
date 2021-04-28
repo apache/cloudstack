@@ -158,7 +158,7 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
         # 1. Create a Public IP range for system vms
         # 2. Created IP range should be present and marked as forsystemvms=true, verify with listVlanIpRanges
         # 7. Delete the Public IP range
-        
+
         services = {
             "gateway":"192.168.99.1",
             "netmask":"255.255.255.0",
@@ -186,16 +186,16 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
             created_ip_range_response[0].forsystemvms,
             "Check forsystemvms parameter in created vlan ip range"
         )
-        
+
         # Delete range
         self.public_ip_range.delete(self.apiclient)
-        
+
     def get_ip_as_number(self, ip_string):
         """ Return numeric value for ip (passed as a string)
         """
         packed_ip = inet_aton(ip_string)
         return unpack(">L", packed_ip)[0]
-    
+
     def is_ip_in_range(self, start_ip, end_ip, ip_to_test):
         """ Check whether ip_to_test belongs to IP range between start_ip and end_ip
         """
@@ -203,7 +203,7 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
         end = self.get_ip_as_number(end_ip)
         ip = self.get_ip_as_number(ip_to_test)
         return start <= ip and ip <= end
-    
+
     def wait_for_system_vm_start(self, domain_id, systemvmtype):
         """ Wait until system vm is Running
         """

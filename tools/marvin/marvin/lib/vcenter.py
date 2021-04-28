@@ -350,7 +350,7 @@ class Vcenter():
         out = p3.stdout.read()
         ssl_thumbprint = out.split('=')[-1].strip()
         return ssl_thumbprint
-    
+
 if __name__ == '__main__':
     vc_object = Vcenter("10.x.x.x", "username", "password")
 
