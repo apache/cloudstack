@@ -58,7 +58,7 @@ class TestScaleVm(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
-        if cls.hypervisor.lower() == 'simulator':
+        if cls.hypervisor.lower() in ['simulator', 'vmware']:
             cls.template = get_template(
                 cls.apiclient,
                 cls.zone.id,
