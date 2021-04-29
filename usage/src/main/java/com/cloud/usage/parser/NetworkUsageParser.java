@@ -80,7 +80,7 @@ public class NetworkUsageParser {
             long zoneId = usageNetwork.getZoneId();
             String key = "" + zoneId;
             if (usageNetwork.getHostId() != 0) {
-                key += "-Host" + usageNetwork.getHostId();
+                key += "-Host" + usageNetwork.getHostId() + "-Network-" + usageNetwork.getNetworkId();
             }
             NetworkInfo networkInfo = networkUsageByZone.get(key);
 
