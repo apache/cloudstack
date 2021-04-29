@@ -111,7 +111,7 @@
       <template slot="actions" slot-scope="record">
         <div class="actions">
           <tooltip-button :tooltip="$('label.edit')" icon="edit" @click="() => openEditRuleModal(record)" />
-          <tooltip-button :tooltip="$('label.tags')" :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" icon="tag" @click="() => openTagsModal(record.id)" />
+          <tooltip-button :tooltip="$('label.edit.tags')" :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" icon="tag" @click="() => openTagsModal(record.id)" />
           <a-popconfirm
             :title="$t('label.delete') + '?'"
             @confirm="handleDeleteRule(record)"
