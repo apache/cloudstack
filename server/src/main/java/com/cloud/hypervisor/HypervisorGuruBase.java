@@ -286,6 +286,16 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     }
 
     @Override
+    public List<Command> finalizeExpunge(VirtualMachine vm) {
+        return null;
+    }
+
+    @Override
+    public List<Command> finalizeExpungeNics(VirtualMachine vm, List<NicProfile> nics) {
+        return null;
+    }
+
+    @Override
     public List<Command> finalizeExpungeVolumes(VirtualMachine vm) {
         return null;
     }
