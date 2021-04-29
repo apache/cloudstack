@@ -527,7 +527,7 @@ def get_suitable_test_template(apiclient, zoneid, ostypeid, hypervisor, deploy_a
               template Information matching the inputs
     '''
     template = FAILED
-    if hypervisor.lower() in ["xenserver", "vmware"]:
+    if hypervisor.lower() in ["xenserver"] or (hypervisor.lower() in ["vmware"] and deploy_as_is):
         template = get_test_template(
             apiclient,
             zoneid,
