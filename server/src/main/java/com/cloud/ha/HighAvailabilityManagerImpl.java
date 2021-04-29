@@ -699,8 +699,11 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             work.setStep(Step.Done);
             return null;
         }
-        s_logger.info("Destroying " + vm.toString());
         try {
+            if (VirtualMachine.State.Running.equals(work.getPreviousState())) {
+                _itMgr.advanceStop(vm.getUuid(), true);
+            }
+            s_logger.info("Destroying " + vm.toString());
             if (!VirtualMachine.State.Expunging.equals(work.getPreviousState())) {
                 s_logger.info("Destroying " + vm.getUuid());
                 if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
@@ -720,6 +723,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             s_logger.debug("operation timed out: " + e.getMessage());
         } catch (ConcurrentOperationException e) {
             s_logger.debug("concurrent operation: " + e.getMessage());
+        } catch (ResourceUnavailableException e) {
+            s_logger.debug("Resource unavailable: " + e.getMessage());
         }
 
         return (System.currentTimeMillis() >> 10) + _stopRetryInterval;
