@@ -100,16 +100,16 @@
                 {{ traffic.toUpperCase() }}
               </a-select-option>
             </a-select>
-            <a-button
-              class="icon-button"
-              shape="circle"
+            <tooltip-button
+              :tooltip="$t('label.add')"
+              buttonClass="icon-button"
               icon="plus"
               size="small"
               @click="trafficAdded" />
-            <a-button
-              class="icon-button"
+            <tooltip-button
+              :tooltip="$t('label.cancel')"
+              buttonClass="icon-button"
               type="danger"
-              shape="circle"
               icon="close"
               size="small"
               @click="() => { addingTrafficForKey = null }" />
@@ -126,7 +126,7 @@
         </div>
       </template>
       <template slot="actions" slot-scope="text, record">
-        <a-button v-if="physicalNetworks.indexOf(record) > 0" type="danger" shape="circle" icon="delete" @click="onDelete(record)" />
+        <tooltip-button :tooltip="$t('label.delete')" v-if="physicalNetworks.indexOf(record) > 0" type="danger" icon="delete" @click="onDelete(record)" />
       </template>
       <template slot="footer" v-if="isAdvancedZone">
         <a-button
@@ -165,7 +165,12 @@
 </template>
 <script>
 
+import TooltipButton from '@/components/view/TooltipButton'
+
 export default {
+  components: {
+    TooltipButton
+  },
   props: {
     prefillContent: {
       type: Object,

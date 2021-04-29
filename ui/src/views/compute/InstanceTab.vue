@@ -67,23 +67,19 @@
         </a-button>
         <NicsTable :resource="vm" :loading="loading">
           <span slot="actions" slot-scope="record">
-            <a-tooltip placement="bottom">
-              <template slot="title">
-                {{ $t('label.set.default.nic') }}
-              </template>
-              <a-popconfirm
-                :title="$t('label.set.default.nic')"
-                @confirm="setAsDefault(record.nic)"
-                :okText="$t('label.yes')"
-                :cancelText="$t('label.no')"
-                v-if="!record.nic.isdefault"
-              >
-                <a-button
-                  :disabled="!('updateDefaultNicForVirtualMachine' in $store.getters.apis)"
-                  icon="check-square"
-                  shape="circle" />
-              </a-popconfirm>
-            </a-tooltip>
+            <a-popconfirm
+              :title="$t('label.set.default.nic')"
+              @confirm="setAsDefault(record.nic)"
+              :okText="$t('label.yes')"
+              :cancelText="$t('label.no')"
+              v-if="!record.nic.isdefault"
+            >
+              <tooltip-button
+                tooltipPlacement="bottom"
+                :tooltip="$t('label.set.default.nic')"
+                :disabled="!('updateDefaultNicForVirtualMachine' in $store.getters.apis)"
+                icon="check-square" />
+            </a-popconfirm>
             <tooltip-button
               :tooltip="$t('label.change.ip.addess')"
               v-if="record.nic.type !== 'L2'"
@@ -96,24 +92,20 @@
               icon="environment"
               :disabled="(!('addIpToNic' in $store.getters.apis) && !('addIpToNic' in $store.getters.apis))"
               @click="fetchSecondaryIPs(record.nic.id)" />
-            <a-tooltip placement="bottom">
-              <template slot="title">
-                {{ $t('label.action.delete.nic') }}
-              </template>
-              <a-popconfirm
-                :title="$t('message.network.removenic')"
-                @confirm="removeNIC(record.nic)"
-                :okText="$t('label.yes')"
-                :cancelText="$t('label.no')"
-                v-if="!record.nic.isdefault"
-              >
-                <a-button
-                  :disabled="!('removeNicFromVirtualMachine' in $store.getters.apis)"
-                  type="danger"
-                  icon="delete"
-                  shape="circle" />
-              </a-popconfirm>
-            </a-tooltip>
+            <a-popconfirm
+              :title="$t('message.network.removenic')"
+              @confirm="removeNIC(record.nic)"
+              :okText="$t('label.yes')"
+              :cancelText="$t('label.no')"
+              v-if="!record.nic.isdefault"
+            >
+              <tooltip-button
+                tooltipPlacement="bottom"
+                :tooltip="$t('label.action.delete.nic')"
+                :disabled="!('removeNicFromVirtualMachine' in $store.getters.apis)"
+                type="danger"
+                icon="delete" />
+            </a-popconfirm>
           </span>
         </NicsTable>
       </a-tab-pane>
@@ -225,9 +217,10 @@
             :okText="$t('label.yes')"
             :cancelText="$t('label.no')"
           >
-            <a-button
+            <tooltip-button
+              tooltipPlacement="top"
+              :tooltip="$t('label.action.release.ip')"
               type="danger"
-              shape="circle"
               icon="delete" />
             {{ ip.ipaddress }}
           </a-popconfirm>

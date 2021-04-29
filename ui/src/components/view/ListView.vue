@@ -70,7 +70,7 @@
           :enabled="quickViewEnabled() && actions.length > 0 && columns && columns[0].dataIndex === 'name' "
           @exec-action="$parent.execAction"/>
         <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
-          <a-button type="dashed" size="small" shape="circle" icon="login" @click="changeProject(record)" />
+          <tooltip-button type="dashed" size="small" icon="login" @click="changeProject(record)" />
         </span>
         <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
 
@@ -305,8 +305,8 @@
         iconTwoToneColor="#52c41a" />
     </template>
     <template slot="tariffActions" slot-scope="text, record">
-      <a-button
-        shape="circle"
+      <tooltip-button
+        :tooltip="$t('label.edit')"
         v-if="editableValueKey !== record.key"
         :disabled="!('quotaTariffUpdate' in $store.getters.apis)"
         icon="edit"

@@ -16,17 +16,18 @@
 // under the License.
 
 <template>
-  <a-tooltip arrowPointAtCenter placement="bottomRight">
+  <a-tooltip arrowPointAtCenter :placement="tooltipPlacement">
     <template slot="title" v-if="tooltip">
       {{ tooltip }}
     </template>
     <a-button
       shape="circle"
-      size="default"
+      :size="size"
       :type="type"
       :disabled="disabled"
       :icon="icon"
       :class="buttonClass"
+      :loading="loading"
       @click="handleClicked()" >
       <a-icon
         v-if="iconType && iconTwoToneColor"
@@ -46,13 +47,21 @@ export default {
       type: String,
       default: null
     },
+    tooltipPlacement: {
+      type: String,
+      default: 'bottomRight'
+    },
     disabled: {
       type: Boolean,
       default: false
     },
     type: {
       type: String,
-      default: null
+      default: 'default'
+    },
+    size: {
+      type: String,
+      default: 'default'
     },
     icon: {
       type: String,
@@ -69,6 +78,10 @@ export default {
     buttonClass: {
       type: String,
       default: ''
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   },
   data () {

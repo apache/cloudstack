@@ -106,19 +106,15 @@
         <div class="resource-detail-item" v-if="resource.id">
           <div class="resource-detail-item__label">{{ $t('label.id') }}</div>
           <div class="resource-detail-item__details">
-            <a-tooltip placement="right" >
-              <template slot="title">
-                <span>{{ $t('label.copyid') }}</span>
-              </template>
-              <a-button
-                style="margin-left: -5px"
-                shape="circle"
-                icon="barcode"
-                type="dashed"
-                size="small"
-                @click="$message.success($t('label.copied.clipboard'))"
-                v-clipboard:copy="resource.id" />
-            </a-tooltip>
+            <tooltip-button
+              tooltipPlacement="right"
+              :tooltip="$t('label.copyid')"
+              style="margin-left: -5px"
+              icon="barcode"
+              type="dashed"
+              size="small"
+              @click="$message.success($t('label.copied.clipboard'))"
+              v-clipboard:copy="resource.id" />
             <span style="margin-left: 10px;">{{ resource.id }}</span>
           </div>
         </div>
@@ -562,14 +558,14 @@
           <a-icon type="key" />
           <strong>
             {{ $t('label.apikey') }}
-            <a-tooltip placement="right" >
-              <template slot="title">
-                <span>{{ $t('label.copy') + ' ' + $t('label.apikey') }}</span>
-              </template>
-              <a-button shape="circle" type="dashed" size="small" @click="$message.success($t('label.copied.clipboard'))" v-clipboard:copy="resource.apikey">
-                <a-icon type="copy"/>
-              </a-button>
-            </a-tooltip>
+            <tooltip-button
+              placement="right"
+              :tooltip="$t('label.copy') + ' ' + $t('label.apikey')"
+              icon="copy"
+              type="dashed"
+              size="small"
+              @click="$message.success($t('label.copied.clipboard'))"
+              v-clipboard:copy="resource.apikey" />
           </strong>
           <div>
             {{ resource.apikey.substring(0, 20) }}...
@@ -579,14 +575,14 @@
           <a-icon type="lock" />
           <strong>
             {{ $t('label.secretkey') }}
-            <a-tooltip placement="right" >
-              <template slot="title">
-                <span>{{ $t('label.copy') + ' ' + $t('label.secretkey') }}</span>
-              </template>
-              <a-button shape="circle" type="dashed" size="small" @click="$message.success($t('label.copied.clipboard'))" v-clipboard:copy="resource.secretkey">
-                <a-icon type="copy"/>
-              </a-button>
-            </a-tooltip>
+            <tooltip-button
+              placement="right"
+              :tooltip="$t('label.copy') + ' ' + $t('label.apikey')"
+              icon="copy"
+              type="dashed"
+              size="small"
+              @click="$message.success($t('label.copied.clipboard'))"
+              v-clipboard:copy="resource.secretkey" />
           </strong>
           <div>
             {{ resource.secretkey.substring(0, 20) }}...
@@ -615,12 +611,8 @@
                 <a-input ref="input" :value="inputKey" @change="handleKeyChange" style="width: 30%; text-align: center" :placeholder="$t('label.key')" />
                 <a-input style=" width: 30px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
                 <a-input :value="inputValue" @change="handleValueChange" style="width: 30%; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-                <a-button shape="circle" size="small" @click="handleInputConfirm">
-                  <a-icon type="check"/>
-                </a-button>
-                <a-button shape="circle" size="small" @click="inputVisible=false">
-                  <a-icon type="close"/>
-                </a-button>
+                <tooltip-button :tooltip="$t('label.ok')" icon="check" size="small" @click="handleInputConfirm" />
+                <tooltip-button :tooltip="$t('label.cancel')" icon="close" size="small" @click="inputVisible=false" />
               </a-input-group>
             </div>
             <a-tag @click="showInput" style="background: #fff; borderStyle: dashed;" v-else-if="isAdminOrOwner() && 'createTags' in $store.getters.apis">

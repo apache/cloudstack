@@ -96,7 +96,7 @@
       </template>
       <template slot="actions" slot-scope="record">
         <div class="actions">
-          <tooltip-button :tooltip="$t('label.edit.tags')" shape="circle" icon="tag" buttonClass="rule-action" @click="() => openTagsModal(record.id)" />
+          <tooltip-button :tooltip="$t('label.tags')" icon="tag" buttonClass="rule-action" @click="() => openTagsModal(record.id)" />
           <tooltip-button
             :tooltip="$t('label.remove.rule')"
             type="danger"
