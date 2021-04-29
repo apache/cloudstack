@@ -38,6 +38,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.capacity.Capacity;
+import com.cloud.capacity.CapacityVO;
+import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.utils.NumbersUtil;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
@@ -121,6 +124,9 @@ import com.cloud.utils.nio.Task;
 import com.cloud.utils.time.InaccurateClock;
 import com.google.common.base.Strings;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.HOST_RESERVED_MEM_MB;
+import static com.cloud.configuration.ConfigurationManagerImpl.HOST_RESERVED_MEM_MB_STRING;
+
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
  **/
@@ -168,6 +174,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @Inject
     protected IndirectAgentLB indirectAgentLB;
+    @Inject
+    CapacityDao _capacityDao;
 
     protected int _retry = 2;
 
@@ -1759,6 +1767,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 if (((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.KVM || ((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.LXC) {
                     Map<String, String> params = new HashMap<String, String>();
                     params.put("router.aggregation.command.each.timeout", _configDao.getValue("router.aggregation.command.each.timeout"));
+                    params.put(HOST_RESERVED_MEM_MB_STRING, _configDao.getValue(HOST_RESERVED_MEM_MB_STRING));
 
                     try {
                         SetHostParamsCommand cmds = new SetHostParamsCommand(params);
@@ -1836,6 +1845,52 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             s_logger.debug("Propagating changes on host parameters to the agents");
             Map<Long, List<Long>> hostsPerZone = getHostsPerZone();
             sendCommandToAgents(hostsPerZone, params);
+        }
+    }
+
+    @Override
+    public void updateCapacityOfHosts() {
+        Map<Long, List<Long>> hostsByZone = new HashMap<>();
+        Map<String, String> params = new HashMap<>();
+        boolean status = true;
+        List<HostVO> allHosts = _resourceMgr.listAllHostsInAllZonesByType(Host.Type.Routing);
+        if (allHosts == null) {
+            return;
+        }
+
+        String value = HOST_RESERVED_MEM_MB.value().toString();
+        params.put(HOST_RESERVED_MEM_MB.key(), value);
+        for (HostVO host : allHosts) {
+            Long zoneId = host.getDataCenterId();
+            try {
+                // Update the "ram" for all hosts
+                long updatedHostRam = (host.getTotalMemory() + host.getDom0MinMemory()) - (Integer.parseInt(value) * 1024L * 1024L);
+                if (updatedHostRam > 0) {
+                    host.setTotalMemory(updatedHostRam);
+                    // Update "dom0_memory" in host table
+                    host.setDom0MinMemory(Integer.parseInt(value) * 1024L * 1024L);
+                    _hostDao.update(host.getId(), host);
+
+                    // Update the "total_capacity" for all hosts in op_host_capacity
+                    CapacityVO memCap = _capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_MEMORY);
+                    memCap.setTotalCapacity(host.getTotalMemory());
+                    _capacityDao.update(memCap.getId(), memCap);
+                } else {
+                    status = false;
+                }
+            } catch (Exception e) {
+                s_logger.error("Unable to update the reserved memory capacity for host id " + host.getId() + " : " + e.getMessage());
+                status = false;
+                continue;
+            }
+
+            List<Long> hostIds = hostsByZone.getOrDefault(zoneId, new ArrayList<>());
+            hostIds.add(host.getId());
+            hostsByZone.put(zoneId, hostIds);
+        }
+
+        if (status) {
+            sendCommandToAgents(hostsByZone, params);
         }
     }
 }

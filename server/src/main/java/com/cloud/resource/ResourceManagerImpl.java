@@ -194,6 +194,7 @@ import com.google.gson.Gson;
 
 
 import static com.cloud.configuration.ConfigurationManagerImpl.SET_HOST_DOWN_TO_MAINTENANCE;
+import static com.cloud.configuration.ConfigurationManagerImpl.HOST_RESERVED_MEM_MB_STRING;
 
 @Component
 public class ResourceManagerImpl extends ManagerBase implements ResourceManager, ResourceService, Manager {
@@ -1999,6 +2000,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 } else {
                     hostTags = implicitHostTags;
                 }
+            }
+
+            // Update host memory reported by agent
+            if (ssCmd.getHypervisorType().equals(HypervisorType.KVM) ||
+                    ssCmd.getHypervisorType().equals(HypervisorType.LXC)) {
+                host.setDom0MinMemory(Long.parseLong(_configDao.getValue(HOST_RESERVED_MEM_MB_STRING)));
             }
         }
 

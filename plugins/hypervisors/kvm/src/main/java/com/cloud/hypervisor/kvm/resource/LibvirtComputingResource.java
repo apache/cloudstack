@@ -184,6 +184,8 @@ import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VmDetailConstants;
 import com.google.common.base.Strings;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.HOST_RESERVED_MEM_MB_STRING;
+
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
  * the libvirt API
@@ -950,7 +952,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         value = (String) params.get("vm.video.ram");
         _videoRam = NumbersUtil.parseInt(value, 0);
 
-        value = (String)params.get("host.reserved.mem.mb");
+        value = (String)params.get(HOST_RESERVED_MEM_MB_STRING);
         // Reserve 1GB unless admin overrides
         _dom0MinMem = NumbersUtil.parseInt(value, 1024) * 1024* 1024L;
 
@@ -1206,6 +1208,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             String value = (String)params.get("router.aggregation.command.each.timeout");
             Long longValue = NumbersUtil.parseLong(value, 600);
             storage.persist("router.aggregation.command.each.timeout", String.valueOf(longValue));
+        }
+
+        if (params.get(HOST_RESERVED_MEM_MB_STRING) != null) {
+            long value = Long.parseLong(params.get(HOST_RESERVED_MEM_MB_STRING));
+            s_logger.info("Reserved memory for host is " + value + "MB");
+            _dom0MinMem = value * 1024L * 1024L;
+            if (!String.valueOf(value).equals("")) {
+                storage.persist(HOST_RESERVED_MEM_MB_STRING, String.valueOf(value));
+            }
         }
 
         return true;
