@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -48,6 +49,7 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
@@ -99,6 +101,7 @@ import org.apache.cloudstack.region.dao.RegionDao;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -586,9 +589,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (cluster == null) {
                     throw new InvalidParameterValueException("unable to find cluster by id " + resourceId);
                 }
-                ClusterDetailsVO clusterDetailsVO = _clusterDetailsDao.findDetail(resourceId, name);
+                String newName = name;
+                if (name.equalsIgnoreCase("cpu.overprovisioning.factor")) {
+                    newName = "cpuOvercommitRatio";
+                }
+                if (name.equalsIgnoreCase("mem.overprovisioning.factor")) {
+                    newName = "memoryOvercommitRatio";
+                }
+                ClusterDetailsVO clusterDetailsVO = _clusterDetailsDao.findDetail(resourceId, newName);
                 if (clusterDetailsVO == null) {
-                    clusterDetailsVO = new ClusterDetailsVO(resourceId, name, value);
+                    clusterDetailsVO = new ClusterDetailsVO(resourceId, newName, value);
                     _clusterDetailsDao.persist(clusterDetailsVO);
                 } else {
                     clusterDetailsVO.setValue(value);
@@ -833,6 +843,161 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } else {
             throw new CloudRuntimeException("Unable to update configuration parameter " + name);
         }
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, eventDescription = "resetting configuration")
+    public Pair<Configuration, String> resetConfiguration(final ResetCfgCmd cmd) throws InvalidParameterValueException {
+        final Long userId = CallContext.current().getCallingUserId();
+        final String name = cmd.getCfgName();
+        final Long zoneId = cmd.getZoneId();
+        final Long clusterId = cmd.getClusterId();
+        final Long storagepoolId = cmd.getStoragepoolId();
+        final Long accountId = cmd.getAccountId();
+        final Long domainId = cmd.getDomainId();
+        final Long imageStoreId = cmd.getImageStoreId();
+        Optional optionalValue;
+        final ConfigKey<?> configKey = _configDepot.get(name);
+        if (configKey == null) {
+            s_logger.warn("Probably the component manager where configuration variable " + name + " is defined needs to implement Configurable interface");
+            throw new InvalidParameterValueException("Config parameter with name " + name + " doesn't exist");
+        }
+        String defaultValue = configKey.defaultValue();
+        String category = configKey.category();
+        String configScope = configKey.scope().toString();
+
+        String scope = ConfigKey.Scope.Global.toString();
+
+        Long id = null;
+        int paramCountCheck = 0;
+
+        if (zoneId != null) {
+            scope = ConfigKey.Scope.Zone.toString();
+            id = zoneId;
+            paramCountCheck++;
+        }
+        if (clusterId != null) {
+            scope = ConfigKey.Scope.Cluster.toString();
+            id = clusterId;
+            paramCountCheck++;
+        }
+        if (domainId != null) {
+            scope = ConfigKey.Scope.Domain.toString();
+            id = domainId;
+            paramCountCheck++;
+        }
+        if (accountId != null) {
+            scope = ConfigKey.Scope.Account.toString();
+            id = accountId;
+            paramCountCheck++;
+        }
+        if (storagepoolId != null) {
+            scope = ConfigKey.Scope.StoragePool.toString();
+            id = storagepoolId;
+            paramCountCheck++;
+        }
+        if (imageStoreId != null) {
+            scope = ConfigKey.Scope.ImageStore.toString();
+            id = imageStoreId;
+            paramCountCheck++;
+        }
+
+        if (paramCountCheck > 1) {
+            throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
+        }
+
+        if (scope != null && !scope.equals(ConfigKey.Scope.Global.toString()) && !configScope.contains(scope)) {
+            throw new InvalidParameterValueException("Invalid scope id provided for the parameter " + name);
+        }
+
+        String newValue = null;
+        switch (ConfigKey.Scope.valueOf(scope)) {
+            case Zone:
+                final DataCenterVO zone = _zoneDao.findById(id);
+                if (zone == null) {
+                    throw new InvalidParameterValueException("unable to find zone by id " + id);
+                }
+                _dcDetailsDao.removeDetail(id, name);
+                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            case Cluster:
+                final ClusterVO cluster = _clusterDao.findById(id);
+                if (cluster == null) {
+                    throw new InvalidParameterValueException("unable to find cluster by id " + id);
+                }
+                ClusterDetailsVO clusterDetailsVO = _clusterDetailsDao.findDetail(id, name);
+                newValue = configKey.value().toString();
+                if (name.equalsIgnoreCase("cpu.overprovisioning.factor") || name.equalsIgnoreCase("mem.overprovisioning.factor")) {
+                    _clusterDetailsDao.persist(id, name, newValue);
+                } else if (clusterDetailsVO != null) {
+                    _clusterDetailsDao.remove(clusterDetailsVO.getId());
+                }
+                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            case StoragePool:
+                final StoragePoolVO pool = _storagePoolDao.findById(id);
+                if (pool == null) {
+                    throw new InvalidParameterValueException("unable to find storage pool by id " + id);
+                }
+                _storagePoolDetailsDao.removeDetail(id, name);
+                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            case Domain:
+                final DomainVO domain = _domainDao.findById(id);
+                if (domain == null) {
+                    throw new InvalidParameterValueException("unable to find domain by id " + id);
+                }
+                DomainDetailVO domainDetailVO = _domainDetailsDao.findDetail(id, name);
+                if (domainDetailVO != null) {
+                    _domainDetailsDao.remove(domainDetailVO.getId());
+                }
+                optionalValue = Optional.ofNullable(configKey.valueInDomain(id));
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            case Account:
+                final AccountVO account = _accountDao.findById(id);
+                if (account == null) {
+                    throw new InvalidParameterValueException("unable to find account by id " + id);
+                }
+                AccountDetailVO accountDetailVO = _accountDetailsDao.findDetail(id, name);
+                if (accountDetailVO != null) {
+                    _accountDetailsDao.remove(accountDetailVO.getId());
+                }
+                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            case ImageStore:
+                final ImageStoreVO imageStoreVO = _imageStoreDao.findById(id);
+                if (imageStoreVO == null) {
+                    throw new InvalidParameterValueException("unable to find the image store by id " + id);
+                }
+                ImageStoreDetailVO imageStoreDetailVO = _imageStoreDetailsDao.findDetail(id, name);
+                if (imageStoreDetailVO != null) {
+                    _imageStoreDetailsDao.remove(imageStoreDetailVO.getId());
+                }
+                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            default:
+                if (!_configDao.update(name, category, defaultValue)) {
+                    s_logger.error("Failed to reset configuration option, name: " + name + ", defaultValue:" + defaultValue);
+                    throw new CloudRuntimeException("Failed to reset configuration value. Please contact Cloud Support.");
+                }
+                optionalValue = Optional.ofNullable(configKey.value());
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+        }
+
+        CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : defaultValue == null ? "" : defaultValue));
+        return new Pair<Configuration, String>(_configDao.findByName(name), newValue);
     }
 
     private String validateConfigurationValue(final String name, String value, final String scope) {

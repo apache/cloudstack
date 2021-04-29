@@ -18,6 +18,7 @@ package com.cloud.configuration;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
@@ -73,6 +74,15 @@ public interface ConfigurationService {
      * @return updated configuration object if successful
      */
     Configuration updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException;
+
+    /**
+     * Resets a configuration entry with default value
+     *
+     * @param cmd
+     *            - the command wrapping name parameter
+     * @return updated configuration object if successful
+     */
+    Pair<Configuration, String> resetConfiguration(ResetCfgCmd cmd) throws InvalidParameterValueException;
 
     /**
      * Create a service offering through the API
