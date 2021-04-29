@@ -1213,7 +1213,7 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
             self.apiclient,
             zoneid=self.zone.id,
             type='Routing',
-            hypervisor='KVM')
+            hypervisor='VMware')
 
         if len(self.hosts) < 2:
             self.skipTest("Requires at least two hosts for performing migration related tests")
