@@ -56,9 +56,9 @@ public interface TemplateApiService {
 
     VirtualMachineTemplate prepareTemplate(long templateId, long zoneId, Long storageId);
 
-    boolean detachIso(long vmId);
+    boolean detachIso(long vmId, boolean forced);
 
-    boolean attachIso(long isoId, long vmId);
+    boolean attachIso(long isoId, long vmId, boolean forced);
 
     /**
      * Deletes a template
