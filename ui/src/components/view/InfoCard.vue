@@ -570,7 +570,7 @@
           <strong>
             {{ $t('label.apikey') }}
             <tooltip-button
-              placement="right"
+              tooltipPlacement="right"
               :tooltip="$t('label.copy') + ' ' + $t('label.apikey')"
               icon="copy"
               type="dashed"
@@ -587,7 +587,7 @@
           <strong>
             {{ $t('label.secretkey') }}
             <tooltip-button
-              placement="right"
+              tooltipPlacement="right"
               :tooltip="$t('label.copy') + ' ' + $t('label.apikey')"
               icon="copy"
               type="dashed"
