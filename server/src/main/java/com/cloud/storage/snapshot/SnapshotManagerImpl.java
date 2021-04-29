@@ -421,16 +421,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     @Override
-    public Snapshot backupSnapshot(Long snapshotId) {
-        SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Image);
-        if (snapshot != null) {
-            throw new CloudRuntimeException("Already in the backup snapshot:" + snapshotId);
-        }
-
-        return snapshotSrv.backupSnapshot(snapshot);
-    }
-
-    @Override
     public Snapshot backupSnapshotFromVmSnapshot(Long snapshotId, Long vmId, Long volumeId, Long vmSnapshotId) {
         VMInstanceVO vm = _vmDao.findById(vmId);
         if (vm == null) {

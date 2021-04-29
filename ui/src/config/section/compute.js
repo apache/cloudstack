@@ -255,7 +255,13 @@ export default {
           label: 'label.action.detach.iso',
           message: 'message.detach.iso.confirm',
           dataView: true,
-          args: ['virtualmachineid'],
+          args: (record, store) => {
+            var args = ['virtualmachineid']
+            if (record && record.hypervisor && record.hypervisor === 'VMware') {
+              args.push('forced')
+            }
+            return args
+          },
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) && 'isoid' in record && record.isoid },
           mapping: {
             virtualmachineid: {
