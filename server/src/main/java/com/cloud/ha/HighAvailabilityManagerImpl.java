@@ -710,6 +710,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
                 } else {
                     _itMgr.destroy(vm.getUuid(), expunge);
                 }
+                return null;
             } else {
                 s_logger.info("VM " + vm.getUuid() + " still in " + vm.getState() + " state.");
             }
