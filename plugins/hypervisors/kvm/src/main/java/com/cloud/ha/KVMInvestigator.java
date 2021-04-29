@@ -100,7 +100,6 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
      */
     private Status checkAgentStatusViaKvmHaAgent(Host agent, Status agentStatus) {
         KvmHaAgentClient kvmHaAgentClient = new KvmHaAgentClient(agent);
-
         boolean isVmsCountOnKvmMatchingWithDatabase = kvmHaAgentClient.isKvmHaAgentHealthy(agent, vmInstanceDao);
         if(isVmsCountOnKvmMatchingWithDatabase) {
             agentStatus = Status.Up;
