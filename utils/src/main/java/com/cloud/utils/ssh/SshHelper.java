@@ -260,7 +260,7 @@ public class SshHelper {
      * does not have an exit status, it returns true to break the loop; otherwise, it returns
      * false.
      */
-    protected static boolean canEndTheSshConnection(int waitResultTimeoutInMs, com.trilead.ssh2.Session sess, int conditions) throws SshException {
+    protected static boolean canEndTheSshConnection(int waitResultTimeoutInMs, com.trilead.ssh2.Session sess, int conditions) throws SshException, InterruptedException {
         if (isChannelConditionEof(conditions)) {
             int newConditions = sess.waitForCondition(ChannelCondition.EXIT_STATUS, waitResultTimeoutInMs);
             throwSshExceptionIfConditionsTimeout(newConditions);

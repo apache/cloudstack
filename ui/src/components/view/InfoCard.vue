@@ -258,7 +258,8 @@
               <a-progress
                 class="progress-bar"
                 size="small"
-                :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeallocatedgb) / parseFloat(resource.disksizetotalgb)).toFixed(2))"
+                :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeallocatedgb) / (parseFloat(resource.disksizetotalgb) *
+                  (parseFloat(resource.overprovisionfactor) || 1.0))).toFixed(2))"
                 :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.disksizeallocatedgb')" />
             </span>
           </div>
@@ -306,6 +307,16 @@
               v-clipboard:copy="ipaddress" />
             <router-link v-if="resource.ipaddressid" :to="{ path: '/publicip/' + resource.ipaddressid }">{{ ipaddress }}</router-link>
             <span v-else>{{ ipaddress }}</span>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="ipV6Address && ipV6Address !== null">
+          <div class="resource-detail-item__label">{{ $t('label.ip6address') }}</div>
+          <div class="resource-detail-item__details">
+            <a-icon
+              type="environment"
+              @click="$message.success(`${$t('label.copied.clipboard')} : ${ ipV6Address }`)"
+              v-clipboard:copy="ipV6Address" />
+            {{ ipV6Address }}
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.projectid || resource.projectname">
@@ -769,6 +780,13 @@ export default {
     name () {
       return this.resource.displayname || this.resource.displaytext || this.resource.name || this.resource.username ||
         this.resource.ipaddress || this.resource.virtualmachinename || this.resource.templatetype
+    },
+    ipV6Address () {
+      if (this.resource.nic && this.resource.nic.length > 0) {
+        return this.resource.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ')
+      }
+
+      return null
     }
   },
   methods: {

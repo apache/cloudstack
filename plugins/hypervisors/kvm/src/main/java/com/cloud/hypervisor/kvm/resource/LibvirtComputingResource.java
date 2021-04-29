@@ -2405,7 +2405,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         DiskDef.DiskBus busT = getDiskModelFromVMDetail(vmTO);
 
         if (busT == null) {
-            busT = getGuestDiskModel(vmTO.getPlatformEmulator());
+            busT = getGuestDiskModel(vmTO.getPlatformEmulator(), isUefiEnabled);
         }
 
         // If we're using virtio scsi, then we need to add a virtual scsi controller
@@ -2490,7 +2490,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         });
 
-        if (MapUtils.isNotEmpty(details) && details.containsKey(GuestDef.BootType.UEFI.toString())) {
+        boolean isUefiEnabled = MapUtils.isNotEmpty(details) && details.containsKey(GuestDef.BootType.UEFI.toString());
+        if (isUefiEnabled) {
             isSecureBoot = isSecureMode(details.get(GuestDef.BootType.UEFI.toString()));
         }
         if (vmSpec.getOs().toLowerCase().contains("window")) {
@@ -2554,7 +2555,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             // if params contains a rootDiskController key, use its value (this is what other HVs are doing)
             DiskDef.DiskBus diskBusType = getDiskModelFromVMDetail(vmSpec);
             if (diskBusType == null) {
-                diskBusType = getGuestDiskModel(vmSpec.getPlatformEmulator());
+                diskBusType = getGuestDiskModel(vmSpec.getPlatformEmulator(), isUefiEnabled);
             }
 
             // I'm not sure why previously certain DATADISKs were hard-coded VIRTIO and others not, however this
@@ -2564,16 +2565,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             final DiskDef disk = new DiskDef();
             int devId = volume.getDiskSeq().intValue();
             if (volume.getType() == Volume.Type.ISO) {
-                if (volPath == null) {
-                    if (isSecureBoot) {
-                        disk.defISODisk(null, devId,isSecureBoot,isWindowsTemplate);
-                    } else {
-                        /* Add iso as placeholder */
-                        disk.defISODisk(null, devId);
-                    }
-                } else {
-                    disk.defISODisk(volPath, devId);
-                }
+
+                disk.defISODisk(volPath, devId, isUefiEnabled);
+
                 if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
                     disk.setBusType(DiskDef.DiskBus.SCSI);
                 }
@@ -2598,14 +2592,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.defNetworkBasedDisk(glusterVolume + path.replace(mountpoint, ""), pool.getSourceHost(), pool.getSourcePort(), null,
                             null, devId, diskBusType, DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);
                 } else if (pool.getType() == StoragePoolType.CLVM || physicalDisk.getFormat() == PhysicalDiskFormat.RAW) {
-                    if (volume.getType() == Volume.Type.DATADISK) {
+                    if (volume.getType() == Volume.Type.DATADISK && !(isWindowsTemplate && isUefiEnabled)) {
                         disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
                     }
                     else {
                         disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusType);
                     }
                 } else {
-                    if (volume.getType() == Volume.Type.DATADISK) {
+                    if (volume.getType() == Volume.Type.DATADISK && !(isWindowsTemplate && isUefiEnabled)) {
                         disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData, DiskDef.DiskFmtType.QCOW2);
                     } else {
                         if (isSecureBoot) {
@@ -3410,7 +3404,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     boolean isGuestPVEnabled(final String guestOSName) {
-        DiskDef.DiskBus db = getGuestDiskModel(guestOSName);
+        DiskDef.DiskBus db = getGuestDiskModel(guestOSName, false);
         return db != DiskDef.DiskBus.IDE;
     }
 
@@ -3445,7 +3439,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return null;
     }
 
-    private DiskDef.DiskBus getGuestDiskModel(final String platformEmulator) {
+    private DiskDef.DiskBus getGuestDiskModel(final String platformEmulator, boolean isUefiEnabled) {
         if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
             return DiskDef.DiskBus.SCSI;
         }
@@ -3454,6 +3448,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return DiskDef.DiskBus.IDE;
         } else if (platformEmulator.startsWith("Other PV Virtio-SCSI")) {
             return DiskDef.DiskBus.SCSI;
+        } else if (isUefiEnabled && platformEmulator.startsWith("Windows")) {
+            return DiskDef.DiskBus.SATA;
         } else if (platformEmulator.contains("Ubuntu") ||
                 platformEmulator.startsWith("Fedora") ||
                 platformEmulator.startsWith("CentOS") ||
@@ -4264,13 +4260,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         QemuImg qemu = new QemuImg(timeout);
         try{
             Map<String, String> info = qemu.info(file);
-            String backingFilePath = info.get(new String("backing_file"));
-            String backingFileFormat = info.get(new String("backing_file_format"));
-            if (org.apache.commons.lang.StringUtils.isEmpty(backingFileFormat)) {
+            String backingFilePath = info.get(QemuImg.BACKING_FILE);
+            String backingFileFormat = info.get(QemuImg.BACKING_FILE_FORMAT);
+            if (org.apache.commons.lang.StringUtils.isNotBlank(backingFilePath)
+                    && org.apache.commons.lang.StringUtils.isBlank(backingFileFormat)) {
+                // VMs which are created in CloudStack 4.14 and before cannot be started or migrated
+                // in latest Linux distributions due to missing backing file format
+                // Please refer to https://libvirt.org/kbase/backing_chains.html#vm-refuses-to-start-due-to-misconfigured-backing-store-format
                 s_logger.info("Setting backing file format of " + volPath);
                 QemuImgFile backingFile = new QemuImgFile(backingFilePath);
                 Map<String, String> backingFileinfo = qemu.info(backingFile);
-                String backingFileFmt = backingFileinfo.get(new String("file_format"));
+                String backingFileFmt = backingFileinfo.get(QemuImg.FILE_FORMAT);
                 qemu.rebase(file, backingFile, backingFileFmt, false);
             }
         } catch (QemuImgException e) {

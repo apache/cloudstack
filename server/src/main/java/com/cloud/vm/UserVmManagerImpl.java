@@ -49,11 +49,14 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.deployasis.UserVmDeployAsIsDetailVO;
 import com.cloud.deployasis.dao.UserVmDeployAsIsDetailsDao;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -514,6 +517,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private UserVmDeployAsIsDetailsDao userVmDeployAsIsDetailsDao;
     @Inject
     private StorageManager storageMgr;
+    @Inject
+    private ServiceOfferingJoinDao serviceOfferingJoinDao;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -1942,14 +1947,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     _itMgr.reConfigureVm(vmInstance.getUuid(), currentServiceOffering, newServiceOffering, customParameters, existingHostHasCapacity);
                     success = true;
                     return success;
-                } catch (InsufficientCapacityException e) {
-                    s_logger.warn("Received exception while scaling ", e);
-                } catch (ResourceUnavailableException e) {
-                    s_logger.warn("Received exception while scaling ", e);
-                } catch (ConcurrentOperationException e) {
+                } catch (InsufficientCapacityException | ResourceUnavailableException | ConcurrentOperationException e) {
                     s_logger.warn("Received exception while scaling ", e);
                 } catch (Exception e) {
-                    s_logger.warn("Received exception while scaling ", e);
+                    s_logger.warn("Scaling failed with exception: ", e);
                 } finally {
                     if (!success) {
                         // Decrement CPU and Memory count accordingly.
@@ -2962,15 +2963,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         checkForUnattachedVolumes(vmId, volumesToBeDeleted);
         validateVolumes(volumesToBeDeleted);
 
+        final ControlledEntity[] volumesToDelete = volumesToBeDeleted.toArray(new ControlledEntity[0]);
+        _accountMgr.checkAccess(ctx.getCallingAccount(), null, true, volumesToDelete);
+
         stopVirtualMachine(vmId, VmDestroyForcestop.value());
 
-        if (vm.getHypervisorType() == HypervisorType.VMware) {
-            List<VolumeVO> allVolumes = _volsDao.findByInstance(vm.getId());
-            allVolumes.removeIf(vol -> vol.getVolumeType() == Volume.Type.ROOT);
-            detachVolumesFromVm(allVolumes);
-        } else {
-            detachVolumesFromVm(volumesToBeDeleted);
-        }
+        detachVolumesFromVm(volumesToBeDeleted);
 
         UserVm destroyedVm = destroyVm(vmId, expunge);
         if (expunge) {
@@ -5266,9 +5264,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to use template " + templateId);
         }
 
-        // Bootmode and boottype are not supported on VMWare dpeloy-as-is templates (since 4.15)
-        if (template.isDeployAsIs() && (cmd.getBootMode() != null || cmd.getBootType() != null)) {
-            throw new InvalidParameterValueException("Boot type and boot mode are not supported on VMware, as we honour what is defined in the template.");
+        ServiceOfferingJoinVO svcOffering = serviceOfferingJoinDao.findById(serviceOfferingId);
+
+        if (template.isDeployAsIs()) {
+            if (svcOffering != null && svcOffering.getRootDiskSize() != null && svcOffering.getRootDiskSize() > 0) {
+                throw new InvalidParameterValueException("Failed to deploy Virtual Machine as a service offering with root disk size specified cannot be used with a deploy as-is template");
+            }
+
+            if (cmd.getDetails().get("rootdisksize") != null) {
+                throw new InvalidParameterValueException("Overriding root disk size isn't supported for VMs deployed from defploy as-is templates");
+            }
+
+            // Bootmode and boottype are not supported on VMWare dpeloy-as-is templates (since 4.15)
+            if ((cmd.getBootMode() != null || cmd.getBootType() != null)) {
+                throw new InvalidParameterValueException("Boot type and boot mode are not supported on VMware, as we honour what is defined in the template.");
+            }
         }
 
         Long diskOfferingId = cmd.getDiskOfferingId();
@@ -5340,7 +5350,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         for (VMTemplateVO tmpl: child_templates){
             if (tmpl.getFormat() == Storage.ImageFormat.ISO){
                 s_logger.info("MDOV trying to attach disk to the VM " + tmpl.getId() + " vmid=" + vm.getId());
-                _tmplService.attachIso(tmpl.getId(), vm.getId());
+                _tmplService.attachIso(tmpl.getId(), vm.getId(), true);
             }
         }
 
@@ -6964,6 +6974,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     newVol = volumeMgr.allocateDuplicateVolume(root, null);
                 }
                 newVols.add(newVol);
+
+                if (userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.ROOT_DISK_SIZE) == null && !newVol.getSize().equals(template.getSize())) {
+                    VolumeVO resizedVolume = (VolumeVO) newVol;
+                    resizedVolume.setSize(template.getSize());
+                    _volsDao.update(resizedVolume.getId(), resizedVolume);
+                }
 
                 // 1. Save usage event and update resource count for user vm volumes
                 _resourceLimitMgr.incrementResourceCount(newVol.getAccountId(), ResourceType.volume, newVol.isDisplay());

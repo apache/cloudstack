@@ -147,11 +147,9 @@ export default {
     this.page = 1
     this.pageSize = 10
     this.itemCount = 0
-  },
-  inject: ['parentFetchData'],
-  mounted () {
     this.fetchData()
   },
+  inject: ['parentFetchData'],
   watch: {
     resource (newItem, oldItem) {
       if (!newItem || !newItem.id) {

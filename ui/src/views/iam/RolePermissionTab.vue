@@ -139,7 +139,7 @@ export default {
       apis: []
     }
   },
-  mounted () {
+  created () {
     this.apis = Object.keys(this.$store.getters.apis).sort((a, b) => a.localeCompare(b))
     this.fetchData()
   },

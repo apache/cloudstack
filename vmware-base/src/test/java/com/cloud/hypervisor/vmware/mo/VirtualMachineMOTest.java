@@ -19,6 +19,7 @@ package com.cloud.hypervisor.vmware.mo;
 
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualLsiLogicController;
@@ -27,6 +28,7 @@ import com.vmware.vim25.VirtualSCSIController;
 import com.vmware.vim25.VirtualSCSISharing;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -116,5 +118,22 @@ public class VirtualMachineMOTest {
             fail("Received exception when success expected: " + e.getMessage());
         }
 
+    }
+
+    @Test
+    public void testGetVmxFormattedVirtualHardwareVersionOneDigit() {
+        String vmxHwVersion = VirtualMachineMO.getVmxFormattedVirtualHardwareVersion(8);
+        Assert.assertEquals("vmx-08", vmxHwVersion);
+    }
+
+    @Test
+    public void testGetVmxFormattedVirtualHardwareVersionTwoDigits() {
+        String vmxHwVersion = VirtualMachineMO.getVmxFormattedVirtualHardwareVersion(11);
+        Assert.assertEquals("vmx-11", vmxHwVersion);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testGetVmxFormattedVirtualHardwareVersionInvalid() {
+        VirtualMachineMO.getVmxFormattedVirtualHardwareVersion(-1);
     }
 }

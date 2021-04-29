@@ -42,7 +42,7 @@ function generateRouterMap (section) {
     name: section.name,
     path: '/' + section.name,
     hidden: section.hidden,
-    meta: { title: section.title, icon: section.icon, docHelp: section.docHelp, searchFilters: section.searchFilters },
+    meta: { title: section.title, icon: section.icon, docHelp: Vue.prototype.$applyDocHelpMappings(section.docHelp), searchFilters: section.searchFilters },
     component: RouteView
   }
 
@@ -63,7 +63,7 @@ function generateRouterMap (section) {
           title: child.title,
           name: child.name,
           icon: child.icon,
-          docHelp: child.docHelp,
+          docHelp: Vue.prototype.$applyDocHelpMappings(child.docHelp),
           permission: child.permission,
           resourceType: child.resourceType,
           filters: child.filters,
@@ -85,7 +85,7 @@ function generateRouterMap (section) {
               title: child.title,
               name: child.name,
               icon: child.icon,
-              docHelp: child.docHelp,
+              docHelp: Vue.prototype.$applyDocHelpMappings(child.docHelp),
               permission: child.permission,
               resourceType: child.resourceType,
               params: child.params ? child.params : {},
@@ -140,7 +140,7 @@ function generateRouterMap (section) {
         title: section.title,
         name: section.name,
         icon: section.icon,
-        docHelp: section.docHelp,
+        docHelp: Vue.prototype.$applyDocHelpMappings(section.docHelp),
         hidden: section.hidden,
         permission: section.permission,
         resourceType: section.resourceType,

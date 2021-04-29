@@ -35,7 +35,6 @@ import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
@@ -47,7 +46,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -57,12 +55,13 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 
 /**
@@ -336,27 +335,15 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
                     continue;
                 }
             }
-
-            int cpu_requested = offering.getCpu() * offering.getSpeed();
-            long ram_requested = offering.getRamSize() * 1024L * 1024L;
-            Cluster cluster = _clusterDao.findById(host.getClusterId());
-            ClusterDetailsVO clusterDetailsCpuOvercommit = _clusterDetailsDao.findDetail(cluster.getId(), "cpuOvercommitRatio");
-            ClusterDetailsVO clusterDetailsRamOvercommmt = _clusterDetailsDao.findDetail(cluster.getId(), "memoryOvercommitRatio");
-            Float cpuOvercommitRatio = Float.parseFloat(clusterDetailsCpuOvercommit.getValue());
-            Float memoryOvercommitRatio = Float.parseFloat(clusterDetailsRamOvercommmt.getValue());
-
-            boolean hostHasCpuCapability = _capacityMgr.checkIfHostHasCpuCapability(host.getId(), offering.getCpu(), offering.getSpeed());
-            boolean hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio,
-                considerReservedCapacity);
-
-            if (hostHasCpuCapability && hostHasCapacity) {
+            Pair<Boolean, Boolean> cpuCapabilityAndCapacity = _capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(host, offering, considerReservedCapacity);
+            if (cpuCapabilityAndCapacity.first() && cpuCapabilityAndCapacity.second()) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Found a suitable host, adding to list: " + host.getId());
                 }
                 suitableHosts.add(host);
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Not using host " + host.getId() + "; host has cpu capability? " + hostHasCpuCapability + ", host has capacity?" + hostHasCapacity);
+                    s_logger.debug("Not using host " + host.getId() + "; host has cpu capability? " + cpuCapabilityAndCapacity.first() + ", host has capacity?" + cpuCapabilityAndCapacity.second());
                 }
                 avoid.addHost(host.getId());
             }

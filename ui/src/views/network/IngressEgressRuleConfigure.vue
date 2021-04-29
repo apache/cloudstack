@@ -30,7 +30,11 @@
       <div class="form">
         <div class="form__item">
           <div class="form__label">{{ $t('label.protocol') }}</div>
-          <a-select v-model="newRule.protocol" style="width: 100%;" @change="resetRulePorts">
+          <a-select
+            autoFocus
+            v-model="newRule.protocol"
+            style="width: 100%;"
+            @change="resetRulePorts">
             <a-select-option value="tcp">{{ $t('label.tcp') | capitalise }}</a-select-option>
             <a-select-option value="udp">{{ $t('label.udp') | capitalise }}</a-select-option>
             <a-select-option value="icmp">{{ $t('label.icmp') | capitalise }}</a-select-option>
@@ -132,7 +136,9 @@
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
             <a-form-item>
-              <a-input v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
+              <a-input
+                autoFocus
+                v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
             </a-form-item>
           </div>
           <div class="add-tags__input">
@@ -259,12 +265,12 @@ export default {
       return val.toUpperCase()
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {
     fetchData () {
-      this.tabType = this.$parent.tab === 'Ingress Rule' ? 'ingress' : 'egress'
+      this.tabType = this.$parent.tab === this.$t('label.ingress.rule') ? 'ingress' : 'egress'
       this.rules = this.tabType === 'ingress' ? this.resource.ingressrule : this.resource.egressrule
     },
     handleAddRule () {
