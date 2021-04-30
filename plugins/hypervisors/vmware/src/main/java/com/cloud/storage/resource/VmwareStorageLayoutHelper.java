@@ -168,10 +168,15 @@ public class VmwareStorageLayoutHelper implements Configurable {
     public static String syncVolumeToVmDefaultFolder(DatacenterMO dcMo, String vmName, DatastoreMO ds, String vmdkName, String excludeFolders) throws Exception {
 
         assert (ds != null);
+
         if (!ds.folderExists(String.format("[%s]", ds.getName()), vmName)) {
             s_logger.info("VM folder does not exist on target datastore, we will create one. vm: " + vmName + ", datastore: " + ds.getName());
-
             ds.makeDirectory(String.format("[%s] %s", ds.getName(), vmName), dcMo.getMor());
+        }
+
+        if (!ds.folderExists(String.format("[%s]", ds.getName()), "fcd")) {
+            s_logger.info("fcd folder does not exist on target datastore, we will create one. vm: " + vmName + ", datastore: " + ds.getName());
+            ds.makeDirectory(String.format("[%s] %s", ds.getName(), "fcd"), dcMo.getMor());
         }
 
         String[] vmdkLinkedCloneModeLegacyPair = getVmdkFilePairDatastorePath(ds, vmName, vmdkName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, true);
