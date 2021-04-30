@@ -188,7 +188,7 @@ public class AccountVO implements Account {
 
     @Override
     public String toString() {
-        return String.format("Account {\"id\": %s, \"name\": \"%s\", \"uuid\": \"%s\"}", id, accountName, uuid);
+        return String.format("Acct[%s-%s] -- Account {\"id\": %s, \"name\": \"%s\", \"uuid\": \"%s\"}", uuid, accountName, id, accountName, uuid);
     }
 
     @Override
