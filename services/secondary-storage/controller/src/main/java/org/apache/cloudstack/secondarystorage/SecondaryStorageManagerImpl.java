@@ -347,10 +347,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         if (ssAHost.getType() != Host.Type.SecondaryStorageVM) {
             return false;
         }
-        String hostName = ssAHost.getName();
-        SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findByInstanceName(hostName);
+        String ssvmName = ssAHost.getName();
+        SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findByInstanceName(ssvmName);
         if (secStorageVm == null) {
-            s_logger.warn(String.format("Secondary storage VM [%s] does not exist.", hostName));
+            s_logger.warn(String.format("Secondary storage VM [%s] does not exist.", ssvmName));
             return false;
         }
 
@@ -372,12 +372,12 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         Answer answer = _agentMgr.easySend(ssAHostId, setupCmd);
         if (answer != null && answer.getResult()) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("Successfully created http auth into secondary storage VM [%s].", hostName));
+                s_logger.debug(String.format("Successfully set HTTP auth into secondary storage VM [%s].", ssvmName));
             }
             return true;
         } else {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("Failed to create http auth into secondary storage VM [%s] due to [%s].", hostName, answer == null ? "answer null" : answer.getDetails()));
+                s_logger.debug(String.format("Failed to set HTTP auth into secondary storage VM [%s] due to [%s].", ssvmName, answer == null ? "answer null" : answer.getDetails()));
             }
             return false;
         }
