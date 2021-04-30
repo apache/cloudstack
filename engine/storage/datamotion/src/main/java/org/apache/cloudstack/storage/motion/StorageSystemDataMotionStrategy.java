@@ -1390,10 +1390,12 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 verifyCopyCmdAnswer(copyCmdAnswer, templateInfo);
 
+                // Seems like vmware 6.5 and above does not automatically remount the datastore after rescanning the storage.
+                // Not sure if this is needed.
                 // If using VMware, have the host rescan its software HBA if dynamic discovery is in use.
-                if (HypervisorType.VMware.equals(templateInfo.getHypervisorType())) {
-                    disconnectHostFromVolume(hostVO, volumeInfo.getPoolId(), volumeInfo.get_iScsiName());
-                }
+                //if (HypervisorType.VMware.equals(templateInfo.getHypervisorType())) {
+                //    disconnectHostFromVolume(hostVO, volumeInfo.getPoolId(), volumeInfo.get_iScsiName());
+                //}
             }
             else {
                 VolumeObjectTO newVolume = new VolumeObjectTO();

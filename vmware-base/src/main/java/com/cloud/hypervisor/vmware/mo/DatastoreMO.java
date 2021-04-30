@@ -311,14 +311,15 @@ public class DatastoreMO extends BaseMO {
         DatastoreFile dirFile = new DatastoreFile(file.getDatastoreName(), file.getDir());
 
         HostDatastoreBrowserMO browserMo = getHostDatastoreBrowserMO();
-
-        s_logger.info("Search file " + file.getFileName() + " on " + dirFile.getPath());
-        HostDatastoreBrowserSearchResults results = browserMo.searchDatastore(dirFile.getPath(), file.getFileName(), true);
-        if (results != null) {
-            List<FileInfo> info = results.getFile();
-            if (info != null && info.size() > 0) {
-                s_logger.info("File " + fileFullPath + " exists on datastore");
-                return true;
+        if(folderExists(String.format("[%s]", file.getDatastoreName()), file.getDir())){
+            s_logger.info("Search file " + file.getFileName() + " on " + dirFile.getPath());
+            HostDatastoreBrowserSearchResults results = browserMo.searchDatastore(dirFile.getPath(), file.getFileName(), true);
+            if (results != null) {
+                List<FileInfo> info = results.getFile();
+                if (info != null && info.size() > 0) {
+                    s_logger.info("File " + fileFullPath + " exists on datastore");
+                    return true;
+                }
             }
         }
 

@@ -280,7 +280,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
             }
 
-            removeVmfsDatastore(cmd, hyperHost, datastoreName, storageHost, storagePortNumber, trimIqn(iScsiName), lstHosts);
+            //vmware 6.7 does not automatically mount datastores after rescanning once removed
+            //removeVmfsDatastore(cmd, hyperHost, datastoreName, storageHost, storagePortNumber, trimIqn(iScsiName), lstHosts);
 
             if (!foundExtent) {
                 throw new CloudRuntimeException("Unable to locate the applicable extent");
