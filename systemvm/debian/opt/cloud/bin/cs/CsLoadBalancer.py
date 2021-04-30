@@ -18,9 +18,9 @@ import logging
 import os.path
 import re
 from cs.CsDatabag import CsDataBag
-from CsProcess import CsProcess
-from CsFile import CsFile
-import CsHelper
+from .CsProcess import CsProcess
+from .CsFile import CsFile
+from . import CsHelper
 
 HAPROXY_CONF_T = "/etc/haproxy/haproxy.cfg.new"
 HAPROXY_CONF_P = "/etc/haproxy/haproxy.cfg"
@@ -30,9 +30,9 @@ class CsLoadBalancer(CsDataBag):
     """ Manage Load Balancer entries """
 
     def process(self):
-        if "config" not in self.dbag.keys():
+        if "config" not in list(self.dbag.keys()):
             return
-        if 'configuration' not in self.dbag['config'][0].keys():
+        if 'configuration' not in list(self.dbag['config'][0].keys()):
             return
         config = self.dbag['config'][0]['configuration']
         file1 = CsFile(HAPROXY_CONF_T)

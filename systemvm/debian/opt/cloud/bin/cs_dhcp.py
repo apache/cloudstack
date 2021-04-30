@@ -16,7 +16,7 @@
 # under the License.
 
 import logging
-from netaddr import *
+from ipaddress import *
 
 
 def merge(dbag, data):
@@ -27,7 +27,7 @@ def merge(dbag, data):
             del(dbag[data['ipv4_address']])
     else:
         remove_keys = set()
-        for key, entry in dbag.iteritems():
+        for key, entry in list(dbag.items()):
             if key != 'id' and entry['mac_address'] == data['mac_address'] and data['remove']:
                 remove_keys.add(key)
                 break

@@ -28,17 +28,17 @@ def check_filesystem():
     readOnly1 = bool(stat1.f_flag & ST_RDONLY)
 
     if (readOnly1):
-        print "Read-only file system : monitor results (/root) file system is mounted as read-only"
+        print("Read-only file system : monitor results (/root) file system is mounted as read-only")
         exit(1)
 
     stat2 = os.statvfs('/var/cache/cloud')
     readOnly2 = bool(stat2.f_flag & ST_RDONLY)
 
     if (readOnly2):
-        print "Read-only file system : config info (/var/cache/cloud) file system is mounted as read-only"
+        print("Read-only file system : config info (/var/cache/cloud) file system is mounted as read-only")
         exit(1)
 
-    print "file system is writable"
+    print("file system is writable")
     exit(0)
 
 

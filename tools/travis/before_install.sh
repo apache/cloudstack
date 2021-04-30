@@ -81,7 +81,7 @@ if [[ $? -ne 0 ]]; then
   echo -e "\napt-get packages failed to install"
 fi
 
-sudo apt-get -q -y -V install freeipmi-common libfreeipmi16 libgcrypt20 libgpg-error-dev libgpg-error0 libopenipmi0 ipmitool libpython-dev libssl-dev libffi-dev python-openssl build-essential --no-install-recommends > /dev/null
+sudo apt-get -q -y -V install freeipmi-common libfreeipmi16 libgcrypt20 libgpg-error-dev libgpg-error0 libopenipmi0 ipmitool libpython-dev libssl-dev libffi-dev pylint3 python-openssl build-essential --no-install-recommends > /dev/null
 
 echo -e "\nIPMI version"
 ipmitool -V
@@ -107,7 +107,7 @@ echo -e "\nInstalling some python packages: "
 
 for ((i=0;i<$RETRY_COUNT;i++))
 do
-  pip install --user --upgrade lxml paramiko nose texttable ipmisim pyopenssl pycrypto mock flask netaddr pylint pycodestyle six astroid > /tmp/piplog
+  pip3 install --user --upgrade lxml paramiko nose texttable ipmisim pyopenssl pycrypto mock flask netaddr pylint pycodestyle six astroid > /tmp/piplog
   if [[ $? -eq 0 ]]; then
     echo -e "\npython packages installed successfully"
     break;

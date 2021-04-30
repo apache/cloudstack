@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -17,13 +17,13 @@
 # under the License.
 
 from os import sys, path
-from utility import getHealthChecksData, formatPort
+from .utility import getHealthChecksData, formatPort
 
 
 def checkMaxconn(haproxyData, haCfgSections):
     if "maxconn" in haproxyData and "maxconn" in haCfgSections["global"]:
         if haproxyData["maxconn"] != haCfgSections["global"]["maxconn"][0].strip():
-            print "global maxconn mismatch occured"
+            print("global maxconn mismatch occured")
             return False
 
     return True
@@ -38,26 +38,26 @@ def checkLoadBalance(haproxyData, haCfgSections):
         secName = "listen " + srcServer
 
         if secName not in haCfgSections:
-            print "Missing section for load balancing " + secName + "\n"
+            print("Missing section for load balancing " + secName + "\n")
             correct = False
         else:
             cfgSection = haCfgSections[secName]
             if "server" in cfgSection:
                 if lbSec["algorithm"] != cfgSection["balance"][0]:
-                    print "Incorrect balance method for " + secName + \
-                          "Expected : " + lbSec["algorithm"] + \
-                          " but found " + cfgSection["balance"][0] + "\n"
+                    print("Incorrect balance method for " + secName +
+                          "Expected : " + lbSec["algorithm"] +
+                          " but found " + cfgSection["balance"][0] + "\n")
                     correct = False
 
                 bindStr = lbSec["sourceIp"] + ":" + formatPort(lbSec["sourcePortStart"], lbSec["sourcePortEnd"])
                 if cfgSection["bind"][0] != bindStr:
-                    print "Incorrect bind string found. Expected " + bindStr + " but found " + cfgSection["bind"][0] + "."
+                    print("Incorrect bind string found. Expected " + bindStr + " but found " + cfgSection["bind"][0] + ".")
                     correct = False
 
                 if (lbSec["sourcePortStart"] == "80" and lbSec["sourcePortEnd"] == "80" and lbSec["keepAliveEnabled"] == "false") \
                         or (lbSec["stickiness"].find("AppCookie") != -1 or lbSec["stickiness"].find("LbCookie") != -1):
                     if not ("mode" in cfgSection and cfgSection["mode"][0] == "http"):
-                        print "Expected HTTP mode but not found"
+                        print("Expected HTTP mode but not found")
                         correct = False
 
                 expectedServerIps = lbSec["vmIps"].split(" ")
@@ -74,7 +74,7 @@ def checkLoadBalance(haproxyData, haCfgSections):
 
                     if not foundPattern:
                         correct = False
-                        print "Missing load balancing for " + pattern + ". "
+                        print("Missing load balancing for " + pattern + ". ")
 
     return correct
 
@@ -86,7 +86,7 @@ def main():
     '''
     haproxyData = getHealthChecksData("haproxyData")
     if haproxyData is None or len(haproxyData) == 0:
-        print "No data provided to check, skipping"
+        print("No data provided to check, skipping")
         exit(0)
 
     with open("/etc/haproxy/haproxy.cfg", 'r') as haCfgFile:
@@ -94,7 +94,7 @@ def main():
         haCfgFile.close()
 
     if len(haCfgLines) == 0:
-        print "Unable to read config file /etc/haproxy/haproxy.cfg"
+        print("Unable to read config file /etc/haproxy/haproxy.cfg")
         exit(1)
 
     haCfgSections = {}
@@ -123,7 +123,7 @@ def main():
     checkLbRules = checkLoadBalance(haproxyData, haCfgSections)
 
     if checkMaxConn and checkLbRules:
-        print "All checks pass"
+        print("All checks pass")
         exit(0)
     else:
         exit(1)

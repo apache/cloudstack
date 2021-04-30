@@ -33,7 +33,7 @@ class CsDataBag(object):
             self.config = config
 
     def dump(self):
-        print self.dbag
+        print(self.dbag)
 
     def get_bag(self):
         return self.dbag

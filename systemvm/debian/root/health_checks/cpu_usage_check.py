@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -18,7 +18,7 @@
 
 from os import sys, path, statvfs
 from subprocess import *
-from utility import getHealthChecksData
+from .utility import getHealthChecksData
 
 
 def main():
@@ -28,7 +28,7 @@ def main():
         data = entries[0]
 
     if "maxCpuUsage" not in data:
-        print "Missing maxCpuUsage in health_checks_data systemThresholds, skipping"
+        print("Missing maxCpuUsage in health_checks_data systemThresholds, skipping")
         exit(0)
 
     maxCpuUsage = float(data["maxCpuUsage"])
@@ -40,14 +40,14 @@ def main():
     if pout.wait() == 0:
         currentUsage = float(pout.communicate()[0].strip())
         if currentUsage > maxCpuUsage:
-            print "CPU Usage " + str(currentUsage) + \
-                  "% has crossed threshold of " + str(maxCpuUsage) + "%"
+            print("CPU Usage " + str(currentUsage) +
+                  "% has crossed threshold of " + str(maxCpuUsage) + "%")
             exit(1)
-        print "CPU Usage within limits with current at " \
-              + str(currentUsage) + "%"
+        print("CPU Usage within limits with current at "
+              + str(currentUsage) + "%")
         exit(0)
     else:
-        print "Failed to retrieve cpu usage using " + cmd
+        print("Failed to retrieve cpu usage using " + cmd)
         exit(1)
 
 
