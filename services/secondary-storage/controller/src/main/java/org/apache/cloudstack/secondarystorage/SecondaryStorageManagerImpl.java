@@ -675,9 +675,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     public SecondaryStorageVmVO assignSecStorageVmFromStoppedPool(long dataCenterId, SecondaryStorageVm.Role role) {
-        List<SecondaryStorageVmVO> l = _secStorageVmDao.getSecStorageVmListInStates(role, dataCenterId, State.Starting, State.Stopped, State.Migrating);
-        if (CollectionUtils.isNotEmpty(l)) {
-            return l.get(0);
+        List<SecondaryStorageVmVO> secondaryStorageVms = _secStorageVmDao.getSecStorageVmListInStates(role, dataCenterId, State.Starting, State.Stopped, State.Migrating);
+        if (CollectionUtils.isNotEmpty(secondaryStorageVms)) {
+            return secondaryStorageVms.get(0);
         }
 
         return null;
@@ -792,8 +792,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             }
 
             boolean useLocalStorage = BooleanUtils.toBoolean(ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId));
-            List<Pair<Long, Integer>> l = _storagePoolHostDao.getDatacenterStoragePoolHostInfo(dataCenterId, !useLocalStorage);
-            if (CollectionUtils.isNotEmpty(l) && l.get(0).second() > 0) {
+            List<Pair<Long, Integer>> storagePoolHostInfos = _storagePoolHostDao.getDatacenterStoragePoolHostInfo(dataCenterId, !useLocalStorage);
+            if (CollectionUtils.isNotEmpty(storagePoolHostInfos) && storagePoolHostInfos.get(0).second() > 0) {
                 return true;
             } else {
                 if (s_logger.isDebugEnabled()) {
@@ -809,11 +809,11 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     private synchronized Map<Long, ZoneHostInfo> getZoneHostInfo() {
         Date cutTime = DateUtil.currentGMTTime();
-        List<RunningHostCountInfo> l = _hostDao.getRunningHostCounts(new Date(cutTime.getTime() - ClusterManager.HeartbeatThreshold.value()));
+        List<RunningHostCountInfo> runningHostCountInfos = _hostDao.getRunningHostCounts(new Date(cutTime.getTime() - ClusterManager.HeartbeatThreshold.value()));
 
         RunningHostInfoAgregator aggregator = new RunningHostInfoAgregator();
-        if (CollectionUtils.isNotEmpty(l)) {
-            for (RunningHostCountInfo countInfo : l) {
+        if (CollectionUtils.isNotEmpty(runningHostCountInfos)) {
+            for (RunningHostCountInfo countInfo : runningHostCountInfos) {
                 aggregator.aggregate(countInfo);
             }
         }
