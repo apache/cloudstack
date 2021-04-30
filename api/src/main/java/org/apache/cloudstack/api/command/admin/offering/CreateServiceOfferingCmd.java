@@ -445,8 +445,8 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return storagePolicy;
     }
 
-    public Boolean getDynamicScalingEnabled() {
-        return isDynamicScalingEnabled == null ? Boolean.TRUE : isDynamicScalingEnabled;
+    public boolean getDynamicScalingEnabled() {
+        return isDynamicScalingEnabled == null ? true : isDynamicScalingEnabled;
     }
 
     /////////////////////////////////////////////////////

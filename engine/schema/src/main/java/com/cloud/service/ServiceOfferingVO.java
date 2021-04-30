@@ -110,7 +110,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 
     public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA,
                              boolean limitResourceUse, boolean volatileVm, String displayText, ProvisioningType provisioningType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse,
-                             VirtualMachine.Type vmType, String hostTag, String deploymentPlanner, Boolean dynamicScalingEnabled) {
+                             VirtualMachine.Type vmType, String hostTag, String deploymentPlanner, boolean dynamicScalingEnabled) {
         super(name, displayText, provisioningType, false, tags, recreatable, useLocalStorage, systemUse, true);
         this.cpu = cpu;
         this.ramSize = ramSize;

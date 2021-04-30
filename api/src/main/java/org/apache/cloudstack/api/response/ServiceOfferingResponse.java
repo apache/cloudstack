@@ -205,7 +205,7 @@ public class ServiceOfferingResponse extends BaseResponse {
     private Long rootDiskSize;
 
     @SerializedName(ApiConstants.DYNAMIC_SCALING_ENABLED)
-    @Param(description = "true if virtual machine needs to be dynamically scalable of cpu or memory")
+    @Param(description = "true if virtual machine needs to be dynamically scalable of cpu or memory", since = "4.16")
     private Boolean dynamicScalingEnabled;
 
     public ServiceOfferingResponse() {

@@ -7101,13 +7101,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         vm.setGuestOSId(template.getGuestOSId());
                         vm.setTemplateId(newTemplateId);
                     }
-                    // check if VM can be dynamically scalable with the new template
-                    ServiceOfferingVO serviceOffering = _offeringDao.findById(vm.getServiceOfferingId());
-                    VMTemplateVO newTemplate = _templateDao.findById(newTemplateId);
-                    boolean dynamicScalingEnabled = checkIfDynamicScalingCanBeEnabled(vm, serviceOffering, newTemplate, vm.getDataCenterId());
-                    vm.setDynamicallyScalable(dynamicScalingEnabled);
-                    _vmDao.update(vmId, vm);
-
+                    // check and update VM if it can be dynamically scalable with the new template
+                    updateVMDynamicallyScalabilityUsingTemplate(vm, newTemplateId);
                 } else {
                     newVol = volumeMgr.allocateDuplicateVolume(root, null);
                 }
@@ -7193,6 +7188,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         s_logger.debug("Restore VM " + vmId + " done successfully");
         return vm;
 
+    }
+
+    private void updateVMDynamicallyScalabilityUsingTemplate(UserVmVO vm, Long newTemplateId) {
+        ServiceOfferingVO serviceOffering = _offeringDao.findById(vm.getServiceOfferingId());
+        VMTemplateVO newTemplate = _templateDao.findById(newTemplateId);
+        boolean dynamicScalingEnabled = checkIfDynamicScalingCanBeEnabled(vm, serviceOffering, newTemplate, vm.getDataCenterId());
+        vm.setDynamicallyScalable(dynamicScalingEnabled);
+        _vmDao.update(vm.getId(), vm);
     }
 
     /**
