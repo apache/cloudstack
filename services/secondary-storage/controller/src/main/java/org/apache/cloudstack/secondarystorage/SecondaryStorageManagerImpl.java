@@ -1200,14 +1200,20 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             controlNic = managementNic;
         }
 
-        if(profile.getHypervisorType() == HypervisorType.Hyperv) {
-            controlNic = managementNic;
-        }
+        controlNic = verifySshAccessOnManagementNicForSystemVmRunningOnHyperV(profile, controlNic, managementNic);
 
         CheckSshCommand check = new CheckSshCommand(profile.getInstanceName(), controlNic.getIPv4Address(), 3922);
         cmds.addCommand("checkSsh", check);
 
         return true;
+    }
+
+    protected NicProfile verifySshAccessOnManagementNicForSystemVmRunningOnHyperV(VirtualMachineProfile profile, NicProfile controlNic, NicProfile managementNic) {
+        if (profile.getHypervisorType() == HypervisorType.Hyperv) {
+            return managementNic;
+        }
+
+        return controlNic;
     }
 
     @Override
