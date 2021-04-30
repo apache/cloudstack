@@ -197,7 +197,7 @@ public class SecondaryStorageManagerTest {
     }
 
     @Test
-    public void validateVerifySshAccessOnManagementNicForSystemvmRunningOnHyperV(){
+    public void validateVerifySshAccessOnManagementNicForSystemVm(){
         Hypervisor.HypervisorType[] hypervisorTypesArray = Hypervisor.HypervisorType.values();
         List<Hypervisor.HypervisorType> hypervisorTypesThatMustReturnManagementNic = new ArrayList<>(Arrays.asList(Hypervisor.HypervisorType.Hyperv));
 
@@ -213,7 +213,7 @@ public class SecondaryStorageManagerTest {
                 expectedResult = managementNic;
             }
 
-            NicProfile result = _ssMgr.verifySshAccessOnManagementNicForSystemVmRunningOnHyperV(virtualMachineProfileMock, controlNic, managementNic);
+            NicProfile result = _ssMgr.verifySshAccessOnManagementNicForSystemVm(virtualMachineProfileMock, controlNic, managementNic);
 
             Assert.assertEquals(expectedResult, result);
         }
