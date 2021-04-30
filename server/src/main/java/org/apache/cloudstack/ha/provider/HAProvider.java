@@ -36,8 +36,8 @@ public interface HAProvider<R extends HAResource> extends Adapter {
         MaxActivityCheckInterval,
         MaxDegradedWaitTimeout,
         RecoveryWaitTimeout,
-        KVM_HA_WEBSERVICE_PORT,
-        IS_KVM_HA_WEBSERVICE_ENABLED
+        KvmHaWebservicePort,
+        IsKvmHaWebserviceEnabled
     };
 
     HAResource.ResourceType resourceType();

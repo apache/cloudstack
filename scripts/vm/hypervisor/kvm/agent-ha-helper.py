@@ -34,6 +34,8 @@ class Libvirt():
         for domain in alldomains:
             if domain.info()[0] == libvirt.VIR_DOMAIN_RUNNING:
                 domains.append(domain.name())
+            elif domain.info()[0] == libvirt.VIR_DOMAIN_PAUSED:
+                domains.append(domain.name())
 
         self.conn.close()
 

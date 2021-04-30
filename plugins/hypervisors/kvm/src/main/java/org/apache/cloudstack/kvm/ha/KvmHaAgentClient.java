@@ -89,10 +89,10 @@ public class KvmHaAgentClient {
     }
 
     protected int getKvmHaMicroservicePortValue() {
-        Integer haAgentPort = KVMHAConfig.KVM_HA_WEBSERVICE_PORT.value();
+        Integer haAgentPort = KVMHAConfig.KvmHaWebservicePort.value();
         if (haAgentPort == null) {
-            LOGGER.warn(String.format("Using default kvm.ha.webservice.port: %s as it was set to NULL for the cluster [id: %d] from %s.", KVMHAConfig.KVM_HA_WEBSERVICE_PORT.defaultValue(), agent.getClusterId(), agent));
-            haAgentPort = Integer.parseInt(KVMHAConfig.KVM_HA_WEBSERVICE_PORT.defaultValue());
+            LOGGER.warn(String.format("Using default kvm.ha.webservice.port: %s as it was set to NULL for the cluster [id: %d] from %s.", KVMHAConfig.KvmHaWebservicePort.defaultValue(), agent.getClusterId(), agent));
+            haAgentPort = Integer.parseInt(KVMHAConfig.KvmHaWebservicePort.defaultValue());
         }
         return haAgentPort;
     }
@@ -101,7 +101,7 @@ public class KvmHaAgentClient {
      * Checks if the KVM HA Webservice is enabled or not; if disabled then CloudStack ignores HA validation via the webservice.
      */
     public boolean isKvmHaWebserviceEnabled() {
-        return KVMHAConfig.KVM_HA_WEBSERVICE_ENABLED.value();
+        return KVMHAConfig.IsKvmHaWebserviceEnabled.value();
     }
 
     /**
@@ -141,24 +141,27 @@ public class KvmHaAgentClient {
      *  Returns true in case of the expected number of VMs matches with the VMs running on the KVM host according to Libvirt. <br><br>
      *
      *  IF: <br>
-     *  (i) KVM HA agent finds 0 running but CloudStack considers that the host has 2 or more VMs running: returns false as could not find VMs running but it expected at least 2 VMs running, fencing/recovering host would avoid downtime to VMs in this case.<br>
-     *  (ii) amount of listed VMs is different than expected: return true and print WARN messages so Admins can monitor and react accordingly
+     *  (i) KVM HA agent finds 0 running but CloudStack considers that the host has 2 or more VMs running: returns false as could not find VMs running but it expected at least
+     *    2 VMs running, fencing/recovering host would avoid downtime to VMs in this case.<br>
+     *  (ii) KVM HA agent finds 0 VM running but CloudStack considers that the host has 1 VM running: return true and log WARN messages and avoids triggering HA recovery/fencing
+     *    when it could be a inconsistency when migrating a VM.<br>
+     *  (iii) amount of listed VMs is different than expected: return true and print WARN messages so Admins can monitor and react accordingly
      */
     public boolean isKvmHaAgentHealthy(Host host, VMInstanceDao vmInstanceDao) {
         int numberOfVmsOnHostAccordingToDB = listVmsOnHost(host, vmInstanceDao).size();
-
         int numberOfVmsOnAgent = countRunningVmsOnAgent();
-
         if (numberOfVmsOnAgent < 0) {
-            LOGGER.error(String.format("KVM HA Agent health check failed, either the KVM Agent %s is unreachable or Libvirt validation failed", agent));
+            LOGGER.error(String.format("KVM HA Agent health check failed, either the KVM Agent %s is unreachable or Libvirt validation failed.", agent));
             LOGGER.warn(String.format("Host %s is not considered healthy and HA fencing/recovering process might be triggered.", agent.getName(), numberOfVmsOnHostAccordingToDB));
             return false;
         }
         if (numberOfVmsOnHostAccordingToDB == numberOfVmsOnAgent) {
             return true;
         }
-        if (numberOfVmsOnAgent == 0) {
+        if (numberOfVmsOnAgent == 0 && numberOfVmsOnHostAccordingToDB > CAUTIOUS_MARGIN_OF_VMS_ON_HOST) {
             // Return false as could not find VMs running but it expected at least one VM running, fencing/recovering host would avoid downtime to VMs in this case.
+            // There is cautious margin added on the conditional. This avoids fencing/recovering hosts when there is one VM migrating to a host that had zero VMs.
+            // If there are more VMs than the CAUTIOUS_MARGIN_OF_VMS_ON_HOST) the Host should be treated as not healthy and fencing/recovering process might be triggered.
             LOGGER.warn(String.format("KVM HA Agent %s could not find VMs; it was expected to list %d VMs.", agent, numberOfVmsOnHostAccordingToDB));
             LOGGER.warn(String.format("Host %s is not considered healthy and HA fencing/recovering process might be triggered.", agent.getName(), numberOfVmsOnHostAccordingToDB));
             return false;
