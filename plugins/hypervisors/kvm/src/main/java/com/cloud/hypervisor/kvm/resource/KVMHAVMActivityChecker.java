@@ -42,7 +42,7 @@ public class KVMHAVMActivityChecker extends KVMHABase implements Callable<Boolea
     }
 
     @Override
-    public Boolean checkingHB() {
+    public Boolean checkingHeartBeat() {
         Script cmd = new Script(vmActivityCheckPath, activityScriptTimeout.getStandardSeconds(), LOG);
         cmd.add("-i", nfsStoragePool._poolIp);
         cmd.add("-p", nfsStoragePool._poolMountSourcePath);
@@ -68,6 +68,6 @@ public class KVMHAVMActivityChecker extends KVMHABase implements Callable<Boolea
 
     @Override
     public Boolean call() throws Exception {
-        return checkingHB();
+        return checkingHeartBeat();
     }
 }
