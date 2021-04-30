@@ -1560,14 +1560,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (primaryStorage.getStatus() == StoragePoolStatus.PrepareForMaintenance) {
                 throw new CloudRuntimeException(String.format("There is already a job running for preparation for maintenance of the storage pool %s", primaryStorage.getUuid()));
             }
-            handlePrepareDatastoreCluserMaintenance(lifeCycle, primaryStorageId);
+            handlePrepareDatastoreClusterMaintenance(lifeCycle, primaryStorageId);
         }
         lifeCycle.maintain(store);
 
         return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
     }
 
-    private void handlePrepareDatastoreCluserMaintenance(DataStoreLifeCycle lifeCycle, Long primaryStorageId) {
+    private void handlePrepareDatastoreClusterMaintenance(DataStoreLifeCycle lifeCycle, Long primaryStorageId) {
         StoragePoolVO datastoreCluster = _storagePoolDao.findById(primaryStorageId);
         datastoreCluster.setStatus(StoragePoolStatus.PrepareForMaintenance);
         _storagePoolDao.update(datastoreCluster.getId(), datastoreCluster);
@@ -1683,6 +1683,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             ModifyStoragePoolAnswer mspAnswer = (ModifyStoragePoolAnswer) answer;
             StoragePoolVO poolVO = _storagePoolDao.findById(poolId);
             updateStoragePoolHostVOAndBytes(poolVO, hostId, mspAnswer);
+            validateChildDatastoresToBeAddedInUpState(poolVO, mspAnswer.getDatastoreClusterChildren());
             syncDatastoreClusterStoragePool(poolId, mspAnswer.getDatastoreClusterChildren(), hostId);
             for (ModifyStoragePoolAnswer childDataStoreAnswer : mspAnswer.getDatastoreClusterChildren()) {
                 StoragePoolInfo childStoragePoolInfo = childDataStoreAnswer.getPoolInfo();
@@ -1710,6 +1711,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         for (ModifyStoragePoolAnswer childDataStoreAnswer : childDatastoreAnswerList) {
             StoragePoolInfo childStoragePoolInfo = childDataStoreAnswer.getPoolInfo();
             StoragePoolVO dataStoreVO = _storagePoolDao.findPoolByUUID(childStoragePoolInfo.getUuid());
+            if (dataStoreVO == null && childDataStoreAnswer.getPoolType().equalsIgnoreCase("NFS")) {
+                List<StoragePoolVO> nfsStoragePools = _storagePoolDao.findPoolsByStorageType(StoragePoolType.NetworkFilesystem.toString());
+                for (StoragePoolVO storagePool : nfsStoragePools) {
+                    String storagePoolUUID = storagePool.getUuid();
+                    if (childStoragePoolInfo.getName().equalsIgnoreCase(storagePoolUUID.replaceAll("-", ""))) {
+                        dataStoreVO = storagePool;
+                        break;
+                    }
+                }
+            }
             if (dataStoreVO != null) {
                 if (dataStoreVO.getParent() != datastoreClusterPoolId) {
                     s_logger.debug(String.format("Storage pool %s with uuid %s is found to be under datastore cluster %s at vCenter, " +
@@ -1743,6 +1754,28 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         handleRemoveChildStoragePoolFromDatastoreCluster(childDatastoreUUIDs);
+    }
+
+    private void validateChildDatastoresToBeAddedInUpState(StoragePoolVO datastoreClusterPool, List<ModifyStoragePoolAnswer> childDatastoreAnswerList) {
+        for (ModifyStoragePoolAnswer childDataStoreAnswer : childDatastoreAnswerList) {
+            StoragePoolInfo childStoragePoolInfo = childDataStoreAnswer.getPoolInfo();
+            StoragePoolVO dataStoreVO = _storagePoolDao.findPoolByUUID(childStoragePoolInfo.getUuid());
+            if (dataStoreVO == null && childDataStoreAnswer.getPoolType().equalsIgnoreCase("NFS")) {
+                List<StoragePoolVO> nfsStoragePools = _storagePoolDao.findPoolsByStorageType(StoragePoolType.NetworkFilesystem.toString());
+                for (StoragePoolVO storagePool : nfsStoragePools) {
+                    String storagePoolUUID = storagePool.getUuid();
+                    if (childStoragePoolInfo.getName().equalsIgnoreCase(storagePoolUUID.replaceAll("-", ""))) {
+                          dataStoreVO = storagePool;
+                          break;
+                    }
+                }
+            }
+            if (dataStoreVO != null && !dataStoreVO.getStatus().equals(StoragePoolStatus.Up)) {
+                String msg = String.format("Cannot synchronise datastore cluster %s because primary storage with id %s is not ready for syncing, " +
+                        "as the status is %s", datastoreClusterPool.getUuid(), dataStoreVO.getUuid(), dataStoreVO.getStatus().toString());
+                throw new CloudRuntimeException(msg);
+            }
+        }
     }
 
     private StoragePoolVO createChildDatastoreVO(StoragePoolVO datastoreClusterPool, ModifyStoragePoolAnswer childDataStoreAnswer) {
