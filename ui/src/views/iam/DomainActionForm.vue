@@ -249,6 +249,7 @@ export default {
           }
         }
 
+        const resourceName = params.displayname || params.displaytext || params.name || this.resource.name
         let hasJobId = false
         api(this.action.api, params).then(json => {
           for (const obj in json) {
@@ -270,6 +271,18 @@ export default {
             }
           }
           if (!hasJobId) {
+            var message = this.action.successMessage ? this.$t(this.action.successMessage) : this.$t(this.action.label) +
+              (resourceName ? ' - ' + resourceName : '')
+            var duration = 2
+            if (this.action.additionalMessage) {
+              message = message + ' - ' + this.$t(this.action.successMessage)
+              duration = 5
+            }
+            this.$message.success({
+              content: message,
+              key: this.action.label + resourceName,
+              duration: duration
+            })
             this.parentUpdActionData(json)
             this.parentFetchData()
           }
