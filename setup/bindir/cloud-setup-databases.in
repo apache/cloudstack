@@ -400,7 +400,7 @@ for example:
             return 'ENC(%s)'%value
 
         def encryptDBSecretKey():
-            self.putDbProperty('db.cloud.encrypt.secret', formatEncryptResult(encrypt(self.dbsecretkey)))
+            self.putDbProperty('db.cloud.encrypt.secret', formatEncryptResult(encrypt(shlex.quote(self.dbsecretkey))))
 
         def encryptDBPassword():
             dbPassword = self.getDbProperty('db.cloud.password')
@@ -444,7 +444,7 @@ for example:
 
             self.encryptiontype = self.options.encryptiontype
             self.mgmtsecretkey = self.options.mgmtsecretkey
-            self.dbsecretkey = shlex.quote(self.options.dbsecretkey)
+            self.dbsecretkey = self.options.dbsecretkey
             self.isDebug = self.options.debug
             if self.options.dbConfPath:
               self.dbConfPath = self.options.dbConfPath
