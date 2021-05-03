@@ -32,8 +32,10 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VMInstanceVO;
@@ -43,6 +45,7 @@ import org.apache.cloudstack.ha.provider.ActivityCheckerInterface;
 import org.apache.cloudstack.ha.provider.HACheckerException;
 import org.apache.cloudstack.ha.provider.HealthCheckerInterface;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 
@@ -51,7 +54,6 @@ import java.util.ArrayList;
 import org.joda.time.DateTime;
 import java.util.HashMap;
 import java.util.List;
-
 
 public class KVMHostActivityChecker extends AdapterBase implements ActivityCheckerInterface<Host>, HealthCheckerInterface<Host> {
     private final static Logger LOG = Logger.getLogger(KVMHostActivityChecker.class);
@@ -63,13 +65,15 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     @Inject
     private AgentManager agentMgr;
     @Inject
-    private PrimaryDataStoreDao storagePool;
-    @Inject
     private StorageManager storageManager;
+    @Inject
+    private PrimaryDataStoreDao storagePool;
     @Inject
     private ResourceManager resourceManager;
     @Inject
     private ClusterDao clusterDao;
+    @Inject
+    private StoragePoolHostDao storagePoolHostDao;
 
     @Override
     public boolean isActive(Host r, DateTime suspectTime) throws HACheckerException {
@@ -87,9 +91,11 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
 
     @Override
     public boolean isHealthy(Host r) {
-        boolean isHealthy = false;
-        HashMap<StoragePool, List<Volume>> poolVolMap = getVolumeUuidOnHost(r);
-        isHealthy = isHealthyCheckViaNfs(r, isHealthy, poolVolMap);
+        boolean isHealthy = true;
+        if (isHostServedByNfsPool(r)) {
+            HashMap<StoragePool, List<Volume>> poolVolMap = getVolumeUuidOnHost(r);
+            isHealthy = isHealthyCheckViaNfs(r, isHealthy, poolVolMap);
+        }
 
         isHealthy = checkHealthViaKvmHaWebservice(r, isHealthy);
 
@@ -197,14 +203,15 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
             throw new IllegalStateException(String.format("Calling KVM investigator for non KVM Host of type [%s].", agent.getHypervisorType()));
         }
         boolean activityStatus = true;
-        HashMap<StoragePool, List<Volume>> poolVolMap = getVolumeUuidOnHost(agent);
-        for (StoragePool pool : poolVolMap.keySet()) {
-            if(Storage.StoragePoolType.NetworkFilesystem == pool.getPoolType()
-                    || Storage.StoragePoolType.ManagedNFS == pool.getPoolType()) {
-                activityStatus = checkVmActivityOnStoragePool(poolVolMap, pool, agent, suspectTime, activityStatus);
-                if (!activityStatus) {
-                    LOG.warn(String.format("It seems that the storage pool [%s] does not have activity on %s.", pool.getId(), agent.toString()));
-                    break;
+        if (isHostServedByNfsPool(agent)) {
+            HashMap<StoragePool, List<Volume>> poolVolMap = getVolumeUuidOnHost(agent);
+            for (StoragePool pool : poolVolMap.keySet()) {
+                if (Storage.StoragePoolType.NetworkFilesystem == pool.getPoolType() || Storage.StoragePoolType.ManagedNFS == pool.getPoolType()) {
+                    activityStatus = checkVmActivityOnStoragePool(poolVolMap, pool, agent, suspectTime, activityStatus);
+                    if (!activityStatus) {
+                        LOG.warn(String.format("It seems that the storage pool [%s] does not have activity on %s.", pool.getId(), agent.toString()));
+                        break;
+                    }
                 }
             }
         }
@@ -265,6 +272,18 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
             }
         }
         return poolVolMap;
+    }
+
+    private boolean isHostServedByNfsPool(Host agent) {
+        List<StoragePoolHostVO> storagesOnHost = storagePoolHostDao.listByHostId(agent.getId());
+        for (StoragePoolHostVO storagePoolHostRef : storagesOnHost) {
+            StoragePoolVO storagePool = this.storagePool.findById(storagePoolHostRef.getPoolId());
+            if(Storage.StoragePoolType.NetworkFilesystem == storagePool.getPoolType()
+                    || Storage.StoragePoolType.ManagedNFS == storagePool.getPoolType()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public long[] getNeighbors(Host agent) {
