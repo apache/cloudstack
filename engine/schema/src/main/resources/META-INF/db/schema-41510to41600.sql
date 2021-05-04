@@ -300,6 +300,21 @@ from
         left join
     `cloud`.`resource_count` secondary_storage_count ON domain.id = secondary_storage_count.domain_id
         and secondary_storage_count.type = 'secondary_storage';
-        
+
 -- Update name for global configuration user.vm.readonly.ui.details
 Update configuration set name='user.vm.readonly.details' where name='user.vm.readonly.ui.details';
+
+DROP TABLE IF EXISTS `cloud`.`external_bigswitch_vns_devices`;
+DROP TABLE IF EXISTS `cloud`.`s3`;
+DROP TABLE IF EXISTS `cloud`.`swift`;
+DROP TABLE IF EXISTS `cloud`.`template_s3_ref`;
+DROP TABLE IF EXISTS `cloud`.`template_swift_ref `;
+DROP TABLE IF EXISTS `cloud`.`template_ovf_properties`;
+DROP TABLE IF EXISTS `cloud`.`op_host_upgrade`;
+DROP TABLE IF EXISTS `cloud`.`stack_maid `;
+DROP TABLE IF EXISTS `cloud`.`template_swift_ref `;
+
+
+-- TODO
+-- DROP TABLE IF EXISTS `cloud`.`volume_host_ref`;
+-- DROP TABLE IF EXISTS `cloud`.`template_host_ref`;
