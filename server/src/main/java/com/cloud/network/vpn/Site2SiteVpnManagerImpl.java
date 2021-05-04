@@ -507,7 +507,13 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         }
         _customerGatewayDao.persist(gw);
 
-        List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByCustomerGatewayId(id);
+        setupVpnConnection(caller, id);
+
+        return gw;
+    }
+
+    private void setupVpnConnection(Account caller, Long vpnCustomerGwIp) {
+        List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByCustomerGatewayId(vpnCustomerGwIp);
         if (conns != null) {
             for (Site2SiteVpnConnection conn : conns) {
                 try {
@@ -530,12 +536,10 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                     startVpnConnection(conn.getId());
                 } catch (ResourceUnavailableException e) {
                     // Should never get here, as we are looping on the actual connections, but we must handle it regardless
-                    continue;
+                    s_logger.warn("Failed to update VPN connection");
                 }
             }
         }
-
-        return gw;
     }
 
     @Override
