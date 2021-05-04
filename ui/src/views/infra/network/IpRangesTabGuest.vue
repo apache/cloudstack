@@ -64,10 +64,10 @@
       :maskClosable="false"
       :footer="null"
       :cancelText="$t('label.cancel')"
-      @cancel="showCreateForm = false"
+      @cancel="closeAction"
       centered
       width="auto">
-      <CreateNetwork :resource="{ zoneid: resource.zoneid }"/>
+      <CreateNetwork :resource="{ zoneid: resource.zoneid }" @close-action="closeAction"/>
     </a-modal>
 
   </a-spin>
@@ -160,6 +160,9 @@ export default {
     },
     handleOpenShowCreateForm () {
       this.showCreateForm = true
+    },
+    closeAction () {
+      this.showCreateForm = false
     },
     changePage (page, pageSize) {
       this.page = page
