@@ -3412,7 +3412,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             case DomainRouter:
                 return vm.getPrivateIpAddress();
             default:
-                s_logger.debug(String.format("% is a [%s], returning null for control Nic IP.", vm.toString(), vm.getType()));
+                s_logger.debug(String.format("%s is a [%s], returning null for control Nic IP.", vm.toString(), vm.getType()));
                 return null;
         }
     }
@@ -4793,8 +4793,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 @Override
                 public boolean checkCondition() {
                     final AsyncJobVO jobVo = _entityMgr.findById(AsyncJobVO.class, job.getId());
-                    assert jobVo != null;
-                    return jobVo.getStatus() != JobInfo.Status.IN_PROGRESS;
+                    return jobVo == null || jobVo.getStatus() != JobInfo.Status.IN_PROGRESS;
                 }
             }, Topics.VM_POWER_STATE, AsyncJob.Topics.JOB_STATE);
             _vmId = vmId;
@@ -4814,8 +4813,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 @Override
                 public boolean checkCondition() {
                     final AsyncJobVO jobVo = _entityMgr.findById(AsyncJobVO.class, job.getId());
-                    assert jobVo != null;
-                    return jobVo.getStatus() != JobInfo.Status.IN_PROGRESS;
+                    return jobVo == null || jobVo.getStatus() != JobInfo.Status.IN_PROGRESS;
                 }
             }, AsyncJob.Topics.JOB_STATE);
             _vmId = vmId;
@@ -5567,7 +5565,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(vmType, vmId, commandName);
 
         if (CollectionUtils.isNotEmpty(pendingWorkJobs)) {
-            assert pendingWorkJobs.size() == 1;
             return new Pair<>(pendingWorkJobs.get(0), vmId);
         }
 
