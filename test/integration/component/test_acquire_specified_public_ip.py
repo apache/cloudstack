@@ -21,7 +21,8 @@ Tests of acquiring a specified public IP for isolated network or vpc
 
 # Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.cloudstackAPI import createVlanIpRange
 from marvin.lib.utils import (validateList,
                               cleanup_resources)

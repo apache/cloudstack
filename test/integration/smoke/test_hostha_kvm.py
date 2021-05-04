@@ -30,7 +30,7 @@ from ipmisim.ipmisim import IpmiServerContext, IpmiServer, ThreadedIpmiServer
 import random
 import socket
 import sys
-import thread
+import _thread
 import time
 
 
@@ -511,7 +511,7 @@ class TestHAKVM(cloudstackTestCase):
         IpmiServerContext('reset')
         ThreadedIpmiServer.allow_reuse_address = False
         server = ThreadedIpmiServer(('0.0.0.0', self.getIpmiServerPort()), IpmiServer)
-        thread.start_new_thread(startIpmiServer, ("ipmi-server", server,))
+        _thread.start_new_thread(startIpmiServer, ("ipmi-server", server,))
         self.server = server
 
     def stopIpmiServer(self):

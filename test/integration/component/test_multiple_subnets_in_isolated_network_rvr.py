@@ -21,7 +21,8 @@ Tests of acquiring IPs in multiple subnets for isolated network or vpc
 
 from nose.plugins.attrib import attr
 from marvin.cloudstackAPI import rebootRouter
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.utils import (validateList,
                               get_host_credentials,
                               get_process_status,
