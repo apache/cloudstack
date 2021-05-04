@@ -317,7 +317,7 @@ export default {
           label: 'label.action.reset.password',
           message: 'message.action.instance.reset.password',
           dataView: true,
-          show: (record) => { return ['Running', 'Stopped'].includes(record.state) && record.passwordenabled },
+          show: (record) => { return ['Stopped'].includes(record.state) && record.passwordenabled },
           response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null }
         },
         {

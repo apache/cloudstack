@@ -718,7 +718,7 @@
 "label.demote.project.owner": "Demote account to Regular role",
 "label.demote.project.owner.user": "Demote user to Regular role",
 "label.deny": "Deny",
-"label.deployasis":"Deploy As-Is",
+"label.deployasis":"Read VM settings from OVA",
 "label.deploymentplanner": "Deployment planner",
 "label.description": "Description",
 "label.destcidr": "Destination CIDR",
