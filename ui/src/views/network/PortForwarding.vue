@@ -503,7 +503,6 @@ export default {
       this.addVmModalNicLoading = false
       this.nics = []
       this.resetTagInputs()
-      this.resetAllRules()
     },
     openTagsModal (id) {
       this.tagsModalLoading = true
