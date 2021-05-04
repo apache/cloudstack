@@ -114,6 +114,9 @@
         <a-tag>source-nat</a-tag>
       </span>
     </span>
+    <span slot="ip6address" slot-scope="text, record" href="javascript:;">
+      <span>{{ ipV6Address(text, record) }}</span>
+    </span>
     <a slot="publicip" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
     </a>
@@ -564,6 +567,13 @@ export default {
     },
     editTariffValue (record) {
       this.parentEditTariffAction(true, record)
+    },
+    ipV6Address (text, record) {
+      if (!record || !record.nic || record.nic.length === 0) {
+        return ''
+      }
+
+      return record.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ') || text
     }
   }
 }

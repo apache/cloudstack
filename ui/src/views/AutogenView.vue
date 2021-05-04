@@ -963,6 +963,9 @@ export default {
           break
         }
       }
+      if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
+        this.$store.dispatch('UpdateConfiguration')
+      }
       return false
     },
     execSubmit (e) {
@@ -989,7 +992,7 @@ export default {
               }
               break
             }
-            if (!input && !['tags'].includes(key)) {
+            if (!input && input !== 0 && !['tags'].includes(key)) {
               continue
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {

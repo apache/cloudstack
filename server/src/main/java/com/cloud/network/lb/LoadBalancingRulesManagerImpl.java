@@ -663,6 +663,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         if (loadBalancer == null) {
             throw new InvalidParameterException("Invalid Load balancer Id:" + cmd.getLbRuleId());
         }
+
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, loadBalancer);
+
         List<LBStickinessPolicyVO> stickinessPolicies = _lb2stickinesspoliciesDao.listByLoadBalancerId(cmd.getLbRuleId(), false);
         for (LBStickinessPolicyVO stickinessPolicy : stickinessPolicies) {
             if (stickinessPolicy.getId() == cmd.getEntityId()) {
@@ -717,6 +720,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         if (loadBalancer == null) {
             throw new InvalidParameterException("Invalid Load balancer Id:" + cmd.getLbRuleId());
         }
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, loadBalancer);
         FirewallRule.State backupState = loadBalancer.getState();
         loadBalancer.setState(FirewallRule.State.Add);
         _lbDao.persist(loadBalancer);

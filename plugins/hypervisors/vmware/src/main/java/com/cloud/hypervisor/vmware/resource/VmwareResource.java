@@ -2019,35 +2019,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (volIso != null) {
                     for (DiskTO vol : disks) {
                         if (vol.getType() == Volume.Type.ISO) {
-
-                            TemplateObjectTO iso = (TemplateObjectTO) vol.getData();
-
-                            if (iso.getPath() != null && !iso.getPath().isEmpty()) {
-                                DataStoreTO imageStore = iso.getDataStore();
-                                if (!(imageStore instanceof NfsTO)) {
-                                    s_logger.debug("unsupported protocol");
-                                    throw new Exception("unsupported protocol");
-                                }
-                                NfsTO nfsImageStore = (NfsTO) imageStore;
-                                String isoPath = nfsImageStore.getUrl() + File.separator + iso.getPath();
-                                Pair<String, ManagedObjectReference> isoDatastoreInfo = getIsoDatastoreInfo(hyperHost, isoPath);
-                                assert (isoDatastoreInfo != null);
-                                assert (isoDatastoreInfo.second() != null);
-
-                                deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
-                                Pair<VirtualDevice, Boolean> isoInfo =
-                                        VmwareHelper.prepareIsoDevice(vmMo, isoDatastoreInfo.first(), isoDatastoreInfo.second(), true, true, ideUnitNumber++, i + 1);
-                                deviceConfigSpecArray[i].setDevice(isoInfo.first());
-                                if (isoInfo.second()) {
-                                    if (s_logger.isDebugEnabled())
-                                        s_logger.debug("Prepare ISO volume at new device " + _gson.toJson(isoInfo.first()));
-                                    deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
-                                } else {
-                                    if (s_logger.isDebugEnabled())
-                                        s_logger.debug("Prepare ISO volume at existing device " + _gson.toJson(isoInfo.first()));
-                                    deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
-                                }
-                            }
+                            configureIso(hyperHost, vmMo, vol, deviceConfigSpecArray, ideUnitNumber++, i);
                             i++;
                         }
                     }
@@ -2075,8 +2047,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             //
             // Setup ROOT/DATA disk devices
             //
+            if (multipleIsosAtached(sortedDisks) && deployAsIs) {
+                sortedDisks = getDisks(sortedDisks);
+            }
+
             for (DiskTO vol : sortedDisks) {
                 if (vol.getType() == Volume.Type.ISO) {
+                    if (deployAsIs) {
+                        configureIso(hyperHost, vmMo, vol, deviceConfigSpecArray, ideUnitNumber++, i);
+                        i++;
+                    }
                     continue;
                 }
 
@@ -2454,6 +2434,46 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             return startAnswer;
         } finally {
+        }
+    }
+
+    private boolean multipleIsosAtached(DiskTO[] sortedDisks) {
+        return Arrays.stream(sortedDisks).filter(disk -> disk.getType() == Volume.Type.ISO).count() > 1;
+    }
+
+    private DiskTO[] getDisks(DiskTO[] sortedDisks) {
+       return Arrays.stream(sortedDisks).filter(vol -> ((vol.getPath() != null &&
+                vol.getPath().contains("configdrive"))) || (vol.getType() != Volume.Type.ISO)).toArray(DiskTO[]::new);
+    }
+    private void configureIso(VmwareHypervisorHost hyperHost, VirtualMachineMO vmMo, DiskTO vol,
+                              VirtualDeviceConfigSpec[] deviceConfigSpecArray, int ideUnitNumber, int i) throws Exception {
+        TemplateObjectTO iso = (TemplateObjectTO) vol.getData();
+
+        if (iso.getPath() != null && !iso.getPath().isEmpty()) {
+            DataStoreTO imageStore = iso.getDataStore();
+            if (!(imageStore instanceof NfsTO)) {
+                s_logger.debug("unsupported protocol");
+                throw new Exception("unsupported protocol");
+            }
+            NfsTO nfsImageStore = (NfsTO) imageStore;
+            String isoPath = nfsImageStore.getUrl() + File.separator + iso.getPath();
+            Pair<String, ManagedObjectReference> isoDatastoreInfo = getIsoDatastoreInfo(hyperHost, isoPath);
+            assert (isoDatastoreInfo != null);
+            assert (isoDatastoreInfo.second() != null);
+
+            deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
+            Pair<VirtualDevice, Boolean> isoInfo =
+                    VmwareHelper.prepareIsoDevice(vmMo, isoDatastoreInfo.first(), isoDatastoreInfo.second(), true, true, ideUnitNumber, i + 1);
+            deviceConfigSpecArray[i].setDevice(isoInfo.first());
+            if (isoInfo.second()) {
+                if (s_logger.isDebugEnabled())
+                    s_logger.debug("Prepare ISO volume at new device " + _gson.toJson(isoInfo.first()));
+                deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
+            } else {
+                if (s_logger.isDebugEnabled())
+                    s_logger.debug("Prepare ISO volume at existing device " + _gson.toJson(isoInfo.first()));
+                deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
+            }
         }
     }
 
@@ -5382,7 +5402,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                                         "Failed to unmount vmware-tools installer ISO as the corresponding CDROM device is locked by VM. Please unmount the CDROM device inside the VM and ret-try.");
                             }
                         } catch (Throwable e) {
-                            vmMo.detachIso(null);
+                            vmMo.detachIso(null, cmd.isForce());
                         }
                     }
 
@@ -5411,7 +5431,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             String isoDatastorePath = String.format("[%s] %s%s", storeName, isoStorePathFromRoot, isoFileName);
 
             if (cmd.isAttach()) {
-                vmMo.attachIso(isoDatastorePath, morSecondaryDs, true, false, cmd.getDeviceKey());
+                vmMo.attachIso(isoDatastorePath, morSecondaryDs, true, false, cmd.getDeviceKey(), cmd.isForce());
                 return new AttachIsoAnswer(cmd);
             } else {
                 int key = vmMo.detachIso(isoDatastorePath, cmd.isForce());

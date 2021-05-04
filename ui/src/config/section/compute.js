@@ -68,7 +68,7 @@ export default {
         return fields
       },
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
-      details: ['displayname', 'name', 'id', 'state', 'ipaddress', 'templatename', 'ostypename', 'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account', 'domain', 'zonename'],
+      details: ['displayname', 'name', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename', 'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account', 'domain', 'zonename'],
       tabs: [{
         component: () => import('@/views/compute/InstanceTab.vue')
       }],
@@ -253,7 +253,13 @@ export default {
           label: 'label.action.detach.iso',
           message: 'message.detach.iso.confirm',
           dataView: true,
-          args: ['virtualmachineid'],
+          args: (record, store) => {
+            var args = ['virtualmachineid']
+            if (record && record.hypervisor && record.hypervisor === 'VMware') {
+              args.push('forced')
+            }
+            return args
+          },
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) && 'isoid' in record && record.isoid },
           mapping: {
             virtualmachineid: {
