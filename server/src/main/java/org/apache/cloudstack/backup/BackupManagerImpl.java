@@ -842,6 +842,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             if (scanLock.lock(5)) {
                 try {
                     scheduleBackups();
+                    cleanupBackups();
                 } finally {
                     scanLock.unlock();
                 }
@@ -958,6 +959,21 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                     backupScheduleDao.releaseFromLockTable(backupScheduleId);
                 }
             }
+        }
+    }
+
+    @DB
+    public void cleanupBackups() {
+        LOG.debug("Unassigning backup offerings on VMs that have been destroyed");
+        List<VMInstanceVO> destroyedVmsWithOfferings = vmInstanceDao.listDestroyedVmsWithBackupOfferingAssigned();
+        for(VMInstanceVO instanceVO : destroyedVmsWithOfferings) {
+            instanceVO = vmInstanceDao.findByIdIncludingRemoved(instanceVO.getId());
+            instanceVO.setBackupOfferingId(null);
+            instanceVO.setBackupExternalId(null);
+            instanceVO.setBackupVolumes(null);
+            vmInstanceDao.update(instanceVO.getId(), instanceVO);
+            ActionEventUtils.onActionEvent(instanceVO.getId(), instanceVO.getAccountId(), instanceVO.getDomainId(),
+                    EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE,"Successfully completed remove VM from backup offering");
         }
     }
 
