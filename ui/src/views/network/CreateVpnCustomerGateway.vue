@@ -108,6 +108,26 @@
           </a-select-option>
         </a-select>
       </a-form-item>
+      <a-form-item>
+        <span slot="label">
+          {{ $t('label.ikeversion') }}
+          <a-tooltip :title="apiParams.ikeversion.description">
+            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+          </a-tooltip>
+        </span>
+        <a-select
+          v-decorator="[
+            'ikeversion',
+            {
+              initialValue: 'ike',
+            },
+          ]"
+          @change="val => { ikeversion = val }">
+          <a-select-option :value="vers" v-for="(vers, idx) in ikeVersions" :key="idx">
+            {{ vers }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
       <a-form-item
         :label="$t('label.ikedh')">
         <a-select
@@ -218,6 +238,21 @@
             },
           ]"/>
       </a-form-item>
+      <a-form-item v-if="ikeversion !== 'ikev1'">
+        <span slot="label">
+          {{ $t('label.splitconnections') }}
+          <a-tooltip :title="apiParams.splitconnections.description">
+            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+          </a-tooltip>
+        </span>
+        <a-switch
+          v-decorator="[
+            'splitconnections',
+            {
+              initialValue: 'false',
+            },
+          ]"/>
+      </a-form-item>
       <a-form-item>
         <span slot="label">
           {{ $t('label.forceencap') }}
@@ -270,6 +305,11 @@ export default {
         'sha512',
         'md5'
       ],
+      ikeVersions: [
+        'ike',
+        'ikev1',
+        'ikev2'
+      ],
       DHGroups: {
         '': 'None',
         'Group 2': 'modp1024',
@@ -280,7 +320,8 @@ export default {
         'Group 17': 'modp6144',
         'Group 18': 'modp8192'
       },
-      ikeDhGroupInitialValue: 'Group 5(modp1536)'
+      ikeDhGroupInitialValue: 'Group 5(modp1536)',
+      ikeversion: 'ike'
     }
   },
   beforeCreate () {
@@ -317,7 +358,9 @@ export default {
           dpd: values.dpd,
           forceencap: values.forceencap,
           ikepolicy: ikepolicy,
-          esppolicy: esppolicy
+          esppolicy: esppolicy,
+          splitconnections: values.splitconnections,
+          ikeversion: values.ikeversion
         }).then(response => {
           this.$store.dispatch('AddAsyncJob', {
             title: this.$t('message.add.vpn.customer.gateway'),

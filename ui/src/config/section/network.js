@@ -407,7 +407,7 @@ export default {
       hidden: true,
       permission: ['listVpnConnections'],
       columns: ['publicip', 'state', 'gateway', 'ipsecpsk', 'ikepolicy', 'esppolicy'],
-      details: ['publicip', 'gateway', 'passive', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'esppolicy', 'ikelifetime', 'esplifetime', 'dpd', 'forceencap', 'created'],
+      details: ['publicip', 'gateway', 'passive', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'esppolicy', 'ikelifetime', 'ikeversion', 'esplifetime', 'dpd', 'splitconnections', 'forceencap', 'created'],
       actions: [
         {
           api: 'createVpnConnection',
@@ -593,7 +593,7 @@ export default {
       icon: 'lock',
       permission: ['listVpnCustomerGateways'],
       columns: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'account'],
-      details: ['name', 'id', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'esppolicy', 'esplifetime', 'dpd', 'forceencap', 'account', 'domain'],
+      details: ['name', 'id', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'ikeversion', 'esppolicy', 'esplifetime', 'dpd', 'splitconnections', 'forceencap', 'account', 'domain'],
       searchFilters: ['keyword', 'domainid', 'account'],
       actions: [
         {
@@ -611,7 +611,12 @@ export default {
           label: 'label.edit',
           docHelp: 'adminguide/networking_and_traffic.html#updating-and-removing-a-vpn-customer-gateway',
           dataView: true,
-          args: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'esppolicy', 'esplifetime', 'dpd', 'forceencap']
+          args: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'ikeversion', 'esppolicy', 'esplifetime', 'dpd', 'splitconnections', 'forceencap'],
+          mapping: {
+            ikeversion: {
+              options: ['ike', 'ikev1', 'ikev2']
+            }
+          }
         },
         {
           api: 'deleteVpnCustomerGateway',
