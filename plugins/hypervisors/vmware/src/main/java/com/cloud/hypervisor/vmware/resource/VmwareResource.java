@@ -1970,7 +1970,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             if(!vmMo.isMemoryHotAddSupported(guestOsId) && vmSpec.isEnableDynamicallyScaleVm()){
-                s_logger.warn("hotadd of memory is not supported, dynamic scaling feature can not be applied " + vmInternalCSName);
+                s_logger.warn("hotadd of memory is not supported, dynamic scaling feature can not be applied to vm: " + vmInternalCSName);
             }
 
             if(!vmMo.isCpuHotAddSupported(guestOsId) && vmSpec.isEnableDynamicallyScaleVm()){
