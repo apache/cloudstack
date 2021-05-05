@@ -519,7 +519,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         advanceExpunge(vm);
     }
 
-    private boolean expungeCommandsCanBypassHostMaintenance(VirtualMachine vm) {
+    private boolean expungeCommandCanBypassHostMaintenance(VirtualMachine vm) {
         return VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType()) ||
                 VirtualMachine.Type.ConsoleProxy.equals(vm.getType());
     }
@@ -570,7 +570,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             final Commands cmds = new Commands(Command.OnError.Stop);
 
             for (final Command volumeExpungeCommand : volumeExpungeCommands) {
-                volumeExpungeCommand.setBypassHostMaintenance(expungeCommandsCanBypassHostMaintenance(vm));
+                volumeExpungeCommand.setBypassHostMaintenance(expungeCommandCanBypassHostMaintenance(vm));
                 cmds.addCommand(volumeExpungeCommand);
             }
 
@@ -612,12 +612,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (hostId != null) {
                 final Commands cmds = new Commands(Command.OnError.Stop);
                 for (final Command command : finalizeExpungeCommands) {
-                    command.setBypassHostMaintenance(expungeCommandsCanBypassHostMaintenance(vm));
+                    command.setBypassHostMaintenance(expungeCommandCanBypassHostMaintenance(vm));
                     cmds.addCommand(command);
                 }
                 if (nicExpungeCommands != null) {
                     for (final Command command : nicExpungeCommands) {
-                        command.setBypassHostMaintenance(expungeCommandsCanBypassHostMaintenance(vm));
+                        command.setBypassHostMaintenance(expungeCommandCanBypassHostMaintenance(vm));
                         cmds.addCommand(command);
                     }
                 }
