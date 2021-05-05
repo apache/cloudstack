@@ -91,13 +91,21 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
 
     @Override
     public boolean isHealthy(Host r) {
-        boolean isHealthy = true;
+        boolean isHealthy = false;
         if (isHostServedByNfsPool(r)) {
             HashMap<StoragePool, List<Volume>> poolVolMap = getVolumeUuidOnHost(r);
             isHealthy = isHealthyCheckViaNfs(r, isHealthy, poolVolMap);
+            if(!isHealthy){
+                LOG.warn(String.format("NFS storage health check failed for %s. It seems that a storage does not have activity.", r.toString()));
+            }
         }
 
-        isHealthy = checkHealthViaKvmHaWebservice(r, isHealthy);
+        boolean isKvmHaAgentHealthy = checkHealthViaKvmHaWebservice(r);
+
+        if (!isHealthy && isKvmHaAgentHealthy) {
+            isHealthy = true;
+            LOG.warn(String.format("KVM HA Agent health check could not detect activity on %s. This might trigger HA Host Recovery and/or Fence", r.toString()));
+        }
 
         return isHealthy;
     }
@@ -108,21 +116,14 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
      *
      * One can enable or disable it via global settings 'kvm.ha.webservice.enabled'.
      */
-    private boolean checkHealthViaKvmHaWebservice(Host r, boolean isHealthy) {
-        KvmHaAgentClient kvmHaAgentClient = new KvmHaAgentClient(r);
+    private boolean checkHealthViaKvmHaWebservice(Host host) {
+        KvmHaAgentClient kvmHaAgentClient = new KvmHaAgentClient(host);
         if(!kvmHaAgentClient.isKvmHaWebserviceEnabled()) {
-            ClusterVO cluster = clusterDao.findById(r.getClusterId());
+            ClusterVO cluster = clusterDao.findById(host.getClusterId());
             LOG.debug(String.format("Skipping KVM HA web-service verification for %s due to 'kvm.ha.webservice.enabled' not enabled for cluster [id: %d, name: %s].",
-                    r.toString(), cluster.getId(), cluster.getName()));
-            return isHealthy;
+                    host.toString(), cluster.getId(), cluster.getName()));
         }
-
-        boolean isKvmHaAgentHealthy = kvmHaAgentClient.isKvmHaAgentHealthy(r, vmInstanceDao);
-
-        if (!isHealthy && isKvmHaAgentHealthy) {
-            isHealthy = true;
-        }
-        return isHealthy;
+        return kvmHaAgentClient.isKvmHaAgentHealthy(host, vmInstanceDao);
     }
 
     private boolean isHealthyCheckViaNfs(Host r, boolean isHealthy, HashMap<StoragePool, List<Volume>> poolVolMap) {
@@ -202,7 +203,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         if (agent.getHypervisorType() != Hypervisor.HypervisorType.KVM && agent.getHypervisorType() != Hypervisor.HypervisorType.LXC) {
             throw new IllegalStateException(String.format("Calling KVM investigator for non KVM Host of type [%s].", agent.getHypervisorType()));
         }
-        boolean activityStatus = true;
+        boolean activityStatus = false;
         if (isHostServedByNfsPool(agent)) {
             HashMap<StoragePool, List<Volume>> poolVolMap = getVolumeUuidOnHost(agent);
             for (StoragePool pool : poolVolMap.keySet()) {
@@ -216,10 +217,13 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
             }
         }
 
-        activityStatus = checkHealthViaKvmHaWebservice(agent, activityStatus);
+        boolean isKvmHaAgentHealthy = checkHealthViaKvmHaWebservice(agent);
 
+        if (!activityStatus && isKvmHaAgentHealthy) {
+            activityStatus = true;
+        }
         if(!activityStatus){
-            LOG.warn(String.format("No VM activity detected on %s. This might trigger HA Host Recovery and/or Fence.", agent.toString()));
+            LOG.warn(String.format("KVM HA Agent health check could not detect activity on %s. This might trigger HA Host Recovery and/or Fence.", agent.toString()));
         }
 
         return activityStatus;

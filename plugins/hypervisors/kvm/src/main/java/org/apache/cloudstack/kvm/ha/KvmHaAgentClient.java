@@ -221,9 +221,10 @@ public class KvmHaAgentClient {
 
         int statusCode = response.getStatusLine().getStatusCode();
         if (statusCode < HttpStatus.SC_OK || statusCode >= HttpStatus.SC_MULTIPLE_CHOICES) {
-            throw new CloudRuntimeException(
+            LOGGER.error(
                     String.format("Failed to get VMs information with a %s request to URL '%s'. The expected HTTP status code is '%s' but it got '%s'.", HttpGet.METHOD_NAME, url,
                             EXPECTED_HTTP_STATUS, statusCode));
+            return null;
         }
 
         LOGGER.debug(String.format("Successfully executed HTTP %s request [URL: %s].", httpReq.getMethod(), url));
@@ -237,13 +238,9 @@ public class KvmHaAgentClient {
                 LOGGER.debug(String.format("Retry HTTP %s request [URL: %s], attempt %d/%d.", httpReq.getMethod(), url, attempt, MAX_REQUEST_RETRIES));
                 return client.execute(httpReq);
             } catch (IOException | InterruptedException e) {
-                if (attempt == MAX_REQUEST_RETRIES) {
-                    throw new CloudRuntimeException(String.format("Failed to execute HTTP %s request retry attempt %d/%d [URL: %s] due to exception %s", httpReq.getMethod(), attempt, MAX_REQUEST_RETRIES, url, e));
-                } else {
-                    LOGGER.error(
-                            String.format("Failed to execute HTTP %s request retry attempt %d/%d [URL: %s] due to exception %s", httpReq.getMethod(), attempt, MAX_REQUEST_RETRIES,
-                                    url, e));
-                }
+                String errorMessage = String.format("Failed to execute HTTP %s request retry attempt %d/%d [URL: %s] due to exception %s",
+                        httpReq.getMethod(), attempt, MAX_REQUEST_RETRIES, url, e);
+                LOGGER.error(errorMessage);
             }
         }
         return null;

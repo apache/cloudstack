@@ -38,7 +38,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.host.HostVO;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 import com.google.gson.JsonArray;
@@ -183,35 +182,45 @@ public class KvmHaAgentClientTest {
         Assert.assertNull(response);
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void retryHttpRequestTestForbidden() throws IOException {
-        prepareAndRunRetryHttpRequestTest(HttpStatus.SC_FORBIDDEN);
+        prepareAndRunRetryHttpRequestTest(HttpStatus.SC_FORBIDDEN, true);
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void retryHttpRequestTestMultipleChoices() throws IOException {
-        prepareAndRunRetryHttpRequestTest(HttpStatus.SC_MULTIPLE_CHOICES);
+        prepareAndRunRetryHttpRequestTest(HttpStatus.SC_MULTIPLE_CHOICES, true);
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void retryHttpRequestTestProcessing() throws IOException {
-        prepareAndRunRetryHttpRequestTest(HttpStatus.SC_PROCESSING);
+        prepareAndRunRetryHttpRequestTest(HttpStatus.SC_PROCESSING, true);
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void retryHttpRequestTestTimeout() throws IOException {
-        prepareAndRunRetryHttpRequestTest(HttpStatus.SC_GATEWAY_TIMEOUT);
+        prepareAndRunRetryHttpRequestTest(HttpStatus.SC_GATEWAY_TIMEOUT, true);
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void retryHttpRequestTestVersionNotSupported() throws IOException {
-        prepareAndRunRetryHttpRequestTest(HttpStatus.SC_HTTP_VERSION_NOT_SUPPORTED);
+        prepareAndRunRetryHttpRequestTest(HttpStatus.SC_HTTP_VERSION_NOT_SUPPORTED, true);
     }
 
-    private void prepareAndRunRetryHttpRequestTest(int scMultipleChoices) throws IOException {
+    @Test
+    public void retryHttpRequestTestOk() throws IOException {
+        prepareAndRunRetryHttpRequestTest(HttpStatus.SC_OK, false);
+    }
+
+    private void prepareAndRunRetryHttpRequestTest(int scMultipleChoices, boolean expectNull) throws IOException {
         HttpResponse mockedResponse = mockResponse(scMultipleChoices, JSON_STRING_EXAMPLE_3VMs);
         Mockito.doReturn(mockedResponse).when(kvmHaAgentClient).retryUntilGetsHttpResponse(Mockito.anyString(), Mockito.any(), Mockito.any());
-        kvmHaAgentClient.retryHttpRequest(EXPECTED_URL, HTTP_REQUEST_BASE, client);
+        HttpResponse response = kvmHaAgentClient.retryHttpRequest(EXPECTED_URL, HTTP_REQUEST_BASE, client);
+        if (expectNull) {
+            Assert.assertNull(response);
+        } else {
+            Assert.assertEquals(mockedResponse, response);
+        }
     }
 
     @Test
@@ -226,20 +235,22 @@ public class KvmHaAgentClientTest {
     @Test
     public void retryUntilGetsHttpResponseTestOneIOException() throws IOException {
         Mockito.when(client.execute(HTTP_REQUEST_BASE)).thenThrow(IOException.class).thenReturn(mockResponse(HttpStatus.SC_OK, JSON_STRING_EXAMPLE_3VMs));
-        kvmHaAgentClient.retryUntilGetsHttpResponse(EXPECTED_URL, HTTP_REQUEST_BASE, client);
+        HttpResponse result = kvmHaAgentClient.retryUntilGetsHttpResponse(EXPECTED_URL, HTTP_REQUEST_BASE, client);
         Mockito.verify(client, Mockito.times(MAX_REQUEST_RETRIES)).execute(Mockito.any());
+        Assert.assertNotNull(result);
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void retryUntilGetsHttpResponseTestTwoIOException() throws IOException {
         Mockito.when(client.execute(HTTP_REQUEST_BASE)).thenThrow(IOException.class).thenThrow(IOException.class);
-        kvmHaAgentClient.retryUntilGetsHttpResponse(EXPECTED_URL, HTTP_REQUEST_BASE, client);
+        HttpResponse result = kvmHaAgentClient.retryUntilGetsHttpResponse(EXPECTED_URL, HTTP_REQUEST_BASE, client);
         Mockito.verify(client, Mockito.times(MAX_REQUEST_RETRIES)).execute(Mockito.any());
+        Assert.assertNull(result);
     }
 
     @Test
     public void isKvmHaWebserviceEnabledTestDefault() {
-        Assert.assertTrue(kvmHaAgentClient.isKvmHaWebserviceEnabled());
+        Assert.assertFalse(kvmHaAgentClient.isKvmHaWebserviceEnabled());
     }
 
     @Test
