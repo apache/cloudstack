@@ -1228,6 +1228,19 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return _hostDao.updateResourceState(currentState, event, nextState, host);
     }
 
+    private void handleVmForLastHostOrWithVGpu(final HostVO host, final VMInstanceVO vm) {
+        // Migration is not supported for VGPU Vms so stop them.
+        // for the last host in this cluster, destroy SSVM/CPVM and stop all other VMs
+        if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())
+                || VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
+            s_logger.error(String.format("Maintenance: VM is of type %s. Destroying VM %s (ID: %s) immediately instead of migration.", vm.getType().toString(), vm.getInstanceName(), vm.getUuid()));
+            _haMgr.scheduleDestroy(vm, host.getId());
+            return;
+        }
+        s_logger.error(String.format("Maintenance: No hosts available for migrations. Scheduling shutdown for VM %s instead of migration.", vm.getUuid()));
+        _haMgr.scheduleStop(vm, host.getId(), WorkType.ForceStop);
+    }
+
     private boolean doMaintain(final long hostId) {
         final HostVO host = _hostDao.findById(hostId);
         s_logger.info("Maintenance: attempting maintenance of host " + host.getUuid());
@@ -1265,16 +1278,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             for (final VMInstanceVO vm : vms) {
                 if (hosts == null || hosts.isEmpty() || !answer.getMigrate()
                         || _serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.vgpuType.toString()) != null) {
-                    // Migration is not supported for VGPU Vms so stop them.
-                    // for the last host in this cluster, destroy SSVM/CPVM and stop all other VMs
-                    if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())
-                            || VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
-                        s_logger.error(String.format("Maintenance: VM is of type %s. Destroying VM %s (ID: %s) immediately instead of migration.", vm.getType().toString(), vm.getInstanceName(), vm.getUuid()));
-                        _haMgr.scheduleDestroy(vm, host.getId());
-                        continue;
-                    }
-                    s_logger.error(String.format("Maintenance: No hosts available for migrations. Scheduling shutdown for VM %s instead of migration.", vm.getUuid()));
-                    _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
+                    handleVmForLastHostOrWithVGpu(host, vm);
                 } else if (HypervisorType.LXC.equals(host.getHypervisorType()) && VirtualMachine.Type.User.equals(vm.getType())){
                     //Migration is not supported for LXC Vms. Schedule restart instead.
                     _haMgr.scheduleRestart(vm, false);
@@ -1422,7 +1426,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      * on a host. We need to track the various VM states on each run and accordingly transit to the
      * appropriate state.
      *
-     * We change states as follws -
+     * We change states as follows -
      * 1. If there are no VMs in running, migrating, starting, stopping, error, unknown states we can move
      *    to maintenance state. Note that there cannot be incoming migrations as the API Call prepare for
      *    maintenance checks incoming migrations before starting.

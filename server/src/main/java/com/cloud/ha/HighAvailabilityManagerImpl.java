@@ -685,34 +685,39 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         _haDao.delete(vm.getId(), WorkType.Destroy);
     }
 
+    private void stopVMWithCleanup(VirtualMachine vm, VirtualMachine.State state) throws OperationTimedoutException, ResourceUnavailableException {
+        if (VirtualMachine.State.Running.equals(state)) {
+            _itMgr.advanceStop(vm.getUuid(), true);
+        }
+    }
+
+    private void destroyVM(VirtualMachine vm, boolean expunge) throws OperationTimedoutException, AgentUnavailableException {
+        s_logger.info("Destroying " + vm.toString());
+        if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
+            consoleProxyManager.destroyProxy(vm.getId());
+        } else if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())) {
+            secondaryStorageVmManager.destroySecStorageVm(vm.getId());
+        } else {
+            _itMgr.destroy(vm.getUuid(), expunge);
+        }
+    }
+
     protected Long destroyVM(final HaWorkVO work) {
         final VirtualMachine vm = _itMgr.findById(work.getInstanceId());
         if (vm == null) {
             s_logger.info("No longer can find VM " + work.getInstanceId() + ". Throwing away " + work);
-            work.setStep(Step.Done);
             return null;
         }
         boolean expunge = VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())
                 || VirtualMachine.Type.ConsoleProxy.equals(vm.getType());
         if (!expunge && VirtualMachine.State.Destroyed.equals(work.getPreviousState())) {
             s_logger.info("VM " + vm.getUuid() + " already in " + vm.getState() + " state. Throwing away " + work);
-            work.setStep(Step.Done);
             return null;
         }
         try {
-            if (VirtualMachine.State.Running.equals(work.getPreviousState())) {
-                _itMgr.advanceStop(vm.getUuid(), true);
-            }
-            s_logger.info("Destroying " + vm.toString());
+            stopVMWithCleanup(vm, work.getPreviousState());
             if (!VirtualMachine.State.Expunging.equals(work.getPreviousState())) {
-                s_logger.info("Destroying " + vm.getUuid());
-                if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
-                    consoleProxyManager.destroyProxy(vm.getId());
-                } else if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())) {
-                    secondaryStorageVmManager.destroySecStorageVm(vm.getId());
-                } else {
-                    _itMgr.destroy(vm.getUuid(), expunge);
-                }
+                destroyVM(vm, expunge);
                 return null;
             } else {
                 s_logger.info("VM " + vm.getUuid() + " still in " + vm.getState() + " state.");

@@ -519,6 +519,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         advanceExpunge(vm);
     }
 
+    private boolean expungeCommandsCanBypassHostMaintenance(VirtualMachine vm) {
+        return VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType()) ||
+                VirtualMachine.Type.ConsoleProxy.equals(vm.getType());
+    }
+
     protected void advanceExpunge(VMInstanceVO vm) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         if (vm == null || vm.getRemoved() != null) {
             if (s_logger.isDebugEnabled()) {
@@ -565,10 +570,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             final Commands cmds = new Commands(Command.OnError.Stop);
 
             for (final Command volumeExpungeCommand : volumeExpungeCommands) {
-                if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType()) ||
-                        VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
-                    volumeExpungeCommand.setBypassHostMaintenance(true);
-                }
+                volumeExpungeCommand.setBypassHostMaintenance(expungeCommandsCanBypassHostMaintenance(vm));
                 cmds.addCommand(volumeExpungeCommand);
             }
 
@@ -610,18 +612,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (hostId != null) {
                 final Commands cmds = new Commands(Command.OnError.Stop);
                 for (final Command command : finalizeExpungeCommands) {
-                    if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType()) ||
-                            VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
-                        command.setBypassHostMaintenance(true);
-                    }
+                    command.setBypassHostMaintenance(expungeCommandsCanBypassHostMaintenance(vm));
                     cmds.addCommand(command);
                 }
                 if (nicExpungeCommands != null) {
                     for (final Command command : nicExpungeCommands) {
-                        if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType()) ||
-                                VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
-                            command.setBypassHostMaintenance(true);
-                        }
+                        command.setBypassHostMaintenance(expungeCommandsCanBypassHostMaintenance(vm));
                         cmds.addCommand(command);
                     }
                 }

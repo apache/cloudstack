@@ -213,20 +213,22 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         }
     }
 
-    @Override
-    public void deleteAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CommandResult> callback) {
-        DeleteCommand cmd = new DeleteCommand(data.getTO());
+    private boolean commandCanBypassHostMaintenance(DataObject data) {
         if (DataObjectType.VOLUME.equals(data.getType())) {
             Volume volume = (Volume)data;
             if (volume.getInstanceId() != null) {
                 VMInstanceVO vm = vmDao.findById(volume.getInstanceId());
-                if (vm != null && (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType()) ||
-                        VirtualMachine.Type.ConsoleProxy.equals(vm.getType()))) {
-                    cmd.setBypassHostMaintenance(true);
-                }
+                return vm != null && (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType()) ||
+                        VirtualMachine.Type.ConsoleProxy.equals(vm.getType()));
             }
         }
+        return false;
+    }
 
+    @Override
+    public void deleteAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CommandResult> callback) {
+        DeleteCommand cmd = new DeleteCommand(data.getTO());
+        cmd.setBypassHostMaintenance(commandCanBypassHostMaintenance(data));
         CommandResult result = new CommandResult();
         try {
             EndPoint ep = null;
