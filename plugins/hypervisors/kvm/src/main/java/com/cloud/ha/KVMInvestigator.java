@@ -103,9 +103,9 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
         boolean isVmsCountOnKvmMatchingWithDatabase = kvmHaAgentClient.isKvmHaAgentHealthy(agent, vmInstanceDao);
         if(isVmsCountOnKvmMatchingWithDatabase) {
             agentStatus = Status.Up;
-            s_logger.debug(String.format("Checking agent %s status; KVM HA Agent is Running as expected."));
+            s_logger.debug(String.format("Checking agent %s status; KVM HA Agent is Running as expected.", agentStatus));
         } else {
-            s_logger.warn(String.format("Checking agent %s status. Failed to check host status via KVM HA Agent"));
+            s_logger.warn(String.format("Checking agent %s status. Failed to check host status via KVM HA Agent", agentStatus));
         }
         return agentStatus;
     }
