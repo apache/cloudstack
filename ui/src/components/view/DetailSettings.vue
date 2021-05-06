@@ -83,8 +83,7 @@
           <tootip-button :tooltip="$t('label.cancel')" @click="hideEditDetail(index)" v-if="item.edit" iconType="close-circle" iconTwoToneColor="#f5222d" />
           <tootip-button :tooltip="$t('label.ok')" @click="updateDetail(index)" v-if="item.edit" iconType="check-circle" iconTwoToneColor="#52c41a" />
           <tooltip-button
-            :tooltip="$('label.edit')"
-            shape="circle"
+            :tooltip="$t('label.edit')"
             icon="edit"
             v-if="!item.edit"
             @click="showEditDetail(index)" />
@@ -100,7 +99,7 @@
             :cancelText="$t('label.no')"
             placement="left"
           >
-            <a-button shape="circle" type="danger" icon="delete" />
+            <tooltip-button :tooltip="$t('label.delete')" type="danger" icon="delete" />
           </a-popconfirm>
         </div>
       </a-list-item>
