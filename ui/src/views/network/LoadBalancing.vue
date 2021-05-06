@@ -100,7 +100,7 @@
               </div>
               <div>{{ ip }}</div>
               <tooltip-button
-                :tooltip="$('label.action.delete.load.balancer')"
+                :tooltip="$t('label.action.delete.load.balancer')"
                 type="danger"
                 icon="delete"
                 @click="() => handleDeleteInstanceFromRule(instance, record, ip)" />
@@ -110,15 +110,15 @@
       </template>
       <template slot="actions" slot-scope="record">
         <div class="actions">
-          <tooltip-button :tooltip="$('label.edit')" icon="edit" @click="() => openEditRuleModal(record)" />
-          <tooltip-button :tooltip="$('label.edit.tags')" :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" icon="tag" @click="() => openTagsModal(record.id)" />
+          <tooltip-button :tooltip="$t('label.edit')" icon="edit" @click="() => openEditRuleModal(record)" />
+          <tooltip-button :tooltip="$t('label.edit.tags')" :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" icon="tag" @click="() => openTagsModal(record.id)" />
           <a-popconfirm
             :title="$t('label.delete') + '?'"
             @confirm="handleDeleteRule(record)"
             :okText="$t('label.yes')"
             :cancelText="$t('label.no')"
           >
-            <tooltip-button :tooltip="$('label.delete')" :disabled="!('deleteLoadBalancerRule' in $store.getters.apis)" type="danger" icon="delete" />
+            <tooltip-button :tooltip="$t('label.delete')" :disabled="!('deleteLoadBalancerRule' in $store.getters.apis)" type="danger" icon="delete" />
           </a-popconfirm>
         </div>
       </template>

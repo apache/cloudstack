@@ -44,7 +44,7 @@
             <tooltip-button
               tooltipPlacement="top"
               :tooltip="record.userid ? $t('label.demote.project.owner.user') : $t('label.demote.project.owner')"
-              v-if="updateProjectApi.params.filter(x => x.name === 'swapowner').length > 0"
+              v-if="updateProjectApi.params.filter(x => x.name === 'swapowner').length > 0 && record.role === owner"
               type="default"
               icon="arrow-down"
               size="small"
