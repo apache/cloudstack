@@ -4214,7 +4214,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throws ResourceUnavailableException, ConcurrentOperationException {
 
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
-        s_logger.info("Migrating " + vm + " to " + dest);
+        s_logger.info(String.format("Migrating %s to %s", vm, dest));
 
         vm.getServiceOfferingId();
         final long dstHostId = dest.getHost().getId();
@@ -4227,7 +4227,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         Host dstHost = _hostDao.findById(dstHostId);
-        if (fromHost.getClusterId().longValue() != dest.getCluster().getId()) {
+        long destHostClusterId = dest.getCluster().getId();
+        long fromHostClusterId = fromHost.getClusterId();
+        if (fromHostClusterId != destHostClusterId) {
             String logMessageHostsOnDifferentCluster = String.format("Source and destination host are not in same cluster, unable to migrate to %s", srcHost);
             s_logger.info(logMessageHostsOnDifferentCluster);
             throw new CloudRuntimeException(logMessageHostsOnDifferentCluster);
@@ -4343,13 +4345,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     try {
                         _agentMgr.send(srcHostId, new Commands(cleanup(vm.getInstanceName())), null);
                     } catch (final AgentUnavailableException e) {
-                        s_logger.error(String.format("AgentUnavailableException while cleanup on source host: %s", srcHost));
+                        s_logger.error(String.format("AgentUnavailableException while cleanup on source %s: %s", srcHost), e);
                     }
                     cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true);
                     throw new CloudRuntimeException("Unable to complete migration for " + vm);
                 }
             } catch (final OperationTimedoutException e) {
-                s_logger.debug("Error while checking the vm " + vm + " on " + dstHost, e);
+                s_logger.debug(String.format("Error while checking the vm %s on %s", vm, dstHost), e);
             }
 
             migrated = true;
@@ -4718,7 +4720,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         case Running:
             try {
                 if (vm.getHostId() != null && vm.getHostId().longValue() != vm.getPowerHostId().longValue()) {
-                    s_logger.info("Detected out of band VM migration from " + host + " to " + poweredHost);
+                    s_logger.info(String.format("Detected out of band VM migration from %s to %s", host, poweredHost));
                 }
                 stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOnReport, vm.getPowerHostId());
             } catch (final NoTransitionException e) {
