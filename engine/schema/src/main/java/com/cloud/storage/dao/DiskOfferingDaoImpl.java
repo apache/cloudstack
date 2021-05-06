@@ -36,7 +36,6 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -69,7 +68,7 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         UniqueNameSearch.and("name", UniqueNameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
         UniqueNameSearch.done();
 
-        _computeOnlyAttr = _allAttributes.get("compute_only");
+        _computeOnlyAttr = _allAttributes.get("computeOnly");
     }
 
     @Override
@@ -81,13 +80,13 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
 
     @Override
     public List<DiskOfferingVO> searchIncludingRemoved(SearchCriteria<DiskOfferingVO> sc, final Filter filter, final Boolean lock, final boolean cache) {
-        sc.addAnd(_computeOnlyAttr, Op.EQ, false);
+        //sc.addAnd(_computeOnlyAttr, Op.EQ, false);
         return super.searchIncludingRemoved(sc, filter, lock, cache);
     }
 
     @Override
     public <K> List<K> customSearchIncludingRemoved(SearchCriteria<K> sc, final Filter filter) {
-        sc.addAnd(_computeOnlyAttr, Op.EQ, false);
+        //sc.addAnd(_computeOnlyAttr, Op.EQ, false);
         return super.customSearchIncludingRemoved(sc, filter);
     }
 
@@ -128,7 +127,7 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     }
 
     @Override
-    public DiskOfferingVO persistDeafultDiskOffering(DiskOfferingVO offering) {
+    public DiskOfferingVO persistDefaultDiskOffering(DiskOfferingVO offering) {
         assert offering.getUniqueName() != null : "unique name shouldn't be null for the disk offering";
         DiskOfferingVO vo = findByUniqueName(offering.getUniqueName());
         if (vo != null) {

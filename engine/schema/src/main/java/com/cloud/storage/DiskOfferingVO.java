@@ -150,6 +150,9 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name = "hv_ss_reserve")
     Integer hypervisorSnapshotReserve;
 
+    @Column(name = "disk_size_strictness")
+    boolean diskSizeStrictness = false;
+
     public DiskOfferingVO() {
         uuid = UUID.randomUUID().toString();
     }
@@ -581,5 +584,13 @@ public class DiskOfferingVO implements DiskOffering {
 
     public boolean isShared() {
         return !useLocalStorage;
+    }
+
+    public boolean getDiskSizeStrictness() {
+        return diskSizeStrictness;
+    }
+
+    public void setDiskSizeStrictness(boolean diskSizeStrictness) {
+        this.diskSizeStrictness = diskSizeStrictness;
     }
 }

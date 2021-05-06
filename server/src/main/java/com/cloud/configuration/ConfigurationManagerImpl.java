@@ -2913,7 +2913,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         tags = com.cloud.utils.StringUtils.cleanupTags(tags);
 
-        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA,
+        DiskOfferingVO diskOffering = new DiskOfferingVO(name, displayText, typedProvisioningType, false, tags, false, localStorageRequired, isSystem, true);
+
+        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA,
                 limitResourceUse, volatileVm, displayText, typedProvisioningType, localStorageRequired, false, tags, isSystem, vmType,
                 hostTag, deploymentPlanner, dynamicScalingEnabled);
 
@@ -2943,25 +2945,25 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("The Root disk size is of %s GB but it must be greater than 0.", rootDiskSizeInGiB));
         } else if (rootDiskSizeInGiB != null) {
             long rootDiskSizeInBytes = rootDiskSizeInGiB * GiB_TO_BYTES;
-            offering.setDiskSize(rootDiskSizeInBytes);
+            diskOffering.setDiskSize(rootDiskSizeInBytes);
         }
 
-        offering.setCustomizedIops(isCustomizedIops);
-        offering.setMinIops(minIops);
-        offering.setMaxIops(maxIops);
+        diskOffering.setCustomizedIops(isCustomizedIops);
+        diskOffering.setMinIops(minIops);
+        diskOffering.setMaxIops(maxIops);
 
-        setBytesRate(offering, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength);
-        setIopsRate(offering, iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength);
+        setBytesRate(diskOffering, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength);
+        setIopsRate(diskOffering, iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength);
 
         if(cacheMode != null) {
-            offering.setCacheMode(DiskOffering.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
+            diskOffering.setCacheMode(DiskOffering.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
         }
 
         if (hypervisorSnapshotReserve != null && hypervisorSnapshotReserve < 0) {
             throw new InvalidParameterValueException("If provided, Hypervisor Snapshot Reserve must be greater than or equal to 0.");
         }
 
-        offering.setHypervisorSnapshotReserve(hypervisorSnapshotReserve);
+        diskOffering.setHypervisorSnapshotReserve(hypervisorSnapshotReserve);
 
         List<ServiceOfferingDetailsVO> detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
         if (details != null) {
@@ -2996,46 +2998,51 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     // Add in disk offering details
                     continue;
                 }
-                detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntryValue, true));
+                detailsVO.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), detailEntry.getKey(), detailEntryValue, true));
             }
         }
 
         if (storagePolicyID != null) {
-            detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), ApiConstants.STORAGE_POLICY, String.valueOf(storagePolicyID), false));
+            detailsVO.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.STORAGE_POLICY, String.valueOf(storagePolicyID), false));
         }
 
-        if ((offering = _serviceOfferingDao.persist(offering)) != null) {
-            for (Long domainId : filteredDomainIds) {
-                detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
-            }
-            if (CollectionUtils.isNotEmpty(zoneIds)) {
-                for (Long zoneId : zoneIds) {
-                    detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
-                }
-            }
-            if (!detailsVO.isEmpty()) {
-                for (ServiceOfferingDetailsVO detail : detailsVO) {
-                    detail.setResourceId(offering.getId());
-                }
-                _serviceOfferingDetailsDao.saveDetails(detailsVO);
-            }
-
+        if ((diskOffering = _diskOfferingDao.persist(diskOffering)) != null) {
+            serviceOffering.setDiskOfferingId(diskOffering.getId());
             if (details != null && !details.isEmpty()) {
                 List<DiskOfferingDetailVO> diskDetailsVO = new ArrayList<DiskOfferingDetailVO>();
                 // Support disk offering details for below parameters
                 if (details.containsKey(Volume.BANDWIDTH_LIMIT_IN_MBPS)) {
-                    diskDetailsVO.add(new DiskOfferingDetailVO(offering.getId(), Volume.BANDWIDTH_LIMIT_IN_MBPS, details.get(Volume.BANDWIDTH_LIMIT_IN_MBPS), false));
+                    diskDetailsVO.add(new DiskOfferingDetailVO(diskOffering.getId(), Volume.BANDWIDTH_LIMIT_IN_MBPS, details.get(Volume.BANDWIDTH_LIMIT_IN_MBPS), false));
                 }
                 if (details.containsKey(Volume.IOPS_LIMIT)) {
-                    diskDetailsVO.add(new DiskOfferingDetailVO(offering.getId(), Volume.IOPS_LIMIT, details.get(Volume.IOPS_LIMIT), false));
+                    diskDetailsVO.add(new DiskOfferingDetailVO(diskOffering.getId(), Volume.IOPS_LIMIT, details.get(Volume.IOPS_LIMIT), false));
                 }
                 if (!diskDetailsVO.isEmpty()) {
                     diskOfferingDetailsDao.saveDetails(diskDetailsVO);
                 }
             }
+        } else {
+            return null;
+        }
 
-            CallContext.current().setEventDetails("Service offering id=" + offering.getId());
-            return offering;
+        if ((serviceOffering = _serviceOfferingDao.persist(serviceOffering)) != null) {
+            for (Long domainId : filteredDomainIds) {
+                detailsVO.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
+            }
+            if (CollectionUtils.isNotEmpty(zoneIds)) {
+                for (Long zoneId : zoneIds) {
+                    detailsVO.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
+                }
+            }
+            if (!detailsVO.isEmpty()) {
+                for (ServiceOfferingDetailsVO detail : detailsVO) {
+                    detail.setResourceId(serviceOffering.getId());
+                }
+                _serviceOfferingDetailsDao.saveDetails(detailsVO);
+            }
+
+            CallContext.current().setEventDetails("Service offering id=" + serviceOffering.getId());
+            return serviceOffering;
         } else {
             return null;
         }

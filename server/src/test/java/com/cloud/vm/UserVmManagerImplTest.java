@@ -97,9 +97,6 @@ public class UserVmManagerImplTest {
     private DiskOfferingDao diskOfferingDao;
 
     @Mock
-    private ServiceOfferingVO serviceOfferingVO;
-
-    @Mock
     private DataCenterDao _dcDao;
     @Mock
     private DataCenterVO _dcMock;
@@ -223,8 +220,12 @@ public class UserVmManagerImplTest {
         boolean ha = false;
         boolean useLocalStorage = false;
 
+        DiskOfferingVO diskOfferingVO = new DiskOfferingVO(name, displayText, Storage.ProvisioningType.THIN, false, null, false, false, false, true);
+        diskOfferingVO = diskOfferingDao.persistDefaultDiskOffering(diskOfferingVO);
+
         ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, Storage.ProvisioningType.THIN, useLocalStorage, false, null, false, null,
                 false);
+        serviceOffering.setDiskOfferingId(diskOfferingVO.getId());
         return serviceOffering;
     }
 
@@ -472,7 +473,6 @@ public class UserVmManagerImplTest {
         Mockito.when(template.getId()).thenReturn(1l);
         Mockito.when(template.getSize()).thenReturn(99L * GiB_TO_BYTES);
         ServiceOfferingVO offering = Mockito.mock(ServiceOfferingVO.class);
-        Mockito.when(offering.getId()).thenReturn(1l);
         Mockito.when(templateDao.findById(Mockito.anyLong())).thenReturn(template);
 
         DiskOfferingVO diskfferingVo = Mockito.mock(DiskOfferingVO.class);

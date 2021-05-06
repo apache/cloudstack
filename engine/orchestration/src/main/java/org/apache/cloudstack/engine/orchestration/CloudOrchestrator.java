@@ -185,25 +185,25 @@ public class CloudOrchestrator implements OrchestrationService {
 
         ServiceOfferingVO computeOffering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
 
-        rootDiskOfferingInfo.setDiskOffering(computeOffering);
-        rootDiskOfferingInfo.setSize(rootDiskSize);
-
-        if (computeOffering.isCustomizedIops() != null && computeOffering.isCustomizedIops()) {
-            Map<String, String> userVmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
-
-            if (userVmDetails != null) {
-                String minIops = userVmDetails.get("minIops");
-                String maxIops = userVmDetails.get("maxIops");
-
-                rootDiskOfferingInfo.setMinIops(minIops != null && minIops.trim().length() > 0 ? Long.parseLong(minIops) : null);
-                rootDiskOfferingInfo.setMaxIops(maxIops != null && maxIops.trim().length() > 0 ? Long.parseLong(maxIops) : null);
-            }
-        }
-
-        if (vm.getDiskOfferingId() != null) {
-            DiskOfferingVO diskOffering = _diskOfferingDao.findById(vm.getDiskOfferingId());
+        Long diskOfferingId = computeOffering.getDiskOfferingId();
+        if (diskOfferingId != null) {
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
             if (diskOffering == null) {
-                throw new InvalidParameterValueException("Unable to find disk offering " + vm.getDiskOfferingId());
+                throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
+            }
+            rootDiskOfferingInfo.setDiskOffering(diskOffering);
+            rootDiskOfferingInfo.setSize(rootDiskSize);
+
+            if (diskOffering.isCustomizedIops() != null && diskOffering.isCustomizedIops()) {
+                Map<String, String> userVmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
+
+                if (userVmDetails != null) {
+                    String minIops = userVmDetails.get("minIops");
+                    String maxIops = userVmDetails.get("maxIops");
+
+                    rootDiskOfferingInfo.setMinIops(minIops != null && minIops.trim().length() > 0 ? Long.parseLong(minIops) : null);
+                    rootDiskOfferingInfo.setMaxIops(maxIops != null && maxIops.trim().length() > 0 ? Long.parseLong(maxIops) : null);
+                }
             }
             Long size = null;
             if (diskOffering.getDiskSize() == 0) {
@@ -238,7 +238,7 @@ public class CloudOrchestrator implements OrchestrationService {
             for (Entry<Long, DiskOffering> datadiskTemplateToDiskOffering : dataDiskTemplateToDiskOfferingMap.entrySet()) {
                 DiskOffering diskOffering = datadiskTemplateToDiskOffering.getValue();
                 if (diskOffering == null) {
-                    throw new InvalidParameterValueException("Unable to find disk offering " + vm.getDiskOfferingId());
+                    throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
                 }
                 if (diskOffering.getDiskSize() == 0) { // Custom disk offering is not supported for volumes created from datadisk templates
                     throw new InvalidParameterValueException("Disk offering " + diskOffering + " requires size parameter.");
@@ -268,9 +268,7 @@ public class CloudOrchestrator implements OrchestrationService {
 
         DiskOfferingInfo rootDiskOfferingInfo = new DiskOfferingInfo();
 
-        rootDiskOfferingInfo.setDiskOffering(computeOffering);
-
-        Long diskOfferingId = vm.getDiskOfferingId();
+        Long diskOfferingId = computeOffering.getDiskOfferingId();
         if (diskOfferingId == null) {
             throw new InvalidParameterValueException("Installing from ISO requires a disk offering to be specified for the root disk.");
         }
@@ -278,6 +276,8 @@ public class CloudOrchestrator implements OrchestrationService {
         if (diskOffering == null) {
             throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
         }
+        rootDiskOfferingInfo.setDiskOffering(diskOffering);
+
         Long size = null;
         if (diskOffering.getDiskSize() == 0) {
             size = diskSize;

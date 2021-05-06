@@ -25,41 +25,34 @@ import org.apache.cloudstack.api.InternalIdentity;
 /**
  * offered.
  */
-public interface ServiceOffering extends DiskOffering, InfrastructureEntity, InternalIdentity, Identity {
-    public static final String consoleProxyDefaultOffUniqueName = "Cloud.com-ConsoleProxy";
-    public static final String ssvmDefaultOffUniqueName = "Cloud.com-SecondaryStorage";
-    public static final String routerDefaultOffUniqueName = "Cloud.Com-SoftwareRouter";
-    public static final String elbVmDefaultOffUniqueName = "Cloud.Com-ElasticLBVm";
-    public static final String internalLbVmDefaultOffUniqueName = "Cloud.Com-InternalLBVm";
+public interface ServiceOffering extends InfrastructureEntity, InternalIdentity, Identity {
+    static final String consoleProxyDefaultOffUniqueName = "Cloud.com-ConsoleProxy";
+    static final String ssvmDefaultOffUniqueName = "Cloud.com-SecondaryStorage";
+    static final String routerDefaultOffUniqueName = "Cloud.Com-SoftwareRouter";
+    static final String elbVmDefaultOffUniqueName = "Cloud.Com-ElasticLBVm";
+    static final String internalLbVmDefaultOffUniqueName = "Cloud.Com-InternalLBVm";
     // leaving cloud.com references as these are identifyers and no real world addresses (check against DB)
 
     enum State {
         Inactive, Active,
     }
 
-    public enum StorageType {
+    enum StorageType {
         local, shared
     }
 
-    @Override
     String getDisplayText();
 
-    @Override
     Date getCreated();
-
-    @Override
-    String getTags();
 
     /**
      * @return user readable description
      */
-    @Override
     String getName();
 
     /**
      * @return is this a system service offering
      */
-    @Override
     boolean isSystemUse();
 
     /**
@@ -105,7 +98,6 @@ public interface ServiceOffering extends DiskOffering, InfrastructureEntity, Int
     /**
      * @return whether or not the service offering requires local storage
      */
-    @Override
     boolean isUseLocalStorage();
 
     /**
@@ -121,7 +113,31 @@ public interface ServiceOffering extends DiskOffering, InfrastructureEntity, Int
 
     boolean isDynamic();
 
+    void setState(DiskOffering.State state);
+
     DiskOffering.State getState();
+
+    void setName(String name);
+
+    String getUniqueName();
+
+    void setUniqueName(String uniqueName);
+
+    void setDisplayText(String displayText);
+
+    boolean isCustomized();
+
+    void setCustomized(boolean customized);
+
+    Date getRemoved();
+
+    void setRemoved(Date removed);
+
+    void setSortKey(int key);
+
+    int getSortKey();
+
+    Long getDiskOfferingId();
 
     boolean isDynamicScalingEnabled();
 }

@@ -16,23 +16,65 @@
 // under the License.
 package com.cloud.service;
 
+import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+import javax.persistence.Id;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.persistence.Enumerated;
+import javax.persistence.EnumType;
 
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ProvisioningType;
+import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 
 @Entity
 @Table(name = "service_offering")
-@PrimaryKeyJoinColumn(name = "id")
-public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering {
+public class ServiceOfferingVO implements ServiceOffering {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    long id;
+
+    @Column(name = "uuid")
+    private String uuid;
+
+    @Column(name = "name")
+    private String name = null;
+
+    @Column(name = "unique_name")
+    private String uniqueName;
+
+    @Column(name = "display_text", length = 4096)
+    private String displayText = null;
+
+    @Column(name = "customized")
+    private boolean customized;
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date removed;
+
+    @Column(name = GenericDao.CREATED_COLUMN)
+    private Date created;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "state")
+    DiskOffering.State state = DiskOffering.State.Active;
+
+    @Column(name = "disk_offering_id")
+    private Long diskOfferingId;
 
     @Column(name = "cpu")
     private Integer cpu;
@@ -73,6 +115,9 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     @Column(name = "deployment_planner")
     private String deploymentPlanner = null;
 
+    @Column(name = "system_use")
+    private boolean systemUse;
+
     @Column(name = "dynamic_scaling_enabled")
     private boolean dynamicScalingEnabled = true;
 
@@ -91,9 +136,10 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         super();
     }
 
+    //FR123 split the usage of below constructor to create service offering vo and disk offering vo in different daoImpl.java files. Currently it is only under serviceofferingdaoimpl.java
     public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText,
-                             ProvisioningType provisioningType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vmType, boolean defaultUse) {
-        super(name, displayText, provisioningType, false, tags, recreatable, useLocalStorage, systemUse, true);
+            ProvisioningType provisioningType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vmType, boolean defaultUse) {
+        //super(name, displayText, provisioningType, false, tags, recreatable, useLocalStorage, systemUse, true);
         this.cpu = cpu;
         this.ramSize = ramSize;
         this.speed = speed;
@@ -104,12 +150,14 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         volatileVm = false;
         this.defaultUse = defaultUse;
         this.vmType = vmType == null ? null : vmType.toString().toLowerCase();
+        uuid = UUID.randomUUID().toString();
+        this.systemUse = systemUse;
     }
 
     public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA,
                              boolean limitResourceUse, boolean volatileVm, String displayText, ProvisioningType provisioningType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse,
                              VirtualMachine.Type vmType, String hostTag, String deploymentPlanner, boolean dynamicScalingEnabled) {
-        super(name, displayText, provisioningType, false, tags, recreatable, useLocalStorage, systemUse, true);
+        //super(name, displayText, provisioningType, false, tags, recreatable, useLocalStorage, systemUse, true);
         this.cpu = cpu;
         this.ramSize = ramSize;
         this.speed = speed;
@@ -121,23 +169,13 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.vmType = vmType == null ? null : vmType.toString().toLowerCase();
         this.hostTag = hostTag;
         this.deploymentPlanner = deploymentPlanner;
+        uuid = UUID.randomUUID().toString();
+        this.systemUse = systemUse;
         this.dynamicScalingEnabled = dynamicScalingEnabled;
     }
 
     public ServiceOfferingVO(ServiceOfferingVO offering) {
-        super(offering.getId(),
-            offering.getName(),
-            offering.getDisplayText(),
-            offering.getProvisioningType(),
-            false,
-            offering.getTags(),
-            offering.isRecreatable(),
-            offering.isUseLocalStorage(),
-            offering.isSystemUse(),
-            true,
-            offering.isCustomizedIops()== null ? false:offering.isCustomizedIops(),
-            offering.getMinIops(),
-            offering.getMaxIops());
+        diskOfferingId = offering.getDiskOfferingId();
         cpu = offering.getCpu();
         ramSize = offering.getRamSize();
         speed = offering.getSpeed();
@@ -148,6 +186,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         volatileVm = offering.isVolatileVm();
         hostTag = offering.getHostTag();
         vmType = offering.getSystemVmType();
+        systemUse = offering.isSystemUse();
         dynamicScalingEnabled = offering.isDynamicScalingEnabled();
     }
 
@@ -172,17 +211,6 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     @Override
     public boolean getDefaultUse() {
         return defaultUse;
-    }
-
-    @Override
-    @Transient
-    public String[] getTagsArray() {
-        String tags = getTags();
-        if (tags == null || tags.length() == 0) {
-            return new String[0];
-        }
-
-        return tags.split(",");
     }
 
     @Override
@@ -293,6 +321,103 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 
     public boolean isCustomCpuSpeedSupported() {
         return isCustomized() && getDetail("minCPU") != null;
+    }
+
+    @Override
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public boolean isSystemUse() {
+        return systemUse;
+    }
+
+    @Override
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public String getUniqueName() {
+        return uniqueName;
+    }
+
+    @Override
+    public void setUniqueName(String uniqueName) {
+        this.uniqueName = uniqueName;
+    }
+
+    @Override
+    public String getDisplayText() {
+        return displayText;
+    }
+
+    @Override
+    public void setDisplayText(String displayText) {
+        this.displayText = displayText;
+    }
+
+    @Override
+    public boolean isCustomized() {
+        return customized;
+    }
+
+    @Override
+    public void setCustomized(boolean customized) {
+        this.customized = customized;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
+    @Override
+    public Date getRemoved() {
+        return removed;
+    }
+
+    @Override
+    public Date getCreated() {
+        return created;
+    }
+
+    @Override
+    public DiskOffering.State getState() {
+        return state;
+    }
+
+    @Override
+    public void setState(DiskOffering.State state) {
+        this.state = state;
+    }
+
+    @Override
+    public Long getDiskOfferingId() {
+        return diskOfferingId;
+    }
+
+    public void setDiskOfferingId(Long diskOfferingId) {
+        this.diskOfferingId = diskOfferingId;
+    }
+
+    @Override
+    public String getUuid() {
+        return uuid;
+    }
+
+    @Override
+    public boolean isUseLocalStorage() {
+        return false;
     }
 
     @Override

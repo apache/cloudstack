@@ -95,6 +95,9 @@ public class VirtualMachineManagerImplTest {
     @Mock
     private ServiceOfferingVO serviceOfferingMock;
 
+    @Mock
+    private DiskOfferingVO diskOfferingMock;
+
     private long hostMockId = 1L;
     @Mock
     private HostVO hostMock;
@@ -218,14 +221,15 @@ public class VirtualMachineManagerImplTest {
         when(serviceOfferingMock.getId()).thenReturn(2l);
 
         ServiceOfferingVO mockCurrentServiceOffering = mock(ServiceOfferingVO.class);
+        DiskOfferingVO mockCurrentDiskOffering = mock(DiskOfferingVO.class);
 
         when(serviceOfferingDaoMock.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn(mockCurrentServiceOffering);
         when(mockCurrentServiceOffering.isUseLocalStorage()).thenReturn(true);
         when(serviceOfferingMock.isUseLocalStorage()).thenReturn(true);
         when(mockCurrentServiceOffering.isSystemUse()).thenReturn(true);
         when(serviceOfferingMock.isSystemUse()).thenReturn(true);
-        when(mockCurrentServiceOffering.getTags()).thenReturn("x,y");
-        when(serviceOfferingMock.getTags()).thenReturn("z,x,y");
+        when(mockCurrentDiskOffering.getTags()).thenReturn("x,y");
+        when(diskOfferingMock.getTags()).thenReturn("z,x,y");
 
         virtualMachineManagerImpl.checkIfCanUpgrade(vmInstanceMock, serviceOfferingMock);
     }

@@ -30,7 +30,7 @@ public interface DiskOfferingDao extends GenericDao<DiskOfferingVO, Long> {
 
     DiskOfferingVO findByUniqueName(String uniqueName);
 
-    DiskOfferingVO persistDeafultDiskOffering(DiskOfferingVO offering);
+    DiskOfferingVO persistDefaultDiskOffering(DiskOfferingVO offering);
 
     List<DiskOfferingVO> listAllBySizeAndProvisioningType(long size, Storage.ProvisioningType provisioningType);
 

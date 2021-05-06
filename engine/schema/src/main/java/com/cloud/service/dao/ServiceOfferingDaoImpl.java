@@ -24,6 +24,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -48,6 +50,8 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     protected ServiceOfferingDetailsDao detailsDao;
     @Inject
     protected UserVmDetailsDao userVmDetailsDao;
+    @Inject
+    private DiskOfferingDao diskOfferingDao;
 
     protected final SearchBuilder<ServiceOfferingVO> UniqueNameSearch;
     protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByKeywordSearch;
@@ -58,7 +62,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
 
         UniqueNameSearch = createSearchBuilder();
         UniqueNameSearch.and("name", UniqueNameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
-        UniqueNameSearch.and("system", UniqueNameSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
+        UniqueNameSearch.and("system_use", UniqueNameSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
         UniqueNameSearch.done();
 
         ServiceOfferingsByKeywordSearch = createSearchBuilder();
@@ -77,7 +81,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     public ServiceOfferingVO findByName(String name) {
         SearchCriteria<ServiceOfferingVO> sc = UniqueNameSearch.create();
         sc.setParameters("name", name);
-        sc.setParameters("system", true);
+        sc.setParameters("system_use", true);
         List<ServiceOfferingVO> vos = search(sc, null, null, false);
         if (vos.size() == 0) {
             return null;
@@ -214,10 +218,16 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     public List<ServiceOfferingVO> createSystemServiceOfferings(String name, String uniqueName, int cpuCount, int ramSize, int cpuSpeed,
             Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText, ProvisioningType provisioningType,
             boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vmType, boolean defaultUse) {
+        DiskOfferingVO diskOfferingVO = new DiskOfferingVO(name, displayText, provisioningType, false, tags, recreatable, false, systemUse, true);
+        diskOfferingVO.setUniqueName(uniqueName);
+        diskOfferingVO = diskOfferingDao.persistDefaultDiskOffering(diskOfferingVO);
+
         List<ServiceOfferingVO> list = new ArrayList<ServiceOfferingVO>();
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpuCount, ramSize, cpuSpeed, rateMbps, multicastRateMbps, offerHA, displayText,
                 provisioningType, false, recreatable, tags, systemUse, vmType, defaultUse);
+        //        super(name, displayText, provisioningType, false, tags, recreatable, useLocalStorage, systemUse, true);
         offering.setUniqueName(uniqueName);
+        offering.setDiskOfferingId(diskOfferingVO.getId());
         offering = persistSystemServiceOffering(offering);
         if (offering != null) {
             list.add(offering);
@@ -228,9 +238,14 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
             useLocal = false;
         }
 
+        diskOfferingVO = new DiskOfferingVO(name + (useLocal ? " - Local Storage" : ""), displayText, provisioningType, false, tags, recreatable, useLocal, systemUse, true);
+        diskOfferingVO.setUniqueName(uniqueName + (useLocal ? "-Local" : ""));
+        diskOfferingVO = diskOfferingDao.persistDefaultDiskOffering(diskOfferingVO);
+
         offering = new ServiceOfferingVO(name + (useLocal ? " - Local Storage" : ""), cpuCount, ramSize, cpuSpeed, rateMbps, multicastRateMbps, offerHA, displayText,
                 provisioningType, useLocal, recreatable, tags, systemUse, vmType, defaultUse);
         offering.setUniqueName(uniqueName + (useLocal ? "-Local" : ""));
+        offering.setDiskOfferingId(diskOfferingVO.getId());
         offering = persistSystemServiceOffering(offering);
         if (offering != null) {
             list.add(offering);
