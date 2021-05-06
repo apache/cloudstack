@@ -157,7 +157,6 @@ import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.Upload;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -1092,44 +1091,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     protected TemplateManagerImpl() {
-    }
-
-    @Override
-    public boolean templateIsDeleteable(VMTemplateHostVO templateHostRef) {
-        VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templateHostRef.getTemplateId());
-        long templateId = template.getId();
-        HostVO secondaryStorageHost = _hostDao.findById(templateHostRef.getHostId());
-        long zoneId = secondaryStorageHost.getDataCenterId();
-        DataCenterVO zone = _dcDao.findById(zoneId);
-
-        // Check if there are VMs running in the template host ref's zone that
-        // use the template
-        List<VMInstanceVO> nonExpungedVms = _vmInstanceDao.listNonExpungedByZoneAndTemplate(zoneId, templateId);
-
-        if (!nonExpungedVms.isEmpty()) {
-            s_logger.debug("Template " + template.getName() + " in zone " + zone.getName() +
-                    " is not deleteable because there are non-expunged VMs deployed from this template.");
-            return false;
-        }
-        List<UserVmVO> userVmUsingIso = _userVmDao.listByIsoId(templateId);
-        // check if there is any VM using this ISO.
-        if (!userVmUsingIso.isEmpty()) {
-            s_logger.debug("ISO " + template.getName() + " in zone " + zone.getName() + " is not deleteable because it is attached to " + userVmUsingIso.size() + " VMs");
-            return false;
-        }
-        // Check if there are any snapshots for the template in the template
-        // host ref's zone
-        List<VolumeVO> volumes = _volumeDao.findByTemplateAndZone(templateId, zoneId);
-        for (VolumeVO volume : volumes) {
-            List<SnapshotVO> snapshots = _snapshotDao.listByVolumeIdVersion(volume.getId(), "2.1");
-            if (!snapshots.isEmpty()) {
-                s_logger.debug("Template " + template.getName() + " in zone " + zone.getName() +
-                        " is not deleteable because there are 2.1 snapshots using this template.");
-                return false;
-            }
-        }
-
-        return true;
     }
 
     @Override

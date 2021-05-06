@@ -313,6 +313,4 @@ DROP TABLE IF EXISTS `cloud`.`template_ovf_properties`;
 DROP TABLE IF EXISTS `cloud`.`op_host_upgrade`;
 DROP TABLE IF EXISTS `cloud`.`stack_maid `;
 DROP TABLE IF EXISTS `cloud`.`volume_host_ref`;
-
--- TODO
--- DROP TABLE IF EXISTS `cloud`.`template_host_ref`;
+DROP TABLE IF EXISTS `cloud`.`template_host_ref`;

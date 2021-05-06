@@ -326,7 +326,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         _discoverers = discoverers;
     }
 
-    protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     protected GenericSearchBuilder<StoragePoolHostVO, Long> UpHostsInPoolSearch;
     protected SearchBuilder<VMInstanceVO> StoragePoolSearch;
     protected SearchBuilder<StoragePoolVO> LocalStorageSearch;

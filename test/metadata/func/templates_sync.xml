@@ -20,7 +20,7 @@ under the License.
 
 <!-- MAKE SURE THAT THE OSTYPE OF TEMPLATES ARE CHANGED IN CASE OF USING TEMPLATE OTHER THAN THE DEFAULT CENTOS 5.3 64bit TEMPLATE -->
 <!--  Make some preparations - create a couple of private templates -->
-	<!-- 
+	<!--
 	<command>
 		<name>createVolume</name>
 		<testcase>Create a volume</testcase>
@@ -43,7 +43,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -53,7 +53,7 @@ under the License.
 		</returnvalue>
 	</command>
 	-->
-		
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase>Deploy a VM </testcase>
@@ -69,7 +69,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -102,7 +102,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>select id from volumes</name>
 		<mysql>true</mysql>
@@ -120,7 +120,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>stopVirtualMachine</name>
 		<testcase>Stop the Virtual Machine</testcase>
@@ -131,8 +131,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-<!--  Create template, delete it and restart management server -->	
+
+<!--  Create template, delete it and restart management server -->
 	<command>
 		<name>createTemplate</name>
 		<testcase>Create template</testcase>
@@ -169,45 +169,6 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	<command>
-		<name>select download_state from template_host_ref</name>
-		<mysql>true</mysql>
-		<testcase>Getting volume path for the vm DATADISK volume</testcase>
-		<parameters>
-			<item getparam="true">
-			    <name>template_id</name>
-				<param>privatetemplateid</param>
-			</item>
-		</parameters>
-		<returnvalue>
-			<item>
-			    <name>download_state</name>
-				<value>DOWNLOADED</value>
-			</item>
-		</returnvalue>
-	</command>
-	
-	
-	<command>
-		<name>select install_path from template_host_ref</name>
-		<mysql>true</mysql>
-		<testcase>Getting install_path from the template</testcase>
-		<parameters>
-			<item getparam="true">
-			    <name>template_id</name>
-				<param>privatetemplateid</param>
-			</item>
-		</parameters>
-		<returnvalue>
-			<item setparam="true">
-			    <name>install_path</name>
-				<param>template_path</param>
-			</item>
-		</returnvalue>
-	</command>
-	
-	
 	<command>
 		<name>listtemplate.sh</name>
 		<script>true</script>
@@ -226,8 +187,8 @@ under the License.
 				<param>template_path</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>removetemplate.sh</name>
 		<script>true</script>
@@ -247,8 +208,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<command>
 		<name>ms.sh</name>
 		<script>true</script>
@@ -264,7 +225,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>ms.sh</name>
 		<script>true</script>
@@ -280,8 +241,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -292,29 +253,9 @@ under the License.
 				<value>240</value>
 			</item>
 		</parameters>
-	</command>	
-	
-	<command>
-		<name>select download_state from template_host_ref</name>
-		<mysql>true</mysql>
-		<testcase>Checking download state of the template in the DB after the template was deleted on secondary storage and management server process was restarted</testcase>
-		<parameters>
-			<item getparam="true">
-			    <name>template_id</name>
-				<param>privatetemplateid</param>
-			</item>
-		</parameters>
-		<returnvalue>
-			<item>
-			    <name>download_state</name>
-				<value>DOWNLOAD_ERROR</value>
-			</item>
-		</returnvalue>
 	</command>
-	
-	
-	
-<!--  Create template, corrupt it by removing lines from templates.properties file and restart management server -->	
+
+<!--  Create template, corrupt it by removing lines from templates.properties file and restart management server -->
 	<command>
 		<name>createTemplate</name>
 		<testcase>Create template</testcase>
@@ -351,45 +292,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	<command>
-		<name>select download_state from template_host_ref</name>
-		<mysql>true</mysql>
-		<testcase>Getting volume path for the vm DATADISK volume</testcase>
-		<parameters>
-			<item getparam="true">
-			    <name>template_id</name>
-				<param>privatetemplateid</param>
-			</item>
-		</parameters>
-		<returnvalue>
-			<item>
-			    <name>download_state</name>
-				<value>DOWNLOADED</value>
-			</item>
-		</returnvalue>
-	</command>
-	
-	
-	<command>
-		<name>select install_path from template_host_ref</name>
-		<mysql>true</mysql>
-		<testcase>Getting install_path from the template</testcase>
-		<parameters>
-			<item getparam="true">
-			    <name>template_id</name>
-				<param>privatetemplateid</param>
-			</item>
-		</parameters>
-		<returnvalue>
-			<item setparam="true">
-			    <name>install_path</name>
-				<param>template_path</param>
-			</item>
-		</returnvalue>
-	</command>
-	
-	
+
 	<command>
 		<name>listtemplate.sh</name>
 		<script>true</script>
@@ -408,8 +311,8 @@ under the License.
 				<param>template_path</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>corrupttemplate.sh</name>
 		<script>true</script>
@@ -433,8 +336,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<command>
 		<name>ms.sh</name>
 		<script>true</script>
@@ -450,7 +353,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>ms.sh</name>
 		<script>true</script>
@@ -466,8 +369,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -478,26 +381,8 @@ under the License.
 				<value>240</value>
 			</item>
 		</parameters>
-	</command>	
-	
-	<command>
-		<name>select download_state from template_host_ref</name>
-		<mysql>true</mysql>
-		<testcase>Checking download state of the template in the DB after the template was deleted on secondary storage and management server process was restarted</testcase>
-		<parameters>
-			<item getparam="true">
-			    <name>template_id</name>
-				<param>privatetemplateid</param>
-			</item>
-		</parameters>
-		<returnvalue>
-			<item>
-			    <name>download_state</name>
-				<value>DOWNLOAD_ERROR</value>
-			</item>
-		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>listtemplate.sh</name>
 		<script>true</script>
@@ -517,9 +402,9 @@ under the License.
 				<param>template_path</param>
 			</item>
 		</parameters>
-	</command>	
-		
-		
+	</command>
+
+
 <!--  Create a template directory on the secondary storage, reboot management server and make sure that template directory got cleanedup -->
 	<command>
 		<name>createTemplate</name>
@@ -557,45 +442,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	<command>
-		<name>select download_state from template_host_ref</name>
-		<mysql>true</mysql>
-		<testcase>Getting volume path for the vm DATADISK volume</testcase>
-		<parameters>
-			<item getparam="true">
-			    <name>template_id</name>
-				<param>privatetemplateid</param>
-			</item>
-		</parameters>
-		<returnvalue>
-			<item>
-			    <name>download_state</name>
-				<value>DOWNLOADED</value>
-			</item>
-		</returnvalue>
-	</command>
-	
-	
-	<command>
-		<name>select install_path from template_host_ref</name>
-		<mysql>true</mysql>
-		<testcase>Getting install_path from the template</testcase>
-		<parameters>
-			<item getparam="true">
-			    <name>template_id</name>
-				<param>privatetemplateid</param>
-			</item>
-		</parameters>
-		<returnvalue>
-			<item setparam="true">
-			    <name>install_path</name>
-				<param>template_path</param>
-			</item>
-		</returnvalue>
-	</command>
-	
-	
+
 	<command>
 		<name>listtemplate.sh</name>
 		<script>true</script>
@@ -614,8 +461,8 @@ under the License.
 				<param>template_path</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createfaketemplate.sh</name>
 		<script>true</script>
@@ -643,8 +490,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<command>
 		<name>ms.sh</name>
 		<script>true</script>
@@ -660,7 +507,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>ms.sh</name>
 		<script>true</script>
@@ -676,8 +523,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -688,8 +535,8 @@ under the License.
 				<value>240</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>listtemplate.sh</name>
 		<script>true</script>
@@ -709,10 +556,10 @@ under the License.
 				<value>/template/tmpl/1/300556/template.properties</value>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
-		
-<!--  Create template, delete it and stop/start management server -->	
+
+<!--  Create template, delete it and stop/start management server -->
 	<command>
 		<name>createTemplate</name>
 		<testcase>Create template</testcase>
@@ -749,45 +596,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	<command>
-		<name>select download_state from template_host_ref</name>
-		<mysql>true</mysql>
-		<testcase>Getting volume path for the vm DATADISK volume</testcase>
-		<parameters>
-			<item getparam="true">
-			    <name>template_id</name>
-				<param>privatetemplateid</param>
-			</item>
-		</parameters>
-		<returnvalue>
-			<item>
-			    <name>download_state</name>
-				<value>DOWNLOADED</value>
-			</item>
-		</returnvalue>
-	</command>
-	
-	
-	<command>
-		<name>select install_path from template_host_ref</name>
-		<mysql>true</mysql>
-		<testcase>Getting install_path from the template</testcase>
-		<parameters>
-			<item getparam="true">
-			    <name>template_id</name>
-				<param>privatetemplateid</param>
-			</item>
-		</parameters>
-		<returnvalue>
-			<item setparam="true">
-			    <name>install_path</name>
-				<param>template_path</param>
-			</item>
-		</returnvalue>
-	</command>
-	
-	
+
 	<command>
 		<name>listtemplate.sh</name>
 		<script>true</script>
@@ -806,8 +615,8 @@ under the License.
 				<param>template_path</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>removetemplate.sh</name>
 		<script>true</script>
@@ -827,8 +636,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<command>
 		<name>ms.sh</name>
 		<script>true</script>
@@ -844,7 +653,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>ms.sh</name>
 		<script>true</script>
@@ -860,8 +669,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<command>
 		<name>ms.sh</name>
 		<script>true</script>
@@ -877,7 +686,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>ms.sh</name>
 		<script>true</script>
@@ -893,7 +702,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -904,29 +713,9 @@ under the License.
 				<value>240</value>
 			</item>
 		</parameters>
-	</command>	
-	
-	<command>
-		<name>select download_state from template_host_ref</name>
-		<mysql>true</mysql>
-		<testcase>Checking download state of the template in the DB after the template was deleted on secondary storage and management server process was restarted</testcase>
-		<parameters>
-			<item getparam="true">
-			    <name>template_id</name>
-				<param>privatetemplateid</param>
-			</item>
-		</parameters>
-		<returnvalue>
-			<item>
-			    <name>download_state</name>
-				<value>DOWNLOAD_ERROR</value>
-			</item>
-		</returnvalue>
 	</command>
-	
-	
-	
-<!--  Create template, don't delete it and restart management server. Make sure that the template is still available, and you can stat a vm from it -->	
+
+<!--  Create template, don't delete it and restart management server. Make sure that the template is still available, and you can stat a vm from it -->
 	<command>
 		<name>createTemplate</name>
 		<testcase>Create template</testcase>
@@ -963,45 +752,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	<command>
-		<name>select download_state from template_host_ref</name>
-		<mysql>true</mysql>
-		<testcase>Getting volume path for the vm DATADISK volume</testcase>
-		<parameters>
-			<item getparam="true">
-			    <name>template_id</name>
-				<param>privatetemplateid</param>
-			</item>
-		</parameters>
-		<returnvalue>
-			<item>
-			    <name>download_state</name>
-				<value>DOWNLOADED</value>
-			</item>
-		</returnvalue>
-	</command>
-	
-	
-	<command>
-		<name>select install_path from template_host_ref</name>
-		<mysql>true</mysql>
-		<testcase>Getting install_path from the template</testcase>
-		<parameters>
-			<item getparam="true">
-			    <name>template_id</name>
-				<param>privatetemplateid</param>
-			</item>
-		</parameters>
-		<returnvalue>
-			<item setparam="true">
-			    <name>install_path</name>
-				<param>template_path</param>
-			</item>
-		</returnvalue>
-	</command>
-	
-	
+
 	<command>
 		<name>listtemplate.sh</name>
 		<script>true</script>
@@ -1020,8 +771,8 @@ under the License.
 				<param>template_path</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>ms.sh</name>
 		<script>true</script>
@@ -1037,7 +788,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>ms.sh</name>
 		<script>true</script>
@@ -1053,8 +804,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -1065,27 +816,8 @@ under the License.
 				<value>240</value>
 			</item>
 		</parameters>
-	</command>	
-	
-	<command>
-		<name>select download_state from template_host_ref</name>
-		<mysql>true</mysql>
-		<testcase>Checking download state of the template in the DB after the template was deleted on secondary storage and management server process was restarted</testcase>
-		<parameters>
-			<item getparam="true">
-			    <name>template_id</name>
-				<param>privatetemplateid</param>
-			</item>
-		</parameters>
-		<returnvalue>
-			<item>
-			    <name>download_state</name>
-				<value>DOWNLOADED</value>
-			</item>
-		</returnvalue>
 	</command>
-	
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase>Deploy vm from private template after management server was rebooted</testcase>
@@ -1101,7 +833,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>privatetemplateid</param>
@@ -1125,7 +857,7 @@ under the License.
 			<item getparam="true">
 				<name>networkids</name>
 				<param>globalnetworkid</param>
-			</item>			
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -1134,8 +866,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 <!--  Register template, delete it from the secondary storage and restart management server. Make sure that template download started again -->
 	<command>
 		<name>registerTemplate</name>
@@ -1180,8 +912,8 @@ under the License.
 				<param>privatetemplateid</param>
 			</item>
 		</returnvalue>
-	</command>		
-	
+	</command>
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -1192,47 +924,8 @@ under the License.
 				<value>300</value>
 			</item>
 		</parameters>
-	</command>	
-	
-	
-	<command>
-		<name>select download_state from template_host_ref</name>
-		<mysql>true</mysql>
-		<testcase>Getting volume path for the vm DATADISK volume</testcase>
-		<parameters>
-			<item getparam="true">
-			    <name>template_id</name>
-				<param>privatetemplateid</param>
-			</item>
-		</parameters>
-		<returnvalue>
-			<item>
-			    <name>download_state</name>
-				<value>DOWNLOADED</value>
-			</item>
-		</returnvalue>
 	</command>
-	
-	
-	<command>
-		<name>select install_path from template_host_ref</name>
-		<mysql>true</mysql>
-		<testcase>Getting install_path from the template</testcase>
-		<parameters>
-			<item getparam="true">
-			    <name>template_id</name>
-				<param>privatetemplateid</param>
-			</item>
-		</parameters>
-		<returnvalue>
-			<item setparam="true">
-			    <name>install_path</name>
-				<param>template_path</param>
-			</item>
-		</returnvalue>
-	</command>
-	
-	
+
 	<command>
 		<name>listtemplate.sh</name>
 		<script>true</script>
@@ -1251,8 +944,8 @@ under the License.
 				<param>template_path</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>removetemplate.sh</name>
 		<script>true</script>
@@ -1272,8 +965,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<command>
 		<name>ms.sh</name>
 		<script>true</script>
@@ -1289,7 +982,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>ms.sh</name>
 		<script>true</script>
@@ -1305,8 +998,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<command>
 		<name>ms.sh</name>
 		<script>true</script>
@@ -1322,7 +1015,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>ms.sh</name>
 		<script>true</script>
@@ -1338,7 +1031,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -1349,26 +1042,7 @@ under the License.
 				<value>15</value>
 			</item>
 		</parameters>
-	</command>	
-	
-	<command>
-		<name>select download_state from template_host_ref</name>
-		<mysql>true</mysql>
-		<testcase>Checking download state of the template in the DB after the template was deleted on secondary storage and management server process was restarted</testcase>
-		<parameters>
-			<item getparam="true">
-			    <name>template_id</name>
-				<param>privatetemplateid</param>
-			</item>
-		</parameters>
-		<returnvalue>
-			<item>
-			    <name>download_state</name>
-				<value>DOWNLOAD_IN_PROGRESS</value>
-			</item>
-		</returnvalue>
 	</command>
-				
 
 <!--  Execute a cleanup -->
 	<command>

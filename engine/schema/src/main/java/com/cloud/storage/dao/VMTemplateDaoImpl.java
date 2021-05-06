@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.storage.dao;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -222,31 +219,6 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
         Filter filter = new Filter(VMTemplateVO.class, "id", false, null, null);
         return listBy(sc, filter);
-    }
-
-    @Override
-    public List<Long> listPrivateTemplatesByHost(Long hostId) {
-
-        String sql =
-            "select * from template_host_ref as thr INNER JOIN vm_template as t ON t.id=thr.template_id "
-                + "where thr.host_id=? and t.public=0 and t.featured=0 and t.type='USER' and t.state='Active'";
-
-        List<Long> l = new ArrayList<Long>();
-
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setLong(1, hostId);
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                l.add(rs.getLong(1));
-            }
-        } catch (SQLException e) {
-            s_logger.debug("Exception: ", e);
-        }
-        return l;
     }
 
     @Override
@@ -572,21 +544,6 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
      * accountType; //String accountId = null; String guestOSJoin = "";
      * StringBuilder templateHostRefJoin = new StringBuilder(); String
      * dataCenterJoin = "", lpjoin = ""; String tagsJoin = "";
-     *
-     * if (isIso && !hyperType.equals(HypervisorType.None)) { guestOSJoin =
-     * " INNER JOIN guest_os guestOS on (guestOS.id = t.guest_os_id) INNER JOIN guest_os_hypervisor goh on ( goh.guest_os_id = guestOS.id) "
-     * ; } if (onlyReady){ templateHostRefJoin.append(
-     * " INNER JOIN  template_host_ref thr on (t.id = thr.template_id) INNER JOIN host h on (thr.host_id = h.id)"
-     * ); sql = SELECT_TEMPLATE_HOST_REF; groupByClause =
-     * " GROUP BY t.id, h.data_center_id "; } if ((templateFilter ==
-     * TemplateFilter.featured) || (templateFilter == TemplateFilter.community))
-     * { dataCenterJoin =
-     * " INNER JOIN data_center dc on (h.data_center_id = dc.id)"; }
-     *
-     * if (zoneType != null) { dataCenterJoin =
-     * " INNER JOIN template_host_ref thr on (t.id = thr.template_id) INNER JOIN host h on (thr.host_id = h.id)"
-     * ; dataCenterJoin +=
-     * " INNER JOIN data_center dc on (h.data_center_id = dc.id)"; }
      *
      * if (templateFilter == TemplateFilter.sharedexecutable || templateFilter
      * == TemplateFilter.shared ){ lpjoin =

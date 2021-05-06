@@ -55,7 +55,6 @@ import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.download.DownloadState.DownloadEvent;
 import com.cloud.storage.upload.UploadListener;
@@ -157,7 +156,7 @@ public class DownloadListener implements Listener {
         return _callback;
     }
 
-    public void setCurrState(VMTemplateHostVO.Status currState) {
+    public void setCurrState(Status currState) {
         _currState = getState(currState.toString());
     }
 
