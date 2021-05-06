@@ -192,7 +192,7 @@
               rules: [{ required: true, message: $t('message.error.required.input') },
                       {
                         validator: (rule, value, callback) => {
-                          if (value && (isNaN(value) || value <= 0)) {
+                          if (value && (isNaN(value) || value < 0)) {
                             callback(this.$t('message.error.number'))
                           }
                           callback()

@@ -169,16 +169,12 @@ export default {
       this.fillEditFormFieldValues()
     }
   },
-  inject: ['parentCloseAction', 'parentFetchData', 'parentUpdActionData'],
+  inject: ['parentCloseAction', 'parentFetchData'],
   methods: {
     pollActionCompletion (jobId, action) {
       this.$pollJob({
         jobId,
         successMethod: result => {
-          if (this.action.api === 'deleteDomain') {
-            this.$set(this.resource, 'isDel', true)
-            this.parentUpdActionData(this.resource)
-          }
           this.parentFetchData()
           if (action.response) {
             const description = action.response(result.jobresult)
@@ -283,7 +279,6 @@ export default {
               key: this.action.label + resourceName,
               duration: duration
             })
-            this.parentUpdActionData(json)
             this.parentFetchData()
           }
           this.parentCloseAction()
