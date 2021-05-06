@@ -818,7 +818,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             case Stop:
             case CheckStop:
             case ForceStop:
-                return ((System.currentTimeMillis() >> 10) + _stopRetryInterval);
             case Destroy:
                 return ((System.currentTimeMillis() >> 10) + _stopRetryInterval);
         }
