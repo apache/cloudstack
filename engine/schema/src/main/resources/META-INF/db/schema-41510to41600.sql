@@ -305,8 +305,6 @@ from
 Update configuration set name='user.vm.readonly.details' where name='user.vm.readonly.ui.details';
 
 DROP TABLE IF EXISTS `cloud`.`external_bigswitch_vns_devices`;
-DROP TABLE IF EXISTS `cloud`.`s3`;
-DROP TABLE IF EXISTS `cloud`.`swift`;
 DROP TABLE IF EXISTS `cloud`.`template_s3_ref`;
 DROP TABLE IF EXISTS `cloud`.`template_swift_ref`;
 DROP TABLE IF EXISTS `cloud`.`template_ovf_properties`;
@@ -314,3 +312,8 @@ DROP TABLE IF EXISTS `cloud`.`op_host_upgrade`;
 DROP TABLE IF EXISTS `cloud`.`stack_maid`;
 DROP TABLE IF EXISTS `cloud`.`volume_host_ref`;
 DROP TABLE IF EXISTS `cloud`.`template_host_ref`;
+DROP TABLE IF EXISTS `cloud`.`swift`;
+
+ALTER TABLE `cloud`.`snapshots` DROP FOREIGN KEY `fk_snapshots__s3_id` ;
+ALTER TABLE `cloud`.`snapshots` DROP COLUMN `s3_id` ;
+DROP TABLE IF EXISTS `cloud`.`s3`;
