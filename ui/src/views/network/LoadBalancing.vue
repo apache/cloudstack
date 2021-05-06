@@ -556,7 +556,7 @@ export default {
         vpcid: this.resource.vpcid
       }).then(json => {
         this.tiers.data = json.listnetworksresponse.network || []
-        this.selectedTier = this.tiers.data && this.tiers.data[0].id ? this.tiers.data[0].id : null
+        this.selectedTier = this.tiers.data?.[0]?.id ? this.tiers.data[0].id : null
         this.$forceUpdate()
       }).catch(error => {
         this.$notifyError(error)

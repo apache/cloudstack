@@ -43,5 +43,9 @@ public interface Site2SiteCustomerGateway extends ControlledEntity, Identity, In
 
     public Date getRemoved();
 
+    public Boolean getSplitConnections();
+
+    public String getIkeVersion();
+
     String getName();
 }

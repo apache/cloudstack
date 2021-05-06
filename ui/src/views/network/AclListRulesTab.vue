@@ -82,7 +82,7 @@
                 <div>{{ acl.traffictype }}</div>
               </div>
               <div class="list__col">
-                <div class="list__label">{{ $t('label.reason') }}</div>
+                <div class="list__label">{{ $t('label.description') }}</div>
                 <div>{{ acl.reason }}</div>
               </div>
             </div>
@@ -184,7 +184,7 @@
             <a-select-option value="egress">{{ $t('label.egress') }}</a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.reason')">
+        <a-form-item :label="$t('label.description')">
           <a-textarea
             v-decorator="['reason']"
             :autosize="{ minRows: 2 }"

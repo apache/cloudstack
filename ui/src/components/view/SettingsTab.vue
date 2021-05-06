@@ -99,7 +99,7 @@ export default {
       filter: ''
     }
   },
-  beforeMount () {
+  created () {
     switch (this.$route.meta.name) {
       case 'account':
         this.scopeKey = 'accountid'
@@ -122,8 +122,6 @@ export default {
       default:
         this.scopeKey = ''
     }
-  },
-  created () {
     this.fetchData()
   },
   watch: {

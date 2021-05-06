@@ -370,7 +370,13 @@ export default {
         publicIps: {},
         snats: {},
         vms: {}
-      }
+      },
+      lbProviderMap: {
+        publicLb: {
+          vpc: ['VpcVirtualRouter', 'Netscaler']
+        }
+      },
+      publicLBExists: false
     }
   },
   created () {
@@ -399,6 +405,7 @@ export default {
         this.fetchLoadBalancers(network.id)
         this.fetchVMs(network.id)
       }
+      this.publicLBNetworkExists()
     },
     fetchNetworkAclList () {
       this.fetchLoading = true
@@ -417,6 +424,38 @@ export default {
         this.modalLoading = false
       })
     },
+    getNetworkOffering (networkId) {
+      return new Promise((resolve, reject) => {
+        api('listNetworkOfferings', {
+          id: networkId
+        }).then(json => {
+          var networkOffering = json.listnetworkofferingsresponse.networkoffering[0]
+          resolve(networkOffering)
+        }).catch(e => {
+          reject(e)
+        })
+      })
+    },
+    publicLBNetworkExists () {
+      api('listNetworks', {
+        vpcid: this.resource.id,
+        supportedservices: 'LB'
+      }).then(async json => {
+        var lbNetworks = json.listnetworksresponse.network || []
+        if (lbNetworks.length > 0) {
+          this.publicLBExists = true
+          for (var idx = 0; idx < lbNetworks.length; idx++) {
+            const lbNetworkOffering = await this.getNetworkOffering(lbNetworks[idx].networkofferingid)
+            const index = lbNetworkOffering.service.map(svc => { return svc.name }).indexOf('Lb')
+            if (index !== -1 &&
+              this.lbProviderMap.publicLb.vpc.indexOf(lbNetworkOffering.service.map(svc => { return svc.provider[0].name })[index]) !== -1) {
+              this.publicLBExists = true
+              break
+            }
+          }
+        }
+      })
+    },
     fetchNetworkOfferings () {
       this.fetchLoading = true
       this.modalLoading = true
@@ -427,6 +466,17 @@ export default {
         state: 'Enabled'
       }).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering || []
+        var filteredOfferings = []
+        if (this.publicLBExists) {
+          for (var index in this.networkOfferings) {
+            const offering = this.networkOfferings[index]
+            const idx = offering.service.map(svc => { return svc.name }).indexOf('Lb')
+            if (idx === -1 || this.lbProviderMap.publicLb.vpc.indexOf(offering.service.map(svc => { return svc.provider[0].name })[idx]) === -1) {
+              filteredOfferings.push(offering)
+            }
+          }
+          this.networkOfferings = filteredOfferings
+        }
         this.$nextTick(function () {
           this.form.setFieldsValue({
             networkOffering: this.networkOfferings[0].id

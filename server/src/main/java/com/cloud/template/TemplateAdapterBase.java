@@ -291,7 +291,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         }
 
         Map details = cmd.getDetails();
-        if (hypervisorType == HypervisorType.VMware) {
+        if (cmd.isDeployAsIs()) {
             if (MapUtils.isNotEmpty(details)) {
                 if (details.containsKey(VmDetailConstants.ROOT_DISK_CONTROLLER)) {
                     s_logger.info("Ignoring the rootDiskController detail provided, as we honour what is defined in the template");
