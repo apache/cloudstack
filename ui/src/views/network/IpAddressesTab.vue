@@ -74,7 +74,7 @@
         <template slot="action" slot-scope="text, record">
           <tooltip-button
             v-if="record.issourcenat !== true && record.forvirtualnetwork === true"
-            :tooltip="$('label.action.release.ip')"
+            :tooltip="$t('label.action.release.ip')"
             type="danger"
             icon="delete"
             :disabled="!('disassociateIpAddress' in $store.getters.apis)"

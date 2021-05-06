@@ -39,7 +39,7 @@
           :cancelText="$t('label.no')"
           placement="top"
         >
-          <tooltip-button :tooltip="$('label.delete')" :disabled="!('releaseDedicatedGuestVlanRange' in $store.getters.apis)" icon="delete" type="danger" />
+          <tooltip-button :tooltip="$t('label.delete')" :disabled="!('releaseDedicatedGuestVlanRange' in $store.getters.apis)" icon="delete" type="danger" />
         </a-popconfirm>
       </template>
     </a-table>
