@@ -540,7 +540,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
             } catch (AgentUnavailableException | OperationTimedoutException e) {
                 // Agent may be restarted on the scripts - continue polling until it is up
                 String msg = String.format("Cannot send command to %s, waiting %sms - %s", host, pingInterval, e.getMessage());
-                s_logger.warn(msg);
+                s_logger.warn(msg, e);
                 cmd.setStarted(true);
                 Thread.sleep(pingInterval);
                 timeSpent += pingInterval;

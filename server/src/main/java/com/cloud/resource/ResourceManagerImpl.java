@@ -904,7 +904,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 try {
                     resourceStateTransitTo(host, ResourceState.Event.DeleteHost, _nodeId);
                 } catch (final NoTransitionException e) {
-                    s_logger.debug("Cannot transit " + host + " to Enabled state", e);
                     s_logger.debug(String.format("Cannot transit %s to Enabled state", host), e);
                 }
 
@@ -2387,7 +2386,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     try {
                         _vmMgr.destroy(vm.getUuid(), false);
                     } catch (final Exception e) {
-                        final String errorMsg = String.format("There was an error when destroying the vm: %s as a part of hostDelete: %s", vm, host);
+                        String errorMsg = String.format("There was an error when destroying the VM: %s as a part of hostDelete: %s", vm, host);
                         s_logger.debug(errorMsg, e);
                         throw new UnableDeleteHostException(errorMsg + "," + e.getMessage());
                     }
@@ -2402,17 +2401,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     // Restart HA enabled vms
                     for (final VMInstanceVO vm : vms) {
                         if (!vm.isHaEnabled() || vm.getState() == State.Stopping) {
-                            s_logger.debug("Stopping vm: " + vm + " as a part of hostDelete: " + host);
+                            s_logger.debug("Stopping VM: " + vm + " as a part of hostDelete: " + host);
                             try {
                                 _vmMgr.advanceStop(vm.getUuid(), false);
                             } catch (final Exception e) {
-                                final String errorMsg = String.format("There was an error stopping the vm: %s as a part of hostDelete: %s", vm, host);
+                                final String errorMsg = String.format("There was an error stopping the VM: %s as a part of hostDelete: %s", vm, host);
                                 s_logger.debug(errorMsg, e);
                                 throw new UnableDeleteHostException(errorMsg + "," + e.getMessage());
                             }
                         } else if (vm.isHaEnabled() && (vm.getState() == State.Running || vm.getState() == State.Starting)) {
-                            s_logger.debug("Scheduling restart for vm: " + vm + " " + vm.getState() + " on host: " + host);
-                            s_logger.debug(String.format("Scheduling restart for vm: %s, state: %s on host: %s.", vm, vm.getState(), host));
+                            s_logger.debug(String.format("Scheduling restart for VM: %s, state: %s on host: %s.", vm, vm.getState(), host));
                             _haMgr.scheduleRestart(vm, false);
                         }
                     }
