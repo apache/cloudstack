@@ -838,7 +838,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 }
 
                 if (vlanUse == VlanType.VirtualNetwork) {
-                    if !dedicatedVlanDbIds.isEmpty()) {
+                    if (!dedicatedVlanDbIds.isEmpty()) {
                         fetchFromDedicatedRange = true;
                         sc.setParameters("vlanId", dedicatedVlanDbIds.toArray());
                         errorMessage.append(", vlanId id=" + Arrays.toString(dedicatedVlanDbIds.toArray()));
@@ -1125,7 +1125,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     }
 
     private String generateErrorMessageForOperationOnDisabledZone(String operation, DataCenter zone) {
-        return String.format("Cannot %s, Zone [id: %d, uuid: %s, name: %s] is currently disabled.", operation, zone.getId(), zone.getUuid(), zone.getName());
+        return String.format("Cannot %s, %s is currently disabled.", operation, zone);
     }
 
     @DB
