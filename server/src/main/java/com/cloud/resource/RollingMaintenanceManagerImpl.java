@@ -44,7 +44,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.HTTPUtils;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfileImpl;
@@ -56,7 +55,6 @@ import org.apache.cloudstack.api.command.admin.resource.StartRollingMaintenanceC
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
