@@ -2265,7 +2265,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
 
                         // only load running vms. For stopped vms get loaded on starting
-                        if (vmInstance.getState() == State.Running) {
+                        if (vmInstance != null && vmInstance.getState() == State.Running) {
                             VmAndCountDetails vmAndCount = new VmAndCountDetails(vmId, VmIpFetchTrialMax.value());
                             vmIdCountMap.put(nicId, vmAndCount);
                         }

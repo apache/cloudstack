@@ -70,7 +70,7 @@
           :enabled="quickViewEnabled() && actions.length > 0 && columns && columns[0].dataIndex === 'name' "
           @exec-action="$parent.execAction"/>
         <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
-          <a-button type="dashed" size="small" shape="circle" icon="login" @click="changeProject(record)" />
+          <tooltip-button type="dashed" size="small" icon="login" @click="changeProject(record)" />
         </span>
         <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
 
@@ -287,30 +287,29 @@
       </div>
     </template>
     <template slot="actions" slot-scope="text, record">
-      <a-button
-        shape="circle"
+      <tooltip-button
+        :tooltip="$t('label.edit')"
         :disabled="!('updateConfiguration' in $store.getters.apis)"
         v-if="editableValueKey !== record.key"
         icon="edit"
         @click="editValue(record)" />
-      <a-button
-        shape="circle"
+      <tooltip-button
+        :tooltip="$t('label.cancel')"
+        @click="editableValueKey = null"
+        v-if="editableValueKey === record.key"
+        iconType="close-circle"
+        iconTwoToneColor="#f5222d" />
+      <tooltip-button
+        :tooltip="$t('label.ok')"
         :disabled="!('updateConfiguration' in $store.getters.apis)"
         @click="saveValue(record)"
-        v-if="editableValueKey === record.key" >
-        <a-icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" />
-      </a-button>
-      <a-button
-        shape="circle"
-        size="default"
-        @click="editableValueKey = null"
-        v-if="editableValueKey === record.key" >
-        <a-icon type="close-circle" theme="twoTone" twoToneColor="#f5222d" />
-      </a-button>
+        v-if="editableValueKey === record.key"
+        iconType="check-circle"
+        iconTwoToneColor="#52c41a" />
     </template>
     <template slot="tariffActions" slot-scope="text, record">
-      <a-button
-        shape="circle"
+      <tooltip-button
+        :tooltip="$t('label.edit')"
         v-if="editableValueKey !== record.key"
         :disabled="!('quotaTariffUpdate' in $store.getters.apis)"
         icon="edit"
@@ -327,6 +326,7 @@ import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
 import InfoCard from '@/components/view/InfoCard'
 import QuickView from '@/components/view/QuickView'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'ListView',
@@ -335,7 +335,8 @@ export default {
     OsLogo,
     Status,
     InfoCard,
-    QuickView
+    QuickView,
+    TooltipButton
   },
   props: {
     columns: {

@@ -39,34 +39,28 @@
       </template>
       <template slot="actions" slot-scope="record">
         <div class="actions">
-          <a-popover v-if="record.account === 'system'" placement="bottom">
-            <template slot="content">{{ $t('label.add.account') }}</template>
-            <a-button
-              icon="user-add"
-              shape="circle"
-              @click="() => handleOpenAddAccountModal(record)"
-              :disabled="!('dedicatePublicIpRange' in $store.getters.apis)"></a-button>
-          </a-popover>
-          <a-popover
+          <tooltip-button
+            v-if="record.account === 'system'"
+            tooltipPlacement="bottom"
+            :tooltip="$t('label.add.account')"
+            icon="user-add"
+            @click="() => handleOpenAddAccountModal(record)"
+            :disabled="!('dedicatePublicIpRange' in $store.getters.apis)" />
+          <tooltip-button
             v-else
-            placement="bottom">
-            <template slot="content">{{ $t('label.release.account') }}</template>
-            <a-button
-              icon="user-delete"
-              shape="circle"
-              type="danger"
-              @click="() => handleRemoveAccount(record.id)"
-              :disabled="!('releasePublicIpRange' in $store.getters.apis)"></a-button>
-          </a-popover>
-          <a-popover placement="bottom">
-            <template slot="content">{{ $t('label.remove.ip.range') }}</template>
-            <a-button
-              icon="delete"
-              shape="circle"
-              type="danger"
-              @click="handleDeleteIpRange(record.id)"
-              :disabled="!('deleteVlanIpRange' in $store.getters.apis)"></a-button>
-          </a-popover>
+            tooltipPlacement="bottom"
+            :tooltip="$t('label.release.account')"
+            icon="user-delete"
+            type="danger"
+            @click="() => handleRemoveAccount(record.id)"
+            :disabled="!('releasePublicIpRange' in $store.getters.apis)" />
+          <tooltip-button
+            tooltipPlacement="bottom"
+            :tooltip="$t('label.remove.ip.range')"
+            icon="delete"
+            type="danger"
+            @click="handleDeleteIpRange(record.id)"
+            :disabled="!('deleteVlanIpRange' in $store.getters.apis)" />
         </div>
       </template>
     </a-table>
@@ -201,9 +195,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'IpRangesTabPublic',
+  components: {
+    TooltipButton
+  },
   props: {
     resource: {
       type: Object,
