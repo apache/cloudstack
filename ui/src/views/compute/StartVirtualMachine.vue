@@ -43,7 +43,8 @@
               }"
               :loading="podsLoading"
               :placeholder="apiParams.podid.description"
-              @change="handlePodChange">
+              @change="handlePodChange"
+              :autoFocus="this.$store.getters.userInfo.roletype === 'Admin'">
               <a-select-option v-for="pod in this.pods" :key="pod.id">
                 {{ pod.name }}
               </a-select-option>
@@ -148,7 +149,7 @@ export default {
       this.apiParams[param.name] = param
     })
   },
-  mounted () {
+  created () {
     if (this.$store.getters.userInfo.roletype === 'Admin') {
       this.fetchPods()
       this.fetchClusters()
@@ -255,7 +256,7 @@ export default {
             successMethod: () => {
               this.parentFetchData()
             },
-            response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `Password of the VM is ${result.virtualmachine.password}` : null }
+            response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null }
           })
           this.closeAction()
         }).catch(error => {

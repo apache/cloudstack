@@ -30,6 +30,7 @@
             </a-tooltip>
           </span>
           <a-input
+            autoFocus
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
@@ -367,7 +368,7 @@
             :loading="domainLoading"
             :placeholder="this.$t('label.domainid')">
             <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
-              {{ opt.name || opt.description }}
+              {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -483,8 +484,6 @@ export default {
         name: this.$t('label.all.zone')
       }
     ]
-  },
-  mounted () {
     this.fetchData()
     this.isPublic = this.isAdmin()
   },

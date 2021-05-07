@@ -917,7 +917,14 @@ public class TemplateServiceImpl implements TemplateService {
         TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(null, to, future);
         AsyncCallbackDispatcher<TemplateServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().deleteTemplateCallback(null, null)).setContext(context);
-        to.getDataStore().getDriver().deleteAsync(to.getDataStore(), to, caller);
+
+        if (to.canBeDeletedFromDataStore()) {
+            to.getDataStore().getDriver().deleteAsync(to.getDataStore(), to, caller);
+        } else {
+            CommandResult result = new CommandResult();
+            caller.complete(result);
+        }
+
         return future;
     }
 

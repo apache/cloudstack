@@ -17,17 +17,19 @@
 
 <template>
   <div>
-    <p v-html="$t('message.assign.instance.another')"></p>
-
     <div class="form">
 
       <div v-if="loading" class="loading">
         <a-icon type="loading" style="color: #1890ff;"></a-icon>
       </div>
 
+      <a-alert type="warning" style="margin-bottom: 20px">
+        <span slot="message" v-html="$t('message.assign.instance.another')"></span>
+      </a-alert>
+
       <div class="form__item">
         <p class="form__label">{{ $t('label.accounttype') }}</p>
-        <a-select v-model="selectedAccountType" defaultValue="account">
+        <a-select v-model="selectedAccountType" defaultValue="account" autoFocus>
           <a-select-option :value="$t('label.account')">{{ $t('label.account') }}</a-select-option>
           <a-select-option :value="$t('label.project')">{{ $t('label.project') }}</a-select-option>
         </a-select>
@@ -37,7 +39,7 @@
         <p class="form__label"><span class="required">*</span>{{ $t('label.domain') }}</p>
         <a-select @change="changeDomain" v-model="selectedDomain" :defaultValue="selectedDomain">
           <a-select-option v-for="domain in domains" :key="domain.name" :value="domain.id">
-            {{ domain.path }}
+            {{ domain.path || domain.name || domain.description }}
           </a-select-option>
         </a-select>
       </div>
@@ -75,9 +77,14 @@
         </a-select>
       </div>
 
-      <a-button type="primary" class="submit-btn" @click="submitData">
-        {{ $t('label.submit') }}
-      </a-button>
+      <div class="submit-btn">
+        <a-button @click="closeAction">
+          {{ $t('label.cancel') }}
+        </a-button>
+        <a-button type="primary" @click="submitData">
+          {{ $t('label.submit') }}
+        </a-button>
+      </div>
 
     </div>
 
@@ -112,7 +119,7 @@ export default {
       loading: false
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {
@@ -127,6 +134,10 @@ export default {
         this.selectedDomain = this.domains[0].id
         this.fetchAccounts()
         this.fetchProjects()
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
       })
     },
     fetchAccounts () {
@@ -135,9 +146,12 @@ export default {
         response: 'json',
         domainId: this.selectedDomain,
         state: 'Enabled',
-        listAll: true
+        isrecursive: false
       }).then(response => {
         this.accounts = response.listaccountsresponse.account
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
         this.loading = false
       })
     },
@@ -148,9 +162,12 @@ export default {
         domainId: this.selectedDomain,
         state: 'Active',
         details: 'min',
-        listAll: true
+        isrecursive: false
       }).then(response => {
         this.projects = response.listprojectsresponse.project
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
         this.loading = false
       })
     },
@@ -165,6 +182,9 @@ export default {
         projectid: this.selectedProject
       }).then(response => {
         this.networks = response.listnetworksresponse.network
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
         this.loading = false
       })
     },
@@ -180,6 +200,9 @@ export default {
     changeProject () {
       this.selectedAccount = null
       this.fetchNetworks()
+    },
+    closeAction () {
+      this.$emit('close-action')
     },
     submitData () {
       let variableKey = ''
@@ -226,6 +249,12 @@ export default {
 
 <style scoped lang="scss">
   .form {
+    width: 85vw;
+
+    @media (min-width: 760px) {
+      width: 500px;
+    }
+
     display: flex;
     flex-direction: column;
 
@@ -247,6 +276,10 @@ export default {
   .submit-btn {
     margin-top: 10px;
     align-self: flex-end;
+
+    button {
+      margin-left: 10px;
+    }
   }
 
   .required {

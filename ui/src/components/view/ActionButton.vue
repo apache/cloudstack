@@ -17,7 +17,12 @@
 
 <template>
   <span class="row-action-button">
-    <console :resource="resource" :size="size" v-if="resource && resource.id && dataView" />
+    <a-tooltip arrowPointAtCenter placement="bottomRight" v-if="resource && resource.id && dataView">
+      <template slot="title">
+        {{ $t('label.view.console') }}
+      </template>
+      <console :resource="resource" :size="size" />
+    </a-tooltip>
     <a-tooltip
       v-for="(action, actionIndex) in actions"
       :key="actionIndex"
@@ -129,6 +134,9 @@ export default {
   methods: {
     execAction (action) {
       action.resource = this.resource
+      if (action.docHelp) {
+        action.docHelp = this.$applyDocHelpMappings(action.docHelp)
+      }
       this.$emit('exec-action', action)
     },
     handleShowBadge () {

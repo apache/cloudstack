@@ -26,6 +26,7 @@ import string
 from optparse import OptionParser
 import subprocess
 import shutil
+import shlex
 import socket
 
 # squelch mysqldb spurious warnings
@@ -399,7 +400,7 @@ for example:
             return 'ENC(%s)'%value
 
         def encryptDBSecretKey():
-            self.putDbProperty('db.cloud.encrypt.secret', formatEncryptResult(encrypt(self.dbsecretkey)))
+            self.putDbProperty('db.cloud.encrypt.secret', formatEncryptResult(encrypt(shlex.quote(self.dbsecretkey))))
 
         def encryptDBPassword():
             dbPassword = self.getDbProperty('db.cloud.password')

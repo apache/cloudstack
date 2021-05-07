@@ -79,8 +79,9 @@
             <artifactId>jasypt</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.trilead</groupId>
+            <groupId>org.jenkins-ci</groupId>
             <artifactId>trilead-ssh2</artifactId>
+            <version>${cs.trilead.version}</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
@@ -181,6 +182,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
+            <version>${cs.commons-compress.version}</version>
         </dependency>
     </dependencies>
     <build>

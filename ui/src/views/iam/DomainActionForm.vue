@@ -37,6 +37,9 @@
           :form="form"
           @submit="handleSubmit"
           layout="vertical" >
+          <a-alert type="warning" v-if="action.message">
+            <span slot="message" v-html="$t(action.message)" />
+          </a-alert>
           <a-form-item
             v-for="(field, fieldIndex) in action.paramFields"
             :key="fieldIndex"
@@ -65,6 +68,7 @@
                   rules: [{ required: field.required, message: $t('message.error.select') }]
                 }]"
                 :placeholder="field.description"
+                :autoFocus="fieldIndex === firstIndex"
               >
                 <a-select-option v-for="(opt, optIndex) in action.mapping[field.name].options" :key="optIndex">
                   {{ opt }}
@@ -84,6 +88,7 @@
                 :filterOption="(input, option) => {
                   return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
+                :autoFocus="fieldIndex === firstIndex"
               >
                 <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                   {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
@@ -98,6 +103,7 @@
                   rules: [{ required: field.required, message: $t('message.error.select') }]
                 }]"
                 :placeholder="field.description"
+                :autoFocus="fieldIndex === firstIndex"
               >
                 <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                   {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
@@ -110,6 +116,7 @@
                   rules: [{ required: field.required, message: `${$t('message.validate.number')}` }]
                 }]"
                 :placeholder="field.description"
+                :autoFocus="fieldIndex === firstIndex"
               />
             </span>
             <span v-else>
@@ -117,7 +124,8 @@
                 v-decorator="[field.name, {
                   rules: [{ required: field.required, message: $t('message.error.required.input') }]
                 }]"
-                :placeholder="field.description" />
+                :placeholder="field.description"
+                :autoFocus="fieldIndex === firstIndex" />
             </span>
           </a-form-item>
         </a-form>
@@ -148,21 +156,25 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
+    this.firstIndex = 0
+    for (let fieldIndex = 0; fieldIndex < this.action.paramFields.length; fieldIndex++) {
+      const field = this.action.paramFields[fieldIndex]
+      if (!(this.action.mapping && field.name in this.action.mapping && this.action.mapping[field.name].value)) {
+        this.firstIndex = fieldIndex
+        break
+      }
+    }
     if (this.action.dataView && this.action.icon === 'edit') {
       this.fillEditFormFieldValues()
     }
   },
-  inject: ['parentCloseAction', 'parentFetchData', 'parentUpdActionData'],
+  inject: ['parentCloseAction', 'parentFetchData'],
   methods: {
     pollActionCompletion (jobId, action) {
       this.$pollJob({
         jobId,
         successMethod: result => {
-          if (this.action.api === 'deleteDomain') {
-            this.$set(this.resource, 'isDel', true)
-            this.parentUpdActionData(this.resource)
-          }
           this.parentFetchData()
           if (action.response) {
             const description = action.response(result.jobresult)
@@ -233,6 +245,7 @@ export default {
           }
         }
 
+        const resourceName = params.displayname || params.displaytext || params.name || this.resource.name
         let hasJobId = false
         api(this.action.api, params).then(json => {
           for (const obj in json) {
@@ -254,7 +267,18 @@ export default {
             }
           }
           if (!hasJobId) {
-            this.parentUpdActionData(json)
+            var message = this.action.successMessage ? this.$t(this.action.successMessage) : this.$t(this.action.label) +
+              (resourceName ? ' - ' + resourceName : '')
+            var duration = 2
+            if (this.action.additionalMessage) {
+              message = message + ' - ' + this.$t(this.action.successMessage)
+              duration = 5
+            }
+            this.$message.success({
+              content: message,
+              key: this.action.label + resourceName,
+              duration: duration
+            })
             this.parentFetchData()
           }
           this.parentCloseAction()

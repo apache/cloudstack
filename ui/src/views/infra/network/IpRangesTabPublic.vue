@@ -39,34 +39,28 @@
       </template>
       <template slot="actions" slot-scope="record">
         <div class="actions">
-          <a-popover v-if="record.account === 'system'" placement="bottom">
-            <template slot="content">{{ $t('label.add.account') }}</template>
-            <a-button
-              icon="user-add"
-              shape="circle"
-              @click="() => handleOpenAddAccountModal(record)"
-              :disabled="!('dedicatePublicIpRange' in $store.getters.apis)"></a-button>
-          </a-popover>
-          <a-popover
+          <tooltip-button
+            v-if="record.account === 'system'"
+            tooltipPlacement="bottom"
+            :tooltip="$t('label.add.account')"
+            icon="user-add"
+            @click="() => handleOpenAddAccountModal(record)"
+            :disabled="!('dedicatePublicIpRange' in $store.getters.apis)" />
+          <tooltip-button
             v-else
-            placement="bottom">
-            <template slot="content">{{ $t('label.release.account') }}</template>
-            <a-button
-              icon="user-delete"
-              shape="circle"
-              type="danger"
-              @click="() => handleRemoveAccount(record.id)"
-              :disabled="!('releasePublicIpRange' in $store.getters.apis)"></a-button>
-          </a-popover>
-          <a-popover placement="bottom">
-            <template slot="content">{{ $t('label.remove.ip.range') }}</template>
-            <a-button
-              icon="delete"
-              shape="circle"
-              type="danger"
-              @click="handleDeleteIpRange(record.id)"
-              :disabled="!('deleteVlanIpRange' in $store.getters.apis)"></a-button>
-          </a-popover>
+            tooltipPlacement="bottom"
+            :tooltip="$t('label.release.account')"
+            icon="user-delete"
+            type="danger"
+            @click="() => handleRemoveAccount(record.id)"
+            :disabled="!('releasePublicIpRange' in $store.getters.apis)" />
+          <tooltip-button
+            tooltipPlacement="bottom"
+            :tooltip="$t('label.remove.ip.range')"
+            icon="delete"
+            type="danger"
+            @click="handleDeleteIpRange(record.id)"
+            :disabled="!('deleteVlanIpRange' in $store.getters.apis)" />
         </div>
       </template>
     </a-table>
@@ -117,7 +111,7 @@
       <a-spin :spinning="domainsLoading">
         <div style="margin-bottom: 10px;">
           <div class="list__label">{{ $t('label.account') }}:</div>
-          <a-input v-model="addAccount.account"></a-input>
+          <a-input v-model="addAccount.account" autoFocus></a-input>
         </div>
         <div>
           <div class="list__label">{{ $t('label.domain') }}:</div>
@@ -125,7 +119,7 @@
             <a-select-option
               v-for="domain in domains"
               :key="domain.id"
-              :value="domain.id">{{ domain.name }}
+              :value="domain.id">{{ domain.path || domain.name || domain.description }}
             </a-select-option>
           </a-select>
         </div>
@@ -145,6 +139,7 @@
       >
         <a-form-item :label="$t('label.gateway')" class="form__item">
           <a-input
+            autoFocus
             v-decorator="['gateway', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
           </a-input>
         </a-form-item>
@@ -186,7 +181,7 @@
                 <a-select-option
                   v-for="domain in domains"
                   :key="domain.id"
-                  :value="domain.id">{{ domain.name }}
+                  :value="domain.id">{{ domain.path || domain.name || domain.description }}
                 </a-select-option>
               </a-select>
             </a-form-item>
@@ -200,9 +195,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'IpRangesTabPublic',
+  components: {
+    TooltipButton
+  },
   props: {
     resource: {
       type: Object,
@@ -270,7 +269,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {

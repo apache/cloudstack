@@ -291,7 +291,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         }
 
         Map details = cmd.getDetails();
-        if (hypervisorType == HypervisorType.VMware) {
+        if (cmd.isDeployAsIs()) {
             if (MapUtils.isNotEmpty(details)) {
                 if (details.containsKey(VmDetailConstants.ROOT_DISK_CONTROLLER)) {
                     s_logger.info("Ignoring the rootDiskController detail provided, as we honour what is defined in the template");
@@ -487,6 +487,10 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             throw new InvalidParameterValueException("Please specify a valid template.");
         }
 
+        if (template.getState() == VirtualMachineTemplate.State.NotUploaded || template.getState() == VirtualMachineTemplate.State.UploadInProgress) {
+            throw new InvalidParameterValueException("The template is either getting uploaded or it may be initiated shortly, please wait for it to be completed");
+        }
+
         return new TemplateProfile(userId, template, zoneId);
     }
 
@@ -524,6 +528,10 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         if (template.getFormat() != ImageFormat.ISO) {
             throw new InvalidParameterValueException("Please specify a valid iso.");
+        }
+
+        if (template.getState() == VirtualMachineTemplate.State.NotUploaded || template.getState() == VirtualMachineTemplate.State.UploadInProgress) {
+            throw new InvalidParameterValueException("The iso is either getting uploaded or it may be initiated shortly, please wait for it to be completed");
         }
 
         return new TemplateProfile(userId, template, zoneId);

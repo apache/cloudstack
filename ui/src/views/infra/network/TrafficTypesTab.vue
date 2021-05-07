@@ -89,8 +89,10 @@ export default {
       fetchLoading: false
     }
   },
-  mounted () {
-    this.fetchData()
+  created () {
+    if (this.resource.id) {
+      this.fetchData()
+    }
   },
   watch: {
     loading (newData, oldData) {

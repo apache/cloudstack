@@ -74,6 +74,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
+import com.cloud.network.dao.RouterHealthCheckResultDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter.RedundantState;
@@ -161,6 +162,8 @@ public class NetworkHelperImpl implements NetworkHelper {
     VpcVirtualNetworkApplianceManager _vpcRouterMgr;
     @Inject
     NetworkDetailsDao networkDetailsDao;
+    @Inject
+    RouterHealthCheckResultDao _routerHealthCheckResultDao;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -259,6 +262,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         _accountMgr.checkAccess(caller, null, true, router);
 
         _itMgr.expunge(router.getUuid());
+        _routerHealthCheckResultDao.expungeHealthChecks(router.getId());
         _routerDao.remove(router.getId());
         return router;
     }

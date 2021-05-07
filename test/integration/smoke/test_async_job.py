@@ -45,33 +45,28 @@ class TestAsyncJob(cloudstackTestCase):
             cls.hypervisor
         )
 
+        cls._cleanup = []
+
         # Create service, disk offerings  etc
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
             cls.testdata["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
 
         cls.disk_offering = DiskOffering.create(
             cls.api_client,
             cls.testdata["disk_offering"]
         )
-
-        cls._cleanup = [
-            cls.service_offering,
-            cls.disk_offering
-        ]
+        cls._cleanup.append(cls.disk_offering)
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as exception:
-            raise Exception("Warning: Exception during cleanup : %s" % exception)
+        super(TestAsyncJob,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
-        self.hypervisor = self.testClient.getHypervisorInfo()
         self.testdata["virtual_machine"]["zoneid"] = self.zone.id
         self.testdata["virtual_machine"]["template"] = self.template.id
         self.testdata["iso"]["zoneid"] = self.zone.id
@@ -83,12 +78,7 @@ class TestAsyncJob(cloudstackTestCase):
         self.cleanup = [self.account]
 
     def tearDown(self):
-        try:
-            self.debug("Cleaning up the resources")
-            cleanup_resources(self.apiclient, self.cleanup)
-            self.debug("Cleanup complete!")
-        except Exception as exception:
-            self.debug("Warning! Exception in tearDown: %s" % exception)
+        super(TestAsyncJob,self).tearDown()
 
     @attr(tags=["advanced", "eip", "advancedns", "basic", "sg"], required_hardware="false")
     def test_query_async_job_result(self):
@@ -106,6 +96,7 @@ class TestAsyncJob(cloudstackTestCase):
             diskofferingid=self.disk_offering.id,
             hypervisor=self.hypervisor
         )
+        self.cleanup.append(virtual_machine)
 
         response = virtual_machine.getState(
             self.apiclient,

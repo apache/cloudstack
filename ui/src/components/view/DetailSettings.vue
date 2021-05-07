@@ -52,18 +52,8 @@
             :dataSource="detailOptions[newKey]"
             :placeholder="$t('label.value')"
             @change="e => onAddInputChange(e, 'newValue')" />
-          <a-tooltip arrowPointAtCenter placement="topRight">
-            <template slot="title">
-              {{ $t('label.add.setting') }}
-            </template>
-            <a-button icon="check" @click="addDetail" class="detail-button"></a-button>
-          </a-tooltip>
-          <a-tooltip arrowPointAtCenter placement="topRight">
-            <template slot="title">
-              {{ $t('label.cancel') }}
-            </template>
-            <a-button icon="close" @click="closeDetail" class="detail-button"></a-button>
-          </a-tooltip>
+          <tooltip-button :tooltip="$t('label.add.setting')" icon="check" @click="addDetail" buttonClass="detail-button" />
+          <tooltip-button :tooltip="$t('label.cancel')" icon="close" @click="closeDetail" buttonClass="detail-button" />
         </a-input-group>
         <p v-if="error" style="color: red"> {{ $t(error) }} </p>
       </div>
@@ -90,14 +80,10 @@
           slot="actions"
           v-if="!disableSettings && 'updateTemplate' in $store.getters.apis &&
             'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner() && allowEditOfDetail(item.name)">
-          <a-button shape="circle" size="default" @click="updateDetail(index)" v-if="item.edit">
-            <a-icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" />
-          </a-button>
-          <a-button shape="circle" size="default" @click="hideEditDetail(index)" v-if="item.edit">
-            <a-icon type="close-circle" theme="twoTone" twoToneColor="#f5222d" />
-          </a-button>
-          <a-button
-            shape="circle"
+          <tootip-button :tooltip="$t('label.cancel')" @click="hideEditDetail(index)" v-if="item.edit" iconType="close-circle" iconTwoToneColor="#f5222d" />
+          <tootip-button :tooltip="$t('label.ok')" @click="updateDetail(index)" v-if="item.edit" iconType="check-circle" iconTwoToneColor="#52c41a" />
+          <tooltip-button
+            :tooltip="$t('label.edit')"
             icon="edit"
             v-if="!item.edit"
             @click="showEditDetail(index)" />
@@ -113,7 +99,7 @@
             :cancelText="$t('label.no')"
             placement="left"
           >
-            <a-button shape="circle" type="danger" icon="delete" />
+            <tooltip-button :tooltip="$t('label.delete')" type="danger" icon="delete" />
           </a-popconfirm>
         </div>
       </a-list-item>
@@ -123,8 +109,10 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from './TooltipButton.vue'
 
 export default {
+  components: { TooltipButton },
   name: 'DetailSettings',
   props: {
     resource: {
@@ -150,7 +138,7 @@ export default {
       this.updateResource(newItem)
     }
   },
-  mounted () {
+  created () {
     this.updateResource(this.resource)
   },
   methods: {
@@ -176,9 +164,16 @@ export default {
       })
       this.disableSettings = (this.$route.meta.name === 'vm' && this.resource.state !== 'Stopped')
     },
+    filterOrReadOnlyDetails () {
+      for (var i = 0; i < this.details.length; i++) {
+        if (!this.allowEditOfDetail(this.details[i].name)) {
+          this.details.splice(i, 1)
+        }
+      }
+    },
     allowEditOfDetail (name) {
-      if (this.resource.readonlyuidetails) {
-        if (this.resource.readonlyuidetails.split(',').map(item => item.trim()).includes(name)) {
+      if (this.resource.readonlydetails) {
+        if (this.resource.readonlydetails.split(',').map(item => item.trim()).includes(name)) {
           return false
         }
       }
@@ -257,13 +252,16 @@ export default {
       }
       this.error = false
       this.details.push({ name: this.newKey, value: this.newValue })
+      this.filterOrReadOnlyDetails()
       this.runApi()
     },
     updateDetail (index) {
+      this.filterOrReadOnlyDetails()
       this.runApi()
     },
     deleteDetail (index) {
       this.details.splice(index, 1)
+      this.filterOrReadOnlyDetails()
       this.runApi()
     },
     onShowAddDetail () {

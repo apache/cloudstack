@@ -46,6 +46,7 @@
               }]
             }]"
             style="width: 100%;"
+            autoFocus
           />
         </a-form-item>
         <span :style="{ display: 'inline-block', width: '24px', textAlign: 'center' }">
@@ -193,11 +194,10 @@ export default {
     min-height: 200px;
     text-align: center;
     vertical-align: center;
-    padding-top: 16px;
-    padding-top: 16px;
     margin-top: 8px;
     max-height: 300px;
     overflow-y: auto;
+    padding: 16px 20px 0;
 
     /deep/.has-error {
       .ant-form-explain {

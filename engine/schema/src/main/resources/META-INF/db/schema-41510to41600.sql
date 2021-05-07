@@ -19,7 +19,6 @@
 -- Schema upgrade from 4.15.1.0 to 4.16.0.0
 --;
 
-
 --;
 -- Stored procedure to do idempotent column add;
 -- This is copied from schema-41000to41100.sql
@@ -301,3 +300,6 @@ from
         left join
     `cloud`.`resource_count` secondary_storage_count ON domain.id = secondary_storage_count.domain_id
         and secondary_storage_count.type = 'secondary_storage';
+        
+-- Update name for global configuration user.vm.readonly.ui.details
+Update configuration set name='user.vm.readonly.details' where name='user.vm.readonly.ui.details';

@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 
 import com.cloud.storage.dao.VMTemplateDetailsDao;
+import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -423,6 +424,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private UserDao userDao;
+
+    @Inject
+    private VirtualMachineManager virtualMachineManager;
 
     /*
      * (non-Javadoc)
@@ -1901,6 +1905,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (caps != null) {
                 boolean quiescevm = Boolean.parseBoolean(caps.get(DataStoreCapabilities.VOLUME_SNAPSHOT_QUIESCEVM.toString()));
                 vr.setNeedQuiescevm(quiescevm);
+
+                boolean supportsStorageSnapshot = Boolean.parseBoolean(caps.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString()));
+                vr.setSupportsStorageSnapshot(supportsStorageSnapshot);
             }
         }
         response.setResponses(volumeResponses, result.second());
@@ -2959,8 +2966,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 sc.addAnd("id", SearchCriteria.Op.NEQ, currentVmOffering.getId());
             }
 
-            // 1. Only return offerings with the same storage type
-            sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, currentVmOffering.isUseLocalStorage());
+            boolean isRootVolumeUsingLocalStorage = virtualMachineManager.isRootVolumeOnLocalStorage(vmId);
+
+            // 1. Only return offerings with the same storage type than the storage pool where the VM's root volume is allocated
+            sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, isRootVolumeUsingLocalStorage);
 
             // 2.In case vm is running return only offerings greater than equal to current offering compute.
             if (vmInstance.getState() == VirtualMachine.State.Running) {
@@ -4115,13 +4124,18 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             throw new CloudRuntimeException("Router health checks are not enabled for router " + routerId);
         }
 
-        if (cmd.shouldPerformFreshChecks() && !routerService.performRouterHealthChecks(routerId)) {
-            throw new CloudRuntimeException("Unable to perform fresh checks on router.");
+        if (cmd.shouldPerformFreshChecks()) {
+            Pair<Boolean, String> healthChecksresult = routerService.performRouterHealthChecks(routerId);
+            if (healthChecksresult == null) {
+                throw new CloudRuntimeException("Failed to initiate fresh checks on router.");
+            } else if (!healthChecksresult.first()) {
+                throw new CloudRuntimeException("Unable to perform fresh checks on router - " + healthChecksresult.second());
+            }
         }
 
         List<RouterHealthCheckResult> result = new ArrayList<>(routerHealthCheckResultDao.getHealthCheckResults(routerId));
         if (result == null || result.size() == 0) {
-            throw new CloudRuntimeException("Database had no entries for health checks for router. This could happen for " +
+            throw new CloudRuntimeException("No health check results found for the router. This could happen for " +
                     "a newly created router. Please wait for periodic results to populate or manually call for checks to execute.");
         }
 
@@ -4135,6 +4149,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMBlacklistedDetails, UserVMReadOnlyUIDetails, SortKeyAscending, AllowUserViewAllDomainAccounts};
+        return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMBlacklistedDetails, UserVMReadOnlyDetails, SortKeyAscending, AllowUserViewAllDomainAccounts};
     }
 }
