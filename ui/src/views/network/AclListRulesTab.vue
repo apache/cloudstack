@@ -87,9 +87,9 @@
               </div>
             </div>
             <div class="list__actions">
-              <a-button shape="circle" icon="tag" @click="() => openTagsModal(acl)"></a-button>
-              <a-button shape="circle" icon="edit" @click="() => openEditRuleModal(acl)"></a-button>
-              <a-button shape="circle" icon="delete" type="danger" :disabled="!('deleteNetworkACL' in $store.getters.apis)" @click="() => handleDeleteRule(acl.id)"></a-button>
+              <tooltip-button :tooltip="$t('label.tags')" icon="tag" @click="() => openTagsModal(acl)" />
+              <tooltip-button :tooltip="$t('label.edit')" icon="edit" @click="() => openEditRuleModal(acl)" />
+              <tooltip-button :tooltip="$t('label.delete')" icon="delete" type="danger" :disabled="!('deleteNetworkACL' in $store.getters.apis)" @click="() => handleDeleteRule(acl.id)" />
             </div>
           </div>
         </transition-group>
@@ -198,11 +198,13 @@
 <script>
 import { api } from '@/api'
 import draggable from 'vuedraggable'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'AclListRulesTab',
   components: {
-    draggable
+    draggable,
+    TooltipButton
   },
   props: {
     resource: {
