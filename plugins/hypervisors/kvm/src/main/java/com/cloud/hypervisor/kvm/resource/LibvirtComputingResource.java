@@ -253,6 +253,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected static final String DEFAULT_OVS_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.OvsVifDriver";
     protected static final String DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.BridgeVifDriver";
+    private final static long HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING = 6030000;
+    private final static long HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING = 5000000;
 
     protected HypervisorType _hypervisorType;
     protected String _hypervisorURI;
@@ -341,6 +343,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected CPUStat _cpuStat = new CPUStat();
     protected MemStat _memStat = new MemStat(_dom0MinMem, _dom0OvercommitMem);
     private final LibvirtUtilitiesHelper libvirtUtilitiesHelper = new LibvirtUtilitiesHelper();
+
+    protected long getHypervisorLibvirtVersion() {
+        return _hypervisorLibvirtVersion;
+    }
+
+    protected long getHypervisorQemuVersion() {
+        return _hypervisorQemuVersion;
+    }
 
     @Override
     public ExecutionResult executeInVR(final String routerIp, final String script, final String args) {
@@ -2716,20 +2726,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    private void setDiskIoDriver(DiskDef disk) {
+    private KVMPhysicalDisk getPhysicalDiskPrimaryStore(PrimaryDataStoreTO primaryDataStoreTO, DataTO data) {
+        KVMStoragePool storagePool = _storagePoolMgr.getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
+        return storagePool.getPhysicalDisk(data.getPath());
+    }
+
+    protected void setDiskIoDriver(DiskDef disk) {
         /*
          * IO Driver works for
          * - Qemu >= 5.0
          * - Libvirt >= 6.3.0
          */
-        if(_hypervisorLibvirtVersion >= 6030000 && _hypervisorQemuVersion >= 5000000) {
+        if (getHypervisorLibvirtVersion() >= HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING && getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING) {
             disk.setIoDriver(DiskDef.IoDriver.IOURING);
         }
-    }
-
-    private KVMPhysicalDisk getPhysicalDiskPrimaryStore(PrimaryDataStoreTO primaryDataStoreTO, DataTO data) {
-        KVMStoragePool storagePool = _storagePoolMgr.getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
-        return storagePool.getPhysicalDisk(data.getPath());
     }
 
     private KVMPhysicalDisk getPhysicalDiskFromNfsStore(String dataStoreUrl, DataTO data) {

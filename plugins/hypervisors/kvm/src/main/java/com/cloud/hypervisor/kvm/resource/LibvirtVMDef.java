@@ -656,14 +656,17 @@ public class LibvirtVMDef {
          * Qemu guests support "threads" and "native" options Since 0.8.8 ; "io_uring" is supported Since 6.3.0 (QEMU 5.0).
          */
         public enum IoDriver {
-            NATIVE("native"), THREADS("threads"), IOURING("io_uring");
+            NATIVE("native"),
+            THREADS("threads"),
+            IOURING("io_uring");
             String ioDriver;
 
             IoDriver(String driver) {
                 ioDriver = driver;
             }
 
-            @Override public String toString() {
+            @Override
+            public String toString() {
                 return ioDriver;
             }
         }
@@ -706,6 +709,10 @@ public class LibvirtVMDef {
 
         public void setDiscard(DiscardType discard) {
             this._discard = discard;
+        }
+
+        public DiskDef.IoDriver getIoDriver() {
+            return ioDriver;
         }
 
         public void setIoDriver(IoDriver ioDriver) {
@@ -1025,7 +1032,7 @@ public class LibvirtVMDef {
                 }
 
                 if(ioDriver != null) {
-                    diskBuilder.append("io='" + ioDriver.toString() + "'");
+                    diskBuilder.append("io='" + ioDriver + "'");
                 }
 
                 diskBuilder.append("/>\n");
