@@ -1285,7 +1285,7 @@
 "label.management.server": "Management Server",
 "label.management.servers": "Management Servers",
 "label.managementservers": "Number of Management Servers",
-"label.masternodes": "Master nodes",
+"label.controlnodes": "Control nodes",
 "label.max.primary.storage": "Max. primary (GiB)",
 "label.max.secondary.storage": "Max. secondary (GiB)",
 "label.maxcpu": "Max. CPU Cores",

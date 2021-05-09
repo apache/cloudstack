@@ -309,3 +309,6 @@ UPDATE `cloud`.`configuration` SET name='user.vm.denied.details' WHERE name='use
 
 -- Update name for global configuration 'blacklisted.routes' to 'denied.routes'
 UPDATE `cloud`.`configuration` SET name='denied.routes', description='Routes that are denied, can not be used for Static Routes creation for the VPC Private Gateway' WHERE name='blacklisted.routes';
+
+-- Rename 'master_node_count' to 'control_node_count' in kubernetes_cluster table
+ALTER TABLE `cloud`.`kubernetes_cluster` CHANGE master_node_count control_node_count bigint NOT NULL default '0' COMMENT 'the number of the control nodes deployed for this Kubernetes cluster';

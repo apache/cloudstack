@@ -1244,7 +1244,7 @@
 "label.management.server": "Verwaltungsserver",
 "label.management.servers": "Management Server",
 "label.managementservers": "Anzahl der Management-Server",
-"label.masternodes": "Master-Knoten",
+"label.controlnodes": "Control-Knoten",
 "label.max.primary.storage": "Max. primärer (GiB)",
 "label.max.secondary.storage": "Max. sekundärer (GiB)",
 "label.maxcpu": "Max. CPU-Kerne",
