@@ -209,7 +209,7 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
         # 1. listNetworks should show the created network in allocated state
         # 2. listRouters returns no running routers
         # 3. VMs should be deployed and in Running state
-        # 4. should list MASTER and BACKUP routers
+        # 4. should list PRIMARY and BACKUP routers
         # 5. listPublicIpAddresses for networkid should show acquired IP addr
         # 6. listRemoteAccessVpns for the network associated should show VPN
         #    created
