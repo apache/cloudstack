@@ -377,19 +377,19 @@ public class TransactionLegacy implements Closeable {
     }
 
     public boolean lock(final String name, final int timeoutSeconds) {
-        Merovingian2 lockMaster = Merovingian2.getLockMaster();
-        if (lockMaster == null) {
+        Merovingian2 lockController = Merovingian2.getLockController();
+        if (lockController == null) {
             throw new CloudRuntimeException("There's no support for locking yet");
         }
-        return lockMaster.acquire(name, timeoutSeconds);
+        return lockController.acquire(name, timeoutSeconds);
     }
 
     public boolean release(final String name) {
-        Merovingian2 lockMaster = Merovingian2.getLockMaster();
-        if (lockMaster == null) {
+        Merovingian2 lockController = Merovingian2.getLockController();
+        if (lockController == null) {
             throw new CloudRuntimeException("There's no support for locking yet");
         }
-        return lockMaster.release(name);
+        return lockController.release(name);
     }
 
     /**
@@ -644,9 +644,9 @@ public class TransactionLegacy implements Closeable {
         closeConnection();
 
         _stack.clear();
-        Merovingian2 lockMaster = Merovingian2.getLockMaster();
-        if (lockMaster != null) {
-            lockMaster.cleanupThread();
+        Merovingian2 lockController = Merovingian2.getLockController();
+        if (lockController != null) {
+            lockController.cleanupThread();
         }
     }
 
