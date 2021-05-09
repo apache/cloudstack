@@ -1491,7 +1491,7 @@
 "label.ovm3cluster": "Natives Clustering",
 "label.ovm3networklabel": "OVM3 Datenverkehrs-Bezeichnung",
 "label.ovm3pool": "Natives Pooling",
-"label.ovm3vip": "Master Vip IP",
+"label.ovm3vip": "Primary Vip IP",
 "label.ovmnetworklabel": "OVM Datenverkehrs-Bezeichnung",
 "label.ovs": "OVS",
 "label.owned.public.ips": "Ihnen gehörende öffentliche IP-Adressen",

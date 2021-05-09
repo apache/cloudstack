@@ -2622,21 +2622,21 @@ class TestSnapshotList(cloudstackTestCase):
     ## List test cases relating to filter - id
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listSnapshot_by_id_as_domainadmin_owns(self):
-        """
-        Domain admin should be able to list Snapshots that he owns by passing uuid in "id" parameter
-        """
+	"""
+	Domain admin should be able to list Snapshots that are self-owned by passing uuid in "id" parameter
+	"""
 
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
         SnapshotList = Snapshot.list(self.apiclient, id=self.vm_d1_snapshot.id)
 
         self.assertNotEqual(SnapshotList,
-                            None,
-                            "Domain Admin is not able to list Snapshotss that he owns")
+                         None,
+                        "Domain Admin is not able to list Snapshots that are self-owned")
 
         self.assertEqual(len(SnapshotList),
                          1,
-                         "Domain Admin is not able to list Snapshotss that belongs to him")
+                        "Domain Admin is not able to list Snapshots that are self-owned")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listSnapshot_by_id_as_domainadmin_ownedbyusersindomain(self):
@@ -2649,12 +2649,12 @@ class TestSnapshotList(cloudstackTestCase):
         SnapshotList1 = Snapshot.list(self.apiclient, id=self.vm_d1a_snapshot.id)
 
         self.assertNotEqual(SnapshotList1,
-                            None,
-                            "Domain Admin is not able to list Snapshotss from his domain")
+                         None,
+                        "Domain Admin is not able to list Snapshots from his domain")
 
         self.assertEqual(len(SnapshotList1),
                          1,
-                         "Domain Admin is not able to list Snapshotss from his domain")
+                        "Domain Admin is not able to list Snapshots from his domain")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listSnapshot_by_id_as_domainadmin_ownedbyusersinsubdomain(self):
@@ -2667,12 +2667,12 @@ class TestSnapshotList(cloudstackTestCase):
         SnapshotList2 = Snapshot.list(self.apiclient, id=self.vm_d12b_snapshot.id)
 
         self.assertNotEqual(SnapshotList2,
-                            None,
-                            "Domain Admin is not able to list Snapshotss from his sub domain")
+                         None,
+                        "Domain Admin is not able to list Snapshots from his sub domain")
 
         self.assertEqual(len(SnapshotList2),
                          1,
-                         "Domain Admin is not able to list Snapshotss from his sub domain")
+                        "Domain Admin is not able to list Snapshots from his sub domain")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listSnapshot_by_id_as_domainadmin_ownedbyusersnotindomain(self):
@@ -2686,7 +2686,7 @@ class TestSnapshotList(cloudstackTestCase):
 
         self.assertEqual(SnapshotList3,
                          None,
-                         "Domain Admin is able to list Snapshotss from  other domains!!!")
+                        "Domain Admin is able to list Snapshots from  other domains!!!")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listSnapshot_by_id_as_domainadmin_ownedbyusersinsubdomain2(self):
@@ -2699,12 +2699,12 @@ class TestSnapshotList(cloudstackTestCase):
         SnapshotList4 = Snapshot.list(self.apiclient, id=self.vm_d111a_snapshot.id)
 
         self.assertNotEqual(SnapshotList4,
-                            None,
-                            "Domain Admin is not able to list Snapshotss from his subdomain")
+                         None,
+                        "Domain Admin is not able to list Snapshots from his subdomain")
 
         self.assertEqual(len(SnapshotList4),
                          1,
-                         "Domain Admin is not able to list Snapshotss from his sub domains")
+                        "Domain Admin is not able to list Snapshots from his sub domains")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listSnapshot_by_id_as_rootadmin_owns(self):
@@ -2716,11 +2716,11 @@ class TestSnapshotList(cloudstackTestCase):
         self.apiclient.connection.securityKey = self.user_a_secretkey
         SnapshotList1 = Snapshot.list(self.apiclient, id=self.vm_a_snapshot.id)
         self.assertNotEqual(SnapshotList1,
-                            None,
-                            "ROOT Admin not able to list Snapshotss that he owns")
+                         None,
+                        "ROOT Admin not able to list Snapshots that are self-owned")
         self.assertEqual(len(SnapshotList1),
                          1,
-                         "ROOT Admin not able to list Snapshotss that he owns")
+                        "ROOT Admin not able to list Snapshots that are self-owned")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listSnapshot_by_id_as_rootadmin_Snapshotsownedbyothers(self):
@@ -2733,36 +2733,36 @@ class TestSnapshotList(cloudstackTestCase):
         SnapshotList1 = Snapshot.list(self.apiclient, id=self.vm_d2_snapshot.id)
         SnapshotList2 = Snapshot.list(self.apiclient, id=self.vm_d11a_snapshot.id)
         self.assertNotEqual(SnapshotList1,
-                            None,
-                            "ROOT Admin not able to list Snapshotss from other domains")
+                         None,
+                        "ROOT Admin not able to list Snapshots from other domains")
 
         self.assertNotEqual(SnapshotList2,
-                            None,
-                            "ROOT Admin not able to list Snapshotss from other domains")
+                         None,
+                        "ROOT Admin not able to list Snapshots from other domains")
         self.assertEqual(len(SnapshotList1),
                          1,
-                         "ROOT Admin not able to list Snapshotss from other domains")
+                        "ROOT Admin not able to list Snapshots from other domains")
         self.assertEqual(len(SnapshotList2),
                          1,
-                         "ROOT Admin not able to list Snapshotss from other domains")
+                        "ROOT Admin not able to list Snapshots from other domains")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listSnapshot_by_id_as_user_own(self):
-        """
-        Regular user should be able to list Snapshots that is owned by him by passing uuid in "id" parameter
-        """
+	"""
+	Regular user should be able to list Snapshots that are self-owned by passing uuid in "id" parameter
+	"""
 
         self.apiclient.connection.apiKey = self.user_d11a_apikey
         self.apiclient.connection.securityKey = self.user_d11a_secretkey
         SnapshotList1 = Snapshot.list(self.apiclient, id=self.vm_d11a_snapshot.id)
 
         self.assertNotEqual(SnapshotList1,
-                            None,
-                            "Regular User is not able to list Snapshotss that he owns")
+                         None,
+                        "Regular User is not able to list Snapshots that are self-owned")
 
         self.assertEqual(len(SnapshotList1),
                          1,
-                         "Regular User is not able to list Snapshotss that he owns")
+                        "Regular User is not able to list Snapshots that are self-owned")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listSnapshot_by_id_as_user_snapshotfromsamedomaindifferentaccount(self):

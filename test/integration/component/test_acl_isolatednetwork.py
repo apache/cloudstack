@@ -363,10 +363,10 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_01_createNetwork_admin(self):
-        """
-        # Validate that Admin should be able to create network for himslef
-        """
-        self.apiclient.connection.apiKey = self.user_root_apikey
+	"""
+        # Validate that Admin should be able to create network with self-ownership
+	"""
+	self.apiclient.connection.apiKey = self.user_root_apikey
         self.apiclient.connection.securityKey = self.user_root_secretkey
         self.acldata["network"]["name"] = "root"
         self.acldata["network"]["displayname"] = "root"
@@ -380,7 +380,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.cleanup.append(network)
         self.assertEqual(network.state.lower() == ALLOCATED.lower(),
                          True,
-                         "Admin User is not able to create a network for himself")
+                         "Admin User is not able to create a network with self-ownership")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_02_createNetwork_admin_foruserinsamedomain(self):
@@ -434,10 +434,10 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_04_createNetwork_domaindmin(self):
-        """
-        # Validate that Domain admin should be able to create network for himslef
-        """
-        self.apiclient.connection.apiKey = self.user_d1_apikey
+	"""
+        # Validate that Domain admin should be able to create network with self-ownership
+	"""
+	self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
         self.acldata["network"]["name"] = "d1"
         self.acldata["network"]["displayname"] = "d1"
@@ -451,7 +451,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.cleanup.append(network)
         self.assertEqual(network.state.lower() == ALLOCATED.lower(),
                          True,
-                         "Domain admin User is not able to create a network for himself")
+                         "Domain admin User is not able to create a network with self-ownership")
 
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
@@ -531,10 +531,10 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_08_createNetwork_user(self):
-        """
-        # Validate that Regular should be able to create network for himslef
-        """
-        self.apiclient.connection.apiKey = self.user_d1a_apikey
+	"""
+        # Validate that Regular should be able to create network with self-ownership
+	"""
+	self.apiclient.connection.apiKey = self.user_d1a_apikey
         self.apiclient.connection.securityKey = self.user_d1a_secretkey
         self.acldata["network"]["name"] = "d1a"
         self.acldata["network"]["displayname"] = "d1a"
@@ -547,9 +547,9 @@ class TestIsolatedNetwork(cloudstackTestCase):
         )
         self.cleanup.append(network)
 
-        self.assertEqual(network.state.lower() == ALLOCATED.lower(),
-                         True,
-                         "User is not able to create a network for himself")
+ 	self.assertEqual(network.state.lower() == ALLOCATED.lower(),
+                    True,
+                    "User is not able to create a network with self-ownership")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_09_createNetwork_user_foruserinsamedomain(self):
@@ -607,10 +607,10 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_11_deployvm_admin(self):
-        """
-        # Validate that Admin should be able to deploy VM in the networks he owns
-        """
-        self.apiclient.connection.apiKey = self.user_root_apikey
+	"""
+        # Validate that Admin should be able to deploy VM in the networks if it is self-owned
+	"""
+	self.apiclient.connection.apiKey = self.user_root_apikey
         self.apiclient.connection.securityKey = self.user_root_secretkey
         vmData = {"name": "root-root", "dispayname": "root-root"}
 
@@ -706,10 +706,10 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_14_deployvm_domaindmin(self):
-        """
-        # Validate that Domain admin should be able to deploy vm for himslef
-        """
-        self.apiclient.connection.apiKey = self.user_d1_apikey
+	"""
+        # Validate that Domain admin should be able to deploy vm with self-ownership
+	"""
+	self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
         vmData = {"name": "d1-d1", "displayname": "d1-d1"}
 
@@ -723,9 +723,10 @@ class TestIsolatedNetwork(cloudstackTestCase):
         )
         self.cleanup.append(vm)
 
-        self.assertEqual(vm.state.lower() == RUNNING.lower(),
-                         True,
-                         "Domain admin User is not able to deploy VM for himself")
+ 	self.assertEqual(vm.state.lower() == RUNNING.lower(),
+                    True,
+                    "Domain admin User is not able to deploy VM with self-ownership")
+
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_15_deployvm_domaindmin_foruserinsamedomain(self):
@@ -773,7 +774,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.cleanup.append(vm)
         self.assertEqual(vm.state.lower() == RUNNING.lower() and vm.account == self.account_d11a.name and vm.domainid == self.account_d11a.domainid,
                          True,
-                         "Domain admin User is not able to deploy vm for himself")
+                         "Domain admin User is not able to deploy vm with self-ownership")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_17_deployvm_domaindmin_forcrossdomainuser(self):
@@ -822,20 +823,20 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 domainid=self.account_d11a.domainid
             )
             self.cleanup.append(vm)
-            self.fail("Domain admin is allowed to deploy vm for users in a network that does not belong to him ")
+            self.fail("Domain admin is allowed to deploy vm for users in a network that is not self-owned ")
         except Exception as e:
             self.debug("When domain admin tries to deploy vm for users in network that does not belong to the user %s" % e)
             if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.UNABLE_TO_USE_NETWORK):
-                self.fail("Error message validation failed when Domain admin tries to deploy vm for users in a network that does not belong to him ")
+                self.fail("Error message validation failed when Domain admin tries to deploy vm for users in a network that is not self-owned ")
 
     ## Test cases relating to deploying VM as regular user
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_18_deployvm_user(self):
-        """
-        # Validate that Regular should be able to deploy vm for himslef
-        """
-        self.apiclient.connection.apiKey = self.user_d1a_apikey
+	"""
+        # Validate that Regular should be able to deploy vm with self-ownership
+	"""
+	self.apiclient.connection.apiKey = self.user_d1a_apikey
         self.apiclient.connection.securityKey = self.user_d1a_secretkey
         vmData = {"name": "d1a-d1a", "displayname": "d1a-d1a"}
 
@@ -850,7 +851,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.cleanup.append(vm)
         self.assertEqual(vm.state.lower() == RUNNING.lower(),
                          True,
-                         "User is not able to deploy vm for himself")
+                         "User is not able to deploy vm with self-ownership")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_19_deployvm_user_foruserinsamedomain(self):
@@ -908,10 +909,10 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_20_1_deployvm_user_incrossnetwork(self):
-        """
-        #Validate that User should not be able deploy VM in a network that does not belong to him
-        """
-        self.apiclient.connection.apiKey = self.user_d11a_apikey
+	"""
+        #Validate that User should not be able deploy VM in a network that is not self-owned
+	"""
+	self.apiclient.connection.apiKey = self.user_d11a_apikey
         self.apiclient.connection.securityKey = self.user_d11a_secretkey
         vmData = {"name": "d11a-invalidnetwork", "displayname": "d11a-invalidnetwork"}
         try:
@@ -924,27 +925,28 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 networkids=self.network_d11b.id,
             )
             self.cleanup.append(vm)
-            self.fail("User is allowed to deploy VM  in a network that does not belong to him ")
+            self.fail("User is allowed to deploy VM  in a network that is not self-owned ")
         except Exception as e:
             self.debug("When user tries to deploy vm in a  network that does not belong to him %s" % e)
             if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.UNABLE_TO_USE_NETWORK):
-                self.fail("Error message validation failed when User is allowed to deploy VM  in a network that does not belong to him ")
+                self.fail("Error message validation failed when User is allowed to deploy VM  in a network that is not self-owned ")
 
     ## Test cases relating to restart Network as admin user
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_21_restartNetwork_admin(self):
-        """
-        #Validate that Admin should be able to restart network for networks he owns
-        """
-        self.apiclient.connection.apiKey = self.user_root_apikey
+	"""
+        #Validate that Admin should be able to restart network for networks if it is self-owned
+	"""
+	self.apiclient.connection.apiKey = self.user_root_apikey
         self.apiclient.connection.securityKey = self.user_root_secretkey
 
         restartResponse = self.network_root.restart(self.apiclient)
 
-        self.assertEqual(restartResponse.success,
-                         True,
-                         "Admin User is not able to restart network he owns")
+ 	self.assertEqual(restartResponse.success,
+                    True,
+                    "Admin User is not able to restart network if it is self-owned")
+
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_22_restartNetwork_admin_foruserinsamedomain(self):
@@ -979,17 +981,18 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_24_restartNetwork_domaindmin(self):
-        """
-        # Validate that Domain admin should be able to restart network for himslef
-        """
-        self.apiclient.connection.apiKey = self.user_d1_apikey
+	"""
+        # Validate that Domain admin should be able to restart network with self-ownership
+	"""
+	self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
 
         restartResponse = self.network_d1.restart(self.apiclient)
 
-        self.assertEqual(restartResponse.success,
-                         True,
-                         "Domain admin User is not able to restart network for himself")
+ 	self.assertEqual(restartResponse.success,
+                    True,
+                    "Domain admin User is not able to restart network with self-ownership")
+
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_25_restartNetwork_domaindmin_foruserinsamedomain(self):
@@ -1013,9 +1016,9 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.apiclient.connection.securityKey = self.user_d1_secretkey
 
         restartResponse = self.network_d11a.restart(self.apiclient)
-        self.assertEqual(restartResponse.success,
-                         True,
-                         "Domain admin User is not able to restart network he owns")
+ 	self.assertEqual(restartResponse.success,
+                    True,
+                    "Domain admin User is not able to restart network if it is self-owned")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_27_restartNetwork_domaindmin_forcrossdomainuser(self):
@@ -1037,16 +1040,17 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_28_restartNetwork_user(self):
-        """
-        #Validate that  Regular should be able to restart network for himslef
-        """
-        self.apiclient.connection.apiKey = self.user_d1a_apikey
+	"""
+        #Validate that  Regular should be able to restart network with self-ownership
+	"""
+	self.apiclient.connection.apiKey = self.user_d1a_apikey
         self.apiclient.connection.securityKey = self.user_d1a_secretkey
 
         restartResponse = self.network_d1a.restart(self.apiclient)
-        self.assertEqual(restartResponse.success,
-                         True,
-                         "User is not able to restart network he owns")
+ 	self.assertEqual(restartResponse.success,
+                    True,
+                    "User is not able to restart network if it is self-owned")
+
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_29_restartNetwork_user_foruserinsamedomain(self):

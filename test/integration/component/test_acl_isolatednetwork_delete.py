@@ -347,10 +347,10 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
 
     @attr("simulator_only",tags=["advanced"],required_hardware="false")
     def test_deleteNetwork_admin(self):
-        """
-        Validate that Admin should be able to delete network he owns
-        """
-        self.apiclient.connection.apiKey = self.user_root_apikey
+	"""
+        Validate that Admin should be able to delete network that is self-owned
+	"""
+	self.apiclient.connection.apiKey = self.user_root_apikey
         self.apiclient.connection.securityKey = self.user_root_secretkey
 
         self.network_root.delete(self.apiclient)
@@ -358,7 +358,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
 
         self.assertEqual(response,
                     None,
-                    "Admin User is not able to restart network he owns")
+                    "Admin User is not able to restart network that is self-owned")
         self._cleanup.remove(self.network_root)
 
 
@@ -396,10 +396,10 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
 
     @attr("simulator_only",tags=["advanced"],required_hardware="false")
     def test_deleteNetwork_domaindmin(self):
-        """
-        Validate that Domain admin should be able to delete network for himslef
-        """
-        self.apiclient.connection.apiKey = self.user_d1_apikey
+	"""
+        Validate that Domain admin should be able to delete network with self-ownership
+	"""
+	self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
 
         self.network_d1.delete(self.apiclient)
@@ -407,7 +407,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
 
         self.assertEqual(response,
                     None,
-                    "Domain admin User is not able to delete a network he owns")
+                    "Domain admin User is not able to delete a network that is self-owned")
         self._cleanup.remove(self.network_d1)
 
     @attr("simulator_only",tags=["advanced"],required_hardware="false")
@@ -462,10 +462,10 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
 
     @attr("simulator_only",tags=["advanced"],required_hardware="false")
     def test_deleteNetwork_user(self):
-        """
-        Validate that Regular should be able to delete network for himslef
-        """
-        self.apiclient.connection.apiKey = self.user_d111a_apikey
+	"""
+        Validate that Regular should be able to delete network with self-ownership
+	"""
+	self.apiclient.connection.apiKey = self.user_d111a_apikey
         self.apiclient.connection.securityKey = self.user_d111a_secretkey
 
         self.network_d111a.delete(self.apiclient)
@@ -473,7 +473,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
 
         self.assertEqual(response,
                     None,
-                    "User is not able to delete a network he owns")
+                    "User is not able to delete a network that is self-owned")
         self._cleanup.remove(self.network_d111a)
 
     @attr("simulator_only",tags=["advanced"],required_hardware="false")

@@ -2602,21 +2602,21 @@ class TestVolumeList(cloudstackTestCase):
     ## List test cases relating to filter - id
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVolume_by_id_as_domainadmin_owns(self):
-        """
-        # Domain admin should be able to list Volumes that he owns by passing uuid in "id" parameter
-        """
+	"""
+	# Domain admin should be able to list Volumes that are self-owned by passing uuid in "id" parameter
+	"""
 
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
         VMList = Volume.list(self.apiclient, id=self.vm_d1_volume[0].id)
 
         self.assertNotEqual(VMList,
-                            None,
-                            "Domain Admin is not able to list Volumes that he owns")
+                         None,
+                        "Domain Admin is not able to list Volumes that are self-owned")
 
         self.assertEqual(len(VMList),
                          1,
-                         "Domain Admin is not able to list Volumes that belongs to him")
+                        "Domain Admin is not able to list Volumes that are self-owned")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVolume_by_id_as_domainadmin_ownedbyusersindomain(self):
@@ -2696,11 +2696,11 @@ class TestVolumeList(cloudstackTestCase):
         self.apiclient.connection.securityKey = self.user_a_secretkey
         VMList1 = Volume.list(self.apiclient, id=self.vm_a_volume[0].id)
         self.assertNotEqual(VMList1,
-                            None,
-                            "ROOT Admin not able to list Volumes that he owns")
+                         None,
+                        "ROOT Admin not able to list Volumes that are self-owned")
         self.assertEqual(len(VMList1),
                          1,
-                         "ROOT Admin not able to list Volumes that he owns")
+                        "ROOT Admin not able to list Volumes that are self-owned")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVolume_by_id_as_rootadmin_Volumesownedbyothers(self):
@@ -2728,21 +2728,21 @@ class TestVolumeList(cloudstackTestCase):
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVolume_by_id_as_user_own(self):
-        """
-        # Regular user should be able to list Volumes that is owned by him by passing uuid in "id" parameter
-        """
+	"""
+	# Regular user should be able to list Volumes that are self-owned by passing uuid in "id" parameter
+	"""
 
         self.apiclient.connection.apiKey = self.user_d11a_apikey
         self.apiclient.connection.securityKey = self.user_d11a_secretkey
         VMList1 = Volume.list(self.apiclient, id=self.vm_d11a_volume[0].id)
 
         self.assertNotEqual(VMList1,
-                            None,
-                            "Regular User is not able to list Volumes that he owns")
+                         None,
+                        "Regular User is not able to list Volumes that are self-owned")
 
         self.assertEqual(len(VMList1),
                          1,
-                         "Regular User is not able to list Volumes that he owns")
+                        "Regular User is not able to list Volumes that are self-owned")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVolume_by_id_as_user_volumefromsamedomaindifferentaccount(self):
