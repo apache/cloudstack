@@ -50,7 +50,7 @@
         </div>
       </div>
     </a-list-item>
-    <a-list-item slot="renderItem" slot-scope="item" v-else-if="item === 'ip6address' && ipV6Address.length > 0">
+    <a-list-item slot="renderItem" slot-scope="item" v-else-if="item === 'ip6address' && ipV6Address && ipV6Address.length > 0">
       <div>
         <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
         <br/>
