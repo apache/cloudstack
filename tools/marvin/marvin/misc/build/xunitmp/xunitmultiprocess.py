@@ -116,7 +116,7 @@ def exc_message(exc_info):
             result = str(exc)
         except UnicodeEncodeError:
             try:
-                result = unicode(exc)
+                result = str(exc)
             except UnicodeError:
                 # Fallback to args as neither str nor
                 # unicode(Exception(u'\xe6')) work in Python < 2.6
@@ -145,7 +145,7 @@ class Xunitmp(Plugin):
     def _quoteattr(self, attr):
         """Escape an XML attribute. Value can be unicode."""
         attr = xml_safe(attr)
-        if isinstance(attr, unicode) and not UNICODE_STRINGS:
+        if isinstance(attr, str) and not UNICODE_STRINGS:
             attr = attr.encode(self.encoding)
         return saxutils.quoteattr(attr)
 
@@ -213,8 +213,8 @@ class Xunitmp(Plugin):
     def addstream(self,xml):
         try:
             self.xunitstream.append(xml)
-        except Exception, e:
-            print 'xunitmultiprocess add stream len=%d,%s'%(len(xml),str(e))
+        except Exception as e:
+            print('xunitmultiprocess add stream len=%d,%s'%(len(xml),str(e)))
             
     def addError(self, test, err, capt=None):
         """Add error output to Xunit report.

@@ -21,7 +21,7 @@
       <div class="form">
         <div class="form__item">
           <div class="form__label">{{ $t('label.sourcecidr') }}</div>
-          <a-input v-model="newRule.cidrlist"></a-input>
+          <a-input autoFocus v-model="newRule.cidrlist"></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.protocol') }}</div>
@@ -74,12 +74,12 @@
       </template>
       <template slot="actions" slot-scope="record">
         <div class="actions">
-          <a-button shape="circle" icon="tag" class="rule-action" @click="() => openTagsModal(record.id)" />
-          <a-button
-            shape="circle"
+          <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag" buttonClass="rule-action" @click="() => openTagsModal(record.id)" />
+          <tooltip-button
+            :tooltip="$t('label.delete')"
             type="danger"
             icon="delete"
-            class="rule-action"
+            buttonClass="rule-action"
             :disabled="!('deleteFirewallRule' in $store.getters.apis)"
             @click="deleteRule(record)" />
         </div>
@@ -110,7 +110,7 @@
       <div class="add-tags">
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.key') }}</p>
-          <a-input v-model="newTag.key"></a-input>
+          <a-input autoFocus v-model="newTag.key"></a-input>
         </div>
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.value') }}</p>
@@ -137,8 +137,12 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
+  components: {
+    TooltipButton
+  },
   props: {
     resource: {
       type: Object,
@@ -198,7 +202,7 @@ export default {
       ]
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   filters: {

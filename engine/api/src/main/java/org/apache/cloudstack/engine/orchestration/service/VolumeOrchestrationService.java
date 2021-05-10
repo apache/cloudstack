@@ -33,6 +33,7 @@ import com.cloud.dc.Pod;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientStorageCapacityException;
+import com.cloud.exception.StorageAccessException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -104,6 +105,8 @@ public interface VolumeOrchestrationService {
 
     void release(VirtualMachineProfile profile);
 
+    void release(long vmId, long hostId);
+
     void cleanupVolumes(long vmId) throws ConcurrentOperationException;
 
     void revokeAccess(DataObject dataObject, Host host, DataStore dataStore);
@@ -116,7 +119,7 @@ public interface VolumeOrchestrationService {
 
     void prepareForMigration(VirtualMachineProfile vm, DeployDestination dest);
 
-    void prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException;
+    void prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException, StorageAccessException;
 
     boolean canVmRestartOnAnotherServer(long vmId);
 

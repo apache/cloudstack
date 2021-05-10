@@ -38,15 +38,12 @@
         <div>{{ returnPodName(record.podid) }}</div>
       </template>
       <template slot="actions" slot-scope="record">
-        <a-popover placement="bottom">
-          <template slot="content">{{ $t('label.remove.ip.range') }}</template>
-          <a-button
-            :disabled="!('deleteStorageNetworkIpRange' in $store.getters.apis)"
-            icon="delete"
-            shape="circle"
-            type="danger"
-            @click="handleDeleteIpRange(record.id)"></a-button>
-        </a-popover>
+        <tooltip-button
+          :tooltip="$t('label.remove.ip.range')"
+          :disabled="!('deleteStorageNetworkIpRange' in $store.getters.apis)"
+          icon="delete"
+          type="danger"
+          @click="handleDeleteIpRange(record.id)" />
       </template>
     </a-table>
     <a-pagination
@@ -79,6 +76,7 @@
       >
         <a-form-item :label="$t('label.podid')" class="form__item">
           <a-select
+            autoFocus
             v-decorator="['pod', {
               rules: [{ required: true, message: `${$t('label.required')}` }]
             }]"
@@ -119,9 +117,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'IpRangesTabStorage',
+  components: {
+    TooltipButton
+  },
   props: {
     resource: {
       type: Object,
@@ -179,7 +181,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {

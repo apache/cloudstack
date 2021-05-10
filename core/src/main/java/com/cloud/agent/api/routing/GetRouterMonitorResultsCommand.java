@@ -19,12 +19,14 @@ package com.cloud.agent.api.routing;
 
 public class GetRouterMonitorResultsCommand extends NetworkElementCommand {
     private boolean performFreshChecks;
+    private boolean validateBasicTestsOnly;
 
     protected GetRouterMonitorResultsCommand() {
     }
 
-    public GetRouterMonitorResultsCommand(boolean performFreshChecks) {
+    public GetRouterMonitorResultsCommand(boolean performFreshChecks, boolean validateBasicTestsOnly) {
         this.performFreshChecks = performFreshChecks;
+        this.validateBasicTestsOnly = validateBasicTestsOnly;
     }
 
     @Override
@@ -34,5 +36,9 @@ public class GetRouterMonitorResultsCommand extends NetworkElementCommand {
 
     public boolean shouldPerformFreshChecks() {
         return performFreshChecks;
+    }
+
+    public boolean shouldValidateBasicTestsOnly() {
+        return validateBasicTestsOnly;
     }
 }

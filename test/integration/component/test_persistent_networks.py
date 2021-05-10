@@ -44,7 +44,8 @@ from marvin.lib.common import (get_domain,
 from nose.plugins.attrib import attr
 from marvin.codes import PASS, FAIL, FAILED
 from marvin.sshClient import SshClient
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from ddt import ddt, data
 import time
 
@@ -2780,7 +2781,8 @@ class TestVPCNetworkOperations(cloudstackTestCase):
             # Check if source nat IP address is released
             ipaddresses = PublicIPAddress.list(
                 self.apiclient,
-                id=publicipaddresses[0].id)
+                id=publicipaddresses[0].id,
+                state="Allocated")
             self.assertEqual(
                 validateList(ipaddresses)[0],
                 FAIL,

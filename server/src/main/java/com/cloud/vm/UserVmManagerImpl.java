@@ -50,6 +50,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -145,6 +146,8 @@ import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Config;
@@ -512,7 +515,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     private UserVmDeployAsIsDetailsDao userVmDeployAsIsDetailsDao;
     @Inject
-    private StorageManager storageMgr;
+    private StorageManager storageManager;
+    @Inject
+    private ServiceOfferingJoinDao serviceOfferingJoinDao;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -800,7 +805,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     return true;
                 }
 
-                if (rebootVirtualMachine(userId, vmId, false) == null) {
+                if (rebootVirtualMachine(userId, vmId, false, false) == null) {
                     s_logger.warn("Failed to reboot the vm " + vmInstance);
                     return false;
                 } else {
@@ -911,7 +916,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 s_logger.debug("Vm " + vmInstance + " is stopped, not rebooting it as a part of SSH Key reset");
                 return true;
             }
-            if (rebootVirtualMachine(userId, vmId, false) == null) {
+            if (rebootVirtualMachine(userId, vmId, false, false) == null) {
                 s_logger.warn("Failed to reboot the vm " + vmInstance);
                 return false;
             } else {
@@ -948,7 +953,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return status;
     }
 
-    private UserVm rebootVirtualMachine(long userId, long vmId, boolean enterSetup) throws InsufficientCapacityException, ResourceUnavailableException {
+    private UserVm rebootVirtualMachine(long userId, long vmId, boolean enterSetup, boolean forced) throws InsufficientCapacityException, ResourceUnavailableException {
         UserVmVO vm = _vmDao.findById(vmId);
 
         if (s_logger.isTraceEnabled()) {
@@ -963,6 +968,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vm.getState() == State.Running && vm.getHostId() != null) {
             collectVmDiskStatistics(vm);
             collectVmNetworkStatistics(vm);
+
+            if (forced) {
+                Host vmOnHost = _hostDao.findById(vm.getHostId());
+                if (vmOnHost == null || vmOnHost.getResourceState() != ResourceState.Enabled || vmOnHost.getStatus() != Status.Up ) {
+                    throw new CloudRuntimeException("Unable to force reboot the VM as the host: " + vm.getHostId() + " is not in the right state");
+                }
+                return forceRebootVirtualMachine(vmId, vm.getHostId(), enterSetup);
+            }
+
             DataCenterVO dc = _dcDao.findById(vm.getDataCenterId());
             try {
                 if (dc.getNetworkType() == DataCenter.NetworkType.Advanced) {
@@ -986,7 +1000,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new CloudRuntimeException("Concurrent operations on starting router. " + e);
             } catch (Exception ex){
                 throw new CloudRuntimeException("Router start failed due to" + ex);
-            }finally {
+            } finally {
                 if (s_logger.isInfoEnabled()) {
                     s_logger.info(String.format("Rebooting vm %s%s.", vm.getInstanceName(), enterSetup? " entering hardware setup menu" : " as is"));
                 }
@@ -1005,6 +1019,24 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             s_logger.error("Vm id=" + vmId + " is not in Running state, failed to reboot");
             return null;
         }
+    }
+
+    private UserVm forceRebootVirtualMachine(long vmId, long hostId, boolean enterSetup) {
+        try {
+            if (stopVirtualMachine(vmId, false) != null) {
+                Map<VirtualMachineProfile.Param,Object> params = null;
+                if (enterSetup) {
+                    params = new HashMap();
+                    params.put(VirtualMachineProfile.Param.BootIntoSetup, Boolean.TRUE);
+                }
+                return startVirtualMachine(vmId, null, null, hostId, params, null).first();
+            }
+        } catch (ResourceUnavailableException e) {
+            throw new CloudRuntimeException("Unable to reboot the VM: " + vmId, e);
+        } catch (CloudException e) {
+            throw new CloudRuntimeException("Unable to reboot the VM: " + vmId, e);
+        }
+        return null;
     }
 
     @Override
@@ -1941,14 +1973,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     _itMgr.reConfigureVm(vmInstance.getUuid(), currentServiceOffering, newServiceOffering, customParameters, existingHostHasCapacity);
                     success = true;
                     return success;
-                } catch (InsufficientCapacityException e) {
-                    s_logger.warn("Received exception while scaling ", e);
-                } catch (ResourceUnavailableException e) {
-                    s_logger.warn("Received exception while scaling ", e);
-                } catch (ConcurrentOperationException e) {
+                } catch (InsufficientCapacityException | ResourceUnavailableException | ConcurrentOperationException e) {
                     s_logger.warn("Received exception while scaling ", e);
                 } catch (Exception e) {
-                    s_logger.warn("Received exception while scaling ", e);
+                    s_logger.warn("Scaling failed with exception: ", e);
                 } finally {
                     if (!success) {
                         // Decrement CPU and Memory count accordingly.
@@ -2019,14 +2047,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (!CollectionUtils.isEmpty(volumeLocators)) {
 
                 GetVolumeStatsCommand cmd = new GetVolumeStatsCommand(poolType, poolUuid, volumeLocators);
+                Answer answer = null;
 
-                if (timeout > 0) {
-                    cmd.setWait(timeout/1000);
+                if (poolType == StoragePoolType.PowerFlex) {
+                    // Get volume stats from the pool directly instead of sending cmd to host
+                    // Added support for ScaleIO/PowerFlex pool only
+                    answer = storageManager.getVolumeStats(storagePool, cmd);
+                } else {
+                    if (timeout > 0) {
+                        cmd.setWait(timeout/1000);
+                    }
+
+                    answer = _agentMgr.easySend(neighbor.getId(), cmd);
                 }
 
-                Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
-
-                if (answer instanceof GetVolumeStatsAnswer){
+                if (answer != null && answer instanceof GetVolumeStatsAnswer){
                     GetVolumeStatsAnswer volstats = (GetVolumeStatsAnswer)answer;
                     if (volstats.getVolumeStats() != null) {
                         volumeStatsByUuid.putAll(volstats.getVolumeStats());
@@ -2230,7 +2265,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
 
                         // only load running vms. For stopped vms get loaded on starting
-                        if (vmInstance.getState() == State.Running) {
+                        if (vmInstance != null && vmInstance.getState() == State.Running) {
                             VmAndCountDetails vmAndCount = new VmAndCountDetails(vmId, VmIpFetchTrialMax.value());
                             vmIdCountMap.put(nicId, vmAndCount);
                         }
@@ -2528,7 +2563,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         final List<String> userBlacklistedSettings = Stream.of(QueryService.UserVMBlacklistedDetails.value().split(","))
                 .map(item -> (item).trim())
                 .collect(Collectors.toList());
-        final List<String> userReadOnlySettings = Stream.of(QueryService.UserVMReadOnlyUIDetails.value().split(","))
+        final List<String> userReadOnlySettings = Stream.of(QueryService.UserVMReadOnlyDetails.value().split(","))
                 .map(item -> (item).trim())
                 .collect(Collectors.toList());
         if (cleanupDetails){
@@ -2887,7 +2922,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Verify input parameters
         UserVmVO vmInstance = _vmDao.findById(vmId);
         if (vmInstance == null) {
-            throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+            throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
         }
 
         _accountMgr.checkAccess(caller, null, true, vmInstance);
@@ -2909,7 +2944,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (enterSetup != null && enterSetup && !HypervisorType.VMware.equals(vmInstance.getHypervisorType())) {
             throw new InvalidParameterValueException("Booting into a hardware setup menu is not implemented on " + vmInstance.getHypervisorType());
         }
-        UserVm userVm = rebootVirtualMachine(CallContext.current().getCallingUserId(), vmId, enterSetup == null ? false : cmd.getBootIntoSetup());
+
+        UserVm userVm = rebootVirtualMachine(CallContext.current().getCallingUserId(), vmId, enterSetup == null ? false : cmd.getBootIntoSetup(), cmd.isForced());
         if (userVm != null ) {
             // update the vmIdCountMap if the vm is in advanced shared network with out services
             final List<NicVO> nics = _nicDao.listByVmId(vmId);
@@ -2961,15 +2997,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         checkForUnattachedVolumes(vmId, volumesToBeDeleted);
         validateVolumes(volumesToBeDeleted);
 
+        final ControlledEntity[] volumesToDelete = volumesToBeDeleted.toArray(new ControlledEntity[0]);
+        _accountMgr.checkAccess(ctx.getCallingAccount(), null, true, volumesToDelete);
+
         stopVirtualMachine(vmId, VmDestroyForcestop.value());
 
-        if (vm.getHypervisorType() == HypervisorType.VMware) {
-            List<VolumeVO> allVolumes = _volsDao.findByInstance(vm.getId());
-            allVolumes.removeIf(vol -> vol.getVolumeType() == Volume.Type.ROOT);
-            detachVolumesFromVm(allVolumes);
-        } else {
-            detachVolumesFromVm(volumesToBeDeleted);
-        }
+        detachVolumesFromVm(volumesToBeDeleted);
 
         UserVm destroyedVm = destroyVm(vmId, expunge);
         if (expunge) {
@@ -3835,8 +3868,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         String instanceName = null;
+        String instanceSuffix = _instance;
         String uuidName = _uuidMgr.generateUuid(UserVm.class, customId);
         if (_instanceNameFlag && HypervisorType.VMware.equals(hypervisorType)) {
+            if (StringUtils.isNotEmpty(hostName)) {
+                instanceSuffix = hostName;
+            }
             if (hostName == null) {
                 if (displayName != null) {
                     hostName = displayName;
@@ -3861,7 +3898,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // Check is hostName is RFC compliant
             checkNameForRFCCompliance(hostName);
         }
-        instanceName = VirtualMachineName.getVmName(id, owner.getId(), _instance);
+        instanceName = VirtualMachineName.getVmName(id, owner.getId(), instanceSuffix);
+        if (_instanceNameFlag && HypervisorType.VMware.equals(hypervisorType) && !instanceSuffix.equals(_instance)) {
+            customParameters.put(VmDetailConstants.NAME_ON_HYPERVISOR, instanceName);
+        }
 
         // Check if VM with instanceName already exists.
         VMInstanceVO vmObj = _vmInstanceDao.findVMByInstanceName(instanceName);
@@ -4089,7 +4129,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 persistVMDeployAsIsProperties(vm, userVmOVFPropertiesMap);
 
-                _vmDao.saveDetails(vm);
+                List<String> hiddenDetails = new ArrayList<>();
+                if (customParameters.containsKey(VmDetailConstants.NAME_ON_HYPERVISOR)) {
+                    hiddenDetails.add(VmDetailConstants.NAME_ON_HYPERVISOR);
+                }
+                _vmDao.saveDetails(vm, hiddenDetails);
                 if (!isImport) {
                     s_logger.debug("Allocating in the DB for vm");
                     DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
@@ -4982,6 +5026,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             destinationHost = _hostDao.findById(hostId);
             if (destinationHost == null) {
                 throw new InvalidParameterValueException("Unable to find the host to deploy the VM, host id=" + hostId);
+            } else if (destinationHost.getResourceState() != ResourceState.Enabled || destinationHost.getStatus() != Status.Up ) {
+                throw new InvalidParameterValueException("Unable to deploy the VM as the host: " + destinationHost.getName() + " is not in the right state");
             }
         }
         return destinationHost;
@@ -5249,8 +5295,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
         }
 
-        Long templateId = cmd.getTemplateId();
-
         if (!serviceOffering.isDynamic()) {
             for(String detail: cmd.getDetails().keySet()) {
                 if(detail.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) || detail.equalsIgnoreCase(VmDetailConstants.CPU_SPEED) || detail.equalsIgnoreCase(VmDetailConstants.MEMORY)) {
@@ -5259,15 +5303,29 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
+        Long templateId = cmd.getTemplateId();
+
         VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
         // Make sure a valid template ID was specified
         if (template == null) {
             throw new InvalidParameterValueException("Unable to use template " + templateId);
         }
 
-        // Bootmode and boottype are not supported on VMWare dpeloy-as-is templates (since 4.15)
-        if (template.isDeployAsIs() && (cmd.getBootMode() != null || cmd.getBootType() != null)) {
-            throw new InvalidParameterValueException("Boot type and boot mode are not supported on VMware, as we honour what is defined in the template.");
+        ServiceOfferingJoinVO svcOffering = serviceOfferingJoinDao.findById(serviceOfferingId);
+
+        if (template.isDeployAsIs()) {
+            if (svcOffering != null && svcOffering.getRootDiskSize() != null && svcOffering.getRootDiskSize() > 0) {
+                throw new InvalidParameterValueException("Failed to deploy Virtual Machine as a service offering with root disk size specified cannot be used with a deploy as-is template");
+            }
+
+            if (cmd.getDetails().get("rootdisksize") != null) {
+                throw new InvalidParameterValueException("Overriding root disk size isn't supported for VMs deployed from defploy as-is templates");
+            }
+
+            // Bootmode and boottype are not supported on VMWare dpeloy-as-is templates (since 4.15)
+            if ((cmd.getBootMode() != null || cmd.getBootType() != null)) {
+                throw new InvalidParameterValueException("Boot type and boot mode are not supported on VMware, as we honour what is defined in the template.");
+            }
         }
 
         Long diskOfferingId = cmd.getDiskOfferingId();
@@ -5293,6 +5351,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (MapUtils.isNotEmpty(userVmNetworkMap)) {
             networkIds = new ArrayList<>(userVmNetworkMap.values());
         }
+
+        Account caller = CallContext.current().getCallingAccount();
+        Long callerId = caller.getId();
+
+        boolean isRootAdmin = _accountService.isRootAdmin(callerId);
+
+        Long hostId = cmd.getHostId();
+        getDestinationHost(hostId, isRootAdmin);
 
         String ipAddress = cmd.getIpAddress();
         String ip6Address = cmd.getIp6Address();
@@ -5339,13 +5405,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         for (VMTemplateVO tmpl: child_templates){
             if (tmpl.getFormat() == Storage.ImageFormat.ISO){
                 s_logger.info("MDOV trying to attach disk to the VM " + tmpl.getId() + " vmid=" + vm.getId());
-                _tmplService.attachIso(tmpl.getId(), vm.getId());
+                _tmplService.attachIso(tmpl.getId(), vm.getId(), true);
             }
         }
 
         // Add extraConfig to user_vm_details table
-        Account caller = CallContext.current().getCallingAccount();
-        Long callerId = caller.getId();
         String extraConfig = cmd.getExtraConfig();
         if (StringUtils.isNotBlank(extraConfig)) {
             if (EnableAdditionalVmConfig.valueIn(callerId)) {
@@ -5775,7 +5839,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     }
 
-    private boolean isVMUsingLocalStorage(VMInstanceVO vm) {
+    public boolean isVMUsingLocalStorage(VMInstanceVO vm) {
         boolean usesLocalStorage = false;
 
         List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
@@ -5828,9 +5892,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (!isOnSupportedHypevisorForMigration(vm)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(vm + " is not XenServer/VMware/KVM/Ovm/Hyperv, cannot migrate this VM form hypervisor type " + vm.getHypervisorType());
-            }
+            s_logger.error(vm + " is not XenServer/VMware/KVM/Ovm/Hyperv, cannot migrate this VM from hypervisor type " + vm.getHypervisorType());
             throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support XenServer/VMware/KVM/Ovm/Hyperv/Ovm3 only");
         }
 
@@ -5839,9 +5901,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (isVMUsingLocalStorage(vm)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(vm + " is using Local Storage, cannot migrate this VM.");
-            }
+            s_logger.error(vm + " is using Local Storage, cannot migrate this VM.");
             throw new InvalidParameterValueException("Unsupported operation, VM uses Local storage, cannot migrate");
         }
 
@@ -6295,7 +6355,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
                 if (hypervisorType.equals(HypervisorType.VMware)) {
                     try {
-                        boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolComplaintWithStoragePolicy(Arrays.asList(volume), pool);
+                        boolean isStoragePoolStoragepolicyComplaince = storageManager.isStoragePoolComplaintWithStoragePolicy(Arrays.asList(volume), pool);
                         if (!isStoragePoolStoragepolicyComplaince) {
                             throw new CloudRuntimeException(String.format("Storage pool %s is not storage policy compliance with the volume %s", pool.getUuid(), volume.getUuid()));
                         }
@@ -7013,6 +7073,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     newVol = volumeMgr.allocateDuplicateVolume(root, null);
                 }
                 newVols.add(newVol);
+
+                if (userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.ROOT_DISK_SIZE) == null && !newVol.getSize().equals(template.getSize())) {
+                    VolumeVO resizedVolume = (VolumeVO) newVol;
+                    resizedVolume.setSize(template.getSize());
+                    _volsDao.update(resizedVolume.getId(), resizedVolume);
+                }
 
                 // 1. Save usage event and update resource count for user vm volumes
                 _resourceLimitMgr.incrementResourceCount(newVol.getAccountId(), ResourceType.volume, newVol.isDisplay());

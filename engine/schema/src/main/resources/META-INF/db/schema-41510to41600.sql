@@ -19,7 +19,6 @@
 -- Schema upgrade from 4.15.1.0 to 4.16.0.0
 --;
 
-
 --;
 -- Stored procedure to do idempotent column add;
 -- This is copied from schema-41000to41100.sql
@@ -485,3 +484,7 @@ FROM
             AND (`custom_speed`.`name` = 'CpuSpeed'))))
         LEFT JOIN `user_vm_details` `custom_ram_size` ON (((`custom_ram_size`.`vm_id` = `vm_instance`.`id`)
         AND (`custom_ram_size`.`name` = 'memory'))));
+
+
+-- Update name for global configuration user.vm.readonly.ui.details
+Update configuration set name='user.vm.readonly.details' where name='user.vm.readonly.ui.details';

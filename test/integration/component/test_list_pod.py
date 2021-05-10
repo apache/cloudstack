@@ -19,7 +19,8 @@
 """
 
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.utils import (cleanup_resources)
 from marvin.lib.base import (Pod, Cluster, Capacities)
 from marvin.cloudstackAPI import (updateConfiguration)

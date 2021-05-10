@@ -95,7 +95,7 @@ class TestSecurityGroups(cloudstackTestCase):
         if len(expected_vals) != len(actual_vals):
             return False
 
-        keys = expected_vals.keys()
+        keys = list(expected_vals.keys())
         for i in range(0, len(expected_vals)):
             exp_val = expected_vals[keys[i]]
             act_val = actual_vals[keys[i]]
@@ -134,13 +134,13 @@ class TestSecurityGroups(cloudstackTestCase):
                                                         )
         # Verifying that default security group is created
         status = validateList(list_securitygroups_before)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Default Security Groups creation failed"
                           )
         # Verifying the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_securitygroups_before),
                           "Count of Security Groups list is not matching"
@@ -167,13 +167,13 @@ class TestSecurityGroups(cloudstackTestCase):
                                                        listall=self.services["listall"]
                                                        )
         status = validateList(list_securitygroups_after)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Security Groups creation failed"
                           )
         # Verifying that list size is pagesize + 1
-        self.assertEquals(
+        self.assertEqual(
                           self.services["pagesize"] + 1,
                           len(list_securitygroups_after),
                           "Failed to create pagesize + 1 number of Security Groups"
@@ -186,13 +186,13 @@ class TestSecurityGroups(cloudstackTestCase):
                                                        pagesize=self.services["pagesize"]
                                                        )
         status = validateList(list_securitygroups_page1)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Failed to list security groups in page 1"
                           )
         # Verifying the list size to be equal to pagesize
-        self.assertEquals(
+        self.assertEqual(
                           self.services["pagesize"],
                           len(list_securitygroups_page1),
                           "Size of security groups in page 1 is not matching"
@@ -205,13 +205,13 @@ class TestSecurityGroups(cloudstackTestCase):
                                                        pagesize=self.services["pagesize"]
                                                        )
         status = validateList(list_securitygroups_page2)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Failed to list security groups in page 2"
                           )
         # Verifying the list size to be equal to pagesize
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_securitygroups_page2),
                           "Size of security groups in page 2 is not matching"
@@ -262,13 +262,13 @@ class TestSecurityGroups(cloudstackTestCase):
                                                         )
         # Verifying that default security group is created
         status = validateList(list_securitygroups_before)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Default Security Groups creation failed"
                           )
         # Verifying the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_securitygroups_before),
                           "Count of Security Groups list is not matching"
@@ -293,13 +293,13 @@ class TestSecurityGroups(cloudstackTestCase):
                                                        listall=self.services["listall"]
                                                        )
         status = validateList(list_securitygroups_after)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Security Groups creation failed"
                           )
         # Verifying that list size is 2
-        self.assertEquals(
+        self.assertEqual(
                           2,
                           len(list_securitygroups_after),
                           "Failed to create Security Group"
@@ -320,13 +320,13 @@ class TestSecurityGroups(cloudstackTestCase):
                                                       )
         # Verifying that security group is listed
         status = validateList(list_securitygroups_byid)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Listing of Security Groups by id failed"
                           )
         # Verifying size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_securitygroups_byid),
                           "Count of the listing security group by id is not matching"
@@ -334,12 +334,12 @@ class TestSecurityGroups(cloudstackTestCase):
         securitygroup_ingress = list_securitygroups_byid[0].ingressrule
         # Validating the Ingress rule
         status = validateList(securitygroup_ingress)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Security Groups Ingress rule authorization failed"
                           )
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(securitygroup_ingress),
                           "Security Group Ingress rules count is not matching"
@@ -378,13 +378,13 @@ class TestSecurityGroups(cloudstackTestCase):
                                                       )
         # Verifying that security group is listed
         status = validateList(list_securitygroups_byid)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Listing of Security Groups by id failed"
                           )
         # Verifying size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_securitygroups_byid),
                           "Count of the listing security group by id is not matching"
@@ -392,7 +392,7 @@ class TestSecurityGroups(cloudstackTestCase):
         securitygroup_ingress = list_securitygroups_byid[0].ingressrule
         # Verifying that Ingress rule is empty(revoked)
         status = validateList(securitygroup_ingress)
-        self.assertEquals(
+        self.assertEqual(
                           EMPTY_LIST,
                           status[2],
                           "Security Groups Ingress rule is not revoked"
@@ -426,13 +426,13 @@ class TestSecurityGroups(cloudstackTestCase):
                                                         )
         # Verifying that default security group is created
         status = validateList(list_securitygroups_before)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Default Security Groups creation failed"
                           )
         # Verifying the size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_securitygroups_before),
                           "Count of Security Groups list is not matching"
@@ -457,13 +457,13 @@ class TestSecurityGroups(cloudstackTestCase):
                                                        listall=self.services["listall"]
                                                        )
         status = validateList(list_securitygroups_after)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Security Groups creation failed"
                           )
         # Verifying that list size is 2
-        self.assertEquals(
+        self.assertEqual(
                           2,
                           len(list_securitygroups_after),
                           "Failed to create Security Group"
@@ -484,13 +484,13 @@ class TestSecurityGroups(cloudstackTestCase):
                                                       )
         # Verifying that security group is listed
         status = validateList(list_securitygroups_byid)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Listing of Security Groups by id failed"
                           )
         # Verifying size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_securitygroups_byid),
                           "Count of the listing security group by id is not matching"
@@ -498,12 +498,12 @@ class TestSecurityGroups(cloudstackTestCase):
         securitygroup_egress = list_securitygroups_byid[0].egressrule
         # Validating the Ingress rule
         status = validateList(securitygroup_egress)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Security Groups Egress rule authorization failed"
                           )
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(securitygroup_egress),
                           "Security Group Egress rules count is not matching"
@@ -542,13 +542,13 @@ class TestSecurityGroups(cloudstackTestCase):
                                                       )
         # Verifying that security group is listed
         status = validateList(list_securitygroups_byid)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Listing of Security Groups by id failed"
                           )
         # Verifying size of the list is 1
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_securitygroups_byid),
                           "Count of the listing security group by id is not matching"
@@ -556,7 +556,7 @@ class TestSecurityGroups(cloudstackTestCase):
         securitygroup_egress = list_securitygroups_byid[0].egressrule
         # Verifying that Ingress rule is empty(revoked)
         status = validateList(securitygroup_egress)
-        self.assertEquals(
+        self.assertEqual(
                           EMPTY_LIST,
                           status[2],
                           "Security Groups Egress rule is not revoked"

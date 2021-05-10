@@ -33,43 +33,30 @@
             {{ getProjectRole(record) }}
           </span>
           <span v-if="imProjectAdmin && dataSource.length > 1" slot="action" slot-scope="text, record" class="account-button-action">
-            <a-tooltip
-              slot="title"
-              placement="top"
-              :title="record.userid ? $t('label.make.user.project.owner') : $t('label.make.project.owner')">
-              <a-button
-                v-if="record.role !== owner"
-                type="default"
-                shape="circle"
-                icon="arrow-up"
-                size="small"
-                @click="promoteAccount(record)" />
-            </a-tooltip>
-            <a-tooltip
-              slot="title"
-              placement="top"
-              :title="record.userid ? $t('label.demote.project.owner.user') : $t('label.demote.project.owner')"
-              v-if="updateProjectApi.params.filter(x => x.name === 'swapowner').length > 0">
-              <a-button
-                v-if="record.role === owner"
-                type="default"
-                shape="circle"
-                icon="arrow-down"
-                size="small"
-                @click="demoteAccount(record)" />
-            </a-tooltip>
-            <a-tooltip
-              slot="title"
-              placement="top"
-              :title="record.userid ? $t('label.remove.project.user') : $t('label.remove.project.account')">
-              <a-button
-                type="danger"
-                shape="circle"
-                icon="delete"
-                size="small"
-                :disabled="!('deleteAccountFromProject' in $store.getters.apis)"
-                @click="onShowConfirmDelete(record)"/>
-            </a-tooltip>
+            <tooltip-button
+              tooltipPlacement="top"
+              :tooltip="record.userid ? $t('label.make.user.project.owner') : $t('label.make.project.owner')"
+              v-if="record.role !== owner"
+              type="default"
+              icon="arrow-up"
+              size="small"
+              @click="promoteAccount(record)" />
+            <tooltip-button
+              tooltipPlacement="top"
+              :tooltip="record.userid ? $t('label.demote.project.owner.user') : $t('label.demote.project.owner')"
+              v-if="updateProjectApi.params.filter(x => x.name === 'swapowner').length > 0 && record.role === owner"
+              type="default"
+              icon="arrow-down"
+              size="small"
+              @click="demoteAccount(record)" />
+            <tooltip-button
+              tooltipPlacement="top"
+              :tooltip="record.userid ? $t('label.remove.project.user') : $t('label.remove.project.account')"
+              type="danger"
+              icon="delete"
+              size="small"
+              :disabled="!('deleteAccountFromProject' in $store.getters.apis)"
+              @click="onShowConfirmDelete(record)" />
           </span>
         </a-table>
         <a-pagination
@@ -94,9 +81,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'AccountsTab',
+  components: {
+    TooltipButton
+  },
   props: {
     resource: {
       type: Object,
@@ -156,11 +147,9 @@ export default {
     this.page = 1
     this.pageSize = 10
     this.itemCount = 0
-  },
-  inject: ['parentFetchData'],
-  mounted () {
     this.fetchData()
   },
+  inject: ['parentFetchData'],
   watch: {
     resource (newItem, oldItem) {
       if (!newItem || !newItem.id) {

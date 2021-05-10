@@ -16,24 +16,22 @@
 // under the License.
 
 <template>
-  <a-tooltip placement="bottom">
-    <template slot="title">
-      {{ $t('label.delete.rule') }}
-    </template>
-    <a-popconfirm
-      :title="`${$t('label.delete.rule')}?`"
-      @confirm="handleDelete"
-      :disabled="disabled">
-      <a-button type="danger" shape="circle" :disabled="disabled">
-        <a-icon type="delete" />
-      </a-button>
-    </a-popconfirm>
-  </a-tooltip>
+  <a-popconfirm
+    :title="`${$t('label.delete.rule')}?`"
+    @confirm="handleDelete"
+    :disabled="disabled">
+    <tooltip-button :tooltip="$t('label.delete.rule')" tooltipPlacement="bottom" type="danger" icon="delete" :disabled="disabled" />
+  </a-popconfirm>
 </template>
 
 <script>
+import TooltipButton from '@/components/view/TooltipButton'
+
 export default {
   name: 'RuleDelete',
+  components: {
+    TooltipButton
+  },
   props: {
     record: {
       type: Object,

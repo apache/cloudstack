@@ -101,6 +101,7 @@ import com.cloud.agent.api.ComputeChecksumCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
+import com.cloud.agent.api.HandleConfigDriveIsoAnswer;
 import com.cloud.agent.api.HandleConfigDriveIsoCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingStorageCommand;
@@ -139,6 +140,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
@@ -320,7 +322,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private Answer execute(HandleConfigDriveIsoCommand cmd) {
         if (cmd.isCreate()) {
             if (cmd.getIsoData() == null) {
-                return new Answer(cmd, false, "Invalid config drive ISO data");
+                return new HandleConfigDriveIsoAnswer(cmd, "Invalid config drive ISO data");
             }
             String nfsMountPoint = getRootDir(cmd.getDestStore().getUrl(), _nfsVersion);
             File isoFile = new File(nfsMountPoint, cmd.getIsoFile());
@@ -333,7 +335,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 File tmpIsoFile = ConfigDriveBuilder.base64StringToFile(cmd.getIsoData(), tempDir.toAbsolutePath().toString(), cmd.getIsoFile());
                 copyLocalToNfs(tmpIsoFile, new File(cmd.getIsoFile()), cmd.getDestStore());
             } catch (IOException | ConfigurationException e) {
-                return new Answer(cmd, false, "Failed due to exception: " + e.getMessage());
+                return new HandleConfigDriveIsoAnswer(cmd, "Failed due to exception: " + e.getMessage());
             } finally {
                 try {
                     if (tempDir != null) {
@@ -343,7 +345,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     s_logger.warn("Failed to delete ConfigDrive temporary directory: " + tempDir.toString(), ioe);
                 }
             }
-            return new Answer(cmd, true, "Successfully saved config drive at secondary storage");
+            return new HandleConfigDriveIsoAnswer(cmd, NetworkElement.Location.SECONDARY, "Successfully saved config drive at secondary storage");
         } else {
             DataStoreTO dstore = cmd.getDestStore();
             if (dstore instanceof NfsTO) {
@@ -354,11 +356,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 try {
                     Files.deleteIfExists(tmpltPath.toPath());
                 } catch (IOException e) {
-                    return new Answer(cmd, e);
+                    return new HandleConfigDriveIsoAnswer(cmd, e);
                 }
-                return new Answer(cmd);
+                return new HandleConfigDriveIsoAnswer(cmd);
             } else {
-                return new Answer(cmd, false, "Not implemented yet");
+                return new HandleConfigDriveIsoAnswer(cmd, "Not implemented yet");
             }
         }
     }
@@ -2348,6 +2350,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             File tmpltParent = null;
             if (tmpltPath.exists() && tmpltPath.isDirectory()) {
                 tmpltParent = tmpltPath;
+            } else if (absoluteTemplatePath.endsWith(File.separator + obj.getId())) {
+                // the path ends with <account id>/<template id>, if upload fails
+                tmpltParent = tmpltPath;
             } else {
                 tmpltParent = tmpltPath.getParentFile();
             }
@@ -2451,6 +2456,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             File tmpltParent = null;
             if (volPath.exists() && volPath.isDirectory()) {
                 // for vmware, absoluteVolumePath represents a directory where volume files are located.
+                tmpltParent = volPath;
+            } else if (absoluteVolumePath.endsWith(File.separator + obj.getId())) {
+                // the path ends with <account id>/<volume id>, if upload fails
                 tmpltParent = volPath;
             } else {
                 // for other hypervisors, the volume .vhd or .qcow2 file path is passed

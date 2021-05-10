@@ -164,15 +164,30 @@
           <a-form-item :label="$t('label.name')">
             <a-input
               :placeholder="$t('label.unique.name.tier')"
-              v-decorator="['name',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
+              v-decorator="['name',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+              autoFocus></a-input>
           </a-form-item>
           <a-form-item :label="$t('label.networkofferingid')">
             <a-select
-              v-decorator="['networkOffering',{rules: [{ required: true, message: `${$t('label.required')}` }]}]">
+              v-decorator="['networkOffering',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+              @change="val => { this.handleNetworkOfferingChange(val) }">
               <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id">
-                {{ item.name }}
+                {{ item.displaytext || item.name || item.description }}
               </a-select-option>
             </a-select>
+          </a-form-item>
+          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan">
+            <span slot="label">
+              {{ $t('label.vlan') }}
+              <a-tooltip :title="$t('label.vlan')">
+                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              </a-tooltip>
+            </span>
+            <a-input
+              v-decorator="['vlan', {
+                rules: [{ required: true, message: $t('message.please.enter.value') }]
+              }]"
+              :placeholder="this.$t('label.vlan')"/>
           </a-form-item>
           <a-form-item :label="$t('label.gateway')">
             <a-input
@@ -208,6 +223,7 @@
         <a-form @submit.prevent="handleAddInternalLBSubmit" :form="form">
           <a-form-item :label="$t('label.name')">
             <a-input
+              autoFocus
               :placeholder="$t('label.internallb.name.description')"
               v-decorator="['name', { rules: [{ required: true, message: $t('message.error.internallb.name')}] }]"/>
           </a-form-item>
@@ -282,6 +298,7 @@ export default {
       LBPublicIPs: {},
       staticNats: {},
       vms: {},
+      selectedNetworkOffering: {},
       algorithms: {
         Source: 'source',
         'Round-robin': 'roundrobin',
@@ -368,10 +385,16 @@ export default {
         publicIps: {},
         snats: {},
         vms: {}
-      }
+      },
+      lbProviderMap: {
+        publicLb: {
+          vpc: ['VpcVirtualRouter', 'Netscaler']
+        }
+      },
+      publicLBExists: false
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {
@@ -385,15 +408,22 @@ export default {
     this.form = this.$form.createForm(this)
   },
   methods: {
+    isObjectEmpty (obj) {
+      return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
+    },
     showIlb (network) {
       return network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value === 'Internal').length > 0)).length > 0 || false
     },
     fetchData () {
       this.networks = this.resource.network
+      if (!this.networks || this.networks.length === 0) {
+        return
+      }
       for (const network of this.networks) {
         this.fetchLoadBalancers(network.id)
         this.fetchVMs(network.id)
       }
+      this.publicLBNetworkExists()
     },
     fetchNetworkAclList () {
       this.fetchLoading = true
@@ -412,6 +442,38 @@ export default {
         this.modalLoading = false
       })
     },
+    getNetworkOffering (networkId) {
+      return new Promise((resolve, reject) => {
+        api('listNetworkOfferings', {
+          id: networkId
+        }).then(json => {
+          var networkOffering = json.listnetworkofferingsresponse.networkoffering[0]
+          resolve(networkOffering)
+        }).catch(e => {
+          reject(e)
+        })
+      })
+    },
+    publicLBNetworkExists () {
+      api('listNetworks', {
+        vpcid: this.resource.id,
+        supportedservices: 'LB'
+      }).then(async json => {
+        var lbNetworks = json.listnetworksresponse.network || []
+        if (lbNetworks.length > 0) {
+          this.publicLBExists = true
+          for (var idx = 0; idx < lbNetworks.length; idx++) {
+            const lbNetworkOffering = await this.getNetworkOffering(lbNetworks[idx].networkofferingid)
+            const index = lbNetworkOffering.service.map(svc => { return svc.name }).indexOf('Lb')
+            if (index !== -1 &&
+              this.lbProviderMap.publicLb.vpc.indexOf(lbNetworkOffering.service.map(svc => { return svc.provider[0].name })[index]) !== -1) {
+              this.publicLBExists = true
+              break
+            }
+          }
+        }
+      })
+    },
     fetchNetworkOfferings () {
       this.fetchLoading = true
       this.modalLoading = true
@@ -422,11 +484,23 @@ export default {
         state: 'Enabled'
       }).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering || []
+        var filteredOfferings = []
+        if (this.publicLBExists) {
+          for (var index in this.networkOfferings) {
+            const offering = this.networkOfferings[index]
+            const idx = offering.service.map(svc => { return svc.name }).indexOf('Lb')
+            if (idx === -1 || this.lbProviderMap.publicLb.vpc.indexOf(offering.service.map(svc => { return svc.provider[0].name })[idx]) === -1) {
+              filteredOfferings.push(offering)
+            }
+          }
+          this.networkOfferings = filteredOfferings
+        }
         this.$nextTick(function () {
           this.form.setFieldsValue({
             networkOffering: this.networkOfferings[0].id
           })
         })
+        this.selectedNetworkOffering = this.networkOfferings[0]
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -464,6 +538,9 @@ export default {
         this.fetchLoading = false
       })
     },
+    handleNetworkOfferingChange (networkOfferingId) {
+      this.selectedNetworkOffering = this.networkOfferings.filter(offering => offering.id === networkOfferingId)[0]
+    },
     closeModal () {
       this.$emit('close-action')
     },
@@ -488,7 +565,7 @@ export default {
         }
 
         this.showCreateNetworkModal = false
-        api('createNetwork', {
+        var params = {
           vpcid: this.resource.id,
           domainid: this.resource.domainid,
           account: this.resource.account,
@@ -500,7 +577,13 @@ export default {
           zoneId: this.resource.zoneid,
           externalid: values.externalId,
           aclid: values.acl
-        }).then(() => {
+        }
+
+        if (values.vlan) {
+          params.vlan = values.vlan
+        }
+
+        api('createNetwork', params).then(() => {
           this.$notification.success({
             message: this.$t('message.success.add.vpc.network')
           })

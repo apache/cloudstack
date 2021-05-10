@@ -437,7 +437,7 @@ class TestVPCRedundancy(cloudstackTestCase):
             )
 
             self.logger.debug("Created network with ID: %s" % obj_network.id)
-        except Exception, e:
+        except Exception as e:
             self.fail('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
         o = networkO(obj_network)
 

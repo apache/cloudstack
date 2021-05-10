@@ -39,7 +39,7 @@
           :cancelText="$t('label.no')"
           placement="top"
         >
-          <a-button :disabled="!('releaseDedicatedGuestVlanRange' in $store.getters.apis)" icon="delete" type="danger" shape="circle"></a-button>
+          <tooltip-button :tooltip="$t('label.delete')" :disabled="!('releaseDedicatedGuestVlanRange' in $store.getters.apis)" icon="delete" type="danger" />
         </a-popconfirm>
       </template>
     </a-table>
@@ -74,6 +74,7 @@
               v-decorator="['range', {
                 rules: [{ required: true, message: `${$t('label.required')}` }]
               }]"
+              autoFocus
             ></a-input>
           </a-form-item>
 
@@ -91,7 +92,7 @@
                 rules: [{ required: true, message: `${$t('label.required')}` }]
               }]"
             >
-              <a-select-option v-for="domain in domains" :key="domain.id" :value="domain.id">{{ domain.name }}</a-select-option>
+              <a-select-option v-for="domain in domains" :key="domain.id" :value="domain.id">{{ domain.path || domain.name || domain.description }}</a-select-option>
             </a-select>
           </a-form-item>
 
@@ -133,9 +134,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'DedicatedVLANTab',
+  components: {
+    TooltipButton
+  },
   props: {
     resource: {
       type: Object,
@@ -183,7 +188,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {

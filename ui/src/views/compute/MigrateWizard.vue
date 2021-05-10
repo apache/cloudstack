@@ -21,7 +21,8 @@
       :placeholder="$t('label.search')"
       v-model="searchQuery"
       style="margin-bottom: 10px;"
-      @search="fetchData" />
+      @search="fetchData"
+      autoFocus />
     <a-table
       size="small"
       style="overflow-y: auto"
@@ -46,6 +47,9 @@
       </div>
       <div slot="memused" slot-scope="record">
         {{ record.memoryused | byteToGigabyte }} GB
+      </div>
+      <div slot="memoryallocatedpercentage" slot-scope="record">
+        {{ record.memoryallocatedpercentage }}
       </div>
       <div slot="cluster" slot-scope="record">
         {{ record.clustername }}
@@ -123,6 +127,10 @@ export default {
           dataIndex: 'cpuused'
         },
         {
+          title: this.$t('label.memoryallocated'),
+          scopedSlots: { customRender: 'memoryallocatedpercentage' }
+        },
+        {
           title: this.$t('label.memused'),
           scopedSlots: { customRender: 'memused' }
         },
@@ -145,7 +153,7 @@ export default {
       ]
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

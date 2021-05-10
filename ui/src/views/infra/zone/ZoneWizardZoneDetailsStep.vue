@@ -35,6 +35,7 @@
               initialValue: name
             }]
           }]"
+          autoFocus
         />
       </a-form-item>
       <a-form-item
@@ -237,7 +238,7 @@
           <a-select-option
             v-for="networkOffering in availableNetworkOfferings"
             :key="networkOffering.id">
-            {{ networkOffering.name }}
+            {{ networkOffering.displaytext || networkOffering.name || networkOffering.description }}
           </a-select-option>
         </a-select>
       </a-form-item>
@@ -393,6 +394,8 @@ export default {
         this.$emit('fieldsChanged', changedFields)
       }
     })
+
+    this.fetchData()
   },
   mounted () {
     this.form.setFieldsValue({
@@ -412,41 +415,6 @@ export default {
       account: this.account,
       localstorageenabled: this.localstorageenabled,
       localstorageenabledforsystemvm: this.localstorageenabledforsystemvm
-    })
-
-    const cForm = this.form
-    api('listHypervisors', { listAll: true }).then(json => {
-      this.hypervisors = json.listhypervisorsresponse.hypervisor
-      if ('listSimulatorHAStateTransitions' in this.$store.getters.apis) {
-        this.hypervisors.push({ name: 'Simulator' })
-      }
-      cForm.setFieldsValue({
-        hypervisor: this.currentHypervisor
-      })
-    })
-
-    if (!this.isAdvancedZone || this.securityGroupsEnabled) {
-      api('listNetworkOfferings', { state: 'Enabled', guestiptype: 'Shared' }).then(json => {
-        this.networkOfferings = {}
-        json.listnetworkofferingsresponse.networkoffering.forEach(offering => {
-          this.setupNetworkOfferingAdditionalFlags(offering)
-          this.networkOfferings[offering.id] = offering
-        })
-        this.availableNetworkOfferings = this.getAvailableNetworkOfferings(this.currentHypervisor)
-        cForm.setFieldsValue({
-          networkOfferingId: this.currentNetworkOfferingId
-        })
-      })
-    }
-
-    api('listDomains', { listAll: true }).then(json => {
-      this.domains = {}
-      json.listdomainsresponse.domain.forEach(dom => {
-        this.domains[dom.id] = dom
-      })
-      cForm.setFieldsValue({
-        domain: this.domain
-      })
     })
   },
   computed: {
@@ -531,6 +499,42 @@ export default {
     }
   },
   methods: {
+    fetchData () {
+      const cForm = this.form
+      api('listHypervisors', { listAll: true }).then(json => {
+        this.hypervisors = json.listhypervisorsresponse.hypervisor
+        if ('listSimulatorHAStateTransitions' in this.$store.getters.apis) {
+          this.hypervisors.push({ name: 'Simulator' })
+        }
+        cForm.setFieldsValue({
+          hypervisor: this.currentHypervisor
+        })
+      })
+
+      if (!this.isAdvancedZone || this.securityGroupsEnabled) {
+        api('listNetworkOfferings', { state: 'Enabled', guestiptype: 'Shared' }).then(json => {
+          this.networkOfferings = {}
+          json.listnetworkofferingsresponse.networkoffering.forEach(offering => {
+            this.setupNetworkOfferingAdditionalFlags(offering)
+            this.networkOfferings[offering.id] = offering
+          })
+          this.availableNetworkOfferings = this.getAvailableNetworkOfferings(this.currentHypervisor)
+          cForm.setFieldsValue({
+            networkOfferingId: this.currentNetworkOfferingId
+          })
+        })
+      }
+
+      api('listDomains', { listAll: true }).then(json => {
+        this.domains = {}
+        json.listdomainsresponse.domain.forEach(dom => {
+          this.domains[dom.id] = dom
+        })
+        cForm.setFieldsValue({
+          domain: this.domain
+        })
+      })
+    },
     handleSubmit (e) {
       e.preventDefault()
       this.form.validateFields((err, values) => {

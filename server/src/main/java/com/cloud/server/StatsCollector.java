@@ -110,6 +110,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageStats;
@@ -931,7 +932,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 for (StoragePoolVO pool : pools) {
                     List<VolumeVO> volumes = _volsDao.findByPoolId(pool.getId(), null);
                     for (VolumeVO volume : volumes) {
-                        if (volume.getFormat() != ImageFormat.QCOW2 && volume.getFormat() != ImageFormat.VHD && volume.getFormat() != ImageFormat.OVA) {
+                        if (volume.getFormat() != ImageFormat.QCOW2 && volume.getFormat() != ImageFormat.VHD && volume.getFormat() != ImageFormat.OVA && (volume.getFormat() != ImageFormat.RAW || pool.getPoolType() != Storage.StoragePoolType.PowerFlex)) {
                             s_logger.warn("Volume stats not implemented for this format type " + volume.getFormat());
                             break;
                         }
@@ -1020,14 +1021,22 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         if (answer != null && answer.getResult()) {
                             storagePoolStats.put(pool.getId(), (StorageStats)answer);
 
+                            boolean poolNeedsUpdating = false;
                             // Seems like we have dynamically updated the pool size since the prev. size and the current do not match
-                            if (pool.getCapacityBytes() != ((StorageStats)answer).getCapacityBytes() ||
-                                    pool.getUsedBytes() != ((StorageStats)answer).getByteUsed()) {
-                                pool.setCapacityBytes(((StorageStats)answer).getCapacityBytes());
-                                if (pool.getStorageProviderName().equalsIgnoreCase(DataStoreProvider.DEFAULT_PRIMARY)) {
-                                    pool.setUsedBytes(((StorageStats) answer).getByteUsed());
-                                    pool.setUpdateTime(new Date());
+                            if (_storagePoolStats.get(poolId) != null && _storagePoolStats.get(poolId).getCapacityBytes() != ((StorageStats)answer).getCapacityBytes()) {
+                                if (((StorageStats)answer).getCapacityBytes() > 0) {
+                                    pool.setCapacityBytes(((StorageStats)answer).getCapacityBytes());
+                                    poolNeedsUpdating = true;
+                                } else {
+                                    s_logger.warn("Not setting capacity bytes, received " + ((StorageStats)answer).getCapacityBytes()  + " capacity for pool ID " + poolId);
                                 }
+                            }
+                            if (pool.getUsedBytes() != ((StorageStats)answer).getByteUsed() && pool.getStorageProviderName().equalsIgnoreCase(DataStoreProvider.DEFAULT_PRIMARY)) {
+                                pool.setUsedBytes(((StorageStats) answer).getByteUsed());
+                                poolNeedsUpdating = true;
+                            }
+                            if (poolNeedsUpdating) {
+                                pool.setUpdateTime(new Date());
                                 _storagePoolDao.update(pool.getId(), pool);
                             }
                         }

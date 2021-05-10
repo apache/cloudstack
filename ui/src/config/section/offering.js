@@ -36,6 +36,10 @@ export default {
           store.getters.apis.createServiceOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')
         }
+        if (store.getters.apis.createServiceOffering &&
+          store.getters.apis.createServiceOffering.params.filter(x => x.name === 'rootdisksize').length > 0) {
+          fields.splice(12, 0, 'rootdisksize')
+        }
         return fields
       },
       related: [{
@@ -146,7 +150,7 @@ export default {
         label: 'label.edit',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
-        args: ['name', 'displaytext']
+        args: ['name', 'displaytext', 'tags']
       }, {
         api: 'updateDiskOffering',
         icon: 'lock',
@@ -212,7 +216,7 @@ export default {
         label: 'label.edit',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
-        args: ['name', 'displaytext', 'availability'],
+        args: ['name', 'displaytext', 'availability', 'tags'],
         mapping: {
           availability: {
             options: ['Optional', 'Required']

@@ -27,12 +27,16 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+
+
 import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
@@ -203,6 +207,7 @@ import org.apache.cloudstack.api.command.admin.storage.PreparePrimaryStorageForM
 import org.apache.cloudstack.api.command.admin.storage.UpdateCloudToUseObjectStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.SyncStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;
@@ -572,6 +577,8 @@ import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.dao.StoragePoolJoinDao;
+import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -607,6 +614,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
@@ -631,12 +639,20 @@ import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.IpAddress;
+import com.cloud.network.IpAddressManager;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVO;
+import com.cloud.network.dao.NetworkAccountDao;
+import com.cloud.network.dao.NetworkAccountVO;
+import com.cloud.network.dao.NetworkDomainDao;
+import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.projects.Project;
@@ -659,6 +675,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.VolumeVO;
@@ -729,6 +746,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "6", "Specifies the length of a randomly generated password", false);
     static final ConfigKey<Integer> sshKeyLength = new ConfigKey<Integer>("Advanced", Integer.class, "ssh.key.length", "2048", "Specifies custom SSH key length (bit)", true, ConfigKey.Scope.Global);
     static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<Boolean>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
+    public static final ConfigKey<String> customCsIdentifier = new ConfigKey<String>("Advanced", String.class, "custom.cs.identifier", UUID.randomUUID().toString().split("-")[0].substring(4), "Custom identifier for the cloudstack installation", true, ConfigKey.Scope.Global);
 
     @Inject
     public AccountManager _accountMgr;
@@ -789,6 +807,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private PrimaryDataStoreDao _poolDao;
     @Inject
+    private StoragePoolJoinDao _poolJoinDao;
+    @Inject
     private NetworkDao _networkDao;
     @Inject
     private StorageManager _storageMgr;
@@ -848,6 +868,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private VolumeDataStoreDao _volumeStoreDao;
     @Inject
     private TemplateDataStoreDao _vmTemplateStoreDao;
+    @Inject
+    private IpAddressManager _ipAddressMgr;
+    @Inject
+    private NetworkAccountDao _networkAccountDao;
+    @Inject
+    private NetworkDomainDao _networkDomainDao;
+    @Inject
+    private NetworkModel _networkMgr;
+    @Inject
+    private VpcDao _vpcDao;
 
     private LockMasterListener _lockMasterListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -1145,7 +1175,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<List<? extends Cluster>, Integer>(result.first(), result.second());
     }
 
-    private HypervisorType getHypervisorType(VMInstanceVO vm, StoragePool srcVolumePool, VirtualMachineProfile profile) {
+    private HypervisorType getHypervisorType(VMInstanceVO vm, StoragePool srcVolumePool) {
         HypervisorType type = null;
         if (vm == null) {
             StoragePoolVO poolVo = _poolDao.findById(srcVolumePool.getId());
@@ -1155,18 +1185,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     ClusterVO cluster = _clusterDao.findById(clusterId);
                     type = cluster.getHypervisorType();
                 }
-            } else if (ScopeType.ZONE.equals(poolVo.getScope())) {
-                Long zoneId = poolVo.getDataCenterId();
-                if (zoneId != null) {
-                    DataCenterVO dc = _dcDao.findById(zoneId);
-                }
             }
 
             if (null == type) {
                 type = srcVolumePool.getHypervisor();
             }
         } else {
-            type = profile.getHypervisorType();
+            type = vm.getHypervisorType();
         }
         return type;
     }
@@ -1335,6 +1360,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     } else {
                         if (storagePool.isManaged()) {
                             if (srcHost.getClusterId() != host.getClusterId()) {
+                                if (storagePool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
+                                    // No need of new volume creation for zone wide PowerFlex/ScaleIO pool
+                                    // Simply, changing volume access to host should work: grant access on dest host and revoke access on source host
+                                    continue;
+                                }
                                 // If the volume's storage pool is managed and at the zone level, then we still have to perform a storage migration
                                 // because we need to create a new target volume and copy the contents of the source volume into it before deleting
                                 // the source volume.
@@ -1499,12 +1529,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         StoragePool srcVolumePool = _poolDao.findById(volume.getPoolId());
-        allPools = getAllStoragePoolCompatileWithVolumeSourceStoragePool(srcVolumePool);
+        HypervisorType hypervisorType = getHypervisorType(vm, srcVolumePool);
+        Pair<Host, List<Cluster>> hostClusterPair = getVolumeVmHostClusters(srcVolumePool, vm, hypervisorType);
+        Host vmHost = hostClusterPair.first();
+        List<Cluster> clusters = hostClusterPair.second();
+        allPools = getAllStoragePoolCompatibleWithVolumeSourceStoragePool(srcVolumePool, hypervisorType, clusters);
         allPools.remove(srcVolumePool);
         if (vm != null) {
-            suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, srcVolumePool);
+            suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, vmHost, srcVolumePool,
+                    CollectionUtils.isNotEmpty(clusters) ? clusters.get(0) : null, hypervisorType);
         } else {
-            suitablePools = allPools;
+            suitablePools = findAllSuitableStoragePoolsForDetachedVolume(volume, allPools);
         }
         List<StoragePool> avoidPools = new ArrayList<>();
         if (srcVolumePool.getParent() != 0L) {
@@ -1531,6 +1566,30 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
+    private Pair<Host, List<Cluster>> getVolumeVmHostClusters(StoragePool srcVolumePool, VirtualMachine vm, HypervisorType hypervisorType) {
+        Host host = null;
+        List<Cluster> clusters = new ArrayList<>();
+        Long clusterId = srcVolumePool.getClusterId();
+        if (vm != null) {
+            Long hostId = vm.getHostId();
+            if (hostId == null) {
+                hostId = vm.getLastHostId();
+            }
+            if (hostId != null) {
+                host = _hostDao.findById(hostId);
+            }
+        }
+        if (clusterId == null && host != null) {
+            clusterId = host.getClusterId();
+        }
+        if (clusterId != null && vm != null) {
+            clusters.add(_clusterDao.findById(clusterId));
+        } else {
+            clusters.addAll(_clusterDao.listByDcHyType(srcVolumePool.getDataCenterId(), hypervisorType.toString()));
+        }
+        return new Pair<>(host, clusters);
+    }
+
     /**
      * This method looks for all storage pools that are compatible with the given volume.
      * <ul>
@@ -1538,16 +1597,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      *  <li>We also all storage available filtering by data center, pod and cluster as the current storage pool used by the given volume.</li>
      * </ul>
      */
-    private List<? extends StoragePool> getAllStoragePoolCompatileWithVolumeSourceStoragePool(StoragePool srcVolumePool) {
+    private List<? extends StoragePool> getAllStoragePoolCompatibleWithVolumeSourceStoragePool(StoragePool srcVolumePool, HypervisorType hypervisorType, List<Cluster> clusters) {
         List<StoragePoolVO> storagePools = new ArrayList<>();
-        List<StoragePoolVO> zoneWideStoragePools = _poolDao.findZoneWideStoragePoolsByTags(srcVolumePool.getDataCenterId(), null);
+        List<StoragePoolVO> zoneWideStoragePools = _poolDao.findZoneWideStoragePoolsByHypervisor(srcVolumePool.getDataCenterId(), hypervisorType);
         if (CollectionUtils.isNotEmpty(zoneWideStoragePools)) {
             storagePools.addAll(zoneWideStoragePools);
         }
-        List<StoragePoolVO> clusterAndLocalStoragePools = _poolDao.listBy(srcVolumePool.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null);
-        if (CollectionUtils.isNotEmpty(clusterAndLocalStoragePools)) {
-            storagePools.addAll(clusterAndLocalStoragePools);
+        if (CollectionUtils.isNotEmpty(clusters)) {
+            List<Long> clusterIds = clusters.stream().map(Cluster::getId).collect(Collectors.toList());
+            List<StoragePoolVO> clusterAndLocalStoragePools = _poolDao.findPoolsInClusters(clusterIds);
+            if (CollectionUtils.isNotEmpty(clusterAndLocalStoragePools)) {
+                storagePools.addAll(clusterAndLocalStoragePools);
+            }
         }
+
         return storagePools;
     }
 
@@ -1558,38 +1621,58 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      *
      *  Side note: the idea behind this method is to provide power for administrators of manually overriding deployments defined by CloudStack.
      */
-    private List<StoragePool> findAllSuitableStoragePoolsForVm(final VolumeVO volume, VMInstanceVO vm, StoragePool srcVolumePool) {
+    private List<StoragePool> findAllSuitableStoragePoolsForVm(final VolumeVO volume, VMInstanceVO vm, Host vmHost, StoragePool srcVolumePool, Cluster srcCluster, HypervisorType hypervisorType) {
         List<StoragePool> suitablePools = new ArrayList<>();
-
-        HostVO host = _hostDao.findById(vm.getHostId());
-        if (host == null) {
-            host = _hostDao.findById(vm.getLastHostId());
-        }
-
         ExcludeList avoid = new ExcludeList();
         avoid.addPool(srcVolumePool.getId());
-
-        DataCenterDeployment plan = new DataCenterDeployment(volume.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null, null, null);
+        Long clusterId = null;
+        Long podId = null;
+        if (srcCluster != null) {
+            clusterId = srcCluster.getId();
+            podId = srcCluster.getPodId();
+        }
+        DataCenterDeployment plan = new DataCenterDeployment(volume.getDataCenterId(), podId, clusterId,
+                null, null, null, null);
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         // OfflineVmwareMigration: vm might be null here; deal!
-        HypervisorType type = getHypervisorType(vm, srcVolumePool, profile);
 
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-        //This is an override mechanism so we can list the possible local storage pools that a volume in a shared pool might be able to be migrated to
-        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, type);
-        diskProfile.setUseLocalStorage(true);
+        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, hypervisorType);
 
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
-            List<StoragePool> pools = allocator.allocateToPool(diskProfile, profile, plan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL);
+            List<StoragePool> pools = allocator.allocateToPool(diskProfile, profile, plan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL, true);
             if (CollectionUtils.isEmpty(pools)) {
                 continue;
             }
             for (StoragePool pool : pools) {
-                boolean isLocalPoolSameHostAsSourcePool = pool.isLocal() && StringUtils.equals(host.getPrivateIpAddress(), pool.getHostAddress());
-                if (isLocalPoolSameHostAsSourcePool || pool.isShared()) {
+                boolean isLocalPoolSameHostAsVmHost = pool.isLocal() &&
+                        (vmHost == null || StringUtils.equals(vmHost.getPrivateIpAddress(), pool.getHostAddress()));
+                if (isLocalPoolSameHostAsVmHost || pool.isShared()) {
                     suitablePools.add(pool);
                 }
+            }
+        }
+        return suitablePools;
+    }
 
+    private List<StoragePool> findAllSuitableStoragePoolsForDetachedVolume(Volume volume, List<? extends StoragePool> allPools) {
+        List<StoragePool> suitablePools = new ArrayList<>();
+        if (CollectionUtils.isEmpty(allPools)) {
+            return  suitablePools;
+        }
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        List<String> tags = new ArrayList<>();
+        String[] tagsArray = diskOffering.getTagsArray();
+        if (tagsArray != null && tagsArray.length > 0) {
+            tags = Arrays.asList(tagsArray);
+        }
+        Long[] poolIds = allPools.stream().map(StoragePool::getId).toArray(Long[]::new);
+        List<StoragePoolJoinVO> pools = _poolJoinDao.searchByIds(poolIds);
+        for (StoragePoolJoinVO storagePool : pools) {
+            if (StoragePoolStatus.Up.equals(storagePool.getStatus()) &&
+                    (CollectionUtils.isEmpty(tags) || tags.contains(storagePool.getTag()))) {
+                Optional<? extends StoragePool> match = allPools.stream().filter(x -> x.getId() == storagePool.getId()).findFirst();
+                match.ifPresent(suitablePools::add);
             }
         }
         return suitablePools;
@@ -1961,29 +2044,90 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends IpAddress>, Integer> searchForIPAddresses(final ListPublicIpAddressesCmd cmd) {
-        final Object keyword = cmd.getKeyword();
-        final Long physicalNetworkId = cmd.getPhysicalNetworkId();
         final Long associatedNetworkId = cmd.getAssociatedNetworkId();
-        final Long sourceNetworkId = cmd.getNetworkId();
         final Long zone = cmd.getZoneId();
-        final String address = cmd.getIpAddress();
         final Long vlan = cmd.getVlanId();
         final Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
-        final Boolean forLoadBalancing = cmd.isForLoadBalancing();
         final Long ipId = cmd.getId();
-        final Boolean sourceNat = cmd.isSourceNat();
-        final Boolean staticNat = cmd.isStaticNat();
+        final Long networkId = cmd.getNetworkId();
         final Long vpcId = cmd.getVpcId();
-        final Boolean forDisplay = cmd.getDisplay();
-        final Map<String, String> tags = cmd.getTags();
 
         final String state = cmd.getState();
         Boolean isAllocated = cmd.isAllocatedOnly();
         if (isAllocated == null) {
-            isAllocated = Boolean.TRUE;
-
-            if (state != null) {
+            if (state != null && state.equalsIgnoreCase(IpAddress.State.Free.name())) {
                 isAllocated = Boolean.FALSE;
+            } else {
+                isAllocated = Boolean.TRUE; // default
+            }
+        } else {
+            if (state != null && state.equalsIgnoreCase(IpAddress.State.Free.name())) {
+                if (isAllocated) {
+                    throw new InvalidParameterValueException("Conflict: allocatedonly is true but state is Free");
+                }
+            } else if (state != null && state.equalsIgnoreCase(IpAddress.State.Allocated.name())) {
+                isAllocated = Boolean.TRUE;
+            }
+        }
+
+        VlanType vlanType = null;
+        if (forVirtualNetwork != null) {
+            vlanType = forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
+        } else {
+            vlanType = VlanType.VirtualNetwork;
+        }
+
+        final Account caller = getCaller();
+        List<IPAddressVO> addrs = new ArrayList<>();
+
+        if (vlanType == VlanType.DirectAttached && networkId == null && ipId == null) { // only root admin can list public ips in all shared networks
+            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                isAllocated = true;
+            }
+        } else if (vlanType == VlanType.DirectAttached) {
+            // list public ip address on shared network
+            // access control. admin: all Ips, domain admin/user: all Ips in shared network in the domain/sub-domain/user
+            NetworkVO network = null;
+            if (networkId == null) {
+                IPAddressVO ip = _publicIpAddressDao.findById(ipId);
+                if (ip == null) {
+                    throw new InvalidParameterValueException("Please specify a valid ipaddress id");
+                }
+                network = _networkDao.findById(ip.getSourceNetworkId());
+            } else {
+                network = _networkDao.findById(networkId);
+            }
+            if (network == null || network.getGuestType() != Network.GuestType.Shared) {
+                throw new InvalidParameterValueException("Please specify a valid network id");
+            }
+            if (network.getAclType() == ControlledEntity.ACLType.Account) {
+                NetworkAccountVO networkMap = _networkAccountDao.getAccountNetworkMapByNetworkId(network.getId());
+                if (networkMap == null) {
+                    return new Pair<>(addrs, 0);
+                }
+                _accountMgr.checkAccess(caller, null, false, _accountDao.findById(networkMap.getAccountId()));
+            } else { // Domain level
+                NetworkDomainVO networkMap = _networkDomainDao.getDomainNetworkMapByNetworkId(network.getId());
+                if (networkMap == null) {
+                    return new Pair<>(addrs, 0);
+                }
+                if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                    if (_networkMgr.isNetworkAvailableInDomain(network.getId(), caller.getDomainId())) {
+                        isAllocated = Boolean.TRUE;
+                    } else {
+                        return new Pair<>(addrs, 0);
+                    }
+                } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+                    if (caller.getDomainId() == networkMap.getDomainId() || _domainDao.isChildDomain(caller.getDomainId(), networkMap.getDomainId())) {
+                        s_logger.debug("Caller " + caller.getUuid() + " has permission to access the network : " + network.getUuid());
+                    } else {
+                        if (_networkMgr.isNetworkAvailableInDomain(network.getId(), caller.getDomainId())) {
+                            isAllocated = Boolean.TRUE;
+                        } else {
+                            return new Pair<>(addrs, 0);
+                        }
+                    }
+                }
             }
         }
 
@@ -1991,12 +2135,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
         Long domainId = null;
         Boolean isRecursive = null;
-        final List<Long> permittedAccounts = new ArrayList<Long>();
+        final List<Long> permittedAccounts = new ArrayList<>();
         ListProjectResourcesCriteria listProjectResourcesCriteria = null;
-        if (isAllocated) {
-            final Account caller = getCaller();
-
-            final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(),
+        if (isAllocated || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.ACCOUNT_TYPE_ADMIN || cmd.getDomainId() != null))) {
+            final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(),
                     null);
             _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
             domainId = domainIdRecursiveListProject.first();
@@ -2005,12 +2147,93 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         }
 
+        buildParameters(sb, cmd);
+
+        SearchCriteria<IPAddressVO> sc = sb.create();
+        setParameters(sc, cmd, vlanType);
+
+        if (isAllocated || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.ACCOUNT_TYPE_ADMIN || cmd.getDomainId() != null))) {
+            _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        }
+
+        if (associatedNetworkId != null) {
+            _accountMgr.checkAccess(caller, null, false, _networkDao.findById(associatedNetworkId));
+            sc.setParameters("associatedNetworkIdEq", associatedNetworkId);
+        }
+        if (vpcId != null) {
+            _accountMgr.checkAccess(caller, null, false, _vpcDao.findById(vpcId));
+            sc.setParameters("vpcId", vpcId);
+        }
+
+        addrs = _publicIpAddressDao.search(sc, searchFilter); // Allocated
+
+        // Free IP addresses in system IP ranges
+        List<Long> freeAddrIds = new ArrayList<>();
+        if (!(isAllocated || vlanType == VlanType.DirectAttached)) {
+            Long zoneId = zone;
+            Account owner = _accountMgr.finalizeOwner(CallContext.current().getCallingAccount(), cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
+            if (associatedNetworkId != null) {
+                NetworkVO guestNetwork = _networkDao.findById(associatedNetworkId);
+                if (zoneId == null) {
+                    zoneId = guestNetwork.getDataCenterId();
+                } else if (zoneId != guestNetwork.getDataCenterId()) {
+                    InvalidParameterValueException ex = new InvalidParameterValueException("Please specify a valid associated network id in the specified zone.");
+                    throw ex;
+                }
+                owner = _accountDao.findById(guestNetwork.getAccountId());
+            }
+            List<DataCenterVO> dcList = new ArrayList<>();
+            if (zoneId == null){
+                dcList = ApiDBUtils.listZones();
+            } else {
+                dcList.add(ApiDBUtils.findZoneById(zoneId));
+            }
+            List<Long> vlanDbIds = null;
+            if (vlan != null) {
+                vlanDbIds = new ArrayList<>();
+                vlanDbIds.add(vlan);
+            }
+            List<IPAddressVO> freeAddrs = new ArrayList<>();
+            for (DataCenterVO dc : dcList) {
+                long dcId = dc.getId();
+                try {
+                    freeAddrs.addAll(_ipAddressMgr.listAvailablePublicIps(dcId, null, vlanDbIds, owner, VlanType.VirtualNetwork, associatedNetworkId,
+                            false, false, false, null, false, cmd.getVpcId(), cmd.isDisplay(), false, false)); // Free
+                } catch (InsufficientAddressCapacityException e) {
+                    s_logger.warn("no free address is found in zone " + dcId);
+                }
+            }
+            for (IPAddressVO addr: freeAddrs) {
+                freeAddrIds.add(addr.getId());
+            }
+        }
+        if (freeAddrIds.size() > 0) {
+            final SearchBuilder<IPAddressVO> sb2 = _publicIpAddressDao.createSearchBuilder();
+            buildParameters(sb2, cmd);
+            sb2.and("ids", sb2.entity().getId(), SearchCriteria.Op.IN);
+
+            SearchCriteria<IPAddressVO> sc2 = sb2.create();
+            setParameters(sc2, cmd, vlanType);
+            sc2.setParameters("ids", freeAddrIds.toArray());
+            addrs.addAll(_publicIpAddressDao.search(sc2, searchFilter)); // Allocated + Free
+        }
+
+        return new Pair<>(addrs, addrs.size());
+    }
+
+    private void buildParameters(final SearchBuilder<IPAddressVO> sb, final ListPublicIpAddressesCmd cmd) {
+        final Object keyword = cmd.getKeyword();
+        final String address = cmd.getIpAddress();
+        final Boolean forLoadBalancing = cmd.isForLoadBalancing();
+        Boolean isAllocated = cmd.isAllocatedOnly();
+        final Map<String, String> tags = cmd.getTags();
+
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("address", sb.entity().getAddress(), SearchCriteria.Op.EQ);
         sb.and("vlanDbId", sb.entity().getVlanId(), SearchCriteria.Op.EQ);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("physicalNetworkId", sb.entity().getPhysicalNetworkId(), SearchCriteria.Op.EQ);
-        sb.and("associatedNetworkId", sb.entity().getAssociatedWithNetworkId(), SearchCriteria.Op.EQ);
+        sb.and("associatedNetworkIdEq", sb.entity().getAssociatedWithNetworkId(), SearchCriteria.Op.EQ);
         sb.and("sourceNetworkId", sb.entity().getSourceNetworkId(), SearchCriteria.Op.EQ);
         sb.and("isSourceNat", sb.entity().isSourceNat(), SearchCriteria.Op.EQ);
         sb.and("isStaticNat", sb.entity().isOneToOneNat(), SearchCriteria.Op.EQ);
@@ -2046,21 +2269,24 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         vlanSearch.and("removed", vlanSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         sb.join("vlanSearch", vlanSearch, sb.entity().getVlanId(), vlanSearch.entity().getId(), JoinBuilder.JoinType.INNER);
 
-        if (isAllocated != null && isAllocated == true) {
+        if (isAllocated != null && isAllocated) {
             sb.and("allocated", sb.entity().getAllocatedTime(), SearchCriteria.Op.NNULL);
         }
+    }
 
-        VlanType vlanType = null;
-        if (forVirtualNetwork != null) {
-            vlanType = forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
-        } else {
-            vlanType = VlanType.VirtualNetwork;
-        }
-
-        final SearchCriteria<IPAddressVO> sc = sb.create();
-        if (isAllocated) {
-            _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-        }
+    private void setParameters(SearchCriteria<IPAddressVO> sc, final ListPublicIpAddressesCmd cmd, VlanType vlanType) {
+        final Object keyword = cmd.getKeyword();
+        final Long physicalNetworkId = cmd.getPhysicalNetworkId();
+        final Long sourceNetworkId = cmd.getNetworkId();
+        final Long zone = cmd.getZoneId();
+        final String address = cmd.getIpAddress();
+        final Long vlan = cmd.getVlanId();
+        final Long ipId = cmd.getId();
+        final Boolean sourceNat = cmd.isSourceNat();
+        final Boolean staticNat = cmd.isStaticNat();
+        final Boolean forDisplay = cmd.getDisplay();
+        final String state = cmd.getState();
+        final Map<String, String> tags = cmd.getTags();
 
         sc.setJoinParameters("vlanSearch", "vlanType", vlanType);
 
@@ -2076,10 +2302,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (zone != null) {
             sc.setParameters("dataCenterId", zone);
-        }
-
-        if (vpcId != null) {
-            sc.setParameters("vpcId", vpcId);
         }
 
         if (ipId != null) {
@@ -2110,10 +2332,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.setParameters("physicalNetworkId", physicalNetworkId);
         }
 
-        if (associatedNetworkId != null) {
-            sc.setParameters("associatedNetworkId", associatedNetworkId);
-        }
-
         if (sourceNetworkId != null) {
             sc.setParameters("sourceNetworkId", sourceNetworkId);
         }
@@ -2127,8 +2345,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         sc.setParameters( "forsystemvms", false);
-        final Pair<List<IPAddressVO>, Integer> result = _publicIpAddressDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends IpAddress>, Integer>(result.first(), result.second());
     }
 
     @Override
@@ -2439,7 +2655,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     private ConsoleProxyVO stopConsoleProxy(final VMInstanceVO systemVm, final boolean isForced) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
-
         _itMgr.advanceStop(systemVm.getUuid(), isForced);
         return _consoleProxyDao.findById(systemVm.getId());
     }
@@ -2447,6 +2662,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private ConsoleProxyVO rebootConsoleProxy(final long instanceId) {
         _consoleProxyMgr.rebootProxy(instanceId);
         return _consoleProxyDao.findById(instanceId);
+    }
+
+    private ConsoleProxyVO forceRebootConsoleProxy(final VMInstanceVO systemVm)  throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        _itMgr.advanceStop(systemVm.getUuid(), false);
+        return _consoleProxyMgr.startProxy(systemVm.getId(), true);
     }
 
     protected ConsoleProxyVO destroyConsoleProxy(final long instanceId) {
@@ -2820,6 +3040,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(FindStoragePoolsForMigrationCmd.class);
         cmdList.add(PreparePrimaryStorageForMaintenanceCmd.class);
         cmdList.add(UpdateStoragePoolCmd.class);
+        cmdList.add(SyncStoragePoolCmd.class);
         cmdList.add(UpdateImageStoreCmd.class);
         cmdList.add(DestroySystemVmCmd.class);
         cmdList.add(ListSystemVMsCmd.class);
@@ -3236,7 +3457,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength, humanReadableSizes};
+        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
@@ -3336,6 +3557,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public SecondaryStorageVmVO rebootSecondaryStorageVm(final long instanceId) {
         _secStorageVmMgr.rebootSecStorageVm(instanceId);
         return _secStorageVmDao.findById(instanceId);
+    }
+
+    private SecondaryStorageVmVO forceRebootSecondaryStorageVm(final VMInstanceVO systemVm)  throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        _itMgr.advanceStop(systemVm.getUuid(), false);
+        return _secStorageVmMgr.startSecStorageVm(systemVm.getId());
     }
 
     protected SecondaryStorageVmVO destroySecondaryStorageVm(final long instanceId) {
@@ -3507,12 +3733,24 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw ex;
         }
 
-        if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)) {
-            ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy Vm");
-            return rebootConsoleProxy(cmd.getId());
-        } else {
-            ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_SSVM_REBOOT, "rebooting secondary storage Vm");
-            return rebootSecondaryStorageVm(cmd.getId());
+        try {
+            if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)) {
+                ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy Vm");
+                if (cmd.isForced()) {
+                    return forceRebootConsoleProxy(systemVm);
+                }
+                return rebootConsoleProxy(cmd.getId());
+            } else {
+                ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_SSVM_REBOOT, "rebooting secondary storage Vm");
+                if (cmd.isForced()) {
+                    return forceRebootSecondaryStorageVm(systemVm);
+                }
+                return rebootSecondaryStorageVm(cmd.getId());
+            }
+        } catch (final ResourceUnavailableException e) {
+            throw new CloudRuntimeException("Unable to reboot " + systemVm, e);
+        } catch (final OperationTimedoutException e) {
+            throw new CloudRuntimeException("Operation timed out - Unable to reboot " + systemVm, e);
         }
     }
 

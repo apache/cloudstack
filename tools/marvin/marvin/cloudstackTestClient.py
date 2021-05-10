@@ -115,8 +115,8 @@ class CSTestClient(object):
                 self.__hypervisor = XEN_SERVER
             return SUCCESS
         except Exception as e:
-            print "\n Exception Occurred Under __setHypervisorInfo " \
-                  "%s" % GetDetailExceptionInfo(e)
+            print("\n Exception Occurred Under __setHypervisorInfo " \
+                  "%s" % GetDetailExceptionInfo(e))
             return FAILED
 
     def __createApiClient(self):

@@ -17,29 +17,31 @@
 
 """ Component tests for VPC network functionality - Port Forwarding Rules.
 """
-from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.base import (stopRouter,
-                                         startRouter,
-                                         Account,
-                                         VpcOffering,
-                                         VPC,
-                                         ServiceOffering,
-                                         NATRule,
-                                         NetworkACL,
-                                         PublicIPAddress,
-                                         NetworkOffering,
-                                         Network,
-                                         VirtualMachine,
-                                         LoadBalancerRule)
-from marvin.lib.common import (get_domain,
-                                           get_zone,
-                                           get_template,
-                                           list_routers)
-from marvin.lib.utils import cleanup_resources
 import socket
 import time
-import sys
+from nose.plugins.attrib import attr
+
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.base import (
+    stopRouter,
+    startRouter,
+    Account,
+    VpcOffering,
+    VPC,
+    ServiceOffering,
+    NATRule,
+    NetworkACL,
+    PublicIPAddress,
+    NetworkOffering,
+    Network,
+    VirtualMachine,
+    LoadBalancerRule)
+from marvin.lib.common import (
+    get_domain,
+    get_zone,
+    get_template,
+    list_routers)
+from marvin.lib.utils import cleanup_resources
 
 
 class Services:
@@ -191,44 +193,40 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
-                                    cls.api_client,
-                                    cls.zone.id,
-                                    cls.services["ostype"]
-                                    )
+            cls.api_client,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
         cls.service_offering = ServiceOffering.create(
-                                                        cls.api_client,
-                                                        cls.services["service_offering"]
-                                                        )
-        cls._cleanup = [cls.service_offering]
+            cls.api_client,
+            cls.services["service_offering"]
+        )
+        cls._cleanup = []
+        cls._cleanup.append(cls.service_offering)
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
+        super(TestVPCNetworkPFRules,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.account = Account.create(
-                                                self.apiclient,
-                                                self.services["account"],
-                                                admin=True,
-                                                domainid=self.domain.id
-                                                )
-        self.cleanup = [self.account]
+            self.apiclient,
+            self.services["account"],
+            admin=True,
+            domainid=self.domain.id
+        )
+        self.cleanup = []
+        self.cleanup.append(self.account)
         self.debug("Creating a VPC offering..")
         self.vpc_off = VpcOffering.create(
-                                                self.apiclient,
-                                                self.services["vpc_offering"]
-                                                )
+            self.apiclient,
+            self.services["vpc_offering"]
+        )
 
         self.debug("Enabling the VPC offering created")
         self.vpc_off.update(self.apiclient, state='Enabled')
@@ -236,39 +234,34 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.debug("Creating a VPC network in the account: %s" % self.account.name)
         self.services["vpc"]["cidr"] = '10.1.1.1/16'
         self.vpc = VPC.create(
-                                self.apiclient,
-                                self.services["vpc"],
-                                vpcofferingid=self.vpc_off.id,
-                                zoneid=self.zone.id,
-                                account=self.account.name,
-                                domainid=self.account.domainid
-                                )
+            self.apiclient,
+            self.services["vpc"],
+            vpcofferingid=self.vpc_off.id,
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+        self.cleanup.append(self.vpc)
         return
 
     def tearDown(self):
-        try:
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            self.debug("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestVPCNetworkPFRules,self).tearDown()
 
     def get_vpcrouter(self):
         routers = list_routers(self.apiclient,
-                                        account=self.account.name,
-                                        domainid=self.account.domainid,
-                                        )
+                               account=self.account.name,
+                               domainid=self.account.domainid,
+                               )
         self.assertEqual(isinstance(routers, list),
-                                True,
-                                "Check for list routers response return valid data"
-                                )
+                         True,
+                         "Check for list routers response return valid data"
+                         )
         self.assertNotEqual(len(routers),
-                                    0,
-                                    "Check list router response"
-                                    )
+                            0,
+                            "Check list router response"
+                            )
         router = routers[0]
         return router
-
 
     def stop_vpcrouter(self):
         router = self.get_vpcrouter()
@@ -278,18 +271,18 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.apiclient.stopRouter(cmd)
 
         routers = list_routers(self.apiclient,
-                                        account=self.account.name,
-                                        domainid=self.account.domainid,
-                                        )
+                               account=self.account.name,
+                               domainid=self.account.domainid,
+                               )
         self.assertEqual(isinstance(routers, list),
-                                True,
-                                "Check for list routers response return valid data"
-                                )
+                         True,
+                         "Check for list routers response return valid data"
+                         )
         router = routers[0]
         self.assertEqual(router.state,
-                        'Stopped',
-                        "Check list router response for router state"
-                        )
+                         'Stopped',
+                         "Check list router response for router state"
+                         )
         return router
 
     def start_vpcrouter(self, router):
@@ -300,58 +293,58 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.apiclient.startRouter(cmd)
 
         routers = list_routers(self.apiclient,
-                                        account=self.account.name,
-                                        domainid=self.account.domainid,
-                                        zoneid=self.zone.id
-                                        )
+                               account=self.account.name,
+                               domainid=self.account.domainid,
+                               zoneid=self.zone.id
+                               )
         self.assertEqual(isinstance(routers, list),
-                                True,
-                                "Check for list routers response return valid data"
-                                )
+                         True,
+                         "Check for list routers response return valid data"
+                         )
         router = routers[0]
         self.assertEqual(router.state,
-                        'Running',
-                        "Check list router response for router state"
-                        )
+                         'Running',
+                         "Check list router response for router state"
+                         )
 
     def check_ssh_into_vm(self, vm, public_ip, testnegative=False):
         self.debug("Checking if we can SSH into VM=%s on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
         try:
-                vm.get_ssh_client(ipaddress=public_ip.ipaddress.ipaddress)
-                if not testnegative:
-                    self.debug("SSH into VM=%s on public_ip=%s is successfully" % (vm.name, public_ip.ipaddress.ipaddress))
-                else:
-                    self.fail("SSH into VM=%s on public_ip=%s is successfully" % (vm.name, public_ip.ipaddress.ipaddress))
+            vm.get_ssh_client(ipaddress=public_ip.ipaddress.ipaddress)
+            if not testnegative:
+                self.debug("SSH into VM=%s on public_ip=%s is successfully" % (vm.name, public_ip.ipaddress.ipaddress))
+            else:
+                self.fail("SSH into VM=%s on public_ip=%s is successfully" % (vm.name, public_ip.ipaddress.ipaddress))
         except:
-                if not testnegative:
-                    self.fail("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
-                else:
-                    self.debug("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
+            if not testnegative:
+                self.fail("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
+            else:
+                self.debug("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
 
     def check_wget_from_vm(self, vm, public_ip, network=None, testnegative=False, isVmAccessible=True):
-        import urllib
-        self.debug("Checking if we can wget from a VM=%s http server on public_ip=%s"  % (vm.name, public_ip.ipaddress.ipaddress))
+        import urllib.request, urllib.error
+        self.debug("Checking if we can wget from a VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
         try:
-                if not isVmAccessible:
-                    self.create_natrule(vm, public_ip, network)
-		self.setup_webserver(vm)
+            if not isVmAccessible:
+                self.create_natrule(vm, public_ip, network)
+            self.setup_webserver(vm)
 
-                urllib.urlretrieve("http://%s/test.html" % public_ip.ipaddress.ipaddress, filename="test.html")
-                if not testnegative:
-                    self.debug("Successesfull to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
-                else:
-                    self.fail("Successesfull to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
+            urllib.request.urlretrieve("http://%s/test.html" % public_ip.ipaddress.ipaddress, filename="test.html")
+            if not testnegative:
+                self.debug("Successesfull to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
+            else:
+                self.fail("Successesfull to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
         except Exception as e:
-                if not testnegative:
-                    self.fail("Failed to wget from VM=%s http server on public_ip=%s: %s" % (vm.name, public_ip.ipaddress.ipaddress, e))
-                else:
-                    self.debug("Failed to wget from VM=%s http server on public_ip=%s: %s" % (vm.name, public_ip.ipaddress.ipaddress, e))
+            if not testnegative:
+                self.fail("Failed to wget from VM=%s http server on public_ip=%s: %s" % (vm.name, public_ip.ipaddress.ipaddress, e))
+            else:
+                self.debug("Failed to wget from VM=%s http server on public_ip=%s: %s" % (vm.name, public_ip.ipaddress.ipaddress, e))
 
     def setup_webserver(self, vm):
         # Start httpd service on VM first
-	sshClient = vm.get_ssh_client()
-	# Test to see if we are on a tiny linux box (using busybox)
-	res = str(sshClient.execute("busybox")).lower()
+        sshClient = vm.get_ssh_client()
+        # Test to see if we are on a tiny linux box (using busybox)
+        res = str(sshClient.execute("busybox")).lower()
         if "hexdump" in res:
             self.setup_busybox(sshClient)
         else:
@@ -359,69 +352,69 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
 
     def setup_busybox(self, sshClient):
         """ Create a dummy test.html file and fire up the busybox web server """
-	sshClient.execute('echo test > test.html')
-	sshClient.execute("/usr/sbin/httpd")
-	self.debug("Setup webserver using busybox")
+        sshClient.execute('echo test > test.html')
+        sshClient.execute("/usr/sbin/httpd")
+        self.debug("Setup webserver using busybox")
 
     def setup_apache(self, sshClient):
-	sshClient.execute("service httpd start")
-	time.sleep(5)
-	ssh_response = str(sshClient.execute("service httpd status")).lower()
-	self.debug("httpd service status is: %s" % ssh_response)
-	if "httpd: unrecognized service" in ssh_response or "inactive" in ssh_response:
-	    ssh_res = sshClient.execute("yum install httpd -y")
-	    if "Complete!" not in ssh_res:
-		raise Exception("Failed to install http server")
-	    sshClient.execute("service httpd start")
-	    time.sleep(5)
-	    ssh_response = str(sshClient.execute("service httpd status")).lower()
-	if not "running" in ssh_response:
-	    raise Exception("Failed to start httpd service")
-	self.debug("Setup webserver using apache")
+        sshClient.execute("service httpd start")
+        time.sleep(5)
+        ssh_response = str(sshClient.execute("service httpd status")).lower()
+        self.debug("httpd service status is: %s" % ssh_response)
+        if "httpd: unrecognized service" in ssh_response or "inactive" in ssh_response:
+            ssh_res = sshClient.execute("yum install httpd -y")
+            if "Complete!" not in ssh_res:
+                raise Exception("Failed to install http server")
+            sshClient.execute("service httpd start")
+            time.sleep(5)
+            ssh_response = str(sshClient.execute("service httpd status")).lower()
+        if not "running" in ssh_response:
+            raise Exception("Failed to start httpd service")
+        self.debug("Setup webserver using apache")
 
     def create_natrule(self, vm, public_ip, network, services=None):
         self.debug("Creating NAT rule in network for vm with public IP")
         if not services:
             services = self.services["natrule"]
         nat_rule = NATRule.create(self.apiclient,
-                                            vm,
-                                            services,
-                                            ipaddressid=public_ip.ipaddress.id,
-                                            openfirewall=False,
-                                            networkid=network.id,
-                                            vpcid=self.vpc.id
-                                            )
+                                  vm,
+                                  services,
+                                  ipaddressid=public_ip.ipaddress.id,
+                                  openfirewall=False,
+                                  networkid=network.id,
+                                  vpcid=self.vpc.id
+                                  )
 
         self.debug("Adding NetworkACL rules to make NAT rule accessible")
         nwacl_nat = NetworkACL.create(self.apiclient,
-                                                networkid=network.id,
-                                                services=services,
-                                                traffictype='Ingress'
-                                                )
+                                      networkid=network.id,
+                                      services=services,
+                                      traffictype='Ingress'
+                                      )
         self.debug('nwacl_nat=%s' % nwacl_nat.__dict__)
         return nat_rule
 
     def acquire_publicip(self, network):
         self.debug("Associating public IP for network: %s" % network.name)
         public_ip = PublicIPAddress.create(self.apiclient,
-                                        accountid=self.account.name,
-                                        zoneid=self.zone.id,
-                                        domainid=self.account.domainid,
-                                        networkid=network.id,
-                                        vpcid=self.vpc.id
-                                        )
+                                           accountid=self.account.name,
+                                           zoneid=self.zone.id,
+                                           domainid=self.account.domainid,
+                                           networkid=network.id,
+                                           vpcid=self.vpc.id
+                                           )
         self.debug("Associated %s with network %s" % (public_ip.ipaddress.ipaddress,
-                                                    network.id
-                                                    ))
+                                                      network.id
+                                                      ))
         return public_ip
 
     def create_vpc(self, cidr='10.1.2.1/16'):
         self.debug("Creating a VPC offering..")
         self.services["vpc_offering"]["name"] = self.services["vpc_offering"]["name"] + str(cidr)
         vpc_off = VpcOffering.create(
-                                                self.apiclient,
-                                                self.services["vpc_offering"]
-                                                )
+            self.apiclient,
+            self.services["vpc_offering"]
+        )
 
         self._cleanup.append(vpc_off)
         self.debug("Enabling the VPC offering created")
@@ -430,95 +423,94 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.debug("Creating a VPC network in the account: %s" % self.account.name)
         self.services["vpc"]["cidr"] = cidr
         vpc = VPC.create(
-                                self.apiclient,
-                                self.services["vpc"],
-                                vpcofferingid=vpc_off.id,
-                                zoneid=self.zone.id,
-                                account=self.account.name,
-                                domainid=self.account.domainid
-                                )
+            self.apiclient,
+            self.services["vpc"],
+            vpcofferingid=vpc_off.id,
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
         return vpc
 
-    def create_network(self, net_offerring, gateway='10.1.1.1',vpc=None):
+    def create_network(self, net_offerring, gateway='10.1.1.1', vpc=None):
         try:
-                self.debug('Create NetworkOffering')
-                net_offerring["name"] = "NET_OFF-" + str(gateway)
-                nw_off = NetworkOffering.create(self.apiclient,
-                                                        net_offerring,
-                                                        conservemode=False
-                                                        )
-                # Enable Network offering
-                nw_off.update(self.apiclient, state='Enabled')
-                self._cleanup.append(nw_off)
-                self.debug('Created and Enabled NetworkOffering')
+            self.debug('Create NetworkOffering')
+            net_offerring["name"] = "NET_OFF-" + str(gateway)
+            nw_off = NetworkOffering.create(self.apiclient,
+                                            net_offerring,
+                                            conservemode=False
+                                            )
+            # Enable Network offering
+            nw_off.update(self.apiclient, state='Enabled')
+            self._cleanup.append(nw_off)
+            self.debug('Created and Enabled NetworkOffering')
 
-                self.services["network"]["name"] = "NETWORK-" + str(gateway)
-                self.debug('Adding Network=%s' % self.services["network"])
-                obj_network = Network.create(self.apiclient,
-                                                self.services["network"],
-                                                accountid=self.account.name,
-                                                domainid=self.account.domainid,
-                                                networkofferingid=nw_off.id,
-                                                zoneid=self.zone.id,
-                                                gateway=gateway,
-                                                vpcid=vpc.id if vpc else self.vpc.id
-                                                )
-                self.debug("Created network with ID: %s" % obj_network.id)
-                return obj_network
-        except Exception, e:
-                self.fail('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
+            self.services["network"]["name"] = "NETWORK-" + str(gateway)
+            self.debug('Adding Network=%s' % self.services["network"])
+            obj_network = Network.create(self.apiclient,
+                                         self.services["network"],
+                                         accountid=self.account.name,
+                                         domainid=self.account.domainid,
+                                         networkofferingid=nw_off.id,
+                                         zoneid=self.zone.id,
+                                         gateway=gateway,
+                                         vpcid=vpc.id if vpc else self.vpc.id
+                                         )
+            self.debug("Created network with ID: %s" % obj_network.id)
+            return obj_network
+        except Exception as e:
+            self.fail('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
 
     def deployvm_in_network(self, network, host_id=None):
         try:
-                self.debug('Creating VM in network=%s' % network.name)
-                vm = VirtualMachine.create(
-                                                self.apiclient,
-                                                self.services["virtual_machine"],
-                                                accountid=self.account.name,
-                                                domainid=self.account.domainid,
-                                                serviceofferingid=self.service_offering.id,
-                                                networkids=[str(network.id)],
-                                                hostid=host_id
-                                                )
-                self.debug('Created VM=%s in network=%s' % (vm.id, network.name))
+            self.debug('Creating VM in network=%s' % network.name)
+            vm = VirtualMachine.create(
+                self.apiclient,
+                self.services["virtual_machine"],
+                accountid=self.account.name,
+                domainid=self.account.domainid,
+                serviceofferingid=self.service_offering.id,
+                networkids=[str(network.id)],
+                hostid=host_id
+            )
+            self.debug('Created VM=%s in network=%s' % (vm.id, network.name))
 
-                return vm
+            return vm
         except:
-                self.fail('Unable to create VM in a Network=%s' % network.name)
+            self.fail('Unable to create VM in a Network=%s' % network.name)
 
     def create_lbrule(self, public_ip, network, vmarray, services=None):
         self.debug("Creating LB rule for IP address: %s" %
-                                                    public_ip.ipaddress.ipaddress)
+                   public_ip.ipaddress.ipaddress)
         objservices = None
         if services:
-                objservices = services
+            objservices = services
         else:
-                objservices = self.services["lbrule"]
+            objservices = self.services["lbrule"]
 
         lb_rule = LoadBalancerRule.create(
-                                                self.apiclient,
-                                                objservices,
-                                                ipaddressid=public_ip.ipaddress.id,
-                                                accountid=self.account.name,
-                                                networkid=network.id,
-                                                vpcid=self.vpc.id,
-                                                domainid=self.account.domainid
-                                        )
+            self.apiclient,
+            objservices,
+            ipaddressid=public_ip.ipaddress.id,
+            accountid=self.account.name,
+            networkid=network.id,
+            vpcid=self.vpc.id,
+            domainid=self.account.domainid
+        )
         self.debug("Adding virtual machines %s and %s to LB rule" % (vmarray))
         lb_rule.assign(self.apiclient, vmarray)
         return lb_rule
 
     def open_egress_to_world(self, network):
-        self.debug("Adding Egress rules to network %s and %s to allow access to internet" % (network.name,self.services["http_rule"]))
+        self.debug("Adding Egress rules to network %s and %s to allow access to internet" % (network.name, self.services["http_rule"]))
         nwacl_internet_1 = NetworkACL.create(
-                                        self.apiclient,
-                                        networkid=network.id,
-                                        services=self.services["http_rule"],
-                                        traffictype='Ingress'
-                                        )
+            self.apiclient,
+            networkid=network.id,
+            services=self.services["http_rule"],
+            traffictype='Ingress'
+        )
 
         return nwacl_internet_1
-
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_01_network_services_VPC_StopCreatePF(self):
@@ -538,14 +530,14 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         network_1 = self.create_network(self.services["network_offering"])
         vm_1 = self.deployvm_in_network(network_1)
         public_ip_1 = self.acquire_publicip(network_1)
-        #ensure vm is accessible over public ip
+        # ensure vm is accessible over public ip
         nat_rule = self.create_natrule(vm_1, public_ip_1, network_1)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
-        #remove the nat rule
+        # remove the nat rule
         nat_rule.delete(self.apiclient)
 
         router = self.stop_vpcrouter()
-        #recreate nat rule
+        # recreate nat rule
         self.create_natrule(vm_1, public_ip_1, network_1)
         self.start_vpcrouter(router)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
@@ -567,7 +559,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         network_1 = self.create_network(self.services["network_offering"])
         vm_1 = self.deployvm_in_network(network_1)
         public_ip_1 = self.acquire_publicip(network_1)
-        self.create_natrule( vm_1, public_ip_1, network_1)
+        self.create_natrule(vm_1, public_ip_1, network_1)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         return
 
@@ -686,7 +678,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         vm_1 = self.deployvm_in_network(network_1)
         public_ip_1 = self.acquire_publicip(network_1)
         self.create_natrule(vm_1, public_ip_1, network_1)
-        http_rule=self.create_natrule(vm_1, public_ip_1, network_1, self.services["http_rule"])
+        http_rule = self.create_natrule(vm_1, public_ip_1, network_1, self.services["http_rule"])
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         http_rule.delete(self.apiclient)
@@ -715,7 +707,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         network_1 = self.create_network(self.services["network_offering"])
         vm_1 = self.deployvm_in_network(network_1)
         public_ip_1 = self.acquire_publicip(network_1)
-        nat_rule  = self.create_natrule(vm_1, public_ip_1, network_1)
+        nat_rule = self.create_natrule(vm_1, public_ip_1, network_1)
         http_rule = self.create_natrule(vm_1, public_ip_1, network_1, self.services["http_rule"])
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
@@ -725,7 +717,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.start_vpcrouter(router)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=True)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True,
-                isVmAccessible=False, network=network_1)
+                                isVmAccessible=False, network=network_1)
         return
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
@@ -748,7 +740,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         network_1 = self.create_network(self.services["network_offering"])
         vm_1 = self.deployvm_in_network(network_1)
         public_ip_1 = self.acquire_publicip(network_1)
-        nat_rule  = self.create_natrule(vm_1, public_ip_1, network_1)
+        nat_rule = self.create_natrule(vm_1, public_ip_1, network_1)
         http_rule = self.create_natrule(vm_1, public_ip_1, network_1, self.services["http_rule"])
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
@@ -756,7 +748,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         nat_rule.delete(self.apiclient)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=True)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True,
-                isVmAccessible=False, network=network_1)
+                                isVmAccessible=False, network=network_1)
         return
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
@@ -788,14 +780,14 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         vm_4 = self.deployvm_in_network(network_2)
         public_ip_1 = self.acquire_publicip(network_1)
         public_ip_2 = self.acquire_publicip(network_1)
-        nat_rule1  = self.create_natrule(vm_1, public_ip_1, network_1)
-        nat_rule2  = self.create_natrule(vm_2, public_ip_2, network_1)
+        nat_rule1 = self.create_natrule(vm_1, public_ip_1, network_1)
+        nat_rule2 = self.create_natrule(vm_2, public_ip_2, network_1)
         http_rule1 = self.create_natrule(vm_1, public_ip_1, network_1, self.services["http_rule"])
         http_rule2 = self.create_natrule(vm_2, public_ip_2, network_1, self.services["http_rule"])
         public_ip_3 = self.acquire_publicip(network_2)
         public_ip_4 = self.acquire_publicip(network_2)
-        nat_rule3  = self.create_natrule(vm_3, public_ip_3, network_2)
-        nat_rule4  = self.create_natrule(vm_4, public_ip_4, network_2)
+        nat_rule3 = self.create_natrule(vm_3, public_ip_3, network_2)
+        nat_rule4 = self.create_natrule(vm_4, public_ip_4, network_2)
         http_rule3 = self.create_natrule(vm_3, public_ip_3, network_2, self.services["http_rule"])
         http_rule4 = self.create_natrule(vm_4, public_ip_4, network_2, self.services["http_rule"])
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
@@ -821,13 +813,13 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_3, public_ip_3, testnegative=True)
         self.check_ssh_into_vm(vm_4, public_ip_4, testnegative=True)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True,
-                isVmAccessible=False, network=network_1)
+                                isVmAccessible=False, network=network_1)
         self.check_wget_from_vm(vm_2, public_ip_2, testnegative=True,
-                isVmAccessible=False, network=network_1)
+                                isVmAccessible=False, network=network_1)
         self.check_wget_from_vm(vm_3, public_ip_3, testnegative=True,
-                isVmAccessible=False, network=network_2)
+                                isVmAccessible=False, network=network_2)
         self.check_wget_from_vm(vm_4, public_ip_4, testnegative=True,
-                isVmAccessible=False, network=network_2)
+                                isVmAccessible=False, network=network_2)
         return
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
@@ -856,14 +848,14 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         vm_4 = self.deployvm_in_network(network_2)
         public_ip_1 = self.acquire_publicip(network_1)
         public_ip_2 = self.acquire_publicip(network_1)
-        nat_rule1  = self.create_natrule(vm_1, public_ip_1, network_1)
-        nat_rule2  = self.create_natrule(vm_2, public_ip_2, network_1)
+        nat_rule1 = self.create_natrule(vm_1, public_ip_1, network_1)
+        nat_rule2 = self.create_natrule(vm_2, public_ip_2, network_1)
         http_rule1 = self.create_natrule(vm_1, public_ip_1, network_1, self.services["http_rule"])
         http_rule2 = self.create_natrule(vm_2, public_ip_2, network_1, self.services["http_rule"])
         public_ip_3 = self.acquire_publicip(network_2)
         public_ip_4 = self.acquire_publicip(network_2)
-        nat_rule3  = self.create_natrule(vm_3, public_ip_3, network_2)
-        nat_rule4  = self.create_natrule(vm_4, public_ip_4, network_2)
+        nat_rule3 = self.create_natrule(vm_3, public_ip_3, network_2)
+        nat_rule4 = self.create_natrule(vm_4, public_ip_4, network_2)
         http_rule3 = self.create_natrule(vm_3, public_ip_3, network_2, self.services["http_rule"])
         http_rule4 = self.create_natrule(vm_4, public_ip_4, network_2, self.services["http_rule"])
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
@@ -887,11 +879,11 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_3, public_ip_3, testnegative=True)
         self.check_ssh_into_vm(vm_4, public_ip_4, testnegative=True)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True,
-                isVmAccessible=False, network=network_1)
+                                isVmAccessible=False, network=network_1)
         self.check_wget_from_vm(vm_2, public_ip_2, testnegative=True,
-                isVmAccessible=False, network=network_1)
+                                isVmAccessible=False, network=network_1)
         self.check_wget_from_vm(vm_3, public_ip_3, testnegative=True,
-                isVmAccessible=False, network=network_2)
+                                isVmAccessible=False, network=network_2)
         self.check_wget_from_vm(vm_4, public_ip_4, testnegative=True,
-                isVmAccessible=False, network=network_2)
+                                isVmAccessible=False, network=network_2)
         return
