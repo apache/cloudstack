@@ -474,6 +474,6 @@ public class DataCenterVO implements DataCenter {
 
     @Override
     public String toString() {
-        return String.format("Zone [{id: \"%s\", name: \"%s\", uuid: \"%s\"}]", id, name, uuid);
+        return String.format("Zone {\"id\": \"%s\", \"name\": \"%s\", \"uuid\": \"%s\"}", id, name, uuid);
     }
 }
