@@ -26,7 +26,7 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="domain_vlan_map")
+@Table(name = "domain_vlan_map")
 public class DomainVlanMapVO implements InternalIdentity {
 
     @Id

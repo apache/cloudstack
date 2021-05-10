@@ -26,7 +26,7 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name = ("inline_load_balancer_nic_map"))
+@Table(name = "inline_load_balancer_nic_map")
 public class InlineLoadBalancerNicMapVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

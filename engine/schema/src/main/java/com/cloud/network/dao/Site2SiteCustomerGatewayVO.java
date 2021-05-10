@@ -32,7 +32,7 @@ import com.cloud.utils.db.GenericDao;
 
 
 @Entity
-@Table(name = ("s2s_customer_gateway"))
+@Table(name = "s2s_customer_gateway")
 public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

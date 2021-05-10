@@ -31,7 +31,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJob;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="async_job_view")
+@Table(name = "async_job_view")
 public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity { //InternalIdentity, Identity {
     @Id
     @Column(name = "id")

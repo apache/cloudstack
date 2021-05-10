@@ -29,7 +29,7 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name = ("instance_group_vm_map"))
+@Table(name = "instance_group_vm_map")
 @SecondaryTables({@SecondaryTable(name = "user_vm", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "instance_id", referencedColumnName = "id")}),
     @SecondaryTable(name = "instance_group", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "group_id", referencedColumnName = "id")})})
 public class InstanceGroupVMMapVO implements InternalIdentity {

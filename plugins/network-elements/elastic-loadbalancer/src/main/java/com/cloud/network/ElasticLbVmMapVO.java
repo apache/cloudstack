@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 import com.cloud.utils.net.Ip;
 
 @Entity
-@Table(name = ("elastic_lb_vm_map"))
+@Table(name = "elastic_lb_vm_map")
 @SecondaryTables({@SecondaryTable(name = "user_ip_address", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "ip_addr_id", referencedColumnName = "id")})})
 public class ElasticLbVmMapVO implements InternalIdentity {
     @Id

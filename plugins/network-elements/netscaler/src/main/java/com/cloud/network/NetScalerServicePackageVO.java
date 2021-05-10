@@ -34,7 +34,7 @@ import com.cloud.api.commands.RegisterServicePackageCmd;
  * By using the service package, CloudStack can choose the kind of NetScaler offering it wants to use.
  */
 @Entity
-@Table(name = " netscaler_servicepackages")
+@Table(name = "netscaler_servicepackages")
 public class NetScalerServicePackageVO implements InternalIdentity {
 
 
