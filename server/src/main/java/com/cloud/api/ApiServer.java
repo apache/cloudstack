@@ -456,7 +456,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                         responseType = param.getValue();
                         continue;
                     }
-                    parameterMap.put(param.getName(), new String[]{param.getValue()});
+                    if(parameterMap.putIfAbsent(param.getName(), new String[]{param.getValue()}) != null) {
+                        String message = String.format("Query parameter '%s' has multiple values", param.getName());
+                        s_logger.error(message);
+                        throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, message);
+                    }
                 }
             }
 

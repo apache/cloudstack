@@ -36,6 +36,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.auth.APIAuthenticationManager;
@@ -136,6 +137,17 @@ public class ApiServlet extends HttpServlet {
         });
     }
 
+    private void ensureSingleQueryParameterValue(Map<String, String[]> params) {
+        params.forEach((k, v) -> {
+            if (v.length > 1) {
+                String message = String.format("Query parameter '%s' has multiple values", k);
+                s_logger.error(message);
+                throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, message);
+            }
+        });
+
+    }
+
     void processRequestInContext(final HttpServletRequest req, final HttpServletResponse resp) {
         InetAddress remoteAddress = null;
         try {
@@ -156,7 +168,9 @@ public class ApiServlet extends HttpServlet {
         // get the response format since we'll need it in a couple of places
         String responseType = HttpUtils.RESPONSE_TYPE_XML;
         final Map<String, Object[]> params = new HashMap<String, Object[]>();
-        params.putAll(req.getParameterMap());
+        Map<String, String[]> reqParams = req.getParameterMap();
+        ensureSingleQueryParameterValue(reqParams);
+        params.putAll(reqParams);
 
         // For HTTP GET requests, it seems that HttpServletRequest.getParameterMap() actually tries
         // to unwrap URL encoded content from ISO-9959-1.
