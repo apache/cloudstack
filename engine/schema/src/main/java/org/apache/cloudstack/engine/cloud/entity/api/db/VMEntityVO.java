@@ -541,11 +541,6 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
         this.networkIds = networkIds;
     }
 
-    @Override
-    public Long getDiskOfferingId() {
-        return diskOfferingId;
-    }
-
     public VMReservationVO getVmReservation() {
         return vmReservation;
     }

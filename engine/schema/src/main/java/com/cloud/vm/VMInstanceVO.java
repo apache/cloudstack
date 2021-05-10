@@ -174,9 +174,6 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name = "uuid")
     protected String uuid = UUID.randomUUID().toString();
 
-    @Column(name = "disk_offering_id")
-    protected Long diskOfferingId;
-
     //
     // Power state for VM state sync
     //
@@ -532,11 +529,6 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     public void setServiceOfferingId(long serviceOfferingId) {
         this.serviceOfferingId = serviceOfferingId;
-    }
-
-    @Override
-    public Long getDiskOfferingId() {
-        return diskOfferingId;
     }
 
     public void setDynamicallyScalable(boolean dynamicallyScalable) {
