@@ -54,7 +54,14 @@
     </div>
 
     <a-divider/>
-
+    <a-button
+      :disabled="!(('deleteFirewallRule' in $store.getters.apis) && this.selectedRowKeys.length > 0)"
+      type="dashed"
+      icon="plus"
+      style="width: 100%; margin-bottom: 15px"
+      @click="deleteRules">
+      {{ $t('label.action.delete.firewall') + 's' }}
+    </a-button>
     <a-table
       size="small"
       style="overflow-y: auto"
@@ -62,6 +69,7 @@
       :columns="columns"
       :dataSource="firewallRules"
       :pagination="false"
+      :rowSelection="$store.getters.userInfo.roletype === 'Admin' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
       :rowKey="record => record.id">
       <template slot="protocol" slot-scope="record">
         {{ record.protocol | capitalise }}
@@ -148,6 +156,7 @@ export default {
   inject: ['parentFetchData', 'parentToggleLoading'],
   data () {
     return {
+      selectedRowKeys: [],
       loading: true,
       addTagLoading: false,
       firewallRules: [],
@@ -198,6 +207,11 @@ export default {
       ]
     }
   },
+  computed: {
+    hasSelected () {
+      return this.selectedRowKeys.length > 0
+    }
+  },
   created () {
     this.fetchData()
   },
@@ -232,6 +246,25 @@ export default {
       }).finally(() => {
         this.loading = false
       })
+    },
+    setSelection (selection) {
+      this.selectedRowKeys = selection
+      this.$emit('selection-change', this.selectedRowKeys)
+    },
+    resetSelection () {
+      this.setSelection([])
+    },
+    onSelectChange (selectedRowKeys, selectedRows) {
+      this.setSelection(selectedRowKeys)
+    },
+    deleteRules (e) {
+      var that = this
+      var selectedRules = (this.firewallRules.filter(function (rule) {
+        return that.selectedRowKeys.indexOf(rule.id) !== -1
+      }))
+      for (const rule of selectedRules) {
+        this.deleteRule(rule)
+      }
     },
     deleteRule (rule) {
       this.loading = true

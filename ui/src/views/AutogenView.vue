@@ -905,7 +905,8 @@ export default {
             this.items.map(x => {
               itemsNameMap[x.id] = x.name || x.displaytext || x.id
             })
-            const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values)
+            console.log(this.items)
+            const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values, this.items)
             for (const params of paramsList) {
               var resourceName = itemsNameMap[params.id]
               // Using a method for this since it's an async call and don't want wrong prarms to be passed

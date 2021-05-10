@@ -62,7 +62,14 @@
     </div>
 
     <a-divider />
-
+    <a-button
+      :disabled="!(('deleteLoadBalancerRule' in $store.getters.apis) && this.selectedRowKeys.length > 0)"
+      type="dashed"
+      icon="plus"
+      style="width: 100%; margin-bottom: 15px"
+      @click="deleteRules">
+      {{ $t('label.action.delete.load.balancer') + 's' }}
+    </a-button>
     <a-table
       size="small"
       class="list-view"
@@ -70,6 +77,7 @@
       :columns="columns"
       :dataSource="lbRules"
       :pagination="false"
+      :rowSelection="$store.getters.userInfo.roletype === 'Admin' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
       :rowKey="record => record.id">
       <template slot="algorithm" slot-scope="record">
         {{ returnAlgorithmName(record.algorithm) }}
@@ -399,6 +407,7 @@ export default {
   inject: ['parentFetchData', 'parentToggleLoading'],
   data () {
     return {
+      selectedRowKeys: [],
       loading: true,
       lbRules: [],
       newTagsForm: this.$form.createForm(this),
@@ -519,6 +528,11 @@ export default {
       vmPageSize: 10,
       vmCount: 0,
       searchQuery: null
+    }
+  },
+  computed: {
+    hasSelected () {
+      return this.selectedRowKeys.length > 0
     }
   },
   created () {
@@ -937,6 +951,25 @@ export default {
         this.loading = false
       })
     },
+    setSelection (selection) {
+      this.selectedRowKeys = selection
+      this.$emit('selection-change', this.selectedRowKeys)
+    },
+    resetSelection () {
+      this.setSelection([])
+    },
+    onSelectChange (selectedRowKeys, selectedRows) {
+      this.setSelection(selectedRowKeys)
+    },
+    deleteRules (e) {
+      var that = this
+      var selectedRules = (this.lbRules.filter(function (rule) {
+        return that.selectedRowKeys.indexOf(rule.id) !== -1
+      }))
+      for (const rule of selectedRules) {
+        this.handleDeleteRule(rule)
+      }
+    },
     handleDeleteRule (rule) {
       this.loading = true
       api('deleteLoadBalancerRule', {
@@ -947,7 +980,6 @@ export default {
           successMessage: this.$t('message.success.remove.rule'),
           successMethod: () => {
             this.parentFetchData()
-            this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
           },
