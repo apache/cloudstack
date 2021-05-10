@@ -99,6 +99,7 @@
           <a-button
             shape="circle"
             icon="edit"
+            :disabled="deployasistemplate === true && (item.name === 'rootDiskController' || item.name === 'dataDiskController')"
             v-if="!item.edit"
             @click="showEditDetail(index)" />
         </div>
@@ -110,6 +111,7 @@
             :title="`${$t('label.delete.setting')}?`"
             @confirm="deleteDetail(index)"
             :okText="$t('label.yes')"
+            :disabled="deployasistemplate === true && (item.name === 'rootDiskController' || item.name === 'dataDiskController')"
             :cancelText="$t('label.no')"
             placement="left"
           >
@@ -142,6 +144,7 @@ export default {
       newValue: '',
       loading: false,
       resourceType: 'UserVm',
+      deployasistemplate: false,
       error: false
     }
   },
@@ -175,6 +178,9 @@ export default {
         this.detailOptions = json.listdetailoptionsresponse.detailoptions.details
       })
       this.disableSettings = (this.$route.meta.name === 'vm' && this.resource.state !== 'Stopped')
+      api('listVirtualMachines', { id: this.resource.id }).then(json => {
+        this.deployasistemplate = json.listvirtualmachinesresponse.virtualmachine[0].deployasistemplate
+      })
     },
     filterOrReadOnlyDetails () {
       for (var i = 0; i < this.details.length; i++) {
