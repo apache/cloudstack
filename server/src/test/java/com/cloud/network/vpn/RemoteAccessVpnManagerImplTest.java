@@ -145,76 +145,76 @@ public class RemoteAccessVpnManagerImplTest extends TestCase {
         new RemoteAccessVpnManagerImpl().validateIpRange(ipRange, expectedException);
     }
 
-    private <T extends Throwable> void throwExceptionOnValidateIpRangeMustThrowCloudRuntimeException(Class<T> exceptionToCatch){
-        throwExceptionOnValidateIpRangeMustThrowCloudRuntimeException(exceptionToCatch, "Test");
+    private <T extends Throwable> void handleExceptionOnValidateIpRangeErrorMustThrowCloudRuntimeException(Class<T> exceptionToCatch){
+        handleExceptionOnValidateIpRangeErrorMustThrowCloudRuntimeException(exceptionToCatch, "Test");
     }
 
-    private <T extends Throwable> void throwExceptionOnValidateIpRangeMustThrowCloudRuntimeException(Class<T> exceptionToCatch, String exceptionMessage){
+    private <T extends Throwable> void handleExceptionOnValidateIpRangeErrorMustThrowCloudRuntimeException(Class<T> exceptionToCatch, String exceptionMessage){
         String errorMessage = "Test";
         String expectedMessage = String.format("Unexpected exception [%s] while throwing error [%s] on validateIpRange.", exceptionMessage, errorMessage);
 
         CloudRuntimeException assertThrows = Assert.assertThrows(expectedMessage, cloudRuntimeException, () -> {
-            new RemoteAccessVpnManagerImpl().throwExceptionOnValidateIpRangeError(exceptionToCatch, errorMessage);
+            new RemoteAccessVpnManagerImpl().handleExceptionOnValidateIpRangeError(exceptionToCatch, errorMessage);
         });
 
         assertEquals(expectedMessage, assertThrows.getMessage());
     }
 
     @Test
-    public void validateThrowExceptionOnValidateIpRangeErrorWhenNoSuchMethodExceptionThrowCloudRuntimeException(){
+    public void validateHandleExceptionOnValidateIpRangeErrorWhenNoSuchMethodExceptionThrowCloudRuntimeException(){
         Class<NoSuchMethodException> exception = NoSuchMethodException.class;
-        throwExceptionOnValidateIpRangeMustThrowCloudRuntimeException(exception);
+        handleExceptionOnValidateIpRangeErrorMustThrowCloudRuntimeException(exception);
     }
 
     @Test
-    public void validateThrowExceptionOnValidateIpRangeErrorWhenSecurityExceptionThrowCloudRuntimeException(){
+    public void validateHandleExceptionOnValidateIpRangeErrorWhenSecurityExceptionThrowCloudRuntimeException(){
         Class<SecurityException> exception = SecurityException.class;
-        throwExceptionOnValidateIpRangeMustThrowCloudRuntimeException(exception);
+        handleExceptionOnValidateIpRangeErrorMustThrowCloudRuntimeException(exception);
     }
 
     @Test
-    public void validateThrowExceptionOnValidateIpRangeErrorWhenInstantiationExceptionThrowCloudRuntimeException(){
+    public void validateHandleExceptionOnValidateIpRangeErrorWhenInstantiationExceptionThrowCloudRuntimeException(){
         Class<InstantiationException> exception = InstantiationException.class;
-        throwExceptionOnValidateIpRangeMustThrowCloudRuntimeException(exception);
+        handleExceptionOnValidateIpRangeErrorMustThrowCloudRuntimeException(exception);
     }
 
     @Test
-    public void validateThrowExceptionOnValidateIpRangeErrorWhenIllegalAccessExceptionThrowCloudRuntimeException(){
+    public void validateHandleExceptionOnValidateIpRangeErrorWhenIllegalAccessExceptionThrowCloudRuntimeException(){
         Class<IllegalAccessException> exception = IllegalAccessException.class;
-        throwExceptionOnValidateIpRangeMustThrowCloudRuntimeException(exception);
+        handleExceptionOnValidateIpRangeErrorMustThrowCloudRuntimeException(exception);
     }
 
     @Test
-    public void validateThrowExceptionOnValidateIpRangeErrorWhenIllegalArgumentExceptionThrowCloudRuntimeException(){
+    public void validateHandleExceptionOnValidateIpRangeErrorWhenIllegalArgumentExceptionThrowCloudRuntimeException(){
         Class<IllegalArgumentException> exception = IllegalArgumentException.class;
-        throwExceptionOnValidateIpRangeMustThrowCloudRuntimeException(exception);
+        handleExceptionOnValidateIpRangeErrorMustThrowCloudRuntimeException(exception);
     }
 
     @Test
-    public void validateThrowExceptionOnValidateIpRangeErrorWhenInvocationTargetExceptionThrowCloudRuntimeException(){
+    public void validateHandleExceptionOnValidateIpRangeErrorWhenInvocationTargetExceptionThrowCloudRuntimeException(){
         Class<InvocationTargetException> exception = InvocationTargetException.class;
-        throwExceptionOnValidateIpRangeMustThrowCloudRuntimeException(exception, "java.lang.reflect.InvocationTargetException.<init>(java.lang.String)");
+        handleExceptionOnValidateIpRangeErrorMustThrowCloudRuntimeException(exception, "java.lang.reflect.InvocationTargetException.<init>(java.lang.String)");
     }
 
     @Test
-    public void validateThrowExceptionOnValidateIpRangeErrorWhenConfigurationExceptionThrowConfigurationException(){
+    public void validateHandleExceptionOnValidateIpRangeErrorWhenConfigurationExceptionThrowConfigurationException(){
         Class<ConfigurationException> exception = ConfigurationException.class;
         String expectedMessage = "Test";
 
         ConfigurationException assertThrows = Assert.assertThrows(expectedMessage, exception, () -> {
-            new RemoteAccessVpnManagerImpl().throwExceptionOnValidateIpRangeError(exception, expectedMessage);
+            new RemoteAccessVpnManagerImpl().handleExceptionOnValidateIpRangeError(exception, expectedMessage);
         });
 
         assertEquals(expectedMessage, assertThrows.getMessage());
     }
 
     @Test
-    public void validateThrowExceptionOnValidateIpRangeErrorWhenInvalidParameterValueExceptionThrowInvalidParameterValueException(){
+    public void validateHandleExceptionOnValidateIpRangeErrorWhenInvalidParameterValueExceptionThrowInvalidParameterValueException(){
         Class<InvalidParameterValueException> exception = InvalidParameterValueException.class;
         String expectedMessage = "Test";
 
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedMessage, exception, () -> {
-            new RemoteAccessVpnManagerImpl().throwExceptionOnValidateIpRangeError(exception, expectedMessage);
+            new RemoteAccessVpnManagerImpl().handleExceptionOnValidateIpRangeError(exception, expectedMessage);
         });
 
         assertEquals(expectedMessage, assertThrows.getMessage());

@@ -261,19 +261,19 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         String[] range = ipRange.split("-");
 
         if (range.length != 2) {
-            throwExceptionOnValidateIpRangeError(exceptionClass, String.format("IP range [%s] is an invalid IP range.", ipRange));
+            handleExceptionOnValidateIpRangeError(exceptionClass, String.format("IP range [%s] is an invalid IP range.", ipRange));
         }
 
         if (!NetUtils.isValidIp4(range[0]) || !NetUtils.isValidIp4(range[1])) {
-            throwExceptionOnValidateIpRangeError(exceptionClass, String.format("One or both IPs sets in the range [%s] are invalid IPs.", ipRange));
+            handleExceptionOnValidateIpRangeError(exceptionClass, String.format("One or both IPs sets in the range [%s] are invalid IPs.", ipRange));
         }
 
         if (!NetUtils.validIpRange(range[0], range[1])) {
-            throwExceptionOnValidateIpRangeError(exceptionClass, String.format("Range of IPs [%s] is invalid.", ipRange));
+            handleExceptionOnValidateIpRangeError(exceptionClass, String.format("Range of IPs [%s] is invalid.", ipRange));
         }
     }
 
-    protected <T extends Throwable> void throwExceptionOnValidateIpRangeError(Class<T> exceptionClass, String errorMessage) throws T {
+    protected <T extends Throwable> void handleExceptionOnValidateIpRangeError(Class<T> exceptionClass, String errorMessage) throws T {
         try {
             throw exceptionClass.getConstructor(String.class).newInstance(errorMessage);
         } catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
@@ -395,7 +395,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
                 VpnUserVO vpnUser = _vpnUsersDao.findByAccountAndUsername(owner.getId(), username);
                 if (vpnUser != null) {
-                     throw new InvalidParameterValueException("VPN User with name " + username + " is already added for account " + owner);
+                    throw new InvalidParameterValueException("VPN User with name " + username + " is already added for account " + owner);
                 }
 
                 long userCount = _vpnUsersDao.getVpnUserCount(owner.getId());
