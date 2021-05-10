@@ -1118,7 +1118,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Check resource limits for CPU and Memory.
         Map<String, String> customParameters = cmd.getDetails();
         ServiceOfferingVO newServiceOffering = _offeringDao.findById(svcOffId);
-        if (newServiceOffering.getState() == DiskOffering.State.Inactive) {
+        if (newServiceOffering.getState() == ServiceOffering.State.Inactive) {
             throw new InvalidParameterValueException(String.format("Unable to upgrade virtual machine %s with an inactive service offering %s", vmInstance.getUuid(), newServiceOffering.getUuid()));
         }
         if (newServiceOffering.isDynamic()) {

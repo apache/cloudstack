@@ -32,7 +32,6 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Transient;
 
-import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.utils.db.GenericDao;
 
@@ -69,7 +68,7 @@ public class ServiceOfferingVO implements ServiceOffering {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "state")
-    DiskOffering.State state = DiskOffering.State.Active;
+    ServiceOffering.State state = ServiceOffering.State.Active;
 
     @Column(name = "disk_offering_id")
     private Long diskOfferingId;
@@ -336,12 +335,12 @@ public class ServiceOfferingVO implements ServiceOffering {
     }
 
     @Override
-    public DiskOffering.State getState() {
+    public ServiceOffering.State getState() {
         return state;
     }
 
     @Override
-    public void setState(DiskOffering.State state) {
+    public void setState(ServiceOffering.State state) {
         this.state = state;
     }
 

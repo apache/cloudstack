@@ -220,12 +220,9 @@ public class UserVmManagerImplTest {
         boolean ha = false;
         boolean useLocalStorage = false;
 
-        DiskOfferingVO diskOfferingVO = new DiskOfferingVO(name, displayText, Storage.ProvisioningType.THIN, false, null, false, false, false, true);
-        diskOfferingVO = diskOfferingDao.persistDefaultDiskOffering(diskOfferingVO);
-
         ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, Storage.ProvisioningType.THIN, useLocalStorage, false, null, false, null,
                 false);
-        serviceOffering.setDiskOfferingId(diskOfferingVO.getId());
+        serviceOffering.setDiskOfferingId(1l);
         return serviceOffering;
     }
 

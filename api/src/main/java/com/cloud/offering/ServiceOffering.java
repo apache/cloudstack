@@ -113,9 +113,9 @@ public interface ServiceOffering extends InfrastructureEntity, InternalIdentity,
 
     boolean isDynamic();
 
-    void setState(DiskOffering.State state);
+    void setState(ServiceOffering.State state);
 
-    DiskOffering.State getState();
+    ServiceOffering.State getState();
 
     void setName(String name);
 
