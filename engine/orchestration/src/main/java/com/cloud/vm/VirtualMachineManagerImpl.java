@@ -1978,7 +1978,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     vmGuru.finalizeStop(profile, answer);
                 }
             } else {
-                if (Arrays.asList(new VirtualMachine.Type[]{VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm}).contains(vm.getType())) {
+                if (VirtualMachine.Type.ConsoleProxy == vm.getType() || VirtualMachine.Type.SecondaryStorageVm == vm.getType()) {
                     HostVO systemVmHost = ApiDBUtils.findHostByTypeNameAndZoneId(vm.getDataCenterId(), vm.getHostName(),
                             VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType()) ? Host.Type.SecondaryStorageVM : Host.Type.ConsoleProxy);
                     _agentMgr.agentStatusTransitTo(systemVmHost, Status.Event.ShutdownRequested, _nodeId);
