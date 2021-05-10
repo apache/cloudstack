@@ -5232,10 +5232,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     String datacenterName = datastoreClusterPath.substring(0, pathstartPosition+1);
                     String childPath = datacenterName + summary.getName();
                     poolInfo.setHostPath(childPath);
-                    String uuid = UUID.nameUUIDFromBytes(((pool.getHost() + childPath)).getBytes()).toString();
+                    String uuid = childDsMo.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
+                    if (uuid == null) {
+                        uuid = UUID.nameUUIDFromBytes(((pool.getHost() + childPath)).getBytes()).toString();
+                    }
                     poolInfo.setUuid(uuid);
                     poolInfo.setLocalPath(cmd.LOCAL_PATH_PREFIX + File.separator + uuid);
-
                     answer.setPoolInfo(poolInfo);
                     answer.setPoolType(summary.getType());
                     answer.setLocalDatastoreName(morDatastore.getValue());

@@ -348,7 +348,7 @@ def get_template(
     return list_templatesout[0]
 
 
-def get_test_template(apiclient, zone_id=None, hypervisor=None, test_templates=None):
+def get_test_template(apiclient, zone_id=None, hypervisor=None, test_templates=None, deploy_as_is=False):
     """
     @Name : get_test_template
     @Desc : Retrieves the test template used to running tests. When the template
@@ -373,6 +373,8 @@ def get_test_template(apiclient, zone_id=None, hypervisor=None, test_templates=N
         return FAILED
 
     test_template = test_templates[hypervisor]
+    if deploy_as_is:
+        test_template['deployasis'] = True
 
     cmd = listTemplates.listTemplatesCmd()
     cmd.name = test_template['name']
@@ -513,7 +515,7 @@ def get_windows_template(
 
     return FAILED
 
-def get_suitable_test_template(apiclient, zoneid, ostypeid, hypervisor):
+def get_suitable_test_template(apiclient, zoneid, ostypeid, hypervisor, deploy_as_is=False):
     '''
     @Name : get_suitable_test_template
     @Desc : Retrieves the test template information based upon inputs provided
@@ -525,11 +527,12 @@ def get_suitable_test_template(apiclient, zoneid, ostypeid, hypervisor):
               template Information matching the inputs
     '''
     template = FAILED
-    if hypervisor.lower() in ["xenserver"]:
+    if hypervisor.lower() in ["xenserver"] or (hypervisor.lower() in ["vmware"] and deploy_as_is):
         template = get_test_template(
             apiclient,
             zoneid,
-            hypervisor)
+            hypervisor,
+            deploy_as_is=deploy_as_is)
     if template == FAILED:
         template = get_template(
             apiclient,

@@ -39,7 +39,7 @@
           :cancelText="$t('label.no')"
           placement="top"
         >
-          <a-button :disabled="!('releaseDedicatedGuestVlanRange' in $store.getters.apis)" icon="delete" type="danger" shape="circle"></a-button>
+          <tooltip-button :tooltip="$t('label.delete')" :disabled="!('releaseDedicatedGuestVlanRange' in $store.getters.apis)" icon="delete" type="danger" />
         </a-popconfirm>
       </template>
     </a-table>
@@ -134,9 +134,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'DedicatedVLANTab',
+  components: {
+    TooltipButton
+  },
   props: {
     resource: {
       type: Object,

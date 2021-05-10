@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,49 +15,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+package org.apache.cloudstack.storage.command;
 
-<template>
-  <a-popconfirm
-    :title="`${$t('label.delete.rule')}?`"
-    @confirm="handleDelete"
-    :disabled="disabled">
-    <tooltip-button :tooltip="$t('label.delete.rule')" tooltipPlacement="bottom" type="danger" icon="delete" :disabled="disabled" />
-  </a-popconfirm>
-</template>
+import com.cloud.agent.api.to.DiskTO;
 
-<script>
-import TooltipButton from '@/components/view/TooltipButton'
+public class SyncVolumePathCommand extends StorageSubSystemCommand {
 
-export default {
-  name: 'RuleDelete',
-  components: {
-    TooltipButton
-  },
-  props: {
-    record: {
-      type: Object,
-      required: true
-    },
-    disabled: {
-      type: Boolean,
-      default: false
+    private DiskTO disk;
+
+    public SyncVolumePathCommand(final DiskTO disk) {
+        super();
+        this.disk = disk;
     }
-  },
-  methods: {
-    handleDelete () {
-      this.$emit('delete')
+
+    public DiskTO getDisk() {
+        return disk;
     }
-  }
+
+    public void setDisk(final DiskTO disk) {
+        this.disk = disk;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
+
+    @Override
+    public void setExecuteInSequence(boolean inSeq) {
+
+    }
 }
-</script>
-
-<style
-  scoped
-  lang="scss"
->
-  .anticon-delete {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-</style>
