@@ -51,6 +51,7 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+
 import org.joda.time.DateTime;
 
 import java.util.Arrays;
@@ -88,7 +89,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         } catch (HACheckerException e) {
             //Re-throwing the exception to avoid poluting the 'HACheckerException' already thrown
             throw e;
-        } catch (Exception e){
+        } catch (Exception e) {
             String message = String.format("Operation timed out, probably the %s is not reachable.", r.toString());
             LOG.warn(message, e);
             throw new HACheckerException(message, e);
@@ -97,46 +98,60 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
 
     @Override
     public boolean isHealthy(Host r) {
-        boolean isHealthy = false;
-        if (isHostServedByNfsPool(r)) {
-            HashMap<StoragePool, List<Volume>> poolVolMap = getVolumeUuidOnHost(r);
-            isHealthy = isHealthCheckViaNfs(r, isHealthy, poolVolMap);
-            if(!isHealthy){
-                LOG.warn(String.format("NFS storage health check failed for %s. It seems that a storage does not have activity.", r.toString()));
-            }
+        boolean isHealthy = true;
+        boolean isHostServedByNfsPool = isHostServedByNfsPool(r);
+        boolean isKvmHaWebserviceEnabled = isKvmHaWebserviceEnabled(r);
+
+        isHealthy = isHealthViaNfs(r);
+
+        if (!isKvmHaWebserviceEnabled) {
+            return isHealthy;
         }
 
-        boolean isKvmHaAgentHealthy = checkHealthViaKvmHaWebservice(r);
+        //TODO
 
-        if (!isHealthy && isKvmHaAgentHealthy) {
+
+        if (isVmActivtyOnHostViaKvmHaWebservice(r) && !isHealthy) {
             isHealthy = true;
-            LOG.warn(String.format("KVM HA Agent health check could not detect activity on %s. This might trigger HA Host Recovery and/or Fence", r.toString()));
         }
 
         return isHealthy;
     }
 
     /**
-     * Checks the host health via an web-service that retrieves Running KVM instances via libvirt. <br>
-     * The health-check is executed on the KVM node and verifies the amount of VMs running and if the libvirt service is running. <br><br>
-     *
-     * One can enable or disable it via global settings 'kvm.ha.webservice.enabled'.
+     * Checks the host health via an web-service that retrieves Running KVM instances via Libvirt. <br>
+     * The health-check is executed on the KVM node and verifies the amount of VMs running and if the Libvirt service is running.
      */
-    private boolean checkHealthViaKvmHaWebservice(Host host) {
+    private boolean isVmActivtyOnHostViaKvmHaWebservice(Host host) {
         KvmHaAgentClient kvmHaAgentClient = new KvmHaAgentClient(host);
-        if(!kvmHaAgentClient.isKvmHaWebserviceEnabled()) {
-            ClusterVO cluster = clusterDao.findById(host.getClusterId());
-            LOG.debug(String.format("Skipping KVM HA web-service verification for %s due to 'kvm.ha.webservice.enabled' not enabled for cluster [id: %d, name: %s].",
-                    host.toString(), cluster.getId(), cluster.getName()));
-        }
         return kvmHaAgentClient.isKvmHaAgentHealthy(host, vmInstanceDao);
     }
 
-    private boolean isHealthCheckViaNfs(Host r, boolean isHealthy, HashMap<StoragePool, List<Volume>> poolVolMap) {
-        for (StoragePool pool : poolVolMap.keySet()) {
-            if(Storage.StoragePoolType.NetworkFilesystem == pool.getPoolType()
-                    || Storage.StoragePoolType.ManagedNFS == pool.getPoolType()) {
-                isHealthy = isAgentActive(r);
+    //TODO
+    private boolean isNeigbourReachable(Host host) {
+        return true;
+    }
+
+    /**
+     * Checks if the KVM HA webservice is enabled. One can enable or disable it via global settings 'kvm.ha.webservice.enabled'.
+     */
+    private boolean isKvmHaWebserviceEnabled(Host host) {
+        KvmHaAgentClient kvmHaAgentClient = new KvmHaAgentClient(host);
+        if (!kvmHaAgentClient.isKvmHaWebserviceEnabled()) {
+            ClusterVO cluster = clusterDao.findById(host.getClusterId());
+            LOG.debug(String.format("Skipping KVM HA web-service verification for %s due to 'kvm.ha.webservice.enabled' not enabled for cluster [id: %d, name: %s].", host,
+                    cluster.getId(), cluster.getName()));
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isHealthViaNfs(Host r) {
+        boolean isHealthy = true;
+        if (isHostServedByNfsPool(r)) {
+            isHealthy = isAgentActive(r);
+            if (!isHealthy) {
+                LOG.warn(String.format("NFS storage health check failed for %s. It seems that a storage does not have activity.", r.toString()));
             }
         }
         return isHealthy;
@@ -214,7 +229,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
             HashMap<StoragePool, List<Volume>> poolVolMap = getVolumeUuidOnHost(agent);
             for (StoragePool pool : poolVolMap.keySet()) {
                 if (NFS_POOL_TYPE.contains(pool.getPoolType())) {
-                    activityStatus = checkVmActivityOnStoragePool(poolVolMap, pool, agent, suspectTime, activityStatus);
+                    activityStatus = isVmActivtyOnHostViaNfsStoragePool(poolVolMap, pool, agent, suspectTime, activityStatus);
                     if (!activityStatus) {
                         LOG.warn(String.format("It seems that the storage pool [%s] does not have activity on %s.", pool.getId(), agent.toString()));
                         break;
@@ -223,19 +238,20 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
             }
         }
 
-        boolean isKvmHaAgentHealthy = checkHealthViaKvmHaWebservice(agent);
+        boolean isKvmHaAgentHealthy = isVmActivtyOnHostViaKvmHaWebservice(agent);
 
         if (!activityStatus && isKvmHaAgentHealthy) {
             activityStatus = true;
         }
-        if(!activityStatus){
+        if (!activityStatus) {
             LOG.warn(String.format("KVM HA Agent health check could not detect activity on %s. This might trigger HA Host Recovery and/or Fence.", agent.toString()));
         }
 
         return activityStatus;
     }
 
-    private boolean checkVmActivityOnStoragePool(HashMap<StoragePool, List<Volume>> poolVolMap, StoragePool pool, Host agent, DateTime suspectTime, boolean activityStatus) throws HACheckerException, IllegalStateException {
+    private boolean isVmActivtyOnHostViaNfsStoragePool(HashMap<StoragePool, List<Volume>> poolVolMap, StoragePool pool, Host agent, DateTime suspectTime, boolean activityStatus)
+            throws HACheckerException, IllegalStateException {
         List<Volume> volume_list = poolVolMap.get(pool);
         final CheckVMActivityOnStoragePoolCommand cmd = new CheckVMActivityOnStoragePoolCommand(agent, pool, volume_list, suspectTime);
 
@@ -251,7 +267,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
                 LOG.debug(message);
                 throw new IllegalStateException(message);
             }
-        } catch (StorageUnavailableException e){
+        } catch (StorageUnavailableException e) {
             String message = String.format("Storage [%s] is unavailable to do the check, probably the %s is not reachable.", pool.getId(), agent.toString());
             LOG.warn(message, e);
             throw new HACheckerException(message, e);

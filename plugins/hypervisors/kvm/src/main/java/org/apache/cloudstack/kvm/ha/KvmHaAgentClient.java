@@ -56,6 +56,9 @@ public class KvmHaAgentClient {
     private static final int ERROR_CODE = -1;
     private static final String EXPECTED_HTTP_STATUS = "2XX";
     private static final String VM_COUNT = "count";
+    private static final String STATUS = "status";
+    private static final String CHECK = "check";
+    private static final String UP = "Up";
     private static final int WAIT_FOR_REQUEST_RETRY = 2;
     private static final int MAX_REQUEST_RETRIES = 2;
     private static final int CAUTIOUS_MARGIN_OF_VMS_ON_HOST = 1;
@@ -84,6 +87,26 @@ public class KvmHaAgentClient {
         }
 
         return responseInJson.get(VM_COUNT).getAsInt();
+    }
+
+    /**
+     *  Executes ping command from the host executing the KVM HA Agent webservice to a target IP Address.
+     *  The webserver serves a JSON Object such as {"status": "Up"} if the IP address is reachable OR {"status": "Down"} if could not ping the IP
+     */
+    protected boolean isTargetHostReachable(String ipAddress) {
+        int port = getKvmHaMicroservicePortValue();
+        String url = String.format("http://%s:%d/%s/%s:%d", agent.getPrivateIpAddress(), port, CHECK, ipAddress, port);
+        HttpResponse response = executeHttpRequest(url);
+
+        if (response == null)
+            return false;
+
+        JsonObject responseInJson = processHttpResponseIntoJson(response);
+        if (responseInJson == null) {
+            return false;
+        }
+
+        return UP.equals(responseInJson.get(STATUS).getAsString());
     }
 
     protected int getKvmHaMicroservicePortValue() {

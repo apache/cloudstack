@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -257,5 +258,21 @@ public class KvmHaAgentClientTest {
     public void getKvmHaMicroservicePortValueTestDefault() {
         Assert.assertEquals(KVM_HA_WEBSERVICE_PORT, kvmHaAgentClient.getKvmHaMicroservicePortValue());
     }
+
+//    private void prepareAndRunCountRunningVmsOnAgent(String jsonStringExample, int expectedListedVms) throws IOException {
+//        Mockito.when(agent.getPrivateIpAddress()).thenReturn(PRIVATE_IP_ADDRESS);
+//        Mockito.doReturn(mockResponse(HttpStatus.SC_OK, JSON_STRING_EXAMPLE_3VMs)).when(kvmHaAgentClient).executeHttpRequest(EXPECTED_URL);
+//
+//        JsonObject jObject = new JsonParser().parse(jsonStringExample).getAsJsonObject();
+//        Mockito.doReturn(jObject).when(kvmHaAgentClient).processHttpResponseIntoJson(Mockito.any(HttpResponse.class));
+//
+//        int result = kvmHaAgentClient.countRunningVmsOnAgent();
+//        Assert.assertEquals(expectedListedVms, result);
+//    }
+//TODO
+//    @Test
+//    public void isTargetHostReachableTest() {
+//        kvmHaAgentClient.isTargetHostReachable(PRIVATE_IP_ADDRESS);
+//    }
 
 }

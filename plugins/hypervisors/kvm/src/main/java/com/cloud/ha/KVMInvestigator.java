@@ -139,6 +139,9 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
         return false;
     }
 
+    /**
+     * Checks the Agent Status sending command CheckOnHostCommand to the Agent, which verifies host Status via NFS Heart Beat script
+     */
     private Status checkAgentStatusViaNfs(Host agent) {
         Status hostStatus = null;
         Status neighbourStatus = null;
