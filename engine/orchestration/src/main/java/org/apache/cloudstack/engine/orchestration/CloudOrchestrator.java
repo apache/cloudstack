@@ -186,11 +186,11 @@ public class CloudOrchestrator implements OrchestrationService {
         ServiceOfferingVO computeOffering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
 
         Long diskOfferingId = computeOffering.getDiskOfferingId();
-        if (diskOfferingId != null) {
-            DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
-            if (diskOffering == null) {
-                throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
-            }
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
+        if (diskOffering == null) {
+            throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
+        }
+        if (!diskOffering.isComputeOnly()) {
             rootDiskOfferingInfo.setDiskOffering(diskOffering);
             rootDiskOfferingInfo.setSize(rootDiskSize);
 
@@ -236,12 +236,12 @@ public class CloudOrchestrator implements OrchestrationService {
 
         if (dataDiskTemplateToDiskOfferingMap != null && !dataDiskTemplateToDiskOfferingMap.isEmpty()) {
             for (Entry<Long, DiskOffering> datadiskTemplateToDiskOffering : dataDiskTemplateToDiskOfferingMap.entrySet()) {
-                DiskOffering diskOffering = datadiskTemplateToDiskOffering.getValue();
-                if (diskOffering == null) {
+                DiskOffering dataDiskOffering = datadiskTemplateToDiskOffering.getValue();
+                if (dataDiskOffering == null) {
                     throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
                 }
-                if (diskOffering.getDiskSize() == 0) { // Custom disk offering is not supported for volumes created from datadisk templates
-                    throw new InvalidParameterValueException("Disk offering " + diskOffering + " requires size parameter.");
+                if (dataDiskOffering.getDiskSize() == 0) { // Custom disk offering is not supported for volumes created from datadisk templates
+                    throw new InvalidParameterValueException("Disk offering " + dataDiskOffering + " requires size parameter.");
                 }
             }
         }
@@ -279,7 +279,7 @@ public class CloudOrchestrator implements OrchestrationService {
         rootDiskOfferingInfo.setDiskOffering(diskOffering);
 
         Long size = null;
-        if (diskOffering.getDiskSize() == 0) {
+        if (!diskOffering.isComputeOnly() && diskOffering.getDiskSize() == 0) {
             size = diskSize;
             if (size == null) {
                 throw new InvalidParameterValueException("Disk offering " + diskOffering + " requires size parameter.");
