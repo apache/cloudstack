@@ -89,6 +89,11 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
     @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "the tag for this template.")
     private String templateTag;
 
+    @Parameter(name=ApiConstants.DEPLOY_AS_IS,
+            type = CommandType.BOOLEAN,
+            description = "(VMware only) true if VM deployments should preserve all the configurations defined for this template", since = "4.15.1")
+    private Boolean deployAsIs;
+
     public String getDisplayText() {
         return displayText;
     }
@@ -151,6 +156,11 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
 
     public String getTemplateTag() {
         return templateTag;
+    }
+
+    public boolean isDeployAsIs() {
+        return Hypervisor.HypervisorType.VMware.toString().equalsIgnoreCase(hypervisor) &&
+                Boolean.TRUE.equals(deployAsIs);
     }
 
     @Override
