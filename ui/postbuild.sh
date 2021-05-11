@@ -5,13 +5,13 @@ tmpFile='./public/config.json.tmp'
 
 echo "Post-build: removing all docHelp suffixes in ${configFile}"
 node > ${tmpFile} <<EOF
-//Read data
+// Read config
 var data = require('${configFile}');
 
-//Manipulate data
+// Clear docHelpMappings
 data.docHelpMappings = {};
 
-//Output data
+// Output config
 console.log(JSON.stringify(data, null, 2));
 
 EOF

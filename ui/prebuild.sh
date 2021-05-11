@@ -8,10 +8,10 @@ for m in $(grep "docHelp: '" -R ./src | sed "s/^.*: '//g" | sed "s/',//g" | sort
 done;
 
 node > ${tmpFile} <<EOF
-//Read data
+// Read config
 var data = require('${configFile}');
 
-//Manipulate data
+// Add docHelpMappings
 var suffixes = '${docHelpMappings}';
 suffixes = suffixes.split(',');
 var mappings = {}
@@ -22,7 +22,7 @@ for (const suffix of suffixes) {
 }
 data.docHelpMappings = mappings;
 
-//Output data
+// Output config
 console.log(JSON.stringify(data, null, 2));
 
 EOF
