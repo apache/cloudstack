@@ -313,7 +313,7 @@ public class DatastoreMO extends BaseMO {
         if(file.getDir() != ""){
             folderExists = folderExists(String.format("[%s]", file.getDatastoreName()), file.getDir());
         }
-        if(folderExists){
+        if (folderExists){
             HostDatastoreBrowserMO browserMo = getHostDatastoreBrowserMO();
             s_logger.info("Search file " + file.getFileName() + " on " + dirFile.getPath());
             HostDatastoreBrowserSearchResults results = browserMo.searchDatastore(dirFile.getPath(), file.getFileName(), true);
