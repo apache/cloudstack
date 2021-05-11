@@ -16,10 +16,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
-configFile='./public/config.json'
-tmpFile='./public/config.json.tmp'
-
+DIR=$(dirname $0)
+configFile="$DIR/public/config.json"
+tmpFile="$DIR/public/config.json.tmp"
 echo "Post-build: removing all docHelp suffixes in ${configFile}"
+
 node > ${tmpFile} <<EOF
 // Read config
 var data = require('${configFile}');

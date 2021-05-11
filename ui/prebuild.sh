@@ -16,8 +16,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
-configFile='./public/config.json'
-tmpFile='./public/config.json.tmp'
+DIR=$(dirname $0)
+configFile="$DIR/public/config.json"
+tmpFile="$DIR/public/config.json.tmp"
 echo "Pre-build: list all docHelp suffixes in ${configFile}"
 for m in $(grep "docHelp: '" -R ./src | sed "s/^.*: '//g" | sed "s/',//g" | sort | uniq); do
     docHelpMappings+="${m},"
