@@ -52,8 +52,12 @@ import org.apache.log4j.Logger;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import org.joda.time.DateTime;
+
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class KVMHostActivityChecker extends AdapterBase implements ActivityCheckerInterface<Host>, HealthCheckerInterface<Host> {
     private final static Logger LOG = Logger.getLogger(KVMHostActivityChecker.class);
@@ -75,6 +79,8 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     @Inject
     private StoragePoolHostDao storagePoolHostDao;
 
+    private static final Set<Storage.StoragePoolType> NFS_POOL_TYPE = new HashSet<>(Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.ManagedNFS));
+
     @Override
     public boolean isActive(Host r, DateTime suspectTime) throws HACheckerException {
         try {
@@ -94,7 +100,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         boolean isHealthy = false;
         if (isHostServedByNfsPool(r)) {
             HashMap<StoragePool, List<Volume>> poolVolMap = getVolumeUuidOnHost(r);
-            isHealthy = isHealthyCheckViaNfs(r, isHealthy, poolVolMap);
+            isHealthy = isHealthCheckViaNfs(r, isHealthy, poolVolMap);
             if(!isHealthy){
                 LOG.warn(String.format("NFS storage health check failed for %s. It seems that a storage does not have activity.", r.toString()));
             }
@@ -111,7 +117,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     }
 
     /**
-     * Checks the host healthy via an web-service that retrieves Running KVM instances via libvirt. <br>
+     * Checks the host health via an web-service that retrieves Running KVM instances via libvirt. <br>
      * The health-check is executed on the KVM node and verifies the amount of VMs running and if the libvirt service is running. <br><br>
      *
      * One can enable or disable it via global settings 'kvm.ha.webservice.enabled'.
@@ -126,7 +132,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         return kvmHaAgentClient.isKvmHaAgentHealthy(host, vmInstanceDao);
     }
 
-    private boolean isHealthyCheckViaNfs(Host r, boolean isHealthy, HashMap<StoragePool, List<Volume>> poolVolMap) {
+    private boolean isHealthCheckViaNfs(Host r, boolean isHealthy, HashMap<StoragePool, List<Volume>> poolVolMap) {
         for (StoragePool pool : poolVolMap.keySet()) {
             if(Storage.StoragePoolType.NetworkFilesystem == pool.getPoolType()
                     || Storage.StoragePoolType.ManagedNFS == pool.getPoolType()) {
@@ -207,7 +213,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         if (isHostServedByNfsPool(agent)) {
             HashMap<StoragePool, List<Volume>> poolVolMap = getVolumeUuidOnHost(agent);
             for (StoragePool pool : poolVolMap.keySet()) {
-                if (Storage.StoragePoolType.NetworkFilesystem == pool.getPoolType() || Storage.StoragePoolType.ManagedNFS == pool.getPoolType()) {
+                if (NFS_POOL_TYPE.contains(pool.getPoolType())) {
                     activityStatus = checkVmActivityOnStoragePool(poolVolMap, pool, agent, suspectTime, activityStatus);
                     if (!activityStatus) {
                         LOG.warn(String.format("It seems that the storage pool [%s] does not have activity on %s.", pool.getId(), agent.toString()));
@@ -282,8 +288,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         List<StoragePoolHostVO> storagesOnHost = storagePoolHostDao.listByHostId(agent.getId());
         for (StoragePoolHostVO storagePoolHostRef : storagesOnHost) {
             StoragePoolVO storagePool = this.storagePool.findById(storagePoolHostRef.getPoolId());
-            if(Storage.StoragePoolType.NetworkFilesystem == storagePool.getPoolType()
-                    || Storage.StoragePoolType.ManagedNFS == storagePool.getPoolType()) {
+            if (NFS_POOL_TYPE.contains(storagePool.getPoolType())) {
                 return true;
             }
         }

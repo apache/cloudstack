@@ -96,7 +96,8 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
     }
 
     /**
-     * It checks the KVM node healthy via KVM HA Agent. If the agent is healthy it returns Status.Up, otherwise it keeps the provided Status as it is.
+     * It checks the KVM node status via KVM HA Agent.
+     * If the agent is healthy it returns Status.Up, otherwise it keeps the provided Status as it is.
      */
     private Status checkAgentStatusViaKvmHaAgent(Host agent, Status agentStatus) {
         KvmHaAgentClient kvmHaAgentClient = new KvmHaAgentClient(agent);

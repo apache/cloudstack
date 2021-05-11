@@ -42,11 +42,11 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * This class provides a client that checks Agent status via a webserver.
- *
+ * <br>
  * The additional webserver exposes a simple JSON API which returns a list
- * of Virtual Machines that are running on that host according to libvirt.
- *
- * This way, KVM HA can verify, via libvirt, VMs status with a HTTP-call
+ * of Virtual Machines that are running on that host according to Libvirt.
+ * <br>
+ * This way, KVM HA can verify, via Libvirt, VMs status with an HTTP-call
  * to this simple webserver and determine if the host is actually down
  * or if it is just the Java Agent which has crashed.
  */
@@ -62,14 +62,14 @@ public class KvmHaAgentClient {
     private Host agent;
 
     /**
-     * Instantiates a webclient that checks, via a webserver running on the KVM host, the VMs running
+     * Instantiates a webclient that checks, via a webserver running on the KVM host, the VMs running according to the Libvirt
      */
     public KvmHaAgentClient(Host agent) {
         this.agent = agent;
     }
 
     /**
-     *  Returns the number of VMs running on the KVM host according to libvirt.
+     *  Returns the number of VMs running on the KVM host according to Libvirt.
      */
     protected int countRunningVmsOnAgent() {
         String url = String.format("http://%s:%d", agent.getPrivateIpAddress(), getKvmHaMicroservicePortValue());
@@ -89,7 +89,8 @@ public class KvmHaAgentClient {
     protected int getKvmHaMicroservicePortValue() {
         Integer haAgentPort = KVMHAConfig.KvmHaWebservicePort.value();
         if (haAgentPort == null) {
-            LOGGER.warn(String.format("Using default kvm.ha.webservice.port: %s as it was set to NULL for the cluster [id: %d] from %s.", KVMHAConfig.KvmHaWebservicePort.defaultValue(), agent.getClusterId(), agent));
+            LOGGER.warn(String.format("Using default kvm.ha.webservice.port: %s as it was set to NULL for the cluster [id: %d] from %s.",
+                    KVMHAConfig.KvmHaWebservicePort.defaultValue(), agent.getClusterId(), agent));
             haAgentPort = Integer.parseInt(KVMHAConfig.KvmHaWebservicePort.defaultValue());
         }
         return haAgentPort;
@@ -128,8 +129,8 @@ public class KvmHaAgentClient {
             int migratingVms = listByHostAndStateMigrating.size();
             int countRunningVmsOnAgent = countRunningVmsOnAgent();
             LOGGER.trace(
-                    String.format("%s has (%d Starting) %d Running, %d Stopping, %d Migrating. Total listed via DB %d / %d (via libvirt)", agent.getName(), startingVMs, runningVMs, stoppingVms,
-                            migratingVms, listByHostAndState.size(), countRunningVmsOnAgent));
+                    String.format("%s has (%d Starting) %d Running, %d Stopping, %d Migrating. Total listed via DB %d / %d (via libvirt)", agent.getName(), startingVMs, runningVMs,
+                            stoppingVms, migratingVms, listByHostAndState.size(), countRunningVmsOnAgent));
         }
 
         return listByHostAndState;
@@ -146,28 +147,28 @@ public class KvmHaAgentClient {
      *  (iii) amount of listed VMs is different than expected: return true and print WARN messages so Admins can monitor and react accordingly
      */
     public boolean isKvmHaAgentHealthy(Host host, VMInstanceDao vmInstanceDao) {
-        int numberOfVmsOnHostAccordingToDB = listVmsOnHost(host, vmInstanceDao).size();
+        int numberOfVmsOnHostAccordingToDb = listVmsOnHost(host, vmInstanceDao).size();
         int numberOfVmsOnAgent = countRunningVmsOnAgent();
         if (numberOfVmsOnAgent < 0) {
             LOGGER.error(String.format("KVM HA Agent health check failed, either the KVM Agent %s is unreachable or Libvirt validation failed.", agent));
-            LOGGER.warn(String.format("Host %s is not considered healthy and HA fencing/recovering process might be triggered.", agent.getName(), numberOfVmsOnHostAccordingToDB));
+            LOGGER.warn(String.format("Host %s is not considered healthy and HA fencing/recovering process might be triggered.", agent.getName(), numberOfVmsOnHostAccordingToDb));
             return false;
         }
-        if (numberOfVmsOnHostAccordingToDB == numberOfVmsOnAgent) {
+        if (numberOfVmsOnHostAccordingToDb == numberOfVmsOnAgent) {
             return true;
         }
-        if (numberOfVmsOnAgent == 0 && numberOfVmsOnHostAccordingToDB > CAUTIOUS_MARGIN_OF_VMS_ON_HOST) {
+        if (numberOfVmsOnAgent == 0 && numberOfVmsOnHostAccordingToDb > CAUTIOUS_MARGIN_OF_VMS_ON_HOST) {
             // Return false as could not find VMs running but it expected at least one VM running, fencing/recovering host would avoid downtime to VMs in this case.
             // There is cautious margin added on the conditional. This avoids fencing/recovering hosts when there is one VM migrating to a host that had zero VMs.
             // If there are more VMs than the CAUTIOUS_MARGIN_OF_VMS_ON_HOST) the Host should be treated as not healthy and fencing/recovering process might be triggered.
-            LOGGER.warn(String.format("KVM HA Agent %s could not find VMs; it was expected to list %d VMs.", agent, numberOfVmsOnHostAccordingToDB));
-            LOGGER.warn(String.format("Host %s is not considered healthy and HA fencing/recovering process might be triggered.", agent.getName(), numberOfVmsOnHostAccordingToDB));
+            LOGGER.warn(String.format("KVM HA Agent %s could not find VMs; it was expected to list %d VMs.", agent, numberOfVmsOnHostAccordingToDb));
+            LOGGER.warn(String.format("Host %s is not considered healthy and HA fencing/recovering process might be triggered.", agent.getName(), numberOfVmsOnHostAccordingToDb));
             return false;
         }
         // In order to have a less "aggressive" health-check, the KvmHaAgentClient will not return false; fencing/recovering could bring downtime to existing VMs
         // Additionally, the inconsistency can also be due to jobs in progress to migrate/stop/start VMs
         // Either way, WARN messages should be presented to Admins so they can look closely to what is happening on the host
-        LOGGER.warn(String.format("KVM HA Agent %s listed %d VMs; however, it was expected %d VMs.", agent, numberOfVmsOnAgent, numberOfVmsOnHostAccordingToDB));
+        LOGGER.warn(String.format("KVM HA Agent %s listed %d VMs; however, it was expected %d VMs.", agent, numberOfVmsOnAgent, numberOfVmsOnHostAccordingToDb));
         return true;
     }
 
