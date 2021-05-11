@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -653,6 +654,16 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return true;
     }
 
+    private void unassignBackupOffering(VMInstanceVO vm) {
+        vm.setBackupOfferingId(null);
+        vm.setBackupExternalId(null);
+        vm.setBackupVolumes(null);
+        vmInstanceDao.update(vm.getId(), vm);
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
+                "Backup-" + vm.getHostName() + "-" + vm.getUuid(), vm.getBackupOfferingId(), null, null,
+                Backup.class.getSimpleName(), vm.getUuid());
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_DELETE, eventDescription = "deleting VM backup", async = true)
     public boolean deleteBackup(final Long backupId) {
@@ -671,6 +682,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (offering == null) {
             throw new CloudRuntimeException("VM backup offering ID " + vm.getBackupOfferingId() + " does not exist");
         }
+        List<Backup> backupsForVm = backupDao.listByVmId(vm.getDataCenterId(), vmId);
+        backupsForVm = backupsForVm.stream().filter(vmBackup -> vmBackup.getId() != backupId).collect(Collectors.toList());
+        if (backupsForVm.size() <= 0 && vm.getRemoved() != null) {
+            unassignBackupOffering(vm);
+        }
+
         final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
         boolean result = backupProvider.deleteBackup(backup);
         if (result) {
@@ -841,6 +858,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         try {
             if (scanLock.lock(5)) {
                 try {
+                    cleanupBackups();
                     scheduleBackups();
                 } finally {
                     scanLock.unlock();
@@ -880,6 +898,17 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                     final String nextScheduledTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, nextDateTime);
                     LOG.debug("Next backup scheduled time for VM ID " + backupSchedule.getVmId() + " is " + nextScheduledTime);
                     break;
+            }
+        }
+    }
+
+    @DB
+    public void cleanupBackups() {
+        LOG.debug("Disassociating backup offerings from expunged VMs that have no more backups");
+        List<VMInstanceVO> destroyedVmsWithOfferings = vmInstanceDao.listDestroyedVmsWithBackupOfferingAssigned();
+        for(VMInstanceVO instanceVO : destroyedVmsWithOfferings) {
+            if (backupDao.listByVmId(instanceVO.getDataCenterId(), instanceVO.getId()).size() == 0) {
+                unassignBackupOffering(instanceVO);
             }
         }
     }

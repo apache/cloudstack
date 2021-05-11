@@ -88,6 +88,8 @@ import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
@@ -519,6 +521,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private StorageManager storageMgr;
     @Inject
     private ServiceOfferingJoinDao serviceOfferingJoinDao;
+    @Inject
+    private BackupDao backupDao;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -2279,6 +2283,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     return false;
                 }
 
+                unassignBackupOffering(vm.getId());
                 _vmDao.remove(vm.getId());
             }
 
@@ -5212,6 +5217,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw ex;
         }
 
+    }
+
+    private void unassignBackupOffering(long vmId) {
+        VMInstanceVO expungedVm = _vmDao.findByIdIncludingRemoved(vmId);
+        if (expungedVm != null && expungedVm.getBackupOfferingId() != null) {
+            if (backupDao.listByVmId(expungedVm.getDataCenterId(), expungedVm.getId()).size() == 0) {
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE, expungedVm.getAccountId(), expungedVm.getDataCenterId(), expungedVm.getId(),
+                        "Backup-" + expungedVm.getHostName() + "-" + expungedVm.getUuid(), expungedVm.getBackupOfferingId(), null, null,
+                        Backup.class.getSimpleName(), expungedVm.getUuid());
+                expungedVm.setBackupOfferingId(null);
+                expungedVm.setBackupExternalId(null);
+                expungedVm.setBackupVolumes(null);
+                _vmInstanceDao.update(expungedVm.getId(), expungedVm);
+            }
+        }
     }
 
     @Override

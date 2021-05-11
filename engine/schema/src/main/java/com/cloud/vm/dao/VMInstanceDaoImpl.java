@@ -95,6 +95,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> StartingWithNoHostSearch;
     protected SearchBuilder<VMInstanceVO> NotMigratingSearch;
     protected SearchBuilder<VMInstanceVO> BackupSearch;
+    protected SearchBuilder<VMInstanceVO> DestroyedVMBackupSearch;
     protected SearchBuilder<VMInstanceVO> LastHostAndStatesSearch;
 
     @Inject
@@ -300,6 +301,11 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         LastHostAndStatesSearch.and("lastHost", LastHostAndStatesSearch.entity().getLastHostId(), Op.EQ);
         LastHostAndStatesSearch.and("states", LastHostAndStatesSearch.entity().getState(), Op.IN);
         LastHostAndStatesSearch.done();
+
+        DestroyedVMBackupSearch = createSearchBuilder();
+        DestroyedVMBackupSearch.and("backupOfferingId", DestroyedVMBackupSearch.entity().getBackupOfferingId(), Op.NNULL);
+        DestroyedVMBackupSearch.and("removed", DestroyedVMBackupSearch.entity().getRemoved(), SearchCriteria.Op.NNULL);
+        DestroyedVMBackupSearch.done();
     }
 
     @Override
@@ -331,6 +337,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         sc.setParameters("lastHost", hostId);
         sc.setParameters("state", State.Migrating);
         return listBy(sc);
+    }
+
+    @Override
+    public List<VMInstanceVO> listDestroyedVmsWithBackupOfferingAssigned() {
+        SearchCriteria<VMInstanceVO> sc = DestroyedVMBackupSearch.create();
+        return listIncludingRemovedBy(sc);
     }
 
     @Override
