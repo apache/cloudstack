@@ -1978,10 +1978,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     vmGuru.finalizeStop(profile, answer);
                 }
             } else {
-                if (VirtualMachine.Type.ConsoleProxy == vm.getType() || VirtualMachine.Type.SecondaryStorageVm == vm.getType()) {
+                if (VirtualMachine.systemVMs.contains(vm.getType())) {
                     HostVO systemVmHost = ApiDBUtils.findHostByTypeNameAndZoneId(vm.getDataCenterId(), vm.getHostName(),
                             VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType()) ? Host.Type.SecondaryStorageVM : Host.Type.ConsoleProxy);
-                    _agentMgr.agentStatusTransitTo(systemVmHost, Status.Event.ShutdownRequested, _nodeId);
+                    if (systemVmHost != null) {
+                        _agentMgr.agentStatusTransitTo(systemVmHost, Status.Event.ShutdownRequested, _nodeId);
+                    }
                 }
             }
         }
