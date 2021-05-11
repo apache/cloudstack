@@ -190,21 +190,22 @@ public class CloudOrchestrator implements OrchestrationService {
         if (diskOffering == null) {
             throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
         }
-        if (!diskOffering.isComputeOnly()) {
-            rootDiskOfferingInfo.setDiskOffering(diskOffering);
-            rootDiskOfferingInfo.setSize(rootDiskSize);
+        rootDiskOfferingInfo.setDiskOffering(diskOffering);
+        rootDiskOfferingInfo.setSize(rootDiskSize);
 
-            if (diskOffering.isCustomizedIops() != null && diskOffering.isCustomizedIops()) {
-                Map<String, String> userVmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
+        if (diskOffering.isCustomizedIops() != null && diskOffering.isCustomizedIops()) {
+            Map<String, String> userVmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
 
-                if (userVmDetails != null) {
-                    String minIops = userVmDetails.get("minIops");
-                    String maxIops = userVmDetails.get("maxIops");
+            if (userVmDetails != null) {
+                String minIops = userVmDetails.get("minIops");
+                String maxIops = userVmDetails.get("maxIops");
 
-                    rootDiskOfferingInfo.setMinIops(minIops != null && minIops.trim().length() > 0 ? Long.parseLong(minIops) : null);
-                    rootDiskOfferingInfo.setMaxIops(maxIops != null && maxIops.trim().length() > 0 ? Long.parseLong(maxIops) : null);
-                }
+                rootDiskOfferingInfo.setMinIops(minIops != null && minIops.trim().length() > 0 ? Long.parseLong(minIops) : null);
+                rootDiskOfferingInfo.setMaxIops(maxIops != null && maxIops.trim().length() > 0 ? Long.parseLong(maxIops) : null);
             }
+        }
+
+        if (!diskOffering.isComputeOnly()) {
             Long size = null;
             if (diskOffering.getDiskSize() == 0) {
                 size = diskSize;
