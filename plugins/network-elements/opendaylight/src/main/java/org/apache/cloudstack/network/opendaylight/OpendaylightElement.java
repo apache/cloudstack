@@ -19,19 +19,6 @@
 
 package org.apache.cloudstack.network.opendaylight;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.network.opendaylight.agent.commands.StartupOpenDaylightControllerCommand;
-
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -55,6 +42,16 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.network.opendaylight.agent.commands.StartupOpenDaylightControllerCommand;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Component
 public class OpendaylightElement extends AdapterBase implements ConnectivityProvider, ResourceStateAdapter {
@@ -156,7 +153,7 @@ public class OpendaylightElement extends AdapterBase implements ConnectivityProv
 
     @Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
-        return new DeleteHostAnswer(true);
+        return null;
     }
 
     private static Map<Service, Map<Capability, String>> setCapabilities() {
