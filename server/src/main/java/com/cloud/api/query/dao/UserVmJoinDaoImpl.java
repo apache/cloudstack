@@ -161,7 +161,6 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setTemplateName(userVm.getTemplateName());
             userVmResponse.setTemplateDisplayText(userVm.getTemplateDisplayText());
             userVmResponse.setPasswordEnabled(userVm.isPasswordEnabled());
-            userVmResponse.setDeployAsIsTemplate(userVm.getTemplateDeployAsIs());
         }
         if (details.contains(VMDetails.all) || details.contains(VMDetails.iso)) {
             userVmResponse.setIsoId(userVm.getIsoUuid());

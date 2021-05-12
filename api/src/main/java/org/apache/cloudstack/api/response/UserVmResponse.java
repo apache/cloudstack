@@ -124,10 +124,6 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = " an alternate display text of the template for the virtual machine")
     private String templateDisplayText;
 
-    @SerializedName(ApiConstants.DEPLOY_AS_IS_TEMPLATE)
-    @Param(description = "Template settings read from OVA")
-    private Boolean deployAsIsTemplate;
-
     @SerializedName(ApiConstants.PASSWORD_ENABLED)
     @Param(description = "true if the password rest feature is enabled, false otherwise")
     private Boolean passwordEnabled;
@@ -431,10 +427,6 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         return templateDisplayText;
     }
 
-    public Boolean getDeployAsIsTemplate() {
-        return deployAsIsTemplate;
-    }
-
     public Boolean getPasswordEnabled() {
         return passwordEnabled;
     }
@@ -671,10 +663,6 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setTemplateDisplayText(String templateDisplayText) {
         this.templateDisplayText = templateDisplayText;
-    }
-
-    public void setDeployAsIsTemplate(Boolean deployAsIsTemplate) {
-        this.deployAsIsTemplate = deployAsIsTemplate;
     }
 
     public void setPasswordEnabled(Boolean passwordEnabled) {

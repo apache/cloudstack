@@ -80,12 +80,12 @@
           slot="actions"
           v-if="!disableSettings && 'updateTemplate' in $store.getters.apis &&
             'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner() && allowEditOfDetail(item.name)">
-          <tootip-button :tooltip="$t('label.cancel')" @click="hideEditDetail(index)" v-if="item.edit" iconType="close-circle" iconTwoToneColor="#f5222d" />
-          <tootip-button :tooltip="$t('label.ok')" @click="updateDetail(index)" v-if="item.edit" iconType="check-circle" iconTwoToneColor="#52c41a" />
+          <tooltip-button :tooltip="$t('label.cancel')" @click="hideEditDetail(index)" v-if="item.edit" iconType="close-circle" iconTwoToneColor="#f5222d" />
+          <tooltip-button :tooltip="$t('label.ok')" @click="updateDetail(index)" v-if="item.edit" iconType="check-circle" iconTwoToneColor="#52c41a" />
           <tooltip-button
             :tooltip="$t('label.edit')"
             icon="edit"
-            :disabled="deployasistemplate === true && (item.name === 'rootDiskController' || item.name === 'dataDiskController')"
+            :disabled="deployasistemplate === true"
             v-if="!item.edit"
             @click="showEditDetail(index)" />
         </div>
@@ -97,11 +97,10 @@
             :title="`${$t('label.delete.setting')}?`"
             @confirm="deleteDetail(index)"
             :okText="$t('label.yes')"
-            :disabled="deployasistemplate === true && (item.name === 'rootDiskController' || item.name === 'dataDiskController')"
             :cancelText="$t('label.no')"
             placement="left"
           >
-            <tooltip-button :tooltip="$t('label.delete')" type="danger" icon="delete" />
+            <tooltip-button :tooltip="$t('label.delete')" :disabled="deployasistemplate === true" type="danger" icon="delete" />
           </a-popconfirm>
         </div>
       </a-list-item>
@@ -166,8 +165,8 @@ export default {
         this.detailOptions = json.listdetailoptionsresponse.detailoptions.details
       })
       this.disableSettings = (this.$route.meta.name === 'vm' && this.resource.state !== 'Stopped')
-      api('listVirtualMachines', { id: this.resource.id }).then(json => {
-        this.deployasistemplate = json.listvirtualmachinesresponse.virtualmachine[0].deployasistemplate
+      api('listTemplates', { templatefilter: 'all', id: this.resource.templateid }).then(json => {
+        this.deployasistemplate = json.listtemplatesresponse.template[0].deployasis
       })
     },
     filterOrReadOnlyDetails () {

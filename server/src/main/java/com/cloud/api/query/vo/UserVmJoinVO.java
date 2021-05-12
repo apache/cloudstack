@@ -178,9 +178,6 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "template_display_text", length = 4096)
     private String templateDisplayText;
 
-    @Column(name = "template_deploy_as_is")
-    private Boolean templateDeployAsIs;
-
     @Column(name = "password_enabled")
     private boolean passwordEnabled;
 
@@ -581,10 +578,6 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getTemplateDisplayText() {
         return templateDisplayText;
-    }
-
-    public Boolean getTemplateDeployAsIs() {
-        return templateDeployAsIs;
     }
 
     public boolean isPasswordEnabled() {
