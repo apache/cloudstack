@@ -313,7 +313,6 @@ DROP TABLE IF EXISTS `cloud`.`stack_maid`;
 DROP TABLE IF EXISTS `cloud`.`volume_host_ref`;
 DROP TABLE IF EXISTS `cloud`.`template_host_ref`;
 DROP TABLE IF EXISTS `cloud`.`swift`;
-DROP TABLE IF EXISTS `cloud`.`certificate`;
 
 ALTER TABLE `cloud`.`snapshots` DROP FOREIGN KEY `fk_snapshots__s3_id` ;
 ALTER TABLE `cloud`.`snapshots` DROP COLUMN `s3_id` ;
