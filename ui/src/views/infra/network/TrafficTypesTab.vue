@@ -112,9 +112,8 @@ export default {
     }
   },
   methods: {
-    fetchData () {
+    async fetchData () {
       this.fetchLoading = true
-      this.fetchGuestNetwork()
       api('listTrafficTypes', { physicalnetworkid: this.resource.id }).then(json => {
         this.traffictypes = json.listtraffictypesresponse.traffictype
       }).catch(error => {
@@ -122,7 +121,6 @@ export default {
       }).finally(() => {
         this.fetchLoading = false
       })
-
       this.fetchLoading = true
       api('listNetworks', {
         listAll: true,
@@ -140,15 +138,24 @@ export default {
       }).finally(() => {
         this.fetchLoading = false
       })
-
-      this.fetchLoading = true
-      api('listZones', { id: this.resource.zoneid }).then(json => {
-        const zone = json.listzonesresponse.zone || []
-        this.networkType = zone[0].networktype
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.fetchLoading = false
+      await this.fetchZones()
+      if (this.networkType === 'Basic') {
+        this.fetchGuestNetwork()
+      }
+    },
+    fetchZones () {
+      return new Promise((resolve, reject) => {
+        this.fetchLoading = true
+        api('listZones', { id: this.resource.zoneid }).then(json => {
+          const zone = json.listzonesresponse.zone || []
+          this.networkType = zone[0].networktype
+          resolve(this.networkType)
+        }).catch(error => {
+          this.$notifyError(error)
+          reject(error)
+        }).finally(() => {
+          this.fetchLoading = false
+        })
       })
     },
     fetchGuestNetwork () {
