@@ -137,18 +137,6 @@ public class TemplateObject implements TemplateInfo {
         if (dataStore == null) {
             return imageVO.getSize();
         }
-
-        /*
-         * if (templateHostVO == null) { VMTemplateSwiftVO templateSwiftVO =
-         * _swiftMgr.findByTmpltId(templateForVmCreation.getId()); if
-         * (templateSwiftVO != null) { long templateSize =
-         * templateSwiftVO.getPhysicalSize(); if (templateSize == 0) {
-         * templateSize = templateSwiftVO.getSize(); } totalAllocatedSize +=
-         * (templateSize + _extraBytesPerVolume); } } else { long templateSize =
-         * templateHostVO.getPhysicalSize(); if ( templateSize == 0 ){
-         * templateSize = templateHostVO.getSize(); } totalAllocatedSize +=
-         * (templateSize + _extraBytesPerVolume); }
-         */
         VMTemplateVO image = imageDao.findById(imageVO.getId());
         return image.getSize();
     }
