@@ -337,7 +337,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 params.isExtractable(), params.getFormat(), params.getGuestOSId(), zoneList,
                 params.getHypervisorType(), params.getChecksum(), params.isBootable(), params.getTemplateTag(), owner,
                 params.getDetails(), params.isSshKeyEnabled(), params.getImageStoreUuid(),
-                params.isDynamicallyScalable(), params.isRoutingType() ? TemplateType.ROUTING : TemplateType.USER, params.isDirectDownload(), false);
+                params.isDynamicallyScalable(), params.isRoutingType() ? TemplateType.ROUTING : TemplateType.USER, params.isDirectDownload(), params.isDeployAsIs());
     }
 
     private Long getDefaultDeployAsIsGuestOsId() {
