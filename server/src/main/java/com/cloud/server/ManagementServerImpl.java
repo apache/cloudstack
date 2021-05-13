@@ -2178,7 +2178,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 long dcId = dc.getId();
                 try {
                     freeAddrs.addAll(_ipAddressMgr.listAvailablePublicIps(dcId, null, vlanDbIds, owner, VlanType.VirtualNetwork, associatedNetworkId,
-                            false, false, false, null, false, cmd.getVpcId(), cmd.isDisplay(), false, false)); // Free
+                            false, false, false, null, null, false, cmd.getVpcId(), cmd.isDisplay(), false, false)); // Free
                 } catch (InsufficientAddressCapacityException e) {
                     s_logger.warn("no free address is found in zone " + dcId);
                 }
