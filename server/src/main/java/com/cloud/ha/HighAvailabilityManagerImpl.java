@@ -202,7 +202,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     int _maxRetries;
     long _timeBetweenFailures;
     long _timeBetweenCleanups;
-    boolean _forceHA;
     String _haTag = null;
 
     protected HighAvailabilityManagerImpl() {
@@ -369,7 +368,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
                 alertType = AlertManager.AlertType.ALERT_TYPE_SSVM;
             }
 
-            if (!(_forceHA || vm.isHaEnabled())) {
+            if (!(ForceHA.value() || vm.isHaEnabled())) {
                 String hostDesc = "id:" + vm.getHostId() + ", availability zone id:" + vm.getDataCenterId() + ", pod id:" + vm.getPodIdToDeployIn();
                 _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "VM (name: " + vm.getHostName() + ", id: " + vm.getId() +
                     ") stopped unexpectedly on host " + hostDesc, "Virtual Machine " + vm.getHostName() + " (id: " + vm.getId() + ") running on host [" + vm.getHostId() +
@@ -574,7 +573,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
         vm = _itMgr.findById(vm.getId());
 
-        if (!_forceHA && !vm.isHaEnabled()) {
+        if (!ForceHA.value() && !vm.isHaEnabled()) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM is not HA enabled so we're done.");
             }
@@ -885,7 +884,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             _workers[i] = new WorkerThread("HA-Worker-" + i);
         }
 
-        _forceHA = ForceHA.value();
         _timeToSleep = TimeToSleep.value() * SECONDS_TO_MILLISECONDS_FACTOR;
         _maxRetries = MigrationMaxRetries.value();
         _timeBetweenFailures = TimeBetweenFailures.value() * SECONDS_TO_MILLISECONDS_FACTOR;

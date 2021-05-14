@@ -4695,7 +4695,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         String.format("VM %s is at %s and we received a %s report while there is no pending jobs on it"
                                 , vm.getInstanceName(), vm.getState(), vm.getPowerState()));
             }
-            if(vm.isHaEnabled() && vm.getState() == State.Running
+            if((HighAvailabilityManager.ForceHA.value() || vm.isHaEnabled()) && vm.getState() == State.Running
                     && HaVmRestartHostUp.value()
                     && vm.getHypervisorType() != HypervisorType.VMware
                     && vm.getHypervisorType() != HypervisorType.Hyperv) {
