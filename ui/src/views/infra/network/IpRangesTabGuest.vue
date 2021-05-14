@@ -149,7 +149,6 @@ export default {
         page: this.page,
         pagesize: this.pageSize
       }).then(response => {
-        console.log(response)
         this.items = response.listnetworksresponse.network ? response.listnetworksresponse.network : []
         this.total = response.listnetworksresponse.count || 0
       }).catch(error => {
