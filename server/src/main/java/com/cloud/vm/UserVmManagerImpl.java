@@ -859,7 +859,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("Failed to reset SSH Key for the virtual machine ");
         }
 
+        removeEncryptedPasswordFromUserVmVoDetails(userVm);
+
         return userVm;
+    }
+
+    protected void removeEncryptedPasswordFromUserVmVoDetails(UserVmVO userVmVo) {
+        Map<String, String> details = userVmVo.getDetails();
+        details.remove(VmDetailConstants.ENCRYPTED_PASSWORD);
+        userVmVo.setDetails(details);
+        _vmDao.saveDetails(userVmVo);
     }
 
     private boolean resetVMSSHKeyInternal(Long vmId, String sshPublicKey) throws ResourceUnavailableException, InsufficientCapacityException {
