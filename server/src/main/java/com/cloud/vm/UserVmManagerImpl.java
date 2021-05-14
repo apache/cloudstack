@@ -2523,7 +2523,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         UserVmVO vmInstance = _vmDao.findById(cmd.getId());
         if (MapUtils.isNotEmpty(details)) {
             VMTemplateVO template = _templateDao.findById(vmInstance.getTemplateId());
-            if (template.isDeployAsIs()) {
+            if (template != null && template.isDeployAsIs()) {
                 throw new CloudRuntimeException("Detail settings are read from OVA, it cannot be changed by API call.");
             }
         }
