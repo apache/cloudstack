@@ -3815,7 +3815,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         String signature = "";
         try {
-            // get the user obj to get his secret key
+            // get the user obj to get their secret key
             user = _accountMgr.getActiveUser(userId);
             final String secretKey = user.getSecretKey();
             final String input = cloudIdentifier;

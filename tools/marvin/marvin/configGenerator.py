@@ -322,7 +322,7 @@ class ConfigManager(object):
     '''
     @Name: ConfigManager
     @Desc: 1. It provides the basic configuration facilities to marvin.
-           2. User can just add configuration files for his tests, deployment
+           2. User can just add configuration files for their tests, deployment
               etc, under one config folder before running their tests.
               cs/tools/marvin/marvin/config.
               They can remove all hard coded values from code and separate
