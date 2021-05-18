@@ -75,6 +75,9 @@ public class ServiceOfferingVO implements ServiceOffering {
     @Column(name = "disk_offering_id")
     private Long diskOfferingId;
 
+    @Column(name = "disk_offering_strictness")
+    private boolean diskOfferingStrictness = false;
+
     @Column(name = "cpu")
     private Integer cpu;
 
@@ -434,5 +437,13 @@ public class ServiceOfferingVO implements ServiceOffering {
 
     public void setDynamicScalingEnabled(boolean dynamicScalingEnabled) {
         this.dynamicScalingEnabled = dynamicScalingEnabled;
+    }
+
+    public Boolean getDiskOfferingStrictness() {
+        return diskOfferingStrictness;
+    }
+
+    public void setDiskOfferingStrictness(boolean diskOfferingStrictness) {
+        this.diskOfferingStrictness = diskOfferingStrictness;
     }
 }

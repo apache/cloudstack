@@ -2865,6 +2865,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        // Check that the the disk offering is specified
+        final Long diskOfferingId = cmd.getDiskOfferingId();
+        if (diskOfferingId != null) {
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
+            if ((diskOffering == null) || diskOffering.getRemoved() != null || diskOffering.isComputeOnly()) {
+                throw new InvalidParameterValueException("Please specify a valid disk offering.");
+            }
+        }
+
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
                 cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainIds(), cmd.getZoneIds(), cmd.getHostTag(),
                 cmd.getNetworkRate(), cmd.getDeploymentPlanner(), details, cmd.getRootDiskSize(), isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
@@ -2872,7 +2881,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
-                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled());
+                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled(), diskOfferingId, cmd.getDiskOfferingStrictness());
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
@@ -2883,7 +2892,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
             Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
             Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-            final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID, final boolean dynamicScalingEnabled) {
+            final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID, final boolean dynamicScalingEnabled, final Long diskOfferingId, final boolean diskOfferingStrictness) {
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
 
@@ -2913,15 +2922,111 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         tags = com.cloud.utils.StringUtils.cleanupTags(tags);
 
-        DiskOfferingVO diskOffering = new DiskOfferingVO(name, displayText, typedProvisioningType, false, tags, false, localStorageRequired, isSystem, true);
-
         ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA,
                 limitResourceUse, volatileVm, displayText, typedProvisioningType, localStorageRequired, false, tags, isSystem, vmType,
                 hostTag, deploymentPlanner, dynamicScalingEnabled);
 
+        List<ServiceOfferingDetailsVO> detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
+        if (details != null) {
+            // To have correct input, either both gpu card name and VGPU type should be passed or nothing should be passed.
+            // Use XOR condition to verify that.
+            final boolean entry1 = details.containsKey(GPU.Keys.pciDevice.toString());
+            final boolean entry2 = details.containsKey(GPU.Keys.vgpuType.toString());
+            if ((entry1 || entry2) && !(entry1 && entry2)) {
+                throw new InvalidParameterValueException("Please specify the pciDevice and vgpuType correctly.");
+            }
+            for (final Entry<String, String> detailEntry : details.entrySet()) {
+                String detailEntryValue = detailEntry.getValue();
+                if (detailEntry.getKey().equals(GPU.Keys.pciDevice.toString())) {
+                    if (detailEntryValue == null) {
+                        throw new InvalidParameterValueException("Please specify a GPU Card.");
+                    }
+                }
+                if (detailEntry.getKey().equals(GPU.Keys.vgpuType.toString())) {
+                    if (detailEntryValue == null) {
+                        throw new InvalidParameterValueException("vGPUType value cannot be null");
+                    }
+                }
+                if (detailEntry.getKey().startsWith(ApiConstants.EXTRA_CONFIG)) {
+                    try {
+                        detailEntryValue = URLDecoder.decode(detailEntry.getValue(), "UTF-8");
+                    } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+                        s_logger.error("Cannot decode extra configuration value for key: " + detailEntry.getKey() + ", skipping it");
+                        continue;
+                    }
+                }
+                if (detailEntry.getKey().equalsIgnoreCase(Volume.BANDWIDTH_LIMIT_IN_MBPS) || detailEntry.getKey().equalsIgnoreCase(Volume.IOPS_LIMIT)) {
+                    // Add in disk offering details
+                    continue;
+                }
+                detailsVO.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), detailEntry.getKey(), detailEntryValue, true));
+            }
+        }
+
+        if (storagePolicyID != null) {
+            detailsVO.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.STORAGE_POLICY, String.valueOf(storagePolicyID), false));
+        }
+
+        serviceOffering.setDiskOfferingStrictness(diskOfferingStrictness);
+
+        DiskOfferingVO diskOffering = null;
+        if (diskOfferingId == null) {
+            diskOffering = createDiskOfferingInternal(userId, isSystem, vmType,
+                    name, cpu, ramSize, speed, displayText, typedProvisioningType, localStorageRequired,
+                    offerHA, limitResourceUse, volatileVm, tags, domainIds, zoneIds, hostTag,
+                    networkRate, deploymentPlanner, details, rootDiskSizeInGiB, isCustomizedIops, minIops, maxIops,
+                    bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength,
+                    bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength,
+                    iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength,
+                    iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength,
+                    hypervisorSnapshotReserve, cacheMode, storagePolicyID);
+        } else {
+            diskOffering = _diskOfferingDao.findById(diskOfferingId);
+        }
+        if (diskOffering != null) {
+            serviceOffering.setDiskOfferingId(diskOffering.getId());
+        } else {
+            return null;
+        }
+
+        if ((serviceOffering = _serviceOfferingDao.persist(serviceOffering)) != null) {
+            for (Long domainId : filteredDomainIds) {
+                detailsVO.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
+            }
+            if (CollectionUtils.isNotEmpty(zoneIds)) {
+                for (Long zoneId : zoneIds) {
+                    detailsVO.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
+                }
+            }
+            if (!detailsVO.isEmpty()) {
+                for (ServiceOfferingDetailsVO detail : detailsVO) {
+                    detail.setResourceId(serviceOffering.getId());
+                }
+                _serviceOfferingDetailsDao.saveDetails(detailsVO);
+            }
+
+            CallContext.current().setEventDetails("Service offering id=" + serviceOffering.getId());
+            return serviceOffering;
+        } else {
+            return null;
+        }
+    }
+
+    private DiskOfferingVO createDiskOfferingInternal(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
+                                                      final String name, final Integer cpu, final Integer ramSize, final Integer speed, final String displayText, final ProvisioningType typedProvisioningType, final boolean localStorageRequired,
+                                                      final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm, String tags, final List<Long> domainIds, List<Long> zoneIds, final String hostTag,
+                                                      final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, Long rootDiskSizeInGiB, final Boolean isCustomizedIops, Long minIops, Long maxIops,
+                                                      Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
+                                                      Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
+                                                      Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
+                                                      Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
+                                                      final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID) {
+
+        DiskOfferingVO diskOffering = new DiskOfferingVO(name, displayText, typedProvisioningType, false, tags, false, localStorageRequired, isSystem, true);
+
         if (Boolean.TRUE.equals(isCustomizedIops) || isCustomizedIops == null) {
-                minIops = null;
-                maxIops = null;
+            minIops = null;
+            maxIops = null;
         } else {
             if (minIops == null && maxIops == null) {
                 minIops = 0L;
@@ -2965,49 +3070,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         diskOffering.setHypervisorSnapshotReserve(hypervisorSnapshotReserve);
 
-        List<ServiceOfferingDetailsVO> detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
-        if (details != null) {
-            // To have correct input, either both gpu card name and VGPU type should be passed or nothing should be passed.
-            // Use XOR condition to verify that.
-            final boolean entry1 = details.containsKey(GPU.Keys.pciDevice.toString());
-            final boolean entry2 = details.containsKey(GPU.Keys.vgpuType.toString());
-            if ((entry1 || entry2) && !(entry1 && entry2)) {
-                throw new InvalidParameterValueException("Please specify the pciDevice and vgpuType correctly.");
-            }
-            for (final Entry<String, String> detailEntry : details.entrySet()) {
-                String detailEntryValue = detailEntry.getValue();
-                if (detailEntry.getKey().equals(GPU.Keys.pciDevice.toString())) {
-                    if (detailEntryValue == null) {
-                        throw new InvalidParameterValueException("Please specify a GPU Card.");
-                    }
-                }
-                if (detailEntry.getKey().equals(GPU.Keys.vgpuType.toString())) {
-                    if (detailEntryValue == null) {
-                        throw new InvalidParameterValueException("vGPUType value cannot be null");
-                    }
-                }
-                if (detailEntry.getKey().startsWith(ApiConstants.EXTRA_CONFIG)) {
-                    try {
-                        detailEntryValue = URLDecoder.decode(detailEntry.getValue(), "UTF-8");
-                    } catch (UnsupportedEncodingException | IllegalArgumentException e) {
-                        s_logger.error("Cannot decode extra configuration value for key: " + detailEntry.getKey() + ", skipping it");
-                        continue;
-                    }
-                }
-                if (detailEntry.getKey().equalsIgnoreCase(Volume.BANDWIDTH_LIMIT_IN_MBPS) || detailEntry.getKey().equalsIgnoreCase(Volume.IOPS_LIMIT)) {
-                    // Add in disk offering details
-                    continue;
-                }
-                detailsVO.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), detailEntry.getKey(), detailEntryValue, true));
-            }
-        }
-
-        if (storagePolicyID != null) {
-            detailsVO.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.STORAGE_POLICY, String.valueOf(storagePolicyID), false));
-        }
-
         if ((diskOffering = _diskOfferingDao.persist(diskOffering)) != null) {
-            serviceOffering.setDiskOfferingId(diskOffering.getId());
             if (details != null && !details.isEmpty()) {
                 List<DiskOfferingDetailVO> diskDetailsVO = new ArrayList<DiskOfferingDetailVO>();
                 // Support disk offering details for below parameters
@@ -3025,29 +3088,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return null;
         }
 
-        if ((serviceOffering = _serviceOfferingDao.persist(serviceOffering)) != null) {
-            for (Long domainId : filteredDomainIds) {
-                detailsVO.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
-            }
-            if (CollectionUtils.isNotEmpty(zoneIds)) {
-                for (Long zoneId : zoneIds) {
-                    detailsVO.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
-                }
-            }
-            if (!detailsVO.isEmpty()) {
-                for (ServiceOfferingDetailsVO detail : detailsVO) {
-                    detail.setResourceId(serviceOffering.getId());
-                }
-                _serviceOfferingDetailsDao.saveDetails(detailsVO);
-            }
-
-            CallContext.current().setEventDetails("Service offering id=" + serviceOffering.getId());
-            return serviceOffering;
-        } else {
-            return null;
-        }
+        return diskOffering;
     }
-
     private void setIopsRate(DiskOffering offering, Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength, Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength) {
         if (iopsReadRate != null && iopsReadRate > 0) {
             offering.setIopsReadRate(iopsReadRate);
