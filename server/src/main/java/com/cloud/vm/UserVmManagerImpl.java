@@ -6215,8 +6215,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        if (!capabilities.isStorageMotionSupported()) {
-            throw new CloudRuntimeException("Migration with storage isn't supported on hypervisor " + srcHost.getHypervisorType() + " of version " + srcHost.getHypervisorVersion());
+        if (capabilities == null || !capabilities.isStorageMotionSupported()) {
+            throw new CloudRuntimeException(String.format("Migration with storage isn't supported on hypervisor %s of version %s", srcHost.getHypervisorType(), srcHost.getHypervisorVersion()));
         }
 
         // Check if destination host is up.
