@@ -1070,6 +1070,7 @@ def main(argv):
     config.address().process()
 
     databag_map = OrderedDict([("guest_network",     {"process_iptables": True,  "executor": []}),
+                               ("ip_aliases",        {"process_iptables": True,  "executor": []}),
                                ("vm_password",       {"process_iptables": False, "executor": [CsPassword("vmpassword", config)]}),
                                ("vm_metadata",       {"process_iptables": False, "executor": [CsVmMetadata('vmdata', config)]}),
                                ("network_acl",       {"process_iptables": True,  "executor": []}),

@@ -768,6 +768,13 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     public boolean isZoneReady(Map<Long, ZoneHostInfo> zoneHostInfoMap, long dataCenterId) {
+        List <HostVO> hosts = _hostDao.listByDataCenterId(dataCenterId);
+        if (CollectionUtils.isEmpty(hosts)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Zone " + dataCenterId + " has no host available which is enabled and in Up state");
+            }
+            return false;
+        }
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenterId);
         if (zoneHostInfo != null && (zoneHostInfo.getFlags() & RunningHostInfoAgregator.ZoneHostInfo.ROUTING_HOST_MASK) != 0) {
             VMTemplateVO template = _templateDao.findSystemVMReadyTemplate(dataCenterId, HypervisorType.Any);

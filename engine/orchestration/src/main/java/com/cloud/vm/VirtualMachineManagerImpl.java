@@ -535,6 +535,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         advanceExpunge(vm);
     }
 
+    private boolean expungeCommandCanBypassHostMaintenance(VirtualMachine vm) {
+        return VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType()) ||
+                VirtualMachine.Type.ConsoleProxy.equals(vm.getType());
+    }
+
     protected void advanceExpunge(VMInstanceVO vm) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         if (vm == null || vm.getRemoved() != null) {
             if (s_logger.isDebugEnabled()) {
@@ -581,6 +586,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             final Commands cmds = new Commands(Command.OnError.Stop);
 
             for (final Command volumeExpungeCommand : volumeExpungeCommands) {
+                volumeExpungeCommand.setBypassHostMaintenance(expungeCommandCanBypassHostMaintenance(vm));
                 cmds.addCommand(volumeExpungeCommand);
             }
 
@@ -622,10 +628,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (hostId != null) {
                 final Commands cmds = new Commands(Command.OnError.Stop);
                 for (final Command command : finalizeExpungeCommands) {
+                    command.setBypassHostMaintenance(expungeCommandCanBypassHostMaintenance(vm));
                     cmds.addCommand(command);
                 }
                 if (nicExpungeCommands != null) {
                     for (final Command command : nicExpungeCommands) {
+                        command.setBypassHostMaintenance(expungeCommandCanBypassHostMaintenance(vm));
                         cmds.addCommand(command);
                     }
                 }
@@ -4891,7 +4899,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         String.format("VM %s is at %s and we received a %s report while there is no pending jobs on it"
                                 , vm.getInstanceName(), vm.getState(), vm.getPowerState()));
             }
-            if (vm.isHaEnabled() && vm.getState() == State.Running
+            if((HighAvailabilityManager.ForceHA.value() || vm.isHaEnabled()) && vm.getState() == State.Running
                     && HaVmRestartHostUp.value()
                     && vm.getHypervisorType() != HypervisorType.VMware
                     && vm.getHypervisorType() != HypervisorType.Hyperv) {
