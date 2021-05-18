@@ -6201,21 +6201,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         HypervisorCapabilitiesVO capabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(srcHost.getHypervisorType(), srcHost.getHypervisorVersion());
 
-        if (capabilities == null && HypervisorType.KVM.equals(srcHost.getHypervisorType())) {
+        if (capabilities == null) {
+            if (!HypervisorType.KVM.equals(srcHost.getHypervisorType())) {
+                throw new CloudRuntimeException(String.format("Cannot migrate VM with storage, as the capabilities are not found for the hypervisor %s with version %s", srcHost.getHypervisorType(), srcHost.getHypervisorVersion()));
+            }
             List<HypervisorCapabilitiesVO> lstHypervisorCapabilities = _hypervisorCapabilitiesDao.listAllByHypervisorType(HypervisorType.KVM);
 
-            if (lstHypervisorCapabilities != null) {
-                for (HypervisorCapabilitiesVO hypervisorCapabilities : lstHypervisorCapabilities) {
-                    if (hypervisorCapabilities.isStorageMotionSupported()) {
-                        capabilities = hypervisorCapabilities;
-
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (capabilities == null || !capabilities.isStorageMotionSupported()) {
+            capabilities = lstHypervisorCapabilities.stream().filter(hvCapabilities -> hvCapabilities.isStorageMotionSupported()).findAny()
+            .orElseThrow(() -> new CloudRuntimeException(String.format("Migration with storage isn't supported on hypervisor %s of version %s", srcHost.getHypervisorType(), srcHost.getHypervisorVersion())));
+        } else if (!capabilities.isStorageMotionSupported()) {
             throw new CloudRuntimeException(String.format("Migration with storage isn't supported on hypervisor %s of version %s", srcHost.getHypervisorType(), srcHost.getHypervisorVersion()));
         }
 
