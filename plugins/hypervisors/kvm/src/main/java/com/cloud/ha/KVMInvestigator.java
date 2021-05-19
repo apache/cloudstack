@@ -24,14 +24,12 @@ import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.ha.HAManager;
-import org.apache.cloudstack.kvm.ha.KvmHaAgentClient;
+import org.apache.cloudstack.kvm.ha.KvmHaHelper;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
@@ -42,8 +40,6 @@ import java.util.List;
 public class KVMInvestigator extends AdapterBase implements Investigator {
     private final static Logger s_logger = Logger.getLogger(KVMInvestigator.class);
     @Inject
-    private HostDao _hostDao;
-    @Inject
     private AgentManager _agentMgr;
     @Inject
     private ResourceManager _resourceMgr;
@@ -52,7 +48,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
     @Inject
     private HAManager haManager;
     @Inject
-    private VMInstanceDao vmInstanceDao;
+    private KvmHaHelper kvmHaHelper;
 
     @Override
     public boolean isVmAlive(com.cloud.vm.VirtualMachine vm, Host host) throws UnknownVM {
@@ -90,24 +86,8 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
             s_logger.debug(String.format("Agent investigation was requested on host %s, but host has no NFS storage. Skipping investigation via NFS.", agent));
         }
 
-        agentStatus = checkAgentStatusViaKvmHaAgent(agent, agentStatus);
+        agentStatus = kvmHaHelper.checkAgentStatusViaKvmHaAgent(agent, agentStatus);
 
-        return agentStatus;
-    }
-
-    /**
-     * It checks the KVM node status via KVM HA Agent.
-     * If the agent is healthy it returns Status.Up, otherwise it keeps the provided Status as it is.
-     */
-    private Status checkAgentStatusViaKvmHaAgent(Host agent, Status agentStatus) {
-        KvmHaAgentClient kvmHaAgentClient = new KvmHaAgentClient(agent);
-        boolean isVmsCountOnKvmMatchingWithDatabase = kvmHaAgentClient.isKvmHaAgentHealthy(agent, vmInstanceDao);
-        if(isVmsCountOnKvmMatchingWithDatabase) {
-            agentStatus = Status.Up;
-            s_logger.debug(String.format("Checking agent %s status; KVM HA Agent is Running as expected.", agentStatus));
-        } else {
-            s_logger.warn(String.format("Checking agent %s status. Failed to check host status via KVM HA Agent", agentStatus));
-        }
         return agentStatus;
     }
 
@@ -153,10 +133,15 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
                 hostStatus = answer.getResult() ? Status.Down : Status.Up;
             }
         } catch (Exception e) {
-            s_logger.debug("Failed to send command to host: " + agent.getId());
+            s_logger.debug(String.format("Failed to send command to %s", agent));
         }
+
         if (hostStatus == null) {
             hostStatus = Status.Disconnected;
+        }
+
+        if (Status.Up == hostStatus) {
+            return hostStatus;
         }
 
         List<HostVO> neighbors = _resourceMgr.listHostsInClusterByStatus(agent.getClusterId(), Status.Up);
@@ -165,12 +150,12 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
                     || (neighbor.getHypervisorType() != Hypervisor.HypervisorType.KVM && neighbor.getHypervisorType() != Hypervisor.HypervisorType.LXC)) {
                 continue;
             }
-            s_logger.debug("Investigating host:" + agent.getId() + " via neighbouring host:" + neighbor.getId());
+            s_logger.debug(String.format("Investigating %s via neighbouring %s ", agent, neighbor));
             try {
                 Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
                 if (answer != null) {
                     neighbourStatus = answer.getResult() ? Status.Down : Status.Up;
-                    s_logger.debug("Neighbouring host:" + neighbor.getId() + " returned status:" + neighbourStatus + " for the investigated host:" + agent.getId());
+                    s_logger.debug(String.format("Neighbouring %s returned status: %s for the investigated %s", neighbor, neighbourStatus, agent));
                     if (neighbourStatus == Status.Up) {
                         break;
                     }
@@ -179,13 +164,15 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
                 s_logger.debug("Failed to send command to host: " + neighbor.getId());
             }
         }
-        if (neighbourStatus == Status.Up && (hostStatus == Status.Disconnected || hostStatus == Status.Down)) {
+
+        if (neighbourStatus == Status.Up) {
             hostStatus = Status.Disconnected;
-        }
-        if (neighbourStatus == Status.Down && (hostStatus == Status.Disconnected || hostStatus == Status.Down)) {
+        } else if (neighbourStatus == Status.Down) {
             hostStatus = Status.Down;
         }
-        s_logger.debug("HA: HOST is ineligible legacy state " + hostStatus + " for host " + agent.getId());
+
+        s_logger.debug(String.format("HA: HOST is ineligible legacy state %s for %s", hostStatus, agent));
         return hostStatus;
     }
+
 }

@@ -14,6 +14,7 @@
 package org.apache.cloudstack.kvm.ha;
 
 import com.cloud.host.Host;
+import com.cloud.host.Status;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -30,6 +31,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
+import javax.inject.Inject;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,25 +59,20 @@ public class KvmHaAgentClient {
     private static final String EXPECTED_HTTP_STATUS = "2XX";
     private static final String VM_COUNT = "count";
     private static final String STATUS = "status";
-    private static final String CHECK = "check";
-    private static final String UP = "Up";
+    private static final String CHECK_NEIGHBOUR = "check-neighbour";
     private static final int WAIT_FOR_REQUEST_RETRY = 2;
     private static final int MAX_REQUEST_RETRIES = 2;
     private static final int CAUTIOUS_MARGIN_OF_VMS_ON_HOST = 1;
-    private Host agent;
+    private static final JsonParser JSON_PARSER = new JsonParser();
 
-    /**
-     * Instantiates a webclient that checks, via a webserver running on the KVM host, the VMs running according to the Libvirt
-     */
-    public KvmHaAgentClient(Host agent) {
-        this.agent = agent;
-    }
+    @Inject
+    private VMInstanceDao vmInstanceDao;
 
     /**
      *  Returns the number of VMs running on the KVM host according to Libvirt.
      */
-    protected int countRunningVmsOnAgent() {
-        String url = String.format("http://%s:%d", agent.getPrivateIpAddress(), getKvmHaMicroservicePortValue());
+    protected int countRunningVmsOnAgent(Host host) {
+        String url = String.format("http://%s:%d", host.getPrivateIpAddress(), getKvmHaMicroservicePortValue(host));
         HttpResponse response = executeHttpRequest(url);
 
         if (response == null)
@@ -89,31 +86,11 @@ public class KvmHaAgentClient {
         return responseInJson.get(VM_COUNT).getAsInt();
     }
 
-    /**
-     *  Executes ping command from the host executing the KVM HA Agent webservice to a target IP Address.
-     *  The webserver serves a JSON Object such as {"status": "Up"} if the IP address is reachable OR {"status": "Down"} if could not ping the IP
-     */
-    protected boolean isTargetHostReachable(String ipAddress) {
-        int port = getKvmHaMicroservicePortValue();
-        String url = String.format("http://%s:%d/%s/%s:%d", agent.getPrivateIpAddress(), port, CHECK, ipAddress, port);
-        HttpResponse response = executeHttpRequest(url);
-
-        if (response == null)
-            return false;
-
-        JsonObject responseInJson = processHttpResponseIntoJson(response);
-        if (responseInJson == null) {
-            return false;
-        }
-
-        return UP.equals(responseInJson.get(STATUS).getAsString());
-    }
-
-    protected int getKvmHaMicroservicePortValue() {
+    protected int getKvmHaMicroservicePortValue(Host host) {
         Integer haAgentPort = KVMHAConfig.KvmHaWebservicePort.value();
         if (haAgentPort == null) {
             LOGGER.warn(String.format("Using default kvm.ha.webservice.port: %s as it was set to NULL for the cluster [id: %d] from %s.",
-                    KVMHAConfig.KvmHaWebservicePort.defaultValue(), agent.getClusterId(), agent));
+                    KVMHAConfig.KvmHaWebservicePort.defaultValue(), host.getClusterId(), host));
             haAgentPort = Integer.parseInt(KVMHAConfig.KvmHaWebservicePort.defaultValue());
         }
         return haAgentPort;
@@ -150,9 +127,9 @@ public class KvmHaAgentClient {
             int runningVMs = listByHostAndStateRunning.size();
             int stoppingVms = listByHostAndStateStopping.size();
             int migratingVms = listByHostAndStateMigrating.size();
-            int countRunningVmsOnAgent = countRunningVmsOnAgent();
+            int countRunningVmsOnAgent = countRunningVmsOnAgent(host);
             LOGGER.trace(
-                    String.format("%s has (%d Starting) %d Running, %d Stopping, %d Migrating. Total listed via DB %d / %d (via libvirt)", agent.getName(), startingVMs, runningVMs,
+                    String.format("%s has (%d Starting) %d Running, %d Stopping, %d Migrating. Total listed via DB %d / %d (via libvirt)", host.getName(), startingVMs, runningVMs,
                             stoppingVms, migratingVms, listByHostAndState.size(), countRunningVmsOnAgent));
         }
 
@@ -169,35 +146,67 @@ public class KvmHaAgentClient {
      *    when it could be a inconsistency when migrating a VM.<br>
      *  (iii) amount of listed VMs is different than expected: return true and print WARN messages so Admins can monitor and react accordingly
      */
-    public boolean isKvmHaAgentHealthy(Host host, VMInstanceDao vmInstanceDao) {
+    public boolean isKvmHaAgentHealthy(Host host) {
         int numberOfVmsOnHostAccordingToDb = listVmsOnHost(host, vmInstanceDao).size();
-        int numberOfVmsOnAgent = countRunningVmsOnAgent();
+        int numberOfVmsOnAgent = countRunningVmsOnAgent(host);
         if (numberOfVmsOnAgent < 0) {
-            LOGGER.error(String.format("KVM HA Agent health check failed, either the KVM Agent %s is unreachable or Libvirt validation failed.", agent));
-            LOGGER.warn(String.format("Host %s is not considered healthy and HA fencing/recovering process might be triggered.", agent.getName(), numberOfVmsOnHostAccordingToDb));
+            LOGGER.error(String.format("KVM HA Agent health check failed, either the KVM Agent %s is unreachable or Libvirt validation failed.", host));
+            logIfFencingOrRecoveringMightBeTriggered(host);
             return false;
         }
         if (numberOfVmsOnHostAccordingToDb == numberOfVmsOnAgent) {
             return true;
         }
         if (numberOfVmsOnAgent == 0 && numberOfVmsOnHostAccordingToDb > CAUTIOUS_MARGIN_OF_VMS_ON_HOST) {
-            // Return false as could not find VMs running but it expected at least one VM running, fencing/recovering host would avoid downtime to VMs in this case.
-            // There is cautious margin added on the conditional. This avoids fencing/recovering hosts when there is one VM migrating to a host that had zero VMs.
-            // If there are more VMs than the CAUTIOUS_MARGIN_OF_VMS_ON_HOST) the Host should be treated as not healthy and fencing/recovering process might be triggered.
-            LOGGER.warn(String.format("KVM HA Agent %s could not find VMs; it was expected to list %d VMs.", agent, numberOfVmsOnHostAccordingToDb));
-            LOGGER.warn(String.format("Host %s is not considered healthy and HA fencing/recovering process might be triggered.", agent.getName(), numberOfVmsOnHostAccordingToDb));
+            LOGGER.warn(String.format("KVM HA Agent %s could not find VMs; it was expected to list %d VMs.", host, numberOfVmsOnHostAccordingToDb));
+            logIfFencingOrRecoveringMightBeTriggered(host);
             return false;
         }
-        // In order to have a less "aggressive" health-check, the KvmHaAgentClient will not return false; fencing/recovering could bring downtime to existing VMs
-        // Additionally, the inconsistency can also be due to jobs in progress to migrate/stop/start VMs
-        // Either way, WARN messages should be presented to Admins so they can look closely to what is happening on the host
-        LOGGER.warn(String.format("KVM HA Agent %s listed %d VMs; however, it was expected %d VMs.", agent, numberOfVmsOnAgent, numberOfVmsOnHostAccordingToDb));
+        LOGGER.warn(String.format("KVM HA Agent %s listed %d VMs; however, it was expected %d VMs.", host, numberOfVmsOnAgent, numberOfVmsOnHostAccordingToDb));
         return true;
+    }
+
+    private void logIfFencingOrRecoveringMightBeTriggered(Host agent) {
+        LOGGER.warn(String.format("Host %s is not considered healthy and HA fencing/recovering process might be triggered.", agent.getName()));
+    }
+
+    /**
+     *  Sends a HTTP GET request from the host executing the KVM HA Agent webservice to a target Host (expected to also be running the KVM HA Agent).
+     *  The webserver serves a JSON Object such as {"status": "Up"} if the request gets a HTTP_OK OR {"status": "Down"} if HTTP GET failed
+     */
+    public boolean isHostReachableByNeighbour(Host neighbour, Host target) {
+        String neighbourHostAddress = neighbour.getPrivateIpAddress();
+        String targetHostAddress = target.getPrivateIpAddress();
+        int port = getKvmHaMicroservicePortValue(neighbour);
+        String url = String.format("http://%s:%d/%s/%s:%d", neighbourHostAddress, port, CHECK_NEIGHBOUR, targetHostAddress, port);
+        HttpResponse response = executeHttpRequest(url);
+
+        if (response == null)
+            return false;
+
+        JsonObject responseInJson = processHttpResponseIntoJson(response);
+        if (responseInJson == null)
+            return false;
+
+        int statusCode = response.getStatusLine().getStatusCode();
+        if (isHttpStatusCodNotOk(statusCode)) {
+            LOGGER.error(
+                    String.format("Failed HTTP %s Request %s; the expected HTTP status code is '%s' but it got '%s'.", HttpGet.METHOD_NAME, url, EXPECTED_HTTP_STATUS, statusCode));
+            return false;
+        }
+
+        String hostStatusFromJson = responseInJson.get(STATUS).getAsString();
+        return Status.Up.toString().equals(hostStatusFromJson);
+    }
+
+    private boolean isHttpStatusCodNotOk(int statusCode) {
+        return statusCode < HttpStatus.SC_OK || statusCode >= HttpStatus.SC_MULTIPLE_CHOICES;
     }
 
     /**
      * Executes a GET request for the given URL address.
      */
+    @Nullable
     protected HttpResponse executeHttpRequest(String url) {
         HttpGet httpReq = prepareHttpRequestForUrl(url);
         if (httpReq == null) {
@@ -213,7 +222,7 @@ public class KvmHaAgentClient {
                 LOGGER.warn(String.format("Failed to execute HTTP %s request [URL: %s] due to exception %s.", httpReq.getMethod(), url, e), e);
                 return null;
             }
-            retryHttpRequest(url, httpReq, client);
+            response = retryHttpRequest(url, httpReq, client);
         }
         return response;
     }
@@ -232,8 +241,9 @@ public class KvmHaAgentClient {
     }
 
     /**
-     * Re-executes the HTTP GET request until it gets a response or it reaches the maximum request retries {@link #MAX_REQUEST_RETRIES}
+     * Re-executes the HTTP GET request until it gets a response or it reaches the maximum request retries {@link #MAX_REQUEST_RETRIES}.
      */
+    @Nullable
     protected HttpResponse retryHttpRequest(String url, HttpRequestBase httpReq, HttpClient client) {
         LOGGER.warn(String.format("Failed to execute HTTP %s request [URL: %s]. Executing the request again.", httpReq.getMethod(), url));
         HttpResponse response = retryUntilGetsHttpResponse(url, httpReq, client);
@@ -244,7 +254,7 @@ public class KvmHaAgentClient {
         }
 
         int statusCode = response.getStatusLine().getStatusCode();
-        if (statusCode < HttpStatus.SC_OK || statusCode >= HttpStatus.SC_MULTIPLE_CHOICES) {
+        if (isHttpStatusCodNotOk(statusCode)) {
             LOGGER.error(
                     String.format("Failed to get VMs information with a %s request to URL '%s'. The expected HTTP status code is '%s' but it got '%s'.", HttpGet.METHOD_NAME, url,
                             EXPECTED_HTTP_STATUS, statusCode));
@@ -255,8 +265,12 @@ public class KvmHaAgentClient {
         return response;
     }
 
+    /**
+     * Retry HTTP Request until success or it reaches {@link #MAX_REQUEST_RETRIES} retries. It can return null.
+     */
+    @Nullable
     protected HttpResponse retryUntilGetsHttpResponse(String url, HttpRequestBase httpReq, HttpClient client) {
-        for (int attempt = 1; attempt < MAX_REQUEST_RETRIES + 1; attempt++) {
+        for (int attempt = 1; attempt <= MAX_REQUEST_RETRIES; attempt++) {
             try {
                 TimeUnit.SECONDS.sleep(WAIT_FOR_REQUEST_RETRY);
                 LOGGER.debug(String.format("Retry HTTP %s request [URL: %s], attempt %d/%d.", httpReq.getMethod(), url, attempt, MAX_REQUEST_RETRIES));
@@ -276,20 +290,17 @@ public class KvmHaAgentClient {
      *
      * Note: this method can return NULL JsonObject in case HttpResponse is NULL.
      */
+    @Nullable
     protected JsonObject processHttpResponseIntoJson(HttpResponse response) {
-        InputStream in;
-        String jsonString;
         if (response == null) {
             return null;
         }
         try {
-            in = response.getEntity().getContent();
+            InputStream in = response.getEntity().getContent();
             BufferedReader streamReader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-            jsonString = streamReader.readLine();
+            return JSON_PARSER.parse(streamReader.readLine()).getAsJsonObject();
         } catch (UnsupportedOperationException | IOException e) {
             throw new CloudRuntimeException("Failed to process response", e);
         }
-
-        return new JsonParser().parse(jsonString).getAsJsonObject();
     }
 }

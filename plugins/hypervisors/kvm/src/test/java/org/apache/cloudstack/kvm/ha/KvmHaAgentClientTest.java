@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -50,15 +49,20 @@ import com.google.gson.JsonParser;
 public class KvmHaAgentClientTest {
 
     private static final int ERROR_CODE = -1;
-    private HostVO agent = Mockito.mock(HostVO.class);
-    private KvmHaAgentClient kvmHaAgentClient = Mockito.spy(new KvmHaAgentClient(agent));
+    private HostVO host = Mockito.mock(HostVO.class);
+    private KvmHaAgentClient kvmHaAgentClient = Mockito.spy(new KvmHaAgentClient());
+    private static final String CHECK_NEIGHBOUR = "check-neighbour";
     private static final int DEFAULT_PORT = 8080;
     private static final String PRIVATE_IP_ADDRESS = "1.2.3.4";
     private static final String JSON_STRING_EXAMPLE_3VMs = "{\"count\":3,\"virtualmachines\":[\"r-123-VM\",\"v-134-VM\",\"s-111-VM\"]}";
     private static final int EXPECTED_RUNNING_VMS_EXAMPLE_3VMs = 3;
     private static final String JSON_STRING_EXAMPLE_0VMs = "{\"count\":0,\"virtualmachines\":[]}";
+    private static final String JSON_STRING_EXAMPLE_CHECK_NEIGHBOUR_UP = "{\"status\": \"Up\"}";
+    private static final String JSON_STRING_EXAMPLE_CHECK_NEIGHBOUR_DOWN = "{\"status\": \"Down\"}";
     private static final int EXPECTED_RUNNING_VMS_EXAMPLE_0VMs = 0;
     private static final String EXPECTED_URL = String.format("http://%s:%d", PRIVATE_IP_ADDRESS, DEFAULT_PORT);
+    private static final String EXPECTED_URL_CHECK_NEIGHBOUR = String
+            .format("http://%s:%d/%s/%s:%d", PRIVATE_IP_ADDRESS, DEFAULT_PORT, CHECK_NEIGHBOUR, PRIVATE_IP_ADDRESS, DEFAULT_PORT);
     private static final HttpRequestBase HTTP_REQUEST_BASE = new HttpGet(EXPECTED_URL);
     private static final String VMS_COUNT = "count";
     private static final String VIRTUAL_MACHINES = "virtualmachines";
@@ -103,9 +107,9 @@ public class KvmHaAgentClientTest {
         }
 
         Mockito.doReturn(vmsOnHostList).when(kvmHaAgentClient).listVmsOnHost(Mockito.any(), Mockito.any());
-        Mockito.doReturn(vmsRunningOnAgent).when(kvmHaAgentClient).countRunningVmsOnAgent();
+        Mockito.doReturn(vmsRunningOnAgent).when(kvmHaAgentClient).countRunningVmsOnAgent(Mockito.any());
 
-        return kvmHaAgentClient.isKvmHaAgentHealthy(agent, vmInstanceDao);
+        return kvmHaAgentClient.isKvmHaAgentHealthy(host);
     }
 
     @Test
@@ -159,13 +163,13 @@ public class KvmHaAgentClientTest {
     }
 
     private void prepareAndRunCountRunningVmsOnAgent(String jsonStringExample, int expectedListedVms) throws IOException {
-        Mockito.when(agent.getPrivateIpAddress()).thenReturn(PRIVATE_IP_ADDRESS);
+        Mockito.when(host.getPrivateIpAddress()).thenReturn(PRIVATE_IP_ADDRESS);
         Mockito.doReturn(mockResponse(HttpStatus.SC_OK, JSON_STRING_EXAMPLE_3VMs)).when(kvmHaAgentClient).executeHttpRequest(EXPECTED_URL);
 
         JsonObject jObject = new JsonParser().parse(jsonStringExample).getAsJsonObject();
         Mockito.doReturn(jObject).when(kvmHaAgentClient).processHttpResponseIntoJson(Mockito.any(HttpResponse.class));
 
-        int result = kvmHaAgentClient.countRunningVmsOnAgent();
+        int result = kvmHaAgentClient.countRunningVmsOnAgent(host);
         Assert.assertEquals(expectedListedVms, result);
     }
 
@@ -256,23 +260,36 @@ public class KvmHaAgentClientTest {
 
     @Test
     public void getKvmHaMicroservicePortValueTestDefault() {
-        Assert.assertEquals(KVM_HA_WEBSERVICE_PORT, kvmHaAgentClient.getKvmHaMicroservicePortValue());
+        Assert.assertEquals(KVM_HA_WEBSERVICE_PORT, kvmHaAgentClient.getKvmHaMicroservicePortValue(host));
     }
 
-//    private void prepareAndRunCountRunningVmsOnAgent(String jsonStringExample, int expectedListedVms) throws IOException {
-//        Mockito.when(agent.getPrivateIpAddress()).thenReturn(PRIVATE_IP_ADDRESS);
-//        Mockito.doReturn(mockResponse(HttpStatus.SC_OK, JSON_STRING_EXAMPLE_3VMs)).when(kvmHaAgentClient).executeHttpRequest(EXPECTED_URL);
-//
-//        JsonObject jObject = new JsonParser().parse(jsonStringExample).getAsJsonObject();
-//        Mockito.doReturn(jObject).when(kvmHaAgentClient).processHttpResponseIntoJson(Mockito.any(HttpResponse.class));
-//
-//        int result = kvmHaAgentClient.countRunningVmsOnAgent();
-//        Assert.assertEquals(expectedListedVms, result);
-//    }
-//TODO
-//    @Test
-//    public void isTargetHostReachableTest() {
-//        kvmHaAgentClient.isTargetHostReachable(PRIVATE_IP_ADDRESS);
-//    }
+    @Test
+    public void isTargetHostReachableTestIsUp() throws IOException {
+        prepareAndRunisTargetHostReachableTest(mockResponse(HttpStatus.SC_OK, JSON_STRING_EXAMPLE_CHECK_NEIGHBOUR_UP), true);
+    }
+
+    @Test
+    public void isTargetHostReachableTestIsDown() throws IOException {
+        prepareAndRunisTargetHostReachableTest(mockResponse(HttpStatus.SC_OK, JSON_STRING_EXAMPLE_CHECK_NEIGHBOUR_DOWN), false);
+    }
+
+    @Test
+    public void isTargetHostReachableTestNotFound() throws IOException {
+        prepareAndRunisTargetHostReachableTest(mockResponse(HttpStatus.SC_NOT_FOUND, JSON_STRING_EXAMPLE_CHECK_NEIGHBOUR_UP), false);
+    }
+
+    @Test
+    public void isTargetHostReachableTestNullResponse() throws IOException {
+        prepareAndRunisTargetHostReachableTest(null, false);
+    }
+
+    private void prepareAndRunisTargetHostReachableTest(CloseableHttpResponse response,  boolean expected) throws IOException {
+        Mockito.when(host.getPrivateIpAddress()).thenReturn(PRIVATE_IP_ADDRESS);
+        Mockito.when(kvmHaAgentClient.getKvmHaMicroservicePortValue(Mockito.any())).thenReturn(8080);
+        Mockito.doReturn(response).when(kvmHaAgentClient).executeHttpRequest(EXPECTED_URL_CHECK_NEIGHBOUR);
+
+        boolean result = kvmHaAgentClient.isHostReachableByNeighbour(host, host);
+        Assert.assertEquals(expected, result);
+    }
 
 }

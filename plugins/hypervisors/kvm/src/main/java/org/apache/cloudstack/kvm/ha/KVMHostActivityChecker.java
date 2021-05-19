@@ -21,8 +21,6 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVMActivityOnStoragePoolCommand;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -76,9 +74,9 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     @Inject
     private ResourceManager resourceManager;
     @Inject
-    private ClusterDao clusterDao;
-    @Inject
     private StoragePoolHostDao storagePoolHostDao;
+    @Inject
+    private KvmHaHelper kvmHaHelper;
 
     private static final Set<Storage.StoragePoolType> NFS_POOL_TYPE = new HashSet<>(Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.ManagedNFS));
 
@@ -100,50 +98,21 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     public boolean isHealthy(Host r) {
         boolean isHealthy = true;
         boolean isHostServedByNfsPool = isHostServedByNfsPool(r);
-        boolean isKvmHaWebserviceEnabled = isKvmHaWebserviceEnabled(r);
+        boolean isKvmHaWebserviceEnabled = kvmHaHelper.isKvmHaWebserviceEnabled(r);
 
-        isHealthy = isHealthViaNfs(r);
+        if(isHostServedByNfsPool) {
+            isHealthy = isHealthViaNfs(r);
+        }
 
         if (!isKvmHaWebserviceEnabled) {
             return isHealthy;
         }
 
-        //TODO
-
-
-        if (isVmActivtyOnHostViaKvmHaWebservice(r) && !isHealthy) {
+        if (kvmHaHelper.isVmActivtyOnHostViaKvmHaWebservice(r) && !isHealthy) {
             isHealthy = true;
         }
 
         return isHealthy;
-    }
-
-    /**
-     * Checks the host health via an web-service that retrieves Running KVM instances via Libvirt. <br>
-     * The health-check is executed on the KVM node and verifies the amount of VMs running and if the Libvirt service is running.
-     */
-    private boolean isVmActivtyOnHostViaKvmHaWebservice(Host host) {
-        KvmHaAgentClient kvmHaAgentClient = new KvmHaAgentClient(host);
-        return kvmHaAgentClient.isKvmHaAgentHealthy(host, vmInstanceDao);
-    }
-
-    //TODO
-    private boolean isNeigbourReachable(Host host) {
-        return true;
-    }
-
-    /**
-     * Checks if the KVM HA webservice is enabled. One can enable or disable it via global settings 'kvm.ha.webservice.enabled'.
-     */
-    private boolean isKvmHaWebserviceEnabled(Host host) {
-        KvmHaAgentClient kvmHaAgentClient = new KvmHaAgentClient(host);
-        if (!kvmHaAgentClient.isKvmHaWebserviceEnabled()) {
-            ClusterVO cluster = clusterDao.findById(host.getClusterId());
-            LOG.debug(String.format("Skipping KVM HA web-service verification for %s due to 'kvm.ha.webservice.enabled' not enabled for cluster [id: %d, name: %s].", host,
-                    cluster.getId(), cluster.getName()));
-            return false;
-        }
-        return true;
     }
 
     private boolean isHealthViaNfs(Host r) {
@@ -238,7 +207,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
             }
         }
 
-        boolean isKvmHaAgentHealthy = isVmActivtyOnHostViaKvmHaWebservice(agent);
+        boolean isKvmHaAgentHealthy = kvmHaHelper.isVmActivtyOnHostViaKvmHaWebservice(agent);
 
         if (!activityStatus && isKvmHaAgentHealthy) {
             activityStatus = true;
