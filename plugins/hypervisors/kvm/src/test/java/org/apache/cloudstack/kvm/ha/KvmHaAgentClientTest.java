@@ -16,8 +16,6 @@ package org.apache.cloudstack.kvm.ha;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
@@ -38,7 +36,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.host.HostVO;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -48,7 +45,6 @@ import com.google.gson.JsonParser;
 @RunWith(MockitoJUnitRunner.class)
 public class KvmHaAgentClientTest {
 
-    private static final int ERROR_CODE = -1;
     private HostVO host = Mockito.mock(HostVO.class);
     private KvmHaAgentClient kvmHaAgentClient = Mockito.spy(new KvmHaAgentClient());
     private static final String CHECK_NEIGHBOUR = "check-neighbour";
@@ -74,43 +70,6 @@ public class KvmHaAgentClientTest {
 
     @Mock
     VMInstanceDaoImpl vmInstanceDao;
-
-    @Test
-    public void isKvmHaAgentHealthyTestAllGood() {
-        boolean result = isKvmHaAgentHealthyTests(EXPECTED_RUNNING_VMS_EXAMPLE_3VMs, EXPECTED_RUNNING_VMS_EXAMPLE_3VMs);
-        Assert.assertTrue(result);
-    }
-
-    @Test
-    public void isKvmHaAgentHealthyTestVMsDoNotMatchButDoNotReturnFalse() {
-        boolean result = isKvmHaAgentHealthyTests(EXPECTED_RUNNING_VMS_EXAMPLE_3VMs, 1);
-        Assert.assertTrue(result);
-    }
-
-    @Test
-    public void isKvmHaAgentHealthyTestExpectedRunningVmsButNoneListed() {
-        boolean result = isKvmHaAgentHealthyTests(EXPECTED_RUNNING_VMS_EXAMPLE_3VMs, 0);
-        Assert.assertFalse(result);
-    }
-
-    @Test
-    public void isKvmHaAgentHealthyTestReceivedErrorCode() {
-        boolean result = isKvmHaAgentHealthyTests(EXPECTED_RUNNING_VMS_EXAMPLE_3VMs, ERROR_CODE);
-        Assert.assertFalse(result);
-    }
-
-    private boolean isKvmHaAgentHealthyTests(int expectedNumberOfVms, int vmsRunningOnAgent) {
-        List<VMInstanceVO> vmsOnHostList = new ArrayList<>();
-        for (int i = 0; i < expectedNumberOfVms; i++) {
-            VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
-            vmsOnHostList.add(vmInstance);
-        }
-
-        Mockito.doReturn(vmsOnHostList).when(kvmHaAgentClient).listVmsOnHost(Mockito.any(), Mockito.any());
-        Mockito.doReturn(vmsRunningOnAgent).when(kvmHaAgentClient).countRunningVmsOnAgent(Mockito.any());
-
-        return kvmHaAgentClient.isKvmHaAgentHealthy(host);
-    }
 
     @Test
     public void processHttpResponseIntoJsonTestNull() {
@@ -251,11 +210,6 @@ public class KvmHaAgentClientTest {
         HttpResponse result = kvmHaAgentClient.retryUntilGetsHttpResponse(EXPECTED_URL, HTTP_REQUEST_BASE, client);
         Mockito.verify(client, Mockito.times(MAX_REQUEST_RETRIES)).execute(Mockito.any());
         Assert.assertNull(result);
-    }
-
-    @Test
-    public void isKvmHaWebserviceEnabledTestDefault() {
-        Assert.assertFalse(kvmHaAgentClient.isKvmHaWebserviceEnabled());
     }
 
     @Test

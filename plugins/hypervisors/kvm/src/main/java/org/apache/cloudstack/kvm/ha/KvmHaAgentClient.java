@@ -61,7 +61,6 @@ public class KvmHaAgentClient {
     private static final String CHECK_NEIGHBOUR = "check-neighbour";
     private static final int WAIT_FOR_REQUEST_RETRY = 2;
     private static final int MAX_REQUEST_RETRIES = 2;
-    private static final int CAUTIOUS_MARGIN_OF_VMS_ON_HOST = 1;
     private static final JsonParser JSON_PARSER = new JsonParser();
 
     @Inject
@@ -70,7 +69,7 @@ public class KvmHaAgentClient {
     /**
      *  Returns the number of VMs running on the KVM host according to Libvirt.
      */
-    protected int countRunningVmsOnAgent(Host host) {
+    public int countRunningVmsOnAgent(Host host) {
         String url = String.format("http://%s:%d", host.getPrivateIpAddress(), getKvmHaMicroservicePortValue(host));
         HttpResponse response = executeHttpRequest(url);
 
@@ -95,12 +94,6 @@ public class KvmHaAgentClient {
         return haAgentPort;
     }
 
-    /**
-     * Checks if the KVM HA Webservice is enabled or not; if disabled then CloudStack ignores HA validation via the webservice.
-     */
-    public boolean isKvmHaWebserviceEnabled() {
-        return KVMHAConfig.IsKvmHaWebserviceEnabled.value();
-    }
 
     /**
      * Lists VMs on host according to vm_instance DB table. The states considered for such listing are: 'Running', 'Stopping', 'Migrating'.
@@ -110,7 +103,7 @@ public class KvmHaAgentClient {
      * However, there is still a probability of a VM in 'Starting' state be already listed on the KVM via '$virsh list',
      * but that's not likely and thus it is not relevant for this very context.
      */
-    protected List<VMInstanceVO> listVmsOnHost(Host host, VMInstanceDao vmInstanceDao) {
+    public List<VMInstanceVO> listVmsOnHost(Host host) {
         List<VMInstanceVO> listByHostAndStates = vmInstanceDao.listByHostAndState(host.getId(), VirtualMachine.State.Running, VirtualMachine.State.Stopping, VirtualMachine.State.Migrating);
 
         if (LOGGER.isTraceEnabled()) {
@@ -126,40 +119,6 @@ public class KvmHaAgentClient {
         }
 
         return listByHostAndStates;
-    }
-
-    /**
-     *  Returns true in case of the expected number of VMs matches with the VMs running on the KVM host according to Libvirt. <br><br>
-     *
-     *  IF: <br>
-     *  (i) KVM HA agent finds 0 running but CloudStack considers that the host has 2 or more VMs running: returns false as could not find VMs running but it expected at least
-     *    2 VMs running, fencing/recovering host would avoid downtime to VMs in this case.<br>
-     *  (ii) KVM HA agent finds 0 VM running but CloudStack considers that the host has 1 VM running: return true and log WARN messages and avoids triggering HA recovery/fencing
-     *    when it could be a inconsistency when migrating a VM.<br>
-     *  (iii) amount of listed VMs is different than expected: return true and print WARN messages so Admins can monitor and react accordingly
-     */
-    public boolean isKvmHaAgentHealthy(Host host) {
-        int numberOfVmsOnHostAccordingToDb = listVmsOnHost(host, vmInstanceDao).size();
-        int numberOfVmsOnAgent = countRunningVmsOnAgent(host);
-        if (numberOfVmsOnAgent < 0) {
-            LOGGER.error(String.format("KVM HA Agent health check failed, either the KVM Agent %s is unreachable or Libvirt validation failed.", host));
-            logIfFencingOrRecoveringMightBeTriggered(host);
-            return false;
-        }
-        if (numberOfVmsOnHostAccordingToDb == numberOfVmsOnAgent) {
-            return true;
-        }
-        if (numberOfVmsOnAgent == 0 && numberOfVmsOnHostAccordingToDb > CAUTIOUS_MARGIN_OF_VMS_ON_HOST) {
-            LOGGER.warn(String.format("KVM HA Agent %s could not find VMs; it was expected to list %d VMs.", host, numberOfVmsOnHostAccordingToDb));
-            logIfFencingOrRecoveringMightBeTriggered(host);
-            return false;
-        }
-        LOGGER.warn(String.format("KVM HA Agent %s listed %d VMs; however, it was expected %d VMs.", host, numberOfVmsOnAgent, numberOfVmsOnHostAccordingToDb));
-        return true;
-    }
-
-    private void logIfFencingOrRecoveringMightBeTriggered(Host agent) {
-        LOGGER.warn(String.format("Host %s is not considered healthy and HA fencing/recovering process might be triggered.", agent.getName()));
     }
 
     /**

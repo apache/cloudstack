@@ -108,7 +108,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
             return isHealthy;
         }
 
-        if (kvmHaHelper.isVmActivtyOnHostViaKvmHaWebservice(host) && !isHealthy) {
+        if (kvmHaHelper.isKvmHealthyCheckViaLibvirt(host) && !isHealthy) {
             isHealthy = true;
         }
 
@@ -207,7 +207,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
             }
         }
 
-        boolean isKvmHaAgentHealthy = kvmHaHelper.isVmActivtyOnHostViaKvmHaWebservice(agent);
+        boolean isKvmHaAgentHealthy = kvmHaHelper.isKvmHealthyCheckViaLibvirt(agent);
 
         if (!activityStatus && isKvmHaAgentHealthy) {
             activityStatus = true;

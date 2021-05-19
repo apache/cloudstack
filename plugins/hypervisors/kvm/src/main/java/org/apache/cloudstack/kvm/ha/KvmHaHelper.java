@@ -35,21 +35,22 @@ import java.util.List;
 public class KvmHaHelper {
 
     @Inject
-    private ResourceManager resourceManager;
+    protected ResourceManager resourceManager;
     @Inject
-    private KvmHaAgentClient kvmHaAgentClient;
+    protected KvmHaAgentClient kvmHaAgentClient;
     @Inject
-    private ClusterDao clusterDao;
+    protected ClusterDao clusterDao;
 
-    private final static Logger LOGGER = Logger.getLogger(KvmHaHelper.class);
-    private final static double PROBLEMATIC_HOSTS_RATIO_ACCEPTED = 0.3;
+    private static final Logger LOGGER = Logger.getLogger(KvmHaHelper.class);
+    private static final double PROBLEMATIC_HOSTS_RATIO_ACCEPTED = 0.3;
+    private static final int CAUTIOUS_MARGIN_OF_VMS_ON_HOST = 1;
 
     /**
      * It checks the KVM node status via KVM HA Agent.
      * If the agent is healthy it returns Status.Up, otherwise it keeps the provided Status as it is.
      */
     public Status checkAgentStatusViaKvmHaAgent(Host host, Status agentStatus) {
-        boolean isVmsCountOnKvmMatchingWithDatabase = kvmHaAgentClient.isKvmHaAgentHealthy(host);
+        boolean isVmsCountOnKvmMatchingWithDatabase = isKvmHaAgentHealthy(host);
         if(isVmsCountOnKvmMatchingWithDatabase) {
             agentStatus = Status.Up;
             LOGGER.debug(String.format("Checking agent %s status; KVM HA Agent is Running as expected.", agentStatus));
@@ -84,10 +85,10 @@ public class KvmHaHelper {
         return false;
     }
 
-    private boolean isHostAgentReachableByNeighbour(Host host) {
+    protected boolean isHostAgentReachableByNeighbour(Host host) {
         List<HostVO> neighbors = resourceManager.listHostsInClusterByStatus(host.getClusterId(), Status.Up);
         for (HostVO neighbor : neighbors) {
-            boolean isVmActivtyOnNeighborHost = kvmHaAgentClient.isKvmHaAgentHealthy(neighbor);
+            boolean isVmActivtyOnNeighborHost = isKvmHaAgentHealthy(neighbor);
             if(isVmActivtyOnNeighborHost) {
                 boolean isReachable = kvmHaAgentClient.isHostReachableByNeighbour(neighbor, host);
                 if (isReachable) {
@@ -104,8 +105,8 @@ public class KvmHaHelper {
      * Returns true if the host is healthy. The health-check is performed via HTTP GET request to a service that retrieves Running KVM instances via Libvirt. <br>
      * The health-check is executed on the KVM node and verifies the amount of VMs running and if the Libvirt service is running.
      */
-    public boolean isVmActivtyOnHostViaKvmHaWebservice(Host host) {
-        boolean isKvmHaAgentHealthy = kvmHaAgentClient.isKvmHaAgentHealthy(host);
+    public boolean isKvmHealthyCheckViaLibvirt(Host host) {
+        boolean isKvmHaAgentHealthy = isKvmHaAgentHealthy(host);
 
         if (!isKvmHaAgentHealthy) {
             if (isClusteProblematic(host) || isHostAgentReachableByNeighbour(host)) {
@@ -121,10 +122,58 @@ public class KvmHaHelper {
      */
     public boolean isKvmHaWebserviceEnabled(Host host) {
         KvmHaAgentClient kvmHaAgentClient = new KvmHaAgentClient();
-        if (!kvmHaAgentClient.isKvmHaWebserviceEnabled()) {
+        if (!isKvmHaWebserviceEnabled(host)) {
             LOGGER.debug(String.format("Skipping KVM HA web-service verification for %s due to 'kvm.ha.webservice.enabled' not enabled.", host));
             return false;
         }
         return true;
+    }
+
+    /**
+     *  Returns true in case of the expected number of VMs matches with the VMs running on the KVM host according to Libvirt. <br><br>
+     *
+     *  IF: <br>
+     *  (i) KVM HA agent finds 0 running but CloudStack considers that the host has 2 or more VMs running: returns false as could not find VMs running but it expected at least
+     *    2 VMs running, fencing/recovering host would avoid downtime to VMs in this case.<br>
+     *  (ii) KVM HA agent finds 0 VM running but CloudStack considers that the host has 1 VM running: return true and log WARN messages and avoids triggering HA recovery/fencing
+     *    when it could be a inconsistency when migrating a VM.<br>
+     *  (iii) amount of listed VMs is different than expected: return true and print WARN messages so Admins can monitor and react accordingly
+     */
+    public boolean isKvmHaAgentHealthy(Host host) {
+        int numberOfVmsOnHostAccordingToDb = kvmHaAgentClient.listVmsOnHost(host).size();
+        int numberOfVmsOnAgent = kvmHaAgentClient.countRunningVmsOnAgent(host);
+
+        if (numberOfVmsOnAgent < 0) {
+            LOGGER.error(String.format("KVM HA Agent health check failed, either the KVM Agent %s is unreachable or Libvirt validation failed.", host));
+            if (isHostAgentReachableByNeighbour(host)) {
+                return true;
+            }
+            logIfFencingOrRecoveringMightBeTriggered(host);
+            return false;
+        }
+
+        if (numberOfVmsOnHostAccordingToDb == numberOfVmsOnAgent) {
+            return true;
+        }
+
+        if (numberOfVmsOnAgent == 0 && numberOfVmsOnHostAccordingToDb > CAUTIOUS_MARGIN_OF_VMS_ON_HOST) {
+            LOGGER.warn(String.format("KVM HA Agent %s could not find VMs; it was expected to list %d VMs.", host, numberOfVmsOnHostAccordingToDb));
+            logIfFencingOrRecoveringMightBeTriggered(host);
+            return false;
+        }
+
+        LOGGER.warn(String.format("KVM HA Agent %s listed %d VMs; however, it was expected %d VMs.", host, numberOfVmsOnAgent, numberOfVmsOnHostAccordingToDb));
+        return true;
+    }
+
+    private void logIfFencingOrRecoveringMightBeTriggered(Host agent) {
+        LOGGER.warn(String.format("Host %s is not considered healthy and HA fencing/recovering process might be triggered.", agent.getName()));
+    }
+
+    /**
+     * Checks if the KVM HA Webservice is enabled or not; if disabled then CloudStack ignores HA validation via the webservice.
+     */
+    public boolean isKvmHaWebserviceEnabled() {
+        return KVMHAConfig.IsKvmHaWebserviceEnabled.value();
     }
 }
