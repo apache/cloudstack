@@ -31,11 +31,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -67,6 +65,8 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
@@ -77,13 +77,13 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
     @Inject
     VolumeDao volDao;
     @Inject
-    VolumeDataFactory volFactory;
-    @Inject
     PrimaryDataStoreDao storagePoolDao;
     @Inject
     VMInstanceDao instanceDao;
     @Inject
-    private HostDao hostDao;
+    HostDao hostDao;
+    @Inject
+    VirtualMachineManager vmManager;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
@@ -91,8 +91,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         if (isOnVmware(srcData, destData)
                 && isOnPrimary(srcData, destData)
                 && isVolumesOnly(srcData, destData)
-                && isIntraPodOrZoneWideStoreInvolved(srcData, destData)
-                && isDettached(srcData)) {
+                && isDetachedOrAttachedToStoppedVM(srcData)) {
             if (s_logger.isDebugEnabled()) {
                 String msg = String.format("%s can handle the request because %d(%s) and %d(%s) share the pod"
                         , this.getClass()
@@ -107,20 +106,14 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         return StrategyPriority.CANT_HANDLE;
     }
 
-    private boolean isIntraPodOrZoneWideStoreInvolved(DataObject srcData, DataObject destData) {
-        DataStore srcStore = srcData.getDataStore();
-        StoragePoolVO srcPool = storagePoolDao.findById(srcStore.getId());
-        DataStore destStore = destData.getDataStore();
-        StoragePoolVO destPool = storagePoolDao.findById(destStore.getId());
-        if (srcPool.getPodId() != null && destPool.getPodId() != null) {
-            return srcPool.getPodId().equals(destPool.getPodId());
-        }
-        return (ScopeType.ZONE.equals(srcPool.getScope()) || ScopeType.ZONE.equals(destPool.getScope()));
+    private boolean isAttachedToStoppedVM(Volume volume) {
+        VMInstanceVO vm = instanceDao.findById(volume.getInstanceId());
+        return vm != null && VirtualMachine.State.Stopped.equals(vm.getState());
     }
 
-    private boolean isDettached(DataObject srcData) {
+    private boolean isDetachedOrAttachedToStoppedVM(DataObject srcData) {
         VolumeVO volume = volDao.findById(srcData.getId());
-        return volume.getInstanceId() == null;
+        return volume.getInstanceId() == null || isAttachedToStoppedVM(volume);
     }
 
     private boolean isVolumesOnly(DataObject srcData, DataObject destData) {
@@ -138,11 +131,46 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
                 && HypervisorType.VMware.equals(destData.getTO().getHypervisorType());
     }
 
-    private Pair<Long, String> getHostIdForVmAndHostGuidInTargetCluster(DataObject srcData, DataObject destData) {
-        StoragePool sourcePool = (StoragePool) srcData.getDataStore();
-        ScopeType sourceScopeType = srcData.getDataStore().getScope().getScopeType();
-        StoragePool targetPool = (StoragePool) destData.getDataStore();
-        ScopeType targetScopeType = destData.getDataStore().getScope().getScopeType();
+    private String getHostGuidInTargetCluster (Long sourceClusterId,
+                                               StoragePool targetPool,
+                                               ScopeType targetScopeType) {
+        String hostGuidInTargetCluster = null;
+        if (ScopeType.CLUSTER.equals(targetScopeType) && !sourceClusterId.equals(targetPool.getClusterId())) {
+            // Without host vMotion might fail between non-shared storages with error similar to,
+            // https://kb.vmware.com/s/article/1003795
+            List<HostVO> hosts = hostDao.findHypervisorHostInCluster(targetPool.getClusterId());
+            if (CollectionUtils.isNotEmpty(hosts)) {
+                hostGuidInTargetCluster = hosts.get(0).getGuid();
+            }
+            if (hostGuidInTargetCluster == null) {
+                throw new CloudRuntimeException("Offline Migration failed, unable to find suitable target host for VM placement while migrating between storage pools of different cluster without shared storages");
+            }
+        }
+        return hostGuidInTargetCluster;
+    }
+
+    private VirtualMachine getVolumeVm(DataObject srcData) {
+        if (srcData instanceof VolumeInfo) {
+            return ((VolumeInfo)srcData).getAttachedVM();
+        }
+        VolumeVO volume = volDao.findById(srcData.getId());
+        return volume.getInstanceId() == null ? null : instanceDao.findById(volume.getInstanceId());
+    }
+
+    private Pair<Long, String> getHostIdForVmAndHostGuidInTargetClusterForAttachedVm(VirtualMachine vm,
+                                                                                     StoragePool targetPool,
+                                                                                     ScopeType targetScopeType) {
+        Pair<Long, Long> clusterAndHostId = vmManager.findClusterAndHostIdForVm(vm.getId());
+        if (clusterAndHostId.second() == null) {
+            throw new CloudRuntimeException(String.format("Offline Migration failed, unable to find host for VM: %s", vm.getUuid()));
+        }
+        return new Pair<>(clusterAndHostId.second(), getHostGuidInTargetCluster(clusterAndHostId.first(), targetPool, targetScopeType));
+    }
+
+    private Pair<Long, String> getHostIdForVmAndHostGuidInTargetClusterForWorkerVm(StoragePool sourcePool,
+                                                                                   ScopeType sourceScopeType,
+                                                                                   StoragePool targetPool,
+                                                                                   ScopeType targetScopeType) {
         Long hostId = null;
         String hostGuidInTargetCluster = null;
         if (ScopeType.CLUSTER.equals(sourceScopeType)) {
@@ -151,17 +179,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
             if (hostId == null) {
                 throw new CloudRuntimeException("Offline Migration failed, unable to find suitable host for worker VM placement in the cluster of storage pool: " + sourcePool.getName());
             }
-            if (ScopeType.CLUSTER.equals(targetScopeType) && !sourcePool.getClusterId().equals(targetPool.getClusterId())) {
-                // Without host vMotion might fail between non-shared storages with error similar to,
-                // https://kb.vmware.com/s/article/1003795
-                List<HostVO> hosts = hostDao.findHypervisorHostInCluster(targetPool.getClusterId());
-                if (CollectionUtils.isNotEmpty(hosts)) {
-                    hostGuidInTargetCluster = hosts.get(0).getGuid();
-                }
-                if (hostGuidInTargetCluster == null) {
-                    throw new CloudRuntimeException("Offline Migration failed, unable to find suitable target host for worker VM placement while migrating between storage pools of different cluster without shared storages");
-                }
-            }
+            hostGuidInTargetCluster = getHostGuidInTargetCluster(sourcePool.getClusterId(), targetPool, sourceScopeType);
         } else if (ScopeType.CLUSTER.equals(targetScopeType)) {
             hostId = findSuitableHostIdForWorkerVmPlacement(targetPool.getClusterId());
             if (hostId == null) {
@@ -169,6 +187,19 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
             }
         }
         return new Pair<>(hostId, hostGuidInTargetCluster);
+    }
+
+    private Pair<Long, String> getHostIdForVmAndHostGuidInTargetCluster(VirtualMachine vm,
+                                                                        DataObject srcData,
+                                                                        StoragePool sourcePool,
+                                                                        DataObject destData,
+                                                                        StoragePool targetPool) {
+        ScopeType sourceScopeType = srcData.getDataStore().getScope().getScopeType();
+        ScopeType targetScopeType = destData.getDataStore().getScope().getScopeType();
+        if (vm != null) {
+            return getHostIdForVmAndHostGuidInTargetClusterForAttachedVm(vm, targetPool, targetScopeType);
+        }
+        return getHostIdForVmAndHostGuidInTargetClusterForWorkerVm(sourcePool, sourceScopeType, targetPool, targetScopeType);
     }
 
     @Override
@@ -205,12 +236,15 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
             // OfflineVmwareMigration: we shouldn't be here as we would have refused in the canHandle call
             throw new UnsupportedOperationException();
         }
-        Pair<Long, String> hostIdForVmAndHostGuidInTargetCluster = getHostIdForVmAndHostGuidInTargetCluster(srcData, destData);
-        Long hostId = hostIdForVmAndHostGuidInTargetCluster.first();
+        VirtualMachine vm = getVolumeVm(srcData);
         StoragePool sourcePool = (StoragePool) srcData.getDataStore();
         StoragePool targetPool = (StoragePool) destData.getDataStore();
+        Pair<Long, String> hostIdForVmAndHostGuidInTargetCluster =
+                getHostIdForVmAndHostGuidInTargetCluster(vm, srcData, sourcePool, destData, targetPool);
+        Long hostId = hostIdForVmAndHostGuidInTargetCluster.first();
         MigrateVolumeCommand cmd = new MigrateVolumeCommand(srcData.getId()
                 , srcData.getTO().getPath()
+                , vm != null ? vm.getInstanceName() : null
                 , sourcePool
                 , targetPool
                 , hostIdForVmAndHostGuidInTargetCluster.second());
@@ -253,9 +287,11 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
             VolumeVO sourceVO = volDao.findById(srcData.getId());
             sourceVO.setState(Volume.State.Ready);
             volDao.update(sourceVO.getId(), sourceVO);
-            destinationVO.setState(Volume.State.Expunged);
-            destinationVO.setRemoved(new Date());
-            volDao.update(destinationVO.getId(), destinationVO);
+            if (destinationVO.getId() != sourceVO.getId()) {
+                destinationVO.setState(Volume.State.Expunged);
+                destinationVO.setRemoved(new Date());
+                volDao.update(destinationVO.getId(), destinationVO);
+            }
             throw new CloudRuntimeException("unexpected answer from hypervisor agent: " + answer.getDetails());
         }
         MigrateVolumeAnswer ans = (MigrateVolumeAnswer) answer;
@@ -264,6 +300,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
             s_logger.debug(String.format(format, ans.getVolumePath(), destData.getId()));
         }
         // OfflineVmwareMigration: update the volume with new pool/volume path
+        destinationVO.setPoolId(destData.getDataStore().getId());
         destinationVO.setPath(ans.getVolumePath());
         volDao.update(destinationVO.getId(), destinationVO);
     }

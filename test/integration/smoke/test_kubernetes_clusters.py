@@ -17,7 +17,8 @@
 """ Tests for Kubernetes supported version """
 
 #Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.cloudstackAPI import (listInfrastructure,
                                   listTemplates,
                                   listKubernetesSupportedVersions,
@@ -245,7 +246,7 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         hypervisor = cls.hypervisor.lower()
 
-        if hypervisor not in cks_templates.keys():
+        if hypervisor not in list(cks_templates.keys()):
             cls.debug("Provided hypervisor has no CKS template")
             return FAILED, False
 
@@ -260,8 +261,8 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         if validateList(templates)[0] != PASS:
             details = None
-            if hypervisor in ["vmware"]:
-                details = [{"keyboard": "us"}]
+            if hypervisor in ["vmware"] and "details" in cks_template:
+                details = cks_template["details"]
             template = Template.register(cls.apiclient, cks_template, zoneid=cls.zone.id, hypervisor=hypervisor.lower(), randomize_name=False, details=details)
             template.download(cls.apiclient)
             return template, False

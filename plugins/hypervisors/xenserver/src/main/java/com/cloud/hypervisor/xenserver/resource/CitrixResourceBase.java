@@ -3110,7 +3110,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.warn("No recommended value found for dynamic max, setting static max and dynamic max equal");
             return dynamicMaxRam;
         }
-        final long staticMax = Math.min(recommendedValue, 4l * dynamicMinRam); // XS
+        final long staticMax = Math.min(recommendedValue, 4L * dynamicMinRam); // XS
         // constraint
         // for
         // stability

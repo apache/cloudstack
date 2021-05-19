@@ -35,8 +35,9 @@ import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 import org.apache.cloudstack.storage.command.ResignatureAnswer;
 import org.apache.cloudstack.storage.command.ResignatureCommand;
-import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
+import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -828,9 +829,15 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer CheckDataStoreStoragePolicyComplaince(CheckDataStoreStoragePolicyComplainceCommand cmd) {
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd) {
         LOGGER.info("'CheckDataStoreStoragePolicyComplainceCommand' not applicable used for Ovm3StorageProcessor");
         return new Answer(cmd,false,"Not applicable used for Ovm3StorageProcessor");
+    }
+
+    @Override
+    public Answer syncVolumePath(SyncVolumePathCommand cmd) {
+        LOGGER.info("SyncVolumePathCommand not currently applicable for Ovm3StorageProcessor");
+        return new Answer(cmd, false, "Not currently applicable for Ovm3StorageProcessor");
     }
 
     @Override
