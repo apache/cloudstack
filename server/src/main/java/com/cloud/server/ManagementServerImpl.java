@@ -1291,7 +1291,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         boolean canMigrateWithStorage = false;
 
         if (VirtualMachine.Type.User.equals(vm.getType()) || HypervisorType.VMware.equals(vm.getHypervisorType())) {
-            canMigrateWithStorage = Boolean.TRUE.equals(_hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion));
+            canMigrateWithStorage = _hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion);
         }
 
         // Check if the vm is using any disks on local storage.
@@ -1347,7 +1347,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                             } else {
                                 boolean hostSupportsStorageMigration = false;
                                 if ((srcHostVersion != null && srcHostVersion.equals(hostVersion)) ||
-                                        Boolean.TRUE.equals(_hypervisorCapabilitiesDao.isStorageMotionSupported(host.getHypervisorType(), hostVersion))) {
+                                        _hypervisorCapabilitiesDao.isStorageMotionSupported(host.getHypervisorType(), hostVersion)) {
                                     hostSupportsStorageMigration = true;
                                 }
                                 if (hostSupportsStorageMigration && hasSuitablePoolsForVolume(volume, host, vmProfile)) {

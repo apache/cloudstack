@@ -6299,13 +6299,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        if (!Boolean.TRUE.equals(_hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion))) {
-            throw new CloudRuntimeException("Migration with storage isn't supported for source host ID: " + srcHost.getUuid() + " on hypervisor " + srcHost.getHypervisorType() + " of version " + srcHost.getHypervisorVersion());
+        if (!_hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion)) {
+            throw new CloudRuntimeException(String.format("Migration with storage isn't supported for source host %s [ID: %s] on hypervisor %s with version %s", srcHost.getName(), srcHost.getUuid(), srcHost.getHypervisorType(), srcHost.getHypervisorVersion()));
         }
 
         if (srcHostVersion == null || !srcHostVersion.equals(destHostVersion)) {
-            if (!Boolean.TRUE.equals(_hypervisorCapabilitiesDao.isStorageMotionSupported(destinationHost.getHypervisorType(), destHostVersion))) {
-                throw new CloudRuntimeException("Migration with storage isn't supported for target host ID: " + srcHost.getUuid() + " on hypervisor " + srcHost.getHypervisorType() + " of version " + srcHost.getHypervisorVersion());
+            if (!_hypervisorCapabilitiesDao.isStorageMotionSupported(destinationHost.getHypervisorType(), destHostVersion)) {
+                throw new CloudRuntimeException(String.format("Migration with storage isn't supported for target host %s [ID: %s] on hypervisor %s with version %s", destinationHost.getName(), destinationHost.getUuid(), destinationHost.getHypervisorType(), destinationHost.getHypervisorVersion()));
             }
         }
 
