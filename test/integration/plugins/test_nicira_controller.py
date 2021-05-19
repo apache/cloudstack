@@ -413,20 +413,20 @@ class TestNiciraContoller(cloudstackTestCase):
     def distribute_vm_and_routers_by_hosts(self, virtual_machine, routers):
         if len(routers) > 1:
             router = self.get_router(routers)
-            self.logger.debug("Master Router VM is %s" % router)
+            self.logger.debug("Primary Router VM is %s" % router)
         else:
             router = routers[0]
 
         if router.hostid == virtual_machine.hostid:
-            self.logger.debug("Master Router VM is on the same host as VM")
+            self.logger.debug("Primary Router VM is on the same host as VM")
             host = findSuitableHostForMigration(self.api_client, router.id)
             if host is not None:
                 migrate_router(self.api_client, router.id, host.id)
-                self.logger.debug("Migrated Master Router VM to host %s" % host.name)
+                self.logger.debug("Migrated Primary Router VM to host %s" % host.name)
             else:
-                self.fail('No suitable host to migrate Master Router VM to')
+                self.fail('No suitable host to migrate Primary Router VM to')
         else:
-            self.logger.debug("Master Router VM is not on the same host as VM: %s, %s" % (router.hostid, virtual_machine.hostid))
+            self.logger.debug("Primary Router VM is not on the same host as VM: %s, %s" % (router.hostid, virtual_machine.hostid))
 
 
     def acquire_publicip(self, network):

@@ -49,6 +49,6 @@ vrrp_instance inside_network {
     }
 
     notify_backup "/opt/cloud/bin/configure_router.py --backup"
-    notify_primary "/opt/cloud/bin/configure_router.py --primary"
+    notify_master "/opt/cloud/bin/configure_router.py --primary"
     notify_fault "/opt/cloud/bin/configure_router.py --fault"
 }

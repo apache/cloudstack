@@ -25,7 +25,7 @@ import logging
 from optparse import OptionParser
 
 parser = OptionParser()
-parser.add_option("-m", "--primary",
+parser.add_option("-p", "--primary",
                   action="store_true", default=False, dest="primary",
                   help="Set router primary")
 parser.add_option("-b", "--backup",

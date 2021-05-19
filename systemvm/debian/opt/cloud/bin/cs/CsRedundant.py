@@ -206,7 +206,7 @@ class CsRedundant(object):
 
     def release_lock(self):
         try:
-            os.remove("/tmp/master_lock")
+            os.remove("/tmp/primary_lock")
         except OSError:
             pass
 
@@ -220,7 +220,7 @@ class CsRedundant(object):
         for iter in range(0, iterations):
             try:
                 s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                s.bind('/tmp/master_lock')
+                s.bind('/tmp/primary_lock')
                 return s
             except socket.error, e:
                 error_code = e.args[0]

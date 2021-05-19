@@ -299,12 +299,12 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & Primary)"
                     )
 
         self.debug("Associating public IP for network: %s" % network.name)
