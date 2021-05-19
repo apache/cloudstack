@@ -6208,7 +6208,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             List<HypervisorCapabilitiesVO> lstHypervisorCapabilities = _hypervisorCapabilitiesDao.listAllByHypervisorType(HypervisorType.KVM);
 
             capabilities = lstHypervisorCapabilities.stream().filter(hvCapabilities -> hvCapabilities.isStorageMotionSupported()).findAny()
-            .orElseThrow(() -> new CloudRuntimeException(String.format("Migration with storage isn't supported on hypervisor %s of version %s", srcHost.getHypervisorType(), srcHost.getHypervisorVersion())));
+            .orElseThrow(() -> new CloudRuntimeException(String.format("Cannot migrate VM with storage, as the capabilities are not found for the hypervisor %s with version %s", srcHost.getHypervisorType(), srcHost.getHypervisorVersion())));
         } else if (!capabilities.isStorageMotionSupported()) {
             throw new CloudRuntimeException(String.format("Migration with storage isn't supported on hypervisor %s of version %s", srcHost.getHypervisorType(), srcHost.getHypervisorVersion()));
         }
