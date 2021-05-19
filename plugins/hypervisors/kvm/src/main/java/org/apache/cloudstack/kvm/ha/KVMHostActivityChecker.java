@@ -81,34 +81,34 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     private static final Set<Storage.StoragePoolType> NFS_POOL_TYPE = new HashSet<>(Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.ManagedNFS));
 
     @Override
-    public boolean isActive(Host r, DateTime suspectTime) throws HACheckerException {
+    public boolean isActive(Host host, DateTime suspectTime) throws HACheckerException {
         try {
-            return isVMActivtyOnHost(r, suspectTime);
+            return isVMActivtyOnHost(host, suspectTime);
         } catch (HACheckerException e) {
             //Re-throwing the exception to avoid poluting the 'HACheckerException' already thrown
             throw e;
         } catch (Exception e) {
-            String message = String.format("Operation timed out, probably the %s is not reachable.", r.toString());
+            String message = String.format("Operation timed out, probably the %s is not reachable.", host.toString());
             LOG.warn(message, e);
             throw new HACheckerException(message, e);
         }
     }
 
     @Override
-    public boolean isHealthy(Host r) {
+    public boolean isHealthy(Host host) {
         boolean isHealthy = true;
-        boolean isHostServedByNfsPool = isHostServedByNfsPool(r);
-        boolean isKvmHaWebserviceEnabled = kvmHaHelper.isKvmHaWebserviceEnabled(r);
+        boolean isHostServedByNfsPool = isHostServedByNfsPool(host);
+        boolean isKvmHaWebserviceEnabled = kvmHaHelper.isKvmHaWebserviceEnabled(host);
 
         if(isHostServedByNfsPool) {
-            isHealthy = isHealthViaNfs(r);
+            isHealthy = isHealthViaNfs(host);
         }
 
         if (!isKvmHaWebserviceEnabled) {
             return isHealthy;
         }
 
-        if (kvmHaHelper.isVmActivtyOnHostViaKvmHaWebservice(r) && !isHealthy) {
+        if (kvmHaHelper.isVmActivtyOnHostViaKvmHaWebservice(host) && !isHealthy) {
             isHealthy = true;
         }
 

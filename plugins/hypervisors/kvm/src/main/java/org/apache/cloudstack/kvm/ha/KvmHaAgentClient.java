@@ -38,7 +38,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -112,28 +111,21 @@ public class KvmHaAgentClient {
      * but that's not likely and thus it is not relevant for this very context.
      */
     protected List<VMInstanceVO> listVmsOnHost(Host host, VMInstanceDao vmInstanceDao) {
-        List<VMInstanceVO> listByHostAndStateRunning = vmInstanceDao.listByHostAndState(host.getId(), VirtualMachine.State.Running);
-        List<VMInstanceVO> listByHostAndStateStopping = vmInstanceDao.listByHostAndState(host.getId(), VirtualMachine.State.Stopping);
-        List<VMInstanceVO> listByHostAndStateMigrating = vmInstanceDao.listByHostAndState(host.getId(), VirtualMachine.State.Migrating);
-
-        List<VMInstanceVO> listByHostAndState = new ArrayList<>();
-        listByHostAndState.addAll(listByHostAndStateRunning);
-        listByHostAndState.addAll(listByHostAndStateStopping);
-        listByHostAndState.addAll(listByHostAndStateMigrating);
+        List<VMInstanceVO> listByHostAndStates = vmInstanceDao.listByHostAndState(host.getId(), VirtualMachine.State.Running, VirtualMachine.State.Stopping, VirtualMachine.State.Migrating);
 
         if (LOGGER.isTraceEnabled()) {
             List<VMInstanceVO> listByHostAndStateStarting = vmInstanceDao.listByHostAndState(host.getId(), VirtualMachine.State.Starting);
             int startingVMs = listByHostAndStateStarting.size();
-            int runningVMs = listByHostAndStateRunning.size();
-            int stoppingVms = listByHostAndStateStopping.size();
-            int migratingVms = listByHostAndStateMigrating.size();
+            long runningVMs = listByHostAndStates.stream().filter(vm -> vm.getState() == VirtualMachine.State.Running).count();
+            long stoppingVms = listByHostAndStates.stream().filter(vm -> vm.getState() == VirtualMachine.State.Stopping).count();
+            long migratingVms = listByHostAndStates.stream().filter(vm -> vm.getState() == VirtualMachine.State.Migrating).count();
             int countRunningVmsOnAgent = countRunningVmsOnAgent(host);
             LOGGER.trace(
                     String.format("%s has (%d Starting) %d Running, %d Stopping, %d Migrating. Total listed via DB %d / %d (via libvirt)", host.getName(), startingVMs, runningVMs,
-                            stoppingVms, migratingVms, listByHostAndState.size(), countRunningVmsOnAgent));
+                            stoppingVms, migratingVms, listByHostAndStates.size(), countRunningVmsOnAgent));
         }
 
-        return listByHostAndState;
+        return listByHostAndStates;
     }
 
     /**
@@ -171,7 +163,7 @@ public class KvmHaAgentClient {
     }
 
     /**
-     *  Sends a HTTP GET request from the host executing the KVM HA Agent webservice to a target Host (expected to also be running the KVM HA Agent).
+     *  Sends HTTP GET request from the host executing the KVM HA Agent webservice to a target Host (expected to also be running the KVM HA Agent).
      *  The webserver serves a JSON Object such as {"status": "Up"} if the request gets a HTTP_OK OR {"status": "Down"} if HTTP GET failed
      */
     public boolean isHostReachableByNeighbour(Host neighbour, Host target) {
