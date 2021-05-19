@@ -241,7 +241,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             }
 
             try {
-                boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolComplaintWithStoragePolicy(requestVolumes, pool);
+                boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolCompliantWithStoragePolicy(requestVolumes, pool);
                 if (!isStoragePoolStoragepolicyComplaince) {
                     return false;
                 }
