@@ -2280,7 +2280,7 @@ public class HypervisorHostHelper {
             Integer host1Version = getHostHardwareVersion(host1);
             Integer host2Version = getHostHardwareVersion(host2);
             if (host1Version != null && host2Version != null && !host1Version.equals(host2Version)) {
-                hardwareVersion = String.valueOf(Math.min(host1Version, host2Version));
+                hardwareVersion = VirtualMachineMO.getVmxFormattedVirtualHardwareVersion(Math.min(host1Version, host2Version));
             }
         }
         return hardwareVersion;
