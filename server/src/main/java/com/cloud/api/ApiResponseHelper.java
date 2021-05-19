@@ -1450,7 +1450,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
 
-            if (vm.getType() == Type.SecondaryStorageVm || vm.getType() == Type.ConsoleProxy) {
+            if (VirtualMachine.systemVMs.contains(vm.getType())) {
                 Host systemVmHost = ApiDBUtils.findHostByTypeNameAndZoneId(vm.getDataCenterId(), vm.getHostName(),
                         Type.SecondaryStorageVm.equals(vm.getType()) ? Host.Type.SecondaryStorageVM : Host.Type.ConsoleProxy);
                 if (systemVmHost != null) {
