@@ -94,7 +94,6 @@ public class KvmHaAgentClient {
         return haAgentPort;
     }
 
-
     /**
      * Lists VMs on host according to vm_instance DB table. The states considered for such listing are: 'Running', 'Stopping', 'Migrating'.
      * <br>

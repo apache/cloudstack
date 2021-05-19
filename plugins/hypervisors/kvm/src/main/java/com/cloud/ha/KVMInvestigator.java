@@ -86,7 +86,10 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
             s_logger.debug(String.format("Agent investigation was requested on host %s, but host has no NFS storage. Skipping investigation via NFS.", agent));
         }
 
-        agentStatus = kvmHaHelper.checkAgentStatusViaKvmHaAgent(agent, agentStatus);
+        boolean isKvmHaWebserviceEnabled = kvmHaHelper.isKvmHaWebserviceEnabled(agent);
+        if(isKvmHaWebserviceEnabled) {
+            agentStatus = kvmHaHelper.checkAgentStatusViaKvmHaAgent(agent, agentStatus);
+        }
 
         return agentStatus;
     }

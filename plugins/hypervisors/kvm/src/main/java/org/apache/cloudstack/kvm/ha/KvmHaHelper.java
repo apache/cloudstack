@@ -121,8 +121,8 @@ public class KvmHaHelper {
      * Checks if the KVM HA webservice is enabled. One can enable or disable it via global settings 'kvm.ha.webservice.enabled'.
      */
     public boolean isKvmHaWebserviceEnabled(Host host) {
-        KvmHaAgentClient kvmHaAgentClient = new KvmHaAgentClient();
-        if (!isKvmHaWebserviceEnabled(host)) {
+        boolean isKvmHaWebserviceEnabled = KVMHAConfig.IsKvmHaWebserviceEnabled.value();
+        if (!isKvmHaWebserviceEnabled) {
             LOGGER.debug(String.format("Skipping KVM HA web-service verification for %s due to 'kvm.ha.webservice.enabled' not enabled.", host));
             return false;
         }
@@ -168,12 +168,5 @@ public class KvmHaHelper {
 
     private void logIfFencingOrRecoveringMightBeTriggered(Host agent) {
         LOGGER.warn(String.format("Host %s is not considered healthy and HA fencing/recovering process might be triggered.", agent.getName()));
-    }
-
-    /**
-     * Checks if the KVM HA Webservice is enabled or not; if disabled then CloudStack ignores HA validation via the webservice.
-     */
-    public boolean isKvmHaWebserviceEnabled() {
-        return KVMHAConfig.IsKvmHaWebserviceEnabled.value();
     }
 }
