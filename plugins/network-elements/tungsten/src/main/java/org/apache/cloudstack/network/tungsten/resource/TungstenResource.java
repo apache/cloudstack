@@ -43,6 +43,7 @@ import net.juniper.tungsten.api.types.LoadbalancerPool;
 import net.juniper.tungsten.api.types.LogicalRouter;
 import net.juniper.tungsten.api.types.NetworkPolicy;
 import net.juniper.tungsten.api.types.Project;
+import net.juniper.tungsten.api.types.SecurityGroup;
 import net.juniper.tungsten.api.types.SequenceType;
 import net.juniper.tungsten.api.types.VirtualMachine;
 import net.juniper.tungsten.api.types.VirtualMachineInterface;
@@ -50,6 +51,8 @@ import net.juniper.tungsten.api.types.VirtualNetwork;
 import net.juniper.tungsten.api.types.VirtualNetworkPolicyType;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkSubnetCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenSecurityGroupRuleCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenVmToSecurityGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ApplyTungstenNetworkPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ApplyTungstenPortForwardingCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AssignTungstenFloatingIpCommand;
@@ -62,6 +65,7 @@ import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkCom
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkLoadbalancerCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenProjectCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenSecurityGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenVirtualMachineCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenDomainCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenFloatingIpCommand;
@@ -72,6 +76,7 @@ import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenNetworkCom
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenNetworkPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenObjectCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenProjectCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenSecurityGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVRouterPortCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVmCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVmInterfaceCommand;
@@ -80,8 +85,10 @@ import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenFloatingIpsCo
 import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenLoadBalancerCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenNatIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenNetworkCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenSecurityGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ReleaseTungstenFloatingIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkSubnetCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenSecurityGroupRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.SetTungstenNetworkGatewayCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.StartupTungstenCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
@@ -286,6 +293,18 @@ public class TungstenResource implements ServerResource {
             return executeRequest((AddTungstenNetworkSubnetCommand) cmd, numRetries);
         } else if (cmd instanceof RemoveTungstenNetworkSubnetCommand) {
             return executeRequest((RemoveTungstenNetworkSubnetCommand) cmd, numRetries);
+        } else if (cmd instanceof CreateTungstenSecurityGroupCommand) {
+            return executeRequest((CreateTungstenSecurityGroupCommand) cmd, numRetries);
+        } else if (cmd instanceof DeleteTungstenSecurityGroupCommand) {
+            return executeRequest((DeleteTungstenSecurityGroupCommand) cmd, numRetries);
+        } else if (cmd instanceof AddTungstenSecurityGroupRuleCommand) {
+            return executeRequest((AddTungstenSecurityGroupRuleCommand) cmd, numRetries);
+        } else if (cmd instanceof AddTungstenVmToSecurityGroupCommand) {
+            return executeRequest((AddTungstenVmToSecurityGroupCommand) cmd, numRetries);
+        } else if (cmd instanceof RemoveTungstenSecurityGroupRuleCommand) {
+            return executeRequest((RemoveTungstenSecurityGroupRuleCommand) cmd, numRetries);
+        } else if (cmd instanceof GetTungstenSecurityGroupCommand) {
+            return executeRequest((GetTungstenSecurityGroupCommand) cmd, numRetries);
         }
 
         s_logger.debug("Received unsupported command " + cmd.toString());
@@ -1080,6 +1099,83 @@ public class TungstenResource implements ServerResource {
 
         if (result)
             return new TungstenAnswer(cmd, true, "tungsten network subnet is deleted");
+        else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(CreateTungstenSecurityGroupCommand cmd, int numRetries) {
+        ApiObjectBase apiObjectBase = _tungstenApi.createTungstenSecurityGroup(cmd.getSecurityGroupUuid(),
+                cmd.getSecurityGroupName(), cmd.getSecurityGroupDescription(), cmd.getProjectFqn());
+        if (apiObjectBase != null) {
+            return new TungstenAnswer(cmd, apiObjectBase, true, "Tungsten security group created");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(DeleteTungstenSecurityGroupCommand cmd, int numRetries) {
+        boolean result = _tungstenApi.deleteTungstenSecurityGroup(cmd.getTungstenSecurityGroupUuid());
+        if (result)
+            return new TungstenAnswer(cmd, true, "Tungsten security group deleted");
+        else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(GetTungstenSecurityGroupCommand cmd, int numRetries) {
+        ApiObjectBase apiObjectBase = _tungstenApi.getTungstenObject(SecurityGroup.class, cmd.getTungstenSecurityGroupUuid());
+        return new TungstenAnswer(cmd, apiObjectBase, true, "Get tungsten security group");
+    }
+
+    private Answer executeRequest(AddTungstenSecurityGroupRuleCommand cmd, int numRetries) {
+        boolean result = _tungstenApi.addTungstenSecurityGroupRule(cmd.getTungstenSecurityGroupUuid(),
+                cmd.getTungstenGroupRuleUuid(), cmd.getSecurityGroupRuleType(), cmd.getStartPort(),
+                cmd.getEndPort(), cmd.getCidr(), cmd.getIpPrefix(), cmd.getIpPrefixLen(),
+                cmd.getProtocol());
+        if (result)
+            return new TungstenAnswer(cmd, true, "Tungsten security group rule added");
+        else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(AddTungstenVmToSecurityGroupCommand cmd, int numRetries) {
+        boolean result = _tungstenApi.addInstanceToSecurityGroup(cmd.getVmUuid(), cmd.getSecurityGroupUuidList());
+        if (result)
+            return new TungstenAnswer(cmd, true, "Tungsten instance added to security groups");
+        else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(RemoveTungstenSecurityGroupRuleCommand cmd, int numRetries) {
+        boolean tungstenPolicyRuleRemoved = _tungstenApi.removeTungstenPolicyRule(cmd.getSecurityGroupUuid(),
+                cmd.getSecurityGroupRuleUuid());
+        boolean tungstenSecurityGroupRuleRemoved = _tungstenApi.removeTungstenSecurityGroupRule(cmd.getSecurityGroupUuid(),
+                cmd.getSecurityGroupRuleUuid(), cmd.getSecurityGroupRuleType());
+        if (tungstenPolicyRuleRemoved && tungstenSecurityGroupRuleRemoved)
+            return new TungstenAnswer(cmd, true, "Tungsten security group removed");
         else {
             if (numRetries > 0) {
                 return retry(cmd, --numRetries);

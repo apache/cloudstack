@@ -23,7 +23,6 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
-import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -53,6 +52,11 @@ import com.cloud.network.element.TungstenProviderVO;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.security.SecurityGroup;
+import com.cloud.network.security.SecurityGroupService;
+import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.network.security.SecurityRule;
+import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.ProjectVO;
@@ -60,17 +64,21 @@ import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.Account;
 import com.cloud.user.DomainManager;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.TungstenUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.dao.UserVmDao;
 import net.juniper.tungsten.api.types.FloatingIp;
 import net.sf.cglib.proxy.Enhancer;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkSubnetCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenSecurityGroupRuleCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenVmToSecurityGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ApplyTungstenNetworkPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenDomainCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIpCommand;
@@ -78,6 +86,7 @@ import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIp
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenProjectCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenSecurityGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenDomainCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenFloatingIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenFloatingIpPoolCommand;
@@ -85,10 +94,13 @@ import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenNetworkCom
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenNetworkPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenObjectCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenProjectCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenSecurityGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenFabricNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenFloatingIpsCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenLoadBalancerCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenSecurityGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkSubnetCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenSecurityGroupRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.UpdateLoadBalancerServiceInstanceCommand;
@@ -99,12 +111,11 @@ import org.apache.cloudstack.network.tungsten.model.TungstenRule;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
+import javax.inject.Inject;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import javax.inject.Inject;
 
 public class TungstenServiceImpl extends ManagerBase implements TungstenService {
     private static final Logger s_logger = Logger.getLogger(TungstenServiceImpl.class);
@@ -141,9 +152,11 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
     @Inject
     private HostDao _hostDao;
     @Inject
-    VlanDao _vlanDao;
-    @Inject
     NetworkDetailsDao networkDetailsDao;
+    @Inject
+    private SecurityGroupDao _securityGroupDao;
+    @Inject
+    private UserVmDao _userVmDao;
 
     @Override
     public boolean start() {
@@ -398,6 +411,75 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
                     }
                 }
             });
+
+        _messageBus.subscribe(SecurityGroupService.MESSAGE_CREATE_TUNGSTEN_SECURITY_GROUP_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object args) {
+                try {
+                    final SecurityGroup securityGroup = (SecurityGroup) args;
+                    createTungstenSecurityGroup(securityGroup);
+                } catch (final Exception e) {
+                    s_logger.error(e.getMessage());
+                }
+            }
+        });
+
+        _messageBus.subscribe(SecurityGroupService.MESSAGE_DELETE_TUNGSTEN_SECURITY_GROUP_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object args) {
+                try {
+                    final SecurityGroup securityGroup = (SecurityGroup) args;
+                    deleteTungstenSecurityGroup(securityGroup);
+                } catch (final Exception e) {
+                    s_logger.error(e.getMessage());
+                }
+            }
+        });
+
+        _messageBus.subscribe(SecurityGroupService.MESSAGE_ADD_SECURITY_GROUP_RULE_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object args) {
+                try {
+                    final List<SecurityRule> securityRules = (List<SecurityRule>) args;
+                    addTungstenSecurityGroupRule(securityRules);
+                } catch (final Exception e) {
+                    s_logger.error(e.getMessage());
+                }
+            }
+        });
+
+        _messageBus.subscribe(SecurityGroupService.MESSAGE_ADD_VM_TO_SECURITY_GROUPS_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object args) {
+                try {
+                    final Pair<Long, List<SecurityGroupVO>> pair = (Pair<Long, List<SecurityGroupVO>>) args;
+                    addTungstenVmToSecurityGroup(pair);
+                } catch (final Exception e) {
+                    s_logger.error(e.getMessage());
+                }
+            }
+        });
+
+        _messageBus.subscribe(SecurityGroupService.MESSAGE_REMOVE_SECURITY_GROUP_RULE_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object args) {
+                try {
+                    final SecurityRule securityRule = (SecurityRule) args;
+                    removeTungstenSecurityGroupRule(securityRule);
+                } catch (final Exception e) {
+                    s_logger.error(e.getMessage());
+                }
+            }
+        });
+    }
+
+    public List<TungstenProviderVO> getTungstenProviders() {
+        List<TungstenProviderVO> tungstenProviders = _tungstenProviderDao.findAll();
+        if (tungstenProviders != null) {
+            return tungstenProviders;
+        } else {
+            return new ArrayList<>();
+        }
     }
 
     private boolean createTungstenFloatingIp(long zoneId, IpAddress ipAddress) {
@@ -446,8 +528,12 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
         }
 
         String networkProjectUuid = getProject(network.getAccountId());
-        Project project = _projectDao.findByUuid(networkProjectUuid);
-        Domain domain = _domainDao.findById(network.getDomainId());
+        return buildProjectFqnName(network.getDomainId(), networkProjectUuid);
+    }
+
+    public String buildProjectFqnName(long domainUuid, String projectUuid) {
+        Project project = _projectDao.findByUuid(projectUuid);
+        Domain domain = _domainDao.findById(domainUuid);
 
         StringBuilder sb = new StringBuilder();
         if (domain != null && domain.getName() != null && domain.getId() != Domain.ROOT_DOMAIN) {
@@ -733,8 +819,7 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
 
     public boolean createTungstenDomain(DomainVO domain) {
         if (domain != null && domain.getId() != Domain.ROOT_DOMAIN) {
-            List<TungstenProviderVO> tungstenProviders = _tungstenProviderDao.findAll();
-            for (TungstenProviderVO tungstenProvider : tungstenProviders) {
+            for (TungstenProviderVO tungstenProvider : getTungstenProviders()) {
                 CreateTungstenDomainCommand createTungstenDomainCommand = new CreateTungstenDomainCommand(
                     domain.getName(), domain.getUuid());
                 TungstenAnswer tungstenAnswer = _tungstenFabricUtils.sendTungstenCommand(createTungstenDomainCommand,
@@ -748,8 +833,7 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
     }
 
     public boolean deleteTungstenDomain(DomainVO domain) {
-        List<TungstenProviderVO> tungstenProviders = _tungstenProviderDao.findAll();
-        for (TungstenProviderVO tungstenProvider : tungstenProviders) {
+        for (TungstenProviderVO tungstenProvider : getTungstenProviders()) {
             DeleteTungstenDomainCommand deleteTungstenDomainCommand = new DeleteTungstenDomainCommand(domain.getUuid());
             TungstenAnswer tungstenAnswer = _tungstenFabricUtils.sendTungstenCommand(deleteTungstenDomainCommand,
                 tungstenProvider.getZoneId());
@@ -761,7 +845,6 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
     }
 
     public boolean createTungstenProject(Project project) {
-        List<TungstenProviderVO> tungstenProviders = _tungstenProviderDao.findAll();
         String domainName;
         String domainUuid;
         Domain domain = _domainDao.findById(project.getDomainId());
@@ -776,7 +859,7 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
             domainUuid = null;
         }
         if (domain != null) {
-            for (TungstenProviderVO tungstenProvider : tungstenProviders) {
+            for (TungstenProviderVO tungstenProvider : getTungstenProviders()) {
                 CreateTungstenProjectCommand createTungstenProjectCommand = new CreateTungstenProjectCommand(
                     project.getName(), project.getUuid(), domainUuid, domainName);
                 TungstenAnswer tungstenAnswer = _tungstenFabricUtils.sendTungstenCommand(createTungstenProjectCommand,
@@ -790,8 +873,7 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
     }
 
     public boolean deleteTungstenProject(Project project) {
-        List<TungstenProviderVO> tungstenProviders = _tungstenProviderDao.findAll();
-        for (TungstenProviderVO tungstenProvider : tungstenProviders) {
+        for (TungstenProviderVO tungstenProvider : getTungstenProviders()) {
             DeleteTungstenProjectCommand deleteTungstenProjectCommand = new DeleteTungstenProjectCommand(
                 project.getUuid());
             TungstenAnswer tungstenAnswer = _tungstenFabricUtils.sendTungstenCommand(deleteTungstenProjectCommand,
@@ -911,4 +993,117 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
 
         return true;
     }
+
+    public boolean createTungstenSecurityGroup(SecurityGroup securityGroup) {
+        Project project = _projectDao.findByProjectAccountId(securityGroup.getAccountId());
+        String projectFqn;
+        if (project != null) {
+            projectFqn = buildProjectFqnName(securityGroup.getDomainId(), project.getUuid());
+        } else {
+            projectFqn = buildProjectFqnName(securityGroup.getDomainId(), null);
+        }
+        for (TungstenProviderVO tungstenProvider : getTungstenProviders()) {
+            CreateTungstenSecurityGroupCommand createTungstenSecurityGroupCommand =
+                    new CreateTungstenSecurityGroupCommand(securityGroup.getUuid(), securityGroup.getName(),
+                            securityGroup.getDescription(), projectFqn);
+            TungstenAnswer tungstenAnswer = _tungstenFabricUtils.sendTungstenCommand(createTungstenSecurityGroupCommand,
+                    tungstenProvider.getZoneId());
+            if (!tungstenAnswer.getResult()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean deleteTungstenSecurityGroup(SecurityGroup securityGroup) {
+        for (TungstenProviderVO tungstenProvider : getTungstenProviders()) {
+            DeleteTungstenSecurityGroupCommand deleteTungstenSecurityGroupCommand =
+                    new DeleteTungstenSecurityGroupCommand(securityGroup.getUuid());
+            TungstenAnswer tungstenAnswer = _tungstenFabricUtils.sendTungstenCommand(deleteTungstenSecurityGroupCommand,
+                    tungstenProvider.getZoneId());
+            if (!tungstenAnswer.getResult()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean addTungstenSecurityGroupRule(List<SecurityRule> securityRules) {
+        for (TungstenProviderVO tungstenProvider : getTungstenProviders()) {
+            for (SecurityRule securityRule : securityRules) {
+                SecurityGroup securityGroup = _securityGroupDao.findById(securityRule.getSecurityGroupId());
+                Pair<String, Integer> pair = NetUtils.getCidr(securityRule.getAllowedSourceIpCidr());
+                AddTungstenSecurityGroupRuleCommand addTungstenSecurityGroupRuleCommand =
+                        new AddTungstenSecurityGroupRuleCommand(securityGroup.getUuid(),
+                                securityRule.getUuid(), securityRule.getType(),
+                                securityRule.getStartPort(), securityRule.getEndPort(),
+                                securityRule.getAllowedSourceIpCidr(), pair.first(),
+                                pair.second(), securityRule.getProtocol());
+                TungstenAnswer tungstenAnswer = _tungstenFabricUtils.sendTungstenCommand(addTungstenSecurityGroupRuleCommand,
+                        tungstenProvider.getZoneId());
+                if (!tungstenAnswer.getResult()) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public boolean removeTungstenSecurityGroupRule(SecurityRule securityRule) {
+        SecurityGroup securityGroup = _securityGroupDao.findById(securityRule.getSecurityGroupId());
+        if (securityGroup == null)
+            return false;
+        for (TungstenProviderVO tungstenProvider : getTungstenProviders()) {
+            RemoveTungstenSecurityGroupRuleCommand removeTungstenSecurityGroupRuleCommand = new RemoveTungstenSecurityGroupRuleCommand(securityGroup.getUuid(),
+                    securityRule.getUuid(), securityRule.getType());
+            TungstenAnswer tungstenAnswer = _tungstenFabricUtils.sendTungstenCommand(removeTungstenSecurityGroupRuleCommand,
+                    tungstenProvider.getZoneId());
+            if (!tungstenAnswer.getResult()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean addTungstenVmToSecurityGroup(Pair<Long, List<SecurityGroupVO>> pair) {
+        long vmId = pair.first();
+        List<String> securityGroupUuidList = new ArrayList<>();
+        UserVm userVm = _userVmDao.findById(vmId);
+        for (SecurityGroupVO securityGroup : pair.second()) {
+            securityGroupUuidList.add(securityGroup.getUuid());
+        }
+
+        //check if this security group exists in tungsten
+        //if not create the security group
+        checkTungstenSecurityGroups(pair.second());
+
+        if (userVm != null && !securityGroupUuidList.isEmpty()) {
+            for (TungstenProviderVO tungstenProvider : getTungstenProviders()) {
+                AddTungstenVmToSecurityGroupCommand addTungstenVmToSecurityGroupCommand =
+                        new AddTungstenVmToSecurityGroupCommand(userVm.getUuid(), securityGroupUuidList);
+                TungstenAnswer tungstenAnswer = _tungstenFabricUtils.sendTungstenCommand(addTungstenVmToSecurityGroupCommand,
+                        tungstenProvider.getZoneId());
+                if (!tungstenAnswer.getResult()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public void checkTungstenSecurityGroups(List<SecurityGroupVO> securityGroups) {
+        for (TungstenProviderVO tungstenProvider : getTungstenProviders()) {
+            for (SecurityGroupVO securityGroup : securityGroups) {
+                GetTungstenSecurityGroupCommand getTungstenSecurityGroupCommand =
+                        new GetTungstenSecurityGroupCommand(securityGroup.getUuid());
+                TungstenAnswer tungstenAnswer = _tungstenFabricUtils.sendTungstenCommand(getTungstenSecurityGroupCommand,
+                        tungstenProvider.getZoneId());
+                if (tungstenAnswer.getApiObjectBase() == null) {
+                    createTungstenSecurityGroup(securityGroup);
+                }
+            }
+        }
+    }
+
 }

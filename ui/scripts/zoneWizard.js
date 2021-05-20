@@ -4146,6 +4146,23 @@
                         stepFns.configureStorageTraffic({
                             data: args.data
                         });
+                        if (tungstenZone == true) {
+                            $.ajax({
+                                url: createURL("createTungstenManagementNetwork&podId=" + args.data.returnedPod.id),
+                                dataType: "json",
+                                async: false,
+                                success: function(json) {
+
+                                },
+                                error : function(XMLHttpResponse) {
+                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                    error('createTungstenManagementNetwork', errorMsg, {
+                                        fn: 'createTungstenManagementNetwork',
+                                        args: args
+                                    });
+                                }
+                            });
+                        }
                     } else { //basic zone without public traffic type , skip to next step
                         if (data.physicalNetworks && $.inArray('storage', data.physicalNetworks[0].trafficTypes) > -1) {
                             stepFns.configureStorageTraffic({

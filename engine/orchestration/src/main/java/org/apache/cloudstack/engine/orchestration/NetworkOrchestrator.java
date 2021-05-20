@@ -392,6 +392,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         // populate providers
         final Map<Network.Service, Set<Network.Provider>> defaultSharedNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
         final Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
+        final Set<Network.Provider> tungstenProvider = new HashSet<Network.Provider>();
 
         defaultProviders.add(Network.Provider.VirtualRouter);
         defaultSharedNetworkOfferingProviders.put(Service.Dhcp, defaultProviders);
@@ -416,6 +417,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final Set<Provider> sgProviders = new HashSet<Provider>();
         sgProviders.add(Provider.SecurityGroupProvider);
         defaultSharedSGEnabledNetworkOfferingProviders.put(Service.SecurityGroup, sgProviders);
+
+        tungstenProvider.add(Provider.Tungsten);
+        final Map<Network.Service, Set<Network.Provider>> defaultTungstenSharedSGEnabledNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
+        defaultTungstenSharedSGEnabledNetworkOfferingProviders.put(Service.Dhcp, tungstenProvider);
+        defaultTungstenSharedSGEnabledNetworkOfferingProviders.put(Service.Dns, tungstenProvider);
+        defaultTungstenSharedSGEnabledNetworkOfferingProviders.put(Service.UserData, tungstenProvider);
+        final Set<Provider> sgTungstenProviders = new HashSet<Provider>();
+        sgTungstenProviders.add(Provider.SecurityGroupProvider);
+        defaultTungstenSharedSGEnabledNetworkOfferingProviders.put(Service.SecurityGroup, sgTungstenProviders);
 
         final Map<Network.Service, Set<Network.Provider>> defaultIsolatedSourceNatEnabledNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
         defaultProviders.clear();
@@ -472,6 +482,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedNetworkOffering, "Offering for Shared networks", TrafficType.Guest, null, true,
                             Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null, true, false, null, false,
                             null, true, false, false,null, null);
+                    offering.setState(NetworkOffering.State.Enabled);
+                    _networkOfferingDao.update(offering.getId(), offering);
+                }
+
+                if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultTungstenSharedNetworkOfferingWithSGService) == null) {
+                    offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultTungstenSharedNetworkOfferingWithSGService, "Offering for Tungsten Shared Security group enabled networks",
+                            TrafficType.Guest, null, true, Availability.Optional, null, defaultTungstenSharedSGEnabledNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true,
+                            null, true, false, null, false, null, true, false, true,null, null);
                     offering.setState(NetworkOffering.State.Enabled);
                     _networkOfferingDao.update(offering.getId(), offering);
                 }

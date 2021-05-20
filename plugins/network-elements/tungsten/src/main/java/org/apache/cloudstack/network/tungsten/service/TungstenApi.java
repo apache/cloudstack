@@ -23,6 +23,8 @@ import net.juniper.tungsten.api.ApiObjectBase;
 import net.juniper.tungsten.api.ApiPropertyBase;
 import net.juniper.tungsten.api.ObjectReference;
 import net.juniper.tungsten.api.Status;
+import net.juniper.tungsten.api.types.AccessControlList;
+import net.juniper.tungsten.api.types.AclRuleType;
 import net.juniper.tungsten.api.types.ActionListType;
 import net.juniper.tungsten.api.types.AddressType;
 import net.juniper.tungsten.api.types.Domain;
@@ -44,12 +46,14 @@ import net.juniper.tungsten.api.types.LoadbalancerPoolType;
 import net.juniper.tungsten.api.types.LoadbalancerType;
 import net.juniper.tungsten.api.types.LogicalRouter;
 import net.juniper.tungsten.api.types.MacAddressesType;
+import net.juniper.tungsten.api.types.MatchConditionType;
 import net.juniper.tungsten.api.types.NetworkIpam;
 import net.juniper.tungsten.api.types.NetworkPolicy;
 import net.juniper.tungsten.api.types.PolicyEntriesType;
 import net.juniper.tungsten.api.types.PolicyRuleType;
 import net.juniper.tungsten.api.types.PortMap;
 import net.juniper.tungsten.api.types.PortMappings;
+import net.juniper.tungsten.api.types.PortType;
 import net.juniper.tungsten.api.types.Project;
 import net.juniper.tungsten.api.types.SecurityGroup;
 import net.juniper.tungsten.api.types.SequenceType;
@@ -69,6 +73,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class TungstenApi {
@@ -1369,6 +1374,201 @@ public class TungstenApi {
             return null;
         } catch (IOException e) {
             return null;
+        }
+    }
+
+    public ApiObjectBase createTungstenSecurityGroup(String securityGroupUuid, String securityGroupName,
+                                                     String securityGroupDescription, String projectFqn) {
+        try {
+            SecurityGroup tungstenSecurityGroup = (SecurityGroup) apiConnector.findById(SecurityGroup.class, securityGroupUuid);
+            if(tungstenSecurityGroup != null) {
+                return tungstenSecurityGroup;
+            }
+            Project project = (Project) getTungstenProjectByFqn(projectFqn);
+            tungstenSecurityGroup = new SecurityGroup();
+            tungstenSecurityGroup.setUuid(securityGroupUuid);
+            tungstenSecurityGroup.setName(securityGroupName);
+            tungstenSecurityGroup.setDisplayName(securityGroupDescription);
+            tungstenSecurityGroup.setParent(project);
+            Status status = apiConnector.create(tungstenSecurityGroup);
+            status.ifFailure(errorHandler);
+            if (status.isSuccess()) {
+                return apiConnector.findById(SecurityGroup.class, tungstenSecurityGroup.getUuid());
+            } else {
+                return null;
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public boolean deleteTungstenSecurityGroup(String tungstenSecurityGroupUuid) {
+        try {
+            SecurityGroup securityGroup = (SecurityGroup) getTungstenObject(SecurityGroup.class, tungstenSecurityGroupUuid);
+            if (securityGroup != null) {
+                Status status = apiConnector.delete(SecurityGroup.class, tungstenSecurityGroupUuid);
+                status.ifFailure(errorHandler);
+                return status.isSuccess();
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean addTungstenSecurityGroupRule(String tungstenSecurityGroupUuid, String securityGroupRuleUuid,
+                                                String securityGroupRuleType, int startPort, int endPort,
+                                                String cidr, String ipPrefix, int ipPrefixLen, String protocol) {
+        try {
+            SecurityGroup securityGroup = (SecurityGroup) getTungstenObject(SecurityGroup.class, tungstenSecurityGroupUuid);
+            if (securityGroup == null) {
+                return false;
+            }
+            for (ObjectReference<ApiPropertyBase> accessControl : securityGroup.getAccessControlLists()) {
+                AccessControlList accessControlList = (AccessControlList) getTungstenObject(AccessControlList.class,
+                        accessControl.getUuid());
+                if (accessControlList.getName().equals(TungstenUtils.getTungstenAccessControl(securityGroupRuleType))) {
+                    AclRuleType aclRuleType = createAclRuleType(securityGroupRuleUuid, securityGroupRuleType,
+                            startPort, endPort, cidr, ipPrefix, ipPrefixLen, protocol);
+                    PolicyRuleType policyRuleType = createPolicyRuleType(aclRuleType.getMatchCondition(), securityGroupRuleUuid);
+                    accessControlList.getEntries().addAclRule(aclRuleType);
+                    if (securityGroup.getEntries() == null) {
+                        securityGroup.setEntries(new PolicyEntriesType(new ArrayList<>(Arrays.asList(policyRuleType))));
+                    } else {
+                        securityGroup.getEntries().addPolicyRule(policyRuleType);
+                    }
+                    Status accessControlListStatus = apiConnector.update(accessControlList);
+                    if (!accessControlListStatus.isSuccess()) {
+                        return false;
+                    }
+                    Status securityGroupStatus = apiConnector.update(securityGroup);
+                    return securityGroupStatus.isSuccess();
+                }
+            }
+
+        } catch (IOException e) {
+            return false;
+        }
+        return false;
+    }
+
+    public boolean removeTungstenSecurityGroupRule(String tungstenSecurityGroupUuid, String securityGroupRuleUuid,
+                                                   String securityGroupRuleType) {
+        try {
+            SecurityGroup securityGroup = (SecurityGroup) getTungstenObject(SecurityGroup.class, tungstenSecurityGroupUuid);
+            if (securityGroup == null) {
+                return false;
+            }
+            for (ObjectReference<ApiPropertyBase> accessControl : securityGroup.getAccessControlLists()) {
+                AccessControlList accessControlList = (AccessControlList) getTungstenObject(AccessControlList.class,
+                        accessControl.getUuid());
+                if (accessControlList.getName().equals(TungstenUtils.getTungstenAccessControl(securityGroupRuleType))) {
+                    List<AclRuleType> existingAclList = accessControlList.getEntries().getAclRule();
+                    accessControlList.getEntries().clearAclRule();
+                    for (AclRuleType aclRuleType : existingAclList) {
+                        if (!aclRuleType.getRuleUuid().equals(securityGroupRuleUuid)) {
+                            accessControlList.getEntries().addAclRule(aclRuleType);
+                        }
+                    }
+                    Status status = apiConnector.update(accessControlList);
+                    return status.isSuccess();
+                }
+            }
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
+    }
+
+    public boolean removeTungstenPolicyRule(String tungstenSecurityGroupUuid, String securityGroupRuleUuid) {
+        try {
+            SecurityGroup securityGroup = (SecurityGroup) getTungstenObject(SecurityGroup.class, tungstenSecurityGroupUuid);
+            if (securityGroup == null) {
+                return false;
+            }
+            List<PolicyRuleType> existingPolicyRules = securityGroup.getEntries().getPolicyRule();
+            securityGroup.getEntries().clearPolicyRule();
+            for (PolicyRuleType policyRule : existingPolicyRules) {
+                if (!policyRule.getRuleUuid().equals(securityGroupRuleUuid)) {
+                    securityGroup.getEntries().addPolicyRule(policyRule);
+                }
+            }
+            Status status = apiConnector.update(securityGroup);
+            return status.isSuccess();
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public AclRuleType createAclRuleType(String securityGroupRuleUuid, String securityGroupRuleType,
+                                         int startPort, int endPort, String cidr, String ipPrefix,
+                                         int ipPrefixLen, String protocol) {
+        String tungstenProtocol = TungstenUtils.getTungstenProtocol(protocol, cidr);
+        String tungstenEthertType = TungstenUtils.getEthertTypeFromCidr(cidr);
+        AddressType addressType = new AddressType(new SubnetType(ipPrefix, ipPrefixLen), null,
+                null, null);
+
+        MatchConditionType matchConditionType = new MatchConditionType();
+        matchConditionType.setSrcPort(new PortType(0, 65535));
+        matchConditionType.setDstPort(new PortType(startPort, endPort));
+        if (securityGroupRuleType.equals(TungstenUtils.INGRESS_RULE)) {
+            matchConditionType.setSrcAddress(addressType);
+            matchConditionType.setDstAddress(new AddressType(null, null, "local", null));
+        } else if (securityGroupRuleType.equals(TungstenUtils.EGRESS_RULE)) {
+            matchConditionType.setDstAddress(addressType);
+            matchConditionType.setSrcAddress(new AddressType(null, null, "local", null));
+        }
+        matchConditionType.setProtocol(tungstenProtocol);
+        matchConditionType.setEthertype(tungstenEthertType);
+        AclRuleType aclRuleType = new AclRuleType(matchConditionType);
+        aclRuleType.setDirection(TungstenUtils.ONE_WAY_DIRECTION);
+        aclRuleType.setRuleUuid(securityGroupRuleUuid);
+        return aclRuleType;
+    }
+
+    public PolicyRuleType createPolicyRuleType(MatchConditionType matchConditionType, String securityGroupRuleUuid) {
+        PolicyRuleType policyRuleType = new PolicyRuleType();
+        policyRuleType.setDirection(TungstenUtils.ONE_WAY_DIRECTION);
+        policyRuleType.setProtocol(matchConditionType.getProtocol());
+        policyRuleType.setEthertype(matchConditionType.getEthertype());
+        policyRuleType.setRuleUuid(securityGroupRuleUuid);
+        policyRuleType.addSrcPorts(matchConditionType.getSrcPort());
+        policyRuleType.addDstPorts(matchConditionType.getDstPort());
+        policyRuleType.addDstAddresses(matchConditionType.getDstAddress());
+        policyRuleType.addSrcAddresses(matchConditionType.getSrcAddress());
+        return policyRuleType;
+    }
+
+    public boolean addInstanceToSecurityGroup(String vmUuid, List<String> securityGroupUuidList) {
+        try {
+            VirtualMachine vm = (VirtualMachine) apiConnector.findById(VirtualMachine.class, vmUuid);
+            if (vm == null) {
+                return false;
+            }
+
+            VirtualMachineInterface vmi = null;
+            for (ObjectReference obj : vm.getVirtualMachineInterfaceBackRefs()) {
+                VirtualMachineInterface tungstenVmi =
+                        (VirtualMachineInterface) apiConnector.findById(VirtualMachineInterface.class, obj.getUuid());
+                if (tungstenVmi.getName().startsWith("vmi")) {
+                    vmi = tungstenVmi;
+                    break;
+                }
+            }
+
+            if (vmi == null) {
+                return false;
+            }
+            for (String securityGroupUuid : securityGroupUuidList) {
+                SecurityGroup tungstenSecurityGroup = (SecurityGroup) apiConnector.findById(SecurityGroup.class, securityGroupUuid);
+                if (tungstenSecurityGroup != null) {
+                    vmi.addSecurityGroup(tungstenSecurityGroup);
+                    apiConnector.update(vmi);
+                }
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
         }
     }
 }

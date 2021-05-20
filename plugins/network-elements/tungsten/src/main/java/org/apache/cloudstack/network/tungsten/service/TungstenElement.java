@@ -62,6 +62,7 @@ import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.TungstenGuestNetworkIpAddressDao;
 import com.cloud.network.dao.TungstenProviderDao;
+import com.cloud.network.element.DnsServiceProvider;
 import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.LoadBalancingServiceProvider;
@@ -142,7 +143,7 @@ import javax.naming.ConfigurationException;
 @Component
 public class TungstenElement extends AdapterBase
     implements StaticNatServiceProvider, UserDataServiceProvider, IpDeployer, FirewallServiceProvider,
-    LoadBalancingServiceProvider, PortForwardingServiceProvider, ResourceStateAdapter, Listener {
+    LoadBalancingServiceProvider, PortForwardingServiceProvider, ResourceStateAdapter, DnsServiceProvider, Listener {
     private static final Logger s_logger = Logger.getLogger(TungstenElement.class);
     private final Map<Network.Service, Map<Network.Capability, String>> _capabilities = InitCapabilities();
     @Inject
@@ -194,12 +195,14 @@ public class TungstenElement extends AdapterBase
         Map<Network.Service, Map<Network.Capability, String>> capabilities = new HashMap<Network.Service,
             Map<Network.Capability, String>>();
         Map<Network.Capability, String> dhcpCapabilities = new HashMap<>();
+        dhcpCapabilities.put(Network.Capability.DhcpAccrossMultipleSubnets, "true");
         capabilities.put(Network.Service.Dhcp, dhcpCapabilities);
         Map<Network.Capability, String> sourceNatCapabilities = new HashMap<>();
         sourceNatCapabilities.put(Network.Capability.RedundantRouter, "true");
         sourceNatCapabilities.put(Network.Capability.SupportedSourceNatTypes, "peraccount");
         capabilities.put(Network.Service.SourceNat, sourceNatCapabilities);
         capabilities.put(Network.Service.Connectivity, null);
+        capabilities.put(Network.Service.SecurityGroup, null);
         capabilities.put(Network.Service.StaticNat, null);
         capabilities.put(Network.Service.UserData, null);
         Map<Network.Capability, String> dnsCapabilities = new HashMap<>();
@@ -732,9 +735,11 @@ public class TungstenElement extends AdapterBase
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
-        PhysicalNetworkTrafficTypeVO physicalNetworkTrafficTypeVO = _physicalNetworkTrafficTypeDao.findBy(
+        PhysicalNetworkTrafficTypeVO publicNetwork = _physicalNetworkTrafficTypeDao.findBy(
             provider.getPhysicalNetworkId(), Networks.TrafficType.Public);
-        return physicalNetworkTrafficTypeVO != null;
+        PhysicalNetworkTrafficTypeVO managementNetwork = _physicalNetworkTrafficTypeDao.findBy(
+                provider.getPhysicalNetworkId(), Networks.TrafficType.Management);
+        return publicNetwork != null || managementNetwork != null;
     }
 
     @Override
@@ -1031,5 +1036,29 @@ public class TungstenElement extends AdapterBase
         }
 
         return tungstenRuleList;
+    }
+
+    @Override
+    public boolean addDnsEntry(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Network.Service.Dhcp, getProvider())) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean configDnsSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Network.Service.Dhcp, getProvider())) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean removeDnsSupportForSubnet(Network network) throws ResourceUnavailableException {
+        if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Network.Service.Dhcp, getProvider())) {
+            return true;
+        }
+        return false;
     }
 }

@@ -21,7 +21,9 @@ import com.cloud.dc.Vlan;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.IpAddressManager;
@@ -43,11 +45,17 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.TungstenUtils;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.network.tungsten.agent.api.ApplyTungstenNetworkPolicyCommand;
@@ -70,10 +78,9 @@ import org.apache.cloudstack.network.tungsten.model.TungstenRule;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.inject.Inject;
 
 @Component
 public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
@@ -98,6 +105,8 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
     VMInstanceDao _vmInstanceDao;
     @Inject
     AccountDao _accountDao;
+    @Inject
+    IpAddressManager _ipAddrMgr;
 
     private static final Networks.TrafficType[] TrafficTypes = {Networks.TrafficType.Guest};
 
@@ -119,7 +128,7 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
     public boolean canHandle(NetworkOffering offering, DataCenter.NetworkType networkType,
         PhysicalNetwork physicalNetwork) {
         return networkType == DataCenter.NetworkType.Advanced && isMyTrafficType(offering.getTrafficType())
-            && offering.getGuestType() == Network.GuestType.Isolated && isMyIsolationMethod(physicalNetwork)
+            && isMyIsolationMethod(physicalNetwork)
             && _ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.Tungsten);
     }
 
@@ -134,19 +143,129 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
             return null;
         }
 
-        NetworkVO network = (NetworkVO) super.design(offering, plan, userSpecified, owner);
+        if(offering.getGuestType() == Network.GuestType.Isolated) {
 
-        if (network == null) {
-            return null;
+            NetworkVO network = (NetworkVO) super.design(offering, plan, userSpecified, owner);
+
+            if (network == null) {
+                return null;
+            }
+
+            network.setBroadcastDomainType(Networks.BroadcastDomainType.Tungsten);
+            return network;
         }
 
-        network.setBroadcastDomainType(Networks.BroadcastDomainType.Tungsten);
-        return network;
+        if(offering.getGuestType() == Network.GuestType.Shared){
+            Network.State state = Network.State.Allocated;
+            if (dc.getNetworkType() == DataCenter.NetworkType.Basic) {
+                state = Network.State.Setup;
+            }
+
+            NetworkVO network =
+                    new NetworkVO(offering.getTrafficType(), Networks.Mode.Dhcp, Networks.BroadcastDomainType.Tungsten, offering.getId(), state, plan.getDataCenterId(),
+                            plan.getPhysicalNetworkId(), offering.isRedundantRouter());
+
+            if (userSpecified != null) {
+                if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) || (userSpecified.getCidr() != null && userSpecified.getGateway() == null)) {
+                    throw new InvalidParameterValueException("cidr and gateway must be specified together.");
+                }
+
+                if ((userSpecified.getIp6Cidr() == null && userSpecified.getIp6Gateway() != null) ||
+                        (userSpecified.getIp6Cidr() != null && userSpecified.getIp6Gateway() == null)) {
+                    throw new InvalidParameterValueException("cidrv6 and gatewayv6 must be specified together.");
+                }
+
+                if (userSpecified.getCidr() != null) {
+                    network.setCidr(userSpecified.getCidr());
+                    network.setGateway(userSpecified.getGateway());
+                }
+
+                if (userSpecified.getIp6Cidr() != null) {
+                    network.setIp6Cidr(userSpecified.getIp6Cidr());
+                    network.setIp6Gateway(userSpecified.getIp6Gateway());
+                }
+
+                if (userSpecified.getBroadcastUri() != null) {
+                    network.setBroadcastUri(userSpecified.getBroadcastUri());
+                    network.setState(Network.State.Setup);
+                }
+
+                if (userSpecified.getBroadcastDomainType() != null) {
+                    network.setBroadcastDomainType(userSpecified.getBroadcastDomainType());
+                }
+
+                if (userSpecified.getPvlanType() != null) {
+                    network.setPvlanType(userSpecified.getPvlanType());
+                }
+            }
+
+            boolean isSecurityGroupEnabled = _networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.SecurityGroup);
+            if (isSecurityGroupEnabled) {
+                network.setName("SecurityGroupEnabledNetwork");
+                network.setDisplayText("SecurityGroupEnabledNetwork");
+            }
+
+            return network;
+        }
+        return null;
     }
 
     @Override
     public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm)
         throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+        if(config.getGuestType() == Network.GuestType.Shared) {
+
+            if(vm.getType() == VirtualMachine.Type.User) {
+
+                String tungstenProjectFqn = _tungstenService.getTungstenProjectFqn(config);
+
+                // create tungsten network
+                createTungstenNetwork(config, tungstenProjectFqn);
+
+                // create logical router with management network
+                TungstenAnswer createLogicalRouterAnswer = createTungstenLogicalRouter(config,
+                        tungstenProjectFqn, Networks.TrafficType.Management);
+                if (!createLogicalRouterAnswer.getResult()) {
+                    throw new CloudRuntimeException("can not create tungsten logical router");
+                }
+
+                // add default tungsten network policy
+                addTungstenDefaultNetworkPolicy(config, tungstenProjectFqn);
+
+                ApplyTungstenNetworkPolicyCommand applyTungstenNetworkPolicyCommand = new ApplyTungstenNetworkPolicyCommand(
+                        tungstenProjectFqn, TungstenUtils.getVirtualNetworkPolicyName(config.getId()), config.getUuid(),
+                        false);
+                TungstenAnswer applyNetworkPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
+                        applyTungstenNetworkPolicyCommand, config.getDataCenterId());
+                if (!applyNetworkPolicyAnswer.getResult()) {
+                    throw new CloudRuntimeException("can not apply default tungsten network policy");
+                }
+
+                createTungstenVmiGateway(config, tungstenProjectFqn);
+            } else {
+                DataCenter dc = _dcDao.findById(config.getDataCenterId());
+
+                if (nic == null) {
+                    nic = new NicProfile(Nic.ReservationStrategy.Create, null, null, null, null);
+                } else if (nic.getIPv4Address() == null && nic.getIPv6Address() == null) {
+                    nic.setReservationStrategy(Nic.ReservationStrategy.Start);
+                } else {
+                    nic.setReservationStrategy(Nic.ReservationStrategy.Create);
+                }
+
+                allocateDirectIp(nic, config, vm, dc, nic.getRequestedIPv4(), nic.getRequestedIPv6());
+                nic.setReservationStrategy(Nic.ReservationStrategy.Create);
+
+                if (nic.getMacAddress() == null) {
+                    nic.setMacAddress(_networkModel.getNextAvailableMacAddressInNetwork(config.getId()));
+                    if (nic.getMacAddress() == null) {
+                        throw new InsufficientAddressCapacityException("Unable to allocate more mac addresses", Network.class, config.getId());
+                    }
+                }
+
+                return nic;
+            }
+        }
         return super.allocate(config, nic, vm);
     }
 
@@ -191,37 +310,19 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
         // setup tungsten network
         try {
             String tungstenProjectFqn = _tungstenService.getTungstenProjectFqn(network);
-            Network publicNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(network.getDataCenterId(),
-                Networks.TrafficType.Public);
 
             // create tungsten network
-            Pair<String, Integer> pair = NetUtils.getCidr(network.getCidr());
-            CreateTungstenNetworkCommand createTungstenGuestNetworkCommand = new CreateTungstenNetworkCommand(
-                network.getUuid(), TungstenUtils.getGuestNetworkName(network.getName()), network.getName(),
-                tungstenProjectFqn, false, false, pair.first(), pair.second(), network.getGateway(),
-                network.getMode().equals(Networks.Mode.Dhcp), null, null, null, false, false,
-                TungstenUtils.getSubnetName(network.getId()));
-            _tungstenFabricUtils.sendTungstenCommand(createTungstenGuestNetworkCommand, network.getDataCenterId());
+            createTungstenNetwork(network, tungstenProjectFqn);
 
             // create logical router with public network
-            CreateTungstenLogicalRouterCommand createTungstenLogicalRouterCommand =
-                new CreateTungstenLogicalRouterCommand(
-                TungstenUtils.getLogicalRouterName(network.getId()), tungstenProjectFqn, publicNetwork.getUuid());
-            TungstenAnswer createLogicalRouterAnswer = _tungstenFabricUtils.sendTungstenCommand(
-                createTungstenLogicalRouterCommand, zoneId);
+            TungstenAnswer createLogicalRouterAnswer = createTungstenLogicalRouter(network,
+                    tungstenProjectFqn, Networks.TrafficType.Public);
             if (!createLogicalRouterAnswer.getResult()) {
                 throw new CloudRuntimeException("can not create tungsten logical router");
             }
 
-            List<TungstenRule> tungstenRuleList = new ArrayList<>();
-            tungstenRuleList.add(new TungstenRule(null, TungstenUtils.DENY_ACTION, TungstenUtils.ONE_WAY_DIRECTION,
-                TungstenUtils.ANY_PROTO, pair.first(), pair.second(), -1, -1, TungstenUtils.ALL_IP4_PREFIX, 0, -1, -1));
-
             // add default tungsten network policy
-            CreateTungstenNetworkPolicyCommand createTungstenNetworkPolicyCommand =
-                new CreateTungstenNetworkPolicyCommand(
-                TungstenUtils.getVirtualNetworkPolicyName(network.getId()), tungstenProjectFqn, tungstenRuleList);
-            _tungstenFabricUtils.sendTungstenCommand(createTungstenNetworkPolicyCommand, zoneId);
+            addTungstenDefaultNetworkPolicy(network, tungstenProjectFqn);
 
             ApplyTungstenNetworkPolicyCommand applyTungstenNetworkPolicyCommand = new ApplyTungstenNetworkPolicyCommand(
                 tungstenProjectFqn, TungstenUtils.getVirtualNetworkPolicyName(network.getId()), network.getUuid(),
@@ -247,10 +348,7 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
             }
 
             // create gateway vmi, update logical router
-            SetTungstenNetworkGatewayCommand setTungstenNetworkGatewayCommand = new SetTungstenNetworkGatewayCommand(
-                tungstenProjectFqn, TungstenUtils.getLogicalRouterName(network.getId()), network.getId(),
-                network.getUuid(), network.getGateway());
-            _tungstenFabricUtils.sendTungstenCommand(setTungstenNetworkGatewayCommand, network.getDataCenterId());
+            createTungstenVmiGateway(network, tungstenProjectFqn);
         } catch (Exception ex) {
             throw new CloudRuntimeException("unable to create tungsten network " + network.getUuid());
         }
@@ -282,17 +380,19 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
         String tungstenProjectFqn = _tungstenService.getTungstenProjectFqn(network);
 
         // release floating ip
-        Network publicNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(network.getDataCenterId(),
-            Networks.TrafficType.Public);
-        IPAddressVO ipAddressVO = _ipAddressDao.findByAssociatedVmId(vm.getId());
-        if (ipAddressVO != null) {
-            ReleaseTungstenFloatingIpCommand releaseTungstenFloatingIpCommand = new ReleaseTungstenFloatingIpCommand(
-                publicNetwork.getUuid(), TungstenUtils.getFloatingIpPoolName(network.getDataCenterId()),
-                TungstenUtils.getFloatingIpName(ipAddressVO.getId()));
-            TungstenAnswer releaseFloatingIpAnswer = _tungstenFabricUtils.sendTungstenCommand(
-                releaseTungstenFloatingIpCommand, network.getDataCenterId());
-            if (!releaseFloatingIpAnswer.getResult()) {
-                return false;
+        if(network.getGuestType().equals(Network.GuestType.Isolated)) {
+            Network publicNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(network.getDataCenterId(),
+                    Networks.TrafficType.Public);
+            IPAddressVO ipAddressVO = _ipAddressDao.findByAssociatedVmId(vm.getId());
+            if (ipAddressVO != null) {
+                ReleaseTungstenFloatingIpCommand releaseTungstenFloatingIpCommand = new ReleaseTungstenFloatingIpCommand(
+                        publicNetwork.getUuid(), TungstenUtils.getFloatingIpPoolName(network.getDataCenterId()),
+                        TungstenUtils.getFloatingIpName(ipAddressVO.getId()));
+                TungstenAnswer releaseFloatingIpAnswer = _tungstenFabricUtils.sendTungstenCommand(
+                        releaseTungstenFloatingIpCommand, network.getDataCenterId());
+                if (!releaseFloatingIpAnswer.getResult()) {
+                    return false;
+                }
             }
         }
 
@@ -325,38 +425,40 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
     public boolean trash(Network network, NetworkOffering offering) {
         try {
             String tungstenProjectFqn = _tungstenService.getTungstenProjectFqn(network);
-            Network publicNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(network.getDataCenterId(),
-                Networks.TrafficType.Public);
+            if(offering.getGuestType() == Network.GuestType.Isolated) {
+                Network publicNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(network.getDataCenterId(),
+                        Networks.TrafficType.Public);
 
-            // clear floating ip
-            List<IPAddressVO> staticNatIpList = _ipAddressDao.listByAssociatedNetwork(network.getId(), false);
-            for (IPAddressVO ipAddressVO : staticNatIpList) {
-                DeleteTungstenFloatingIpCommand deleteTungstenFloatingIpCommand = new DeleteTungstenFloatingIpCommand(
-                    network.getUuid(), TungstenUtils.getFloatingIpPoolName(network.getDataCenterId()),
-                    TungstenUtils.getFloatingIpName(ipAddressVO.getId()));
-                _tungstenFabricUtils.sendTungstenCommand(deleteTungstenFloatingIpCommand, network.getDataCenterId());
-            }
+                // clear floating ip
+                List<IPAddressVO> staticNatIpList = _ipAddressDao.listByAssociatedNetwork(network.getId(), false);
+                for (IPAddressVO ipAddressVO : staticNatIpList) {
+                    DeleteTungstenFloatingIpCommand deleteTungstenFloatingIpCommand = new DeleteTungstenFloatingIpCommand(
+                            network.getUuid(), TungstenUtils.getFloatingIpPoolName(network.getDataCenterId()),
+                            TungstenUtils.getFloatingIpName(ipAddressVO.getId()));
+                    _tungstenFabricUtils.sendTungstenCommand(deleteTungstenFloatingIpCommand, network.getDataCenterId());
+                }
 
-            // delete rule network policy
-            List<FirewallRuleVO> firewallRuleVOList = _firewallRulesDao.listByNetworkAndPurpose(network.getId(),
-                FirewallRule.Purpose.Firewall);
-            for (FirewallRuleVO firewallRuleVO : firewallRuleVOList) {
-                String networkUuid =
-                    firewallRuleVO.getTrafficType() == FirewallRule.TrafficType.Egress ? network.getUuid() :
-                        publicNetwork.getUuid();
-                DeleteTungstenNetworkPolicyCommand deleteRuleNetworkPolicyCommand =
-                    new DeleteTungstenNetworkPolicyCommand(
-                    TungstenUtils.getRuleNetworkPolicyName(firewallRuleVO.getId()), tungstenProjectFqn, networkUuid);
-                _tungstenFabricUtils.sendTungstenCommand(deleteRuleNetworkPolicyCommand, network.getDataCenterId());
-            }
+                // delete rule network policy
+                List<FirewallRuleVO> firewallRuleVOList = _firewallRulesDao.listByNetworkAndPurpose(network.getId(),
+                        FirewallRule.Purpose.Firewall);
+                for (FirewallRuleVO firewallRuleVO : firewallRuleVOList) {
+                    String networkUuid =
+                            firewallRuleVO.getTrafficType() == FirewallRule.TrafficType.Egress ? network.getUuid() :
+                                    publicNetwork.getUuid();
+                    DeleteTungstenNetworkPolicyCommand deleteRuleNetworkPolicyCommand =
+                            new DeleteTungstenNetworkPolicyCommand(
+                                    TungstenUtils.getRuleNetworkPolicyName(firewallRuleVO.getId()), tungstenProjectFqn, networkUuid);
+                    _tungstenFabricUtils.sendTungstenCommand(deleteRuleNetworkPolicyCommand, network.getDataCenterId());
+                }
 
-            // clear source nat network policy
-            List<IPAddressVO> sourceNatIpList = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
-            for (IPAddressVO ipAddressVO : sourceNatIpList) {
-                DeleteTungstenNetworkPolicyCommand deletePublicNetworkPolicyCommand =
-                    new DeleteTungstenNetworkPolicyCommand(
-                    TungstenUtils.getPublicNetworkPolicyName(ipAddressVO.getId()), null, publicNetwork.getUuid());
-                _tungstenFabricUtils.sendTungstenCommand(deletePublicNetworkPolicyCommand, network.getDataCenterId());
+                // clear source nat network policy
+                List<IPAddressVO> sourceNatIpList = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
+                for (IPAddressVO ipAddressVO : sourceNatIpList) {
+                    DeleteTungstenNetworkPolicyCommand deletePublicNetworkPolicyCommand =
+                            new DeleteTungstenNetworkPolicyCommand(
+                                    TungstenUtils.getPublicNetworkPolicyName(ipAddressVO.getId()), null, publicNetwork.getUuid());
+                    _tungstenFabricUtils.sendTungstenCommand(deletePublicNetworkPolicyCommand, network.getDataCenterId());
+                }
             }
 
             // delete default network policy
@@ -379,5 +481,77 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru {
             return false;
         }
         return super.trash(network, offering);
+    }
+
+    public void createTungstenNetwork(Network network, String tungstenProjectFqn) {
+        Pair<String, Integer> pair = NetUtils.getCidr(network.getCidr());
+        CreateTungstenNetworkCommand createTungstenGuestNetworkCommand = new CreateTungstenNetworkCommand(
+                network.getUuid(), TungstenUtils.getGuestNetworkName(network.getName()), network.getName(),
+                tungstenProjectFqn, false, false, pair.first(), pair.second(), network.getGateway(),
+                network.getMode().equals(Networks.Mode.Dhcp), null, null, null, false, false,
+                TungstenUtils.getSubnetName(network.getId()));
+        _tungstenFabricUtils.sendTungstenCommand(createTungstenGuestNetworkCommand, network.getDataCenterId());
+    }
+
+    public void createTungstenVmiGateway(Network network, String tungstenProjectFqn) {
+        SetTungstenNetworkGatewayCommand setTungstenNetworkGatewayCommand = new SetTungstenNetworkGatewayCommand(
+                tungstenProjectFqn, TungstenUtils.getLogicalRouterName(network.getId()), network.getId(),
+                network.getUuid(), network.getGateway());
+        _tungstenFabricUtils.sendTungstenCommand(setTungstenNetworkGatewayCommand, network.getDataCenterId());
+    }
+
+    public void addTungstenDefaultNetworkPolicy(Network network, String tungstenProjectFqn) {
+        Pair<String, Integer> pair = NetUtils.getCidr(network.getCidr());
+        List<TungstenRule> tungstenRuleList = new ArrayList<>();
+        tungstenRuleList.add(new TungstenRule(null, TungstenUtils.DENY_ACTION, TungstenUtils.ONE_WAY_DIRECTION,
+                TungstenUtils.ANY_PROTO, pair.first(), pair.second(), -1, -1, TungstenUtils.ALL_IP4_PREFIX, 0, -1, -1));
+
+        // add default tungsten network policy
+        CreateTungstenNetworkPolicyCommand createTungstenNetworkPolicyCommand =
+                new CreateTungstenNetworkPolicyCommand(
+                        TungstenUtils.getVirtualNetworkPolicyName(network.getId()), tungstenProjectFqn, tungstenRuleList);
+        _tungstenFabricUtils.sendTungstenCommand(createTungstenNetworkPolicyCommand, network.getDataCenterId());
+    }
+
+    public TungstenAnswer createTungstenLogicalRouter(Network network, String tungstenProjectFqn, Networks.TrafficType trafficType) {
+        Network managementNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(network.getDataCenterId(),
+                trafficType);
+        CreateTungstenLogicalRouterCommand createTungstenLogicalRouterCommand =
+                new CreateTungstenLogicalRouterCommand(
+                        TungstenUtils.getLogicalRouterName(network.getId()), tungstenProjectFqn, managementNetwork.getUuid());
+        TungstenAnswer createLogicalRouterAnswer = _tungstenFabricUtils.sendTungstenCommand(
+                createTungstenLogicalRouterCommand, network.getDataCenterId());
+        return createLogicalRouterAnswer;
+    }
+
+    protected void allocateDirectIp(final NicProfile nic, final Network network, final VirtualMachineProfile vm, final DataCenter dc, final String requestedIp4Addr,
+                                    final String requestedIp6Addr) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+
+        try {
+            Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientCapacityException>() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientVirtualNetworkCapacityException,
+                        InsufficientAddressCapacityException {
+                    if (_networkModel.isSharedNetworkWithoutServices(network.getId())) {
+                        _ipAddrMgr.allocateNicValues(nic, dc, vm, network, requestedIp4Addr, requestedIp6Addr);
+                    } else {
+                        _ipAddrMgr.allocateDirectIp(nic, dc, vm, network, requestedIp4Addr, requestedIp6Addr);
+                        //save the placeholder nic if the vm is the Virtual router
+                        if (vm.getType() == VirtualMachine.Type.DomainRouter) {
+                            Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, null);
+                            if (placeholderNic == null) {
+                                s_logger.debug("Saving placeholder nic with ip4 address " + nic.getIPv4Address() + " and ipv6 address " + nic.getIPv6Address() +
+                                        " for the network " + network);
+                                _networkMgr.savePlaceholderNic(network, nic.getIPv4Address(), nic.getIPv6Address(), VirtualMachine.Type.DomainRouter);
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (InsufficientCapacityException e) {
+            ExceptionUtil.rethrow(e, InsufficientVirtualNetworkCapacityException.class);
+            ExceptionUtil.rethrow(e, InsufficientAddressCapacityException.class);
+            throw new IllegalStateException(e);
+        }
     }
 }

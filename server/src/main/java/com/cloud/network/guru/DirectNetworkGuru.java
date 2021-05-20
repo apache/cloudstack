@@ -148,7 +148,8 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                 && isMyTrafficType(offering.getTrafficType())
                 && isMyIsolationMethod(physnet)
                 && offering.getGuestType() == GuestType.Shared
-                && !_ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.NiciraNvp)) {
+                && !_ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.NiciraNvp)
+                && !_ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.Tungsten)) {
             return true;
         } else if (dc.getNetworkType() == NetworkType.Advanced
                 && offering.getGuestType() == GuestType.Shared

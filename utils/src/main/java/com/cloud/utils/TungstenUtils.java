@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.utils;
 
+import com.cloud.utils.net.NetUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -32,6 +33,9 @@ public class TungstenUtils {
     private static final String publicType = "public";
     private static final String managementType = "management";
     private static final String controlType = "control";
+
+    public static final String INGRESS_RULE = "ingress";
+    public static final String EGRESS_RULE = "egress";
 
     public static final int MAX_CIDR = 32;
     public static final int WEB_SERVICE_PORT = 8080;
@@ -220,6 +224,41 @@ public class TungstenUtils {
                 return "SOURCE_IP";
             default:
                 return null;
+        }
+    }
+
+    public static String getEthertTypeFromCidr(String cidr) {
+        if (NetUtils.isValidIp4Cidr(cidr)) {
+            return "IPv4";
+        } else {
+            return "IPv6";
+        }
+    }
+
+    public static String getTungstenAccessControl(String securityGroupRuleType) {
+        switch (securityGroupRuleType) {
+            case INGRESS_RULE:
+                return "ingress-access-control-list";
+            case EGRESS_RULE:
+                return "egress-access-control-list";
+            default:
+                return null;
+        }
+    }
+
+    public static String getTungstenProtocol(String protocol, String cidr) {
+        switch (protocol) {
+            case "tcp":
+                return "tcp";
+            case "udp":
+                return "udp";
+            case "icmp":
+                if(NetUtils.isValidIp4Cidr(cidr))
+                    return "icmp";
+                else
+                    return "icmp6";
+            default:
+                return "any";
         }
     }
 }

@@ -48,6 +48,8 @@ import org.apache.cloudstack.api.command.user.securitygroup.UpdateSecurityGroupC
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -171,6 +173,8 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     NicDao _nicDao;
     @Inject
     NicSecondaryIpDao _nicSecIpDao;
+    @Inject
+    MessageBus _messageBus;
 
     ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
@@ -816,6 +820,8 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             }
         });
 
+        _messageBus.publish(_name, MESSAGE_ADD_SECURITY_GROUP_RULE_EVENT, PublishScope.LOCAL, newRules);
+
         try {
             final ArrayList<Long> affectedVms = new ArrayList<Long>();
             affectedVms.addAll(_securityGroupVMMapDao.listVmIdsBySecurityGroup(securityGroup.getId()));
@@ -901,6 +907,10 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             s_logger.debug("Can't update rules for host, ignore", e);
         }
 
+        if(result) {
+            _messageBus.publish(_name, MESSAGE_REMOVE_SECURITY_GROUP_RULE_EVENT, PublishScope.LOCAL, rule);
+        }
+
         return result;
     }
 
@@ -928,11 +938,12 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         if (group == null) {
             group = new SecurityGroupVO(name, description, domainId, accountId);
             group = _securityGroupDao.persist(group);
+            _messageBus.publish(_name, SecurityGroupService.MESSAGE_CREATE_TUNGSTEN_SECURITY_GROUP_EVENT,
+                    PublishScope.LOCAL, group);
             s_logger.debug("Created security group " + group + " for account id=" + accountId);
         } else {
             s_logger.debug("Returning existing security group " + group + " for account id=" + accountId);
         }
-
         return group;
     }
 
@@ -1223,7 +1234,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         // check permissions
         _accountMgr.checkAccess(caller, null, true, group);
 
-        return Transaction.execute(new TransactionCallbackWithException<Boolean, ResourceInUseException>() {
+        boolean result = Transaction.execute(new TransactionCallbackWithException<Boolean, ResourceInUseException>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) throws ResourceInUseException {
                 SecurityGroupVO group = _securityGroupDao.lockRow(groupId, true);
@@ -1251,6 +1262,10 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             }
         });
 
+        if(result) {
+            _messageBus.publish(_name, MESSAGE_DELETE_TUNGSTEN_SECURITY_GROUP_EVENT, PublishScope.LOCAL, group);
+        }
+        return result;
     }
 
     @Override
