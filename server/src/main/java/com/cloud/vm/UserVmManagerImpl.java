@@ -6312,7 +6312,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 } else {
                     // Verify the volume given belongs to the vm.
                     if (!vmVolumes.contains(volume)) {
-                        throw new InvalidParameterValueException("There volume " + volume + " doesn't belong to " + "the virtual machine " + vm + " that has to be migrated");
+                        throw new InvalidParameterValueException(String.format("Volume " + volume + " doesn't belong to the VM %s (ID: %s) that has to be migrated", vm.getInstanceName(), vm.getUuid()));
                     }
                     volToPoolObjectMap.put(volume.getId(), pool.getId());
                 }
@@ -6347,7 +6347,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm == null) {
-            throw new InvalidParameterValueException("Unable to find the vm by id " + vmId);
+            throw new InvalidParameterValueException("Unable to find the VM by ID " + vmId);
         }
 
         // OfflineVmwareMigration: this would be it ;) if multiple paths exist: unify
@@ -6356,7 +6356,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
             }
-            CloudRuntimeException ex = new CloudRuntimeException("VM is not Running, unable to migrate the vm with" + " specified id");
+            CloudRuntimeException ex = new CloudRuntimeException(String.format("Unable to migrate the VM %s (ID: %s) as it is not in Running state", vm.getInstanceName(), vm.getUuid()));
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
@@ -6366,19 +6366,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // OfflineVmwareMigration: this condition is to complicated. (already a method somewhere)
-        if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) && !vm.getHypervisorType().equals(HypervisorType.KVM)
-                && !vm.getHypervisorType().equals(HypervisorType.Ovm) && !vm.getHypervisorType().equals(HypervisorType.Hyperv)
-                && !vm.getHypervisorType().equals(HypervisorType.Simulator)) {
-            throw new InvalidParameterValueException("Unsupported hypervisor type for vm migration, we support" + " XenServer/VMware/KVM only");
+        if (!Arrays.asList(new HypervisorType[]{
+                HypervisorType.XenServer,
+                HypervisorType.VMware,
+                HypervisorType.KVM,
+                HypervisorType.Simulator}).contains(vm.getHypervisorType())) {
+            throw new InvalidParameterValueException(String.format("Unsupported hypervisor: %s for VM migration, we support XenServer/VMware/KVM only", vm.getHypervisorType()));
         }
-
-        Pair<Host, Host> sourceDestinationHosts = getHostsForMigrateVmWithStorage(vm, destinationHost);
-        Host srcHost = sourceDestinationHosts.first();
 
         // Check that Vm does not have VM Snapshots
         if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
             throw new InvalidParameterValueException("VM with VM Snapshots cannot be migrated with storage, please remove all VM snapshots");
         }
+
+        Pair<Host, Host> sourceDestinationHosts = getHostsForMigrateVmWithStorage(vm, destinationHost);
+        Host srcHost = sourceDestinationHosts.first();
 
         if (!isVMUsingLocalStorage(vm) && MapUtils.isEmpty(volumeToPool)
                 && (destinationHost.getClusterId().equals(srcHost.getClusterId()) || isVmVolumesOnZoneWideStore(vm))){
@@ -6387,8 +6389,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (!VirtualMachine.Type.User.equals(vm.getType())) {
                 return migrateVirtualMachine(vmId, destinationHost);
             }
-            throw new InvalidParameterValueException("Migration of the vm " + vm + "from host " + srcHost + " to destination host " + destinationHost
-                    + " doesn't involve migrating the volumes.");
+            throw new InvalidParameterValueException(String.format("Migration of the VM: %s (ID: %s) from host %s (ID: %s) to destination host  %s (ID: %s) doesn't involve migrating the volumes",
+                    vm.getInstanceName(), vm.getUuid(), srcHost.getName(), srcHost.getUuid(), destinationHost.getName(), destinationHost.getUuid()));
         }
 
         Map<Long, Long> volToPoolObjectMap = getVolumePoolMappingForMigrateVmWithStorage(vm, volumeToPool);
