@@ -248,17 +248,17 @@ public class TungstenUtils {
 
     public static String getTungstenProtocol(String protocol, String cidr) {
         switch (protocol) {
-            case "tcp":
-                return "tcp";
-            case "udp":
-                return "udp";
-            case "icmp":
+            case NetUtils.TCP_PROTO:
+                return NetUtils.TCP_PROTO;
+            case NetUtils.UDP_PROTO:
+                return NetUtils.UDP_PROTO;
+            case NetUtils.ICMP_PROTO:
                 if(NetUtils.isValidIp4Cidr(cidr))
-                    return "icmp";
+                    return NetUtils.ICMP_PROTO;
                 else
-                    return "icmp6";
+                    return NetUtils.ICMP6_PROTO;
             default:
-                return "any";
+                return NetUtils.ANY_PROTO;
         }
     }
 }

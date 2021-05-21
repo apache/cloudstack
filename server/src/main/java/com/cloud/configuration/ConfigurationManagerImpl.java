@@ -1787,13 +1787,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     private boolean isTungstenZone(long zoneId){
-        boolean isTungsten = false;
         List<PhysicalNetworkVO> physicalNetworks = _physicalNetworkDao.listByZone(zoneId);
         for(PhysicalNetworkVO physicalNetwork : physicalNetworks){
             if(physicalNetwork.getIsolationMethods().contains("TF"))
-                isTungsten = true;
+                return true;
         }
-        return isTungsten;
+        return false;
     }
 
     private void checkIpRange(final String startIp, final String endIp, final String cidrAddress, final long cidrSize) {

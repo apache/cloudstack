@@ -27,7 +27,7 @@ import javax.persistence.Table;
 import java.util.UUID;
 
 @Entity
-@Table(name = ("tungsten_providers"))
+@Table(name = "tungsten_providers")
 public class TungstenProviderVO implements TungstenProvider {
 
     @Id
