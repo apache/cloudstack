@@ -30,10 +30,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+
+
 import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
@@ -204,6 +207,7 @@ import org.apache.cloudstack.api.command.admin.storage.PreparePrimaryStorageForM
 import org.apache.cloudstack.api.command.admin.storage.UpdateCloudToUseObjectStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.SyncStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;
@@ -742,6 +746,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "6", "Specifies the length of a randomly generated password", false);
     static final ConfigKey<Integer> sshKeyLength = new ConfigKey<Integer>("Advanced", Integer.class, "ssh.key.length", "2048", "Specifies custom SSH key length (bit)", true, ConfigKey.Scope.Global);
     static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<Boolean>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
+    public static final ConfigKey<String> customCsIdentifier = new ConfigKey<String>("Advanced", String.class, "custom.cs.identifier", UUID.randomUUID().toString().split("-")[0].substring(4), "Custom identifier for the cloudstack installation", true, ConfigKey.Scope.Global);
 
     @Inject
     public AccountManager _accountMgr;
@@ -1277,15 +1282,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
+        String srcHostVersion = srcHost.getHypervisorVersion();
+        if (HypervisorType.KVM.equals(srcHost.getHypervisorType()) && srcHostVersion == null) {
+            srcHostVersion = "";
+        }
 
         // Check if the vm can be migrated with storage.
         boolean canMigrateWithStorage = false;
 
-        if (vm.getType() == VirtualMachine.Type.User) {
-            final HypervisorCapabilitiesVO capabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(srcHost.getHypervisorType(), srcHost.getHypervisorVersion());
-            if (capabilities != null) {
-                canMigrateWithStorage = capabilities.isStorageMotionSupported();
-            }
+        if (VirtualMachine.Type.User.equals(vm.getType()) || HypervisorType.VMware.equals(vm.getHypervisorType())) {
+            canMigrateWithStorage = Boolean.TRUE.equals(_hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion));
         }
 
         // Check if the vm is using any disks on local storage.
@@ -1312,8 +1318,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
         DataCenterDeployment plan = null;
         if (canMigrateWithStorage) {
-            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), null, null, null, keyword,
-                null, null, srcHost.getHypervisorType(), srcHost.getHypervisorVersion(), srcHost.getId());
+            Long podId = !VirtualMachine.Type.User.equals(vm.getType()) ? srcHost.getPodId() : null;
+            allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), podId, null, null, keyword,
+                null, null, srcHost.getHypervisorType(), null, srcHost.getId());
             allHosts = allHostsPair.first();
             hostsForMigrationWithStorage = new ArrayList<>(allHosts);
 
@@ -1323,6 +1330,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
                 for (Iterator<HostVO> iterator = hostsForMigrationWithStorage.iterator(); iterator.hasNext();) {
                     final Host host = iterator.next();
+                    String hostVersion = host.getHypervisorVersion();
+                    if (HypervisorType.KVM.equals(host.getHypervisorType()) && hostVersion == null) {
+                        hostVersion = "";
+                    }
 
                     if (volClusterId != null) {
                         if (storagePool.isLocal() || !host.getClusterId().equals(volClusterId) || usesLocal) {
@@ -1334,7 +1345,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                                 // source volume.
                                 iterator.remove();
                             } else {
-                                if (hasSuitablePoolsForVolume(volume, host, vmProfile)) {
+                                boolean hostSupportsStorageMigration = false;
+                                if ((srcHostVersion != null && srcHostVersion.equals(hostVersion)) ||
+                                        Boolean.TRUE.equals(_hypervisorCapabilitiesDao.isStorageMotionSupported(host.getHypervisorType(), hostVersion))) {
+                                    hostSupportsStorageMigration = true;
+                                }
+                                if (hostSupportsStorageMigration && hasSuitablePoolsForVolume(volume, host, vmProfile)) {
                                     requiresStorageMotion.put(host, true);
                                 } else {
                                     iterator.remove();
@@ -1344,6 +1360,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     } else {
                         if (storagePool.isManaged()) {
                             if (srcHost.getClusterId() != host.getClusterId()) {
+                                if (storagePool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
+                                    // No need of new volume creation for zone wide PowerFlex/ScaleIO pool
+                                    // Simply, changing volume access to host should work: grant access on dest host and revoke access on source host
+                                    continue;
+                                }
                                 // If the volume's storage pool is managed and at the zone level, then we still have to perform a storage migration
                                 // because we need to create a new target volume and copy the contents of the source volume into it before deleting
                                 // the source volume.
@@ -1354,7 +1375,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 }
             }
 
-            plan = new DataCenterDeployment(srcHost.getDataCenterId(), null, null, null, null, null);
+            plan = new DataCenterDeployment(srcHost.getDataCenterId(), podId, null, null, null, null);
         } else {
             final Long cluster = srcHost.getClusterId();
             if (s_logger.isDebugEnabled()) {
@@ -1589,6 +1610,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 storagePools.addAll(clusterAndLocalStoragePools);
             }
         }
+
         return storagePools;
     }
 
@@ -1628,7 +1650,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (isLocalPoolSameHostAsVmHost || pool.isShared()) {
                     suitablePools.add(pool);
                 }
-
             }
         }
         return suitablePools;
@@ -2177,7 +2198,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 long dcId = dc.getId();
                 try {
                     freeAddrs.addAll(_ipAddressMgr.listAvailablePublicIps(dcId, null, vlanDbIds, owner, VlanType.VirtualNetwork, associatedNetworkId,
-                            false, false, false, null, false, cmd.getVpcId(), cmd.isDisplay(), false, false)); // Free
+                            false, false, false, null, null, false, cmd.getVpcId(), cmd.isDisplay(), false, false)); // Free
                 } catch (InsufficientAddressCapacityException e) {
                     s_logger.warn("no free address is found in zone " + dcId);
                 }
@@ -2634,7 +2655,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     private ConsoleProxyVO stopConsoleProxy(final VMInstanceVO systemVm, final boolean isForced) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
-
         _itMgr.advanceStop(systemVm.getUuid(), isForced);
         return _consoleProxyDao.findById(systemVm.getId());
     }
@@ -2642,6 +2662,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private ConsoleProxyVO rebootConsoleProxy(final long instanceId) {
         _consoleProxyMgr.rebootProxy(instanceId);
         return _consoleProxyDao.findById(instanceId);
+    }
+
+    private ConsoleProxyVO forceRebootConsoleProxy(final VMInstanceVO systemVm)  throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        _itMgr.advanceStop(systemVm.getUuid(), false);
+        return _consoleProxyMgr.startProxy(systemVm.getId(), true);
     }
 
     protected ConsoleProxyVO destroyConsoleProxy(final long instanceId) {
@@ -3015,6 +3040,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(FindStoragePoolsForMigrationCmd.class);
         cmdList.add(PreparePrimaryStorageForMaintenanceCmd.class);
         cmdList.add(UpdateStoragePoolCmd.class);
+        cmdList.add(SyncStoragePoolCmd.class);
         cmdList.add(UpdateImageStoreCmd.class);
         cmdList.add(DestroySystemVmCmd.class);
         cmdList.add(ListSystemVMsCmd.class);
@@ -3431,7 +3457,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength, humanReadableSizes};
+        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
@@ -3531,6 +3557,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public SecondaryStorageVmVO rebootSecondaryStorageVm(final long instanceId) {
         _secStorageVmMgr.rebootSecStorageVm(instanceId);
         return _secStorageVmDao.findById(instanceId);
+    }
+
+    private SecondaryStorageVmVO forceRebootSecondaryStorageVm(final VMInstanceVO systemVm)  throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        _itMgr.advanceStop(systemVm.getUuid(), false);
+        return _secStorageVmMgr.startSecStorageVm(systemVm.getId());
     }
 
     protected SecondaryStorageVmVO destroySecondaryStorageVm(final long instanceId) {
@@ -3702,12 +3733,24 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw ex;
         }
 
-        if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)) {
-            ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy Vm");
-            return rebootConsoleProxy(cmd.getId());
-        } else {
-            ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_SSVM_REBOOT, "rebooting secondary storage Vm");
-            return rebootSecondaryStorageVm(cmd.getId());
+        try {
+            if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)) {
+                ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy Vm");
+                if (cmd.isForced()) {
+                    return forceRebootConsoleProxy(systemVm);
+                }
+                return rebootConsoleProxy(cmd.getId());
+            } else {
+                ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_SSVM_REBOOT, "rebooting secondary storage Vm");
+                if (cmd.isForced()) {
+                    return forceRebootSecondaryStorageVm(systemVm);
+                }
+                return rebootSecondaryStorageVm(cmd.getId());
+            }
+        } catch (final ResourceUnavailableException e) {
+            throw new CloudRuntimeException("Unable to reboot " + systemVm, e);
+        } catch (final OperationTimedoutException e) {
+            throw new CloudRuntimeException("Operation timed out - Unable to reboot " + systemVm, e);
         }
     }
 

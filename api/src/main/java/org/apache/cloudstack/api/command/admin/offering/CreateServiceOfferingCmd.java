@@ -321,7 +321,15 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             Collection<?> props = details.values();
             for (Object prop : props) {
                 HashMap<String, String> detail = (HashMap<String, String>) prop;
-                detailsMap.put(detail.get("key"), detail.get("value"));
+                // Compatibility with key and value pairs input from API cmd for details map parameter
+                if (!Strings.isNullOrEmpty(detail.get("key")) && !Strings.isNullOrEmpty(detail.get("value"))) {
+                    detailsMap.put(detail.get("key"), detail.get("value"));
+                    continue;
+                }
+
+                for (Map.Entry<String, String> entry: detail.entrySet()) {
+                    detailsMap.put(entry.getKey(),entry.getValue());
+                }
             }
         }
         return detailsMap;

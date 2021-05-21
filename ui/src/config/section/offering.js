@@ -183,7 +183,7 @@ export default {
       icon: 'cloud-upload',
       docHelp: 'adminguide/virtual_machines.html#backup-offerings',
       permission: ['listBackupOfferings', 'listInfrastructure'],
-      columns: ['name', 'description', 'zoneid'],
+      columns: ['name', 'description', 'zonename'],
       details: ['name', 'id', 'description', 'externalid', 'zone', 'created'],
       actions: [{
         api: 'importBackupOffering',

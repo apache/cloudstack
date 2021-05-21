@@ -51,6 +51,12 @@ public interface QuotaConfig {
     public static final ConfigKey<String> QuotaSmtpSender = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.sender", "",
             "Sender of quota alert email (will be in the From header of the email)", true);
 
+    public static final ConfigKey<String> QuotaSmtpEnabledSecurityProtocols = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.enabledSecurityProtocols", "",
+            "White-space separated security protocols; ex: \"TLSv1 TLSv1.1\". Supported protocols: SSLv2Hello, SSLv3, TLSv1, TLSv1.1 and TLSv1.2", true);
+
+    public static final ConfigKey<String> QuotaSmtpUseStartTLS = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.useStartTLS", "false",
+            "If set to true and if we enable security via quota.usage.smtp.useAuth, this will enable StartTLS to secure the conection.", true);
+
     enum QuotaEmailTemplateTypes {
         QUOTA_LOW, QUOTA_EMPTY, QUOTA_UNLOCK_ACCOUNT, QUOTA_STATEMENT
     }

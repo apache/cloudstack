@@ -35,7 +35,7 @@
                 autoFocus />
             </a-form-item>
           </a-col>
-          <a-col :md="24" :lg="24">
+          <a-col :md="24" :lg="24" v-if="!supportsStorageSnapshot">
             <a-form-item :label="$t('label.asyncbackup')">
               <a-switch v-decorator="['asyncbackup']" />
             </a-form-item>
@@ -64,12 +64,8 @@
               <a-input ref="input" :value="inputKey" @change="handleKeyChange" style="width: 100px; text-align: center" :placeholder="$t('label.key')" />
               <a-input style=" width: 30px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
               <a-input :value="inputValue" @change="handleValueChange" style="width: 100px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-              <a-button shape="circle" size="small" @click="handleInputConfirm">
-                <a-icon type="check"/>
-              </a-button>
-              <a-button shape="circle" size="small" @click="inputVisible=false">
-                <a-icon type="close"/>
-              </a-button>
+              <tooltip-button :tooltip="$t('label.ok')" icon="check" size="small" @click="handleInputConfirm" />
+              <tooltip-button :tooltip="$t('label.cancel')" icon="close" size="small" @click="inputVisible=false" />
             </a-input-group>
           </div>
           <a-tag v-else @click="showInput" style="background: #fff; borderStyle: dashed;">
@@ -97,9 +93,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'TakeSnapshot',
+  components: {
+    TooltipButton
+  },
   props: {
     loading: {
       type: Boolean,
@@ -114,6 +114,7 @@ export default {
     return {
       actionLoading: false,
       quiescevm: false,
+      supportsStorageSnapshot: false,
       inputValue: '',
       inputKey: '',
       inputVisible: '',
@@ -131,6 +132,7 @@ export default {
   },
   mounted () {
     this.quiescevm = this.resource.quiescevm
+    this.supportsStorageSnapshot = this.resource.supportsstoragesnapshot
   },
   methods: {
     handleSubmit (e) {

@@ -43,6 +43,7 @@ note that you can override/provide "branding" string with "-b, --brand" flag as 
 Optional arguments:
    -b, --brand string                      Set branding to be used in package name (it will override any branding string in POM version)
    -T, --use-timestamp                     Use epoch timestamp instead of SNAPSHOT in the package name (if not provided, use "SNAPSHOT")
+   -o, --output-directory                  The output directory of packages
 
 Other arguments:
    -h, --help                              Display this help message and exit
@@ -84,6 +85,16 @@ while [ -n "$1" ]; do
             fi
             ;;
 
+        -o | --output-directory)
+            if [ -n "$OUTPUT_DIR" ]; then
+                echo "ERROR: you have already entered value for -o, --output-directory"
+                exit 1
+            else
+                OUTPUT_DIR=$2
+                shift 2
+            fi
+            ;;
+
         -*|*)
             echo "ERROR: no such option $1. -h or --help for help"
             exit 1
@@ -96,7 +107,7 @@ if [ -z "$(which dch)" ] ; then
     exit 1
 fi
 
-NOW="$(date +%s)"
+NOW="$(date +'%Y%m%dT%H%M%S')"
 PWD=$(cd $(dirname "$0") && pwd -P)
 cd $PWD/../
 
@@ -139,7 +150,7 @@ else
     fi
 fi
 
-/bin/cp debian/changelog /tmp/changelog.orig
+/bin/cp debian/changelog debian/changelog.$NOW
 
 dch -b -v "${VERSION}~${DISTCODE}" -u low -m "Apache CloudStack Release ${VERSION}"
 sed -i '0,/ UNRELEASED;/s// unstable;/g' debian/changelog
@@ -147,7 +158,13 @@ sed -i '0,/ UNRELEASED;/s// unstable;/g' debian/changelog
 dpkg-checkbuilddeps
 dpkg-buildpackage -uc -us -b
 
-/bin/mv /tmp/changelog.orig debian/changelog
+/bin/mv debian/changelog.$NOW debian/changelog
+
+if [ -n "$OUTPUT_DIR" ];then
+    mkdir -p "$OUTPUT_DIR"
+    mv ../*${VERSION}* "$OUTPUT_DIR"
+    echo "====== CloudStack packages have been moved to $OUTPUT_DIR ======"
+fi
 
 if [ "$USE_TIMESTAMP" == "true" ]; then
     (cd $PWD; git reset --hard)

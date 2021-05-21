@@ -17,10 +17,15 @@
 
 package org.apache.cloudstack.response;
 
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
+import java.text.DecimalFormat;
+import java.text.ParseException;
+
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
+
+import com.cloud.serializer.Param;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.gson.annotations.SerializedName;
 
 public class HostMetricsResponse extends HostResponse {
     @SerializedName("powerstate")
@@ -109,15 +114,15 @@ public class HostMetricsResponse extends HostResponse {
         }
     }
 
-    public void setCpuTotal(final Integer cpuNumber, final Long cpuSpeed, final Double overcommitRatio) {
-        if (cpuNumber != null && cpuSpeed != null && overcommitRatio != null) {
-            this.cpuTotal = String.format("%.2f Ghz (x %.1f)", cpuNumber * cpuSpeed / 1000.0, overcommitRatio);
+    public void setCpuTotal(final Integer cpuNumber, final Long cpuSpeed) {
+        if (cpuNumber != null && cpuSpeed != null) {
+            this.cpuTotal = String.format("%.2f Ghz", cpuNumber * cpuSpeed / 1000.0);
         }
     }
 
     public void setCpuUsed(final String cpuUsed, final Integer cpuNumber, final Long cpuSpeed) {
         if (cpuUsed != null && cpuNumber != null && cpuSpeed != null) {
-            this.cpuUsed = String.format("%.2f Ghz", Double.valueOf(cpuUsed.replace("%", "")) * cpuNumber * cpuSpeed / (100.0 * 1000.0));
+            this.cpuUsed = String.format("%.2f Ghz", parseCPU(cpuUsed) * cpuNumber * cpuSpeed / (100.0 * 1000.0));
         }
     }
 
@@ -129,13 +134,13 @@ public class HostMetricsResponse extends HostResponse {
 
     public void setCpuAllocated(final String cpuAllocated, final Integer cpuNumber, final Long cpuSpeed) {
         if (cpuAllocated != null && cpuNumber != null && cpuSpeed != null) {
-            this.cpuAllocated = String.format("%.2f Ghz", Double.valueOf(cpuAllocated.replace("%", "")) * cpuNumber * cpuSpeed / (100.0 * 1000.0));
+            this.cpuAllocated = String.format("%.2f Ghz", parseCPU(cpuAllocated) * cpuNumber * cpuSpeed / (100.0 * 1000.0));
         }
     }
 
-    public void setMemTotal(final Long memTotal, final Double overcommitRatio) {
-        if (memTotal != null && overcommitRatio != null) {
-            this.memTotal = String.format("%.2f GB (x %.1f)", memTotal / (1024.0 * 1024.0 * 1024.0), overcommitRatio);
+    public void setMemTotal(final Long memTotal) {
+        if (memTotal != null) {
+            this.memTotal = String.format("%.2f GB", memTotal / (1024.0 * 1024.0 * 1024.0));
         }
     }
 
@@ -165,25 +170,25 @@ public class HostMetricsResponse extends HostResponse {
 
     public void setCpuUsageThreshold(final String cpuUsed, final Double threshold) {
         if (cpuUsed != null && threshold != null) {
-            this.cpuThresholdExceeded = Double.valueOf(cpuUsed.replace("%", "")) > (100.0 * threshold);
+            this.cpuThresholdExceeded = parseCPU(cpuUsed) > (100.0 * threshold);
         }
     }
 
     public void setCpuUsageDisableThreshold(final String cpuUsed, final Float threshold) {
         if (cpuUsed != null && threshold != null) {
-            this.cpuDisableThresholdExceeded = Double.valueOf(cpuUsed.replace("%", "")) > (100.0 * threshold);
+            this.cpuDisableThresholdExceeded = parseCPU(cpuUsed) > (100.0 * threshold);
         }
     }
 
-    public void setCpuAllocatedThreshold(final String cpuAllocated, final Double overCommitRatio, final Double threshold) {
-        if (cpuAllocated != null && overCommitRatio != null && threshold != null) {
-            this.cpuAllocatedThresholdExceeded = Double.valueOf(cpuAllocated.replace("%", "")) > (100.0 * threshold * overCommitRatio);
+    public void setCpuAllocatedThreshold(final String cpuAllocated, final Double threshold) {
+        if (cpuAllocated != null && threshold != null) {
+            this.cpuAllocatedThresholdExceeded = Double.valueOf(cpuAllocated.replace("%", "")) > (100.0 * threshold );
         }
     }
 
-    public void setCpuAllocatedDisableThreshold(final String cpuAllocated, final Double overCommitRatio, final Float threshold) {
-        if (cpuAllocated != null && overCommitRatio != null && threshold != null) {
-            this.cpuAllocatedDisableThresholdExceeded = Double.valueOf(cpuAllocated.replace("%", "")) > (100.0 * threshold * overCommitRatio);
+    public void setCpuAllocatedDisableThreshold(final String cpuAllocated, final Float threshold) {
+        if (cpuAllocated != null && threshold != null) {
+            this.cpuAllocatedDisableThresholdExceeded = Double.valueOf(cpuAllocated.replace("%", "")) > (100.0 * threshold);
         }
     }
 
@@ -199,15 +204,24 @@ public class HostMetricsResponse extends HostResponse {
         }
     }
 
-    public void setMemoryAllocatedThreshold(final Long memAllocated, final Long memTotal, final Double overCommitRatio, final Double threshold) {
-        if (memAllocated != null && memTotal != null && overCommitRatio != null && threshold != null) {
-            this.memoryAllocatedThresholdExceeded = memAllocated > (memTotal * threshold * overCommitRatio);
+    public void setMemoryAllocatedThreshold(final Long memAllocated, final Long memTotal, final Double threshold) {
+        if (memAllocated != null && memTotal != null && threshold != null) {
+            this.memoryAllocatedThresholdExceeded = memAllocated > (memTotal * threshold);
         }
     }
 
-    public void setMemoryAllocatedDisableThreshold(final Long memAllocated, final Long memTotal, final Double overCommitRatio, final Float threshold) {
-        if (memAllocated != null && memTotal != null && overCommitRatio != null && threshold != null) {
-            this.memoryAllocatedDisableThresholdExceeded = memAllocated > (memTotal * threshold * overCommitRatio);
+    public void setMemoryAllocatedDisableThreshold(final Long memAllocated, final Long memTotal, final Float threshold) {
+        if (memAllocated != null && memTotal != null && threshold != null) {
+            this.memoryAllocatedDisableThresholdExceeded = memAllocated > (memTotal * threshold);
+        }
+    }
+
+    private Double parseCPU(String cpu) {
+        DecimalFormat decimalFormat = new DecimalFormat("#.##");
+        try {
+            return decimalFormat.parse(cpu).doubleValue();
+        } catch (ParseException e) {
+            throw new CloudRuntimeException(e);
         }
     }
 
