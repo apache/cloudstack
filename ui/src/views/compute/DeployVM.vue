@@ -516,7 +516,13 @@
                           <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
                         </a-tooltip>
                       </span>
-                      <a-switch v-decorator="['dynamicscalingenabled', {initialValue: dynamicscalingenabled}]" :checked="dynamicscalingenabled" @change="val => { dynamicscalingenabled = val }"/>
+                      <a-form-item>
+                        <a-switch
+                          v-decorator="['dynamicscalingenabled']"
+                          :checked="isDynamicallyScalable() && dynamicscalingenabled"
+                          :disabled="!isDynamicallyScalable()"
+                          @change="val => { dynamicscalingenabled = val }"/>
+                      </a-form-item>
                     </a-form-item>
                     <a-form-item :label="$t('label.userdata')">
                       <a-textarea
@@ -1096,6 +1102,16 @@ export default {
       }
     }
   },
+  serviceOffering (oldValue, newValue) {
+    if (oldValue && newValue && oldValue.id !== newValue.id) {
+      this.dynamicscalingenabled = this.isDynamicallyScalable()
+    }
+  },
+  template (oldValue, newValue) {
+    if (oldValue && newValue && oldValue.id !== newValue.id) {
+      this.dynamicscalingenabled = this.isDynamicallyScalable()
+    }
+  },
   created () {
     this.form = this.$form.createForm(this, {
       onValuesChange: (props, fields) => {
@@ -1188,6 +1204,9 @@ export default {
         ['name', 'keyboard', 'boottype', 'bootmode', 'userdata'].forEach(this.fillValue)
         this.instanceConfig = this.form.getFieldsValue() // ToDo: maybe initialize with some other defaults
       })
+    },
+    isDynamicallyScalable () {
+      return this.serviceOffering && this.serviceOffering.dynamicscalingenabled && this.template && this.template.isdynamicallyscalable
     },
     async fetchDataByZone (zoneId) {
       this.fillValue('zoneid')
