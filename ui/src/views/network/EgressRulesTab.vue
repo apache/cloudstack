@@ -60,12 +60,12 @@
 
     <a-divider/>
     <a-button
-      :disabled="!(('deleteEgressFirewallRule' in $store.getters.apis) && this.selectedRowKeys.length > 0)"
-      type="dashed"
+      v-if="(('deleteEgressFirewallRule' in $store.getters.apis) && this.selectedRowKeys.length > 0)"
+      type="danger"
       icon="plus"
       style="width: 100%; margin-bottom: 15px"
-      @click="deleteRules">
-      {{ $t('label.action.delete.firewall') + 's' }}
+      @click="bulkDeleteRulesConfirmation()">
+      {{ $t('label.action.bulk.delete.egress.firewall.rules') }}
     </a-button>
     <a-table
       size="small"
@@ -105,14 +105,123 @@
       </template>
     </a-pagination>
 
+    <a-modal
+      v-if="showConfirmationAction"
+      :visible="showConfirmationAction"
+      :closable="true"
+      :maskClosable="false"
+      :okText="$t('label.ok')"
+      :cancelText="$t('label.cancel')"
+      style="top: 20px;"
+      width="60vw"
+      @ok="deleteRules"
+      @cancel="closeModal"
+      centered>
+      <span slot="title">
+        {{ $t('label.action.bulk.delete.egress.firewall.rules') }}
+      </span>
+      <span>
+        <a-alert type="warning">
+          <span v-if="selectedItems.length > 0" slot="message" v-html="`<b>${selectedItems.length} ` + $t('label.items.selected') + `. </b>`" />
+          <span slot="message" v-html="$t('label.confirm.delete.egress.firewall.rules')" />
+        </a-alert>
+        <a-divider />
+        <a-table
+          size="middle"
+          :columns="selectedColumns"
+          :dataSource="selectedItems"
+          :rowKey="(record, idx) => record.id"
+          :pagination="false"
+          style="overflow-y: auto">
+          <template slot="protocol" slot-scope="record">
+            {{ record.protocol | capitalise }}
+          </template>
+          <template slot="startport" slot-scope="record">
+            {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : 'All' }}
+          </template>
+          <template slot="endport" slot-scope="record">
+            {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : 'All' }}
+          </template>
+        </a-table>
+        <a-divider />
+        <br/>
+      </span>
+    </a-modal>
+
+    <a-modal
+      :visible="showGroupActionModal"
+      :closable="true"
+      :maskClosable="false"
+      :title="$t('label.status')"
+      :cancelText="$t('label.cancel')"
+      @cancel="handleCancel"
+      width="60vw"
+      style="top: 20px;overflow-y: auto"
+      centered
+    >
+      <template slot="footer">
+        <a-button key="back" @click="handleCancel"> {{ $t('label.close') }} </a-button>
+      </template>
+      <div v-if="showGroupActionModal">
+        <a-table
+          v-if="selectedItems.length > 0"
+          size="middle"
+          :columns="selectedColumns"
+          :dataSource="selectedItems"
+          :rowKey="(record, idx) => record.id"
+          :pagination="false"
+          style="overflow-y: auto"
+        >
+          <div slot="status" slot-scope="text">
+            <status :text=" text ? text : 'inprogress' " displayText></status>
+          </div>
+          <template slot="protocol" slot-scope="record">
+            {{ record.protocol | capitalise }}
+          </template>
+          <template slot="startport" slot-scope="record">
+            {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : 'All' }}
+          </template>
+          <template slot="endport" slot-scope="record">
+            {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : 'All' }}
+          </template>
+        </a-table>
+        <a-divider />
+        <a-alert type="info">
+          <span
+            slot="message"
+            v-html="`<b>Successfully completed: ${selectedItems.filter(item => item.status === 'success').length || 0}
+            <br/>Failed: ${selectedItems.filter(item => item.status === 'failure').length || 0}
+            <br/>In Progress: ${selectedItems.filter(item => item.status === 'inprogress').length || 0}<b/>`" />
+        </a-alert>
+        <a-pagination
+          class="pagination"
+          size="small"
+          :current="page"
+          :pageSize="pageSize"
+          :total="selectedItems.length"
+          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
+          :pageSizeOptions="['10', '20', '40', '80', '100']"
+          @change="handleChangePage"
+          @showSizeChange="handleChangePageSize"
+          showSizeChanger>
+          <template slot="buildOptionText" slot-scope="props">
+            <span>{{ props.value }} / {{ $t('label.page') }}</span>
+          </template>
+        </a-pagination>
+      </div>
+    </a-modal>
   </div>
 </template>
 
 <script>
 import { api } from '@/api'
+import Status from '@/components/widgets/Status'
 
 export default {
   name: 'EgressRulesTab',
+  components: {
+    Status
+  },
   props: {
     resource: {
       type: Object,
@@ -122,6 +231,12 @@ export default {
   data () {
     return {
       selectedRowKeys: [],
+      showGroupActionModal: false,
+      showBulkActionCompletedModal: false,
+      selectedItems: {},
+      selectedColumns: [],
+      filterColumns: ['Action'],
+      showConfirmationAction: false,
       loading: true,
       egressRules: [],
       newRule: {
@@ -188,6 +303,7 @@ export default {
       this.fetchData()
     }
   },
+  inject: ['parentFetchData'],
   methods: {
     fetchData () {
       this.loading = true
@@ -206,6 +322,9 @@ export default {
     setSelection (selection) {
       this.selectedRowKeys = selection
       this.$emit('selection-change', this.selectedRowKeys)
+      this.selectedItems = (this.egressRules.filter(function (item) {
+        return selection.indexOf(item.id) !== -1
+      }))
     },
     resetSelection () {
       this.setSelection([])
@@ -213,12 +332,43 @@ export default {
     onSelectChange (selectedRowKeys, selectedRows) {
       this.setSelection(selectedRowKeys)
     },
+    bulkDeleteRulesConfirmation () {
+      this.showConfirmationAction = true
+      this.selectedColumns = this.columns.filter(column => {
+        return !this.filterColumns.includes(column.title)
+      })
+      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'inprogress' }))
+    },
+    handleCancel () {
+      this.showGroupActionModal = false
+      this.showBulkActionCompletedModal = true
+      this.showBulkActionCompletedModal = false
+      this.parentFetchData()
+    },
+    jobCompletedNotificationCancel () {
+      this.showBulkActionCompletedModal = false
+      this.selectedItems = []
+      this.selectedColumns = []
+      this.selectedRowKeys = []
+      this.parentFetchData()
+    },
+    updateResourceState (resource, state) {
+      if (this.selectedItems && resource) {
+        const objIndex = this.selectedItems.findIndex(obj => obj.id === resource)
+        this.selectedItems[objIndex].status = state
+      }
+    },
     deleteRules (e) {
-      var that = this
-      var selectedRules = (this.egressRules.filter(function (rule) {
-        return that.selectedRowKeys.indexOf(rule.id) !== -1
-      }))
-      for (const rule of selectedRules) {
+      this.showConfirmationAction = false
+      this.selectedColumns.splice(0, 0, {
+        dataIndex: 'status',
+        title: this.$t('label.status'),
+        scopedSlots: { customRender: 'status' }
+      })
+      if (this.selectedRowKeys.length > 0) {
+        this.showGroupActionModal = true
+      }
+      for (const rule of this.selectedItems) {
         this.deleteRule(rule)
       }
     },
@@ -228,9 +378,19 @@ export default {
         this.$pollJob({
           jobId: response.deleteegressfirewallruleresponse.jobid,
           successMessage: this.$t('message.success.remove.egress.rule'),
-          successMethod: () => this.fetchData(),
+          successMethod: () => {
+            if (this.selectedItems.length > 0) {
+              this.updateResourceState(rule.id, 'success')
+            }
+            this.fetchData()
+          },
           errorMessage: this.$t('message.remove.egress.rule.failed'),
-          errorMethod: () => this.fetchData(),
+          errorMethod: () => {
+            if (this.selectedItems.length > 0) {
+              this.updateResourceState(rule.id, 'failure')
+            }
+            this.fetchData()
+          },
           loadingMessage: this.$t('message.remove.egress.rule.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => this.fetchData()
@@ -238,6 +398,8 @@ export default {
       }).catch(error => {
         this.$notifyError(error)
         this.fetchData()
+      }).finally(() => {
+        this.loading = false
       })
     },
     addRule () {
@@ -280,6 +442,9 @@ export default {
       this.newRule.icmpcode = null
       this.newRule.startport = null
       this.newRule.endport = null
+    },
+    closeModal () {
+      this.showConfirmationAction = false
     },
     handleChangePage (page, pageSize) {
       this.page = page

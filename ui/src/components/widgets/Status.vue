@@ -96,6 +96,7 @@ export default {
         case 'True':
         case 'Up':
         case 'enabled':
+        case 'success':
           status = 'success'
           break
         case 'Alert':
@@ -107,6 +108,7 @@ export default {
         case 'False':
         case 'Stopped':
         case 'ReadOnly':
+        case 'failure':
           status = 'error'
           break
         case 'Migrating':
@@ -114,6 +116,7 @@ export default {
         case 'Starting':
         case 'Stopping':
         case 'Upgrading':
+        case 'inprogress':
           status = 'processing'
           break
         case 'Allocated':

@@ -127,6 +127,7 @@
         :okText="$t('label.ok')"
         :cancelText="$t('label.cancel')"
         style="top: 20px;"
+        width="60vw"
         @ok="handleSubmit"
         @cancel="closeAction"
         :confirmLoading="actionLoading"
@@ -145,8 +146,22 @@
         <a-spin :spinning="actionLoading">
           <span v-if="currentAction.message">
             <a-alert type="warning">
+              <span v-if="selectedRowKeys.length > 0" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
               <span slot="message" v-html="$t(currentAction.message)" />
             </a-alert>
+            <div v-if="selectedRowKeys.length > 0">
+              <a-divider />
+              <a-table
+                v-if="selectedRowKeys.length > 0"
+                size="middle"
+                :columns="columns"
+                :dataSource="selectedItems"
+                :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
+                :pagination="false"
+                style="overflow-y: auto"
+              >
+              </a-table>
+            </div>
             <br v-if="currentAction.paramFields.length > 0"/>
           </span>
           <a-form
@@ -298,6 +313,7 @@
             </a-form-item>
           </a-form>
         </a-spin>
+        <br />
       </a-modal>
     </div>
 
@@ -335,6 +351,67 @@
         </template>
       </a-pagination>
     </div>
+    <a-modal
+      :visible="showGroupActionModal"
+      :closable="true"
+      :maskClosable="false"
+      :okText="$t('label.ok')"
+      :cancelText="$t('label.cancel')"
+      @cancel="handleCancel"
+      width="60vw"
+      style="top: 20px;overflow-y: auto"
+      centered
+    >
+      <template slot="footer">
+        <a-button key="back" @click="handleCancel"> {{ $t('label.close') }} </a-button>
+      </template>
+      <div v-if="showGroupActionModal">
+        <a-table
+          v-if="selectedItems.length > 0"
+          size="middle"
+          :columns="selectedColumns"
+          :dataSource="selectedItems"
+          :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
+          :pagination="false"
+          style="overflow-y: auto"
+        >
+          <div slot="status" slot-scope="text">
+            <status :text=" text ? text : 'inprogress' " displayText></status>
+          </div>
+        </a-table>
+        <a-divider />
+        <a-alert type="info">
+          <span
+            slot="message"
+            v-html="`<b>Successfully completed: ${selectedItems.filter(item => item.status === 'success').length || 0}
+            <br/>Failed: ${selectedItems.filter(item => item.status === 'failure').length || 0}
+            <br/>In Progress: ${selectedItems.filter(item => item.status === 'inprogress').length || 0}<b/>`" />
+        </a-alert>
+        <br/>
+        <a-pagination
+          class="pagination"
+          size="small"
+          :current="page"
+          :pageSize="pageSize"
+          :total="selectedItems.length"
+          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
+          :pageSizeOptions="['10', '20', '40', '80', '100']"
+          @change="changePage"
+          @showSizeChange="changePageSize"
+          showSizeChanger>
+          <template slot="buildOptionText" slot-scope="props">
+            <span>{{ props.value }} / {{ $t('label.page') }}</span>
+          </template>
+        </a-pagination>
+      </div>
+      <!-- <a-progress
+        v-if="jobsState"
+        class="progress-bar"
+        size="small"
+        status="active"
+        :percent="parseFloat(getPercentUsed(jobsState))"
+        :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% '" /> -->
+    </a-modal>
   </div>
 </template>
 
@@ -384,6 +461,10 @@ export default {
       loading: false,
       actionLoading: false,
       columns: [],
+      selectedColumns: [],
+      showGroupActionModal: false,
+      showBulkActionCompletedModal: false,
+      selectedItems: {},
       items: [],
       itemCount: 0,
       page: 1,
@@ -418,6 +499,10 @@ export default {
         if (action && 'api' in action && ['destroyVirtualMachine'].includes(action.api)) {
           return
         }
+      }
+
+      if (this.$route.path.includes('/publicip/') || (this.$route.path.includes('/guestnetwork/')) && this.$route.query.tab === 'egress.rules') {
+        return
       }
       this.fetchData()
     })
@@ -466,6 +551,11 @@ export default {
     },
     '$store.getters.metrics' (oldVal, newVal) {
       this.fetchData()
+    }
+  },
+  computed: {
+    hasSelected () {
+      return this.selectedRowKeys.length > 0
     }
   },
   methods: {
@@ -711,6 +801,11 @@ export default {
     },
     onRowSelectionChange (selection) {
       this.selectedRowKeys = selection
+      if (selection?.length > 0) {
+        this.selectedItems = (this.items.filter(function (item) {
+          return selection.indexOf(item.id) !== -1
+        }))
+      }
     },
     execAction (action, isGroupAction) {
       const self = this
@@ -855,12 +950,15 @@ export default {
       }).then(function () {
       })
     },
-    pollActionCompletion (jobId, action, resourceName, showLoading = true) {
+    pollActionCompletion (jobId, action, resourceName, resource, showLoading = true) {
       this.$pollJob({
         jobId,
         name: resourceName,
         successMethod: result => {
           this.fetchData()
+          if (this.selectedItems.length > 0) {
+            this.updateResourceState(resource, 'success')
+          }
           if (action.response) {
             const description = action.response(result.jobresult)
             if (description) {
@@ -872,11 +970,17 @@ export default {
             }
           }
         },
-        errorMethod: () => this.fetchData(),
+        errorMethod: () => {
+          this.fetchData()
+          if (this.selectedItems.length > 0) {
+            this.updateResourceState(resource, 'failure')
+          }
+        },
         loadingMessage: `${this.$t(action.label)} - ${resourceName}`,
         showLoading: showLoading,
         catchMessage: this.$t('error.fetching.async.job.result'),
-        action
+        action,
+        bulkAction: `${this.selectedItems.length > 0}`
       })
     },
     fillEditFormFieldValues () {
@@ -896,8 +1000,44 @@ export default {
         }
       })
     },
+    getSelectedItems () {
+      const that = this
+      this.selectedItems = (this.items.filter(function (item) {
+        return that.selectedRowKeys.indexOf(item.id) !== -1
+      }))
+      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'inprogress' }))
+    },
+    handleCancel () {
+      this.showGroupActionModal = false
+      this.showBulkActionCompletedModal = false
+      this.jobCompletedNotificationCancel()
+    },
+    jobCompletedNotificationCancel () {
+      this.showBulkActionCompletedModal = false
+      this.selectedItems = []
+      this.selectedColumns = []
+      this.selectedRowKeys = []
+      // this.parentFetchData()
+    },
+    updateJobsState () {
+      if (this.selectedItems) {
+        this.jobsState.inprogress = this.selectedItems.filter(item => item.status === 'inprogress')
+        this.jobsState.success = this.selectedItems.filter(item => item.status === 'success')
+        this.jobsState.failure = this.selectedItems.filter(item => item.status === 'failure')
+      }
+    },
     handleSubmit (e) {
       if (!this.dataView && this.currentAction.groupAction && this.selectedRowKeys.length > 0) {
+        if (this.selectedRowKeys.length > 0) {
+          this.selectedColumns = this.columns
+          this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'inprogress' }))
+          this.selectedColumns.splice(0, 0, {
+            dataIndex: 'status',
+            title: this.$t('label.status'),
+            scopedSlots: { customRender: 'status' }
+          })
+          this.showGroupActionModal = true
+        }
         this.form.validateFields((err, values) => {
           if (!err) {
             this.actionLoading = true
@@ -905,7 +1045,6 @@ export default {
             this.items.map(x => {
               itemsNameMap[x.id] = x.name || x.displaytext || x.id
             })
-            console.log(this.items)
             const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values, this.items)
             for (const params of paramsList) {
               var resourceName = itemsNameMap[params.id]
@@ -931,23 +1070,60 @@ export default {
     callGroupApi (params, resourceName) {
       const action = this.currentAction
       api(action.api, params).then(json => {
-        this.handleResponse(json, resourceName, action, false)
+        this.handleResponse(json, resourceName, this.getDataIdentifier(params), action, false)
       }).catch(error => {
         if ([401].includes(error.response.status)) {
           return
         }
-        this.$notifyError(error)
+        if (this.selectedItems.length !== 0) {
+          this.$notifyError(error)
+        }
       })
     },
-    handleResponse (response, resourceName, action, showLoading = true) {
+    bulkDeleteRulesConfirmation () {
+      this.showConfirmationAction = true
+      this.selectedColumns = this.columns.filter(column => {
+        return !this.filterColumns.includes(column.title)
+      })
+      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'inprogress' }))
+    },
+    updateResourceState (resource, state) {
+      var tempResource = []
+      if (this.selectedItems && resource) {
+        if (resource.includes(',')) {
+          resource = resource.split(',')
+          tempResource.push(resource)
+        } else {
+          tempResource.push(resource)
+        }
+        for (var r = 0; r < tempResource.length; r++) {
+          const objIndex = this.selectedItems.findIndex(obj => obj.id === tempResource[r])
+          this.selectedItems[objIndex].status = state
+        }
+      }
+    },
+    getDataIdentifier (params) {
+      var dataIdentifier = ''
+      if (this.selectedItems.length > 0) {
+        dataIdentifier = params.id || params.username || params.name || params.vmsnapshotid || params.ids
+      }
+      return dataIdentifier
+    },
+    handleResponse (response, resourceName, resource, action, showLoading = true) {
       for (const obj in response) {
         if (obj.includes('response')) {
           if (response[obj].jobid) {
             const jobid = response[obj].jobid
             this.$store.dispatch('AddAsyncJob', { title: this.$t(action.label), jobid: jobid, description: resourceName, status: 'progress' })
-            this.pollActionCompletion(jobid, action, resourceName, showLoading)
+            this.pollActionCompletion(jobid, action, resourceName, resource, showLoading)
             return true
           } else {
+            if (this.selectedItems.length > 0) {
+              this.updateResourceState(resource, 'success')
+              if (resource) {
+                this.selectedItems.filter(item => item === resource)
+              }
+            }
             var message = action.successMessage ? this.$t(action.successMessage) : this.$t(action.label) +
               (resourceName ? ' - ' + resourceName : '')
             var duration = 2
@@ -1042,7 +1218,7 @@ export default {
           args = [action.api, params]
         }
         api(...args).then(json => {
-          hasJobId = this.handleResponse(json, resourceName, action)
+          hasJobId = this.handleResponse(json, resourceName, this.getDataIdentifier(params), action)
           if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView) {
             this.$router.go(-1)
           } else {

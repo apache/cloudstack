@@ -49,6 +49,7 @@ export const pollJobPlugin = {
         catchMessage = i18n.t('label.error.caught'),
         catchMethod = () => {},
         action = null
+        // bulkAction = false
       } = options
 
       api('queryAsyncJobResult', { jobId }).then(json => {
@@ -82,12 +83,14 @@ export const pollJobPlugin = {
           if (name) {
             desc = `(${name}) ${desc}`
           }
+          // if (!bulkAction) {
           notification.error({
             message: title,
             description: desc,
             key: jobId,
             duration: 0
           })
+          // }
           eventBus.$emit('async-job-complete', action)
           errorMethod(result)
         } else if (result.jobstatus === 0) {
@@ -104,12 +107,14 @@ export const pollJobPlugin = {
         }
       }).catch(e => {
         console.error(`${catchMessage} - ${e}`)
+        // if (!bulkAction) {
         notification.error({
           message: i18n.t('label.error'),
           description: catchMessage,
           duration: 0
         })
         catchMethod && catchMethod()
+        // }
       })
     }
   }

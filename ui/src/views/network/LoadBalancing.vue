@@ -63,12 +63,12 @@
 
     <a-divider />
     <a-button
-      :disabled="!(('deleteLoadBalancerRule' in $store.getters.apis) && this.selectedRowKeys.length > 0)"
-      type="dashed"
+      v-if="(('deleteLoadBalancerRule' in $store.getters.apis) && this.selectedItems.length > 0)"
+      type="danger"
       icon="plus"
       style="width: 100%; margin-bottom: 15px"
-      @click="deleteRules">
-      {{ $t('label.action.delete.load.balancer') + 's' }}
+      @click="bulkDeleteRulesConfirmation()">
+      {{ $t('label.action.bulk.delete.load.balancer.rules') }}
     </a-button>
     <a-table
       size="small"
@@ -383,9 +383,132 @@
           </template>
         </a-pagination>
       </div>
-
     </a-modal>
 
+    <a-modal
+      v-if="showConfirmationAction"
+      :visible="showConfirmationAction"
+      :closable="true"
+      :maskClosable="false"
+      :okText="$t('label.ok')"
+      :cancelText="$t('label.cancel')"
+      style="top: 20px;"
+      width="60vw"
+      @ok="deleteRules"
+      @cancel="closeModal"
+      centered>
+      <span slot="title">
+        {{ $t('label.action.bulk.delete.load.balancer.rules') }}
+      </span>
+      <span>
+        <a-alert type="warning">
+          <span v-if="selectedItems.length > 0" slot="message" v-html="`<b>${selectedItems.length} ` + $t('label.items.selected') + `. </b>`" />
+          <span slot="message" v-html="$t('label.confirm.delete.loadbalancer.rules')" />
+        </a-alert>
+        <a-divider />
+        <a-table
+          size="middle"
+          :columns="selectedColumns"
+          :dataSource="selectedItems"
+          :rowKey="(record, idx) => record.id"
+          :pagination="false"
+          style="overflow-y: auto">
+          <template slot="algorithm" slot-scope="record">
+            {{ returnAlgorithmName(record.algorithm) }}
+          </template>
+          <template slot="protocol" slot-scope="record">
+            {{ record.protocol | capitalise }}
+          </template>
+          <template slot="vm" slot-scope="record">
+            <div><a-icon type="desktop"/> {{ record.virtualmachinename }} ({{ record.vmguestip }})</div>
+          </template>
+        </a-table>
+        <a-divider />
+        <br/>
+      </span>
+    </a-modal>
+
+    <a-modal
+      :visible="showGroupActionModal"
+      :closable="true"
+      :maskClosable="false"
+      :title="$t('label.status')"
+      :cancelText="$t('label.cancel')"
+      @cancel="handleCancel"
+      width="60vw"
+      style="top: 20px;overflow-y: auto"
+      centered
+    >
+      <template slot="footer">
+        <a-button key="back" @click="handleCancel"> {{ $t('label.close') }} </a-button>
+      </template>
+      <div v-if="showGroupActionModal">
+        <a-table
+          v-if="selectedItems.length > 0"
+          size="middle"
+          :columns="selectedColumns"
+          :dataSource="selectedItems"
+          :rowKey="(record, idx) => record.id"
+          :pagination="false"
+          style="overflow-y: auto"
+        >
+          <div slot="status" slot-scope="text">
+            <status :text=" text ? text : 'inprogress' " displayText></status>
+          </div>
+          <template slot="algorithm" slot-scope="record">
+            {{ returnAlgorithmName(record.algorithm) }}
+          </template>
+          <template slot="protocol" slot-scope="record">
+            {{ record.protocol | capitalise }}
+          </template>
+          <template slot="vm" slot-scope="record">
+            <div><a-icon type="desktop"/> {{ record.virtualmachinename }} ({{ record.vmguestip }})</div>
+          </template>
+        </a-table>
+        <a-divider />
+        <a-alert type="info">
+          <span
+            slot="message"
+            v-html="`<b>Successfully completed: ${selectedItems.filter(item => item.status === 'success').length || 0}
+            <br/>Failed: ${selectedItems.filter(item => item.status === 'failure').length || 0}
+            <br/>In Progress: ${selectedItems.filter(item => item.status === 'inprogress').length || 0}<b/>`" />
+          <!-- <span slot="message" v-html="`<br/>Failed: ${selectedItems.filter(item => item.status === 'failure').length || 0}`" />
+          <span slot="message" v-html="`<br/>In Progress: ${selectedItems.filter(item => item.status === 'inprogress').length || 0}`" /> -->
+        </a-alert>
+        <a-pagination
+          class="pagination"
+          size="small"
+          :current="page"
+          :pageSize="pageSize"
+          :total="selectedItems.length"
+          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
+          :pageSizeOptions="['10', '20', '40', '80', '100']"
+          @change="handleChangePage"
+          @showSizeChange="handleChangePageSize"
+          showSizeChanger>
+          <template slot="buildOptionText" slot-scope="props">
+            <span>{{ props.value }} / {{ $t('label.page') }}</span>
+          </template>
+        </a-pagination>
+      </div>
+    </a-modal>
+    <!-- <a-modal
+      :visible="showBulkActionCompletedModal && jobsState.inprogress.length === 0"
+      :closable="true"
+      title="Job Status Info"
+      :maskClosable="false"
+      :cancelText="$t('label.cancel')"
+      @cancel="jobCompletedNotificationCancel"
+      style="top: 20px;overflow-y: auto"
+      centered>
+      <template slot="footer">
+        <a-button key="back" @click="jobCompletedNotificationCancel"> {{ $t('label.close') }} </a-button>
+      </template>
+      <a-alert type="info">
+        <span v-if="jobsState && jobsState.success" slot="message" v-html="`No. of jobs completed Successfully: ${jobsState.success.length}`" />
+        <span v-if="jobsState && jobsState.failure" slot="message" v-html="`<br/>No. of Jobs failed: ${jobsState.failure.length}`" />
+      </a-alert>
+    </a-modal> -->
   </div>
 </template>
 
@@ -408,6 +531,12 @@ export default {
   data () {
     return {
       selectedRowKeys: [],
+      showGroupActionModal: false,
+      showBulkActionCompletedModal: false,
+      selectedItems: {},
+      selectedColumns: [],
+      filterColumns: ['State', 'Action', 'Add VMs', 'Stickiness'],
+      showConfirmationAction: false,
       loading: true,
       lbRules: [],
       newTagsForm: this.$form.createForm(this),
@@ -954,6 +1083,9 @@ export default {
     setSelection (selection) {
       this.selectedRowKeys = selection
       this.$emit('selection-change', this.selectedRowKeys)
+      this.selectedItems = (this.lbRules.filter(function (item) {
+        return selection.indexOf(item.id) !== -1
+      }))
     },
     resetSelection () {
       this.setSelection([])
@@ -961,12 +1093,43 @@ export default {
     onSelectChange (selectedRowKeys, selectedRows) {
       this.setSelection(selectedRowKeys)
     },
+    bulkDeleteRulesConfirmation () {
+      this.showConfirmationAction = true
+      this.selectedColumns = this.columns.filter(column => {
+        return !this.filterColumns.includes(column.title)
+      })
+      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'inprogress' }))
+    },
+    handleCancel () {
+      this.showGroupActionModal = false
+      // this.showBulkActionCompletedModal = true
+      this.showBulkActionCompletedModal = false
+      this.parentFetchData()
+    },
+    jobCompletedNotificationCancel () {
+      this.showBulkActionCompletedModal = false
+      this.selectedItems = []
+      this.selectedColumns = []
+      this.selectedRowKeys = []
+      this.parentFetchData()
+    },
+    updateResourceState (resource, state) {
+      if (this.selectedItems && resource) {
+        const objIndex = this.selectedItems.findIndex(obj => obj.id === resource)
+        this.selectedItems[objIndex].status = state
+      }
+    },
     deleteRules (e) {
-      var that = this
-      var selectedRules = (this.lbRules.filter(function (rule) {
-        return that.selectedRowKeys.indexOf(rule.id) !== -1
-      }))
-      for (const rule of selectedRules) {
+      this.showConfirmationAction = false
+      this.selectedColumns.splice(0, 0, {
+        dataIndex: 'status',
+        title: this.$t('label.status'),
+        scopedSlots: { customRender: 'status' }
+      })
+      if (this.selectedRowKeys.length > 0) {
+        this.showGroupActionModal = true
+      }
+      for (const rule of this.selectedItems) {
         this.handleDeleteRule(rule)
       }
     },
@@ -979,24 +1142,33 @@ export default {
           jobId: response.deleteloadbalancerruleresponse.jobid,
           successMessage: this.$t('message.success.remove.rule'),
           successMethod: () => {
-            this.parentFetchData()
-            this.parentToggleLoading()
-            this.fetchData()
+            if (this.selectedItems.length > 0) {
+              this.updateResourceState(rule.id, 'success')
+            }
+            if (this.selectedRowKeys.length === 0 || this.showBulkActionCompletedModal) {
+              this.parentFetchData()
+              this.parentToggleLoading()
+            }
             this.closeModal()
           },
           errorMessage: this.$t('message.remove.rule.failed'),
           errorMethod: () => {
-            this.parentFetchData()
-            this.parentToggleLoading()
-            this.fetchData()
+            if (this.selectedItems.length > 0) {
+              this.updateResourceState(rule.id, 'failure')
+            }
+            if (this.selectedRowKeys.length === 0 || this.showBulkActionCompletedModal) {
+              this.parentFetchData()
+              this.parentToggleLoading()
+            }
             this.closeModal()
           },
           loadingMessage: this.$t('message.delete.rule.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
-            this.parentFetchData()
-            this.parentToggleLoading()
-            this.fetchData()
+            if (this.selectedRowKeys.length === 0 || this.showBulkActionCompletedModal) {
+              this.parentFetchData()
+              this.parentToggleLoading()
+            }
             this.closeModal()
           }
         })
@@ -1180,6 +1352,7 @@ export default {
       this.editRuleModalLoading = false
       this.addVmModalLoading = false
       this.addVmModalNicLoading = false
+      this.showConfirmationAction = false
       this.vms = []
       this.nics = []
       this.addVmModalVisible = false

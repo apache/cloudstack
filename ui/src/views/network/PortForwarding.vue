@@ -72,12 +72,12 @@
 
     <a-divider/>
     <a-button
-      :disabled="!(('deletePortForwardingRule' in $store.getters.apis) && this.selectedRowKeys.length > 0)"
-      type="dashed"
+      v-if="(('deletePortForwardingRule' in $store.getters.apis) && this.selectedItems.length > 0)"
+      type="danger"
       icon="plus"
       style="width: 100%; margin-bottom: 15px"
-      @click="deleteRules">
-      {{ $t('label.delete.portforward.rules') }}
+      @click="bulkDeleteRulesConfirmation()">
+      {{ $t('label.action.bulk.delete.portforward.rules') }}
     </a-button>
     <a-table
       size="small"
@@ -254,6 +254,138 @@
         </a-pagination>
       </div>
     </a-modal>
+
+    <a-modal
+      v-if="showConfirmationAction"
+      :visible="showConfirmationAction"
+      :closable="true"
+      :maskClosable="false"
+      :okText="$t('label.ok')"
+      :cancelText="$t('label.cancel')"
+      style="top: 20px;"
+      width="60vw"
+      @ok="deleteRules"
+      @cancel="closeModal"
+      centered>
+      <span slot="title">
+        {{ $t('label.action.bulk.delete.portforward.rules') }}
+      </span>
+      <span>
+        <a-alert type="warning">
+          <span v-if="selectedItems.length > 0" slot="message" v-html="`<b>${selectedItems.length} ` + $t('label.items.selected') + `. </b>`" />
+          <span slot="message" v-html="$t('label.confirm.delete.portforward.rules')" />
+        </a-alert>
+        <a-divider />
+        <a-table
+          size="middle"
+          :columns="selectedColumns"
+          :dataSource="selectedItems"
+          :rowKey="(record, idx) => record.id"
+          :pagination="false"
+          style="overflow-y: auto">
+          <template slot="privateport" slot-scope="record">
+            {{ record.privateport }} - {{ record.privateendport }}
+          </template>
+          <template slot="publicport" slot-scope="record">
+            {{ record.publicport }} - {{ record.publicendport }}
+          </template>
+          <template slot="protocol" slot-scope="record">
+            {{ record.protocol | capitalise }}
+          </template>
+          <template slot="vm" slot-scope="record">
+            <div><a-icon type="desktop"/> {{ record.virtualmachinename }} ({{ record.vmguestip }})</div>
+          </template>
+        </a-table>
+        <a-divider />
+        <br/>
+      </span>
+    </a-modal>
+
+    <a-modal
+      :visible="showGroupActionModal"
+      :closable="true"
+      :maskClosable="false"
+      :title="$t('label.status')"
+      :cancelText="$t('label.cancel')"
+      @cancel="handleCancel"
+      width="60vw"
+      style="top: 20px;overflow-y: auto"
+      centered
+    >
+      <template slot="footer">
+        <a-button key="back" @click="handleCancel"> {{ $t('label.close') }} </a-button>
+      </template>
+      <div v-if="showGroupActionModal">
+        <a-table
+          v-if="selectedItems.length > 0"
+          size="middle"
+          :columns="selectedColumns"
+          :dataSource="selectedItems"
+          :rowKey="(record, idx) => record.id"
+          :pagination="false"
+          style="overflow-y: auto"
+        >
+          <div slot="status" slot-scope="text">
+            <status :text=" text ? text : 'inprogress' " displayText></status>
+          </div>
+          <template slot="privateport" slot-scope="record">
+            {{ record.privateport }} - {{ record.privateendport }}
+          </template>
+          <template slot="publicport" slot-scope="record">
+            {{ record.publicport }} - {{ record.publicendport }}
+          </template>
+          <template slot="protocol" slot-scope="record">
+            {{ record.protocol | capitalise }}
+          </template>
+          <template slot="vm" slot-scope="record">
+            <div><a-icon type="desktop"/> {{ record.virtualmachinename }} ({{ record.vmguestip }})</div>
+          </template>
+        </a-table>
+        <a-divider />
+        <a-alert type="info">
+          <span
+            slot="message"
+            v-html="`<b>Successfully completed: ${selectedItems.filter(item => item.status === 'success').length || 0}
+            <br/>Failed: ${selectedItems.filter(item => item.status === 'failure').length || 0}
+            <br/>In Progress: ${selectedItems.filter(item => item.status === 'inprogress').length || 0}<b/>`" />
+          <span slot="message" v-html="``" />
+          <span slot="message" v-html="``" />
+        </a-alert>
+        <a-pagination
+          class="pagination"
+          size="small"
+          :current="page"
+          :pageSize="pageSize"
+          :total="selectedItems.length"
+          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
+          :pageSizeOptions="['10', '20', '40', '80', '100']"
+          @change="handleChangePage"
+          @showSizeChange="handleChangePageSize"
+          showSizeChanger>
+          <template slot="buildOptionText" slot-scope="props">
+            <span>{{ props.value }} / {{ $t('label.page') }}</span>
+          </template>
+        </a-pagination>
+      </div>
+    </a-modal>
+
+    <!-- <a-modal
+      :visible="showBulkActionCompletedModal && jobsState.inprogress.length === 0"
+      :closable="true"
+      title="Job Status Info"
+      :maskClosable="false"
+      :cancelText="$t('label.cancel')"
+      @cancel="jobCompletedNotificationCancel"
+      style="top: 20px;overflow-y: auto"
+      centered>
+      <template slot="footer">
+        <a-button key="back" @click="jobCompletedNotificationCancel"> {{ $t('label.close') }} </a-button>
+      </template>
+      <a-alert type="info">
+        <span v-if="jobsState && jobsState.success" slot="message" v-html="`No. of jobs completed Successfully: ${jobsState.success.length}`" />
+        <span v-if="jobsState && jobsState.failure" slot="message" v-html="`<br/>No. of Jobs failed: ${jobsState.failure.length}`" />
+      </a-alert>
+    </a-modal> -->
   </div>
 </template>
 
@@ -275,6 +407,13 @@ export default {
   data () {
     return {
       selectedRowKeys: [],
+      showGroupActionModal: false,
+      showBulkActionCompletedModal: false,
+      selectedItems: {},
+      jobsState: {},
+      selectedColumns: [],
+      filterColumns: ['State', 'Action'],
+      showConfirmationAction: false,
       loading: true,
       portForwardRules: [],
       newRule: {
@@ -444,6 +583,9 @@ export default {
     setSelection (selection) {
       this.selectedRowKeys = selection
       this.$emit('selection-change', this.selectedRowKeys)
+      this.selectedItems = (this.portForwardRules.filter(function (item) {
+        return selection.indexOf(item.id) !== -1
+      }))
     },
     resetSelection () {
       this.setSelection([])
@@ -451,12 +593,63 @@ export default {
     onSelectChange (selectedRowKeys, selectedRows) {
       this.setSelection(selectedRowKeys)
     },
+    // getSelectedItems () {
+    //   const that = this
+    //   this.selectedItems = (this.portForwardRules.filter(function (item) {
+    //     return that.selectedRowKeys.indexOf(item.id) !== -1
+    //   }))
+    //   this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'inprogress' }))
+    // },
+    bulkDeleteRulesConfirmation () {
+      this.showConfirmationAction = true
+      this.selectedColumns = this.columns.filter(column => {
+        return !this.filterColumns.includes(column.title)
+      })
+      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'inprogress' }))
+    },
+    handleCancel () {
+      console.log('handle cancel')
+      this.showGroupActionModal = false
+      this.showBulkActionCompletedModal = true
+      // this.updateJobsState()
+      // if (this.jobsState?.jobsState?.inprogress?.length > 0) {
+      this.showBulkActionCompletedModal = false
+      this.parentFetchData()
+      // }
+    },
+    jobCompletedNotificationCancel () {
+      this.jobsState = {}
+      this.showBulkActionCompletedModal = false
+      this.selectedItems = []
+      this.selectedColumns = []
+      this.selectedRowKeys = []
+      this.parentFetchData()
+    },
+    // updateJobsState () {
+    //   if (this.selectedItems) {
+    //     this.jobsState.inprogress = this.selectedItems.filter(item => item.status === 'inprogress')
+    //     this.jobsState.success = this.selectedItems.filter(item => item.status === 'success')
+    //     this.jobsState.failure = this.selectedItems.filter(item => item.status === 'failure')
+    //   }
+    // },
+    updateResourceState (resource, state) {
+      if (this.selectedItems && resource) {
+        const objIndex = this.selectedItems.findIndex(obj => obj.id === resource)
+        this.selectedItems[objIndex].status = state
+      }
+    },
     deleteRules (e) {
-      var that = this
-      var selectedRules = (this.portForwardRules.filter(function (rule) {
-        return that.selectedRowKeys.indexOf(rule.id) !== -1
-      }))
-      for (const rule of selectedRules) {
+      this.showConfirmationAction = false
+      this.selectedColumns.splice(0, 0, {
+        dataIndex: 'status',
+        title: this.$t('label.status'),
+        scopedSlots: { customRender: 'status' }
+      })
+      if (this.selectedRowKeys.length > 0) {
+        // this.getSelectedItems()
+        this.showGroupActionModal = true
+      }
+      for (const rule of this.selectedItems) {
         this.deleteRule(rule)
       }
     },
@@ -466,9 +659,19 @@ export default {
         this.$pollJob({
           jobId: response.deleteportforwardingruleresponse.jobid,
           successMessage: this.$t('message.success.remove.port.forward'),
-          successMethod: () => this.fetchData(),
+          successMethod: () => {
+            if (this.selectedItems.length > 0) {
+              this.updateResourceState(rule.id, 'success')
+            }
+            this.fetchData()
+          },
           errorMessage: this.$t('message.remove.port.forward.failed'),
-          errorMethod: () => this.fetchData(),
+          errorMethod: () => {
+            if (this.selectedItems.length > 0) {
+              this.updateResourceState(rule.id, 'failure')
+            }
+            this.fetchData()
+          },
           loadingMessage: this.$t('message.delete.port.forward.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => this.fetchData()
@@ -534,6 +737,7 @@ export default {
       this.newRule.virtualmachineid = null
       this.addVmModalLoading = false
       this.addVmModalNicLoading = false
+      this.showConfirmationAction = false
       this.nics = []
       this.resetTagInputs()
     },
