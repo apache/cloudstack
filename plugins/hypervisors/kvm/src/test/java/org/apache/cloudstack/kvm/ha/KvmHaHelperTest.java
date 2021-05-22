@@ -16,7 +16,11 @@ package org.apache.cloudstack.kvm.ha;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
+import com.cloud.resource.ResourceManager;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,6 +47,10 @@ public class KvmHaHelperTest {
     private KvmHaAgentClient kvmHaAgentClient;
     @Mock
     private HostVO host;
+    @Mock
+    private ResourceManager resourceManager;
+    @Mock
+    private ClusterDao clusterDao;
 
     @Before
     public void setup() {
@@ -51,41 +59,41 @@ public class KvmHaHelperTest {
 
     @Test
     public void isKvmHaAgentHealthyTestAllGood() {
-        boolean result = isKvmHaAgentHealthyTests(EXPECTED_RUNNING_VMS_EXAMPLE_3VMs, EXPECTED_RUNNING_VMS_EXAMPLE_3VMs, true);
+        boolean result = prepareAndTestIsKvmHaAgentHealthy(EXPECTED_RUNNING_VMS_EXAMPLE_3VMs, EXPECTED_RUNNING_VMS_EXAMPLE_3VMs, true);
         Assert.assertTrue(result);
     }
 
     @Test
     public void isKvmHaAgentHealthyTestVMsDoNotMatchButDoNotReturnFalse() {
-        boolean result = isKvmHaAgentHealthyTests(EXPECTED_RUNNING_VMS_EXAMPLE_3VMs, 1, true);
+        boolean result = prepareAndTestIsKvmHaAgentHealthy(EXPECTED_RUNNING_VMS_EXAMPLE_3VMs, 1, true);
         Assert.assertTrue(result);
     }
 
     @Test
     public void isKvmHaAgentHealthyTestExpectedRunningVmsButNoneListed() {
-        boolean result = isKvmHaAgentHealthyTests(EXPECTED_RUNNING_VMS_EXAMPLE_3VMs, 0, true);
+        boolean result = prepareAndTestIsKvmHaAgentHealthy(EXPECTED_RUNNING_VMS_EXAMPLE_3VMs, 0, true);
         Assert.assertFalse(result);
     }
 
     @Test
     public void isKvmHaAgentHealthyTestExpectedRunningVmsButNoneListedUnreachable() {
-        boolean result = isKvmHaAgentHealthyTests(EXPECTED_RUNNING_VMS_EXAMPLE_3VMs, 0, false);
+        boolean result = prepareAndTestIsKvmHaAgentHealthy(EXPECTED_RUNNING_VMS_EXAMPLE_3VMs, 0, false);
         Assert.assertFalse(result);
     }
 
     @Test
     public void isKvmHaAgentHealthyTestReceivedErrorCode() {
-        boolean result = isKvmHaAgentHealthyTests(EXPECTED_RUNNING_VMS_EXAMPLE_3VMs, ERROR_CODE, true);
+        boolean result = prepareAndTestIsKvmHaAgentHealthy(EXPECTED_RUNNING_VMS_EXAMPLE_3VMs, ERROR_CODE, true);
         Assert.assertTrue(result);
     }
 
     @Test
     public void isKvmHaAgentHealthyTestReceivedErrorCodeHostUnreachable() {
-        boolean result = isKvmHaAgentHealthyTests(EXPECTED_RUNNING_VMS_EXAMPLE_3VMs, ERROR_CODE, false);
+        boolean result = prepareAndTestIsKvmHaAgentHealthy(EXPECTED_RUNNING_VMS_EXAMPLE_3VMs, ERROR_CODE, false);
         Assert.assertFalse(result);
     }
 
-    private boolean isKvmHaAgentHealthyTests(int expectedNumberOfVms, int vmsRunningOnAgent, boolean isHostAgentReachableByNeighbour) {
+    private boolean prepareAndTestIsKvmHaAgentHealthy(int expectedNumberOfVms, int vmsRunningOnAgent, boolean isHostAgentReachableByNeighbour) {
         List<VMInstanceVO> vmsOnHostList = new ArrayList<>();
         for (int i = 0; i < expectedNumberOfVms; i++) {
             VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
@@ -104,4 +112,67 @@ public class KvmHaHelperTest {
         Assert.assertFalse(kvmHaHelper.isKvmHaWebserviceEnabled(Mockito.any()));
     }
 
+    @Test
+    public void listProblematicHostsTest() {
+        List<HostVO> hostsInCluster = mockProblematicCluster();
+        List<HostVO> problematicNeighbors = kvmHaHelper.listProblematicHosts(hostsInCluster);
+        Assert.assertEquals(5, hostsInCluster.size());
+        Assert.assertEquals(4, problematicNeighbors.size());
+    }
+
+    private List<HostVO> mockProblematicCluster() {
+        HostVO hostDown = Mockito.mock(HostVO.class);
+        Mockito.doReturn(Status.Down).when(hostDown).getStatus();
+        HostVO hostDisconnected = Mockito.mock(HostVO.class);
+        Mockito.doReturn(Status.Disconnected).when(hostDisconnected).getStatus();
+        HostVO hostError = Mockito.mock(HostVO.class);
+        Mockito.doReturn(Status.Error).when(hostError).getStatus();
+        HostVO hostAlert = Mockito.mock(HostVO.class);
+        Mockito.doReturn(Status.Alert).when(hostAlert).getStatus();
+        List<HostVO> hostsInCluster = mockHealthyCluster(1);
+        hostsInCluster.add(hostAlert);
+        hostsInCluster.add(hostDown);
+        hostsInCluster.add(hostDisconnected);
+        hostsInCluster.add(hostError);
+        return hostsInCluster;
+    }
+
+    private List<HostVO> mockHealthyCluster(int healthyHosts) {
+        HostVO hostUp = Mockito.mock(HostVO.class);
+        Mockito.doReturn(Status.Up).when(hostUp).getStatus();
+        List<HostVO> hostsInCluster = new ArrayList<>();
+        for (int i = 0; i < healthyHosts; i++) {
+            hostsInCluster.add(hostUp);
+        }
+        return hostsInCluster;
+    }
+
+    @Test
+    public void isClusteProblematicTestProblematicCluster() {
+        prepareAndTestIsClusteProblematicTest(mockProblematicCluster(), true);
+    }
+
+    @Test
+    public void isClusteProblematicTestProblematicCluster10Healthy4ProblematicHosts() {
+        List<HostVO> hostsInCluster = mockHealthyCluster(9);
+        hostsInCluster.addAll(mockProblematicCluster());
+        prepareAndTestIsClusteProblematicTest(hostsInCluster, false);
+    }
+
+    @Test
+    public void isClusteProblematicTestHealthyCluster() {
+        List<HostVO> hostsInCluster = mockHealthyCluster(20);
+        hostsInCluster.addAll(mockProblematicCluster());
+        prepareAndTestIsClusteProblematicTest(hostsInCluster, false);
+    }
+
+    private void prepareAndTestIsClusteProblematicTest(List<HostVO> problematicCluster, boolean expectedProblematicCluster) {
+        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+        Mockito.doReturn(0l).when(cluster).getId();
+        Mockito.doReturn("cluster-name").when(cluster).getName();
+        Mockito.doReturn(problematicCluster).when(resourceManager).listAllHostsInCluster(Mockito.anyLong());
+        Mockito.doReturn(cluster).when(clusterDao).findById(Mockito.anyLong());
+        boolean isClusteProblematic = kvmHaHelper.isClusteProblematic(host);
+        Assert.assertEquals(expectedProblematicCluster, isClusteProblematic);
+    }
 }

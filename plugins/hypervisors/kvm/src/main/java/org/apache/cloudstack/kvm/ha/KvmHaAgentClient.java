@@ -149,7 +149,7 @@ public class KvmHaAgentClient {
         return Status.Up.toString().equals(hostStatusFromJson);
     }
 
-    private boolean isHttpStatusCodNotOk(int statusCode) {
+    protected boolean isHttpStatusCodNotOk(int statusCode) {
         return statusCode < HttpStatus.SC_OK || statusCode >= HttpStatus.SC_MULTIPLE_CHOICES;
     }
 

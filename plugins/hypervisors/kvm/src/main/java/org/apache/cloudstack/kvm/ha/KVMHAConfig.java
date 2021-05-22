@@ -58,6 +58,12 @@ public class KVMHAConfig {
             true, ConfigKey.Scope.Cluster);
 
     public static final ConfigKey<Boolean> IsKvmHaWebserviceEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "kvm.ha.webservice.enabled", "false",
-            "The KVM HA Webservice is executed on the KVM node and checks the amount of VMs running via libvirt. It serves as a HA health-check for KVM nodes. One can enable (set to 'true') or disable it ('false'). If disabled then CloudStack ignores HA validation via this agent.",
+            "The KVM HA Webservice is executed on the KVM node and checks the amount of VMs running via libvirt. It serves as a HA health-check for KVM nodes. "
+                    + "One can enable (set to 'true') or disable it ('false'). If disabled then CloudStack ignores HA validation via this agent.",
+            true, ConfigKey.Scope.Cluster);
+
+    public static final ConfigKey<Double> KvmHaAcceptedProblematicHostsRatio = new ConfigKey<Double>("Advanced", Double.class, "kvm.ha.accepted.problematic.hosts.ratio", "0.3",
+            "The ratio of problematic Hosts accepted on a Cluster. If a cluster has more than the accepted ratio, HA will not be Fence/Recover Hosts and Admins will be notified to check the cluster healthy. "
+                    + "A Host is considered problematic if in one of the following states: Error, Alert, Down, Disconnected. Default value is '0.3' (30%).",
             true, ConfigKey.Scope.Cluster);
 }

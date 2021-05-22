@@ -25,9 +25,14 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.resource.ResourceManager;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * This class provides methods that help the KVM HA process on checking hosts status as well as deciding if a host should be fenced/recovered or not.
@@ -45,6 +50,8 @@ public class KvmHaHelper {
     private static final double PROBLEMATIC_HOSTS_RATIO_ACCEPTED = 0.3;
     private static final int CAUTIOUS_MARGIN_OF_VMS_ON_HOST = 1;
 
+    private static final Set<Status> PROBLEMATIC_HOST_STATUS = new HashSet<>(Arrays.asList(Status.Alert, Status.Disconnected, Status.Down, Status.Error));
+
     /**
      * It checks the KVM node status via KVM HA Agent.
      * If the agent is healthy it returns Status.Up, otherwise it keeps the provided Status as it is.
@@ -60,28 +67,29 @@ public class KvmHaHelper {
         return agentStatus;
     }
 
+    @NotNull
+    protected List<HostVO> listProblematicHosts(List<HostVO> hostsInCluster) {
+        return hostsInCluster.stream().filter(neighbour -> PROBLEMATIC_HOST_STATUS.contains(neighbour.getStatus())).collect(Collectors.toList());
+    }
+
     /**
      * Returns false if the cluster has no problematic hosts or a small fraction of it.<br><br>
      * Returns true if the cluster is problematic. A cluster is problematic if many hosts are in Down or Disconnected states, in such case it should not recover/fence.<br>
      * Instead, Admins should be warned and check as it could be networking problems and also might not even have resources capacity on the few Healthy hosts at the cluster.
      */
-    private boolean isClusteProblematic(Host host) {
+    protected boolean isClusteProblematic(Host host) {
         List<HostVO> hostsInCluster = resourceManager.listAllHostsInCluster(host.getClusterId());
-        List<HostVO> problematicNeighbors = resourceManager.listHostsInClusterByStatus(host.getClusterId(), Status.Down);
-        problematicNeighbors.addAll(resourceManager.listHostsInClusterByStatus(host.getClusterId(), Status.Disconnected));
-        problematicNeighbors.addAll(resourceManager.listHostsInClusterByStatus(host.getClusterId(), Status.Alert));
-        problematicNeighbors.addAll(resourceManager.listHostsInClusterByStatus(host.getClusterId(), Status.Error));
+        List<HostVO> problematicNeighbors = listProblematicHosts(hostsInCluster);
         int problematicHosts = problematicNeighbors.size();
+        int problematicHostsRatioAccepted = (int) (hostsInCluster.size() * KVMHAConfig.KvmHaAcceptedProblematicHostsRatio.value());
 
-        int problematicHostsRatioAccepted = (int)(hostsInCluster.size() * PROBLEMATIC_HOSTS_RATIO_ACCEPTED);
-        if (problematicHosts >= problematicHostsRatioAccepted) {
+        if (problematicHosts > problematicHostsRatioAccepted) {
             ClusterVO cluster = clusterDao.findById(host.getClusterId());
             LOGGER.warn(String.format("%s is problematic but HA will not fence/recover due to its cluster [id: %d, name: %s] containing %d problematic hosts (Down, Disconnected, "
                             + "Alert or Error states). Maximum problematic hosts accepted for this cluster is %d.",
                     host, cluster.getId(), cluster.getName(), problematicHosts, problematicHostsRatioAccepted));
             return true;
         }
-
         return false;
     }
 
@@ -89,10 +97,10 @@ public class KvmHaHelper {
         List<HostVO> neighbors = resourceManager.listHostsInClusterByStatus(host.getClusterId(), Status.Up);
         for (HostVO neighbor : neighbors) {
             boolean isVmActivtyOnNeighborHost = isKvmHaAgentHealthy(neighbor);
-            if(isVmActivtyOnNeighborHost) {
+            if (isVmActivtyOnNeighborHost) {
                 boolean isReachable = kvmHaAgentClient.isHostReachableByNeighbour(neighbor, host);
                 if (isReachable) {
-                    String.format( "%s is reachable by neighbour %s. If CloudStack is failing to reach the respective host then it is probably a network issue between the host "
+                    String.format("%s is reachable by neighbour %s. If CloudStack is failing to reach the respective host then it is probably a network issue between the host "
                             + "and CloudStack management server.", host, neighbor);
                     return true;
                 }

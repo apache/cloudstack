@@ -31,12 +31,13 @@ import org.apache.http.message.BasicStatusLine;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.host.HostVO;
-import com.cloud.vm.dao.VMInstanceDaoImpl;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -46,7 +47,6 @@ import com.google.gson.JsonParser;
 public class KvmHaAgentClientTest {
 
     private HostVO host = Mockito.mock(HostVO.class);
-    private KvmHaAgentClient kvmHaAgentClient = Mockito.spy(new KvmHaAgentClient());
     private static final String CHECK_NEIGHBOUR = "check-neighbour";
     private static final int DEFAULT_PORT = 8080;
     private static final String PRIVATE_IP_ADDRESS = "1.2.3.4";
@@ -65,11 +65,11 @@ public class KvmHaAgentClientTest {
     private static final int MAX_REQUEST_RETRIES = 2;
     private static final int KVM_HA_WEBSERVICE_PORT = 8080;
 
+    @Spy
+    @InjectMocks
+    private KvmHaAgentClient kvmHaAgentClient;
     @Mock
-    HttpClient client;
-
-    @Mock
-    VMInstanceDaoImpl vmInstanceDao;
+    private HttpClient client;
 
     @Test
     public void processHttpResponseIntoJsonTestNull() {
@@ -246,4 +246,67 @@ public class KvmHaAgentClientTest {
         Assert.assertEquals(expected, result);
     }
 
+    @Test
+    public void isHostReachableByNeighbourTest() throws IOException {
+        JsonObject jsonObject = new JsonParser().parse(JSON_STRING_EXAMPLE_CHECK_NEIGHBOUR_UP).getAsJsonObject();
+        CloseableHttpResponse response = mockResponse(HttpStatus.SC_OK, JSON_STRING_EXAMPLE_CHECK_NEIGHBOUR_UP);
+        prepareAndTestIsHostReachableByNeighbour(response, jsonObject, true);
+    }
+
+    @Test
+    public void isHostReachableByNeighbourTestHttp300() throws IOException {
+        JsonObject jsonObject = new JsonParser().parse(JSON_STRING_EXAMPLE_CHECK_NEIGHBOUR_UP).getAsJsonObject();
+        CloseableHttpResponse response = mockResponse(HttpStatus.SC_MULTIPLE_CHOICES, JSON_STRING_EXAMPLE_CHECK_NEIGHBOUR_UP);
+        prepareAndTestIsHostReachableByNeighbour(response, jsonObject, false);
+    }
+
+    @Test
+    public void isHostReachableByNeighbourTestHttp404() throws IOException {
+        JsonObject jsonObject = new JsonParser().parse(JSON_STRING_EXAMPLE_CHECK_NEIGHBOUR_UP).getAsJsonObject();
+        CloseableHttpResponse response = mockResponse(HttpStatus.SC_NOT_FOUND, JSON_STRING_EXAMPLE_CHECK_NEIGHBOUR_UP);
+        prepareAndTestIsHostReachableByNeighbour(response, jsonObject, false);
+    }
+
+    @Test
+    public void isHostReachableByNeighbourTestNullResponse() throws IOException {
+        JsonObject jsonObject = new JsonParser().parse(JSON_STRING_EXAMPLE_CHECK_NEIGHBOUR_UP).getAsJsonObject();
+        prepareAndTestIsHostReachableByNeighbour(null, jsonObject, false);
+    }
+
+    @Test
+    public void isHostReachableByNeighbourTestNullJson() throws IOException {
+        CloseableHttpResponse response = mockResponse(HttpStatus.SC_OK, JSON_STRING_EXAMPLE_CHECK_NEIGHBOUR_UP);
+        prepareAndTestIsHostReachableByNeighbour(response, null, false);
+    }
+
+    private void prepareAndTestIsHostReachableByNeighbour(CloseableHttpResponse response, JsonObject jsonObject, boolean expected) throws IOException {
+        HostVO neighbour = Mockito.mock(HostVO.class);
+        Mockito.when(neighbour.getPrivateIpAddress()).thenReturn(PRIVATE_IP_ADDRESS);
+        HostVO target = Mockito.mock(HostVO.class);
+        Mockito.when(target.getPrivateIpAddress()).thenReturn(PRIVATE_IP_ADDRESS);
+
+        Mockito.doReturn(response).when(kvmHaAgentClient).executeHttpRequest(EXPECTED_URL_CHECK_NEIGHBOUR);
+        Mockito.doReturn(jsonObject).when(kvmHaAgentClient).processHttpResponseIntoJson(Mockito.any(HttpResponse.class));
+
+        boolean result = kvmHaAgentClient.isHostReachableByNeighbour(neighbour, target);
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void isHttpStatusCodNotOkTestHttp200() {
+        boolean result = kvmHaAgentClient.isHttpStatusCodNotOk(HttpStatus.SC_OK);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isHttpStatusCodNotOkTestHttp300() {
+        boolean result = kvmHaAgentClient.isHttpStatusCodNotOk(HttpStatus.SC_MULTIPLE_CHOICES);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void isHttpStatusCodNotOkTestHttp404() {
+        boolean result = kvmHaAgentClient.isHttpStatusCodNotOk(HttpStatus.SC_NOT_FOUND);
+        Assert.assertTrue(result);
+    }
 }
