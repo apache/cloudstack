@@ -2086,9 +2086,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
 
                 VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(diskInfoBuilder, vol, hyperHost, context);
-                controllerKey = getDiskController(matchingExistingDisk, vol, vmSpec, ideControllerKey, scsiControllerKey);
-                String diskController = getDiskController(vmMo, matchingExistingDisk, vol, controllerInfo);
-
+                String diskController = getDiskController(vmMo, matchingExistingDisk, vol, controllerInfo, deployAsIs);
                 if (DiskControllerType.getType(diskController) == DiskControllerType.osdefault) {
                     diskController = vmMo.getRecommendedDiskController(null);
                 }
@@ -3298,47 +3296,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return null;
     }
 
-    private int getDiskController(VirtualMachineDiskInfo matchingExistingDisk, DiskTO vol, VirtualMachineTO vmSpec, int ideControllerKey, int scsiControllerKey) {
-
-        int controllerKey;
-        if (matchingExistingDisk != null) {
-            s_logger.info("Chose disk controller based on existing information: " + matchingExistingDisk.getDiskDeviceBusName());
-            if (matchingExistingDisk.getDiskDeviceBusName().startsWith("ide"))
-                return ideControllerKey;
-            else
-                return scsiControllerKey;
-        }
-
-        if (vol.getType() == Volume.Type.ROOT) {
-            Map<String, String> vmDetails = vmSpec.getDetails();
-            if (vmDetails != null && vmDetails.get(VmDetailConstants.ROOT_DISK_CONTROLLER) != null) {
-                if (vmDetails.get(VmDetailConstants.ROOT_DISK_CONTROLLER).equalsIgnoreCase("scsi")) {
-                    s_logger.info("Chose disk controller for vol " + vol.getType() + " -> scsi, based on root disk controller settings: "
-                            + vmDetails.get(VmDetailConstants.ROOT_DISK_CONTROLLER));
-                    controllerKey = scsiControllerKey;
-                } else {
-                    s_logger.info("Chose disk controller for vol " + vol.getType() + " -> ide, based on root disk controller settings: "
-                            + vmDetails.get(VmDetailConstants.ROOT_DISK_CONTROLLER));
-                    controllerKey = ideControllerKey;
-                }
-            } else {
-                s_logger.info("Chose disk controller for vol " + vol.getType() + " -> scsi. due to null root disk controller setting");
-                controllerKey = scsiControllerKey;
-            }
-
-        } else {
-            // DATA volume always use SCSI device
-            s_logger.info("Chose disk controller for vol " + vol.getType() + " -> scsi");
-            controllerKey = scsiControllerKey;
-        }
-
-        return controllerKey;
-    }
-
-    private String getDiskController(VirtualMachineMO vmMo, VirtualMachineDiskInfo matchingExistingDisk, DiskTO vol, Pair<String, String> controllerInfo) throws Exception {
-        int controllerKey;
+    private String getDiskController(VirtualMachineMO vmMo, VirtualMachineDiskInfo matchingExistingDisk, DiskTO vol, Pair<String, String> controllerInfo, boolean deployAsIs) throws Exception {
         DiskControllerType controllerType = DiskControllerType.none;
-        if (matchingExistingDisk != null) {
+        if (deployAsIs && matchingExistingDisk != null) {
             String currentBusName = matchingExistingDisk.getDiskDeviceBusName();
             if (currentBusName != null) {
                 s_logger.info("Chose disk controller based on existing information: " + currentBusName);
