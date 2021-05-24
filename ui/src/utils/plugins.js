@@ -48,8 +48,8 @@ export const pollJobPlugin = {
         showLoading = true,
         catchMessage = i18n.t('label.error.caught'),
         catchMethod = () => {},
-        action = null
-        // bulkAction = false
+        action = null,
+        bulkAction = false
       } = options
 
       api('queryAsyncJobResult', { jobId }).then(json => {
@@ -70,11 +70,13 @@ export const pollJobPlugin = {
           eventBus.$emit('async-job-complete', action)
           successMethod(result)
         } else if (result.jobstatus === 2) {
-          message.error({
-            content: errorMessage,
-            key: jobId,
-            duration: 1
-          })
+          if (!bulkAction) {
+            message.error({
+              content: errorMessage,
+              key: jobId,
+              duration: 1
+            })
+          }
           var title = errorMessage
           if (action && action.label) {
             title = i18n.t(action.label)
@@ -83,14 +85,14 @@ export const pollJobPlugin = {
           if (name) {
             desc = `(${name}) ${desc}`
           }
-          // if (!bulkAction) {
-          notification.error({
-            message: title,
-            description: desc,
-            key: jobId,
-            duration: 0
-          })
-          // }
+          if (!bulkAction) {
+            notification.error({
+              message: title,
+              description: desc,
+              key: jobId,
+              duration: 0
+            })
+          }
           eventBus.$emit('async-job-complete', action)
           errorMethod(result)
         } else if (result.jobstatus === 0) {
@@ -107,7 +109,6 @@ export const pollJobPlugin = {
         }
       }).catch(e => {
         console.error(`${catchMessage} - ${e}`)
-        // if (!bulkAction) {
         notification.error({
           message: i18n.t('label.error'),
           description: catchMessage,

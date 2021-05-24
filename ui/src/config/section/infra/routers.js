@@ -72,10 +72,11 @@ export default {
       label: 'label.action.reboot.router',
       message: 'message.action.reboot.router',
       dataView: true,
-      args: ['forced'],
+      // args: ['forced'],
       hidden: (record) => { return record.state === 'Running' },
       groupAction: true,
       popup: true,
+      // groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
       groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     },
     {

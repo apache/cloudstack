@@ -404,13 +404,6 @@
           </template>
         </a-pagination>
       </div>
-      <!-- <a-progress
-        v-if="jobsState"
-        class="progress-bar"
-        size="small"
-        status="active"
-        :percent="parseFloat(getPercentUsed(jobsState))"
-        :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% '" /> -->
     </a-modal>
   </div>
 </template>
@@ -501,7 +494,8 @@ export default {
         }
       }
 
-      if (this.$route.path.includes('/publicip/') || (this.$route.path.includes('/guestnetwork/')) && this.$route.query.tab === 'egress.rules') {
+      if ((this.$route.path.includes('/publicip/') && ['firewall', 'portforwarding', 'loadbalancing'].includes(this.$route.query.tab)) ||
+        (this.$route.path.includes('/guestnetwork/') && this.$route.query.tab === 'egress.rules')) {
         return
       }
       this.fetchData()
@@ -1092,7 +1086,7 @@ export default {
       if (this.selectedItems && resource) {
         if (resource.includes(',')) {
           resource = resource.split(',')
-          tempResource.push(resource)
+          tempResource = resource
         } else {
           tempResource.push(resource)
         }
@@ -1114,7 +1108,7 @@ export default {
         if (obj.includes('response')) {
           if (response[obj].jobid) {
             const jobid = response[obj].jobid
-            this.$store.dispatch('AddAsyncJob', { title: this.$t(action.label), jobid: jobid, description: resourceName, status: 'progress' })
+            this.$store.dispatch('AddAsyncJob', { title: this.$t(action.label), jobid: jobid, description: resourceName, status: 'progress', bulkAction: this.selectedItems.length > 0 })
             this.pollActionCompletion(jobid, action, resourceName, resource, showLoading)
             return true
           } else {

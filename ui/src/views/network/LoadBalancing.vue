@@ -385,130 +385,22 @@
       </div>
     </a-modal>
 
-    <a-modal
-      v-if="showConfirmationAction"
-      :visible="showConfirmationAction"
-      :closable="true"
-      :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
-      style="top: 20px;"
-      width="60vw"
-      @ok="deleteRules"
-      @cancel="closeModal"
-      centered>
-      <span slot="title">
-        {{ $t('label.action.bulk.delete.load.balancer.rules') }}
-      </span>
-      <span>
-        <a-alert type="warning">
-          <span v-if="selectedItems.length > 0" slot="message" v-html="`<b>${selectedItems.length} ` + $t('label.items.selected') + `. </b>`" />
-          <span slot="message" v-html="$t('label.confirm.delete.loadbalancer.rules')" />
-        </a-alert>
-        <a-divider />
-        <a-table
-          size="middle"
-          :columns="selectedColumns"
-          :dataSource="selectedItems"
-          :rowKey="(record, idx) => record.id"
-          :pagination="false"
-          style="overflow-y: auto">
-          <template slot="algorithm" slot-scope="record">
-            {{ returnAlgorithmName(record.algorithm) }}
-          </template>
-          <template slot="protocol" slot-scope="record">
-            {{ record.protocol | capitalise }}
-          </template>
-          <template slot="vm" slot-scope="record">
-            <div><a-icon type="desktop"/> {{ record.virtualmachinename }} ({{ record.vmguestip }})</div>
-          </template>
-        </a-table>
-        <a-divider />
-        <br/>
-      </span>
-    </a-modal>
-
-    <a-modal
-      :visible="showGroupActionModal"
-      :closable="true"
-      :maskClosable="false"
-      :title="$t('label.status')"
-      :cancelText="$t('label.cancel')"
-      @cancel="handleCancel"
-      width="60vw"
-      style="top: 20px;overflow-y: auto"
-      centered
-    >
-      <template slot="footer">
-        <a-button key="back" @click="handleCancel"> {{ $t('label.close') }} </a-button>
-      </template>
-      <div v-if="showGroupActionModal">
-        <a-table
-          v-if="selectedItems.length > 0"
-          size="middle"
-          :columns="selectedColumns"
-          :dataSource="selectedItems"
-          :rowKey="(record, idx) => record.id"
-          :pagination="false"
-          style="overflow-y: auto"
-        >
-          <div slot="status" slot-scope="text">
-            <status :text=" text ? text : 'inprogress' " displayText></status>
-          </div>
-          <template slot="algorithm" slot-scope="record">
-            {{ returnAlgorithmName(record.algorithm) }}
-          </template>
-          <template slot="protocol" slot-scope="record">
-            {{ record.protocol | capitalise }}
-          </template>
-          <template slot="vm" slot-scope="record">
-            <div><a-icon type="desktop"/> {{ record.virtualmachinename }} ({{ record.vmguestip }})</div>
-          </template>
-        </a-table>
-        <a-divider />
-        <a-alert type="info">
-          <span
-            slot="message"
-            v-html="`<b>Successfully completed: ${selectedItems.filter(item => item.status === 'success').length || 0}
-            <br/>Failed: ${selectedItems.filter(item => item.status === 'failure').length || 0}
-            <br/>In Progress: ${selectedItems.filter(item => item.status === 'inprogress').length || 0}<b/>`" />
-          <!-- <span slot="message" v-html="`<br/>Failed: ${selectedItems.filter(item => item.status === 'failure').length || 0}`" />
-          <span slot="message" v-html="`<br/>In Progress: ${selectedItems.filter(item => item.status === 'inprogress').length || 0}`" /> -->
-        </a-alert>
-        <a-pagination
-          class="pagination"
-          size="small"
-          :current="page"
-          :pageSize="pageSize"
-          :total="selectedItems.length"
-          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
-          :pageSizeOptions="['10', '20', '40', '80', '100']"
-          @change="handleChangePage"
-          @showSizeChange="handleChangePageSize"
-          showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
-            <span>{{ props.value }} / {{ $t('label.page') }}</span>
-          </template>
-        </a-pagination>
-      </div>
-    </a-modal>
-    <!-- <a-modal
-      :visible="showBulkActionCompletedModal && jobsState.inprogress.length === 0"
-      :closable="true"
-      title="Job Status Info"
-      :maskClosable="false"
-      :cancelText="$t('label.cancel')"
-      @cancel="jobCompletedNotificationCancel"
-      style="top: 20px;overflow-y: auto"
-      centered>
-      <template slot="footer">
-        <a-button key="back" @click="jobCompletedNotificationCancel"> {{ $t('label.close') }} </a-button>
-      </template>
-      <a-alert type="info">
-        <span v-if="jobsState && jobsState.success" slot="message" v-html="`No. of jobs completed Successfully: ${jobsState.success.length}`" />
-        <span v-if="jobsState && jobsState.failure" slot="message" v-html="`<br/>No. of Jobs failed: ${jobsState.failure.length}`" />
-      </a-alert>
-    </a-modal> -->
+    <bulk-action-view
+      v-if="showConfirmationAction || showGroupActionModal"
+      :showConfirmationAction="showConfirmationAction"
+      :showGroupActionModal="showGroupActionModal"
+      :items="lbRules"
+      :selectedRowKeys="selectedRowKeys"
+      :selectedItems="selectedItems"
+      :columns="columns"
+      :selectedColumns="selectedColumns"
+      :filterColumns="filterColumns"
+      action="deleteLoadBalancerRule"
+      :loading="loading"
+      :message="message"
+      @group-action="deleteRules"
+      @handle-cancel="handleCancel"
+      @close-modal="closeModal" />
   </div>
 </template>
 
@@ -516,12 +408,14 @@
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/view/TooltipButton'
+import BulkActionView from '@/components/view/BulkActionView'
 
 export default {
   name: 'LoadBalancing',
   components: {
     Status,
-    TooltipButton
+    TooltipButton,
+    BulkActionView
   },
   props: {
     resource: {
@@ -535,10 +429,14 @@ export default {
       selectedRowKeys: [],
       showGroupActionModal: false,
       showBulkActionCompletedModal: false,
-      selectedItems: {},
+      selectedItems: [],
       selectedColumns: [],
       filterColumns: ['State', 'Action', 'Add VMs', 'Stickiness'],
       showConfirmationAction: false,
+      message: {
+        title: this.$t('label.action.bulk.delete.load.balancer.rules'),
+        confirmMessage: this.$t('label.confirm.delete.loadbalancer.rules')
+      },
       loading: true,
       lbRules: [],
       newTagsForm: this.$form.createForm(this),

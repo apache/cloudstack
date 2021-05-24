@@ -105,111 +105,21 @@
       </template>
     </a-pagination>
 
-    <a-modal
-      v-if="showConfirmationAction"
-      :visible="showConfirmationAction"
-      :closable="true"
-      :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
-      style="top: 20px;"
-      width="60vw"
-      @ok="deleteRules"
-      @cancel="closeModal"
-      centered>
-      <span slot="title">
-        {{ $t('label.action.bulk.delete.egress.firewall.rules') }}
-      </span>
-      <span>
-        <a-alert type="warning">
-          <span v-if="selectedItems.length > 0" slot="message" v-html="`<b>${selectedItems.length} ` + $t('label.items.selected') + `. </b>`" />
-          <span slot="message" v-html="$t('label.confirm.delete.egress.firewall.rules')" />
-        </a-alert>
-        <a-divider />
-        <a-table
-          size="middle"
-          :columns="selectedColumns"
-          :dataSource="selectedItems"
-          :rowKey="(record, idx) => record.id"
-          :pagination="false"
-          style="overflow-y: auto">
-          <template slot="protocol" slot-scope="record">
-            {{ record.protocol | capitalise }}
-          </template>
-          <template slot="startport" slot-scope="record">
-            {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : 'All' }}
-          </template>
-          <template slot="endport" slot-scope="record">
-            {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : 'All' }}
-          </template>
-        </a-table>
-        <a-divider />
-        <br/>
-      </span>
-    </a-modal>
-
-    <a-modal
-      :visible="showGroupActionModal"
-      :closable="true"
-      :maskClosable="false"
-      :title="$t('label.status')"
-      :cancelText="$t('label.cancel')"
-      @cancel="handleCancel"
-      width="60vw"
-      style="top: 20px;overflow-y: auto"
-      centered
-    >
-      <template slot="footer">
-        <a-button key="back" @click="handleCancel"> {{ $t('label.close') }} </a-button>
-      </template>
-      <div v-if="showGroupActionModal">
-        <a-table
-          v-if="selectedItems.length > 0"
-          size="middle"
-          :columns="selectedColumns"
-          :dataSource="selectedItems"
-          :rowKey="(record, idx) => record.id"
-          :pagination="false"
-          style="overflow-y: auto"
-        >
-          <div slot="status" slot-scope="text">
-            <status :text=" text ? text : 'inprogress' " displayText></status>
-          </div>
-          <template slot="protocol" slot-scope="record">
-            {{ record.protocol | capitalise }}
-          </template>
-          <template slot="startport" slot-scope="record">
-            {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : 'All' }}
-          </template>
-          <template slot="endport" slot-scope="record">
-            {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : 'All' }}
-          </template>
-        </a-table>
-        <a-divider />
-        <a-alert type="info">
-          <span
-            slot="message"
-            v-html="`<b>Successfully completed: ${selectedItems.filter(item => item.status === 'success').length || 0}
-            <br/>Failed: ${selectedItems.filter(item => item.status === 'failure').length || 0}
-            <br/>In Progress: ${selectedItems.filter(item => item.status === 'inprogress').length || 0}<b/>`" />
-        </a-alert>
-        <a-pagination
-          class="pagination"
-          size="small"
-          :current="page"
-          :pageSize="pageSize"
-          :total="selectedItems.length"
-          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
-          :pageSizeOptions="['10', '20', '40', '80', '100']"
-          @change="handleChangePage"
-          @showSizeChange="handleChangePageSize"
-          showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
-            <span>{{ props.value }} / {{ $t('label.page') }}</span>
-          </template>
-        </a-pagination>
-      </div>
-    </a-modal>
+    <bulk-action-view
+      v-if="showConfirmationAction || showGroupActionModal"
+      :showConfirmationAction="showConfirmationAction"
+      :showGroupActionModal="showGroupActionModal"
+      :items="egressRules"
+      :selectedRowKeys="selectedRowKeys"
+      :selectedItems="selectedItems"
+      :columns="columns"
+      :selectedColumns="selectedColumns"
+      action="deleteEgressFirewallRule"
+      :loading="loading"
+      :message="message"
+      @group-action="deleteRules"
+      @handle-cancel="handleCancel"
+      @close-modal="closeModal" />
   </div>
 </template>
 
@@ -217,12 +127,14 @@
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/view/TooltipButton'
+import BulkActionView from '@/components/view/BulkActionView'
 
 export default {
   name: 'EgressRulesTab',
   components: {
     Status,
-    TooltipButton
+    TooltipButton,
+    BulkActionView
   },
   props: {
     resource: {
@@ -235,10 +147,14 @@ export default {
       selectedRowKeys: [],
       showGroupActionModal: false,
       showBulkActionCompletedModal: false,
-      selectedItems: {},
+      selectedItems: [],
       selectedColumns: [],
       filterColumns: ['Action'],
       showConfirmationAction: false,
+      message: {
+        title: this.$t('label.action.bulk.delete.egress.firewall.rules'),
+        confirmMessage: this.$t('label.confirm.delete.egress.firewall.rules')
+      },
       loading: true,
       egressRules: [],
       newRule: {

@@ -102,12 +102,14 @@ export default {
               if (result.jobresult.errortext !== null) {
                 this.jobs[i].description = '(' + this.jobs[i].description + ') ' + result.jobresult.errortext
               }
-              this.$notification.error({
-                message: this.jobs[i].title,
-                description: this.jobs[i].description,
-                key: this.jobs[i].jobid,
-                duration: 0
-              })
+              if (!this.jobs[i].bulkAction) {
+                this.$notification.error({
+                  message: this.jobs[i].title,
+                  description: this.jobs[i].description,
+                  key: this.jobs[i].jobid,
+                  duration: 0
+                })
+              }
             }
           }).catch(function (e) {
             console.log(this.$t('error.fetching.async.job.result') + e)
