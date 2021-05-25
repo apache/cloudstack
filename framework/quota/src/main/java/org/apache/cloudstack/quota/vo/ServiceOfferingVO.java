@@ -73,6 +73,9 @@ public class ServiceOfferingVO implements ServiceOffering {
     @Column(name = "disk_offering_id")
     private Long diskOfferingId;
 
+    @Column(name = "disk_offering_strictness")
+    private boolean diskOfferingStrictness = false;
+
     @Column(name = "cpu")
     private Integer cpu;
 
@@ -347,6 +350,16 @@ public class ServiceOfferingVO implements ServiceOffering {
     @Override
     public Long getDiskOfferingId() {
         return diskOfferingId;
+    }
+
+    @Override
+    public Boolean getDiskOfferingStrictness() {
+        return diskOfferingStrictness;
+    }
+
+    @Override
+    public void setDiskOfferingStrictness(boolean diskOfferingStrictness) {
+
     }
 
     public void setDiskOfferingId(Long diskOfferingId) {
