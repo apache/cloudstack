@@ -575,6 +575,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.destroy.forcestop", "false",
             "On destroy, force-stop takes this value ", true);
 
+    public static final List<HypervisorType> VM_STORAGEMIGRATION_SUPPORTING_HYPERVISORS = new ArrayList<>(Arrays.asList(
+            HypervisorType.KVM,
+            HypervisorType.VMware,
+            HypervisorType.XenServer,
+            HypervisorType.Simulator
+    ));
+
     @Override
     public UserVmVO getVirtualMachine(long vmId) {
         return _vmDao.findById(vmId);
@@ -6286,16 +6293,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return new Pair<>(srcHost, destinationHost);
     }
 
+    private List<VolumeVO> getVmVolumesForMigrateVmWithStorage(VMInstanceVO vm) {
+        List<VolumeVO> vmVolumes = _volsDao.findUsableVolumesForInstance(vm.getId());
+        for (VolumeVO volume : vmVolumes) {
+            if (volume.getState() != Volume.State.Ready) {
+                throw new CloudRuntimeException(String.format("Volume %s (ID: %s) of the VM is not in Ready state. Cannot migrate the VM %s (ID: %s) with its volumes", volume.getName(), volume.getUuid(), vm.getInstanceName(), vm.getUuid()));
+            }
+        }
+        return vmVolumes;
+    }
+
     private Map<Long, Long> getVolumePoolMappingForMigrateVmWithStorage(VMInstanceVO vm, Map<String, String> volumeToPool) {
         Map<Long, Long> volToPoolObjectMap = new HashMap<Long, Long>();
 
-        List<VolumeVO> vmVolumes = _volsDao.findUsableVolumesForInstance(vm.getId());
-        // Check if all the volumes are in the correct state.
-        for (VolumeVO volume : vmVolumes) {
-            if (volume.getState() != Volume.State.Ready) {
-                throw new CloudRuntimeException("Volume " + volume + " of the VM is not in Ready state. Cannot " + "migrate the vm with its volumes.");
-            }
-        }
+        List<VolumeVO> vmVolumes = getVmVolumesForMigrateVmWithStorage(vm);
 
         if (MapUtils.isNotEmpty(volumeToPool)) {
             // Check if all the volumes and pools passed as parameters are valid.
@@ -6365,16 +6376,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
         }
 
-        // OfflineVmwareMigration: this condition is to complicated. (already a method somewhere)
-        if (!Arrays.asList(new HypervisorType[]{
-                HypervisorType.XenServer,
-                HypervisorType.VMware,
-                HypervisorType.KVM,
-                HypervisorType.Simulator}).contains(vm.getHypervisorType())) {
+        if (VM_STORAGEMIGRATION_SUPPORTING_HYPERVISORS.contains(vm.getHypervisorType())) {
             throw new InvalidParameterValueException(String.format("Unsupported hypervisor: %s for VM migration, we support XenServer/VMware/KVM only", vm.getHypervisorType()));
         }
 
-        // Check that Vm does not have VM Snapshots
         if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
             throw new InvalidParameterValueException("VM with VM Snapshots cannot be migrated with storage, please remove all VM snapshots");
         }
