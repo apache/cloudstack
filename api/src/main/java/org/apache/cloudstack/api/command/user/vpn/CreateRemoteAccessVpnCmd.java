@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.RemoteAccessVpnException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.RemoteAccessVpn;
@@ -156,6 +157,10 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
             s_logger.info("Network rule conflict: " + e.getMessage());
             s_logger.trace("Network Rule Conflict: ", e);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
+        } catch (RemoteAccessVpnException e) {
+            s_logger.info("Create vpn internal error: " + e.getMessage());
+            s_logger.trace("Create vpn internal error: ", e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
 

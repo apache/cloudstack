@@ -32,10 +32,21 @@ public class RemoteAccessVpnConfigItem extends AbstractConfigItemFacade {
 
     @Override
     public List<ConfigItem> generateConfig(final NetworkElementCommand cmd) {
-        final RemoteAccessVpnCfgCommand command = (RemoteAccessVpnCfgCommand) cmd;
+        final RemoteAccessVpnCfgCommand command = (RemoteAccessVpnCfgCommand)cmd;
 
-        final RemoteAccessVpn remoteAccessVpn = new RemoteAccessVpn(command.isCreate(), command.getIpRange(), command.getPresharedKey(), command.getVpnServerIp(), command.getLocalIp(), command.getLocalCidr(),
-                command.getPublicInterface());
+        final RemoteAccessVpn remoteAccessVpn = new RemoteAccessVpn(
+                command.isCreate(),
+                command.getIpRange(),
+                command.getPresharedKey(),
+                command.getVpnServerIp(),
+                command.getLocalIp(),
+                command.getLocalCidr(),
+                command.getPublicInterface(),
+                command.getVpnType(),
+                command.getCaCert(),
+                command.getServerCert(),
+                command.getServerKey());
+
         return generateConfigItems(remoteAccessVpn);
     }
 

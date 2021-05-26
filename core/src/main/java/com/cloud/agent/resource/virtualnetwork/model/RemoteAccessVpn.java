@@ -24,11 +24,18 @@ public class RemoteAccessVpn extends ConfigBase {
     public boolean create;
     public String ipRange, presharedKey, vpnServerIp, localIp, localCidr, publicInterface;
 
+    // items related to VPN IKEv2 implementation
+    private String vpnType;
+    private String caCert;
+    private String serverCert;
+    private String serverKey;
+
     public RemoteAccessVpn() {
         super(ConfigBase.REMOTEACCESSVPN);
     }
 
-    public RemoteAccessVpn(boolean create, String ipRange, String presharedKey, String vpnServerIp, String localIp, String localCidr, String publicInterface) {
+    public RemoteAccessVpn(boolean create, String ipRange, String presharedKey, String vpnServerIp, String localIp, String localCidr, String publicInterface, String vpnType,
+            String caCert, String serverCert, String serverKey) {
         super(ConfigBase.REMOTEACCESSVPN);
         this.create = create;
         this.ipRange = ipRange;
@@ -37,6 +44,10 @@ public class RemoteAccessVpn extends ConfigBase {
         this.localIp = localIp;
         this.localCidr = localCidr;
         this.publicInterface = publicInterface;
+        this.vpnType = vpnType;
+        this.caCert = caCert;
+        this.serverCert = serverCert;
+        this.serverKey = serverKey;
     }
 
     public boolean isCreate() {
@@ -93,6 +104,38 @@ public class RemoteAccessVpn extends ConfigBase {
 
     public void setPublicInterface(String publicInterface) {
         this.publicInterface = publicInterface;
+    }
+
+    public String getVpnType() {
+        return vpnType;
+    }
+
+    public void setVpnType(String vpnType) {
+        this.vpnType = vpnType;
+    }
+
+    public String getCaCert() {
+        return caCert;
+    }
+
+    public void setCaCert(String caCert) {
+        this.caCert = caCert;
+    }
+
+    public String getServerCert() {
+        return serverCert;
+    }
+
+    public void setServerCert(String serverCert) {
+        this.serverCert = serverCert;
+    }
+
+    public String getServerKey() {
+        return serverKey;
+    }
+
+    public void setServerKey(String serverKey) {
+        this.serverKey = serverKey;
     }
 
 }

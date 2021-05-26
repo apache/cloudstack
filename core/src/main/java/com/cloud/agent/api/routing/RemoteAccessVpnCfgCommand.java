@@ -30,6 +30,12 @@ public class RemoteAccessVpnCfgCommand extends NetworkElementCommand {
     private String localCidr;
     private String publicInterface;
 
+    // items related to VPN IKEv2 implementation
+    private String vpnType;
+    private String caCert;
+    private String serverCert;
+    private String serverKey;
+
     protected RemoteAccessVpnCfgCommand() {
         this.create = false;
     }
@@ -43,7 +49,8 @@ public class RemoteAccessVpnCfgCommand extends NetworkElementCommand {
         return true;
     }
 
-    public RemoteAccessVpnCfgCommand(boolean create, String vpnServerAddress, String localIp, String ipRange, String ipsecPresharedKey, boolean vpcEnabled) {
+    public RemoteAccessVpnCfgCommand(boolean create, String vpnServerAddress, String localIp, String ipRange, String ipsecPresharedKey, boolean vpcEnabled, String vpnType,
+            String caCert, String serverCert, String serverKey) {
         this.vpnServerIp = vpnServerAddress;
         this.ipRange = ipRange;
         this.presharedKey = ipsecPresharedKey;
@@ -55,6 +62,10 @@ public class RemoteAccessVpnCfgCommand extends NetworkElementCommand {
         } else {
             this.setPublicInterface("eth2");
         }
+        this.vpnType = vpnType;
+        this.caCert = caCert;
+        this.serverCert = serverCert;
+        this.serverKey = serverKey;
     }
 
     public String getVpnServerIp() {
@@ -107,6 +118,38 @@ public class RemoteAccessVpnCfgCommand extends NetworkElementCommand {
 
     public void setPublicInterface(String publicInterface) {
         this.publicInterface = publicInterface;
+    }
+
+    public String getVpnType() {
+        return vpnType;
+    }
+
+    public void setVpnType(String vpnType) {
+        this.vpnType = vpnType;
+    }
+
+    public String getCaCert() {
+        return caCert;
+    }
+
+    public void setCaCert(String caCert) {
+        this.caCert = caCert;
+    }
+
+    public String getServerCert() {
+        return serverCert;
+    }
+
+    public void setServerCert(String serverCert) {
+        this.serverCert = serverCert;
+    }
+
+    public String getServerKey() {
+        return serverKey;
+    }
+
+    public void setServerKey(String serverKey) {
+        this.serverKey = serverKey;
     }
 
 }

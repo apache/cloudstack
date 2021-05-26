@@ -66,6 +66,10 @@
             <artifactId>cloud-framework-direct-download</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.bettercloud</groupId>
+            <artifactId>vault-java-driver</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

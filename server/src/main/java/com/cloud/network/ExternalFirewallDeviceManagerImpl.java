@@ -89,6 +89,7 @@ import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -705,8 +706,24 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
 
         String maskedIpRange = ipRange[0] + "-" + ipRange[1];
 
-        RemoteAccessVpnCfgCommand createVpnCmd =
-            new RemoteAccessVpnCfgCommand(create, ip.getAddress().addr(), vpn.getLocalIp(), maskedIpRange, vpn.getIpsecPresharedKey(), false);
+        //TODO
+        final String vpnType = null;
+        final String caCert = null;
+        final String serverCert = null;
+        final String serverKey = null;
+
+        RemoteAccessVpnCfgCommand createVpnCmd = new RemoteAccessVpnCfgCommand(
+                create,
+                ip.getAddress().addr(),
+                vpn.getLocalIp(),
+                maskedIpRange,
+                vpn.getIpsecPresharedKey(),
+                false,
+                vpnType,
+                caCert,
+                serverCert,
+                serverKey);
+
         createVpnCmd.setAccessDetail(NetworkElementCommand.ACCOUNT_ID, String.valueOf(network.getAccountId()));
         createVpnCmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, network.getCidr());
         Answer answer = _agentMgr.easySend(externalFirewall.getId(), createVpnCmd);
@@ -740,7 +757,9 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             }
         }
 
-        VpnUsersCfgCommand addUsersCmd = new VpnUsersCfgCommand(addUsers, removeUsers);
+        String vpnType = _configDao.getValue(RemoteAccessVpnService.RemoteAccessVpnTypeConfigKey);
+
+        VpnUsersCfgCommand addUsersCmd = new VpnUsersCfgCommand(addUsers, removeUsers, vpnType);
         addUsersCmd.setAccessDetail(NetworkElementCommand.ACCOUNT_ID, String.valueOf(network.getAccountId()));
         addUsersCmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, network.getCidr());
 

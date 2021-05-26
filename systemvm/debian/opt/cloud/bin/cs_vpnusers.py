@@ -31,10 +31,14 @@ def merge(dbag, data):
     for user in dbagc.keys():
         if user == 'id':
             continue
+        elif user == 'vpn_type':
+            continue
         userrec = dbagc[user]
         add = userrec['add']
         if not add:
             del(dbagc[user])
+
+    dbagc['vpn_type'] = data["vpn_type"]
 
     for user in data['vpn_users']:
         username = user['user']

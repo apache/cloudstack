@@ -79,12 +79,13 @@ public class VpnUsersCfgCommand extends NetworkElementCommand {
     }
 
     UsernamePassword[] userpwds;
+    private String vpnType;
 
     protected VpnUsersCfgCommand() {
 
     }
 
-    public VpnUsersCfgCommand(List<VpnUser> addUsers, List<VpnUser> removeUsers) {
+    public VpnUsersCfgCommand(List<VpnUser> addUsers, List<VpnUser> removeUsers, String vpnType) {
         userpwds = new UsernamePassword[addUsers.size() + removeUsers.size()];
         int i = 0;
         for (VpnUser vpnUser : removeUsers) {
@@ -93,6 +94,8 @@ public class VpnUsersCfgCommand extends NetworkElementCommand {
         for (VpnUser vpnUser : addUsers) {
             userpwds[i++] = new UsernamePassword(vpnUser.getUsername(), vpnUser.getPassword(), true);
         }
+
+        this.vpnType = vpnType;
     }
 
     @Override
@@ -102,6 +105,10 @@ public class VpnUsersCfgCommand extends NetworkElementCommand {
 
     public UsernamePassword[] getUserpwds() {
         return userpwds;
+    }
+
+    public String getVpnType() {
+        return vpnType;
     }
 
 }

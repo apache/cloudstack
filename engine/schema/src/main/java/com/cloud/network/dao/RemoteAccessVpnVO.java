@@ -69,11 +69,18 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     @Column(name = "display", updatable = true, nullable = false)
     protected boolean display = true;
 
+    @Column(name = "vpn_type")
+    private String vpnType;
+
+    @Encrypt
+    @Column(name = "ca_certificate", length = 8191)
+    private String caCertificate;
+
     public RemoteAccessVpnVO() {
         uuid = UUID.randomUUID().toString();
     }
 
-    public RemoteAccessVpnVO(long accountId, long domainId, Long networkId, long publicIpId, Long vpcId, String localIp, String ipRange,  String presharedKey) {
+    public RemoteAccessVpnVO(long accountId, long domainId, Long networkId, long publicIpId, Long vpcId, String localIp, String ipRange, String presharedKey, String vpnType) {
         this.accountId = accountId;
         serverAddressId = publicIpId;
         this.ipRange = ipRange;
@@ -84,6 +91,7 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
         state = State.Added;
         uuid = UUID.randomUUID().toString();
         this.vpcId = vpcId;
+        this.vpnType = vpnType;
     }
 
     @Override
@@ -164,6 +172,20 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     @Override
     public boolean isDisplay() {
         return display;
+    }
+
+    @Override
+    public String getCaCertificate() {
+        return caCertificate;
+    }
+
+    public void setCaCertificate(String caCertificate) {
+        this.caCertificate = caCertificate;
+    }
+
+    @Override
+    public String getVpnType() {
+        return vpnType;
     }
 
     @Override

@@ -41,7 +41,7 @@ public class VpnUsersConfigItem extends AbstractConfigItemFacade {
             vpnUsers.add(new VpnUser(userpwd.getUsername(), userpwd.getPassword(), userpwd.isAdd()));
         }
 
-        final VpnUserList vpnUserList = new VpnUserList(vpnUsers);
+        final VpnUserList vpnUserList = new VpnUserList(vpnUsers, command.getVpnType());
         return generateConfigItems(vpnUserList);
     }
 

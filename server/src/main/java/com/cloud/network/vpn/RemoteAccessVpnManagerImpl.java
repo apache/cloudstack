@@ -24,17 +24,23 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.api.command.user.vpn.ListRemoteAccessVpnsCmd;
 import org.apache.cloudstack.api.command.user.vpn.ListVpnUsersCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.pki.PkiDetail;
+import org.apache.cloudstack.pki.PkiManager;
+import org.apache.cloudstack.resourcedetail.dao.RemoteAccessVpnDetailsDao;
 
 import com.cloud.configuration.Config;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -44,6 +50,7 @@ import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.RemoteAccessVpnException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
@@ -90,13 +97,14 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.net.NetUtils;
-import org.apache.commons.collections.CollectionUtils;
 
 public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAccessVpnService, Configurable {
     private final static Logger s_logger = Logger.getLogger(RemoteAccessVpnManagerImpl.class);
 
+    static final ConfigKey<String> RemoteAccessVpnType = new ConfigKey<String>("Network", String.class, RemoteAccessVpnTypeConfigKey, "ikev2", "Type of VPN (ikev2 or l2tp)", false,
+            ConfigKey.Scope.Account);
     static final ConfigKey<String> RemoteAccessVpnClientIpRange = new ConfigKey<String>("Network", String.class, RemoteAccessVpnClientIpRangeCK, "10.1.2.1-10.1.2.8",
-        "The range of ips to be allocated to remote access vpn clients. The first ip in the range is used by the VPN server", false, ConfigKey.Scope.Account);
+            "The range of ips to be allocated to remote access vpn clients. The first ip in the range is used by the VPN server", false, ConfigKey.Scope.Account);
 
     @Inject
     AccountDao _accountDao;
@@ -104,6 +112,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     VpnUserDao _vpnUsersDao;
     @Inject
     RemoteAccessVpnDao _remoteAccessVpnDao;
+    @Inject
+    RemoteAccessVpnDetailsDao _remoteAccessVpnDetailsDao;
     @Inject
     IPAddressDao _ipAddressDao;
     @Inject
@@ -131,13 +141,16 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     @Inject
     VpcDao _vpcDao;
 
+    @Inject
+    private PkiManager pkiManager;
+
     int _userLimit;
     int _pskLength;
     SearchBuilder<RemoteAccessVpnVO> VpnSearch;
 
     @Override
     @DB
-    public RemoteAccessVpn createRemoteAccessVpn(final long publicIpId, String ipRange, boolean openFirewall, final Boolean forDisplay) throws NetworkRuleConflictException {
+    public RemoteAccessVpn createRemoteAccessVpn(final long publicIpId, String ipRange, boolean openFirewall, final Boolean forDisplay) throws NetworkRuleConflictException, RemoteAccessVpnException {
         CallContext ctx = CallContext.current();
         final Account caller = ctx.getCallingAccount();
 
@@ -235,25 +248,81 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         long startIp = NetUtils.ip2Long(range[0]);
         final String newIpRange = NetUtils.long2Ip(++startIp) + "-" + range[1];
-        final String sharedSecret = PasswordGenerator.generatePresharedKey(_pskLength);
+        final String vpnType = RemoteAccessVpnType.value();
 
-        return Transaction.execute(new TransactionCallbackWithException<RemoteAccessVpn, NetworkRuleConflictException>() {
+        // use server.secret.pem instead of pre-shared key for VPN IKEv2
+        final String sharedSecret = vpnType.equalsIgnoreCase(RemoteAccessVpnService.Type.IKEV2.toString()) ? null : PasswordGenerator.generatePresharedKey(_pskLength);
+
+        RemoteAccessVpn vpn = Transaction.execute(new TransactionCallbackWithException<RemoteAccessVpn, NetworkRuleConflictException>() {
             @Override
             public RemoteAccessVpn doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
                 if (vpcId == null) {
                     _rulesMgr.reservePorts(ipAddr, NetUtils.UDP_PROTO, Purpose.Vpn, openFirewallFinal, caller, NetUtils.VPN_PORT, NetUtils.VPN_L2TP_PORT,
                         NetUtils.VPN_NATT_PORT);
                 }
-                RemoteAccessVpnVO vpnVO =
-                    new RemoteAccessVpnVO(ipAddr.getAccountId(), ipAddr.getDomainId(), ipAddr.getAssociatedWithNetworkId(), publicIpId, vpcId, range[0], newIpRange,
-                        sharedSecret);
+                RemoteAccessVpnVO vpnVO = new RemoteAccessVpnVO(
+                        ipAddr.getAccountId(),
+                        ipAddr.getDomainId(),
+                        ipAddr.getAssociatedWithNetworkId(),
+                        publicIpId,
+                        vpcId,
+                        range[0],
+                        newIpRange,
+                        sharedSecret,
+                        vpnType);
 
                 if (forDisplay != null) {
                     vpnVO.setDisplay(forDisplay);
                 }
+
                 return _remoteAccessVpnDao.persist(vpnVO);
             }
         });
+
+        if (vpnType.equalsIgnoreCase(RemoteAccessVpnService.Type.IKEV2.toString())) {
+            try {
+                // issue a signed certificate for the public IP through Vault
+                final Domain domain = _domainMgr.findDomainByIdOrPath(ipAddr.getDomainId(), null);
+                final PkiDetail credential = pkiManager.issueCertificate(domain, ipAddress.getAddress());
+
+                Transaction.execute(new TransactionCallback<ResourceDetail>() {
+                    @Override
+                    public ResourceDetail doInTransaction(TransactionStatus status) throws RuntimeException {
+                        // note that all the vpn details will be encrypted and then stored in database
+                        _remoteAccessVpnDetailsDao.addDetail(vpn.getId(), PkiManager.CREDENTIAL_ISSUING_CA, credential.getIssuingCa(), false);
+                        _remoteAccessVpnDetailsDao.addDetail(vpn.getId(), PkiManager.CREDENTIAL_SERIAL_NUMBER, credential.getSerialNumber(), false);
+                        _remoteAccessVpnDetailsDao.addDetail(vpn.getId(), PkiManager.CREDENTIAL_CERTIFICATE, credential.getCertificate(), false);
+                        _remoteAccessVpnDetailsDao.addDetail(vpn.getId(), PkiManager.CREDENTIAL_PRIVATE_KEY, credential.getPrivateKey(), false);
+
+                        // no need to return anything here
+                        return null;
+                    }
+                });
+
+                Transaction.execute(new TransactionCallback<Boolean>() {
+                    @Override
+                    public Boolean doInTransaction(TransactionStatus status) {
+                        RemoteAccessVpnVO vpnVO = (RemoteAccessVpnVO)vpn;
+
+                        vpnVO.setCaCertificate(credential.getIssuingCa());
+
+                        return _remoteAccessVpnDao.update(vpnVO.getId(), vpnVO);
+                    }
+                });
+            } catch (RemoteAccessVpnException | RuntimeException e) {
+                // clean up just created vpn
+                Transaction.execute(new TransactionCallback<Boolean>() {
+                    @Override
+                    public Boolean doInTransaction(TransactionStatus status) {
+                        return _remoteAccessVpnDao.remove(vpn.getId());
+                    }
+                });
+
+                throw e;
+            }
+        }
+
+        return vpn;
     }
 
     private void validateRemoteAccessVpnConfiguration() throws ConfigurationException {
@@ -755,7 +824,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {RemoteAccessVpnClientIpRange};
+        return new ConfigKey<?>[] {RemoteAccessVpnType, RemoteAccessVpnClientIpRange};
     }
 
     public List<RemoteAccessVPNServiceProvider> getVpnServiceProviders() {

@@ -22,6 +22,7 @@ import org.apache.cloudstack.api.command.user.vpn.ListRemoteAccessVpnsCmd;
 import org.apache.cloudstack.api.command.user.vpn.ListVpnUsersCmd;
 
 import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.RemoteAccessVpnException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
@@ -29,9 +30,15 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
 public interface RemoteAccessVpnService {
-    static final String RemoteAccessVpnClientIpRangeCK = "remote.access.vpn.client.iprange";
+    enum Type {
+        L2TP, IKEV2
+    }
 
-    RemoteAccessVpn createRemoteAccessVpn(long vpnServerAddressId, String ipRange, boolean openFirewall, Boolean forDisplay) throws NetworkRuleConflictException;
+    String RemoteAccessVpnTypeConfigKey = "remote.access.vpn.type";
+    String RemoteAccessVpnClientIpRangeCK = "remote.access.vpn.client.iprange";
+
+    RemoteAccessVpn createRemoteAccessVpn(long vpnServerAddressId, String ipRange, boolean openFirewall, Boolean forDisplay)
+            throws NetworkRuleConflictException, RemoteAccessVpnException;
 
     boolean destroyRemoteAccessVpnForIp(long ipId, Account caller, boolean forceCleanup) throws ResourceUnavailableException;
 

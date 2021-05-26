@@ -39,7 +39,7 @@ public class RemoteAccessVpnDetailVO implements ResourceDetail {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "value", length = 1024)
+    @Column(name = "value", length = 8191)
     private String value;
 
     @Column(name = "display")
