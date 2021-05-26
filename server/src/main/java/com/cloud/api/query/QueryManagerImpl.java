@@ -1344,7 +1344,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         List<Long> routersWithFailures = null;
-        if (VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value() && isHealthCheckFailed != null) {
+        if (isHealthCheckFailed != null) {
             GenericSearchBuilder<RouterHealthCheckResultVO, Long> routerHealthCheckResultSearch = routerHealthCheckResultDao.createSearchBuilder(Long.class);
             routerHealthCheckResultSearch.and("checkResult", routerHealthCheckResultSearch.entity().getCheckResult(), SearchCriteria.Op.EQ);
             routerHealthCheckResultSearch.selectFields(routerHealthCheckResultSearch.entity().getRouterId());
