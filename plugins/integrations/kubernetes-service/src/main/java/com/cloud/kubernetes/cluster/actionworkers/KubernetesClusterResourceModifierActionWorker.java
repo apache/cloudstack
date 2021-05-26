@@ -334,7 +334,9 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         for (int i = offset + 1; i <= nodeCount; i++) {
             UserVm vm = createKubernetesNode(publicIpAddress);
             addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), false);
-            resizeNodeVolume(vm);
+            if (kubernetesCluster.getNodeRootDiskSize() > 0) {
+                resizeNodeVolume(vm);
+            }
             startKubernetesVM(vm);
             vm = userVmDao.findById(vm.getId());
             if (vm == null) {

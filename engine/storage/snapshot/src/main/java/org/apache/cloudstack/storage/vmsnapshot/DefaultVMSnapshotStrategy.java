@@ -230,11 +230,10 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             } else {
                 String errMsg = (answer == null) ? null : answer.getDetails();
                 s_logger.error("Delete vm snapshot " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " failed due to " + errMsg);
+                processAnswer(vmSnapshotVO, userVm, answer, hostId);
                 throw new CloudRuntimeException("Delete vm snapshot " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " failed due to " + errMsg);
             }
-        } catch (OperationTimedoutException e) {
-            throw new CloudRuntimeException("Delete vm snapshot " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " failed due to " + e.getMessage());
-        } catch (AgentUnavailableException e) {
+        } catch (OperationTimedoutException | AgentUnavailableException e) {
             throw new CloudRuntimeException("Delete vm snapshot " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " failed due to " + e.getMessage());
         }
     }
@@ -254,9 +253,13 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                         finalizeRevert(vmSnapshot, answer.getVolumeTOs());
                         vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationSucceeded);
                     } else if (as instanceof DeleteVMSnapshotAnswer) {
-                        DeleteVMSnapshotAnswer answer = (DeleteVMSnapshotAnswer)as;
-                        finalizeDelete(vmSnapshot, answer.getVolumeTOs());
-                        vmSnapshotDao.remove(vmSnapshot.getId());
+                        if (as.getResult()) {
+                            DeleteVMSnapshotAnswer answer = (DeleteVMSnapshotAnswer) as;
+                            finalizeDelete(vmSnapshot, answer.getVolumeTOs());
+                            vmSnapshotDao.remove(vmSnapshot.getId());
+                        } else {
+                            vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
+                        }
                     }
                 }
             });

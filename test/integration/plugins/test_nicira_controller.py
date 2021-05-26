@@ -405,7 +405,7 @@ class TestNiciraContoller(cloudstackTestCase):
 
 
     def get_master_router(self, routers):
-        master = filter(lambda r: r.redundantstate == 'MASTER', routers)
+        master = [r for r in routers if r.redundantstate == 'MASTER']
         self.logger.debug("Found %s master router(s): %s" % (master.size(), master))
         return master[0]
 

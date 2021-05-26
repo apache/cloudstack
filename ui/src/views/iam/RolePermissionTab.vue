@@ -51,20 +51,13 @@
           <a-input v-model="newRuleDescription" :placeholder="$t('label.description')"></a-input>
         </div>
         <div class="rules-table__col rules-table__col--actions">
-          <a-tooltip
-            placement="bottom">
-            <template slot="title">
-              {{ $t('label.save.new.rule') }}
-            </template>
-            <a-button
-              :disabled="!('createRolePermission' in $store.getters.apis)"
-              icon="plus"
-              type="primary"
-              shape="circle"
-              @click="onRuleSave"
-            >
-            </a-button>
-          </a-tooltip>
+          <tooltip-button
+            tooltipPlacement="bottom"
+            :tooltip="$t('label.save.new.rule')"
+            :disabled="!('createRolePermission' in $store.getters.apis)"
+            icon="plus"
+            type="primary"
+            @click="onRuleSave" />
         </div>
       </div>
 
@@ -117,13 +110,15 @@ import { api } from '@/api'
 import draggable from 'vuedraggable'
 import PermissionEditable from './PermissionEditable'
 import RuleDelete from './RuleDelete'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'RolePermissionTab',
   components: {
     RuleDelete,
     PermissionEditable,
-    draggable
+    draggable,
+    TooltipButton
   },
   props: {
     resource: {
@@ -144,7 +139,7 @@ export default {
       apis: []
     }
   },
-  mounted () {
+  created () {
     this.apis = Object.keys(this.$store.getters.apis).sort((a, b) => a.localeCompare(b))
     this.fetchData()
   },

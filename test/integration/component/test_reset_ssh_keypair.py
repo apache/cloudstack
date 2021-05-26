@@ -32,7 +32,8 @@ from marvin.lib.common import (get_domain,
 from marvin.lib.utils import (cleanup_resources,
                                           random_gen,
                                           validateList)
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.codes import PASS, RUNNING
 
 #Import System modules

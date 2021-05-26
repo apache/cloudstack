@@ -192,7 +192,7 @@
               rules: [{ required: true, message: $t('message.error.required.input') },
                       {
                         validator: (rule, value, callback) => {
-                          if (value && (isNaN(value) || value <= 0)) {
+                          if (value && (isNaN(value) || value < 0)) {
                             callback(this.$t('message.error.number'))
                           }
                           callback()
@@ -680,7 +680,7 @@
             :loading="domainLoading"
             :placeholder="this.$t('label.domainid')">
             <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
-              {{ opt.name || opt.description }}
+              {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -819,8 +819,6 @@ export default {
         name: this.$t('label.all.zone')
       }
     ]
-  },
-  mounted () {
     if (this.$route.meta.name === 'systemoffering') {
       this.isSystem = true
     }

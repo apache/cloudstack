@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 
 import com.cloud.storage.dao.VMTemplateDetailsDao;
+import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -423,6 +424,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private UserDao userDao;
+
+    @Inject
+    private VirtualMachineManager virtualMachineManager;
 
     /*
      * (non-Javadoc)
@@ -2962,8 +2966,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 sc.addAnd("id", SearchCriteria.Op.NEQ, currentVmOffering.getId());
             }
 
-            // 1. Only return offerings with the same storage type
-            sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, currentVmOffering.isUseLocalStorage());
+            boolean isRootVolumeUsingLocalStorage = virtualMachineManager.isRootVolumeOnLocalStorage(vmId);
+
+            // 1. Only return offerings with the same storage type than the storage pool where the VM's root volume is allocated
+            sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, isRootVolumeUsingLocalStorage);
 
             // 2.In case vm is running return only offerings greater than equal to current offering compute.
             if (vmInstance.getState() == VirtualMachine.State.Running) {
@@ -4143,6 +4149,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMBlacklistedDetails, UserVMReadOnlyUIDetails, SortKeyAscending, AllowUserViewAllDomainAccounts};
+        return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMBlacklistedDetails, UserVMReadOnlyDetails, SortKeyAscending, AllowUserViewAllDomainAccounts};
     }
 }

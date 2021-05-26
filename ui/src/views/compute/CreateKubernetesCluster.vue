@@ -362,8 +362,6 @@ export default {
         name: ''
       }
     ]
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

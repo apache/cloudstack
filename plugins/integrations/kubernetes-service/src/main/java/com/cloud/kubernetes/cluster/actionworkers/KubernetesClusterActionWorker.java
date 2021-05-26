@@ -355,7 +355,7 @@ public class KubernetesClusterActionWorker {
 
         for (UserVm vm : clusterVMs) {
             try {
-                templateService.attachIso(iso.getId(), vm.getId());
+                templateService.attachIso(iso.getId(), vm.getId(), true);
                 if (LOGGER.isInfoEnabled()) {
                     LOGGER.info(String.format("Attached binaries ISO for VM : %s in cluster: %s", vm.getDisplayName(), kubernetesCluster.getName()));
                 }
@@ -373,7 +373,7 @@ public class KubernetesClusterActionWorker {
         for (UserVm vm : clusterVMs) {
             boolean result = false;
             try {
-                result = templateService.detachIso(vm.getId());
+                result = templateService.detachIso(vm.getId(), true);
             } catch (CloudRuntimeException ex) {
                 LOGGER.warn(String.format("Failed to detach binaries ISO from VM : %s in the Kubernetes cluster : %s ", vm.getDisplayName(), kubernetesCluster.getName()), ex);
             }

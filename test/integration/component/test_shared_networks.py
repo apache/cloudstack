@@ -18,7 +18,8 @@
 """ P1 tests for shared networks
 """
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.cloudstackAPI import rebootRouter, stopRouter, startRouter
 from marvin.lib.base import (Account,
                              Network,
@@ -796,10 +797,10 @@ class TestSharedNetworks(cloudstackTestCase):
 
         ip_range = list(
             netaddr.iter_iprange(
-                unicode(
-                    self.testdata["shared_network"]["startip"]), unicode(
+                str(
+                    self.testdata["shared_network"]["startip"]), str(
                     self.testdata["shared_network"]["endip"])))
-        if netaddr.IPAddress(unicode(vms[0].nic[0].ipaddress)) not in ip_range:
+        if netaddr.IPAddress(str(vms[0].nic[0].ipaddress)) not in ip_range:
             self.fail(
                 "Virtual machine ip should be from the ip range assigned to\
                         network created.")
@@ -834,10 +835,10 @@ class TestSharedNetworks(cloudstackTestCase):
 
         ip_range = list(
             netaddr.iter_iprange(
-                unicode(
-                    self.testdata["shared_network"]["startip"]), unicode(
+                str(
+                    self.testdata["shared_network"]["startip"]), str(
                     self.testdata["shared_network"]["endip"])))
-        if netaddr.IPAddress(unicode(vms[0].nic[0].ipaddress)) not in ip_range:
+        if netaddr.IPAddress(str(vms[0].nic[0].ipaddress)) not in ip_range:
             self.fail(
                 "Virtual machine ip should be from the ip range assigned to\
                 network created.")
@@ -1107,10 +1108,10 @@ class TestSharedNetworks(cloudstackTestCase):
 
         ip_range = list(
             netaddr.iter_iprange(
-                unicode(
-                    self.testdata["shared_network"]["startip"]), unicode(
+                str(
+                    self.testdata["shared_network"]["startip"]), str(
                     self.testdata["shared_network"]["endip"])))
-        if netaddr.IPAddress(unicode(vms[0].nic[0].ipaddress)) not in ip_range:
+        if netaddr.IPAddress(str(vms[0].nic[0].ipaddress)) not in ip_range:
             self.fail(
                 "Virtual machine ip should be from the ip range assigned\
                  to network created.")
@@ -1449,10 +1450,10 @@ class TestSharedNetworks(cloudstackTestCase):
 
         ip_range = list(
             netaddr.iter_iprange(
-                unicode(
-                    self.testdata["shared_network"]["startip"]), unicode(
+                str(
+                    self.testdata["shared_network"]["startip"]), str(
                     self.testdata["shared_network"]["endip"])))
-        if netaddr.IPAddress(unicode(vms[0].nic[0].ipaddress)) not in ip_range:
+        if netaddr.IPAddress(str(vms[0].nic[0].ipaddress)) not in ip_range:
             self.fail(
                 "Virtual machine ip should be from the ip range\
                         assigned to network created.")
@@ -1484,10 +1485,10 @@ class TestSharedNetworks(cloudstackTestCase):
 
         ip_range = list(
             netaddr.iter_iprange(
-                unicode(
-                    self.testdata["shared_network"]["startip"]), unicode(
+                str(
+                    self.testdata["shared_network"]["startip"]), str(
                     self.testdata["shared_network"]["endip"])))
-        if netaddr.IPAddress(unicode(vms[0].nic[0].ipaddress)) not in ip_range:
+        if netaddr.IPAddress(str(vms[0].nic[0].ipaddress)) not in ip_range:
             self.fail(
                 "Virtual machine ip should be from the ip range assigne\
                  to network created.")
@@ -1777,10 +1778,10 @@ class TestSharedNetworks(cloudstackTestCase):
 
         ip_range = list(
             netaddr.iter_iprange(
-                unicode(
-                    self.testdata["shared_network"]["startip"]), unicode(
+                str(
+                    self.testdata["shared_network"]["startip"]), str(
                     self.testdata["shared_network"]["endip"])))
-        if netaddr.IPAddress(unicode(vms[0].nic[0].ipaddress)) not in ip_range:
+        if netaddr.IPAddress(str(vms[0].nic[0].ipaddress)) not in ip_range:
             self.fail(
                 "Virtual machine ip should be from the ip range assigned\
                  to network created.")
@@ -3144,7 +3145,7 @@ class TestSharedNetworks(cloudstackTestCase):
             id=self.shared_network_offering.id
         )
         status = validateList(list_network_offerings_response)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "listNetworkOfferings returned invalid object in response."
@@ -3170,7 +3171,7 @@ class TestSharedNetworks(cloudstackTestCase):
             id=self.shared_network_offering.id
         )
         status = validateList(list_network_offerings_response)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "listNetworkOfferings returned invalid object in\
@@ -3200,7 +3201,7 @@ class TestSharedNetworks(cloudstackTestCase):
             id=self.network.id
         )
         status = validateList(list_accounts_response)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "listNetworks returned invalid object in response."
@@ -3246,7 +3247,7 @@ class TestSharedNetworks(cloudstackTestCase):
             id=self.network2.id
         )
         status = validateList(list_networks_response)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "listNetworks returned invalid object in response after\

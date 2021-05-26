@@ -50,6 +50,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -1972,14 +1973,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     _itMgr.reConfigureVm(vmInstance.getUuid(), currentServiceOffering, newServiceOffering, customParameters, existingHostHasCapacity);
                     success = true;
                     return success;
-                } catch (InsufficientCapacityException e) {
-                    s_logger.warn("Received exception while scaling ", e);
-                } catch (ResourceUnavailableException e) {
-                    s_logger.warn("Received exception while scaling ", e);
-                } catch (ConcurrentOperationException e) {
+                } catch (InsufficientCapacityException | ResourceUnavailableException | ConcurrentOperationException e) {
                     s_logger.warn("Received exception while scaling ", e);
                 } catch (Exception e) {
-                    s_logger.warn("Received exception while scaling ", e);
+                    s_logger.warn("Scaling failed with exception: ", e);
                 } finally {
                     if (!success) {
                         // Decrement CPU and Memory count accordingly.
@@ -2268,7 +2265,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
 
                         // only load running vms. For stopped vms get loaded on starting
-                        if (vmInstance.getState() == State.Running) {
+                        if (vmInstance != null && vmInstance.getState() == State.Running) {
                             VmAndCountDetails vmAndCount = new VmAndCountDetails(vmId, VmIpFetchTrialMax.value());
                             vmIdCountMap.put(nicId, vmAndCount);
                         }
@@ -2557,6 +2554,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String extraConfig = cmd.getExtraConfig();
 
         UserVmVO vmInstance = _vmDao.findById(cmd.getId());
+        if (MapUtils.isNotEmpty(details) || cmd.isCleanupDetails()) {
+            VMTemplateVO template = _templateDao.findById(vmInstance.getTemplateId());
+            if (template != null && template.isDeployAsIs()) {
+                throw new CloudRuntimeException("Detail settings are read from OVA, it cannot be changed by API call.");
+            }
+        }
+
         long accountId = vmInstance.getAccountId();
 
         if (isDisplayVm != null && isDisplayVm != vmInstance.isDisplay()) {
@@ -2566,7 +2570,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         final List<String> userBlacklistedSettings = Stream.of(QueryService.UserVMBlacklistedDetails.value().split(","))
                 .map(item -> (item).trim())
                 .collect(Collectors.toList());
-        final List<String> userReadOnlySettings = Stream.of(QueryService.UserVMReadOnlyUIDetails.value().split(","))
+        final List<String> userReadOnlySettings = Stream.of(QueryService.UserVMReadOnlyDetails.value().split(","))
                 .map(item -> (item).trim())
                 .collect(Collectors.toList());
         if (cleanupDetails){
@@ -3000,15 +3004,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         checkForUnattachedVolumes(vmId, volumesToBeDeleted);
         validateVolumes(volumesToBeDeleted);
 
+        final ControlledEntity[] volumesToDelete = volumesToBeDeleted.toArray(new ControlledEntity[0]);
+        _accountMgr.checkAccess(ctx.getCallingAccount(), null, true, volumesToDelete);
+
         stopVirtualMachine(vmId, VmDestroyForcestop.value());
 
-        if (vm.getHypervisorType() == HypervisorType.VMware) {
-            List<VolumeVO> allVolumes = _volsDao.findByInstance(vm.getId());
-            allVolumes.removeIf(vol -> vol.getVolumeType() == Volume.Type.ROOT);
-            detachVolumesFromVm(allVolumes);
-        } else {
-            detachVolumesFromVm(volumesToBeDeleted);
-        }
+        detachVolumesFromVm(volumesToBeDeleted);
 
         UserVm destroyedVm = destroyVm(vmId, expunge);
         if (expunge) {
@@ -5454,7 +5455,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         for (VMTemplateVO tmpl: child_templates){
             if (tmpl.getFormat() == Storage.ImageFormat.ISO){
                 s_logger.info("MDOV trying to attach disk to the VM " + tmpl.getId() + " vmid=" + vm.getId());
-                _tmplService.attachIso(tmpl.getId(), vm.getId());
+                _tmplService.attachIso(tmpl.getId(), vm.getId(), true);
             }
         }
 
@@ -5888,7 +5889,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     }
 
-    private boolean isVMUsingLocalStorage(VMInstanceVO vm) {
+    public boolean isVMUsingLocalStorage(VMInstanceVO vm) {
         boolean usesLocalStorage = false;
 
         List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
@@ -5941,9 +5942,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (!isOnSupportedHypevisorForMigration(vm)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(vm + " is not XenServer/VMware/KVM/Ovm/Hyperv, cannot migrate this VM form hypervisor type " + vm.getHypervisorType());
-            }
+            s_logger.error(vm + " is not XenServer/VMware/KVM/Ovm/Hyperv, cannot migrate this VM from hypervisor type " + vm.getHypervisorType());
             throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support XenServer/VMware/KVM/Ovm/Hyperv/Ovm3 only");
         }
 
@@ -5952,9 +5951,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (isVMUsingLocalStorage(vm)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(vm + " is using Local Storage, cannot migrate this VM.");
-            }
+            s_logger.error(vm + " is using Local Storage, cannot migrate this VM.");
             throw new InvalidParameterValueException("Unsupported operation, VM uses Local storage, cannot migrate");
         }
 
@@ -7126,6 +7123,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     newVol = volumeMgr.allocateDuplicateVolume(root, null);
                 }
                 newVols.add(newVol);
+
+                if (userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.ROOT_DISK_SIZE) == null && !newVol.getSize().equals(template.getSize())) {
+                    VolumeVO resizedVolume = (VolumeVO) newVol;
+                    resizedVolume.setSize(template.getSize());
+                    _volsDao.update(resizedVolume.getId(), resizedVolume);
+                }
 
                 // 1. Save usage event and update resource count for user vm volumes
                 _resourceLimitMgr.incrementResourceCount(newVol.getAccountId(), ResourceType.volume, newVol.isDisplay());
