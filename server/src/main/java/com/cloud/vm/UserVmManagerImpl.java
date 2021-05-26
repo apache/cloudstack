@@ -2782,13 +2782,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (isDynamicallyScalable == true) {
                 VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
                 if (!template.isDynamicallyScalable()) {
-                    throw new InvalidParameterValueException("Dynamic Scaling cannot be enabled on the VM since template is not dynamic scaling enabled");
+                    throw new InvalidParameterValueException("Dynamic Scaling cannot be enabled for the VM since its template does not have dynamic scaling enabled");
                 }
                 if (!offering.isDynamicScalingEnabled()) {
-                    throw new InvalidParameterValueException("Dynamic Scaling cannot be enabled on the VM since service offering is not dynamic scaling enabled");
+                    throw new InvalidParameterValueException("Dynamic Scaling cannot be enabled for the VM since its service offering does not have dynamic scaling enabled");
                 }
                 if (!UserVmManager.EnableDynamicallyScaleVm.valueIn(vm.getDataCenterId())) {
-                    throw new InvalidParameterValueException("Dynamic Scaling cannot be enabled on the VM since corresponding global setting is false");
+                    s_logger.debug(String.format("Dynamic Scaling cannot be enabled for the VM %s since the global setting enable.dynamic.scale.vm is set to false", vm.getUuid()));
+                    throw new InvalidParameterValueException("Dynamic Scaling cannot be enabled for the VM since corresponding global setting is set to false");
                 }
             }
         }
