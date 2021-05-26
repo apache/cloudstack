@@ -63,7 +63,7 @@ public class KVMHAConfig {
             true, ConfigKey.Scope.Cluster);
 
     public static final ConfigKey<Double> KvmHaAcceptedProblematicHostsRatio = new ConfigKey<Double>("Advanced", Double.class, "kvm.ha.accepted.problematic.hosts.ratio", "0.3",
-            "The ratio of problematic Hosts accepted on a Cluster. If a cluster has more than the accepted ratio, HA will not be Fence/Recover Hosts and Admins will be notified to check the cluster healthy. "
+            "The ratio of problematic Hosts accepted on a Cluster. If a cluster has more than the accepted ratio, HA will not Fence/Recover Hosts; instead, it will notify Admins to check the cluster healthy. "
                     + "A Host is considered problematic if in one of the following states: Error, Alert, Down, Disconnected. Default value is '0.3' (30%).",
             true, ConfigKey.Scope.Cluster);
 }
