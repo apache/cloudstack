@@ -991,15 +991,15 @@ public class ConfigurationManagerTest {
 
     @Test
     public void updateDiskOfferingTagsIfIsNotNullTestWhenTagsIsNull(){
-        Mockito.doNothing().when(configurationMgr).updateDiskOfferingTagsIfIsNotNull(null, diskOfferingVOMock);
-        this.configurationMgr.updateDiskOfferingTagsIfIsNotNull(null, diskOfferingVOMock);
-        Mockito.verify(configurationMgr, Mockito.times(1)).updateDiskOfferingTagsIfIsNotNull(null, diskOfferingVOMock);
+        Mockito.doNothing().when(configurationMgr).updateOfferingTagsIfIsNotNull(null, diskOfferingVOMock);
+        this.configurationMgr.updateOfferingTagsIfIsNotNull(null, diskOfferingVOMock);
+        Mockito.verify(configurationMgr, Mockito.times(1)).updateOfferingTagsIfIsNotNull(null, diskOfferingVOMock);
     }
     @Test
     public void updateDiskOfferingTagsIfIsNotNullTestWhenTagsIsNotNull(){
         String tags = "tags";
-        Mockito.doNothing().when(configurationMgr).updateDiskOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
-        this.configurationMgr.updateDiskOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
-        Mockito.verify(configurationMgr, Mockito.times(1)).updateDiskOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
+        Mockito.doNothing().when(configurationMgr).updateOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
+        this.configurationMgr.updateOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
+        Mockito.verify(configurationMgr, Mockito.times(1)).updateOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
     }
 }
