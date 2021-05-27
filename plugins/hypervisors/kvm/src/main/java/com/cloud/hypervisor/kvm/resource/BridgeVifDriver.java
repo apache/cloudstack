@@ -267,8 +267,8 @@ public class BridgeVifDriver extends VifDriverBase {
     }
 
     @Override
-    public void unplug(LibvirtVMDef.InterfaceDef iface) {
-        deleteVnetBr(iface.getBrName());
+    public void unplug(LibvirtVMDef.InterfaceDef iface, boolean deleteBr) {
+        deleteVnetBr(iface.getBrName(), deleteBr);
     }
 
     @Override
@@ -327,7 +327,7 @@ public class BridgeVifDriver extends VifDriverBase {
         }
     }
 
-    private void deleteVnetBr(String brName) {
+    private void deleteVnetBr(String brName, boolean deleteBr) {
         synchronized (_vnetBridgeMonitor) {
             String cmdout = Script.runSimpleBashScript("ls /sys/class/net/" + brName);
             if (cmdout == null)
@@ -376,6 +376,7 @@ public class BridgeVifDriver extends VifDriverBase {
             command.add("-v", vNetId);
             command.add("-p", pName);
             command.add("-b", brName);
+            command.add("-d", String.valueOf(deleteBr));
 
             final String result = command.execute();
             if (result != null) {
@@ -434,6 +435,24 @@ public class BridgeVifDriver extends VifDriverBase {
             return true;
         } else {
             return false;
+        }
+    }
+
+    @Override
+    public void deleteBr(NicTO nic) {
+        String vlanId = Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
+        String trafficLabel = nic.getName();
+        String pifName = _pifs.get(trafficLabel);
+        if (pifName == null) {
+            // if not found in bridge map, maybe traffic label refers to pif already?
+            File pif = new File("/sys/class/net/" + trafficLabel);
+            if (pif.isDirectory()) {
+                pifName = trafficLabel;
+            }
+        }
+        if (vlanId != null && pifName != null) {
+            String brName = generateVnetBrName(pifName, vlanId);
+            deleteVnetBr(brName, true);
         }
     }
 }

@@ -26,9 +26,17 @@
           <div><strong>{{ $t(type) }}</strong></div>
           <div>{{ item[type] || $t('label.network.label.display.for.blank.value') }}</div>
         </div>
-        <div v-if="item.traffictype === 'Guest'">
+        <div v-if="item.traffictype === 'Guest' && networkType === 'Advanced'">
           <a-divider />
-          <IpRangesTabGuest :resource="resource" :loading="loading" />
+          <IpRangesTabGuest :resource="resource" :loading="loading"/>
+        </div>
+        <div v-if="item.traffictype === 'Guest' && networkType === 'Basic'">
+          <a-divider />
+          <IpRangesTabPublic
+            :resource="resource"
+            :loading="loading"
+            :network="guestNetwork"
+            :basicGuestNetwork="networkType === 'Basic' && item.traffictype === 'Guest'"/>
         </div>
         <div v-if="item.traffictype === 'Public'">
           <div style="margin-bottom: 10px;">
@@ -40,7 +48,7 @@
             <div>{{ publicNetwork.broadcastdomaintype }}</div>
           </div>
           <a-divider />
-          <IpRangesTabPublic :resource="resource" :loading="loading" :network="publicNetwork" />
+          <IpRangesTabPublic :resource="resource" :loading="loading" :network="publicNetwork" :basicGuestNetwork="false" />
         </div>
         <div v-if="item.traffictype === 'Management'">
           <a-divider />
@@ -86,10 +94,12 @@ export default {
     return {
       traffictypes: [],
       publicNetwork: {},
+      guestNetwork: {},
+      networkType: 'Advanced',
       fetchLoading: false
     }
   },
-  mounted () {
+  created () {
     if (this.resource.id) {
       this.fetchData()
     }
@@ -102,7 +112,7 @@ export default {
     }
   },
   methods: {
-    fetchData () {
+    async fetchData () {
       this.fetchLoading = true
       api('listTrafficTypes', { physicalnetworkid: this.resource.id }).then(json => {
         this.traffictypes = json.listtraffictypesresponse.traffictype
@@ -111,7 +121,6 @@ export default {
       }).finally(() => {
         this.fetchLoading = false
       })
-
       this.fetchLoading = true
       api('listNetworks', {
         listAll: true,
@@ -123,6 +132,42 @@ export default {
           this.publicNetwork = json.listnetworksresponse.network[0]
         } else {
           this.publicNetwork = {}
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.fetchLoading = false
+      })
+      await this.fetchZones()
+      if (this.networkType === 'Basic') {
+        this.fetchGuestNetwork()
+      }
+    },
+    fetchZones () {
+      return new Promise((resolve, reject) => {
+        this.fetchLoading = true
+        api('listZones', { id: this.resource.zoneid }).then(json => {
+          const zone = json.listzonesresponse.zone || []
+          this.networkType = zone[0].networktype
+          resolve(this.networkType)
+        }).catch(error => {
+          this.$notifyError(error)
+          reject(error)
+        }).finally(() => {
+          this.fetchLoading = false
+        })
+      })
+    },
+    fetchGuestNetwork () {
+      api('listNetworks', {
+        listAll: true,
+        trafficType: 'Guest',
+        zoneId: this.resource.zoneid
+      }).then(json => {
+        if (json.listnetworksresponse?.network?.length > 0) {
+          this.guestNetwork = json.listnetworksresponse.network[0]
+        } else {
+          this.guestNetwork = {}
         }
       }).catch(error => {
         this.$notifyError(error)

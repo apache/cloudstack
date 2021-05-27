@@ -3364,7 +3364,7 @@ public class LibvirtComputingResourceTest {
 
             when(libvirtComputingResource.getAllVifDrivers()).thenReturn(drivers);
 
-            doNothing().when(vifDriver).unplug(intDef);
+            doNothing().when(vifDriver).unplug(intDef, true);
 
         } catch (final LibvirtException e) {
             fail(e.getMessage());

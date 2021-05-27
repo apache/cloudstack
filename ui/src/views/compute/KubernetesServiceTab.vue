@@ -224,6 +224,7 @@ export default {
     if (!this.isAdmin()) {
       this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'instancename')
     }
+    this.handleFetchData()
   },
   watch: {
     resource (newData, oldData) {

@@ -222,8 +222,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 userVmResponse.setDiskKbsWrite((long)vmStats.getDiskWriteKBs());
                 userVmResponse.setDiskIORead((long)vmStats.getDiskReadIOs());
                 userVmResponse.setDiskIOWrite((long)vmStats.getDiskWriteIOs());
-                userVmResponse.setMemoryKBs((long)vmStats.getMemoryKBs());
-                userVmResponse.setMemoryIntFreeKBs((long)vmStats.getIntFreeMemoryKBs());
+                long totalMemory = (long)vmStats.getMemoryKBs();
+                long freeMemory = (long)vmStats.getIntFreeMemoryKBs();
+                long correctedFreeMemory = freeMemory >= totalMemory ? 0 : freeMemory;
+                userVmResponse.setMemoryKBs(totalMemory);
+                userVmResponse.setMemoryIntFreeKBs(correctedFreeMemory);
                 userVmResponse.setMemoryTargetKBs((long)vmStats.getTargetMemoryKBs());
 
             }
@@ -350,7 +353,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             }
             userVmResponse.setDetails(resourceDetails);
             if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                userVmResponse.setReadOnlyUIDetails(QueryService.UserVMReadOnlyUIDetails.value());
+                userVmResponse.setReadOnlyDetails(QueryService.UserVMReadOnlyDetails.value());
             }
         }
 

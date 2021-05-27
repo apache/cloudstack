@@ -46,25 +46,24 @@
         </div>
 
         <div slot="actions" class="action">
-          <a-button
-            shape="circle"
+          <tooltip-button
+            :tooltip="$t('label.edit')"
             :disabled="!('updateConfiguration' in $store.getters.apis)"
             v-if="editableValueKey !== index"
             icon="edit"
             @click="setEditableSetting(item, index)" />
-          <a-button
-            shape="circle"
-            size="default"
+          <tooltip-button
+            :tooltip="$t('label.cancel')"
             @click="editableValueKey = null"
-            v-if="editableValueKey === index" >
-            <a-icon type="close-circle" theme="twoTone" twoToneColor="#f5222d" />
-          </a-button>
-          <a-button
-            shape="circle"
+            v-if="editableValueKey === index"
+            iconType="close-circle"
+            iconTwoToneColor="#f5222d" />
+          <tooltip-button
+            :tooltip="$t('label.ok')"
             @click="updateData(item)"
-            v-if="editableValueKey === index" >
-            <a-icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" />
-          </a-button>
+            v-if="editableValueKey === index"
+            iconType="check-circle"
+            iconTwoToneColor="#52c41a" />
         </div>
       </a-list-item>
     </a-list>
@@ -73,8 +72,12 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from './TooltipButton.vue'
 
 export default {
+  components: {
+    TooltipButton
+  },
   name: 'SettingsTab',
   props: {
     resource: {
@@ -96,7 +99,7 @@ export default {
       filter: ''
     }
   },
-  beforeMount () {
+  created () {
     switch (this.$route.meta.name) {
       case 'account':
         this.scopeKey = 'accountid'
@@ -119,8 +122,6 @@ export default {
       default:
         this.scopeKey = ''
     }
-  },
-  mounted () {
     this.fetchData()
   },
   watch: {

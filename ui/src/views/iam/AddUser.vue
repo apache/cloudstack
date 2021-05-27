@@ -125,7 +125,7 @@
             v-decorator="['domainid']"
             :placeholder="apiParams.domainid.description">
             <a-select-option v-for="domain in domainsList" :key="domain.id">
-              {{ domain.name }}
+              {{ domain.path || domain.name || domain.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -218,7 +218,7 @@ export default {
       domainid: null
     }
   },
-  beforeCreate () {
+  created () {
     this.form = this.$form.createForm(this)
     this.apiConfig = this.$store.getters.apis.createUser || {}
     this.apiParams = {}
@@ -229,8 +229,6 @@ export default {
     this.apiConfig.params.forEach(param => {
       this.apiParams[param.name] = param
     })
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

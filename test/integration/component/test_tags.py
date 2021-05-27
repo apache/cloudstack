@@ -787,7 +787,7 @@ class TestResourceTags(cloudstackTestCase):
             )
 
         except Exception as e:
-            print e
+            print(e)
 
         vpns = Vpn.list(
             self.apiclient,
@@ -3024,7 +3024,13 @@ class TestResourceTags(cloudstackTestCase):
             )
         except Exception as e:
             # verify e.message
-            assert "tag scope33 already on UserVm with id" in e.message, \
+            print(f"=== exception caught === {type(e)}")
+            strerror = ""
+            if hasattr(e,'message'):
+                strerror = e.__getattribute__('message')
+            else:
+                strerror = e.args
+            assert "tag scope33 already on UserVm with id" in str(strerror), \
                 "neat error message missing from error result"
             pass
 

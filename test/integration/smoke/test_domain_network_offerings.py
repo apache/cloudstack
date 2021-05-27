@@ -144,7 +144,7 @@ class TestCreateDomainsNetworkOffering(cloudstackTestCase):
             network_offering.id,
             "Check server id in createNetworkOffering"
         )
-        self.assertItemsEqual(
+        self.assertCountEqual(
             network_response.domainid.split(","),
             offering_data_domainid.split(","),
             "Check domainid in createNetworkOffering"
@@ -254,7 +254,7 @@ class TestDomainsNetworkOfferings(cloudstackTestCase):
         )
 
         try:
-            self.assertItemsEqual(
+            self.assertCountEqual(
                 list_network_response[0].domainid.split(","),
                 input_domainid.split(","),
                 "Check child domainid in updateServiceOffering, should fail"
@@ -264,7 +264,7 @@ class TestDomainsNetworkOfferings(cloudstackTestCase):
             self.debug("Child domain check successful")
 
         domainid = "{0},{1}".format(self.domain_1.id, self.domain_2.id)
-        self.assertItemsEqual(
+        self.assertCountEqual(
             list_network_response[0].domainid.split(","),
             result_domainid.split(","),
             "Check domainid in createNetworkOffering"
