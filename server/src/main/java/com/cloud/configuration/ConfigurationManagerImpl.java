@@ -2807,29 +2807,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             offering.setSortKey(sortKey);
         }
 
-        // Note: tag editing commented out for now; keeping the code intact,
-        // might need to re-enable in next releases
-        // if (tags != null)
-        // {
-        // if (tags.trim().isEmpty() && offeringHandle.getTags() == null)
-        // {
-        // //no new tags; no existing tags
-        // offering.setTagsArray(csvTagsToList(null));
-        // }
-        // else if (!tags.trim().isEmpty() && offeringHandle.getTags() != null)
-        // {
-        // //new tags + existing tags
-        // List<String> oldTags = csvTagsToList(offeringHandle.getTags());
-        // List<String> newTags = csvTagsToList(tags);
-        // oldTags.addAll(newTags);
-        // offering.setTagsArray(oldTags);
-        // }
-        // else if(!tags.trim().isEmpty())
-        // {
-        // //new tags; NO existing tags
-        // offering.setTagsArray(csvTagsToList(tags));
-        // }
-        // }
+        updateOfferingTagsIfIsNotNull(cmd.getTags(), offering);
+
+        updateServiceOfferingHostTagsIfNotNull(cmd.getHostTag(), offering);
 
         if (updateNeeded && !_serviceOfferingDao.update(id, offering)) {
             return null;
@@ -3284,7 +3264,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             diskOffering.setDisplayOffering(displayDiskOffering);
         }
 
-        updateDiskOfferingTagsIfIsNotNull(tags, diskOffering);
+        updateOfferingTagsIfIsNotNull(tags, diskOffering);
 
         validateMaxRateEqualsOrGreater(iopsReadRate, iopsReadRateMax, IOPS_READ_RATE);
         validateMaxRateEqualsOrGreater(iopsWriteRate, iopsWriteRateMax, IOPS_WRITE_RATE);
@@ -3336,19 +3316,38 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     /**
-     * Check the tags parameters to the diskOffering
+     * Check the tags parameters to the disk/service offering
      * <ul>
      *     <li>If tags is null, do nothing and return.</li>
-     *     <li>If tags is not null, set tag to the diskOffering.</li>
-     *     <li>If tags is an blank string, set null on diskOffering tag.</li>
+     *     <li>If tags is not null, set tag to the disk/service offering.</li>
+     *     <li>If tags is an blank string, set null on disk/service offering tag.</li>
      * </ul>
      */
-    protected void updateDiskOfferingTagsIfIsNotNull(String tags, DiskOfferingVO diskOffering) {
+    protected void updateOfferingTagsIfIsNotNull(String tags, DiskOfferingVO diskOffering) {
         if (tags == null) { return; }
         if (StringUtils.isNotBlank(tags)) {
             diskOffering.setTags(tags);
         } else {
             diskOffering.setTags(null);
+        }
+    }
+
+    /**
+     * Check the host tags parameters to the service offering
+     * <ul>
+     *     <li>If host tags is null, do nothing and return.</li>
+     *     <li>If host tags is not null, set host tag to the service offering.</li>
+     *     <li>If host tags is an blank string, set null on service offering tag.</li>
+     * </ul>
+     */
+    protected void updateServiceOfferingHostTagsIfNotNull(String hostTags, ServiceOfferingVO offering) {
+        if (hostTags == null) {
+            return;
+        }
+        if (StringUtils.isNotBlank(hostTags)) {
+            offering.setHostTag(hostTags);
+        } else {
+            offering.setHostTag(null);
         }
     }
 
