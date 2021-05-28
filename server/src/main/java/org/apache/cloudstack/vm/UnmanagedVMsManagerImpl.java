@@ -770,10 +770,15 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             excludeList.addHost(sourceHost.getId());
             final DataCenterDeployment plan = new DataCenterDeployment(sourceHost.getDataCenterId(), sourceHost.getPodId(), sourceHost.getClusterId(), null, null, null);
             DeployDestination dest = null;
+            ArrayList<String> errors = new ArrayList<>();
             try {
-                dest = deploymentPlanningManager.planDeployment(profile, plan, excludeList, null);
+                dest = deploymentPlanningManager.planDeployment(profile, plan, excludeList, null, errors);
             } catch (Exception e) {
-                LOGGER.warn(String.format("VM import failed for unmanaged vm: %s during vm migration, finding deployment destination", vm.getInstanceName()), e);
+                String errorMessage = String.format("VM import failed for unmanaged vm: %s during vm migration, finding deployment destination", vm.getInstanceName());
+                for (String error: errors) {
+                    errorMessage += "\n" + error;
+                }
+                LOGGER.warn(errorMessage, e);
                 cleanupFailedImportVM(vm);
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm: %s during vm migration, finding deployment destination", vm.getInstanceName()));
             }

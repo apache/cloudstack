@@ -220,7 +220,7 @@ public class DeploymentPlanningManagerImplTest {
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
 
         Mockito.when(avoids.shouldAvoid((DataCenterVO)Matchers.anyObject())).thenReturn(true);
-        DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
+        DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null, new ArrayList<>());
         assertNull("DataCenter is in avoid set, destination should be null! ", dest);
     }
 
@@ -236,7 +236,7 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(avoids.shouldAvoid((DataCenterVO)Matchers.anyObject())).thenReturn(false);
 
         Mockito.when(_planner.canHandle(vmProfile, plan, avoids)).thenReturn(false);
-        DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
+        DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null, new ArrayList<>());
         assertNull("Planner cannot handle, destination should be null! ", dest);
     }
 
@@ -253,7 +253,7 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(_planner.canHandle(vmProfile, plan, avoids)).thenReturn(true);
 
         Mockito.when(((DeploymentClusterPlanner)_planner).orderClusters(vmProfile, plan, avoids)).thenReturn(null);
-        DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
+        DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null, new ArrayList<>());
         assertNull("Planner cannot handle, destination should be null! ", dest);
     }
 

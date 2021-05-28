@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.engine.cloud.entity.api;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -199,8 +200,9 @@ public class VMEntityManagerImpl implements VMEntityManager {
 
         while (true) {
             DeployDestination dest = null;
+            List<String> errors = new ArrayList<>();
             try {
-                dest = _dpMgr.planDeployment(vmProfile, plan, exclude, plannerToUse);
+                dest = _dpMgr.planDeployment(vmProfile, plan, exclude, plannerToUse, errors);
             } catch (AffinityConflictException e) {
                 throw new CloudRuntimeException("Unable to create deployment, affinity rules associated to the VM conflict");
             }
@@ -221,7 +223,11 @@ public class VMEntityManagerImpl implements VMEntityManager {
                 // call retry it.
                 return UUID.randomUUID().toString();
             } else {
-                throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId(),
+                String errorMessage = "Unable to create a deployment for " + vmProfile;
+                for(String error: errors ){
+                    errorMessage += "\n" + error;
+                }
+                throw new InsufficientServerCapacityException(errorMessage, DataCenter.class, plan.getDataCenterId(),
                     areAffinityGroupsAssociated(vmProfile));
             }
         }
