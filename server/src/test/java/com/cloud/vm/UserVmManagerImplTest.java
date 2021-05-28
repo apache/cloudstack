@@ -469,15 +469,13 @@ public class UserVmManagerImplTest {
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
         Mockito.when(template.getId()).thenReturn(1l);
         Mockito.when(template.getSize()).thenReturn(99L * GiB_TO_BYTES);
-        ServiceOfferingVO offering = Mockito.mock(ServiceOfferingVO.class);
         Mockito.when(templateDao.findById(Mockito.anyLong())).thenReturn(template);
 
         DiskOfferingVO diskfferingVo = Mockito.mock(DiskOfferingVO.class);
-        Mockito.when(diskOfferingDao.findById(Mockito.anyLong())).thenReturn(diskfferingVo);
 
         Mockito.when(diskfferingVo.getDiskSize()).thenReturn(offeringRootDiskSize);
 
-        long rootDiskSize = userVmManagerImpl.configureCustomRootDiskSize(customParameters, template, Hypervisor.HypervisorType.KVM, offering);
+        long rootDiskSize = userVmManagerImpl.configureCustomRootDiskSize(customParameters, template, Hypervisor.HypervisorType.KVM, diskfferingVo);
 
         Assert.assertEquals(expectedRootDiskSize, rootDiskSize);
         Mockito.verify(userVmManagerImpl, Mockito.times(timesVerifyIfHypervisorSupports)).verifyIfHypervisorSupportsRootdiskSizeOverride(Mockito.any());

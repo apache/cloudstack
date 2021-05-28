@@ -3310,7 +3310,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                 Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
                                                 Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
                                                 Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-                                                final Integer hypervisorSnapshotReserve, String cacheMode, final Map<String, String> details, final Long storagePolicyID) {
+                                                final Integer hypervisorSnapshotReserve, String cacheMode, final Map<String, String> details, final Long storagePolicyID, final boolean diskSizeStrictness) {
         long diskSize = 0;// special case for custom disk offerings
         if (numGibibytes != null && numGibibytes <= 0) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
@@ -3392,6 +3392,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         newDiskOffering.setHypervisorSnapshotReserve(hypervisorSnapshotReserve);
+        newDiskOffering.setDiskSizeStrictness(diskSizeStrictness);
 
         CallContext.current().setEventDetails("Disk offering id=" + newDiskOffering.getId());
         final DiskOfferingVO offering = _diskOfferingDao.persist(newDiskOffering);
@@ -3440,6 +3441,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final List<Long> zoneIds = cmd.getZoneIds();
         final Map<String, String> details = cmd.getDetails();
         final Long storagePolicyId = cmd.getStoragePolicy();
+        final boolean diskSizeStrictness =  cmd.getDiskSizeStrictness();
 
         // check if valid domain
         if (CollectionUtils.isNotEmpty(domainIds)) {
@@ -3515,7 +3517,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops,
                 maxIops, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength,
                 iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength,
-                hypervisorSnapshotReserve, cacheMode, details, storagePolicyId);
+                hypervisorSnapshotReserve, cacheMode, details, storagePolicyId, diskSizeStrictness);
     }
 
     /**
