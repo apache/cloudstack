@@ -4048,7 +4048,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         vm.setDetail(VmDetailConstants.FIRMWARE, "efi");
                         s_logger.info("guestOS is OSX : overwrite root disk controller to scsi, use smc and efi");
                     } else {
-String controllerSetting = StringUtils.defaultIfEmpty(_configDao.getValue(Config.VmwareRootDiskControllerType.key()),
+                        String controllerSetting = StringUtils.defaultIfEmpty(_configDao.getValue(Config.VmwareRootDiskControllerType.key()),
                                 Config.VmwareRootDiskControllerType.getDefaultValue());
                         // Don't override if VM already has root/data disk controller detail
                         if (vm.getDetail(VmDetailConstants.ROOT_DISK_CONTROLLER) == null) {
