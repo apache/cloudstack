@@ -1032,7 +1032,7 @@ public class LibvirtVMDef {
                 }
 
                 if(ioDriver != null) {
-                    diskBuilder.append("io='" + ioDriver + "'");
+                    diskBuilder.append(String.format("io='%s'", ioDriver));
                 }
 
                 diskBuilder.append("/>\n");

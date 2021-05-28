@@ -2731,12 +2731,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return storagePool.getPhysicalDisk(data.getPath());
     }
 
+    /**
+     * Set Disk IO Driver, if supported by the Libvirt/Qemu version.
+     * IO Driver works for:
+     * (i) Qemu >= 5.0;
+     * (ii) Libvirt >= 6.3.0
+     */
     protected void setDiskIoDriver(DiskDef disk) {
-        /*
-         * IO Driver works for
-         * - Qemu >= 5.0
-         * - Libvirt >= 6.3.0
-         */
         if (getHypervisorLibvirtVersion() >= HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING && getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING) {
             disk.setIoDriver(DiskDef.IoDriver.IOURING);
         }
