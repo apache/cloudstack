@@ -67,6 +67,11 @@ class TestScaleVm(cloudstackTestCase):
             if cls.template == FAILED:
                 assert False, "get_template() failed to return template\
                         with description %s" % cls.services["ostype"]
+            cls.template = Template.update(
+                cls.template,
+                cls.apiclient,
+                isdynamicallyscalable='true'
+            )
         else:
             cls.template = Template.register(
                        cls.apiclient,
