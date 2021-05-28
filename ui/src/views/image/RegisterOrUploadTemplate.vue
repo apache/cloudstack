@@ -837,6 +837,9 @@ export default {
             }
           }
         }
+        if (!('requireshvm' in params)) { // handled as default true by API
+          params.requireshvm = false
+        }
         if (this.currentForm === 'Create') {
           this.loading = true
           api('registerTemplate', params).then(json => {
