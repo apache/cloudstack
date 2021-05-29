@@ -50,7 +50,10 @@ public class AgentPropertiesFileHandler {
             try {
                 String configValue = PropertiesUtil.loadFromFile(agentPropertiesFile).getProperty(name);
                 if (StringUtils.isNotBlank(configValue)) {
-                    ConvertUtils.register(new IntegerConverter(defaultValue), Integer.class);
+                    if (defaultValue instanceof Integer) {
+                        ConvertUtils.register(new IntegerConverter(defaultValue), Integer.class);
+                    }
+
                     return (T)ConvertUtils.convert(configValue, defaultValue.getClass());
                 } else {
                     logger.debug(String.format("Property [%s] has empty or null value. Using default value [%s].", name, defaultValue));
