@@ -26,12 +26,12 @@ import org.apache.log4j.Logger;
 
 /**
  * This class provides a facility to read the agent's properties file and get
- * its properties, according to the {@link AgentProperty} properties constants.
+ * its properties, according to the {@link AgentProperties} properties constants.
  *
  */
-public class AgentPropertyFile {
+public class AgentPropertiesFileHandler {
 
-    private static final Logger logger = Logger.getLogger(AgentPropertyFile.class);
+    private static final Logger logger = Logger.getLogger(AgentPropertiesFileHandler.class);
 
     /**
      * This method reads the property in the agent.properties file.
@@ -40,7 +40,7 @@ public class AgentPropertyFile {
      * @return The value of the property. If the property is not available, the
      * default defined value will be used.
      */
-    public static <T> T getProperty(AgentProperty<T> property) {
+    public static <T> T getProperty(AgentProperties<T> property) {
         final T defaultValue = property.getDefaultValue();
         File agentPropertiesFile = PropertiesUtil.findConfigFile(KeyStoreUtils.AGENT_PROPSFILE);
 
