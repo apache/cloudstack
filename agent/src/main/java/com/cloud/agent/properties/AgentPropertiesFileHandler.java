@@ -41,23 +41,25 @@ public class AgentPropertiesFileHandler {
      * default defined value will be used.
      */
     public static <T> T getProperty(AgentProperties<T> property) {
-        final T defaultValue = property.getDefaultValue();
+        T defaultValue = property.getDefaultValue();
+        String name = property.getName();
+
         File agentPropertiesFile = PropertiesUtil.findConfigFile(KeyStoreUtils.AGENT_PROPSFILE);
 
         if (agentPropertiesFile != null) {
             try {
-                String configValue = PropertiesUtil.loadFromFile(agentPropertiesFile).getProperty(property.getName());
+                String configValue = PropertiesUtil.loadFromFile(agentPropertiesFile).getProperty(name);
                 if (StringUtils.isNotBlank(configValue)) {
                     ConvertUtils.register(new IntegerConverter(defaultValue), Integer.class);
                     return (T)ConvertUtils.convert(configValue, defaultValue.getClass());
                 } else {
-                    logger.debug(String.format("Property [%s] has empty or null value. Using default value [%s].", property.getName(), property.getDefaultValue()));
+                    logger.debug(String.format("Property [%s] has empty or null value. Using default value [%s].", name, defaultValue));
                 }
             } catch (IOException ex) {
-                logger.debug(String.format("Failed to get property [%s]. Using default value [%s].", property.getName(), property.getDefaultValue()), ex);
+                logger.debug(String.format("Failed to get property [%s]. Using default value [%s].", name, defaultValue), ex);
             }
         } else {
-            logger.debug(String.format("File [%s] was not found, we will use default defined values. Property [%s]: [%s].", KeyStoreUtils.AGENT_PROPSFILE, property.getName(), property.getDefaultValue()));
+            logger.debug(String.format("File [%s] was not found, we will use default defined values. Property [%s]: [%s].", KeyStoreUtils.AGENT_PROPSFILE, name, defaultValue));
         }
 
         return defaultValue;
