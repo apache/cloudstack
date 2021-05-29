@@ -31,7 +31,7 @@ public class AgentProperties<T>{
      * Data type: int. <br>
      * Default value: 60000 (ms).
     */
-    public static final AgentProperties<Integer> HEARTBEAT_UPDATE_TIMEOUT = new AgentProperties<Integer>("hearbeat.update.timeout", 60000);
+    public static final AgentProperties<Integer> HEARTBEAT_UPDATE_TIMEOUT = new AgentProperties<Integer>("heartbeat.update.timeout", 60000);
 
     private final String name;
     private final T defaultValue;

@@ -81,7 +81,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         }
     }
 
-    protected void runHearbeat() {
+    protected void runHeartBeat() {
         synchronized (storagePool) {
             Set<String> removedPools = new HashSet<>();
             for (String uuid : storagePool.keySet()) {
@@ -162,7 +162,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
     public void run() {
         while (true) {
 
-            runHearbeat();
+            runHeartBeat();
 
             try {
                 Thread.sleep(_heartBeatUpdateFreq);
