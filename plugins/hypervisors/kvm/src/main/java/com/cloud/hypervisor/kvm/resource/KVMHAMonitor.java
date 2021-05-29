@@ -35,16 +35,15 @@ import java.util.concurrent.ConcurrentHashMap;
 public class KVMHAMonitor extends KVMHABase implements Runnable {
 
     private static final Logger s_logger = Logger.getLogger(KVMHAMonitor.class);
-    private final Map<String, NfsStoragePool> _storagePool = new ConcurrentHashMap<>();
+    private final Map<String, NfsStoragePool> storagePool = new ConcurrentHashMap<>();
 
-    /* private ip address */
-    private final String _hostIP;
+    private final String hostPrivateIp;
 
     public KVMHAMonitor(NfsStoragePool pool, String host, String scriptPath) {
         if (pool != null) {
-            _storagePool.put(pool._poolUUID, pool);
+            storagePool.put(pool._poolUUID, pool);
         }
-        _hostIP = host;
+        hostPrivateIp = host;
         configureHeartBeatPath(scriptPath);
 
         _heartBeatUpdateTimeout = AgentPropertiesFileHandler.getProperty(AgentProperties.HEARTBEAT_UPDATE_TIMEOUT);
@@ -55,38 +54,38 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
     }
 
     public void addStoragePool(NfsStoragePool pool) {
-        synchronized (_storagePool) {
-            _storagePool.put(pool._poolUUID, pool);
+        synchronized (storagePool) {
+            storagePool.put(pool._poolUUID, pool);
         }
     }
 
     public void removeStoragePool(String uuid) {
-        synchronized (_storagePool) {
-            NfsStoragePool pool = _storagePool.get(uuid);
+        synchronized (storagePool) {
+            NfsStoragePool pool = storagePool.get(uuid);
             if (pool != null) {
                 Script.runSimpleBashScript("umount " + pool._mountDestPath);
-                _storagePool.remove(uuid);
+                storagePool.remove(uuid);
             }
         }
     }
 
     public List<NfsStoragePool> getStoragePools() {
-        synchronized (_storagePool) {
-            return new ArrayList<>(_storagePool.values());
+        synchronized (storagePool) {
+            return new ArrayList<>(storagePool.values());
         }
     }
 
     public NfsStoragePool getStoragePool(String uuid) {
-        synchronized (_storagePool) {
-            return _storagePool.get(uuid);
+        synchronized (storagePool) {
+            return storagePool.get(uuid);
         }
     }
 
     protected void runHearbeat() {
-        synchronized (_storagePool) {
+        synchronized (storagePool) {
             Set<String> removedPools = new HashSet<>();
-            for (String uuid : _storagePool.keySet()) {
-                NfsStoragePool primaryStoragePool = _storagePool.get(uuid);
+            for (String uuid : storagePool.keySet()) {
+                NfsStoragePool primaryStoragePool = storagePool.get(uuid);
                 StoragePool storage;
                 try {
                     Connect conn = LibvirtConnection.getConnection();
@@ -121,7 +120,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
                     cmd.add("-i", primaryStoragePool._poolIp);
                     cmd.add("-p", primaryStoragePool._poolMountSourcePath);
                     cmd.add("-m", primaryStoragePool._mountDestPath);
-                    cmd.add("-h", _hostIP);
+                    cmd.add("-h", hostPrivateIp);
                     result = cmd.execute();
 
                     s_logger.debug(String.format("The command (%s), to the pool [%s], has the result [%s].", cmd.toString(), uuid, result));
