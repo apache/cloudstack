@@ -43,7 +43,7 @@
           :columns="selectedColumns"
           :dataSource="selectedItems"
           :rowKey="(record, idx) => record.id"
-          :pagination="false"
+          :pagination="true"
           style="overflow-y: auto">
           <template slot="algorithm" slot-scope="record">
             {{ returnAlgorithmName(record.algorithm) }}
@@ -96,7 +96,7 @@
           :columns="selectedColumns"
           :dataSource="selectedItems"
           :rowKey="(record, idx) => record.id"
-          :pagination="false"
+          :pagination="true"
           style="overflow-y: auto">
           <div slot="status" slot-scope="text">
             <status :text=" text ? text : 'inprogress' " displayText></status>
@@ -132,21 +132,6 @@
             <br/>In Progress: ${selectedItems.filter(item => item.status === 'inprogress').length || 0}<b/>`" />
         </a-alert>
         <br/>
-        <a-pagination
-          class="pagination"
-          size="small"
-          :current="page"
-          :pageSize="pageSize"
-          :total="selectedItems.length"
-          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
-          :pageSizeOptions="['10', '20', '40', '80', '100']"
-          @change="handleChangePage"
-          @showSizeChange="handleChangePageSize"
-          showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
-            <span>{{ props.value }} / {{ $t('label.page') }}</span>
-          </template>
-        </a-pagination>
       </div>
     </a-modal>
   </div>
@@ -213,7 +198,6 @@ export default {
   inject: ['parentFetchData'],
   data () {
     return {
-      showBulkActionCompletedModal: false,
       totalCount: 0,
       page: 1,
       pageSize: 10

@@ -127,7 +127,7 @@
         :okText="$t('label.ok')"
         :cancelText="$t('label.cancel')"
         style="top: 20px;"
-        width="60vw"
+        :width="this.selectedItems.length > 0 ? '60vw' : '30vw'"
         @ok="handleSubmit"
         @cancel="closeAction"
         :confirmLoading="actionLoading"
@@ -157,7 +157,7 @@
                 :columns="columns"
                 :dataSource="selectedItems"
                 :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
-                :pagination="false"
+                :pagination="true"
                 style="overflow-y: auto"
               >
               </a-table>
@@ -372,7 +372,7 @@
           :columns="selectedColumns"
           :dataSource="selectedItems"
           :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
-          :pagination="false"
+          :pagination="true"
           style="overflow-y: auto"
         >
           <div slot="status" slot-scope="text">
@@ -380,29 +380,24 @@
           </div>
         </a-table>
         <a-divider />
-        <a-alert type="info">
-          <span
-            slot="message"
-            v-html="`<b>Successfully completed: ${selectedItems.filter(item => item.status === 'success').length || 0}
-            <br/>Failed: ${selectedItems.filter(item => item.status === 'failure').length || 0}
-            <br/>In Progress: ${selectedItems.filter(item => item.status === 'inprogress').length || 0}<b/>`" />
-        </a-alert>
+        <div class="float-container">
+          <div class="float-child-left">
+            <a-progress
+              type="circle"
+              :percent="parseFloat((selectedItems.filter(item => item.status !== 'inprogress').length)/(selectedItems.length) * 100)"
+              :format="(percent) => parseFloat(percent).toFixed(2) + '% ' + $t('state.completed')" />
+          </div>
+          <div class="float-child-right">
+            <a-alert type="info">
+              <span
+                slot="message"
+                v-html="`<b>Successfully completed: ${selectedItems.filter(item => item.status === 'success').length || 0}
+                <br/>Failed: ${selectedItems.filter(item => item.status === 'failure').length || 0}
+                <br/>In Progress: ${selectedItems.filter(item => item.status === 'inprogress').length || 0}<b/>`" />
+            </a-alert>
+          </div>
+        </div>
         <br/>
-        <a-pagination
-          class="pagination"
-          size="small"
-          :current="page"
-          :pageSize="pageSize"
-          :total="selectedItems.length"
-          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
-          :pageSizeOptions="['10', '20', '40', '80', '100']"
-          @change="changePage"
-          @showSizeChange="changePageSize"
-          showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
-            <span>{{ props.value }} / {{ $t('label.page') }}</span>
-          </template>
-        </a-pagination>
       </div>
     </a-modal>
   </div>
@@ -456,7 +451,6 @@ export default {
       columns: [],
       selectedColumns: [],
       showGroupActionModal: false,
-      showBulkActionCompletedModal: false,
       selectedItems: {},
       items: [],
       itemCount: 0,
@@ -495,13 +489,26 @@ export default {
       }
 
       if ((this.$route.path.includes('/publicip/') && ['firewall', 'portforwarding', 'loadbalancing'].includes(this.$route.query.tab)) ||
-        (this.$route.path.includes('/guestnetwork/') && this.$route.query.tab === 'egress.rules')) {
+        (this.$route.path.includes('/guestnetwork/') && (this.$route.query.tab === 'egress.rules' || this.$route.query.tab === 'public.ip.addresses'))) {
         return
       }
       this.fetchData()
     })
     eventBus.$on('exec-action', (action, isGroupAction) => {
       this.execAction(action, isGroupAction)
+    })
+    eventBus.$on('update-bulk-job-status', (items, action) => {
+      for (const item of items) {
+        const job = this.$store.getters.asyncJobIds.filter(j => { return j.jobid === item.jobid })[0]
+        if (job?.bulkAction) {
+          job.bulkAction = action
+          this.$store.getters.asyncJobIds.map(function (j) {
+            if (j.jobid === item.jobid) {
+              j.bulkAction = false
+            }
+          })
+        }
+      }
     })
 
     if (this.device === 'desktop') {
@@ -948,6 +955,7 @@ export default {
       this.$pollJob({
         jobId,
         name: resourceName,
+        resourceId: resource,
         successMethod: result => {
           this.fetchData()
           if (this.selectedItems.length > 0) {
@@ -974,7 +982,7 @@ export default {
         showLoading: showLoading,
         catchMessage: this.$t('error.fetching.async.job.result'),
         action,
-        bulkAction: `${this.selectedItems.length > 0}`
+        bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal
       })
     },
     fillEditFormFieldValues () {
@@ -994,31 +1002,12 @@ export default {
         }
       })
     },
-    getSelectedItems () {
-      const that = this
-      this.selectedItems = (this.items.filter(function (item) {
-        return that.selectedRowKeys.indexOf(item.id) !== -1
-      }))
-      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'inprogress' }))
-    },
     handleCancel () {
+      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
       this.showGroupActionModal = false
-      this.showBulkActionCompletedModal = false
-      this.jobCompletedNotificationCancel()
-    },
-    jobCompletedNotificationCancel () {
-      this.showBulkActionCompletedModal = false
       this.selectedItems = []
       this.selectedColumns = []
       this.selectedRowKeys = []
-      // this.parentFetchData()
-    },
-    updateJobsState () {
-      if (this.selectedItems) {
-        this.jobsState.inprogress = this.selectedItems.filter(item => item.status === 'inprogress')
-        this.jobsState.success = this.selectedItems.filter(item => item.status === 'success')
-        this.jobsState.failure = this.selectedItems.filter(item => item.status === 'failure')
-      }
     },
     handleSubmit (e) {
       if (!this.dataView && this.currentAction.groupAction && this.selectedRowKeys.length > 0) {
@@ -1074,14 +1063,7 @@ export default {
         }
       })
     },
-    bulkDeleteRulesConfirmation () {
-      this.showConfirmationAction = true
-      this.selectedColumns = this.columns.filter(column => {
-        return !this.filterColumns.includes(column.title)
-      })
-      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'inprogress' }))
-    },
-    updateResourceState (resource, state) {
+    updateResourceState (resource, state, jobid) {
       var tempResource = []
       if (this.selectedItems && resource) {
         if (resource.includes(',')) {
@@ -1093,6 +1075,9 @@ export default {
         for (var r = 0; r < tempResource.length; r++) {
           const objIndex = this.selectedItems.findIndex(obj => obj.id === tempResource[r])
           this.selectedItems[objIndex].status = state
+          if (jobid) {
+            this.selectedItems[objIndex].jobid = jobid
+          }
         }
       }
     },
@@ -1108,7 +1093,14 @@ export default {
         if (obj.includes('response')) {
           if (response[obj].jobid) {
             const jobid = response[obj].jobid
-            this.$store.dispatch('AddAsyncJob', { title: this.$t(action.label), jobid: jobid, description: resourceName, status: 'progress', bulkAction: this.selectedItems.length > 0 })
+            this.$store.dispatch('AddAsyncJob', {
+              title: this.$t(action.label),
+              jobid: jobid,
+              description: resourceName,
+              status: 'progress',
+              bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
+            })
+            this.updateResourceState(resource, 'inprogress', jobid)
             this.pollActionCompletion(jobid, action, resourceName, resource, showLoading)
             return true
           } else {
@@ -1388,5 +1380,30 @@ export default {
 
 .ant-breadcrumb {
   vertical-align: text-bottom;
+}
+
+.float-container {
+    display: flex;
+}
+
+.float-child-right {
+    width: 80%;
+    float: left;
+    padding: 10px;
+}
+
+.float-child-left {
+    width: 20%;
+    float: left;
+    padding: 15px;
+}
+@media (max-width: 767px) {
+  .float-container {
+    flex-direction: column-reverse;
+  }
+  .float-child-left,
+  .float-child-right {
+    width: auto;
+  }
 }
 </style>

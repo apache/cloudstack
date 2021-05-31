@@ -36,6 +36,7 @@ export const pollJobPlugin = {
        * @param {String} [catchMessage=Error caught]
        * @param {Function} [catchMethod=() => {}]
        * @param {Object} [action=null]
+       * @param {Object} [bulkAction=false]
        */
       const {
         jobId,
