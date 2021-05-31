@@ -46,7 +46,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         hostPrivateIp = host;
         configureHeartBeatPath(scriptPath);
 
-        _heartBeatUpdateTimeout = AgentPropertiesFileHandler.getProperty(AgentProperties.HEARTBEAT_UPDATE_TIMEOUT);
+        _heartBeatUpdateTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HEARTBEAT_UPDATE_TIMEOUT);
     }
 
     private static synchronized void configureHeartBeatPath(String scriptPath) {

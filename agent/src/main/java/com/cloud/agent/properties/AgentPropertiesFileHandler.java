@@ -40,7 +40,7 @@ public class AgentPropertiesFileHandler {
      * @return The value of the property. If the property is not available, the
      * default defined value will be used.
      */
-    public static <T> T getProperty(AgentProperties.Property<T> property) {
+    public static <T> T getPropertyValue(AgentProperties.Property<T> property) {
         T defaultValue = property.getDefaultValue();
         String name = property.getName();
 

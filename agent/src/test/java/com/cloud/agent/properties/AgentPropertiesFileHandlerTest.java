@@ -51,20 +51,20 @@ public class AgentPropertiesFileHandlerTest extends TestCase {
     Properties propertiesMock;
 
     @Test
-    public void validateGetPropertyFileNotFoundReturnDefaultValue() throws Exception{
+    public void validateGetPropertyValueFileNotFoundReturnDefaultValue() throws Exception{
         String expectedResult = "default value";
         Mockito.doReturn(expectedResult).when(agentPropertiesStringMock).getDefaultValue();
 
         PowerMockito.mockStatic(PropertiesUtil.class);
         PowerMockito.doReturn(null).when(PropertiesUtil.class, "findConfigFile", Mockito.anyString());
 
-        String result = AgentPropertiesFileHandler.getProperty(agentPropertiesStringMock);
+        String result = AgentPropertiesFileHandler.getPropertyValue(agentPropertiesStringMock);
 
         Assert.assertEquals(expectedResult, result);
     }
 
     @Test
-    public void validateGetPropertyLoadFromFileThrowsIOExceptionReturnDefaultValue() throws Exception{
+    public void validateGetPropertyValueLoadFromFileThrowsIOExceptionReturnDefaultValue() throws Exception{
         String expectedResult = "default value";
         Mockito.doReturn(expectedResult).when(agentPropertiesStringMock).getDefaultValue();
 
@@ -72,13 +72,13 @@ public class AgentPropertiesFileHandlerTest extends TestCase {
         PowerMockito.doReturn(fileMock).when(PropertiesUtil.class, "findConfigFile", Mockito.anyString());
         PowerMockito.doThrow(new IOException()).when(PropertiesUtil.class, "loadFromFile", Mockito.any());
 
-        String result = AgentPropertiesFileHandler.getProperty(agentPropertiesStringMock);
+        String result = AgentPropertiesFileHandler.getPropertyValue(agentPropertiesStringMock);
 
         Assert.assertEquals(expectedResult, result);
     }
 
     @Test
-    public void validateGetPropertyPropertyIsEmptyReturnDefaultValue() throws Exception{
+    public void validateGetPropertyValuePropertyIsEmptyReturnDefaultValue() throws Exception{
         String expectedResult = "default value";
         Mockito.doReturn(expectedResult).when(agentPropertiesStringMock).getDefaultValue();
         Mockito.doReturn("name").when(agentPropertiesStringMock).getName();
@@ -88,13 +88,13 @@ public class AgentPropertiesFileHandlerTest extends TestCase {
         PowerMockito.doReturn(propertiesMock).when(PropertiesUtil.class, "loadFromFile", Mockito.any());
         PowerMockito.doReturn("").when(propertiesMock).getProperty(Mockito.anyString());
 
-        String result = AgentPropertiesFileHandler.getProperty(agentPropertiesStringMock);
+        String result = AgentPropertiesFileHandler.getPropertyValue(agentPropertiesStringMock);
 
         Assert.assertEquals(expectedResult, result);
     }
 
     @Test
-    public void validateGetPropertyPropertyIsNullReturnDefaultValue() throws Exception{
+    public void validateGetPropertyValuePropertyIsNullReturnDefaultValue() throws Exception{
         String expectedResult = "default value";
         Mockito.doReturn(expectedResult).when(agentPropertiesStringMock).getDefaultValue();
         Mockito.doReturn("name").when(agentPropertiesStringMock).getName();
@@ -104,13 +104,13 @@ public class AgentPropertiesFileHandlerTest extends TestCase {
         PowerMockito.doReturn(propertiesMock).when(PropertiesUtil.class, "loadFromFile", Mockito.any());
         PowerMockito.doReturn(null).when(propertiesMock).getProperty(Mockito.anyString());
 
-        String result = AgentPropertiesFileHandler.getProperty(agentPropertiesStringMock);
+        String result = AgentPropertiesFileHandler.getPropertyValue(agentPropertiesStringMock);
 
         Assert.assertEquals(expectedResult, result);
     }
 
     @Test
-    public void validateGetPropertyValidPropertyReturnPropertyValue() throws Exception{
+    public void validateGetPropertyValueValidPropertyReturnPropertyValue() throws Exception{
         String expectedResult = "test";
         Mockito.doReturn("default value").when(agentPropertiesStringMock).getDefaultValue();
         Mockito.doReturn("name").when(agentPropertiesStringMock).getName();
@@ -120,13 +120,13 @@ public class AgentPropertiesFileHandlerTest extends TestCase {
         PowerMockito.doReturn(propertiesMock).when(PropertiesUtil.class, "loadFromFile", Mockito.any());
         Mockito.doReturn(expectedResult).when(propertiesMock).getProperty(Mockito.anyString());
 
-        String result = AgentPropertiesFileHandler.getProperty(agentPropertiesStringMock);
+        String result = AgentPropertiesFileHandler.getPropertyValue(agentPropertiesStringMock);
 
         Assert.assertEquals(expectedResult, result);
     }
 
     @Test
-    public void validateGetPropertyValidIntegerPropertyReturnPropertyValue() throws Exception{
+    public void validateGetPropertyValueValidIntegerPropertyReturnPropertyValue() throws Exception{
         Integer expectedResult = 2;
         Mockito.doReturn(1).when(agentPropertiesIntegerMock).getDefaultValue();
         Mockito.doReturn("name").when(agentPropertiesIntegerMock).getName();
@@ -136,7 +136,7 @@ public class AgentPropertiesFileHandlerTest extends TestCase {
         PowerMockito.doReturn(propertiesMock).when(PropertiesUtil.class, "loadFromFile", Mockito.any());
         Mockito.doReturn(String.valueOf(expectedResult)).when(propertiesMock).getProperty(Mockito.anyString());
 
-        Integer result = AgentPropertiesFileHandler.getProperty(agentPropertiesIntegerMock);
+        Integer result = AgentPropertiesFileHandler.getPropertyValue(agentPropertiesIntegerMock);
 
         Assert.assertEquals(expectedResult, result);
     }
