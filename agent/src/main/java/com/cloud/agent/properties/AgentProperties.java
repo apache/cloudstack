@@ -24,29 +24,30 @@ package com.cloud.agent.properties;
  *
  * @param <T> type of the default value.
  */
-public class AgentProperties<T>{
+public class AgentProperties{
 
     /**
      * Heartbeat update timeout. <br>
      * Data type: int. <br>
      * Default value: 60000 (ms).
     */
-    public static final AgentProperties<Integer> HEARTBEAT_UPDATE_TIMEOUT = new AgentProperties<Integer>("heartbeat.update.timeout", 60000);
+    public static final Property<Integer> HEARTBEAT_UPDATE_TIMEOUT = new Property<Integer>("heartbeat.update.timeout", 60000);
 
-    private final String name;
-    private final T defaultValue;
+    public static class Property <T>{
+        private final String name;
+        private final T defaultValue;
 
-    private AgentProperties(String name, T value) {
-        this.name = name;
-        this.defaultValue = value;
+        private Property(String name, T value) {
+            this.name = name;
+            this.defaultValue = value;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public T getDefaultValue() {
+            return defaultValue;
+        }
     }
-
-    public String getName() {
-        return name;
-    }
-
-    public T getDefaultValue() {
-        return defaultValue;
-    }
-
 }

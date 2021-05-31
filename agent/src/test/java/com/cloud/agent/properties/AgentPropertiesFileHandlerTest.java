@@ -39,10 +39,10 @@ import org.powermock.modules.junit4.PowerMockRunner;
 public class AgentPropertiesFileHandlerTest extends TestCase {
 
     @Mock
-    AgentProperties<String> agentPropertiesStringMock;
+    AgentProperties.Property<String> agentPropertiesStringMock;
 
     @Mock
-    AgentProperties<Integer> agentPropertiesIntegerMock;
+    AgentProperties.Property<Integer> agentPropertiesIntegerMock;
 
     @Mock
     File fileMock;
