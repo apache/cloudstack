@@ -174,6 +174,11 @@ public class VmwareStorageLayoutHelper implements Configurable {
             ds.makeDirectory(String.format("[%s] %s", ds.getName(), vmName), dcMo.getMor());
         }
 
+        if (!ds.folderExists(String.format("[%s]", ds.getName()), HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER)) {
+            s_logger.info(HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER + " folder does not exist on target datastore, we will create one. vm: " + vmName + ", datastore: " + ds.getName());
+            ds.makeDirectory(String.format("[%s] %s", ds.getName(), HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER), dcMo.getMor());
+        }
+
         String[] vmdkLinkedCloneModeLegacyPair = getVmdkFilePairDatastorePath(ds, vmName, vmdkName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, true);
         String[] vmdkFullCloneModeLegacyPair = getVmdkFilePairDatastorePath(ds, vmName, vmdkName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, false);
 
