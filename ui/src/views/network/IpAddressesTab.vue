@@ -379,7 +379,6 @@ export default {
         this.showGroupActionModal = true
       }
       for (const ip of this.selectedItems) {
-        console.log(ip)
         this.releaseIpAddress(ip)
       }
     },
