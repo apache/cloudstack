@@ -845,7 +845,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         try {
             if (scanLock.lock(5)) {
                 try {
-                    cleanupBackups();
                     scheduleBackups();
                 } finally {
                     scanLock.unlock();
@@ -885,18 +884,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                     final String nextScheduledTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, nextDateTime);
                     LOG.debug("Next backup scheduled time for VM ID " + backupSchedule.getVmId() + " is " + nextScheduledTime);
                     break;
-            }
-        }
-    }
-
-    @DB
-    public void cleanupBackups() {
-        LOG.debug("Disassociating backup offerings from expunged VMs that have no more backups");
-        List<VMInstanceVO> destroyedVmsWithOfferings = vmInstanceDao.listDestroyedVmsWithBackupOfferingAssigned();
-        for(VMInstanceVO instanceVO : destroyedVmsWithOfferings) {
-            List<Backup> backupsForVm = backupDao.listByVmId(instanceVO.getDataCenterId(), instanceVO.getId());
-            if (CollectionUtils.isEmpty(backupsForVm)) {
-                removeVMFromBackupOffering(instanceVO.getId(), true);
             }
         }
     }

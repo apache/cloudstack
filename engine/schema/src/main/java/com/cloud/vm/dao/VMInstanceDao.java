@@ -159,5 +159,4 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     List<VMInstanceVO> listNonMigratingVmsByHostEqualsLastHost(long hostId);
 
-    List<VMInstanceVO> listDestroyedVmsWithBackupOfferingAssigned();
 }
