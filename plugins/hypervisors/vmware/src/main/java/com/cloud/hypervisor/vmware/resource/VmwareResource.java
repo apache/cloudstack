@@ -6183,6 +6183,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         dsMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, poolUuid);
                     }
 
+                    HypervisorHostHelper.createBaseFolder(dsMo, hyperHost, StoragePoolType.VMFS);
+
                     DatastoreSummary dsSummary = dsMo.getDatastoreSummary();
                     String address = hostMo.getHostName();
                     StoragePoolInfo pInfo = new StoragePoolInfo(poolUuid, address, dsMo.getMor().getValue(), "", StoragePoolType.VMFS, dsSummary.getCapacity(),
