@@ -55,12 +55,12 @@
 
     <a-divider/>
     <a-button
-      :disabled="!(('deleteFirewallRule' in $store.getters.apis) && this.selectedRowKeys.length > 0)"
-      type="dashed"
+      v-if="(('deleteFirewallRule' in $store.getters.apis) && this.selectedItems.length > 0)"
+      type="danger"
       icon="plus"
       style="width: 100%; margin-bottom: 15px"
-      @click="deleteRules">
-      {{ $t('label.action.delete.firewall') + 's' }}
+      @click="bulkDeleteRulesConfirmation()">
+      {{ $t('label.action.bulk.delete.firewall.rules') }}
     </a-button>
     <a-table
       size="small"
@@ -82,12 +82,12 @@
       </template>
       <template slot="actions" slot-scope="record">
         <div class="actions">
-          <a-button shape="circle" icon="tag" class="rule-action" @click="() => openTagsModal(record.id)" />
-          <a-button
-            shape="circle"
+          <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag" buttonClass="rule-action" @click="() => openTagsModal(record.id)" />
+          <tooltip-button
+            :tooltip="$t('label.delete')"
             type="danger"
             icon="delete"
-            class="rule-action"
+            buttonClass="rule-action"
             :disabled="!('deleteFirewallRule' in $store.getters.apis)"
             @click="deleteRule(record)" />
         </div>
@@ -140,13 +140,36 @@
       <a-button class="add-tags-done" @click="tagsModalVisible = false" type="primary">{{ $t('label.done') }}</a-button>
     </a-modal>
 
+    <bulk-action-view
+      v-if="showConfirmationAction || showGroupActionModal"
+      :showConfirmationAction="showConfirmationAction"
+      :showGroupActionModal="showGroupActionModal"
+      :items="firewallRules"
+      :selectedRowKeys="selectedRowKeys"
+      :selectedItems="selectedItems"
+      :columns="columns"
+      :selectedColumns="selectedColumns"
+      action="deleteFirewallRule"
+      :loading="loading"
+      :message="message"
+      @group-action="deleteRules"
+      @handle-cancel="handleCancel"
+      @close-modal="closeModal" />
   </div>
 </template>
 
 <script>
 import { api } from '@/api'
+import Status from '@/components/widgets/Status'
+import TooltipButton from '@/components/view/TooltipButton'
+import BulkActionView from '@/components/view/BulkActionView'
 
 export default {
+  components: {
+    Status,
+    TooltipButton,
+    BulkActionView
+  },
   props: {
     resource: {
       type: Object,
@@ -157,6 +180,16 @@ export default {
   data () {
     return {
       selectedRowKeys: [],
+      showGroupActionModal: false,
+      showBulkActionCompletedModal: false,
+      selectedItems: [],
+      selectedColumns: [],
+      filterColumns: ['State', 'Action'],
+      showConfirmationAction: false,
+      message: {
+        title: this.$t('label.action.bulk.delete.firewall.rules'),
+        confirmMessage: this.$t('label.confirm.delete.firewall.rules')
+      },
       loading: true,
       addTagLoading: false,
       firewallRules: [],
@@ -250,6 +283,9 @@ export default {
     setSelection (selection) {
       this.selectedRowKeys = selection
       this.$emit('selection-change', this.selectedRowKeys)
+      this.selectedItems = (this.firewallRules.filter(function (item) {
+        return selection.indexOf(item.id) !== -1
+      }))
     },
     resetSelection () {
       this.setSelection([])
@@ -257,12 +293,43 @@ export default {
     onSelectChange (selectedRowKeys, selectedRows) {
       this.setSelection(selectedRowKeys)
     },
+    bulkDeleteRulesConfirmation () {
+      this.showConfirmationAction = true
+      this.selectedColumns = this.columns.filter(column => {
+        return !this.filterColumns.includes(column.title)
+      })
+      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'inprogress' }))
+    },
+    handleCancel () {
+      this.showGroupActionModal = false
+      this.showBulkActionCompletedModal = true
+      this.showBulkActionCompletedModal = false
+      this.parentFetchData()
+    },
+    jobCompletedNotificationCancel () {
+      this.showBulkActionCompletedModal = false
+      this.selectedItems = []
+      this.selectedColumns = []
+      this.selectedRowKeys = []
+      this.parentFetchData()
+    },
+    updateResourceState (resource, state) {
+      if (this.selectedItems && resource) {
+        const objIndex = this.selectedItems.findIndex(obj => obj.id === resource)
+        this.selectedItems[objIndex].status = state
+      }
+    },
     deleteRules (e) {
-      var that = this
-      var selectedRules = (this.firewallRules.filter(function (rule) {
-        return that.selectedRowKeys.indexOf(rule.id) !== -1
-      }))
-      for (const rule of selectedRules) {
+      this.showConfirmationAction = false
+      this.selectedColumns.splice(0, 0, {
+        dataIndex: 'status',
+        title: this.$t('label.status'),
+        scopedSlots: { customRender: 'status' }
+      })
+      if (this.selectedRowKeys.length > 0) {
+        this.showGroupActionModal = true
+      }
+      for (const rule of this.selectedItems) {
         this.deleteRule(rule)
       }
     },
@@ -272,9 +339,19 @@ export default {
         this.$pollJob({
           jobId: response.deletefirewallruleresponse.jobid,
           successMessage: this.$t('message.success.remove.firewall.rule'),
-          successMethod: () => this.fetchData(),
+          successMethod: () => {
+            if (this.selectedItems.length > 0) {
+              this.updateResourceState(rule.id, 'success')
+            }
+            this.fetchData()
+          },
           errorMessage: this.$t('message.remove.firewall.rule.failed'),
-          errorMethod: () => this.fetchData(),
+          errorMethod: () => {
+            if (this.selectedItems.length > 0) {
+              this.updateResourceState(rule.id, 'failure')
+            }
+            this.fetchData()
+          },
           loadingMessage: this.$t('message.remove.firewall.rule.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => this.fetchData()
@@ -329,6 +406,7 @@ export default {
       this.tagsModalVisible = false
       this.newTag.key = null
       this.newTag.value = null
+      this.showConfirmationAction = false
     },
     openTagsModal (id) {
       this.selectedRule = id

@@ -63,12 +63,12 @@
 
     <a-divider />
     <a-button
-      :disabled="!(('deleteLoadBalancerRule' in $store.getters.apis) && this.selectedRowKeys.length > 0)"
-      type="dashed"
+      v-if="(('deleteLoadBalancerRule' in $store.getters.apis) && this.selectedItems.length > 0)"
+      type="danger"
       icon="plus"
       style="width: 100%; margin-bottom: 15px"
-      @click="deleteRules">
-      {{ $t('label.action.delete.load.balancer') + 's' }}
+      @click="bulkDeleteRulesConfirmation()">
+      {{ $t('label.action.bulk.delete.load.balancer.rules') }}
     </a-button>
     <a-table
       size="small"
@@ -107,8 +107,8 @@
                 </router-link>
               </div>
               <div>{{ ip }}</div>
-              <a-button
-                shape="circle"
+              <tooltip-button
+                :tooltip="$t('label.action.delete.load.balancer')"
                 type="danger"
                 icon="delete"
                 @click="() => handleDeleteInstanceFromRule(instance, record, ip)" />
@@ -118,15 +118,15 @@
       </template>
       <template slot="actions" slot-scope="record">
         <div class="actions">
-          <a-button shape="circle" icon="edit" @click="() => openEditRuleModal(record)"></a-button>
-          <a-button :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" shape="circle" icon="tag" @click="() => openTagsModal(record.id)" />
+          <tooltip-button :tooltip="$t('label.edit')" icon="edit" @click="() => openEditRuleModal(record)" />
+          <tooltip-button :tooltip="$t('label.edit.tags')" :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" icon="tag" @click="() => openTagsModal(record.id)" />
           <a-popconfirm
             :title="$t('label.delete') + '?'"
             @confirm="handleDeleteRule(record)"
             :okText="$t('label.yes')"
             :cancelText="$t('label.no')"
           >
-            <a-button :disabled="!('deleteLoadBalancerRule' in $store.getters.apis)" shape="circle" type="danger" icon="delete" />
+            <tooltip-button :tooltip="$t('label.delete')" :disabled="!('deleteLoadBalancerRule' in $store.getters.apis)" type="danger" icon="delete" />
           </a-popconfirm>
         </div>
       </template>
@@ -383,20 +383,39 @@
           </template>
         </a-pagination>
       </div>
-
     </a-modal>
 
+    <bulk-action-view
+      v-if="showConfirmationAction || showGroupActionModal"
+      :showConfirmationAction="showConfirmationAction"
+      :showGroupActionModal="showGroupActionModal"
+      :items="lbRules"
+      :selectedRowKeys="selectedRowKeys"
+      :selectedItems="selectedItems"
+      :columns="columns"
+      :selectedColumns="selectedColumns"
+      :filterColumns="filterColumns"
+      action="deleteLoadBalancerRule"
+      :loading="loading"
+      :message="message"
+      @group-action="deleteRules"
+      @handle-cancel="handleCancel"
+      @close-modal="closeModal" />
   </div>
 </template>
 
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
+import TooltipButton from '@/components/view/TooltipButton'
+import BulkActionView from '@/components/view/BulkActionView'
 
 export default {
   name: 'LoadBalancing',
   components: {
-    Status
+    Status,
+    TooltipButton,
+    BulkActionView
   },
   props: {
     resource: {
@@ -408,6 +427,16 @@ export default {
   data () {
     return {
       selectedRowKeys: [],
+      showGroupActionModal: false,
+      showBulkActionCompletedModal: false,
+      selectedItems: [],
+      selectedColumns: [],
+      filterColumns: ['State', 'Action', 'Add VMs', 'Stickiness'],
+      showConfirmationAction: false,
+      message: {
+        title: this.$t('label.action.bulk.delete.load.balancer.rules'),
+        confirmMessage: this.$t('label.confirm.delete.loadbalancer.rules')
+      },
       loading: true,
       lbRules: [],
       newTagsForm: this.$form.createForm(this),
@@ -954,6 +983,9 @@ export default {
     setSelection (selection) {
       this.selectedRowKeys = selection
       this.$emit('selection-change', this.selectedRowKeys)
+      this.selectedItems = (this.lbRules.filter(function (item) {
+        return selection.indexOf(item.id) !== -1
+      }))
     },
     resetSelection () {
       this.setSelection([])
@@ -961,12 +993,43 @@ export default {
     onSelectChange (selectedRowKeys, selectedRows) {
       this.setSelection(selectedRowKeys)
     },
+    bulkDeleteRulesConfirmation () {
+      this.showConfirmationAction = true
+      this.selectedColumns = this.columns.filter(column => {
+        return !this.filterColumns.includes(column.title)
+      })
+      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'inprogress' }))
+    },
+    handleCancel () {
+      this.showGroupActionModal = false
+      // this.showBulkActionCompletedModal = true
+      this.showBulkActionCompletedModal = false
+      this.parentFetchData()
+    },
+    jobCompletedNotificationCancel () {
+      this.showBulkActionCompletedModal = false
+      this.selectedItems = []
+      this.selectedColumns = []
+      this.selectedRowKeys = []
+      this.parentFetchData()
+    },
+    updateResourceState (resource, state) {
+      if (this.selectedItems && resource) {
+        const objIndex = this.selectedItems.findIndex(obj => obj.id === resource)
+        this.selectedItems[objIndex].status = state
+      }
+    },
     deleteRules (e) {
-      var that = this
-      var selectedRules = (this.lbRules.filter(function (rule) {
-        return that.selectedRowKeys.indexOf(rule.id) !== -1
-      }))
-      for (const rule of selectedRules) {
+      this.showConfirmationAction = false
+      this.selectedColumns.splice(0, 0, {
+        dataIndex: 'status',
+        title: this.$t('label.status'),
+        scopedSlots: { customRender: 'status' }
+      })
+      if (this.selectedRowKeys.length > 0) {
+        this.showGroupActionModal = true
+      }
+      for (const rule of this.selectedItems) {
         this.handleDeleteRule(rule)
       }
     },
@@ -979,23 +1042,33 @@ export default {
           jobId: response.deleteloadbalancerruleresponse.jobid,
           successMessage: this.$t('message.success.remove.rule'),
           successMethod: () => {
-            this.parentFetchData()
-            this.fetchData()
+            if (this.selectedItems.length > 0) {
+              this.updateResourceState(rule.id, 'success')
+            }
+            if (this.selectedRowKeys.length === 0 || this.showBulkActionCompletedModal) {
+              this.parentFetchData()
+              this.parentToggleLoading()
+            }
             this.closeModal()
           },
           errorMessage: this.$t('message.remove.rule.failed'),
           errorMethod: () => {
-            this.parentFetchData()
-            this.parentToggleLoading()
-            this.fetchData()
+            if (this.selectedItems.length > 0) {
+              this.updateResourceState(rule.id, 'failure')
+            }
+            if (this.selectedRowKeys.length === 0 || this.showBulkActionCompletedModal) {
+              this.parentFetchData()
+              this.parentToggleLoading()
+            }
             this.closeModal()
           },
           loadingMessage: this.$t('message.delete.rule.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
-            this.parentFetchData()
-            this.parentToggleLoading()
-            this.fetchData()
+            if (this.selectedRowKeys.length === 0 || this.showBulkActionCompletedModal) {
+              this.parentFetchData()
+              this.parentToggleLoading()
+            }
             this.closeModal()
           }
         })
@@ -1179,6 +1252,7 @@ export default {
       this.editRuleModalLoading = false
       this.addVmModalLoading = false
       this.addVmModalNicLoading = false
+      this.showConfirmationAction = false
       this.vms = []
       this.nics = []
       this.addVmModalVisible = false

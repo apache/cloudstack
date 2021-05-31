@@ -48,7 +48,8 @@ export const pollJobPlugin = {
         showLoading = true,
         catchMessage = i18n.t('label.error.caught'),
         catchMethod = () => {},
-        action = null
+        action = null,
+        bulkAction = false
       } = options
 
       api('queryAsyncJobResult', { jobId }).then(json => {
@@ -69,11 +70,13 @@ export const pollJobPlugin = {
           eventBus.$emit('async-job-complete', action)
           successMethod(result)
         } else if (result.jobstatus === 2) {
-          message.error({
-            content: errorMessage,
-            key: jobId,
-            duration: 1
-          })
+          if (!bulkAction) {
+            message.error({
+              content: errorMessage,
+              key: jobId,
+              duration: 1
+            })
+          }
           var title = errorMessage
           if (action && action.label) {
             title = i18n.t(action.label)
@@ -82,12 +85,14 @@ export const pollJobPlugin = {
           if (name) {
             desc = `(${name}) ${desc}`
           }
-          notification.error({
-            message: title,
-            description: desc,
-            key: jobId,
-            duration: 0
-          })
+          if (!bulkAction) {
+            notification.error({
+              message: title,
+              description: desc,
+              key: jobId,
+              duration: 0
+            })
+          }
           eventBus.$emit('async-job-complete', action)
           errorMethod(result)
         } else if (result.jobstatus === 0) {
@@ -110,6 +115,7 @@ export const pollJobPlugin = {
           duration: 0
         })
         catchMethod && catchMethod()
+        // }
       })
     }
   }
@@ -175,7 +181,7 @@ export const configUtilPlugin = {
       if (docHelp && docHelpMappings &&
         docHelpMappings.constructor === Object && Object.keys(docHelpMappings).length > 0) {
         for (var key in docHelpMappings) {
-          if (docHelp.includes(key)) {
+          if (docHelp.includes(key) && docHelp !== docHelpMappings[key]) {
             docHelp = docHelp.replace(key, docHelpMappings[key])
             break
           }

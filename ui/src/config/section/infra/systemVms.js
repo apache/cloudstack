@@ -54,8 +54,10 @@ export default {
       message: 'message.action.reboot.systemvm',
       dataView: true,
       show: (record) => { return record.state === 'Running' },
+      // args: ['forced'],
       groupAction: true,
       popup: true,
+      // groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
       groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     },
     {
@@ -79,17 +81,18 @@ export default {
       label: 'label.action.migrate.systemvm',
       message: 'message.migrate.systemvm.confirm',
       dataView: true,
-      show: (record) => { return record.state === 'Running' },
-      args: ['virtualmachineid', 'hostid'],
-      mapping: {
-        virtualmachineid: {
-          value: (record) => { return record.id }
-        },
-        hostid: {
-          api: 'findHostsForMigration',
-          params: (record) => { return { virtualmachineid: record.id } }
-        }
-      }
+      show: (record, store) => { return record.state === 'Running' && ['Admin'].includes(store.userInfo.roletype) },
+      component: () => import('@/views/compute/MigrateWizard'),
+      popup: true
+    },
+    {
+      api: 'migrateSystemVm',
+      icon: 'drag',
+      label: 'label.action.migrate.systemvm.to.ps',
+      dataView: true,
+      show: (record, store) => { return ['Stopped'].includes(record.state) && ['VMware'].includes(record.hypervisor) },
+      component: () => import('@/views/compute/MigrateVMStorage'),
+      popup: true
     },
     {
       api: 'runDiagnostics',

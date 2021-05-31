@@ -2260,8 +2260,7 @@ public class HypervisorHostHelper {
         String hostApiVersion = "";
         try {
             hostApiVersion = hostMo.getHostAboutInfo().getApiVersion();
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
         if (hostApiVersion == null) {
             hostApiVersion = "";
         }

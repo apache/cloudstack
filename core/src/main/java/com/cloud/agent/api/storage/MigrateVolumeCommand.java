@@ -34,7 +34,7 @@ public class MigrateVolumeCommand extends Command {
     StorageFilerTO sourcePool;
     String attachedVmName;
     Volume.Type volumeType;
-    private String hostGuidInTargetCluster;
+    String hostGuidInTargetCluster;
 
     private DataTO srcData;
     private DataTO destData;

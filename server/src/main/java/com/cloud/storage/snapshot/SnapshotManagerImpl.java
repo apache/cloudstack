@@ -1286,7 +1286,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
 
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
-        if (storagePoolVO.getPoolType() == StoragePoolType.RBD && !BackupSnapshotAfterTakingSnapshot.value()) {
+        if ((storagePoolVO.getPoolType() == StoragePoolType.RBD || storagePoolVO.getPoolType() == StoragePoolType.PowerFlex) && !BackupSnapshotAfterTakingSnapshot.value()) {
             return DataStoreRole.Primary;
         }
 
@@ -1386,6 +1386,15 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             return false;
         }
         return true;
+    }
+
+    @Override
+    public boolean backedUpSnapshotsExistsForVolume(Volume volume) {
+        List<SnapshotVO> snapshots = _snapshotDao.listByStatus(volume.getId(), Snapshot.State.BackedUp);
+        if (snapshots.size() > 0) {
+            return true;
+        }
+        return false;
     }
 
     @Override

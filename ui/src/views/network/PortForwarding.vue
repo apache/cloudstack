@@ -72,12 +72,12 @@
 
     <a-divider/>
     <a-button
-      :disabled="!(('deletePortForwardingRule' in $store.getters.apis) && this.selectedRowKeys.length > 0)"
-      type="dashed"
+      v-if="(('deletePortForwardingRule' in $store.getters.apis) && this.selectedItems.length > 0)"
+      type="danger"
       icon="plus"
       style="width: 100%; margin-bottom: 15px"
-      @click="deleteRules">
-      {{ $t('label.delete.portforward.rules') }}
+      @click="bulkDeleteRulesConfirmation()">
+      {{ $t('label.action.bulk.delete.portforward.rules') }}
     </a-button>
     <a-table
       size="small"
@@ -105,12 +105,12 @@
       </template>
       <template slot="actions" slot-scope="record">
         <div class="actions">
-          <a-button shape="circle" icon="tag" class="rule-action" @click="() => openTagsModal(record.id)" />
-          <a-button
-            shape="circle"
+          <tooltip-button :tooltip="$t('label.tags')" icon="tag" buttonClass="rule-action" @click="() => openTagsModal(record.id)" />
+          <tooltip-button
+            :tooltip="$t('label.remove.rule')"
             type="danger"
             icon="delete"
-            class="rule-action"
+            buttonClass="rule-action"
             :disabled="!('deletePortForwardingRule' in $store.getters.apis)"
             @click="deleteRule(record)" />
         </div>
@@ -254,16 +254,37 @@
         </a-pagination>
       </div>
     </a-modal>
+
+    <bulk-action-view
+      v-if="showConfirmationAction || showGroupActionModal"
+      :showConfirmationAction="showConfirmationAction"
+      :showGroupActionModal="showGroupActionModal"
+      :items="portForwardRules"
+      :selectedRowKeys="selectedRowKeys"
+      :selectedItems="selectedItems"
+      :columns="columns"
+      :selectedColumns="selectedColumns"
+      :filterColumns="filterColumns"
+      action="deletePortForwardingRule"
+      :loading="loading"
+      :message="message"
+      @group-action="deleteRules"
+      @handle-cancel="handleCancel"
+      @close-modal="closeModal" />
   </div>
 </template>
 
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
+import TooltipButton from '@/components/view/TooltipButton'
+import BulkActionView from '@/components/view/BulkActionView'
 
 export default {
   components: {
-    Status
+    Status,
+    TooltipButton,
+    BulkActionView
   },
   props: {
     resource: {
@@ -275,6 +296,17 @@ export default {
   data () {
     return {
       selectedRowKeys: [],
+      showGroupActionModal: false,
+      showBulkActionCompletedModal: false,
+      selectedItems: [],
+      jobsState: {},
+      selectedColumns: [],
+      filterColumns: ['State', 'Action'],
+      showConfirmationAction: false,
+      message: {
+        title: this.$t('label.action.bulk.delete.portforward.rules'),
+        confirmMessage: this.$t('label.confirm.delete.portforward.rules')
+      },
       loading: true,
       portForwardRules: [],
       newRule: {
@@ -444,6 +476,9 @@ export default {
     setSelection (selection) {
       this.selectedRowKeys = selection
       this.$emit('selection-change', this.selectedRowKeys)
+      this.selectedItems = (this.portForwardRules.filter(function (item) {
+        return selection.indexOf(item.id) !== -1
+      }))
     },
     resetSelection () {
       this.setSelection([])
@@ -451,12 +486,45 @@ export default {
     onSelectChange (selectedRowKeys, selectedRows) {
       this.setSelection(selectedRowKeys)
     },
+    bulkDeleteRulesConfirmation () {
+      this.showConfirmationAction = true
+      this.selectedColumns = this.columns.filter(column => {
+        return !this.filterColumns.includes(column.title)
+      })
+      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'inprogress' }))
+    },
+    handleCancel () {
+      console.log('handle cancel')
+      this.showGroupActionModal = false
+      this.showBulkActionCompletedModal = true
+      this.showBulkActionCompletedModal = false
+      this.parentFetchData()
+    },
+    jobCompletedNotificationCancel () {
+      this.jobsState = {}
+      this.showBulkActionCompletedModal = false
+      this.selectedItems = []
+      this.selectedColumns = []
+      this.selectedRowKeys = []
+      this.parentFetchData()
+    },
+    updateResourceState (resource, state) {
+      if (this.selectedItems && resource) {
+        const objIndex = this.selectedItems.findIndex(obj => obj.id === resource)
+        this.selectedItems[objIndex].status = state
+      }
+    },
     deleteRules (e) {
-      var that = this
-      var selectedRules = (this.portForwardRules.filter(function (rule) {
-        return that.selectedRowKeys.indexOf(rule.id) !== -1
-      }))
-      for (const rule of selectedRules) {
+      this.showConfirmationAction = false
+      this.selectedColumns.splice(0, 0, {
+        dataIndex: 'status',
+        title: this.$t('label.status'),
+        scopedSlots: { customRender: 'status' }
+      })
+      if (this.selectedRowKeys.length > 0) {
+        this.showGroupActionModal = true
+      }
+      for (const rule of this.selectedItems) {
         this.deleteRule(rule)
       }
     },
@@ -466,9 +534,19 @@ export default {
         this.$pollJob({
           jobId: response.deleteportforwardingruleresponse.jobid,
           successMessage: this.$t('message.success.remove.port.forward'),
-          successMethod: () => this.fetchData(),
+          successMethod: () => {
+            if (this.selectedItems.length > 0) {
+              this.updateResourceState(rule.id, 'success')
+            }
+            this.fetchData()
+          },
           errorMessage: this.$t('message.remove.port.forward.failed'),
-          errorMethod: () => this.fetchData(),
+          errorMethod: () => {
+            if (this.selectedItems.length > 0) {
+              this.updateResourceState(rule.id, 'failure')
+            }
+            this.fetchData()
+          },
           loadingMessage: this.$t('message.delete.port.forward.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => this.fetchData()
@@ -534,6 +612,7 @@ export default {
       this.newRule.virtualmachineid = null
       this.addVmModalLoading = false
       this.addVmModalNicLoading = false
+      this.showConfirmationAction = false
       this.nics = []
       this.resetTagInputs()
     },

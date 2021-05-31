@@ -504,14 +504,9 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.removed = removed;
     }
 
-    transient String toString;
-
     @Override
     public String toString() {
-        if (toString == null) {
-            toString = new StringBuilder("VM[").append(type.toString()).append("|").append(getInstanceName()).append("]").toString();
-        }
-        return toString;
+        return String.format("VM instance {\"id\": \"%s\", \"name\": \"%s\", \"uuid\": \"%s\", \"type\"=\"%s\"}", id, getInstanceName(), uuid, type);
     }
 
     @Override

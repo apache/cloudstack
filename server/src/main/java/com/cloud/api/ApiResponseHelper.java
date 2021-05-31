@@ -433,6 +433,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         domainResponse.setDomainName(domain.getName());
         domainResponse.setId(domain.getUuid());
         domainResponse.setLevel(domain.getLevel());
+        domainResponse.setCreated(domain.getCreated());
         domainResponse.setNetworkDomain(domain.getNetworkDomain());
         Domain parentDomain = ApiDBUtils.findDomainById(domain.getParent());
         if (parentDomain != null) {
@@ -1447,6 +1448,11 @@ public class ApiResponseHelper implements ResponseGenerator {
                     vmResponse.setHostId(host.getUuid());
                     vmResponse.setHostName(host.getName());
                     vmResponse.setHypervisor(host.getHypervisorType().toString());
+                }
+            } else if (vm.getLastHostId() != null) {
+                Host lastHost = ApiDBUtils.findHostById(vm.getLastHostId());
+                if (lastHost != null) {
+                    vmResponse.setHypervisor(lastHost.getHypervisorType().toString());
                 }
             }
 
