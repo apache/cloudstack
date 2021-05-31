@@ -81,6 +81,10 @@ import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
@@ -141,7 +145,6 @@ import com.cloud.agent.api.VolumeStatsEntry;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
@@ -518,6 +521,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private StorageManager storageManager;
     @Inject
     private ServiceOfferingJoinDao serviceOfferingJoinDao;
+    @Inject
+    private BackupDao backupDao;
+    @Inject
+    private BackupManager backupManager;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -2293,6 +2300,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return false;
         }
         try {
+
+            if (vm.getBackupOfferingId() != null) {
+                List<Backup> backupsForVm = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
+                if (CollectionUtils.isEmpty(backupsForVm)) {
+                    backupManager.removeVMFromBackupOffering(vm.getId(), true);
+                }
+            }
 
             releaseNetworkResourcesOnExpunge(vm.getId());
 
