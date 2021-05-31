@@ -1389,7 +1389,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             return true;
         }
 
-        s_logger.warn(String.format("Image storage [%s] has not enough capacity. Capacity: total=[%s], used=[%s], threshold=[%s%%].", imageStoreId,readableTotalCapacity, readableUsedCapacity, threshold * 100));
+        s_logger.warn(String.format("Image storage [%s] has not enough capacity. Capacity: total=[%s], used=[%s], threshold=[%s%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100));
         return false;
     }
 

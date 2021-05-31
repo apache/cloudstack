@@ -88,7 +88,7 @@ public interface CapacityManager {
                     null);
 
     static final ConfigKey<Float> SecondaryStorageCapacityThreshold = new ConfigKey<Float>("Advanced", Float.class, "secondary.storage.capacity.threshold", "0.90",
-            "Secondary storage capacity threshold (1 = 100%).", true);
+            "Percentage (as a value between 0 and 1) of secondary storage capacity threshold.", true);
 
     public boolean releaseVmCapacity(VirtualMachine vm, boolean moveFromReserved, boolean moveToReservered, Long hostId);
 
