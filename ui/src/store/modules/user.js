@@ -33,7 +33,8 @@ import {
   TIMEZONE_OFFSET,
   USE_BROWSER_TIMEZONE,
   ASYNC_JOB_IDS,
-  DOMAIN_STORE
+  DOMAIN_STORE,
+  DARK_MODE
 } from '@/store/mutation-types'
 
 const user = {
@@ -51,7 +52,8 @@ const user = {
     zones: {},
     timezoneoffset: 0.0,
     usebrowsertimezone: false,
-    domainStore: {}
+    domainStore: {},
+    darkMode: false
   },
 
   mutations: {
@@ -106,6 +108,10 @@ const user = {
     SET_DOMAIN_STORE (state, domainStore) {
       state.domainStore = domainStore
       Vue.ls.set(DOMAIN_STORE, domainStore)
+    },
+    SET_DARK_MODE (state, darkMode) {
+      state.darkMode = darkMode
+      Vue.ls.set(DARK_MODE, darkMode)
     }
   },
 
@@ -142,6 +148,7 @@ const user = {
           commit('SET_LDAP', {})
           commit('SET_CLOUDIAN', {})
           commit('SET_DOMAIN_STORE', {})
+          commit('SET_DARK_MODE', {})
 
           notification.destroy()
 
@@ -159,9 +166,11 @@ const user = {
         const cachedTimezoneOffset = Vue.ls.get(TIMEZONE_OFFSET, 0.0)
         const cachedUseBrowserTimezone = Vue.ls.get(USE_BROWSER_TIMEZONE, false)
         const domainStore = Vue.ls.get(DOMAIN_STORE, {})
+        const darkMode = Vue.ls.get(DARK_MODE, {})
         const hasAuth = Object.keys(cachedApis).length > 0
 
         commit('SET_DOMAIN_STORE', domainStore)
+        commit('SET_DARK_MODE', darkMode)
         if (hasAuth) {
           console.log('Login detected, using cached APIs')
           commit('SET_ZONES', cachedZones)
@@ -270,6 +279,7 @@ const user = {
         commit('SET_CLOUDIAN', {})
         commit('RESET_THEME')
         commit('SET_DOMAIN_STORE', {})
+        commit('SET_DARK_MODE', {})
         Vue.ls.remove(CURRENT_PROJECT)
         Vue.ls.remove(ACCESS_TOKEN)
         Vue.ls.remove(ASYNC_JOB_IDS)
@@ -337,6 +347,9 @@ const user = {
     },
     SetDomainStore ({ commit }, domainStore) {
       commit('SET_DOMAIN_STORE', domainStore)
+    },
+    SetDarkMode ({ commit }, darkMode) {
+      commit('SET_DARK_MODE', darkMode)
     }
   }
 }

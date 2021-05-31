@@ -45,11 +45,24 @@ export default {
   data () {
     return {}
   },
+  watch: {
+    '$store.getters.darkMode' (darkMode) {
+      if (darkMode) {
+        document.body.classList.add('dark')
+      } else {
+        document.body.classList.remove('dark')
+      }
+    }
+  },
   mounted () {
     document.body.classList.add('userLayout')
+    if (this.$store.getters.darkMode) {
+      document.body.classList.add('dark')
+    }
   },
   beforeDestroy () {
     document.body.classList.remove('userLayout')
+    document.body.classList.remove('dark')
   }
 }
 </script>
@@ -57,7 +70,6 @@ export default {
 <style lang="less" scoped>
 .user-layout {
   height: 100%;
-  background: #fff;
 
   &-container {
     padding: 3rem 0;

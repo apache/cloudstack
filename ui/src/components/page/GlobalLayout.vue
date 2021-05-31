@@ -129,6 +129,13 @@ export default {
     },
     mainMenu (newMenu) {
       this.menus = newMenu.find((item) => item.path === '/').children
+    },
+    '$store.getters.darkMode' (darkMode) {
+      if (darkMode) {
+        document.body.classList.add('dark')
+      } else {
+        document.body.classList.remove('dark')
+      }
     }
   },
   created () {
@@ -136,6 +143,9 @@ export default {
     this.collapsed = !this.sidebarOpened
   },
   mounted () {
+    if (this.$store.getters.darkMode) {
+      document.body.classList.add('dark')
+    }
     const userAgent = navigator.userAgent
     if (userAgent.indexOf('Edge') > -1) {
       this.$nextTick(() => {
@@ -145,6 +155,9 @@ export default {
         }, 16)
       })
     }
+  },
+  beforeDestroy () {
+    document.body.classList.remove('dark')
   },
   methods: {
     ...mapActions(['setSidebar']),

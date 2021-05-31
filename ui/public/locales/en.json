@@ -646,6 +646,7 @@
 "label.daily": "Daily",
 "label.dashboard": "Dashboard",
 "label.dashboard.endpoint": "Dashboard endpoint",
+"label.dark.mode": "Dark mode",
 "label.data.disk": "Data Disk",
 "label.data.disk.offering": "Data Disk Offering",
 "label.date": "Date",
