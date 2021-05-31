@@ -70,6 +70,7 @@ import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.VolumeStatsEntry;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.dc.Vlan.VlanType;
@@ -224,8 +225,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static final ConfigKey<String> statsOutputUri = new ConfigKey<String>("Advanced", String.class, "stats.output.uri", "",
             "URI to send StatsCollector statistics to. The collector is defined on the URI scheme. Example: graphite://graphite-hostaddress:port or influxdb://influxdb-hostaddress/dbname. Note that the port is optional, if not added the default port for the respective collector (graphite or influxdb) will be used. Additionally, the database name '/dbname' is  also optional; default db name is 'cloudstack'. You must create and configure the database if using influxdb.",
             true);
-    private static final ConfigKey<Double> secondaryStorageCapacityThreshold = new ConfigKey<Double>("Advanced", Double.class, "secondary.storage.capacity.threshold", "0.90",
-            "Secondary storage capacity threshold (1 = 100%).", true);
 
     private static StatsCollector s_instance = null;
 
@@ -1622,13 +1621,13 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmDiskStatsInterval, vmDiskStatsIntervalMin, vmNetworkStatsInterval, vmNetworkStatsIntervalMin, StatsTimeout, statsOutputUri, secondaryStorageCapacityThreshold};
+        return new ConfigKey<?>[] {vmDiskStatsInterval, vmDiskStatsIntervalMin, vmNetworkStatsInterval, vmNetworkStatsIntervalMin, StatsTimeout, statsOutputUri};
     }
 
     public double getImageStoreCapacityThreshold() {
-        double thresholdConfigValue = secondaryStorageCapacityThreshold.value();
-        double thresholdConfigDefaultValue = NumberUtils.toDouble(secondaryStorageCapacityThreshold.defaultValue());
-        String thresholdConfigKey = secondaryStorageCapacityThreshold.key();
+        double thresholdConfigValue = CapacityManager.secondaryStorageCapacityThreshold.value();
+        double thresholdConfigDefaultValue = NumberUtils.toDouble(CapacityManager.secondaryStorageCapacityThreshold.defaultValue());
+        String thresholdConfigKey = CapacityManager.secondaryStorageCapacityThreshold.key();
 
         if (thresholdConfigValue >= MIN_STORAGE_SECONDARY_CAPACITY_THRESHOLD && thresholdConfigValue <= MAX_STORAGE_SECONDARY_CAPACITY_THRESHOLD) {
             return thresholdConfigValue;
