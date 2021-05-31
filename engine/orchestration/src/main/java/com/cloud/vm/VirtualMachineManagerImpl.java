@@ -3182,7 +3182,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             final Answer rebootAnswer = cmds.getAnswer(RebootAnswer.class);
             if (rebootAnswer != null && rebootAnswer.getResult()) {
-                if (dc.isSecurityGroupEnabled() && vm.getType() == VirtualMachine.Type.User) {
+                boolean isVmSecurityGroupEnabled = _securityGroupManager.isVmSecurityGroupEnabled(vm.getId());
+                if (isVmSecurityGroupEnabled && vm.getType() == VirtualMachine.Type.User) {
                     List<Long> affectedVms = new ArrayList<Long>();
                     affectedVms.add(vm.getId());
                     _securityGroupManager.scheduleRulesetUpdateToHosts(affectedVms, true, null);
