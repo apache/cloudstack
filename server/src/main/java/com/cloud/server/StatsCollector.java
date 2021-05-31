@@ -207,9 +207,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static final String INFLUXDB_HOST_MEASUREMENT = "host_stats";
     private static final String INFLUXDB_VM_MEASUREMENT = "vm_stats";
 
-    private static final double MIN_STORAGE_SECONDARY_CAPACITY_THRESHOLD = 0.00;
-    private static final double MAX_STORAGE_SECONDARY_CAPACITY_THRESHOLD = 1.00;
-
     private static final ConfigKey<Integer> vmDiskStatsInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vm.disk.stats.interval", "0",
             "Interval (in seconds) to report vm disk statistics. Vm disk statistics will be disabled if this is set to 0 or less than 0.", false);
     private static final ConfigKey<Integer> vmDiskStatsIntervalMin = new ConfigKey<Integer>("Advanced", Integer.class, "vm.disk.stats.interval.min", "300",
@@ -1625,28 +1622,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     }
 
     public double getImageStoreCapacityThreshold() {
-        double thresholdConfigValue = CapacityManager.secondaryStorageCapacityThreshold.value();
-        double thresholdConfigDefaultValue = NumberUtils.toDouble(CapacityManager.secondaryStorageCapacityThreshold.defaultValue());
-        String thresholdConfigKey = CapacityManager.secondaryStorageCapacityThreshold.key();
-
-        if (thresholdConfigValue >= MIN_STORAGE_SECONDARY_CAPACITY_THRESHOLD && thresholdConfigValue <= MAX_STORAGE_SECONDARY_CAPACITY_THRESHOLD) {
-            return thresholdConfigValue;
-        }
-
-        if (thresholdConfigValue < MIN_STORAGE_SECONDARY_CAPACITY_THRESHOLD) {
-            s_logger.warn(String.format("Invalid [%s] configuration: value set [%s] is lower than '%s'. Assuming '%s', default value, as secondary storage capacity threshold.",
-                                        thresholdConfigKey,
-                                        thresholdConfigValue,
-                                        MIN_STORAGE_SECONDARY_CAPACITY_THRESHOLD,
-                                        thresholdConfigDefaultValue));
-            return thresholdConfigDefaultValue;
-        }
-
-        s_logger.warn(String.format("Invalid [%s] configuration: value set [%s] is bigger than '%s'. Assuming '%s', top limit, as secondary storage capacity threshold.",
-                                    thresholdConfigKey,
-                                    thresholdConfigValue,
-                                    MAX_STORAGE_SECONDARY_CAPACITY_THRESHOLD,
-                                    MAX_STORAGE_SECONDARY_CAPACITY_THRESHOLD));
-        return MAX_STORAGE_SECONDARY_CAPACITY_THRESHOLD;
+        return CapacityManager.SecondaryStorageCapacityThreshold.value();
     }
 }
