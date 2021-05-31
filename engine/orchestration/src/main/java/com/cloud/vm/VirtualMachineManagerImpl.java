@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.ApiDBUtils;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
@@ -170,6 +171,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.hypervisor.HypervisorGuruBase;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
@@ -2086,6 +2088,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 } else {
                     s_logger.warn("Unable to actually stop " + vm + " but continue with release because it's a force stop");
                     vmGuru.finalizeStop(profile, answer);
+                }
+            } else {
+                if (VirtualMachine.systemVMs.contains(vm.getType())) {
+                    HostVO systemVmHost = ApiDBUtils.findHostByTypeNameAndZoneId(vm.getDataCenterId(), vm.getHostName(),
+                            VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType()) ? Host.Type.SecondaryStorageVM : Host.Type.ConsoleProxy);
+                    if (systemVmHost != null) {
+                        _agentMgr.agentStatusTransitTo(systemVmHost, Status.Event.ShutdownRequested, _nodeId);
+                    }
                 }
             }
         }
@@ -4650,34 +4660,43 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private VMInstanceVO orchestrateReConfigureVm(final String vmUuid, final ServiceOffering oldServiceOffering, final ServiceOffering newServiceOffering,
-                                                  final boolean reconfiguringOnExistingHost) throws ResourceUnavailableException, ConcurrentOperationException {
-        final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
+    private VMInstanceVO orchestrateReConfigureVm(String vmUuid, ServiceOffering oldServiceOffering, ServiceOffering newServiceOffering,
+                                                  boolean reconfiguringOnExistingHost) throws ResourceUnavailableException, ConcurrentOperationException {
+        VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         upgradeVmDb(vm.getId(), newServiceOffering, oldServiceOffering);
 
-        final HostVO hostVo = _hostDao.findById(vm.getHostId());
-        final Float memoryOvercommitRatio = CapacityManager.MemOverprovisioningFactor.valueIn(hostVo.getClusterId());
-        final Float cpuOvercommitRatio = CapacityManager.CpuOverprovisioningFactor.valueIn(hostVo.getClusterId());
-        final long minMemory = (long)(newServiceOffering.getRamSize() / memoryOvercommitRatio);
-        final ScaleVmCommand reconfigureCmd =
-                new ScaleVmCommand(vm.getInstanceName(), newServiceOffering.getCpu(), (int)(newServiceOffering.getSpeed() / cpuOvercommitRatio),
+        HostVO hostVo = _hostDao.findById(vm.getHostId());
+
+        Long clustedId = hostVo.getClusterId();
+        Float memoryOvercommitRatio = CapacityManager.MemOverprovisioningFactor.valueIn(clustedId);
+        Float cpuOvercommitRatio = CapacityManager.CpuOverprovisioningFactor.valueIn(clustedId);
+        boolean divideMemoryByOverprovisioning = HypervisorGuruBase.VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor.valueIn(clustedId);
+        boolean divideCpuByOverprovisioning = HypervisorGuruBase.VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor.valueIn(clustedId);
+
+        int minMemory = (int)(newServiceOffering.getRamSize() / (divideMemoryByOverprovisioning ? memoryOvercommitRatio : 1));
+        int minSpeed = (int)(newServiceOffering.getSpeed() / (divideCpuByOverprovisioning ? cpuOvercommitRatio : 1));
+
+        ScaleVmCommand scaleVmCommand =
+                new ScaleVmCommand(vm.getInstanceName(), newServiceOffering.getCpu(), minSpeed,
                         newServiceOffering.getSpeed(), minMemory * 1024L * 1024L, newServiceOffering.getRamSize() * 1024L * 1024L, newServiceOffering.getLimitCpuUse());
 
-        final Long dstHostId = vm.getHostId();
-        if(vm.getHypervisorType().equals(HypervisorType.VMware)) {
-            final HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
-            Map<String, String> details = null;
-            details = hvGuru.getClusterSettings(vm.getId());
-            reconfigureCmd.getVirtualMachine().setDetails(details);
+        Long dstHostId = vm.getHostId();
+
+        if (vm.getHypervisorType().equals(HypervisorType.VMware)) {
+            HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
+            Map<String, String> details = hvGuru.getClusterSettings(vm.getId());
+            scaleVmCommand.getVirtualMachine().setDetails(details);
         }
 
-        final ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Running, vm.getType(), vm.getId());
+        ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Running, vm.getType(), vm.getId());
 
         work.setStep(Step.Prepare);
         work.setResourceType(ItWorkVO.ResourceType.Host);
         work.setResourceId(vm.getHostId());
         _workDao.persist(work);
+
         boolean success = false;
+
         try {
             if (reconfiguringOnExistingHost) {
                 vm.setServiceOfferingId(oldServiceOffering.getId());
@@ -4686,17 +4705,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _capacityMgr.allocateVmCapacity(vm, false); // lock the new capacity
             }
 
-            final Answer reconfigureAnswer = _agentMgr.send(vm.getHostId(), reconfigureCmd);
-            if (reconfigureAnswer == null || !reconfigureAnswer.getResult()) {
-                s_logger.error("Unable to scale vm due to " + (reconfigureAnswer == null ? "" : reconfigureAnswer.getDetails()));
-                throw new CloudRuntimeException("Unable to scale vm due to " + (reconfigureAnswer == null ? "" : reconfigureAnswer.getDetails()));
+            Answer scaleVmAnswer = _agentMgr.send(vm.getHostId(), scaleVmCommand);
+            if (scaleVmAnswer == null || !scaleVmAnswer.getResult()) {
+                String msg = String.format("Unable to scale %s due to [%s].", vm.toString(), (scaleVmAnswer == null ? "" : scaleVmAnswer.getDetails()));
+                s_logger.error(msg);
+                throw new CloudRuntimeException(msg);
             }
             if (vm.getType().equals(VirtualMachine.Type.User)) {
                 _userVmMgr.generateUsageEvent(vm, vm.isDisplayVm(), EventTypes.EVENT_VM_DYNAMIC_SCALE);
             }
             success = true;
-        } catch (final OperationTimedoutException e) {
-            throw new AgentUnavailableException("Operation timed out on reconfiguring " + vm, dstHostId);
+        } catch (OperationTimedoutException e) {
+            throw new AgentUnavailableException(String.format("Unable to scale %s due to [%s].", vm.toString(), e.getMessage()), dstHostId, e);
         } catch (final AgentUnavailableException e) {
             throw e;
         } finally {

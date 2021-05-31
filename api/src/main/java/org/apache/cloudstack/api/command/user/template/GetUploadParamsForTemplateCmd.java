@@ -183,7 +183,7 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
         if (!hypervisor.equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString()) && osTypeId == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Missing parameter ostypeid");
         }
-        if (hypervisor.equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString()) && osTypeId != null) {
+        if (hypervisor.equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString()) && deployAsIs && osTypeId != null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid parameter ostypeid, not applicable for VMware");
         }
     }

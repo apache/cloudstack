@@ -1476,16 +1476,12 @@ class Template:
 
     @classmethod
     def create_from_volume(cls, apiclient, volume, services,
-                           random_name=True):
+                           random_name=True, projectid=None):
         """Create Template from volume"""
         # Create template from Volume ID
         cmd = createTemplate.createTemplateCmd()
 
-        Template._set_command(apiclient, cmd, services, random_name)
-
-        cmd.volumeid = volume.id
-
-        return Template(apiclient.createTemplate(cmd).__dict__)
+        return Template._set_command(apiclient, cmd, services, random_name, projectid = projectid, volume = volume)
 
     @classmethod
     def create_from_snapshot(cls, apiclient, snapshot, services, account=None,
@@ -1494,14 +1490,10 @@ class Template:
         # Create template from Snapshot ID
         cmd = createTemplate.createTemplateCmd()
 
-        Template._set_command(apiclient, cmd, services, random_name)
-
-        cmd.snapshotid = snapshot.id
-
-        return Template(apiclient.createTemplate(cmd).__dict__)
+        return Template._set_command(apiclient, cmd, services, random_name, snapshot = snapshot, projectid = projectid)
 
     @classmethod
-    def _set_command(cls, apiclient, cmd, services, random_name=True):
+    def _set_command(cls, apiclient, cmd, services, random_name=True, snapshot=None, volume=None, projectid=None):
         cmd.displaytext = services["displaytext"]
         cmd.name = "-".join([
             services["name"],
@@ -1528,12 +1520,12 @@ class Template:
             raise Exception(
                 "Unable to find Ostype is required for creating template")
 
-        cmd.snapshotid = snapshot.id
+        if volume:
+            cmd.volumeid = volume.id
 
-        if account:
-            cmd.account = account
-        if domainid:
-            cmd.domainid = domainid
+        if snapshot:
+            cmd.snapshotid = snapshot.id
+
         if projectid:
             cmd.projectid = projectid
 
