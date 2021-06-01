@@ -152,7 +152,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
     }
 
-    protected Script createHeartBeatCommand(NfsStoragePool primaryStoragePool) {
+    private Script createHeartBeatCommand(NfsStoragePool primaryStoragePool) {
         Script cmd = new Script(s_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
         cmd.add("-i", primaryStoragePool._poolIp);
         cmd.add("-p", primaryStoragePool._poolMountSourcePath);
