@@ -5243,12 +5243,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     answer.setLocalDatastoreName(morDatastore.getValue());
 
                     childDsMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, uuid);
-                    HypervisorHostHelper.createBaseFolderInDatastore(childDsMo, hyperHost);
+                    HypervisorHostHelper.createBaseFolderInDatastore(childDsMo, hyperHost.getHyperHostDatacenter());
 
                     childDatastoresModifyStoragePoolAnswers.add(answer);
                 }
             } else {
-                HypervisorHostHelper.createBaseFolderInDatastore(dsMo, hyperHost);
+                HypervisorHostHelper.createBaseFolderInDatastore(dsMo, hyperHost.getHyperHostDatacenter());
 
                 DatastoreSummary summary = dsMo.getDatastoreSummary();
                 capacity = summary.getCapacity();
