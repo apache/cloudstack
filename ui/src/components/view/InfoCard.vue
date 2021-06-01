@@ -280,7 +280,7 @@
                 :key="eth.id"
                 style="margin-left: -24px; margin-top: 5px;">
                 <a-icon type="api" />eth{{ index }} {{ eth.ipaddress }}
-                <router-link v-if="eth.networkname && eth.networkid" :to="{ path: '/guestnetwork/' + eth.networkid }">({{ eth.networkname }})</router-link>
+                <router-link v-if="!isStatic && eth.networkname && eth.networkid" :to="{ path: '/guestnetwork/' + eth.networkid }">({{ eth.networkname }})</router-link>
               </div>
             </div>
           </div>
@@ -305,7 +305,7 @@
               type="environment"
               @click="$message.success(`${$t('label.copied.clipboard')} : ${ ipaddress }`)"
               v-clipboard:copy="ipaddress" />
-            <router-link v-if="resource.ipaddressid" :to="{ path: '/publicip/' + resource.ipaddressid }">{{ ipaddress }}</router-link>
+            <router-link v-if="!isStatic && resource.ipaddressid" :to="{ path: '/publicip/' + resource.ipaddressid }">{{ ipaddress }}</router-link>
             <span v-else>{{ ipaddress }}</span>
           </div>
         </div>
@@ -323,7 +323,7 @@
           <div class="resource-detail-item__label">{{ $t('label.project') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="project" />
-            <router-link v-if="resource.projectid" :to="{ path: '/project/' + resource.projectid }">{{ resource.project || resource.projectname || resource.projectid }}</router-link>
+            <router-link v-if="!isStatic && resource.projectid" :to="{ path: '/project/' + resource.projectid }">{{ resource.project || resource.projectname || resource.projectid }}</router-link>
             <router-link v-else :to="{ path: '/project', query: { name: resource.projectname }}">{{ resource.projectname }}</router-link>
           </div>
         </div>
@@ -406,10 +406,10 @@
           <div class="resource-detail-item__details">
             <a-icon type="picture" />
             <div v-if="resource.isoid">
-              <router-link :to="{ path: '/iso/' + resource.isoid }">{{ resource.isoname || resource.isoid }} </router-link>
+              <router-link :to="{ path: '/iso/' + resource.isoid }">{{ resource.isodisplaytext || resource.isoname || resource.isoid }} </router-link>
             </div>
             <div v-else>
-              <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatename || resource.templateid }} </router-link>
+              <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
             </div>
           </div>
         </div>
@@ -417,7 +417,7 @@
           <div class="resource-detail-item__label">{{ $t('label.serviceofferingname') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="cloud" />
-            <router-link v-if="$route.meta.name === 'router'" :to="{ path: '/computeoffering/' + resource.serviceofferingid, query: { issystem: true } }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
+            <router-link v-if="!isStatic && $route.meta.name === 'router'" :to="{ path: '/computeoffering/' + resource.serviceofferingid, query: { issystem: true } }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
             <router-link v-else-if="$router.resolve('/computeoffering/' + resource.serviceofferingid).route.name !== '404'" :to="{ path: '/computeoffering/' + resource.serviceofferingid }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
             <span v-else>{{ resource.serviceofferingname || resource.serviceofferingid }}</span>
           </div>
@@ -426,21 +426,21 @@
           <div class="resource-detail-item__label">{{ $t('label.diskoffering') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="hdd" />
-            <router-link v-if="$router.resolve('/diskoffering/' + resource.diskofferingid).route.name !== '404'" :to="{ path: '/diskoffering/' + resource.diskofferingid }">{{ resource.diskofferingname || resource.diskofferingid }} </router-link>
+            <router-link v-if="!isStatic && $router.resolve('/diskoffering/' + resource.diskofferingid).route.name !== '404'" :to="{ path: '/diskoffering/' + resource.diskofferingid }">{{ resource.diskofferingname || resource.diskofferingid }} </router-link>
             <span v-else>{{ resource.diskofferingname || resource.diskofferingid }}</span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.backupofferingid">
           <div class="resource-detail-item__label">{{ $t('label.backupofferingid') }}</div>
           <a-icon type="cloud-upload" />
-          <router-link v-if="$router.resolve('/backupoffering/' + resource.backupofferingid).route.name !== '404'" :to="{ path: '/backupoffering/' + resource.backupofferingid }">{{ resource.backupofferingname || resource.backupofferingid }} </router-link>
+          <router-link v-if="!isStatic && $router.resolve('/backupoffering/' + resource.backupofferingid).route.name !== '404'" :to="{ path: '/backupoffering/' + resource.backupofferingid }">{{ resource.backupofferingname || resource.backupofferingid }} </router-link>
           <span v-else>{{ resource.backupofferingname || resource.backupofferingid }}</span>
         </div>
         <div class="resource-detail-item" v-if="resource.networkofferingid">
           <div class="resource-detail-item__label">{{ $t('label.networkofferingid') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="wifi" />
-            <router-link v-if="$router.resolve('/networkoffering/' + resource.networkofferingid).route.name !== '404'" :to="{ path: '/networkoffering/' + resource.networkofferingid }">{{ resource.networkofferingname || resource.networkofferingid }} </router-link>
+            <router-link v-if="!isStatic && $router.resolve('/networkoffering/' + resource.networkofferingid).route.name !== '404'" :to="{ path: '/networkoffering/' + resource.networkofferingid }">{{ resource.networkofferingname || resource.networkofferingid }} </router-link>
             <span v-else>{{ resource.networkofferingname || resource.networkofferingid }}</span>
           </div>
         </div>
@@ -448,7 +448,7 @@
           <div class="resource-detail-item__label">{{ $t('label.vpcoffering') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="deployment-unit" />
-            <router-link v-if="$router.resolve('/vpcoffering/' + resource.vpcofferingid).route.name !== '404'" :to="{ path: '/vpcoffering/' + resource.vpcofferingid }">{{ resource.vpcofferingname || resource.vpcofferingid }} </router-link>
+            <router-link v-if="!isStatic && $router.resolve('/vpcoffering/' + resource.vpcofferingid).route.name !== '404'" :to="{ path: '/vpcoffering/' + resource.vpcofferingid }">{{ resource.vpcofferingname || resource.vpcofferingid }} </router-link>
             <span v-else>{{ resource.vpcofferingname || resource.vpcofferingid }}</span>
           </div>
         </div>
@@ -456,7 +456,7 @@
           <div class="resource-detail-item__label">{{ $t('label.storagepool') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="database" />
-            <router-link v-if="$router.resolve('/storagepool/' + resource.storageid).route.name !== '404'" :to="{ path: '/storagepool/' + resource.storageid }">{{ resource.storage || resource.storageid }} </router-link>
+            <router-link v-if="!isStatic && $router.resolve('/storagepool/' + resource.storageid).route.name !== '404'" :to="{ path: '/storagepool/' + resource.storageid }">{{ resource.storage || resource.storageid }} </router-link>
             <span v-else>{{ resource.storage || resource.storageid }}</span>
             <a-tag style="margin-left: 5px;" v-if="resource.storagetype">
               {{ resource.storagetype }}
@@ -467,7 +467,7 @@
           <div class="resource-detail-item__label">{{ $t('label.hostname') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="desktop" />
-            <router-link v-if="$router.resolve('/host/' + resource.hostid).route.name !== '404'" :to="{ path: '/host/' + resource.hostid }">{{ resource.hostname || resource.hostid }} </router-link>
+            <router-link v-if="!isStatic && $router.resolve('/host/' + resource.hostid).route.name !== '404'" :to="{ path: '/host/' + resource.hostid }">{{ resource.hostname || resource.hostid }} </router-link>
             <span v-else>{{ resource.hostname || resource.hostid }}</span>
           </div>
         </div>
@@ -475,7 +475,7 @@
           <div class="resource-detail-item__label">{{ $t('label.clusterid') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="cluster" />
-            <router-link v-if="$router.resolve('/cluster/' + resource.clusterid).route.name !== '404'" :to="{ path: '/cluster/' + resource.clusterid }">{{ resource.clustername || resource.cluster || resource.clusterid }}</router-link>
+            <router-link v-if="!isStatic && $router.resolve('/cluster/' + resource.clusterid).route.name !== '404'" :to="{ path: '/cluster/' + resource.clusterid }">{{ resource.clustername || resource.cluster || resource.clusterid }}</router-link>
             <span v-else>{{ resource.clustername || resource.cluster || resource.clusterid }}</span>
           </div>
         </div>
@@ -483,7 +483,7 @@
           <div class="resource-detail-item__label">{{ $t('label.podid') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="appstore" />
-            <router-link v-if="$router.resolve('/pod/' + resource.podid).route.name !== '404'" :to="{ path: '/pod/' + resource.podid }">{{ resource.podname || resource.pod || resource.podid }}</router-link>
+            <router-link v-if="!isStatic && $router.resolve('/pod/' + resource.podid).route.name !== '404'" :to="{ path: '/pod/' + resource.podid }">{{ resource.podname || resource.pod || resource.podid }}</router-link>
             <span v-else>{{ resource.podname || resource.pod || resource.podid }}</span>
           </div>
         </div>
@@ -491,7 +491,7 @@
           <div class="resource-detail-item__label">{{ $t('label.zone') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="global" />
-            <router-link v-if="$router.resolve('/zone/' + resource.zoneid).route.name !== '404'" :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
+            <router-link v-if="!isStatic && $router.resolve('/zone/' + resource.zoneid).route.name !== '404'" :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
             <span v-else>{{ resource.zone || resource.zonename || resource.zoneid }}</span>
           </div>
         </div>
@@ -502,7 +502,7 @@
             <template v-for="(item,idx) in resource.owner">
               <span style="margin-right:5px" :key="idx">
                 <span v-if="$store.getters.userInfo.roletype !== 'User'">
-                  <router-link v-if="'user' in item" :to="{ path: '/accountuser', query: { username: item.user, domainid: resource.domainid }}">{{ item.account + '(' + item.user + ')' }}</router-link>
+                  <router-link v-if="!isStatic && 'user' in item" :to="{ path: '/accountuser', query: { username: item.user, domainid: resource.domainid }}">{{ item.account + '(' + item.user + ')' }}</router-link>
                   <router-link v-else :to="{ path: '/account', query: { name: item.account, domainid: resource.domainid } }">{{ item.account }}</router-link>
                 </span>
                 <span v-else>{{ item.user ? item.account + '(' + item.user + ')' : item.account }}</span>
@@ -514,7 +514,7 @@
           <div class="resource-detail-item__label">{{ $t('label.account') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="user" />
-            <router-link v-if="$store.getters.userInfo.roletype !== 'User'" :to="{ path: '/account', query: { name: resource.account, domainid: resource.domainid } }">{{ resource.account }}</router-link>
+            <router-link v-if="!isStatic && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/account', query: { name: resource.account, domainid: resource.domainid } }">{{ resource.account }}</router-link>
             <span v-else>{{ resource.account }}</span>
           </div>
         </div>
@@ -522,7 +522,7 @@
           <div class="resource-detail-item__label">{{ $t('label.role') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="idcard" />
-            <router-link v-if="$router.resolve('/role/' + resource.roleid).route.name !== '404'" :to="{ path: '/role/' + resource.roleid }">{{ resource.rolename || resource.role || resource.roleid }}</router-link>
+            <router-link v-if="!isStatic && $router.resolve('/role/' + resource.roleid).route.name !== '404'" :to="{ path: '/role/' + resource.roleid }">{{ resource.rolename || resource.role || resource.roleid }}</router-link>
             <span v-else>{{ resource.rolename || resource.role || resource.roleid }}</span>
           </div>
         </div>
@@ -530,7 +530,7 @@
           <div class="resource-detail-item__label">{{ $t('label.domain') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="block" />
-            <router-link v-if="$store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + resource.domainid }">{{ resource.domain || resource.domainid }}</router-link>
+            <router-link v-if="!isStatic && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + resource.domainid }">{{ resource.domain || resource.domainid }}</router-link>
             <span v-else>{{ resource.domain || resource.domainid }}</span>
           </div>
         </div>
@@ -538,7 +538,7 @@
           <div class="resource-detail-item__label">{{ $t('label.management.servers') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="rocket" />
-            <router-link v-if="$router.resolve('/managementserver/' + resource.managementserverid).route.name !== '404'" :to="{ path: '/managementserver/' + resource.managementserverid }">{{ resource.managementserver || resource.managementserverid }}</router-link>
+            <router-link v-if="!isStatic && $router.resolve('/managementserver/' + resource.managementserverid).route.name !== '404'" :to="{ path: '/managementserver/' + resource.managementserverid }">{{ resource.managementserver || resource.managementserverid }}</router-link>
             <span v-else>{{ resource.managementserver || resource.managementserverid }}</span>
           </div>
         </div>
@@ -601,7 +601,7 @@
         </div>
       </div>
 
-      <div class="account-center-tags" v-if="resourceType && 'listTags' in $store.getters.apis">
+      <div class="account-center-tags" v-if="!isStatic && resourceType && 'listTags' in $store.getters.apis">
         <a-divider/>
         <a-spin :spinning="loadingTags">
           <div class="title">{{ $t('label.tags') }}</div>
@@ -633,7 +633,7 @@
         </a-spin>
       </div>
 
-      <div class="account-center-team" v-if="annotationType && 'listAnnotations' in $store.getters.apis">
+      <div class="account-center-team" v-if="!isStatic && annotationType && 'listAnnotations' in $store.getters.apis">
         <a-divider :dashed="true"/>
         <a-spin :spinning="loadingAnnotations">
           <div class="title">
@@ -719,6 +719,10 @@ export default {
     bordered: {
       type: Boolean,
       default: true
+    },
+    isStatic: {
+      type: Boolean,
+      default: false
     }
   },
   data () {

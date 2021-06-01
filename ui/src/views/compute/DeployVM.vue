@@ -203,9 +203,9 @@
                     ></compute-offering-selection>
                     <compute-selection
                       v-if="serviceOffering && serviceOffering.iscustomized"
-                      cpunumber-input-decorator="cpunumber"
-                      cpuspeed-input-decorator="cpuspeed"
-                      memory-input-decorator="memory"
+                      cpuNumberInputDecorator="cpunumber"
+                      cpuSpeedInputDecorator="cpuspeed"
+                      memoryInputDecorator="memory"
                       :preFillContent="dataPreFill"
                       :computeOfferingId="instanceConfig.computeofferingid"
                       :isConstrained="'serviceofferingdetails' in serviceOffering"

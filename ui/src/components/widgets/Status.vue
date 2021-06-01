@@ -96,6 +96,7 @@ export default {
         case 'True':
         case 'Up':
         case 'enabled':
+        case 'PowerOn':
           status = 'success'
           break
         case 'Alert':
@@ -107,6 +108,7 @@ export default {
         case 'False':
         case 'Stopped':
         case 'ReadOnly':
+        case 'PowerOff':
           status = 'error'
           break
         case 'Migrating':

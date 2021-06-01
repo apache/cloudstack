@@ -43,6 +43,10 @@ public class UnmanagedInstanceResponse extends BaseResponse {
     @Param(description = "the ID of the host to which virtual machine belongs")
     private String hostId;
 
+    @SerializedName(ApiConstants.HOST_NAME)
+    @Param(description = "the name of the host to which virtual machine belongs")
+    private String hostName;
+
     @SerializedName(ApiConstants.POWER_STATE)
     @Param(description = "the power state of the virtual machine")
     private String  powerState;
@@ -106,6 +110,14 @@ public class UnmanagedInstanceResponse extends BaseResponse {
 
     public void setHostId(String hostId) {
         this.hostId = hostId;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
     }
 
     public String getPowerState() {
