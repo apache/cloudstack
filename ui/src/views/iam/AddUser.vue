@@ -225,7 +225,7 @@ export default {
     this.apiConfig.params.forEach(param => {
       this.apiParams[param.name] = param
     })
-    this.apiConfig = this.$store.getters.apis.authorizeSamlSso || {}
+    this.apiConfig = this.$store.getters.apis.authorizeSamlSso || { params: [] }
     this.apiConfig.params.forEach(param => {
       this.apiParams[param.name] = param
     })
