@@ -243,19 +243,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.createAccount || {}
-    this.apiParams = {}
-    if (this.apiConfig.params) {
-      this.apiConfig.params.forEach(param => {
-        this.apiParams[param.name] = param
-      })
-    }
-    this.apiConfig = this.$store.getters.apis.authorizeSamlSso || {}
-    if (this.apiConfig.params) {
-      this.apiConfig.params.forEach(param => {
-        this.apiParams[param.name] = param
-      })
-    }
+    this.apiParams = this.$getApiParams('createAccount', 'authorizeSamlSso')
   },
   created () {
     this.fetchData()

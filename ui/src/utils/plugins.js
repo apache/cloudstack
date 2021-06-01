@@ -185,3 +185,20 @@ export const configUtilPlugin = {
     }
   }
 }
+
+export const apiMetaUtilPlugin = {
+  install (Vue) {
+    Vue.prototype.$getApiParams = function () {
+      var apiParams = {}
+      for (var argument of arguments) {
+        var apiConfig = this.$store.getters.apis[argument] || {}
+        if (apiConfig && apiConfig.params) {
+          apiConfig.params.forEach(param => {
+            apiParams[param.name] = param
+          })
+        }
+      }
+      return apiParams
+    }
+  }
+}

@@ -156,11 +156,7 @@ export default {
     this.page = 1
     this.pageSize = 10
     this.itemCount = 0
-    this.apiConfig = this.$store.getters.apis.listProjectInvitations || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('listProjectInvitations')
     if (this.apiParams.userid) {
       this.columns.splice(2, 0, {
         title: this.$t('label.user'),

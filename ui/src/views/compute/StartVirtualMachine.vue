@@ -143,11 +143,7 @@ export default {
   inject: ['parentFetchData'],
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.startVirtualMachine || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('startVirtualMachine')
   },
   created () {
     if (this.$store.getters.userInfo.roletype === 'Admin') {

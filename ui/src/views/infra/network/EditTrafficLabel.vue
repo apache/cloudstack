@@ -136,13 +136,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.updateTrafficType || {}
-    this.apiParams = {}
-    if (this.apiConfig.params) {
-      this.apiConfig.params.forEach(param => {
-        this.apiParams[param.name] = param
-      })
-    }
+    this.apiParams = this.$getApiParams('updateTrafficType')
   },
   inject: ['parentFetchData'],
   created () {

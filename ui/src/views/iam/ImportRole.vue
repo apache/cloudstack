@@ -133,11 +133,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.importRole || {}
-    this.importRoleApiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.importRoleApiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('importRole')
   },
   methods: {
     handleRemove (file) {
