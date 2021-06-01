@@ -1508,7 +1508,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         for (final VM vm : vms) {
             final String vmName = vm.getNameLabel(conn);
             if (!vmName.startsWith("r-") && !vmName.startsWith("s-") && !vmName.startsWith("v-")) {
-                return;
+                continue;
             }
             final Set<VBD> vbds = vm.getVBDs(conn);
             for (final VBD vbd : vbds) {
