@@ -140,6 +140,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -969,6 +970,19 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
     }
 
+    @Override
+    public void copySnapshotPoliciesBetweenVolumes(VolumeVO srcVolume, VolumeVO destVolume){
+        IntervalType[] intervalTypes = IntervalType.values();
+        List<SnapshotPolicyVO> policies = listPoliciesforVolume(srcVolume.getId());
+
+        s_logger.debug(String.format("Copying snapshot policies %s from volume %s to volume %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(policies,
+          "id", "uuid"), srcVolume.getVolumeDescription(), destVolume.getVolumeDescription()));
+
+        policies.forEach(policy ->
+          persistSnapshotPolicy(destVolume, policy.getSchedule(), policy.getTimezone(), intervalTypes[policy.getInterval()], policy.getMaxSnaps(),
+            policy.isDisplay(), policy.isActive(), taggedResourceService.getTagsFromResource(ResourceObjectType.SnapshotPolicy, policy.getId()))
+        );
+    }
 
     protected boolean deletePolicy(Long policyId) {
         SnapshotPolicyVO snapshotPolicy = _snapshotPolicyDao.findById(policyId);
