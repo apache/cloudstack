@@ -54,4 +54,12 @@ public interface TaggedResourceService {
     String getUuid(String resourceId, ResourceObjectType resourceType);
 
     public long getResourceId(String resourceId, ResourceObjectType resourceType);
+
+    /**
+     * Retrieves tags from resource.
+     * @param type
+     * @param resourceId
+     * @return If the list of tags is not null, returns a map with the tags, otherwise, returns null.
+     */
+    public Map<String, String> getTagsFromResource(ResourceObjectType type, long resourceId);
 }

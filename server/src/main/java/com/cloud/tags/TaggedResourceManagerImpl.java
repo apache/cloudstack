@@ -416,4 +416,10 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     public List<? extends ResourceTag> listByResourceTypeAndId(ResourceObjectType resourceType, long resourceId) {
         return _resourceTagDao.listBy(resourceId, resourceType);
     }
+
+    @Override
+    public Map<String, String> getTagsFromResource(ResourceObjectType type, long resourceId) {
+        List<? extends ResourceTag> listResourceTags = listByResourceTypeAndId(type, resourceId);
+        return listResourceTags == null ? null : listResourceTags.stream().collect(Collectors.toMap(ResourceTag::getKey, ResourceTag::getValue));
+    }
 }
