@@ -23,7 +23,7 @@
           <span slot="label">
             {{ $t('label.username') }}
             <a-tooltip :title="apiParams.username.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -39,7 +39,7 @@
               <span slot="label">
                 {{ $t('label.password') }}
                 <a-tooltip :title="apiParams.password.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <a-icon type="info-circle" />
                 </a-tooltip>
               </span>
               <a-input-password
@@ -54,7 +54,7 @@
               <span slot="label">
                 {{ $t('label.confirmpassword') }}
                 <a-tooltip :title="apiParams.password.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <a-icon type="info-circle" />
                 </a-tooltip>
               </span>
               <a-input-password
@@ -72,7 +72,7 @@
           <span slot="label">
             {{ $t('label.email') }}
             <a-tooltip :title="apiParams.email.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -87,7 +87,7 @@
               <span slot="label">
                 {{ $t('label.firstname') }}
                 <a-tooltip :title="apiParams.firstname.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <a-icon type="info-circle" />
                 </a-tooltip>
               </span>
               <a-input
@@ -102,7 +102,7 @@
               <span slot="label">
                 {{ $t('label.lastname') }}
                 <a-tooltip :title="apiParams.lastname.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <a-icon type="info-circle" />
                 </a-tooltip>
               </span>
               <a-input
@@ -117,7 +117,7 @@
           <span slot="label">
             {{ $t('label.domain') }}
             <a-tooltip :title="apiParams.domainid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -133,7 +133,7 @@
           <span slot="label">
             {{ $t('label.account') }}
             <a-tooltip :title="apiParams.account.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -149,7 +149,7 @@
           <span slot="label">
             {{ $t('label.timezone') }}
             <a-tooltip :title="apiParams.timezone.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -169,7 +169,7 @@
             <span slot="label">
               {{ $t('label.samlentity') }}
               <a-tooltip :title="apiParams.entityid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select

@@ -21,7 +21,7 @@
         <span slot="label">
           {{ $t('label.name') }}
           <a-tooltip :title="apiParams.name.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-input
@@ -38,7 +38,7 @@
         <span slot="label">
           {{ $t('label.gateway') }}
           <a-tooltip :title="apiParams.gateway.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-input
@@ -54,7 +54,7 @@
         <span slot="label">
           {{ $t('label.cidrlist') }}
           <a-tooltip :title="apiParams.cidrlist.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-input
@@ -70,7 +70,7 @@
         <span slot="label">
           {{ $t('label.ipsecpsk') }}
           <a-tooltip :title="apiParams.ipsecpsk.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-input
@@ -112,7 +112,7 @@
         <span slot="label">
           {{ $t('label.ikeversion') }}
           <a-tooltip :title="apiParams.ikeversion.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-select
@@ -195,7 +195,7 @@
         <span slot="label">
           {{ $t('label.ikelifetime') }}
           <a-tooltip :title="apiParams.ikelifetime.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-input
@@ -211,7 +211,7 @@
         <span slot="label">
           {{ $t('label.esplifetime') }}
           <a-tooltip :title="apiParams.esplifetime.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-input
@@ -227,7 +227,7 @@
         <span slot="label">
           {{ $t('label.dpd') }}
           <a-tooltip :title="apiParams.dpd.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-switch
@@ -242,7 +242,7 @@
         <span slot="label">
           {{ $t('label.splitconnections') }}
           <a-tooltip :title="apiParams.splitconnections.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-switch
@@ -257,7 +257,7 @@
         <span slot="label">
           {{ $t('label.forceencap') }}
           <a-tooltip :title="apiParams.forceencap.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-switch

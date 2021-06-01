@@ -137,6 +137,8 @@ const user = {
 
           const cachedUseBrowserTimezone = Vue.ls.get(USE_BROWSER_TIMEZONE, false)
           commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
+          const darkMode = Vue.ls.get(DARK_MODE, false)
+          commit('SET_DARK_MODE', darkMode)
 
           commit('SET_APIS', {})
           commit('SET_NAME', '')
@@ -148,7 +150,6 @@ const user = {
           commit('SET_LDAP', {})
           commit('SET_CLOUDIAN', {})
           commit('SET_DOMAIN_STORE', {})
-          commit('SET_DARK_MODE', {})
 
           notification.destroy()
 
@@ -166,7 +167,7 @@ const user = {
         const cachedTimezoneOffset = Vue.ls.get(TIMEZONE_OFFSET, 0.0)
         const cachedUseBrowserTimezone = Vue.ls.get(USE_BROWSER_TIMEZONE, false)
         const domainStore = Vue.ls.get(DOMAIN_STORE, {})
-        const darkMode = Vue.ls.get(DARK_MODE, {})
+        const darkMode = Vue.ls.get(DARK_MODE, false)
         const hasAuth = Object.keys(cachedApis).length > 0
 
         commit('SET_DOMAIN_STORE', domainStore)
@@ -279,7 +280,6 @@ const user = {
         commit('SET_CLOUDIAN', {})
         commit('RESET_THEME')
         commit('SET_DOMAIN_STORE', {})
-        commit('SET_DARK_MODE', {})
         Vue.ls.remove(CURRENT_PROJECT)
         Vue.ls.remove(ACCESS_TOKEN)
         Vue.ls.remove(ASYNC_JOB_IDS)

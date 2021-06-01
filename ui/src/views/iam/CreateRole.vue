@@ -26,7 +26,7 @@
           <span slot="label">
             {{ $t('label.name') }}
             <a-tooltip :title="createRoleApiParams.name.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -41,7 +41,7 @@
           <span slot="label">
             {{ $t('label.description') }}
             <a-tooltip :title="createRoleApiParams.description.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -53,7 +53,7 @@
           <span slot="label">
             {{ $t('label.based.on') }}
             <a-tooltip :title="$t('label.based.on.role.id.or.type')">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-radio-group
@@ -75,7 +75,7 @@
           <span slot="label">
             {{ $t('label.type') }}
             <a-tooltip :title="createRoleApiParams.type.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -93,7 +93,7 @@
           <span slot="label">
             {{ $t('label.role') }}
             <a-tooltip :title="createRoleApiParams.roleid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select

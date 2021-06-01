@@ -27,7 +27,7 @@
             <span slot="label">
               {{ $t('label.name') }}
               <a-tooltip :title="apiParams.name.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -41,7 +41,7 @@
             <span slot="label">
               {{ $t('label.displaytext') }}
               <a-tooltip :title="apiParams.displaytext.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -54,7 +54,7 @@
             <span slot="label">
               {{ $t('label.zoneid') }}
               <a-tooltip :title="apiParams.zoneid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
@@ -83,7 +83,7 @@
             <span slot="label">
               {{ $t('label.domain') }}
               <a-tooltip :title="apiParams.domainid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
@@ -105,7 +105,7 @@
             <span slot="label">
               {{ $t('label.networkofferingid') }}
               <a-tooltip :title="apiParams.networkofferingid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
@@ -134,7 +134,7 @@
             <span slot="label">
               {{ $t('label.vlan') }}
               <a-tooltip :title="apiParams.vlan.description" v-if="'vlan' in apiParams">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -147,7 +147,7 @@
             <span slot="label">
               {{ $t('label.bypassvlanoverlapcheck') }}
               <a-tooltip :title="apiParams.bypassvlanoverlapcheck.description" v-if="'bypassvlanoverlapcheck' in apiParams">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-switch v-decorator="['bypassvlanoverlapcheck']" />
@@ -156,7 +156,7 @@
             <span slot="label">
               {{ $t('label.isolatedpvlantype') }}
               <a-tooltip :title="apiParams.isolatedpvlantype.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-radio-group
@@ -183,7 +183,7 @@
             <span slot="label">
               {{ $t('label.isolatedpvlanid') }}
               <a-tooltip :title="apiParams.isolatedpvlan.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -194,7 +194,7 @@
             <span slot="label">
               {{ $t('label.account') }}
               <a-tooltip :title="apiParams.account.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -484,7 +484,6 @@ export default {
 
 .tagsTitle {
   font-weight: 500;
-  color: rgba(0, 0, 0, 0.85);
   margin-bottom: 12px;
 }
 

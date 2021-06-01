@@ -588,14 +588,6 @@ export default {
 /deep/ .ant-table-small > .ant-table-content > .ant-table-body {
   margin: 0;
 }
-
-/deep/ .light-row {
-  background-color: #fff;
-}
-
-/deep/ .dark-row {
-  background-color: #f9f9f9;
-}
 </style>
 
 <style scoped lang="scss">

@@ -26,7 +26,7 @@
           <span slot="label">
             {{ $t('label.rules.file') }}
             <a-tooltip :title="$t('label.rules.file.to.import')">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-upload-dragger
@@ -55,7 +55,7 @@
           <span slot="label">
             {{ $t('label.name') }}
             <a-tooltip :title="importRoleApiParams.name.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -70,7 +70,7 @@
           <span slot="label">
             {{ $t('label.description') }}
             <a-tooltip :title="importRoleApiParams.description.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -82,7 +82,7 @@
           <span slot="label">
             {{ $t('label.type') }}
             <a-tooltip :title="importRoleApiParams.type.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -100,7 +100,7 @@
           <span slot="label">
             {{ $t('label.forced') }}
             <a-tooltip :title="importRoleApiParams.forced.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-switch
