@@ -323,11 +323,16 @@ export default {
       permission: ['listVMSnapshot'],
       resourceType: 'VMSnapshot',
       columns: () => {
-        const fields = ['displayname', 'state', 'name', 'type', 'current', 'parentName', 'created']
+        const fields = ['name', 'state', 'type', 'current', 'parentName', 'created']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('domain')
           fields.push('account')
         }
+
+        if (store.getters.displayname) {
+          fields.splice(0, 1, 'displayname')
+        }
+
         return fields
       },
       details: ['name', 'id', 'displayname', 'description', 'type', 'current', 'parentName', 'virtualmachineid', 'account', 'domain', 'created'],

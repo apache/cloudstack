@@ -38,6 +38,13 @@
                 :un-checked-children="$t('label.metrics')"
                 :checked="$store.getters.metrics"
                 @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
+              <a-switch
+                v-if="!dataView && ['vm', 'vmsnapshot'].includes($route.name)"
+                style="margin-left: 8px"
+                :checked-children="$t('label.displayname')"
+                :un-checked-children="$t('label.name')"
+                :checked="$store.getters.displayname"
+                @change="(checked, event) => { $store.dispatch('SetDisplayname', checked) }"/>
               <a-tooltip placement="right">
                 <template slot="title">
                   {{ $t('label.filterby') }}
@@ -465,6 +472,9 @@ export default {
       }
     },
     '$store.getters.metrics' (oldVal, newVal) {
+      this.fetchData()
+    },
+    '$store.getters.displayname' (oldVal, newVal) {
       this.fetchData()
     }
   },

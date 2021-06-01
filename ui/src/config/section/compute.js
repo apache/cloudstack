@@ -38,7 +38,7 @@ export default {
         return filters
       },
       columns: () => {
-        const fields = ['displayname', 'name', 'state', 'ipaddress']
+        const fields = ['name', 'state', 'ipaddress']
         const metricsFields = ['cpunumber', 'cpuused', 'cputotal',
           {
             memoryused: (record) => {
@@ -47,6 +47,10 @@ export default {
           },
           'memorytotal', 'networkread', 'networkwrite', 'diskkbsread', 'diskkbswrite', 'diskiopstotal'
         ]
+
+        if (store.getters.displayname) {
+          fields.splice(0, 1, 'displayname')
+        }
 
         if (store.getters.metrics) {
           fields.push(...metricsFields)

@@ -21,6 +21,7 @@ const getters = {
   theme: state => state.app.theme,
   color: state => state.app.color,
   metrics: state => state.app.metrics,
+  displayname: state => state.app.displayname,
   token: state => state.user.token,
   project: state => state.user.project,
   avatar: state => state.user.avatar,
