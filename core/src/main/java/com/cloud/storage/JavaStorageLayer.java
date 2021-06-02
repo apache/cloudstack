@@ -31,7 +31,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import javax.naming.ConfigurationException;
-
 import org.apache.log4j.Logger;
 
 public class JavaStorageLayer implements StorageLayer {
@@ -226,7 +225,7 @@ public class JavaStorageLayer implements StorageLayer {
         }
     }
 
-    public static boolean isWorldReadable(File file) {
+    public boolean isWorldReadable(File file) {
         Set<PosixFilePermission> permissions;
         try {
             permissions = Files.getPosixFilePermissions(
