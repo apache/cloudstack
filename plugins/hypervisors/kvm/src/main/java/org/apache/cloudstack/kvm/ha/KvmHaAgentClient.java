@@ -228,7 +228,7 @@ public class KvmHaAgentClient {
             } catch (IOException | InterruptedException e) {
                 String errorMessage = String.format("Failed to execute HTTP %s request retry attempt %d/%d [URL: %s] due to exception %s",
                         httpReq.getMethod(), attempt, MAX_REQUEST_RETRIES, url, e);
-                LOGGER.error(errorMessage);
+                LOGGER.error(errorMessage, e);
             }
         }
         return null;

@@ -79,6 +79,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     private KvmHaHelper kvmHaHelper;
 
     private static final Set<Storage.StoragePoolType> NFS_POOL_TYPE = new HashSet<>(Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.ManagedNFS));
+    private static final Set<Hypervisor.HypervisorType> KVM_OR_LXC = new HashSet<>(Arrays.asList(Hypervisor.HypervisorType.KVM, Hypervisor.HypervisorType.LXC));
 
     @Override
     public boolean isActive(Host host, DateTime suspectTime) throws HACheckerException {
@@ -100,7 +101,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         boolean isHostServedByNfsPool = isHostServedByNfsPool(host);
         boolean isKvmHaWebserviceEnabled = kvmHaHelper.isKvmHaWebserviceEnabled(host);
 
-        if(isHostServedByNfsPool) {
+        if (isHostServedByNfsPool) {
             isHealthy = isHealthViaNfs(host);
         }
 
@@ -109,7 +110,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         }
 
         if (kvmHaHelper.isKvmHealthyCheckViaLibvirt(host) && !isHealthy) {
-            isHealthy = true;
+            return true;
         }
 
         return isHealthy;
@@ -190,7 +191,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     }
 
     private boolean isVMActivtyOnHost(Host agent, DateTime suspectTime) throws HACheckerException {
-        if (agent.getHypervisorType() != Hypervisor.HypervisorType.KVM && agent.getHypervisorType() != Hypervisor.HypervisorType.LXC) {
+        if (!KVM_OR_LXC.contains(agent.getHypervisorType())) {
             throw new IllegalStateException(String.format("Calling KVM investigator for non KVM Host of type [%s].", agent.getHypervisorType()));
         }
         boolean activityStatus = false;
