@@ -21,15 +21,21 @@ package com.cloud.storage;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
-public class JavaStorageLayer implements StorageLayer {
+import org.apache.log4j.Logger;
 
+public class JavaStorageLayer implements StorageLayer {
+    private static final Logger s_logger = Logger.getLogger(JavaStorageLayer.class);
     String _name;
     boolean _makeWorldWriteable = true;
 
@@ -183,6 +189,9 @@ public class JavaStorageLayer implements StorageLayer {
         if (dirName != null) {
             File dir = new File(dirName);
             if (dir.exists()) {
+                if (isWorldReadable(dir)) {
+                    s_logger.warn("The temp dir " + dir.getAbsolutePath() + " is World Readable");
+                }
                 String uniqDirName = dir.getAbsolutePath() + File.separator + UUID.randomUUID().toString();
                 if (mkdir(uniqDirName)) {
                     return new File(uniqDirName);
@@ -215,6 +224,22 @@ public class JavaStorageLayer implements StorageLayer {
 
             return success;
         }
+    }
+
+    public static boolean isWorldReadable(File file) {
+        Set<PosixFilePermission> permissions;
+        try {
+            permissions = Files.getPosixFilePermissions(
+                Paths.get(file.getAbsolutePath()));
+        } catch (IOException e) {
+            return false;
+        }
+        for (PosixFilePermission permission:permissions) {
+            if (permission.equals(PosixFilePermission.OTHERS_READ)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private List<String> listDirPaths(String path) {
