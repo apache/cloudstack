@@ -457,7 +457,7 @@
     }
   }
 
-  .user-layout .ant-input-affix-wrapper .ant-input-prefix, 
+  .user-layout .ant-input-affix-wrapper .ant-input-prefix,
   .user-layout .ant-input-affix-wrapper .ant-input-suffix {
     color: @dark-text-color-3;
   }
@@ -626,17 +626,25 @@
     }
   }
 
-  .ant-collapse, .ant-collapse--borderless {
+  .ant-collapse {
     background-color: @dark-secondary-bgColor;
-  }
 
-  .ant-collapse>.ant-collapse-item>.ant-collapse-header {
-    color: @dark-text-color-3;
-  }
+    &--borderless {
+      background-color: @dark-secondary-bgColor;
+    }
 
-  .ant-collapse .ant-collapse-item-disabled>.ant-collapse-header,
-  .ant-collapse .ant-collapse-item-disabled>.ant-collapse-header>.arrow {
-    color: @dark-text-color-1;
+    & > .ant-collapse-item {
+      background-color: @dark-background-color;
+
+      & > .ant-collapse-header {
+        color: @dark-text-color-3;
+      }
+
+      &-disabled > .ant-collapse-header,
+      &-disabled > .ant-collapse-header > .arrow {
+        color: @dark-text-color-1;
+      }
+    }
   }
 }
 
