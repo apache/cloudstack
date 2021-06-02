@@ -5243,12 +5243,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     answer.setLocalDatastoreName(morDatastore.getValue());
 
                     childDsMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, uuid);
-                    HypervisorHostHelper.createBaseFolderInDatastore(childDsMo, hyperHost);
+                    HypervisorHostHelper.createBaseFolderInDatastore(childDsMo, hyperHost.getHyperHostDatacenter());
 
                     childDatastoresModifyStoragePoolAnswers.add(answer);
                 }
             } else {
-                HypervisorHostHelper.createBaseFolderInDatastore(dsMo, hyperHost);
+                HypervisorHostHelper.createBaseFolderInDatastore(dsMo, hyperHost.getHyperHostDatacenter());
 
                 DatastoreSummary summary = dsMo.getDatastoreSummary();
                 capacity = summary.getCapacity();
@@ -6182,6 +6182,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         poolUuid = UUID.randomUUID().toString();
                         dsMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, poolUuid);
                     }
+
+                    HypervisorHostHelper.createBaseFolder(dsMo, hyperHost, StoragePoolType.VMFS);
 
                     DatastoreSummary dsSummary = dsMo.getDatastoreSummary();
                     String address = hostMo.getHostName();
