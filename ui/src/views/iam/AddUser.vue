@@ -321,7 +321,7 @@ export default {
 
         if (this.account) {
           params.account = this.account
-        } else if (values.account) {
+        } else if (this.accountList[values.account]) {
           params.account = this.accountList[values.account].name
         }
 
