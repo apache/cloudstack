@@ -54,7 +54,7 @@
         <a-form-item>
           <span slot="label">
             {{ $t('label.name') }}
-            <a-tooltip :title="importRoleApiParams.name.description">
+            <a-tooltip :title="apiParams.name.description">
               <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </span>
@@ -62,26 +62,26 @@
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
-            :placeholder="importRoleApiParams.name.description"
+            :placeholder="apiParams.name.description"
             autoFocus />
         </a-form-item>
 
         <a-form-item>
           <span slot="label">
             {{ $t('label.description') }}
-            <a-tooltip :title="importRoleApiParams.description.description">
+            <a-tooltip :title="apiParams.description.description">
               <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </span>
           <a-input
             v-decorator="['description']"
-            :placeholder="importRoleApiParams.description.description" />
+            :placeholder="apiParams.description.description" />
         </a-form-item>
 
         <a-form-item>
           <span slot="label">
             {{ $t('label.type') }}
-            <a-tooltip :title="importRoleApiParams.type.description">
+            <a-tooltip :title="apiParams.type.description">
               <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </span>
@@ -89,7 +89,7 @@
             v-decorator="['type', {
               rules: [{ required: true, message: $t('message.error.select') }]
             }]"
-            :placeholder="importRoleApiParams.type.description">
+            :placeholder="apiParams.type.description">
             <a-select-option v-for="role in defaultRoles" :key="role">
               {{ role }}
             </a-select-option>
@@ -99,7 +99,7 @@
         <a-form-item>
           <span slot="label">
             {{ $t('label.forced') }}
-            <a-tooltip :title="importRoleApiParams.forced.description">
+            <a-tooltip :title="apiParams.forced.description">
               <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </span>
