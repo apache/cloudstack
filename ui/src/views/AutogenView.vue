@@ -614,7 +614,6 @@ export default {
 
       params.page = this.page
       params.pagesize = this.pageSize
-      this.searchParams = params
       api(this.apiName, params).then(json => {
         var responseName
         var objectName
@@ -702,6 +701,7 @@ export default {
         }
       }).finally(f => {
         this.loading = false
+        this.searchParams = params
       })
     },
     closeAction () {
