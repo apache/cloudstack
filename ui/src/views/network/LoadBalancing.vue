@@ -1031,8 +1031,15 @@ export default {
       api('deleteLoadBalancerRule', {
         id: rule.id
       }).then(response => {
+        const jobId = response.deleteloadbalancerruleresponse.jobid
+        this.$store.dispatch('AddAsyncJob', {
+          title: this.$t('label.loadbalancerrule'),
+          jobid: jobId,
+          description: rule.id,
+          status: 'progress'
+        })
         this.$pollJob({
-          jobId: response.deleteloadbalancerruleresponse.jobid,
+          jobId: jobId,
           successMessage: this.$t('message.success.remove.rule'),
           successMethod: () => {
             if (this.selectedItems.length > 0) {
@@ -1067,6 +1074,7 @@ export default {
           bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal
         })
       }).catch(error => {
+        console.log(error)
         this.$notifyError(error)
         this.loading = false
       })

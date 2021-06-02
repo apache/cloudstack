@@ -33,8 +33,11 @@
             </a-list-item-meta>
           </a-list-item>
           <a-list-item v-for="(job, index) in jobs" :key="index">
-            <a-list-item-meta :title="job.title" :description="job.description">
-              <a-avatar :style="notificationAvatar[job.status].style" :icon="notificationAvatar[job.status].icon" slot="avatar"/>
+            <a-list-item-meta :title="job.title">
+              <a-avatar :style="notificationAvatar[job.status].style" :icon="notificationAvatar[job.status].icon" slot="avatar"/><br/>
+              <span v-if="getResourceName(job.description, 'name') && job.path" slot="description"><router-link :to="{ path: job.path}"> {{ getResourceName(job.description, "name") + ' - ' }}</router-link></span>
+              <span v-if="getResourceName(job.description, 'name') && job.path" slot="description"> {{ getResourceName(job.description, "msg") }}</span>
+              <span v-else slot="description"> {{ job.description }} </span>
             </a-list-item-meta>
           </a-list-item>
         </a-list>
@@ -79,6 +82,14 @@ export default {
       this.poller = setInterval(() => {
         this.pollJobs()
       }, 4000)
+    },
+    getResourceName (description, data) {
+      if (data === 'name') {
+        const name = description.match(/\(([^)]+)\)/)
+        return name ? name[1] : null
+      }
+      const msg = description.substring(description.indexOf(')') + 1)
+      return msg
     },
     async pollJobs () {
       var hasUpdated = false

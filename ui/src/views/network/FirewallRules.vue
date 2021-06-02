@@ -329,8 +329,15 @@ export default {
     deleteRule (rule) {
       this.loading = true
       api('deleteFirewallRule', { id: rule.id }).then(response => {
+        const jobId = response.deletefirewallruleresponse.jobid
+        this.$store.dispatch('AddAsyncJob', {
+          title: this.$t('label.firewall'),
+          jobid: jobId,
+          description: rule.id,
+          status: 'progress'
+        })
         this.$pollJob({
-          jobId: response.deletefirewallruleresponse.jobid,
+          jobId: jobId,
           successMessage: this.$t('message.success.remove.firewall.rule'),
           successMethod: () => {
             if (this.selectedItems.length > 0) {

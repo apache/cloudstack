@@ -79,13 +79,13 @@
       :visible="showGroupActionModal"
       :closable="true"
       :maskClosable="false"
-      :title="$t('label.status')"
       :cancelText="$t('label.cancel')"
       @cancel="handleCancel"
       width="60vw"
       style="top: 20px;overflow-y: auto"
       centered
     >
+      <span slot="title"> {{ $t(message.title) }} </span>
       <template slot="footer">
         <a-button key="back" @click="handleCancel"> {{ $t('label.close') }} </a-button>
       </template>
@@ -124,23 +124,11 @@
           </template>
         </a-table>
         <a-divider />
-        <div class="float-container">
-          <div class="float-child-left">
-            <a-progress
-              type="circle"
-              :percent="parseFloat((selectedItems.filter(item => item.status !== 'inprogress').length)/(selectedItems.length) * 100)"
-              :format="(percent) => parseFloat(percent).toFixed(2) + '% ' + $t('state.completed')" />
-          </div>
-          <div class="float-child-right">
-            <a-alert type="info">
-              <span
-                slot="message"
-                v-html="`<b>Successfully completed: ${selectedItems.filter(item => item.status === 'success').length || 0}
-                <br/>Failed: ${selectedItems.filter(item => item.status === 'failure').length || 0}
-                <br/>In Progress: ${selectedItems.filter(item => item.status === 'inprogress').length || 0}<b/>`" />
-            </a-alert>
-          </div>
-        </div>
+        <a-card :bordered="false" style="background:#f1f1f1">
+          <div><a-icon type="check-circle-o" style="color: #52c41a; margin-right: 8px"/> {{ $t('label.success') + ': ' + selectedItems.filter(item => item.status === 'success').length || 0 }}</div>
+          <div><a-icon type="close-circle-o" style="color: #f5222d; margin-right: 8px"/> {{ $t('state.failed') + ': ' + selectedItems.filter(item => item.status === 'failed').length || 0 }}</div>
+          <div><a-icon type="sync-o" style="color: #1890ff; margin-right: 8px"/> {{ $t('state.inprogress') + ': ' + selectedItems.filter(item => item.status === 'InProgress').length || 0 }}</div>
+        </a-card>
         <br/>
       </div>
     </a-modal>
@@ -248,29 +236,3 @@ export default {
   }
 }
 </script>
-<style scoped>
-.float-container {
-    display: flex;
-}
-
-.float-child-right {
-    width: 80%;
-    float: left;
-    padding: 10px;
-}
-
-.float-child-left {
-    width: 20%;
-    float: left;
-    padding: 15px;
-}
-@media (max-width: 767px) {
-  .float-container {
-    flex-direction: column-reverse;
-  }
-  .float-child-left,
-  .float-child-right {
-    width: auto;
-  }
-}
-</style>

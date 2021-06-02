@@ -387,8 +387,15 @@ export default {
       api('disassociateIpAddress', {
         id: ip.id
       }).then(response => {
+        const jobId = response.disassociateipaddressresponse.jobid
+        this.$store.dispatch('AddAsyncJob', {
+          title: this.$t('label.public.ip'),
+          jobid: jobId,
+          description: ip.id,
+          status: 'progress'
+        })
         this.$pollJob({
-          jobId: response.disassociateipaddressresponse.jobid,
+          jobId: jobId,
           successMessage: this.$t('message.success.release.ip'),
           successMethod: () => {
             if (this.selectedItems.length > 0) {
