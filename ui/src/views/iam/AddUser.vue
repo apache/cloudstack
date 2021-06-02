@@ -137,7 +137,9 @@
             </a-tooltip>
           </span>
           <a-select
-            v-decorator="['account']"
+            v-decorator="['account', {
+              rules: [{ required: true, message: $t('message.error.required.input') }]
+            }]"
             :loading="loadingAccount"
             :placeholder="apiParams.account.description">
             <a-select-option v-for="(item, idx) in accountList" :key="idx">
