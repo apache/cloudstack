@@ -43,6 +43,6 @@ public class ScaleIOGatewayClientImplTest {
     @Test(expected = CloudRuntimeException.class)
     public void testClient() throws Exception {
         client = (ScaleIOGatewayClientImpl) ScaleIOGatewayClient.getClient("https://10.2.3.149/api",
-                "admin", "P@ssword123", false, 60);
+                "admin", "P@ssword123", false, 60, 100);
     }
 }
