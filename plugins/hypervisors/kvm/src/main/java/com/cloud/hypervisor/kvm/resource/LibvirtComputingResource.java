@@ -3448,8 +3448,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return DiskDef.DiskBus.IDE;
         } else if (platformEmulator.startsWith("Other PV Virtio-SCSI")) {
             return DiskDef.DiskBus.SCSI;
-        } else if (isUefiEnabled && platformEmulator.startsWith("Windows")) {
-            return DiskDef.DiskBus.SATA;
         } else if (platformEmulator.contains("Ubuntu") ||
                 platformEmulator.startsWith("Fedora") ||
                 platformEmulator.startsWith("CentOS") ||
@@ -3459,6 +3457,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 platformEmulator.startsWith("Oracle") ||
                 platformEmulator.startsWith("Other PV")) {
             return DiskDef.DiskBus.VIRTIO;
+        } else if (isUefiEnabled && (platformEmulator.startsWith("Windows") || platformEmulator.startsWith("Other"))) {
+            return DiskDef.DiskBus.SATA;
         } else {
             return DiskDef.DiskBus.IDE;
         }
