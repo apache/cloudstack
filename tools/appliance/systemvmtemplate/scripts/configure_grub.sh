@@ -21,6 +21,7 @@ set -x
 
 function configure_grub() {
   # Remove old kernel
+  apt-get remove -y --purge linux-image-amd64 linux-image-4.19.0-16-amd64 || true
   echo "blacklist floppy" > /etc/modprobe.d/blacklist-floppy.conf
   rmmod floppy || true
   update-initramfs -u

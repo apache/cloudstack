@@ -55,14 +55,15 @@ function apt_upgrade() {
   apt-get -q -y update
 
   # Remove unused non-default kernel
-  apt-get remove -y --purge linux-image-amd64 linux-image-4.19.0-16-amd64 || true
   apt-get -q -y upgrade
   apt-get -q -y dist-upgrade
   apt-get -q -y upgrade -t buster-backports
+  apt-get -q -y dist-upgrade -t buster-backports
 
   apt-get -y autoremove --purge
   apt-get autoclean
   apt-get clean
+  reboot
 }
 
 return 2>/dev/null || apt_upgrade

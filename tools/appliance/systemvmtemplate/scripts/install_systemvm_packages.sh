@@ -72,6 +72,7 @@ function install_packages() {
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins strongswan-charon strongswan-starter \
     virt-what open-vm-tools qemu-guest-agent hyperv-daemons
 
+  apt-get -y upgrade -t buster-backports
   apt-get -y autoremove --purge
   apt-get clean
   apt-get autoclean
