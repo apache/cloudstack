@@ -183,7 +183,7 @@ public class JavaStorageLayer implements StorageLayer {
     }
 
     @Override
-    public File createUniqDir() {
+    public File createUniqDir() throws IOException {
         String dirName = System.getProperty("java.io.tmpdir");
         if (dirName != null) {
             File dir = new File(dirName);
@@ -197,7 +197,7 @@ public class JavaStorageLayer implements StorageLayer {
                 }
             }
         }
-        return null;
+        throw new IOException("the tmp dir " + dirName + " does not exist");
     }
 
     @Override
@@ -225,14 +225,11 @@ public class JavaStorageLayer implements StorageLayer {
         }
     }
 
-    public boolean isWorldReadable(File file) {
+    public boolean isWorldReadable(File file) throws IOException {
         Set<PosixFilePermission> permissions;
-        try {
-            permissions = Files.getPosixFilePermissions(
-                Paths.get(file.getAbsolutePath()));
-        } catch (IOException e) {
-            return false;
-        }
+        permissions = Files.getPosixFilePermissions(
+            Paths.get(file.getAbsolutePath()));
+
         for (PosixFilePermission permission:permissions) {
             if (permission.equals(PosixFilePermission.OTHERS_READ)) {
                 return true;
