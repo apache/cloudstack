@@ -30,4 +30,10 @@ LABEL_DATE="--label \"org.opencontainers.image.created=${DATE}\""
 GIT_REV="$(git rev-parse HEAD)"
 LABEL_GIT_REV="--label \"org.opencontainers.image.revision=${GIT_REV}\""
 
-docker build -t cloudstack-ui ${LABEL_DATE} ${LABEL_GIT_REV} ${LABEL_GIT_TAG} .
+while getopts $OPTIONS OPTION
+do
+        case "$OPTION" in
+                p)podman build -t cloudstack-ui ${LABEL_DATE} ${LABEL_GIT_REV} ${LABEL_GIT_TAG};;
+                d)docker build -t cloudstack-ui ${LABEL_DATE} ${LABEL_GIT_REV} ${LABEL_GIT_TAG};;
+        esac
+done
