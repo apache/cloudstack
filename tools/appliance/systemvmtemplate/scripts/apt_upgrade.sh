@@ -59,12 +59,10 @@ function apt_upgrade() {
   apt-get -q -y upgrade
   apt-get -q -y dist-upgrade
   apt-get -q -y upgrade -t buster-backports
-  apt-get -q -y dist-upgrade -t buster-backports
 
   apt-get -y autoremove --purge
   apt-get autoclean
   apt-get clean
-  reboot
 }
 
 return 2>/dev/null || apt_upgrade
