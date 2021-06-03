@@ -96,21 +96,22 @@ The Apache CloudStack files shared between agent and management server
 
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
-Requires: openssh-clients
+Requires: openssh
 Requires: java-11-openjdk
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: ebtables
 Requires: iptables
+Requires: selinux-tools
 Requires: ethtool
 Requires: net-tools
+Requires: net-tools-deprecated
 Requires: iproute
 Requires: ipset
 Requires: perl
-Requires: python3-libvirt
-Requires: qemu-img
+Requires: python3-libvirt-python
 Requires: qemu-kvm
-Requires: libgcrypt > 1.8.3
+Requires: qemu-tools
 Provides: cloud-agent
 Group: System Environment/Libraries
 %description agent

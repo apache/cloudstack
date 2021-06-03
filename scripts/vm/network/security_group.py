@@ -185,7 +185,9 @@ def destroy_network_rules_for_nic(vm_name, vm_ip, vm_mac, vif, sec_ips):
         logging.debug("Ignoring failure to delete ebtable rules for vm: " + vm_name)
 
 def get_bridge_physdev(brname):
-    physdev = execute("bridge -o link show | awk '/master %s / && !/^[0-9]+: vnet/ {print $2}' | head -1 | cut -d ':' -f1" % brname)
+    # eth1.50@eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 master breth1-50 state forwarding priority 32 cost 4 |
+    # eth1.50@eth1: | eth1.50@eth1 | eth1.50
+    physdev = execute("bridge -o link show | awk '/master %s / && !/^[0-9]+: vnet/ {print $2}' | head -1 | cut -d ':' -f1 | cut -d '@' -f1" % brname)
     return physdev.strip()
 
 
