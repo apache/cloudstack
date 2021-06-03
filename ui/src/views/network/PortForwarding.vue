@@ -86,7 +86,7 @@
       :columns="columns"
       :dataSource="portForwardRules"
       :pagination="false"
-      :rowSelection="$store.getters.userInfo.roletype === 'Admin' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
+      :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
       <template slot="privateport" slot-scope="record">
         {{ record.privateport }} - {{ record.privateendport }}
@@ -297,9 +297,7 @@ export default {
     return {
       selectedRowKeys: [],
       showGroupActionModal: false,
-      showBulkActionCompletedModal: false,
       selectedItems: [],
-      jobsState: {},
       selectedColumns: [],
       filterColumns: ['State', 'Action'],
       showConfirmationAction: false,
@@ -494,15 +492,7 @@ export default {
       this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'inprogress' }))
     },
     handleCancel () {
-      console.log('handle cancel')
       this.showGroupActionModal = false
-      this.showBulkActionCompletedModal = true
-      this.showBulkActionCompletedModal = false
-      this.parentFetchData()
-    },
-    jobCompletedNotificationCancel () {
-      this.jobsState = {}
-      this.showBulkActionCompletedModal = false
       this.selectedItems = []
       this.selectedColumns = []
       this.selectedRowKeys = []
@@ -549,7 +539,8 @@ export default {
           },
           loadingMessage: this.$t('message.delete.port.forward.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
-          catchMethod: () => this.fetchData()
+          catchMethod: () => this.fetchData(),
+          bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal
         })
       }).catch(error => {
         this.$notifyError(error)

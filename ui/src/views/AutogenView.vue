@@ -127,7 +127,7 @@
         :okText="$t('label.ok')"
         :cancelText="$t('label.cancel')"
         style="top: 20px;"
-        width="60vw"
+        :width="this.selectedItems.length > 0 ? '60vw' : '30vw'"
         @ok="handleSubmit"
         @cancel="closeAction"
         :confirmLoading="actionLoading"
@@ -154,10 +154,10 @@
               <a-table
                 v-if="selectedRowKeys.length > 0"
                 size="middle"
-                :columns="columns"
+                :columns="chosenColumns"
                 :dataSource="selectedItems"
                 :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
-                :pagination="false"
+                :pagination="true"
                 style="overflow-y: auto"
               >
               </a-table>
@@ -362,6 +362,16 @@
       style="top: 20px;overflow-y: auto"
       centered
     >
+      <span slot="title">
+        {{ $t(modalInfo.label) }}
+        <a
+          v-if="modalInfo.docHelp || $route.meta.docHelp"
+          style="margin-left: 5px"
+          :href="$config.docBase + '/' + (modalInfo.docHelp || $route.meta.docHelp)"
+          target="_blank">
+          <a-icon type="question-circle-o"></a-icon>
+        </a>
+      </span>
       <template slot="footer">
         <a-button key="back" @click="handleCancel"> {{ $t('label.close') }} </a-button>
       </template>
@@ -372,37 +382,20 @@
           :columns="selectedColumns"
           :dataSource="selectedItems"
           :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
-          :pagination="false"
+          :pagination="true"
           style="overflow-y: auto"
         >
           <div slot="status" slot-scope="text">
-            <status :text=" text ? text : 'inprogress' " displayText></status>
+            <status :text=" text ? text : 'InProgress'" displayText></status>
           </div>
         </a-table>
         <a-divider />
-        <a-alert type="info">
-          <span
-            slot="message"
-            v-html="`<b>Successfully completed: ${selectedItems.filter(item => item.status === 'success').length || 0}
-            <br/>Failed: ${selectedItems.filter(item => item.status === 'failure').length || 0}
-            <br/>In Progress: ${selectedItems.filter(item => item.status === 'inprogress').length || 0}<b/>`" />
-        </a-alert>
+        <a-card :bordered="false" style="background:#f1f1f1">
+          <div><a-icon type="check-circle-o" style="color: #52c41a; margin-right: 8px"/> {{ $t('label.success') + ': ' + selectedItems.filter(item => item.status === 'success').length || 0 }}</div>
+          <div><a-icon type="close-circle-o" style="color: #f5222d; margin-right: 8px"/> {{ $t('state.failed') + ': ' + selectedItems.filter(item => item.status === 'failed').length || 0 }}</div>
+          <div><a-icon type="sync-o" style="color: #1890ff; margin-right: 8px"/> {{ $t('state.inprogress') + ': ' + selectedItems.filter(item => item.status === 'InProgress').length || 0 }}</div>
+        </a-card>
         <br/>
-        <a-pagination
-          class="pagination"
-          size="small"
-          :current="page"
-          :pageSize="pageSize"
-          :total="selectedItems.length"
-          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
-          :pageSizeOptions="['10', '20', '40', '80', '100']"
-          @change="changePage"
-          @showSizeChange="changePageSize"
-          showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
-            <span>{{ props.value }} / {{ $t('label.page') }}</span>
-          </template>
-        </a-pagination>
       </div>
     </a-modal>
   </div>
@@ -455,10 +448,11 @@ export default {
       actionLoading: false,
       columns: [],
       selectedColumns: [],
+      chosenColumns: [],
       showGroupActionModal: false,
-      showBulkActionCompletedModal: false,
       selectedItems: {},
       items: [],
+      modalInfo: {},
       itemCount: 0,
       page: 1,
       pageSize: 10,
@@ -495,13 +489,37 @@ export default {
       }
 
       if ((this.$route.path.includes('/publicip/') && ['firewall', 'portforwarding', 'loadbalancing'].includes(this.$route.query.tab)) ||
-        (this.$route.path.includes('/guestnetwork/') && this.$route.query.tab === 'egress.rules')) {
+        (this.$route.path.includes('/guestnetwork/') && (this.$route.query.tab === 'egress.rules' || this.$route.query.tab === 'public.ip.addresses'))) {
         return
       }
       this.fetchData()
     })
     eventBus.$on('exec-action', (action, isGroupAction) => {
       this.execAction(action, isGroupAction)
+    })
+    eventBus.$on('update-bulk-job-status', (items, action) => {
+      for (const item of items) {
+        this.$store.getters.asyncJobIds.map(function (j) {
+          if (j.jobid === item.jobid) {
+            j.bulkAction = action
+          }
+        })
+      }
+    })
+    eventBus.$on('update-job-details', (jobId, resourceId) => {
+      const path = this.$route.path
+      var jobs = this.$store.getters.asyncJobIds.map(job => {
+        if (job.jobid === jobId) {
+          if (!path.includes(resourceId)) {
+            job.path = path + '/' + resourceId
+          } else {
+            job.path = path
+          }
+        }
+        return job
+      })
+
+      this.$store.commit('SET_ASYNC_JOB_IDS', jobs)
     })
 
     if (this.device === 'desktop') {
@@ -679,6 +697,9 @@ export default {
           sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
         })
       }
+      this.chosenColumns = this.columns.filter(column => {
+        return !['State', 'Host', 'Zone', 'IP Address', 'Private IP Address', 'Link Local IP Address'].includes(column.title)
+      })
 
       if (['listTemplates', 'listIsos'].includes(this.apiName) && this.dataView) {
         delete params.showunique
@@ -945,6 +966,7 @@ export default {
       })
     },
     pollActionCompletion (jobId, action, resourceName, resource, showLoading = true) {
+      eventBus.$emit('update-job-details', jobId, resource)
       this.$pollJob({
         jobId,
         name: resourceName,
@@ -967,14 +989,14 @@ export default {
         errorMethod: () => {
           this.fetchData()
           if (this.selectedItems.length > 0) {
-            this.updateResourceState(resource, 'failure')
+            this.updateResourceState(resource, 'failed')
           }
         },
         loadingMessage: `${this.$t(action.label)} - ${resourceName}`,
         showLoading: showLoading,
         catchMessage: this.$t('error.fetching.async.job.result'),
         action,
-        bulkAction: `${this.selectedItems.length > 0}`
+        bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal
       })
     },
     fillEditFormFieldValues () {
@@ -994,43 +1016,27 @@ export default {
         }
       })
     },
-    getSelectedItems () {
-      const that = this
-      this.selectedItems = (this.items.filter(function (item) {
-        return that.selectedRowKeys.indexOf(item.id) !== -1
-      }))
-      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'inprogress' }))
-    },
     handleCancel () {
+      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
       this.showGroupActionModal = false
-      this.showBulkActionCompletedModal = false
-      this.jobCompletedNotificationCancel()
-    },
-    jobCompletedNotificationCancel () {
-      this.showBulkActionCompletedModal = false
       this.selectedItems = []
       this.selectedColumns = []
       this.selectedRowKeys = []
-      // this.parentFetchData()
-    },
-    updateJobsState () {
-      if (this.selectedItems) {
-        this.jobsState.inprogress = this.selectedItems.filter(item => item.status === 'inprogress')
-        this.jobsState.success = this.selectedItems.filter(item => item.status === 'success')
-        this.jobsState.failure = this.selectedItems.filter(item => item.status === 'failure')
-      }
+      this.modalInfo = {}
     },
     handleSubmit (e) {
       if (!this.dataView && this.currentAction.groupAction && this.selectedRowKeys.length > 0) {
         if (this.selectedRowKeys.length > 0) {
-          this.selectedColumns = this.columns
-          this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'inprogress' }))
+          this.selectedColumns = this.chosenColumns
+          this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
           this.selectedColumns.splice(0, 0, {
             dataIndex: 'status',
             title: this.$t('label.status'),
             scopedSlots: { customRender: 'status' }
           })
           this.showGroupActionModal = true
+          this.modalInfo.label = this.currentAction.label
+          this.modalInfo.docHelp = this.currentAction.docHelp
         }
         this.form.validateFields((err, values) => {
           if (!err) {
@@ -1074,14 +1080,7 @@ export default {
         }
       })
     },
-    bulkDeleteRulesConfirmation () {
-      this.showConfirmationAction = true
-      this.selectedColumns = this.columns.filter(column => {
-        return !this.filterColumns.includes(column.title)
-      })
-      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'inprogress' }))
-    },
-    updateResourceState (resource, state) {
+    updateResourceState (resource, state, jobid) {
       var tempResource = []
       if (this.selectedItems && resource) {
         if (resource.includes(',')) {
@@ -1093,6 +1092,9 @@ export default {
         for (var r = 0; r < tempResource.length; r++) {
           const objIndex = this.selectedItems.findIndex(obj => obj.id === tempResource[r])
           this.selectedItems[objIndex].status = state
+          if (jobid) {
+            this.selectedItems[objIndex].jobid = jobid
+          }
         }
       }
     },
@@ -1108,7 +1110,14 @@ export default {
         if (obj.includes('response')) {
           if (response[obj].jobid) {
             const jobid = response[obj].jobid
-            this.$store.dispatch('AddAsyncJob', { title: this.$t(action.label), jobid: jobid, description: resourceName, status: 'progress', bulkAction: this.selectedItems.length > 0 })
+            this.$store.dispatch('AddAsyncJob', {
+              title: this.$t(action.label),
+              jobid: jobid,
+              description: resourceName,
+              status: 'progress',
+              bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
+            })
+            this.updateResourceState(resource, 'InProgress', jobid)
             this.pollActionCompletion(jobid, action, resourceName, resource, showLoading)
             return true
           } else {

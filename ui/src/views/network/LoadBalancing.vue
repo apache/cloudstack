@@ -77,7 +77,7 @@
       :columns="columns"
       :dataSource="lbRules"
       :pagination="false"
-      :rowSelection="$store.getters.userInfo.roletype === 'Admin' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
+      :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
       <template slot="algorithm" slot-scope="record">
         {{ returnAlgorithmName(record.algorithm) }}
@@ -428,7 +428,6 @@ export default {
     return {
       selectedRowKeys: [],
       showGroupActionModal: false,
-      showBulkActionCompletedModal: false,
       selectedItems: [],
       selectedColumns: [],
       filterColumns: ['State', 'Action', 'Add VMs', 'Stickiness'],
@@ -1002,12 +1001,6 @@ export default {
     },
     handleCancel () {
       this.showGroupActionModal = false
-      // this.showBulkActionCompletedModal = true
-      this.showBulkActionCompletedModal = false
-      this.parentFetchData()
-    },
-    jobCompletedNotificationCancel () {
-      this.showBulkActionCompletedModal = false
       this.selectedItems = []
       this.selectedColumns = []
       this.selectedRowKeys = []
@@ -1038,14 +1031,21 @@ export default {
       api('deleteLoadBalancerRule', {
         id: rule.id
       }).then(response => {
+        const jobId = response.deleteloadbalancerruleresponse.jobid
+        this.$store.dispatch('AddAsyncJob', {
+          title: this.$t('label.loadbalancerrule'),
+          jobid: jobId,
+          description: rule.id,
+          status: 'progress'
+        })
         this.$pollJob({
-          jobId: response.deleteloadbalancerruleresponse.jobid,
+          jobId: jobId,
           successMessage: this.$t('message.success.remove.rule'),
           successMethod: () => {
             if (this.selectedItems.length > 0) {
               this.updateResourceState(rule.id, 'success')
             }
-            if (this.selectedRowKeys.length === 0 || this.showBulkActionCompletedModal) {
+            if (this.selectedRowKeys.length === 0) {
               this.parentFetchData()
               this.parentToggleLoading()
             }
@@ -1056,7 +1056,7 @@ export default {
             if (this.selectedItems.length > 0) {
               this.updateResourceState(rule.id, 'failure')
             }
-            if (this.selectedRowKeys.length === 0 || this.showBulkActionCompletedModal) {
+            if (this.selectedRowKeys.length === 0) {
               this.parentFetchData()
               this.parentToggleLoading()
             }
@@ -1065,14 +1065,16 @@ export default {
           loadingMessage: this.$t('message.delete.rule.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
-            if (this.selectedRowKeys.length === 0 || this.showBulkActionCompletedModal) {
+            if (this.selectedRowKeys.length === 0) {
               this.parentFetchData()
               this.parentToggleLoading()
             }
             this.closeModal()
-          }
+          },
+          bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal
         })
       }).catch(error => {
+        console.log(error)
         this.$notifyError(error)
         this.loading = false
       })

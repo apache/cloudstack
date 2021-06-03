@@ -23,8 +23,7 @@
     :dataSource="items"
     :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
     :pagination="false"
-    :rowSelection=" enableGroupAction() || $route.name === 'event' && $store.getters.userInfo.roletype === 'Admin'
-      ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
+    :rowSelection=" enableGroupAction() || $route.name === 'event' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
     :rowClassName="getRowClassName"
     style="overflow-y: auto"
   >
@@ -426,7 +425,7 @@ export default {
       return ['vm', 'alert', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot',
         'vmsnapshot', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
-        'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering'
+        'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm'
       ].includes(this.$route.name)
     },
     fetchColumns () {

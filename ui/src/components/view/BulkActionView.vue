@@ -43,7 +43,7 @@
           :columns="selectedColumns"
           :dataSource="selectedItems"
           :rowKey="(record, idx) => record.id"
-          :pagination="false"
+          :pagination="true"
           style="overflow-y: auto">
           <template slot="algorithm" slot-scope="record">
             {{ returnAlgorithmName(record.algorithm) }}
@@ -79,13 +79,13 @@
       :visible="showGroupActionModal"
       :closable="true"
       :maskClosable="false"
-      :title="$t('label.status')"
       :cancelText="$t('label.cancel')"
       @cancel="handleCancel"
       width="60vw"
       style="top: 20px;overflow-y: auto"
       centered
     >
+      <span slot="title"> {{ $t(message.title) }} </span>
       <template slot="footer">
         <a-button key="back" @click="handleCancel"> {{ $t('label.close') }} </a-button>
       </template>
@@ -96,7 +96,7 @@
           :columns="selectedColumns"
           :dataSource="selectedItems"
           :rowKey="(record, idx) => record.id"
-          :pagination="false"
+          :pagination="true"
           style="overflow-y: auto">
           <div slot="status" slot-scope="text">
             <status :text=" text ? text : 'inprogress' " displayText></status>
@@ -124,29 +124,12 @@
           </template>
         </a-table>
         <a-divider />
-        <a-alert type="info">
-          <span
-            slot="message"
-            v-html="`<b>Successfully completed: ${selectedItems.filter(item => item.status === 'success').length || 0}
-            <br/>Failed: ${selectedItems.filter(item => item.status === 'failure').length || 0}
-            <br/>In Progress: ${selectedItems.filter(item => item.status === 'inprogress').length || 0}<b/>`" />
-        </a-alert>
+        <a-card :bordered="false" style="background:#f1f1f1">
+          <div><a-icon type="check-circle-o" style="color: #52c41a; margin-right: 8px"/> {{ $t('label.success') + ': ' + selectedItems.filter(item => item.status === 'success').length || 0 }}</div>
+          <div><a-icon type="close-circle-o" style="color: #f5222d; margin-right: 8px"/> {{ $t('state.failed') + ': ' + selectedItems.filter(item => item.status === 'failed').length || 0 }}</div>
+          <div><a-icon type="sync-o" style="color: #1890ff; margin-right: 8px"/> {{ $t('state.inprogress') + ': ' + selectedItems.filter(item => item.status === 'InProgress').length || 0 }}</div>
+        </a-card>
         <br/>
-        <a-pagination
-          class="pagination"
-          size="small"
-          :current="page"
-          :pageSize="pageSize"
-          :total="selectedItems.length"
-          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
-          :pageSizeOptions="['10', '20', '40', '80', '100']"
-          @change="handleChangePage"
-          @showSizeChange="handleChangePageSize"
-          showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
-            <span>{{ props.value }} / {{ $t('label.page') }}</span>
-          </template>
-        </a-pagination>
       </div>
     </a-modal>
   </div>
@@ -213,7 +196,6 @@ export default {
   inject: ['parentFetchData'],
   data () {
     return {
-      showBulkActionCompletedModal: false,
       totalCount: 0,
       page: 1,
       pageSize: 10
