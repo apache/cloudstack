@@ -155,6 +155,7 @@ import { api } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/view/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
+import eventBus from '@/config/eventBus'
 
 export default {
   name: 'IpAddressesTab',
@@ -353,7 +354,7 @@ export default {
       this.selectedColumns = this.columns.filter(column => {
         return !this.filterColumns.includes(column.title)
       })
-      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'inprogress' }))
+      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
     },
     handleCancel () {
       this.showGroupActionModal = false
@@ -372,7 +373,7 @@ export default {
       this.showConfirmationAction = false
       this.selectedColumns.splice(0, 0, {
         dataIndex: 'status',
-        title: this.$t('label.status'),
+        title: this.$t('label.operation.status'),
         scopedSlots: { customRender: 'status' }
       })
       if (this.selectedRowKeys.length > 0) {
@@ -389,11 +390,13 @@ export default {
       }).then(response => {
         const jobId = response.disassociateipaddressresponse.jobid
         this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('label.public.ip'),
+          title: this.$t('label.action.release.ip'),
           jobid: jobId,
           description: ip.id,
-          status: 'progress'
+          status: 'progress',
+          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
         })
+        eventBus.$emit('update-job-details', jobId, null)
         this.$pollJob({
           jobId: jobId,
           successMessage: this.$t('message.success.release.ip'),
@@ -406,7 +409,7 @@ export default {
           errorMessage: this.$t('message.release.ip.failed'),
           errorMethod: () => {
             if (this.selectedItems.length > 0) {
-              this.updateResourceState(ip.id, 'failure')
+              this.updateResourceState(ip.id, 'failed')
             }
             this.fetchData()
           },

@@ -127,7 +127,7 @@
         :okText="$t('label.ok')"
         :cancelText="$t('label.cancel')"
         style="top: 20px;"
-        :width="this.selectedItems.length > 0 ? '60vw' : '30vw'"
+        :width="this.selectedItems.length > 0 ? '50vw' : '30vw'"
         @ok="handleSubmit"
         @cancel="closeAction"
         :confirmLoading="actionLoading"
@@ -358,7 +358,7 @@
       :okText="$t('label.ok')"
       :cancelText="$t('label.cancel')"
       @cancel="handleCancel"
-      width="60vw"
+      width="50vw"
       style="top: 20px;overflow-y: auto"
       centered
     >
@@ -383,10 +383,9 @@
           :dataSource="selectedItems"
           :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
           :pagination="true"
-          style="overflow-y: auto"
-        >
+          style="overflow-y: auto">
           <div slot="status" slot-scope="text">
-            <status :text=" text ? text : 'InProgress'" displayText></status>
+            <status :text=" text ? text : $t('state.inprogress')" displayText></status>
           </div>
         </a-table>
         <a-divider />
@@ -450,7 +449,7 @@ export default {
       selectedColumns: [],
       chosenColumns: [],
       showGroupActionModal: false,
-      selectedItems: {},
+      selectedItems: [],
       items: [],
       modalInfo: {},
       itemCount: 0,
@@ -507,13 +506,14 @@ export default {
       }
     })
     eventBus.$on('update-job-details', (jobId, resourceId) => {
+      const fullPath = this.$route.fullPath
       const path = this.$route.path
       var jobs = this.$store.getters.asyncJobIds.map(job => {
         if (job.jobid === jobId) {
-          if (!path.includes(resourceId)) {
+          if (resourceId && !path.includes(resourceId)) {
             job.path = path + '/' + resourceId
           } else {
-            job.path = path
+            job.path = fullPath
           }
         }
         return job
@@ -1031,7 +1031,7 @@ export default {
           this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
           this.selectedColumns.splice(0, 0, {
             dataIndex: 'status',
-            title: this.$t('label.status'),
+            title: this.$t('label.operation.status'),
             scopedSlots: { customRender: 'status' }
           })
           this.showGroupActionModal = true

@@ -25,7 +25,7 @@
       :okText="$t('label.ok')"
       :cancelText="$t('label.cancel')"
       style="top: 20px;"
-      width="60vw"
+      width="50vw"
       @ok="groupAction"
       @cancel="closeModal"
       centered>
@@ -81,7 +81,7 @@
       :maskClosable="false"
       :cancelText="$t('label.cancel')"
       @cancel="handleCancel"
-      width="60vw"
+      width="50vw"
       style="top: 20px;overflow-y: auto"
       centered
     >
@@ -99,7 +99,7 @@
           :pagination="true"
           style="overflow-y: auto">
           <div slot="status" slot-scope="text">
-            <status :text=" text ? text : 'inprogress' " displayText></status>
+            <status :text=" text ? text : $t('state.inprogress') " displayText></status>
           </div>
           <template slot="algorithm" slot-scope="record">
             {{ returnAlgorithmName(record.algorithm) }}

@@ -76,7 +76,7 @@
       type="danger"
       icon="plus"
       style="width: 100%; margin-bottom: 15px"
-      @click="bulkDeleteRulesConfirmation()">
+      @click="bulkActionConfirmation()">
       {{ $t('label.action.bulk.delete.portforward.rules') }}
     </a-button>
     <a-table
@@ -279,6 +279,7 @@ import { api } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/view/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
+import eventBus from '@/config/eventBus'
 
 export default {
   components: {
@@ -484,12 +485,12 @@ export default {
     onSelectChange (selectedRowKeys, selectedRows) {
       this.setSelection(selectedRowKeys)
     },
-    bulkDeleteRulesConfirmation () {
+    bulkActionConfirmation () {
       this.showConfirmationAction = true
       this.selectedColumns = this.columns.filter(column => {
         return !this.filterColumns.includes(column.title)
       })
-      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'inprogress' }))
+      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
     },
     handleCancel () {
       this.showGroupActionModal = false
@@ -508,7 +509,7 @@ export default {
       this.showConfirmationAction = false
       this.selectedColumns.splice(0, 0, {
         dataIndex: 'status',
-        title: this.$t('label.status'),
+        title: this.$t('label.operation.status'),
         scopedSlots: { customRender: 'status' }
       })
       if (this.selectedRowKeys.length > 0) {
@@ -521,8 +522,17 @@ export default {
     deleteRule (rule) {
       this.loading = true
       api('deletePortForwardingRule', { id: rule.id }).then(response => {
+        const jobId = response.deleteportforwardingruleresponse.jobid
+        this.$store.dispatch('AddAsyncJob', {
+          title: this.$t('label.portforwarding.rule'),
+          jobid: jobId,
+          description: rule.id,
+          status: 'progress',
+          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
+        })
+        eventBus.$emit('update-job-details', jobId, null)
         this.$pollJob({
-          jobId: response.deleteportforwardingruleresponse.jobid,
+          jobId: jobId,
           successMessage: this.$t('message.success.remove.port.forward'),
           successMethod: () => {
             if (this.selectedItems.length > 0) {
@@ -533,7 +543,7 @@ export default {
           errorMessage: this.$t('message.remove.port.forward.failed'),
           errorMethod: () => {
             if (this.selectedItems.length > 0) {
-              this.updateResourceState(rule.id, 'failure')
+              this.updateResourceState(rule.id, 'failed')
             }
             this.fetchData()
           },
