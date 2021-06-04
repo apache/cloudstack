@@ -55,8 +55,10 @@ export default {
       showOnboarding: false
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
+  },
+  mounted () {
     this.showCapacityDashboard = Object.prototype.hasOwnProperty.call(store.getters.apis, 'listCapacity')
     this.project = false
     if (store.getters.project && store.getters.project.id) {

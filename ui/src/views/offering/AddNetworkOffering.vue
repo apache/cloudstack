@@ -30,6 +30,7 @@
             </a-tooltip>
           </span>
           <a-input
+            autoFocus
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.name') }]
             }]"
@@ -227,7 +228,7 @@
                   message: `${this.$t('message.error.select')}`
                 }
               ],
-              initialValue: 0
+              initialValue: this.serviceOfferings.length > 0 ? this.serviceOfferings[0].id : ''
             }]"
             showSearch
             optionFilterProp="children"
@@ -236,7 +237,7 @@
             }"
             :loading="serviceOfferingLoading"
             :placeholder="this.$t('label.serviceofferingid')">
-            <a-select-option v-for="(opt, optIndex) in this.serviceOfferings" :key="optIndex">
+            <a-select-option v-for="(opt) in this.serviceOfferings" :key="opt.id">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -409,7 +410,7 @@
             :loading="domainLoading"
             :placeholder="this.$t('label.domain')">
             <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
-              {{ opt.name || opt.description }}
+              {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -524,8 +525,6 @@ export default {
         name: this.$t('label.all.zone')
       }
     ]
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

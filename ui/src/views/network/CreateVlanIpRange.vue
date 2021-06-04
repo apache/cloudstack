@@ -23,6 +23,17 @@
           :form="form"
           @submit="handleSubmit"
           layout="vertical">
+          <a-form-item :label="$t('label.podid')" v-if="pods && pods.length > 0">
+            <a-select
+              autoFocus
+              v-decorator="['podid', {
+                initialValue: this.pods && this.pods.length > 0 ? this.pods[0].id : '',
+                rules: [{ required: true, message: `${$t('label.required')}` }]
+              }]"
+            >
+              <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
+            </a-select>
+          </a-form-item>
           <a-form-item>
             <span slot="label">
               {{ $t('label.gateway') }}
@@ -31,6 +42,7 @@
               </a-tooltip>
             </span>
             <a-input
+              autoFocus
               v-decorator="['gateway', {
                 rules: [{ required: true, message: $t('message.error.gateway') }]
               }]"
@@ -194,6 +206,8 @@ export default {
   data () {
     return {
       loading: false,
+      zone: {},
+      pods: [],
       ipV4Regex: /^(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)$/i,
       ipV6Regex: /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(([0-9A-Fa-f]{1,4}:){0,5}:((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(::([0-9A-Fa-f]{1,4}:){0,5}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/i
     }
@@ -205,8 +219,41 @@ export default {
     this.apiConfig.params.forEach(param => {
       this.apiParams[param.name] = param
     })
+    this.fetchData()
   },
   methods: {
+    async fetchData () {
+      await this.fetchZone()
+      if (this.zone.networktype === 'Basic') {
+        this.fetchPods()
+      }
+    },
+    fetchZone () {
+      return new Promise((resolve, reject) => {
+        this.loading = true
+        api('listZones', { id: this.resource.zoneid }).then(json => {
+          this.zone = json.listzonesresponse.zone[0] || {}
+          resolve(this.zone)
+        }).catch(error => {
+          this.$notifyError(error)
+          reject(error)
+        }).finally(() => {
+          this.loading = false
+        })
+      })
+    },
+    fetchPods () {
+      this.loading = true
+      api('listPods', {
+        zoneid: this.resource.zoneid
+      }).then(response => {
+        this.pods = response.listpodsresponse.pod ? response.listpodsresponse.pod : []
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
+      })
+    },
     handleSubmit (e) {
       e.preventDefault()
 
@@ -218,6 +265,9 @@ export default {
         const params = {}
         params.forVirtualNetwork = false
         params.networkid = this.resource.id
+        if (values.podid) {
+          params.podid = values.podid
+        }
         params.gateway = values.gateway
         params.netmask = values.netmask
         params.startip = values.startip

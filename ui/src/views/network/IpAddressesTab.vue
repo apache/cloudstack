@@ -19,7 +19,7 @@
   <div>
     <a-spin :spinning="fetchLoading">
       <a-button
-        :disabled="!('associateIpAddress' in $store.getters.apis)"
+        :disabled="!('associateIpAddress' in $store.getters.apis) || resource.type === 'Shared'"
         type="dashed"
         icon="plus"
         style="width: 100%; margin-bottom: 15px"
@@ -29,6 +29,7 @@
       <div v-if="$route.path.startsWith('/vpc')">
         Select Tier:
         <a-select
+          autoFocus
           style="width: 40%; margin-left: 15px;margin-bottom: 15px"
           :loading="fetchLoading"
           defaultActiveFirstOption
@@ -51,7 +52,8 @@
         :rowKey="item => item.id"
         :pagination="false" >
         <template slot="ipaddress" slot-scope="text, record">
-          <router-link :to="{ path: '/publicip/' + record.id }" >{{ text }} </router-link>
+          <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/publicip/' + record.id }" >{{ text }} </router-link>
+          <div v-else>{{ text }}</div>
           <a-tag v-if="record.issourcenat === true">source-nat</a-tag>
         </template>
 
@@ -65,15 +67,16 @@
         </template>
 
         <template slot="associatednetworkname" slot-scope="text, record">
-          <router-link :to="{ path: '/guestnetwork/' + record.associatednetworkid }" > {{ record.associatednetworkname || record.associatednetworkid }} </router-link>
+          <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/guestnetwork/' + record.associatednetworkid }" > {{ record.associatednetworkname || record.associatednetworkid }} </router-link>
+          <div v-else>{{ record.networkname }}</div>
         </template>
 
         <template slot="action" slot-scope="text, record">
-          <a-button
-            v-if="record.issourcenat !== true"
+          <tooltip-button
+            v-if="record.issourcenat !== true && record.forvirtualnetwork === true"
+            :tooltip="$t('label.action.release.ip')"
             type="danger"
             icon="delete"
-            shape="circle"
             :disabled="!('disassociateIpAddress' in $store.getters.apis)"
             @click="releaseIpAddress(record)" />
         </template>
@@ -110,6 +113,7 @@
         <a-alert :message="$t('message.action.acquire.ip')" type="warning" />
         <a-form-item :label="$t('label.ipaddress')">
           <a-select
+            autoFocus
             style="width: 100%;"
             showSearch
             v-model="acquireIp">
@@ -125,11 +129,13 @@
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'IpAddressesTab',
   components: {
-    Status
+    Status,
+    TooltipButton
   },
   props: {
     resource: {
@@ -185,7 +191,7 @@ export default {
       listPublicIpAddress: []
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {
@@ -210,6 +216,10 @@ export default {
         if (this.vpcTier) {
           params.associatednetworkid = this.vpcTier
         }
+      } else if (this.resource.type === 'Shared') {
+        params.networkid = this.resource.id
+        params.allocatedonly = false
+        params.forvirtualnetwork = false
       } else {
         params.associatednetworkid = this.resource.id
       }

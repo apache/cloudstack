@@ -61,7 +61,6 @@ from operator import itemgetter
 
 _multiprocess_shared_ = True
 
-
 class TestDeployVM(cloudstackTestCase):
 
     @classmethod
@@ -358,12 +357,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.apiclient = super(TestVMLifeCycle, cls).getClsTestClient().getApiClient()
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestVMLifeCycle, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -475,6 +469,40 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         self.debug("Rebooting VM - ID: %s" % self.virtual_machine.id)
         self.small_virtual_machine.reboot(self.apiclient)
+
+        list_vm_response = VirtualMachine.list(
+            self.apiclient,
+            id=self.small_virtual_machine.id
+        )
+        self.assertEqual(
+            isinstance(list_vm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+
+        self.assertNotEqual(
+            len(list_vm_response),
+            0,
+            "Check VM available in List Virtual Machines"
+        )
+
+        self.assertEqual(
+            list_vm_response[0].state,
+            "Running",
+            "Check virtual machine is in running state"
+        )
+        return
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_04_reboot_vm_forced(self):
+        """Test Force Reboot Virtual Machine
+        """
+
+        try:
+            self.debug("Force rebooting VM - ID: %s" % self.virtual_machine.id)
+            self.small_virtual_machine.reboot(self.apiclient, forced=True)
+        except Exception as e:
+            self.fail("Failed to force reboot VM: %s" % e)
 
         list_vm_response = VirtualMachine.list(
             self.apiclient,
@@ -745,7 +773,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                       (self.virtual_machine.ipaddress, e))
         mount_dir = "/mnt/tmp"
         cmds = "mkdir -p %s" % mount_dir
-        self.assert_(ssh_client.execute(cmds) == [], "mkdir failed within guest")
+        self.assertTrue(ssh_client.execute(cmds) == [], "mkdir failed within guest")
 
         iso_unsupported = False
         for diskdevice in self.services["diskdevice"]:
@@ -755,8 +783,9 @@ class TestVMLifeCycle(cloudstackTestCase):
                 break
             if str(res).find("mount: unknown filesystem type 'iso9660'") != -1:
                 iso_unsupported = True
-                self.debug("Test template does not supports iso9660 filesystem. Proceeding with test without mounting.")
-                print "Test template does not supports iso9660 filesystem. Proceeding with test without mounting."
+                log_msg = "Test template does not supports iso9660 filesystem. Proceeding with test without mounting."
+                self.debug(log_msg)
+                print(log_msg)
                 break
         else:
             self.fail("No mount points matched. Mount was unsuccessful")
@@ -900,11 +929,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.apiclient = super(TestSecuredVmMigration, cls).getClsTestClient().getApiClient()
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestSecuredVmMigration, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -918,7 +943,8 @@ class TestSecuredVmMigration(cloudstackTestCase):
             self.apiclient,
             zoneid=self.zone.id,
             type='Routing',
-            hypervisor='KVM')
+            hypervisor='KVM',
+            state='Up')
 
         if len(self.hosts) < 2:
             self.skipTest("Requires at least two hosts for performing migration related tests")
@@ -929,10 +955,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
     def tearDown(self):
         self.secure_all_hosts()
         self.updateConfiguration("ca.plugin.root.auth.strictness", "true")
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestSecuredVmMigration, self).tearDown()
 
     def get_target_host(self, secured, virtualmachineid):
         target_hosts = Host.listForMigration(self.apiclient,
@@ -950,8 +973,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
         if protocol not in resp[0]:
             cloudstackTestCase.fail(self, "Libvirt listen protocol expected: '" + protocol + "\n"
-                                                                                             "does not match actual: " +
-                                    resp[0])
+                                    "does not match actual: " + resp[0])
 
     def migrate_and_check(self, vm, src_host, dest_host, proto='tls'):
         """
@@ -964,7 +986,6 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
     def waitUntilHostInState(self, hostId, state="Up", interval=5, retries=20):
         while retries > -1:
-            print("Waiting for host: %s to be %s. %s retries left." % (hostId, state, retries))
             time.sleep(interval)
             host = Host.list(
                 self.apiclient,
@@ -982,12 +1003,17 @@ class TestSecuredVmMigration(cloudstackTestCase):
     def unsecure_host(self, host):
         SshClient(host.ipaddress, port=22, user=self.hostConfig["username"], passwd=self.hostConfig["password"]) \
             .execute("rm -f /etc/cloudstack/agent/cloud* && \
+                      service cloudstack-agent stop ; \
+                      service libvirtd stop ; \
+                      service libvirt-bin stop ; \
                       sed -i 's/listen_tls.*/listen_tls=0/g' /etc/libvirt/libvirtd.conf && \
                       sed -i 's/listen_tcp.*/listen_tcp=1/g' /etc/libvirt/libvirtd.conf && \
                       sed -i '/.*_file=.*/d' /etc/libvirt/libvirtd.conf && \
-                      service libvirtd restart && \
-                      sleep 30 && \
-                      service cloudstack-agent restart")
+                      service libvirtd start ; \
+                      service libvirt-bin start ; \
+                      sleep 30 ; \
+                      service cloudstack-agent start")
+        time.sleep(30)
         print("Unsecuring Host: %s" % (host.name))
         self.waitUntilHostInState(hostId=host.id, state="Up")
         self.check_connection(host=host, secured='false')
@@ -1173,11 +1199,7 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.apiclient = super(TestMigrateVMwithVolume, cls).getClsTestClient().getApiClient()
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestMigrateVMwithVolume,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1187,20 +1209,17 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
         if self.hypervisor.lower() not in ["vmware"]:
             self.skipTest("VM Migration with Volumes is not supported on other than VMware")
 
-            self.hosts = Host.list(
-                self.apiclient,
-                zoneid=self.zone.id,
-                type='Routing',
-                hypervisor='KVM')
+        self.hosts = Host.list(
+            self.apiclient,
+            zoneid=self.zone.id,
+            type='Routing',
+            hypervisor='VMware')
 
-            if len(self.hosts) < 2:
-                self.skipTest("Requires at least two hosts for performing migration related tests")
+        if len(self.hosts) < 2:
+            self.skipTest("Requires at least two hosts for performing migration related tests")
 
     def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestMigrateVMwithVolume,self).tearDown()
 
     def get_target_host(self, virtualmachineid):
         target_hosts = Host.listForMigration(self.apiclient,
@@ -1386,11 +1405,7 @@ class TestKVMLiveMigration(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.apiclient = super(TestKVMLiveMigration, cls).getClsTestClient().getApiClient()
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestKVMLiveMigration,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1409,11 +1424,12 @@ class TestKVMLiveMigration(cloudstackTestCase):
         if len(self.hosts) < 2:
             self.skipTest("Requires at least two hosts for performing migration related tests")
 
+        for host in self.hosts:
+            if host.details['Host.OS'] in ['CentOS']:
+                self.skipTest("live migration is not stabily supported on CentOS")
+
     def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestKVMLiveMigration,self).tearDown()
 
     def get_target_host(self, virtualmachineid):
         target_hosts = Host.listForMigration(self.apiclient,
@@ -1745,9 +1761,6 @@ class TestVAppsVM(cloudstackTestCase):
                 cls.l2_network_offering
             ]
 
-            # Uncomment when tests are finished, to cleanup the test templates
-            for template in cls.templates:
-                cls._cleanup.append(template)
 
     @classmethod
     def tearDownClass(cls):
@@ -1769,21 +1782,21 @@ class TestVAppsVM(cloudstackTestCase):
     def get_ova_parsed_information_from_template(self, template):
         if not template:
             return None
-        details = template.details.__dict__
+        details = template.deployasisdetails.__dict__
         configurations = []
         disks = []
         isos = []
         networks = []
         for propKey in details:
-            if propKey.startswith('ACS-configuration'):
+            if propKey.startswith('configuration'):
                 configurations.append(json.loads(details[propKey]))
-            elif propKey.startswith('ACS-disk'):
+            elif propKey.startswith('disk'):
                 detail = json.loads(details[propKey])
                 if detail['isIso'] == True:
                     isos.append(detail)
                 else:
                     disks.append(detail)
-            elif propKey.startswith('ACS-network'):
+            elif propKey.startswith('network'):
                 networks.append(json.loads(details[propKey]))
 
         return configurations, disks, isos, networks
@@ -1811,32 +1824,6 @@ class TestVAppsVM(cloudstackTestCase):
                 nic.networkid,
                 nic_network["network"],
                 msg="VM NIC(InstanceID: {}) network mismatch, expected = {}, result = {}".format(nic_network["nic"], nic_network["network"], nic.networkid)
-            )
-
-    def verify_disks(self, template_disks, vm_id):
-        cmd = listVolumes.listVolumesCmd()
-        cmd.virtualmachineid = vm_id
-        cmd.listall = True
-        vm_volumes =  self.apiclient.listVolumes(cmd)
-        self.assertEqual(
-            isinstance(vm_volumes, list),
-            True,
-            "Check listVolumes response returns a valid list"
-        )
-        self.assertEqual(
-            len(template_disks),
-            len(vm_volumes),
-            msg="VM volumes count is different, expected = {}, result = {}".format(len(template_disks), len(vm_volumes))
-        )
-        template_disks.sort(key=itemgetter('diskNumber'))
-        vm_volumes.sort(key=itemgetter('deviceid'))
-        for j in range(len(vm_volumes)):
-            volume = vm_volumes[j]
-            disk = template_disks[j]
-            self.assertEqual(
-                volume.size,
-                disk["virtualSize"],
-                msg="VM Volume(diskNumber: {}) network mismatch, expected = {}, result = {}".format(disk["diskNumber"], disk["virtualSize"], volume.size)
             )
 
     @attr(tags=["advanced", "advancedns", "smoke", "sg", "dev"], required_hardware="false")
@@ -1939,8 +1926,6 @@ class TestVAppsVM(cloudstackTestCase):
 
             # Verify nics
             self.verify_nics(nicnetworklist, vm.id)
-            # Verify disks
-            self.verify_disks(disks, vm.id)
             # Verify properties
             original_properties = vm_service['properties']
             vm_properties = get_vm_vapp_configs(self.apiclient, self.config, self.zone, vm.instancename)

@@ -20,14 +20,13 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -44,6 +43,7 @@ import com.cloud.storage.OCFS2Manager;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManagerImpl;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 
 public class StoragePoolMonitor implements Listener {
@@ -137,7 +137,49 @@ public class StoragePoolMonitor implements Listener {
 
     @Override
     public synchronized boolean processDisconnect(long agentId, Status state) {
-        return true;
+        Host host = _storageManager.getHost(agentId);
+        if (host == null) {
+            s_logger.warn("Agent: " + agentId + " not found, not disconnecting pools");
+            return false;
+        }
+
+        if (host.getType() != Host.Type.Routing) {
+            return false;
+        }
+
+        List<StoragePoolHostVO> storagePoolHosts = _storageManager.findStoragePoolsConnectedToHost(host.getId());
+        if (storagePoolHosts == null) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("No pools to disconnect for host: " + host.getId());
+            }
+            return true;
+        }
+
+        boolean disconnectResult = true;
+        for (StoragePoolHostVO storagePoolHost : storagePoolHosts) {
+            StoragePoolVO pool = _poolDao.findById(storagePoolHost.getPoolId());
+            if (pool == null) {
+                continue;
+            }
+
+            if (!pool.isShared()) {
+                continue;
+            }
+
+            // Handle only PowerFlex pool for now, not to impact other pools behavior
+            if (pool.getPoolType() != StoragePoolType.PowerFlex) {
+                continue;
+            }
+
+            try {
+                _storageManager.disconnectHostFromSharedPool(host.getId(), pool.getId());
+            } catch (Exception e) {
+                s_logger.error("Unable to disconnect host " + host.getId() + " from storage pool id " + pool.getId() + " due to " + e.toString());
+                disconnectResult = false;
+            }
+        }
+
+        return disconnectResult;
     }
 
     @Override

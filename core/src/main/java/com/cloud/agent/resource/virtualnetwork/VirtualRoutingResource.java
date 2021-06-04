@@ -44,6 +44,7 @@ import org.apache.cloudstack.diagnostics.DiagnosticsCommand;
 import org.apache.cloudstack.diagnostics.PrepareFilesAnswer;
 import org.apache.cloudstack.diagnostics.PrepareFilesCommand;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.Duration;
 
@@ -65,6 +66,7 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.resource.virtualnetwork.facade.AbstractConfigItemFacade;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -310,6 +312,16 @@ public class VirtualRoutingResource {
 
     private GetRouterMonitorResultsAnswer execute(GetRouterMonitorResultsCommand cmd) {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        Pair<Boolean, String> fileSystemTestResult = checkRouterFileSystem(routerIp);
+        if (!fileSystemTestResult.first()) {
+            return new GetRouterMonitorResultsAnswer(cmd, false, null, fileSystemTestResult.second());
+        }
+
+        if (cmd.shouldValidateBasicTestsOnly()) {
+            // Basic tests (connectivity and file system checks) are already validated
+            return new GetRouterMonitorResultsAnswer(cmd, true, null, "success");
+        }
+
         String args = cmd.shouldPerformFreshChecks() ? "true" : "false";
         s_logger.info("Fetching health check result for " + routerIp + " and executing fresh checks: " + args);
         ExecutionResult result = _vrDeployer.executeInVR(routerIp, VRScripts.ROUTER_MONITOR_RESULTS, args);
@@ -325,6 +337,27 @@ public class VirtualRoutingResource {
         }
 
         return parseLinesForHealthChecks(cmd, result.getDetails());
+    }
+
+    private Pair<Boolean, String> checkRouterFileSystem(String routerIp) {
+        ExecutionResult fileSystemWritableTestResult = _vrDeployer.executeInVR(routerIp, VRScripts.ROUTER_FILESYSTEM_WRITABLE_CHECK, null);
+        if (fileSystemWritableTestResult.isSuccess()) {
+            s_logger.debug("Router connectivity and file system writable check passed");
+            return new Pair<Boolean, String>(true, "success");
+        }
+
+        String resultDetails = fileSystemWritableTestResult.getDetails();
+        s_logger.warn("File system writable check failed with details: " + resultDetails);
+        if (StringUtils.isNotBlank(resultDetails)) {
+            final String readOnlyFileSystemError = "Read-only file system";
+            if (resultDetails.contains(readOnlyFileSystemError)) {
+                resultDetails = "Read-only file system";
+            }
+        } else {
+            resultDetails = "No results available";
+        }
+
+        return new Pair<Boolean, String>(false, resultDetails);
     }
 
     private GetRouterAlertsAnswer execute(GetRouterAlertsCommand cmd) {

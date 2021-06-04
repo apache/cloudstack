@@ -30,7 +30,8 @@
             v-decorator="['username', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
-            :placeholder="apiParams.username.description" />
+            :placeholder="apiParams.username.description"
+            autoFocus />
         </a-form-item>
         <a-form-item>
           <span slot="label">
@@ -136,7 +137,7 @@ export default {
       this.apiParams[param.name] = param
     })
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

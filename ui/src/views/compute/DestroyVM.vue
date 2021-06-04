@@ -17,7 +17,7 @@
 
 <template>
   <div class="form-layout">
-    <a-alert type="warning" v-html="$t('message.action.destroy.instance')" /><br/>
+    <a-alert type="warning" v-html="resource.backupofferingid ? $t('message.action.destroy.instance.with.backups') : $t('message.action.destroy.instance')" /><br/>
     <a-spin :spinning="loading">
       <a-form
         :form="form"
@@ -44,7 +44,8 @@
             v-decorator="['volumeids']"
             :placeholder="$t('label.delete.volumes')"
             mode="multiple"
-            :loading="loading">
+            :loading="loading"
+            :autoFocus="$store.getters.userInfo.roletype !== 'Admin' && !$store.getters.features.allowuserexpungerecovervm">
             <a-select-option v-for="volume in volumes" :key="volume.id">
               {{ volume.name }}
             </a-select-option>
@@ -87,7 +88,7 @@ export default {
       this.apiParams[param.name] = param
     })
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

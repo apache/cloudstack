@@ -21,7 +21,7 @@
       <div class="form">
         <div class="form__item" ref="newRuleName">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.name') }}</div>
-          <a-input v-model="newRule.name"></a-input>
+          <a-input autoFocus v-model="newRule.name"></a-input>
           <span class="error-text">{{ $t('label.required') }}</span>
         </div>
         <div class="form__item" ref="newRulePublicPort">
@@ -99,8 +99,8 @@
                 </router-link>
               </div>
               <div>{{ ip }}</div>
-              <a-button
-                shape="circle"
+              <tooltip-button
+                :tooltip="$t('label.action.delete.load.balancer')"
                 type="danger"
                 icon="delete"
                 @click="() => handleDeleteInstanceFromRule(instance, record, ip)" />
@@ -110,15 +110,15 @@
       </template>
       <template slot="actions" slot-scope="record">
         <div class="actions">
-          <a-button shape="circle" icon="edit" @click="() => openEditRuleModal(record)"></a-button>
-          <a-button :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" shape="circle" icon="tag" @click="() => openTagsModal(record.id)" />
+          <tooltip-button :tooltip="$t('label.edit')" icon="edit" @click="() => openEditRuleModal(record)" />
+          <tooltip-button :tooltip="$t('label.edit.tags')" :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" icon="tag" @click="() => openTagsModal(record.id)" />
           <a-popconfirm
             :title="$t('label.delete') + '?'"
             @confirm="handleDeleteRule(record)"
             :okText="$t('label.yes')"
             :cancelText="$t('label.no')"
           >
-            <a-button :disabled="!('deleteLoadBalancerRule' in $store.getters.apis)" shape="circle" type="danger" icon="delete" />
+            <tooltip-button :tooltip="$t('label.delete')" :disabled="!('deleteLoadBalancerRule' in $store.getters.apis)" type="danger" icon="delete" />
           </a-popconfirm>
         </div>
       </template>
@@ -154,7 +154,9 @@
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.key') }}</p>
           <a-form-item>
-            <a-input v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
+            <a-input
+              autoFocus
+              v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
           </a-form-item>
         </div>
         <div class="add-tags__input">
@@ -193,7 +195,7 @@
 
       <a-form :form="stickinessPolicyForm" @submit="handleSubmitStickinessForm" class="custom-ant-form">
         <a-form-item :label="$t('label.stickiness.method')">
-          <a-select v-decorator="['methodname']" @change="handleStickinessMethodSelectChange">
+          <a-select autoFocus v-decorator="['methodname']" @change="handleStickinessMethodSelectChange">
             <a-select-option value="LbCookie">{{ $t('label.lb.cookie') }}</a-select-option>
             <a-select-option value="AppCookie">{{ $t('label.app.cookie') }}</a-select-option>
             <a-select-option value="SourceBased">{{ $t('label.source.based') }}</a-select-option>
@@ -265,7 +267,7 @@
       <div class="edit-rule" v-if="selectedRule">
         <div class="edit-rule__item">
           <p class="edit-rule__label">{{ $t('label.name') }}</p>
-          <a-input v-model="editRuleDetails.name" />
+          <a-input autoFocus v-model="editRuleDetails.name" />
         </div>
         <div class="edit-rule__item">
           <p class="edit-rule__label">{{ $t('label.algorithm') }}</p>
@@ -304,6 +306,7 @@
           v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
           <strong>{{ $t('label.select.tier') }} </strong>
           <a-select
+            :autoFocus="'vpcid' in resource && !('associatednetworkid' in resource)"
             v-model="selectedTier"
             @change="fetchVirtualMachines()"
             :placeholder="$t('label.select.tier')" >
@@ -316,6 +319,7 @@
           </a-select>
         </span>
         <a-input-search
+          :autoFocus="!('vpcid' in resource && !('associatednetworkid' in resource))"
           class="input-search"
           :placeholder="$t('label.search')"
           v-model="searchQuery"
@@ -380,11 +384,13 @@
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'LoadBalancing',
   components: {
-    Status
+    Status,
+    TooltipButton
   },
   props: {
     resource: {
@@ -517,7 +523,7 @@ export default {
       searchQuery: null
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {
@@ -550,7 +556,7 @@ export default {
         vpcid: this.resource.vpcid
       }).then(json => {
         this.tiers.data = json.listnetworksresponse.network || []
-        this.selectedTier = this.tiers.data && this.tiers.data[0].id ? this.tiers.data[0].id : null
+        this.selectedTier = this.tiers.data?.[0]?.id ? this.tiers.data[0].id : null
         this.$forceUpdate()
       }).catch(error => {
         this.$notifyError(error)

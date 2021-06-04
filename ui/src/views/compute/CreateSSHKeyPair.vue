@@ -28,7 +28,8 @@
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.name') }]
             }]"
-            :placeholder="apiParams.name.description"/>
+            :placeholder="apiParams.name.description"
+            autoFocus />
         </a-form-item>
         <a-form-item :label="$t('label.publickey')">
           <a-input
@@ -48,7 +49,7 @@
             :placeholder="apiParams.domainid.description"
             @change="val => { this.handleDomainChanged(this.domains[val]) }">
             <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
-              {{ opt.name || opt.description }}
+              {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -112,8 +113,6 @@ export default {
         name: ''
       }
     ]
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

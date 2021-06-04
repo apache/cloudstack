@@ -16,7 +16,8 @@
 # under the License.
 
 # Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.utils import (cleanup_resources,
                               validateList)
 from marvin.lib.base import (Account,
@@ -118,7 +119,7 @@ class TestTemplates(cloudstackTestCase):
         if len(expected_vals) != len(actual_vals):
             return False
 
-        keys = expected_vals.keys()
+        keys = list(expected_vals.keys())
         for i in range(0, len(expected_vals)):
             exp_val = expected_vals[keys[i]]
             act_val = actual_vals[keys[i]]
@@ -231,13 +232,13 @@ class TestTemplates(cloudstackTestCase):
             templatefilter=self.services["templatefilter"]
         )
         status = validateList(list_templates_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Templates creation failed"
         )
         # Verifying that list size is pagesize + 1
-        self.assertEquals(
+        self.assertEqual(
             self.services["pagesize"] + 1,
             len(list_templates_after),
             "Failed to create pagesize + 1 number of Templates"
@@ -251,13 +252,13 @@ class TestTemplates(cloudstackTestCase):
             pagesize=self.services["pagesize"]
         )
         status = validateList(list_templates_page1)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to list Templates in page 1"
         )
         # Verifying the list size to be equal to pagesize
-        self.assertEquals(
+        self.assertEqual(
             self.services["pagesize"],
             len(list_templates_page1),
             "Size of Templates in page 1 is not matching"
@@ -271,13 +272,13 @@ class TestTemplates(cloudstackTestCase):
             pagesize=self.services["pagesize"]
         )
         status = validateList(list_templates_page2)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to list Templates in page 2"
         )
         # Verifying the list size to be equal to 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_templates_page2),
             "Size of Templates in page 2 is not matching"
@@ -354,13 +355,13 @@ class TestTemplates(cloudstackTestCase):
             templatefilter=self.services["templatefilter"]
         )
         status = validateList(list_templates_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Templates creation failed"
         )
         # Verifying that list size is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_templates_after),
             "Failed to create a Template"
@@ -381,7 +382,7 @@ class TestTemplates(cloudstackTestCase):
             "Download Template failed"
         )
         # Verifying the details of downloaded template
-        self.assertEquals(
+        self.assertEqual(
             "DOWNLOAD_URL_CREATED",
             download_template.state,
             "Download URL not created for Template"
@@ -390,7 +391,7 @@ class TestTemplates(cloudstackTestCase):
             download_template.url,
             "Download URL not created for Template"
         )
-        self.assertEquals(
+        self.assertEqual(
             template_created.id,
             download_template.id,
             "Download Template details are not same as Template created"
@@ -453,13 +454,13 @@ class TestTemplates(cloudstackTestCase):
             templatefilter=self.services["templatefilter"]
         )
         status = validateList(list_templates_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Templates creation failed"
         )
         # Verifying that list size is 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_templates_after),
             "Failed to create a Template"
@@ -551,7 +552,7 @@ class TestTemplates(cloudstackTestCase):
         # Editing the Template ostypeid
         ostype_list = list_os_types(self.userapiclient)
         status = validateList(ostype_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to list OS Types"
@@ -716,7 +717,7 @@ class TestTemplates(cloudstackTestCase):
             available=True
         )
         status = validateList(zones_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to list Zones"
@@ -756,7 +757,7 @@ class TestTemplates(cloudstackTestCase):
                 zoneid=zones_list[0].id
             )
             status = validateList(zones_list)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Failed to list Hypervisors in Zone 1"
@@ -780,13 +781,13 @@ class TestTemplates(cloudstackTestCase):
                 zoneid=zones_list[0].id
             )
             status = validateList(list_templates_zone1)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Templates creation failed in Zone1"
             )
             # Verifying that list size is 1
-            self.assertEquals(
+            self.assertEqual(
                 1,
                 len(list_templates_zone1),
                 "Failed to create a Template"
@@ -825,13 +826,13 @@ class TestTemplates(cloudstackTestCase):
                 zoneid=zones_list[0].id
             )
             status = validateList(list_templates_zone1)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Templates creation failed in Zone1"
             )
             # Verifying that list size is 1
-            self.assertEquals(
+            self.assertEqual(
                 1,
                 len(list_templates_zone1),
                 "Failed to create a Template"
@@ -844,23 +845,23 @@ class TestTemplates(cloudstackTestCase):
                 zoneid=zones_list[1].id
             )
             status = validateList(list_templates_zone2)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Template failed to copy into Zone2"
             )
             # Verifying that list size is 1
-            self.assertEquals(
+            self.assertEqual(
                 1,
                 len(list_templates_zone2),
                 "Template failed to copy into Zone2"
             )
-            self.assertNotEquals(
+            self.assertNotEqual(
                 "Connection refused",
                 list_templates_zone2[0].status,
                 "Failed to copy Template"
             )
-            self.assertEquals(
+            self.assertEqual(
                 True,
                 list_templates_zone2[0].isready,
                 "Failed to copy Template"

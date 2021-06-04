@@ -34,6 +34,8 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.gpu.GPU;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailVO;
@@ -47,8 +49,8 @@ import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.Volume;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -60,8 +62,11 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.commons.lang3.StringUtils;
 
-public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru {
+public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru, Configurable {
     public static final Logger s_logger = Logger.getLogger(HypervisorGuruBase.class);
 
     @Inject
@@ -84,6 +89,14 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     private ServiceOfferingDao _serviceOfferingDao;
     @Inject
     private NetworkDetailsDao networkDetailsDao;
+    @Inject
+    private HostDao hostDao;
+
+    public static ConfigKey<Boolean> VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.min.memory.equals.memory.divided.by.mem.overprovisioning.factor", "true",
+            "If we set this to 'true', a minimum memory (memory/ mem.overprovisioning.factor) will be set to the VM, independent of using a scalable service offering or not.", true, ConfigKey.Scope.Cluster);
+
+    public static ConfigKey<Boolean> VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.min.cpu.speed.equals.cpu.speed.divided.by.cpu.overprovisioning.factor", "true",
+            "If we set this to 'true', a minimum CPU speed (cpu speed/ cpu.overprovisioning.factor) will be set on the VM, independent of using a scalable service offering or not.", true, ConfigKey.Scope.Cluster);
 
     @Override
     public NicTO toNicTO(NicProfile profile) {
@@ -166,8 +179,13 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     protected VirtualMachineTO toVirtualMachineTO(VirtualMachineProfile vmProfile) {
         ServiceOffering offering = _serviceOfferingDao.findById(vmProfile.getId(), vmProfile.getServiceOfferingId());
         VirtualMachine vm = vmProfile.getVirtualMachine();
-        Long minMemory = (long)(offering.getRamSize() / vmProfile.getMemoryOvercommitRatio());
-        int minspeed = (int)(offering.getSpeed() / vmProfile.getCpuOvercommitRatio());
+        HostVO host = hostDao.findById(vm.getHostId());
+
+        boolean divideMemoryByOverprovisioning = VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor.valueIn(host.getClusterId());
+        boolean divideCpuByOverprovisioning = VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor.valueIn(host.getClusterId());
+
+        Long minMemory = (long)(offering.getRamSize() / (divideMemoryByOverprovisioning ? vmProfile.getMemoryOvercommitRatio() : 1));
+        int minspeed = (int)(offering.getSpeed() / (divideCpuByOverprovisioning ? vmProfile.getCpuOvercommitRatio() : 1));
         int maxspeed = (offering.getSpeed());
         VirtualMachineTO to = new VirtualMachineTO(vm.getId(), vm.getInstanceName(), vm.getType(), offering.getCpu(), minspeed, maxspeed, minMemory * 1024l * 1024l,
                 offering.getRamSize() * 1024l * 1024l, null, null, vm.isHaEnabled(), vm.limitCpuUse(), vm.getVncPassword());
@@ -248,6 +266,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setConfigDriveLabel(vmProfile.getConfigDriveLabel());
         to.setConfigDriveIsoRootFolder(vmProfile.getConfigDriveIsoRootFolder());
         to.setConfigDriveIsoFile(vmProfile.getConfigDriveIsoFile());
+        to.setConfigDriveLocation(vmProfile.getConfigDriveLocation());
         to.setState(vm.getState());
 
         return to;
@@ -297,7 +316,18 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         return false;
     }
 
-    public List<Command> finalizeMigrate(VirtualMachine vm, StoragePool destination) {
+    public List<Command> finalizeMigrate(VirtualMachine vm, Map<Volume, StoragePool> volumeToPool) {
         return null;
     }
+
+     @Override
+    public String getConfigComponentName() {
+        return HypervisorGuruBase.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor, VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor };
+    }
+
 }

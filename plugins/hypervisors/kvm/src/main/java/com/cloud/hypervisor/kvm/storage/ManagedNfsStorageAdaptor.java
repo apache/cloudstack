@@ -35,6 +35,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.PoolType;
 import com.cloud.hypervisor.kvm.resource.LibvirtStorageVolumeDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtStorageVolumeXMLParser;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -319,7 +320,7 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, KVMStoragePool destPool, boolean isIso) {
+    public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format, int timeout) {
         return null;
     }
 

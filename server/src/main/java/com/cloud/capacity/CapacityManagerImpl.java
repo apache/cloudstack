@@ -60,6 +60,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceListener;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
@@ -585,9 +586,19 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         // if the storage pool is managed, the used bytes can be larger than the sum of the sizes of all of the non-destroyed volumes
         // in this case, call getUsedBytes(StoragePoolVO)
         if (pool.isManaged()) {
-            return getUsedBytes(pool);
-        }
-        else {
+            totalAllocatedSize = getUsedBytes(pool);
+
+            if (templateForVmCreation != null) {
+                VMTemplateStoragePoolVO templatePoolVO = _templatePoolDao.findByPoolTemplate(pool.getId(), templateForVmCreation.getId(), null);
+                if (templatePoolVO == null) {
+                    // template is not installed in the pool, consider the template size for allocation
+                    long templateForVmCreationSize = templateForVmCreation.getSize() != null ? templateForVmCreation.getSize() : 0;
+                    totalAllocatedSize += templateForVmCreationSize;
+                }
+            }
+
+            return totalAllocatedSize;
+        } else {
             // Get size for all the non-destroyed volumes.
             Pair<Long, Long> sizes = _volumeDao.getNonDestroyedCountAndTotalByPool(pool.getId());
 
@@ -1089,6 +1100,23 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
         return false;
 
+    }
+
+    @Override
+    public Pair<Boolean, Boolean> checkIfHostHasCpuCapabilityAndCapacity(Host host, ServiceOffering offering, boolean considerReservedCapacity) {
+        int cpu_requested = offering.getCpu() * offering.getSpeed();
+        long ram_requested = offering.getRamSize() * 1024L * 1024L;
+        Cluster cluster = _clusterDao.findById(host.getClusterId());
+        ClusterDetailsVO clusterDetailsCpuOvercommit = _clusterDetailsDao.findDetail(cluster.getId(), "cpuOvercommitRatio");
+        ClusterDetailsVO clusterDetailsRamOvercommmt = _clusterDetailsDao.findDetail(cluster.getId(), "memoryOvercommitRatio");
+        Float cpuOvercommitRatio = Float.parseFloat(clusterDetailsCpuOvercommit.getValue());
+        Float memoryOvercommitRatio = Float.parseFloat(clusterDetailsRamOvercommmt.getValue());
+
+        boolean hostHasCpuCapability = checkIfHostHasCpuCapability(host.getId(), offering.getCpu(), offering.getSpeed());
+        boolean hostHasCapacity = checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio,
+                considerReservedCapacity);
+
+        return new Pair<>(hostHasCpuCapability, hostHasCapacity);
     }
 
     @Override

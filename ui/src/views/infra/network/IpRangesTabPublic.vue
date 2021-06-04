@@ -34,39 +34,33 @@
       :rowKey="record => record.id"
       :pagination="false"
     >
-      <template slot="account" slot-scope="record">
+      <template slot="account" slot-scope="record" v-if="!basicGuestNetwork">
         <a-button @click="() => handleOpenAccountModal(record)">{{ `[${record.domain}] ${record.account === undefined ? '' : record.account}` }}</a-button>
       </template>
       <template slot="actions" slot-scope="record">
         <div class="actions">
-          <a-popover v-if="record.account === 'system'" placement="bottom">
-            <template slot="content">{{ $t('label.add.account') }}</template>
-            <a-button
-              icon="user-add"
-              shape="circle"
-              @click="() => handleOpenAddAccountModal(record)"
-              :disabled="!('dedicatePublicIpRange' in $store.getters.apis)"></a-button>
-          </a-popover>
-          <a-popover
-            v-else
-            placement="bottom">
-            <template slot="content">{{ $t('label.release.account') }}</template>
-            <a-button
-              icon="user-delete"
-              shape="circle"
-              type="danger"
-              @click="() => handleRemoveAccount(record.id)"
-              :disabled="!('releasePublicIpRange' in $store.getters.apis)"></a-button>
-          </a-popover>
-          <a-popover placement="bottom">
-            <template slot="content">{{ $t('label.remove.ip.range') }}</template>
-            <a-button
-              icon="delete"
-              shape="circle"
-              type="danger"
-              @click="handleDeleteIpRange(record.id)"
-              :disabled="!('deleteVlanIpRange' in $store.getters.apis)"></a-button>
-          </a-popover>
+          <tooltip-button
+            v-if="record.account === 'system' && !basicGuestNetwork"
+            tooltipPlacement="bottom"
+            :tooltip="$t('label.add.account')"
+            icon="user-add"
+            @click="() => handleOpenAddAccountModal(record)"
+            :disabled="!('dedicatePublicIpRange' in $store.getters.apis)" />
+          <tooltip-button
+            v-if="record.account !== 'system' && !basicGuestNetwork"
+            tooltipPlacement="bottom"
+            :tooltip="$t('label.release.account')"
+            icon="user-delete"
+            type="danger"
+            @click="() => handleRemoveAccount(record.id)"
+            :disabled="!('releasePublicIpRange' in $store.getters.apis)" />
+          <tooltip-button
+            tooltipPlacement="bottom"
+            :tooltip="$t('label.remove.ip.range')"
+            icon="delete"
+            type="danger"
+            @click="handleDeleteIpRange(record.id)"
+            :disabled="!('deleteVlanIpRange' in $store.getters.apis)" />
         </div>
       </template>
     </a-table>
@@ -117,7 +111,7 @@
       <a-spin :spinning="domainsLoading">
         <div style="margin-bottom: 10px;">
           <div class="list__label">{{ $t('label.account') }}:</div>
-          <a-input v-model="addAccount.account"></a-input>
+          <a-input v-model="addAccount.account" autoFocus></a-input>
         </div>
         <div>
           <div class="list__label">{{ $t('label.domain') }}:</div>
@@ -125,7 +119,7 @@
             <a-select-option
               v-for="domain in domains"
               :key="domain.id"
-              :value="domain.id">{{ domain.name }}
+              :value="domain.id">{{ domain.path || domain.name || domain.description }}
             </a-select-option>
           </a-select>
         </div>
@@ -143,8 +137,19 @@
         layout="vertical"
         class="form"
       >
+        <a-form-item :label="$t('label.podid')" class="form__item" v-if="basicGuestNetwork">
+          <a-select
+            autoFocus
+            v-decorator="['podid', {
+              rules: [{ required: true, message: `${$t('label.required')}` }]
+            }]"
+          >
+            <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item :label="$t('label.gateway')" class="form__item">
           <a-input
+            autoFocus
             v-decorator="['gateway', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
           </a-input>
         </a-form-item>
@@ -153,7 +158,7 @@
             v-decorator="['netmask', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
           </a-input>
         </a-form-item>
-        <a-form-item :label="$t('label.vlan')" class="form__item">
+        <a-form-item :label="$t('label.vlan')" class="form__item" v-if="!basicGuestNetwork">
           <a-input
             v-decorator="['vlan']">
           </a-input>
@@ -168,11 +173,11 @@
             v-decorator="['endip', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
           </a-input>
         </a-form-item>
-        <div class="form__item">
+        <div class="form__item" v-if="!basicGuestNetwork">
           <div style="color: black;">{{ $t('label.set.reservation') }}</div>
           <a-switch @change="handleShowAccountFields"></a-switch>
         </div>
-        <div v-if="showAccountFields" style="margin-top: 20px;">
+        <div v-if="showAccountFields && !basicGuestNetwork" style="margin-top: 20px;">
           <div v-html="$t('label.set.reservation.desc')"></div>
           <a-form-item :label="$t('label.system.vms')" class="form__item">
             <a-switch v-decorator="['forsystemvms']"></a-switch>
@@ -186,7 +191,7 @@
                 <a-select-option
                   v-for="domain in domains"
                   :key="domain.id"
-                  :value="domain.id">{{ domain.name }}
+                  :value="domain.id">{{ domain.path || domain.name || domain.description }}
                 </a-select-option>
               </a-select>
             </a-form-item>
@@ -200,9 +205,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'IpRangesTabPublic',
+  components: {
+    TooltipButton
+  },
   props: {
     resource: {
       type: Object,
@@ -214,6 +223,10 @@ export default {
     },
     network: {
       type: Object,
+      required: true
+    },
+    basicGuestNetwork: {
+      type: Boolean,
       required: true
     }
   },
@@ -233,6 +246,8 @@ export default {
       domainsLoading: false,
       addIpRangeModal: false,
       showAccountFields: false,
+      podsLoading: false,
+      pods: [],
       page: 1,
       pageSize: 10,
       columns: [
@@ -257,10 +272,6 @@ export default {
           dataIndex: 'endip'
         },
         {
-          title: this.$t('label.account'),
-          scopedSlots: { customRender: 'account' }
-        },
-        {
           title: this.$t('label.action'),
           scopedSlots: { customRender: 'actions' }
         }
@@ -270,7 +281,20 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
+    if (!this.basicGuestNetwork) {
+      this.columns.splice(5, 0,
+        {
+          title: this.$t('label.account'),
+          scopedSlots: { customRender: 'account' }
+        }
+      )
+    } else {
+      this.columns.unshift({
+        title: this.$t('label.pod'),
+        dataIndex: 'podname'
+      })
+    }
     this.fetchData()
   },
   watch: {
@@ -297,6 +321,7 @@ export default {
       }).finally(() => {
         this.componentLoading = false
       })
+      this.fetchPods()
     },
     fetchDomains () {
       this.domainsLoading = true
@@ -313,6 +338,22 @@ export default {
         this.$notifyError(error)
       }).finally(() => {
         this.domainsLoading = false
+      })
+    },
+    fetchPods () {
+      this.podsLoading = true
+      api('listPods', {
+        zoneid: this.resource.zoneid,
+        page: this.page,
+        pagesize: this.pageSize
+      }).then(response => {
+        this.total = response.listpodsresponse.count || 0
+        this.pods = response.listpodsresponse.pod ? response.listpodsresponse.pod : []
+      }).catch(error => {
+        console.log(error)
+        this.$notifyError(error)
+      }).finally(() => {
+        this.podsLoading = false
       })
     },
     handleAddAccount () {
@@ -385,18 +426,25 @@ export default {
 
         this.componentLoading = true
         this.addIpRangeModal = false
-        api('createVlanIpRange', {
-          zoneId: this.resource.zoneid,
-          vlan: values.vlan,
+        var params = {
           gateway: values.gateway,
           netmask: values.netmask,
           startip: values.startip,
-          endip: values.endip,
-          forsystemvms: values.forsystemvms,
-          account: values.forsystemvms ? null : values.account,
-          domainid: values.forsystemvms ? null : values.domain,
-          forvirtualnetwork: true
-        }).then(() => {
+          endip: values.endip
+        }
+        if (!this.basicGuestNetwork) {
+          params.zoneId = this.resource.zoneid
+          params.vlan = values.vlan
+          params.forsystemvms = values.forsystemvms
+          params.account = values.forsystemvms ? null : values.account
+          params.domainid = values.forsystemvms ? null : values.domain
+          params.forvirtualnetwork = true
+        } else {
+          params.forvirtualnetwork = false
+          params.podid = values.podid
+          params.networkid = this.network.id
+        }
+        api('createVlanIpRange', params).then(() => {
           this.$notification.success({
             message: this.$t('message.success.add.iprange')
           })

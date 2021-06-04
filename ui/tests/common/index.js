@@ -21,10 +21,11 @@ import mockRouter from '../mock/mockRouter'
 
 import localVue from '../setup'
 import { mount } from '@vue/test-utils'
-import { pollJobPlugin, notifierPlugin } from '@/utils/plugins'
+import { pollJobPlugin, notifierPlugin, configUtilPlugin } from '@/utils/plugins'
 
 localVue.use(pollJobPlugin)
 localVue.use(notifierPlugin)
+localVue.use(configUtilPlugin)
 
 function createMockRouter (newRoutes = []) {
   let routes = []

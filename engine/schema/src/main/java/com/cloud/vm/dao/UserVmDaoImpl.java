@@ -29,13 +29,13 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
@@ -373,6 +373,11 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
     @Override
     public void saveDetails(UserVmVO vm) {
+        saveDetails(vm, new ArrayList<String>());
+    }
+
+    @Override
+    public void saveDetails(UserVmVO vm, List<String> hiddenDetails) {
         Map<String, String> detailsStr = vm.getDetails();
         if (detailsStr == null) {
             return;
@@ -382,7 +387,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
         List<UserVmDetailVO> details = new ArrayList<UserVmDetailVO>();
         for (Map.Entry<String, String> entry : detailsStr.entrySet()) {
-            boolean display = visibilityMap.getOrDefault(entry.getKey(), true);
+            boolean display = !hiddenDetails.contains(entry.getKey()) && visibilityMap.getOrDefault(entry.getKey(), true);
             details.add(new UserVmDetailVO(vm.getId(), entry.getKey(), entry.getValue(), display));
         }
 

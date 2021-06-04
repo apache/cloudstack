@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -61,6 +62,7 @@ import org.apache.cloudstack.poll.BackgroundPollManager;
 import org.apache.cloudstack.poll.BackgroundPollTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDispatcher;
@@ -333,24 +335,22 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         boolean result = false;
-        VMInstanceVO vmInstance = null;
         try {
-            vmInstance = vmInstanceDao.acquireInLockTable(vm.getId());
-            vmInstance.setBackupOfferingId(null);
-            vmInstance.setBackupExternalId(null);
-            vmInstance.setBackupVolumes(null);
-            result = backupProvider.removeVMFromBackupOffering(vmInstance);
+            vm.setBackupOfferingId(null);
+            vm.setBackupExternalId(null);
+            vm.setBackupVolumes(null);
+            result = backupProvider.removeVMFromBackupOffering(vm);
             if (result && backupProvider.willDeleteBackupsOnOfferingRemoval()) {
                 final List<Backup> backups = backupDao.listByVmId(null, vm.getId());
                 for (final Backup backup : backups) {
                     backupDao.remove(backup.getId());
                 }
             }
-            if ((result || forced) && vmInstanceDao.update(vmInstance.getId(), vmInstance)) {
+            if ((result || forced) && vmInstanceDao.update(vm.getId(), vm)) {
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
                         "Backup-" + vm.getHostName() + "-" + vm.getUuid(), vm.getBackupOfferingId(), null, null,
                         Backup.class.getSimpleName(), vm.getUuid());
-                final BackupSchedule backupSchedule = backupScheduleDao.findByVM(vmInstance.getId());
+                final BackupSchedule backupSchedule = backupScheduleDao.findByVM(vm.getId());
                 if (backupSchedule != null) {
                     backupScheduleDao.remove(backupSchedule.getId());
                 }
@@ -358,10 +358,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             }
         } catch (final Exception e) {
             LOG.warn("Exception caught when trying to remove VM from the backup offering: ", e);
-        } finally {
-            if (vmInstance != null) {
-                vmInstanceDao.releaseFromLockTable(vmInstance.getId());
-            }
         }
         return result;
     }
@@ -671,6 +667,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (offering == null) {
             throw new CloudRuntimeException("VM backup offering ID " + vm.getBackupOfferingId() + " does not exist");
         }
+        List<Backup> backupsForVm = backupDao.listByVmId(vm.getDataCenterId(), vmId);
+        if (CollectionUtils.isNotEmpty(backupsForVm)) {
+            backupsForVm = backupsForVm.stream().filter(vmBackup -> vmBackup.getId() != backupId).collect(Collectors.toList());
+            if (backupsForVm.size() <= 0 && vm.getRemoved() != null) {
+                removeVMFromBackupOffering(vmId, true);
+            }
+        }
+
         final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
         boolean result = backupProvider.deleteBackup(backup);
         if (result) {

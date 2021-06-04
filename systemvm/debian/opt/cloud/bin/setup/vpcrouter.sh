@@ -112,6 +112,9 @@ EOF
   if [ -f /etc/cron.daily/logrotate ]; then
     mv -n /etc/cron.daily/logrotate /etc/cron.hourly 2>&1
   fi
+
+  # Load modules to support NAT traversal in VR
+  modprobe nf_nat_pptp
 }
 
 routing_svcs

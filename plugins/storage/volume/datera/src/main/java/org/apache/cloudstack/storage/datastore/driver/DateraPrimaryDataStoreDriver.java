@@ -17,6 +17,37 @@
 
 package org.apache.cloudstack.storage.datastore.driver;
 
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.CreateObjectAnswer;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.util.DateraObject;
+import org.apache.cloudstack.storage.datastore.util.DateraUtil;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -44,40 +75,12 @@ import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Ints;
-import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.command.CreateObjectAnswer;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.datastore.util.DateraObject;
-import org.apache.cloudstack.storage.datastore.util.DateraUtil;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
@@ -1255,6 +1258,12 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
+    public void copyAsync(DataObject srcData, DataObject destData,
+            Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean canCopy(DataObject srcData, DataObject destData) {
         return false;
     }
@@ -1825,6 +1834,30 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void handleQualityOfServiceForVolumeMigration(VolumeInfo volumeInfo,
             QualityOfServiceState qualityOfServiceState) {
+    }
 
+    @Override
+    public boolean canProvideStorageStats() {
+        return false;
+    }
+
+    @Override
+    public Pair<Long, Long> getStorageStats(StoragePool storagePool) {
+        return null;
+    }
+
+    @Override
+    public boolean canProvideVolumeStats() {
+        return false;
+    }
+
+    @Override
+    public Pair<Long, Long> getVolumeStats(StoragePool storagePool, String volumeId) {
+        return null;
+    }
+
+    @Override
+    public boolean canHostAccessStoragePool(Host host, StoragePool pool) {
+        return true;
     }
 }

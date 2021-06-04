@@ -41,7 +41,7 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
      * means heartbeating is stopped definitely
      */
     @Override
-    public Boolean checkingHB() {
+    public Boolean checkingHeartBeat() {
         List<Boolean> results = new ArrayList<Boolean>();
         for (NfsStoragePool pool : _pools) {
             Script cmd = new Script(s_heartBeatPath, _heartBeatCheckerTimeout, s_logger);
@@ -77,6 +77,6 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
     public Boolean call() throws Exception {
         // s_logger.addAppender(new org.apache.log4j.ConsoleAppender(new
         // org.apache.log4j.PatternLayout(), "System.out"));
-        return checkingHB();
+        return checkingHeartBeat();
     }
 }

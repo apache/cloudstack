@@ -20,7 +20,7 @@
     <div class="form">
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.zonenamelabel') }}</div>
-        <a-select v-model="zoneId" @change="fetchPods">
+        <a-select v-model="zoneId" @change="fetchPods" autoFocus>
           <a-select-option
             v-for="zone in zonesList"
             :value="zone.id"
@@ -150,7 +150,7 @@ export default {
       }
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {
@@ -247,19 +247,30 @@ export default {
       }
       this.loading = true
       this.parentToggleLoading()
-      api('addCluster', {}, 'POST', {
+      var data = {
         zoneId: this.zoneId,
         hypervisor: this.hypervisor,
         clustertype: this.clustertype,
         podId: this.podId,
         clustername: this.clustername,
-        ovm3pool: this.ovm3pool,
-        ovm3cluster: this.ovm3cluster,
-        ovm3vip: this.ovm3vip,
-        username: this.username,
-        password: this.password,
         url: this.url
-      }).then(response => {
+      }
+      if (this.ovm3pool) {
+        data.ovm3pool = this.ovm3pool
+      }
+      if (this.ovm3cluster) {
+        data.ovm3cluster = this.ovm3cluster
+      }
+      if (this.ovm3vip) {
+        data.ovm3vip = this.ovm3vip
+      }
+      if (this.username) {
+        data.username = this.username
+      }
+      if (this.password) {
+        data.password = this.password
+      }
+      api('addCluster', {}, 'POST', data).then(response => {
         const cluster = response.addclusterresponse.cluster[0] || {}
         if (cluster.id && this.showDedicated) {
           this.dedicateCluster(cluster.id)

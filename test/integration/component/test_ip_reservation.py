@@ -22,7 +22,8 @@
 
     Feature Specifications: https://cwiki.apache.org/confluence/display/CLOUDSTACK/FS+-+IP+Range+Reservation+within+a+Network
 """
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.utils import validateList, cleanup_resources, verifyRouterState
 from marvin.lib.base import (Account,
                              Network,
@@ -762,7 +763,7 @@ class TestUpdateIPReservation(cloudstackTestCase):
 
         try:
             virtual_machine_1 = createVirtualMachine(self, network_id=isolated_network.id,
-                    ip_address=u"10.1."+random_subnet+".3")
+                    ip_address="10.1."+random_subnet+".3")
         except Exception as e:
             self.fail("VM creation failed: %s" % e)
 
