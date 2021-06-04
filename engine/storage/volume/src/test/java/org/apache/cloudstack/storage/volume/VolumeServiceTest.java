@@ -140,40 +140,20 @@ public class VolumeServiceTest extends TestCase{
     }
 
     @Test
-    public void validateCopyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigrationReturnTrue() throws ExecutionException, InterruptedException{
+    public void validateCopyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigrationReturnTrueOrFalse() throws ExecutionException, InterruptedException{
         VolumeObject volumeObject = new VolumeObject();
         volumeObject.configure(null, new VolumeVO() {});
 
-        Mockito.doReturn(true).when(volumeDaoMock).updateUuid(Mockito.anyLong(), Mockito.anyLong());
         Mockito.doNothing().when(snapshotManagerMock).copySnapshotPoliciesBetweenVolumes(Mockito.any(), Mockito.any());
-        Mockito.doNothing().when(volumeServiceImplSpy).destroyVolume(Mockito.anyLong());
-        Mockito.doNothing().when(volumeServiceImplSpy).expungeSourceVolumeAfterMigration(Mockito.any(), Mockito.anyBoolean());
+        Mockito.doReturn(true, false).when(volumeServiceImplSpy).destroySourceVolumeAfterMigration(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
 
-        boolean result = volumeServiceImplSpy.copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(ObjectInDataStoreStateMachine.Event.DestroyRequested, null, volumeObject,
-          volumeObject, true);
+        boolean result = volumeServiceImplSpy.copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(ObjectInDataStoreStateMachine.Event.DestroyRequested, null,
+          volumeObject, volumeObject, true);
+        boolean result2 = volumeServiceImplSpy.copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(ObjectInDataStoreStateMachine.Event.DestroyRequested, null,
+          volumeObject, volumeObject, true);
 
         Assert.assertTrue(result);
-    }
-
-    @Test
-    public void validateCopyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigrationExpungeSourceVolumeAfterMigrationThrowExceptionReturnFalse() throws
-      ExecutionException, InterruptedException{
-        VolumeObject volumeObject = new VolumeObject();
-        volumeObject.configure(null, new VolumeVO() {});
-
-        List<Exception> exceptions = new ArrayList<>(Arrays.asList(new InterruptedException(), new ExecutionException() {}));
-
-        for (Exception exception : exceptions) {
-            Mockito.doReturn(true).when(volumeDaoMock).updateUuid(Mockito.anyLong(), Mockito.anyLong());
-            Mockito.doNothing().when(snapshotManagerMock).copySnapshotPoliciesBetweenVolumes(Mockito.any(), Mockito.any());
-            Mockito.doNothing().when(volumeServiceImplSpy).destroyVolume(Mockito.anyLong());
-            Mockito.doThrow(exception).when(volumeServiceImplSpy).expungeSourceVolumeAfterMigration(Mockito.any(), Mockito.anyBoolean());
-
-            boolean result = volumeServiceImplSpy.copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(ObjectInDataStoreStateMachine.Event.DestroyRequested, null,
-              volumeObject, volumeObject, true);
-
-            Assert.assertFalse(result);
-        }
+        Assert.assertFalse(result2);
     }
 
     @Test (expected = Exception.class)
@@ -183,6 +163,51 @@ public class VolumeServiceTest extends TestCase{
         volumeObject.configure(null, new VolumeVO() {});
 
         volumeServiceImplSpy.copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(ObjectInDataStoreStateMachine.Event.DestroyRequested, null, volumeObject,
+          volumeObject, true);
+    }
+
+    @Test
+    public void validateDestroySourceVolumeAfterMigrationReturnTrue() throws ExecutionException, InterruptedException{
+        VolumeObject volumeObject = new VolumeObject();
+        volumeObject.configure(null, new VolumeVO() {});
+
+        Mockito.doReturn(true).when(volumeDaoMock).updateUuid(Mockito.anyLong(), Mockito.anyLong());
+        Mockito.doNothing().when(volumeServiceImplSpy).destroyVolume(Mockito.anyLong());
+        Mockito.doNothing().when(volumeServiceImplSpy).expungeSourceVolumeAfterMigration(Mockito.any(), Mockito.anyBoolean());
+
+        boolean result = volumeServiceImplSpy.destroySourceVolumeAfterMigration(ObjectInDataStoreStateMachine.Event.DestroyRequested, null, volumeObject,
+          volumeObject, true);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void validateDestroySourceVolumeAfterMigrationExpungeSourceVolumeAfterMigrationThrowExceptionReturnFalse() throws
+      ExecutionException, InterruptedException{
+        VolumeObject volumeObject = new VolumeObject();
+        volumeObject.configure(null, new VolumeVO() {});
+
+        List<Exception> exceptions = new ArrayList<>(Arrays.asList(new InterruptedException(), new ExecutionException() {}));
+
+        for (Exception exception : exceptions) {
+            Mockito.doReturn(true).when(volumeDaoMock).updateUuid(Mockito.anyLong(), Mockito.anyLong());
+            Mockito.doNothing().when(volumeServiceImplSpy).destroyVolume(Mockito.anyLong());
+            Mockito.doThrow(exception).when(volumeServiceImplSpy).expungeSourceVolumeAfterMigration(Mockito.any(), Mockito.anyBoolean());
+
+            boolean result = volumeServiceImplSpy.destroySourceVolumeAfterMigration(ObjectInDataStoreStateMachine.Event.DestroyRequested, null,
+              volumeObject, volumeObject, true);
+
+            Assert.assertFalse(result);
+        }
+    }
+
+    @Test (expected = Exception.class)
+    public void validateDestroySourceVolumeAfterMigrationThrowAnyOtherException() throws
+      ExecutionException, InterruptedException{
+        VolumeObject volumeObject = new VolumeObject();
+        volumeObject.configure(null, new VolumeVO() {});
+
+        volumeServiceImplSpy.destroySourceVolumeAfterMigration(ObjectInDataStoreStateMachine.Event.DestroyRequested, null, volumeObject,
           volumeObject, true);
     }
 }

@@ -1850,6 +1850,13 @@ public class VolumeServiceImpl implements VolumeService {
     @Override
     public boolean copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(Event destinationEvent, Answer destinationEventAnswer, VolumeInfo sourceVolume,
       VolumeInfo destinationVolume, boolean retryExpungeVolumeAsync) {
+        VolumeVO sourceVolumeVo = ((VolumeObject) sourceVolume).getVolume();
+        snapshotMgr.copySnapshotPoliciesBetweenVolumes(sourceVolumeVo, ((VolumeObject) destinationVolume).getVolume());
+        return destroySourceVolumeAfterMigration(destinationEvent, destinationEventAnswer, sourceVolume, destinationVolume, retryExpungeVolumeAsync);
+    }
+
+    protected boolean destroySourceVolumeAfterMigration(Event destinationEvent, Answer destinationEventAnswer, VolumeInfo sourceVolume,
+      VolumeInfo destinationVolume, boolean retryExpungeVolumeAsync) {
         sourceVolume.processEvent(Event.OperationSuccessed);
         destinationVolume.processEvent(destinationEvent, destinationEventAnswer);
 
@@ -1857,8 +1864,6 @@ public class VolumeServiceImpl implements VolumeService {
 
         long sourceVolumeId = sourceVolume.getId();
         volDao.updateUuid(sourceVolumeId, destinationVolume.getId());
-
-        snapshotMgr.copySnapshotPoliciesBetweenVolumes(sourceVolumeVo, ((VolumeObject) destinationVolume).getVolume());
 
         s_logger.info(String.format("Cleaning up %s on storage [%s].", sourceVolumeVo.getVolumeDescription(), sourceVolumeVo.getPoolId()));
         destroyVolume(sourceVolumeId);
