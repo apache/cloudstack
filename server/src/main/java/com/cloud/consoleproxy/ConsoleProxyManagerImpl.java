@@ -849,7 +849,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     public boolean isZoneReady(Map<Long, ZoneHostInfo> zoneHostInfoMap, long dataCenterId) {
-        List <HostVO> hosts = _hostDao.listByDataCenterId(dataCenterId);
+        List <HostVO> hosts = hostDao.listByDataCenterId(dataCenterId);
         if (CollectionUtils.isEmpty(hosts)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Zone " + dataCenterId + " has no host available which is enabled and in Up state");
