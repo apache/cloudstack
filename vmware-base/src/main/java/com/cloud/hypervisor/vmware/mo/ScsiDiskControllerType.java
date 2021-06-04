@@ -22,4 +22,5 @@ public interface ScsiDiskControllerType {
     String LSILOGIC_SAS_1068 = "lsisas1068";
     String BUSLOGIC = "buslogic";
     String VMWARE_PARAVIRTUAL = "pvscsi";
+    String VMWARE_VIRTUAL_SCSI = "VirtualSCSI";
 }
