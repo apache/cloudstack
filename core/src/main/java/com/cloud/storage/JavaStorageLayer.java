@@ -189,7 +189,11 @@ public class JavaStorageLayer implements StorageLayer {
             File dir = new File(dirName);
             if (dir.exists()) {
                 if (isWorldReadable(dir)) {
-                    s_logger.warn("The temp dir " + dir.getAbsolutePath() + " is World Readable");
+                    if (dir.getAbsolutePath().equals("/tmp")) {
+                        s_logger.warn("The temp dir is /tmp");
+                    }else {
+                        s_logger.warn("The temp dir " + dir.getAbsolutePath() + " is World Readable");
+                    }
                 }
                 String uniqDirName = dir.getAbsolutePath() + File.separator + UUID.randomUUID().toString();
                 if (mkdir(uniqDirName)) {
