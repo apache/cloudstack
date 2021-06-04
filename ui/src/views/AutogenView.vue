@@ -127,7 +127,7 @@
         :okText="$t('label.ok')"
         :cancelText="$t('label.cancel')"
         style="top: 20px;"
-        :width="this.selectedItems.length > 0 ? '50vw' : '30vw'"
+        :width="modalWidth"
         @ok="handleSubmit"
         @cancel="closeAction"
         :confirmLoading="actionLoading"
@@ -468,7 +468,8 @@ export default {
       actions: [],
       formModel: {},
       confirmDirty: false,
-      firstIndex: 0
+      firstIndex: 0,
+      modalWidth: '30vw'
     }
   },
   beforeCreate () {
@@ -698,7 +699,9 @@ export default {
         })
       }
       this.chosenColumns = this.columns.filter(column => {
-        return !['State', 'Host', 'Zone', 'IP Address', 'Private IP Address', 'Link Local IP Address'].includes(column.title)
+        return ![this.$t('label.state'), this.$t('label.hostname'), this.$t('label.hostid'), this.$t('label.zonename'),
+          this.$t('label.zone'), this.$t('label.zoneid'), this.$t('label.ip'), this.$t('label.ipaddress'), this.$t('label.privateip'),
+          this.$t('label.linklocalip'), this.$t('label.size'), this.$t('label.sizegb')].includes(column.title)
       })
 
       if (['listTemplates', 'listIsos'].includes(this.apiName) && this.dataView) {
@@ -817,9 +820,12 @@ export default {
     onRowSelectionChange (selection) {
       this.selectedRowKeys = selection
       if (selection?.length > 0) {
+        this.modalWidth = '50vw'
         this.selectedItems = (this.items.filter(function (item) {
           return selection.indexOf(item.id) !== -1
         }))
+      } else {
+        this.modalWidth = '30vw'
       }
     },
     execAction (action, isGroupAction) {
@@ -1090,7 +1096,7 @@ export default {
           tempResource.push(resource)
         }
         for (var r = 0; r < tempResource.length; r++) {
-          const objIndex = this.selectedItems.findIndex(obj => obj.id === tempResource[r])
+          const objIndex = this.selectedItems.findIndex(obj => (obj.id === tempResource[r] || obj.username === tempResource[r]))
           this.selectedItems[objIndex].status = state
           if (jobid) {
             this.selectedItems[objIndex].jobid = jobid

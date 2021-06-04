@@ -425,7 +425,7 @@ export default {
       return ['vm', 'alert', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot',
         'vmsnapshot', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
-        'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm'
+        'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes'
       ].includes(this.$route.name)
     },
     fetchColumns () {
