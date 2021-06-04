@@ -128,10 +128,7 @@ public class KVMHostInfo {
             */
             this.capabilities.add("snapshot");
             conn.close();
-
-            LOGGER.info(String.format("Fetched the following host's information {\"cpus\": %s, \"cpuSpeed\": %s, \"cpuSockets\": %s, \"cpuNodes\": %s, \"capabilities\": \"%s\"}.",
-              hosts.cpus, this.cpuSpeed, hosts.sockets, hosts.nodes, this.capabilities.toString()));
-        } catch (LibvirtException e) {
+        } catch (final LibvirtException e) {
             LOGGER.error("Caught libvirt exception while fetching host information", e);
         }
     }
