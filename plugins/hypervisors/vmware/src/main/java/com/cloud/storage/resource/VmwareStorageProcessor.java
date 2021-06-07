@@ -3772,6 +3772,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             if(!primaryDsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
+                HypervisorHostHelper.createBaseFolderInDatastore(primaryDsMo, primaryDsMo.getDataCenterMor());
                 clonedVm.moveAllVmDiskFiles(primaryDsMo, HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, false);
             }
             clonedVm.detachAllDisks();
