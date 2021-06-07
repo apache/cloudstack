@@ -106,7 +106,11 @@
                           @update-template-iso="updateFieldValue" />
                         <span>
                           {{ $t('label.override.rootdisk.size') }}
-                          <a-switch :disabled="template.deployasis" @change="val => { this.showRootDiskSizeChanger = val }" style="margin-left: 10px;"/>
+                          <a-switch
+                            :checked="showRootDiskSizeChanger && rootDiskSizeFixed > 0"
+                            :disabled="rootDiskSizeFixed > 0 || template.deployasis"
+                            @change="val => { this.showRootDiskSizeChanger = val }"
+                            style="margin-left: 10px;"/>
                           <div v-if="template.deployasis">  {{ this.$t('message.deployasis') }} </div>
                         </span>
                         <disk-size-selection
@@ -185,7 +189,7 @@
                     </a-form-item>
                     <compute-offering-selection
                       :compute-items="options.serviceOfferings"
-                      :selected-template="template"
+                      :selected-template="template ? template : {}"
                       :row-count="rowCount.serviceOfferings"
                       :zoneId="zoneId"
                       :value="serviceOffering ? serviceOffering.id : ''"
@@ -771,7 +775,8 @@ export default {
       dataPreFill: {},
       showDetails: false,
       showRootDiskSizeChanger: false,
-      securitygroupids: []
+      securitygroupids: [],
+      rootDiskSizeFixed: 0
     }
   },
   computed: {
@@ -1422,6 +1427,8 @@ export default {
         }
         if (this.showRootDiskSizeChanger && values.rootdisksize && values.rootdisksize > 0) {
           deployVmData.rootdisksize = values.rootdisksize
+        } else if (this.rootDiskSizeFixed > 0) {
+          deployVmData.rootdisksize = this.rootDiskSizeFixed
         }
         if (values.hypervisor && values.hypervisor.length > 0) {
           deployVmData.hypervisor = values.hypervisor
@@ -1957,6 +1964,10 @@ export default {
         if ('memory' in this.form.fieldsStore.fieldsMeta) {
           this.updateFieldValue('memory', this.selectedTemplateConfiguration.memory)
         }
+      }
+      if (offering && offering.rootdisksize > 0) {
+        this.rootDiskSizeFixed = offering.rootdisksize / (1024 * 1024 * 1024.0).toFixed(2)
+        this.showRootDiskSizeChanger = false
       }
     }
   }

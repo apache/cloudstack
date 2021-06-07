@@ -335,6 +335,14 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Boolean display = cmd.getDisplay();
 
         SnapshotPolicyVO policyVO = _snapshotPolicyDao.findById(id);
+        VolumeInfo volume = volFactory.getVolume(policyVO.getVolumeId());
+        if (volume == null) {
+            throw new InvalidParameterValueException("No such volume exist");
+        }
+
+        // does the caller have the authority to act on this volume
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
+
         if (display != null) {
             boolean previousDisplay = policyVO.isDisplay();
             policyVO.setDisplay(display);
@@ -410,16 +418,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
 
         return snapshotOnSecondary;
-    }
-
-    @Override
-    public Snapshot backupSnapshot(Long snapshotId) {
-        SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Image);
-        if (snapshot != null) {
-            throw new CloudRuntimeException("Already in the backup snapshot:" + snapshotId);
-        }
-
-        return snapshotSrv.backupSnapshot(snapshot);
     }
 
     @Override

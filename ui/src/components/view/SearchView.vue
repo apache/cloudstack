@@ -40,7 +40,7 @@
           slot="addonBefore"
           trigger="click"
           v-model="visibleFilter">
-          <template slot="content">
+          <template slot="content" v-if="visibleFilter">
             <a-form
               style="min-width: 170px"
               :form="form"
@@ -76,9 +76,7 @@
                       <a-input ref="input" :value="inputKey" @change="e => inputKey = e.target.value" style="width: 50px; text-align: center" :placeholder="$t('label.key')" />
                       <a-input style=" width: 20px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
                       <a-input :value="inputValue" @change="handleValueChange" style="width: 50px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-                      <a-button shape="circle" size="small" @click="inputKey = inputValue = ''">
-                        <a-icon type="close"/>
-                      </a-button>
+                      <tooltip-button icon="close" size="small" @click="inputKey = inputValue = ''" />
                     </a-input-group>
                   </div>
                 </div>
@@ -104,7 +102,7 @@
             class="filter-button"
             size="small"
             @click="() => { searchQuery = null }">
-            <a-icon type="filter" :theme="Object.keys(searchParams).length > 0 ? 'twoTone' : 'outlined'" />
+            <a-icon type="filter" :theme="isFiltered ? 'twoTone' : 'outlined'" />
           </a-button>
         </a-popover>
       </a-input-search>
@@ -140,7 +138,8 @@ export default {
       fields: [],
       inputKey: null,
       inputValue: null,
-      fieldValues: {}
+      fieldValues: {},
+      isFiltered: false
     }
   },
   beforeCreate () {
@@ -157,6 +156,13 @@ export default {
       if (to && to.query && 'q' in to.query) {
         this.searchQuery = to.query.q
       }
+      this.isFiltered = false
+      this.searchFilters.some(item => {
+        if (this.searchParams[item]) {
+          this.isFiltered = true
+          return true
+        }
+      })
     }
   },
   mounted () {
@@ -417,6 +423,7 @@ export default {
         field[item] = undefined
         this.form.setFieldsValue(field)
       })
+      this.isFiltered = false
       this.inputKey = null
       this.inputValue = null
       this.searchQuery = null
@@ -430,6 +437,7 @@ export default {
         if (err) {
           return
         }
+        this.isFiltered = true
         for (const key in values) {
           const input = values[key]
           if (input === '' || input === null || input === undefined) {

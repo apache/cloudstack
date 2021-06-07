@@ -72,11 +72,11 @@
         </template>
 
         <template slot="action" slot-scope="text, record">
-          <a-button
+          <tooltip-button
             v-if="record.issourcenat !== true && record.forvirtualnetwork === true"
+            :tooltip="$t('label.action.release.ip')"
             type="danger"
             icon="delete"
-            shape="circle"
             :disabled="!('disassociateIpAddress' in $store.getters.apis)"
             @click="releaseIpAddress(record)" />
         </template>
@@ -129,11 +129,13 @@
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'IpAddressesTab',
   components: {
-    Status
+    Status,
+    TooltipButton
   },
   props: {
     resource: {

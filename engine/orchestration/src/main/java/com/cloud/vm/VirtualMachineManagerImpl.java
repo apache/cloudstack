@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.ApiDBUtils;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
@@ -519,6 +520,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         advanceExpunge(vm);
     }
 
+    private boolean expungeCommandCanBypassHostMaintenance(VirtualMachine vm) {
+        return VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType()) ||
+                VirtualMachine.Type.ConsoleProxy.equals(vm.getType());
+    }
+
     protected void advanceExpunge(VMInstanceVO vm) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         if (vm == null || vm.getRemoved() != null) {
             if (s_logger.isDebugEnabled()) {
@@ -565,6 +571,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             final Commands cmds = new Commands(Command.OnError.Stop);
 
             for (final Command volumeExpungeCommand : volumeExpungeCommands) {
+                volumeExpungeCommand.setBypassHostMaintenance(expungeCommandCanBypassHostMaintenance(vm));
                 cmds.addCommand(volumeExpungeCommand);
             }
 
@@ -606,10 +613,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (hostId != null) {
                 final Commands cmds = new Commands(Command.OnError.Stop);
                 for (final Command command : finalizeExpungeCommands) {
+                    command.setBypassHostMaintenance(expungeCommandCanBypassHostMaintenance(vm));
                     cmds.addCommand(command);
                 }
                 if (nicExpungeCommands != null) {
                     for (final Command command : nicExpungeCommands) {
+                        command.setBypassHostMaintenance(expungeCommandCanBypassHostMaintenance(vm));
                         cmds.addCommand(command);
                     }
                 }
@@ -1976,6 +1985,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     s_logger.warn("Unable to actually stop " + vm + " but continue with release because it's a force stop");
                     vmGuru.finalizeStop(profile, answer);
                 }
+            } else {
+                if (VirtualMachine.systemVMs.contains(vm.getType())) {
+                    HostVO systemVmHost = ApiDBUtils.findHostByTypeNameAndZoneId(vm.getDataCenterId(), vm.getHostName(),
+                            VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType()) ? Host.Type.SecondaryStorageVM : Host.Type.ConsoleProxy);
+                    if (systemVmHost != null) {
+                        _agentMgr.agentStatusTransitTo(systemVmHost, Status.Event.ShutdownRequested, _nodeId);
+                    }
+                }
             }
         }
 
@@ -2292,43 +2309,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             volume.setPoolId(destPool.getId());
             _volsDao.update(volume.getId(), volume);
         }
-    }
-
-    private Pair<Long, Long> findClusterAndHostIdForVm(VMInstanceVO vm) {
-        Long hostId = vm.getHostId();
-        Long clusterId = null;
-        // OfflineVmwareMigration: probably this is null when vm is stopped
-        if(hostId == null) {
-            hostId = vm.getLastHostId();
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("host id is null, using last host id %d", hostId) );
-            }
-        }
-        if (hostId == null) {
-            List<VolumeVO> volumes = _volsDao.findByInstanceAndType(vm.getId(), Type.ROOT);
-            if (CollectionUtils.isNotEmpty(volumes)) {
-                for (VolumeVO rootVolume : volumes) {
-                    if (rootVolume.getPoolId() != null) {
-                        StoragePoolVO pool = _storagePoolDao.findById(rootVolume.getPoolId());
-                        if (pool != null && pool.getClusterId() != null) {
-                            clusterId = pool.getClusterId();
-                            List<HostVO> hosts = _hostDao.findHypervisorHostInCluster(pool.getClusterId());
-                            if (CollectionUtils.isNotEmpty(hosts)) {
-                                hostId = hosts.get(0).getId();
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (clusterId == null && hostId != null) {
-            HostVO host = _hostDao.findById(hostId);
-            if (host != null) {
-                clusterId = host.getClusterId();
-            }
-        }
-        return new Pair<>(clusterId, hostId);
     }
 
     private void migrateThroughHypervisorOrStorage(StoragePool destPool, VMInstanceVO vm) throws StorageUnavailableException, InsufficientCapacityException {
@@ -3370,7 +3350,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             final Answer rebootAnswer = cmds.getAnswer(RebootAnswer.class);
             if (rebootAnswer != null && rebootAnswer.getResult()) {
-                if (dc.isSecurityGroupEnabled() && vm.getType() == VirtualMachine.Type.User) {
+                boolean isVmSecurityGroupEnabled = _securityGroupManager.isVmSecurityGroupEnabled(vm.getId());
+                if (isVmSecurityGroupEnabled && vm.getType() == VirtualMachine.Type.User) {
                     List<Long> affectedVms = new ArrayList<Long>();
                     affectedVms.add(vm.getId());
                     _securityGroupManager.scheduleRulesetUpdateToHosts(affectedVms, true, null);
@@ -3669,22 +3650,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final ServiceOfferingVO currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
 
-        // Check that the service offering being upgraded to has the same Guest IP type as the VM's current service offering
-        // NOTE: With the new network refactoring in 2.2, we shouldn't need the check for same guest IP type anymore.
-        /*
-         * if (!currentServiceOffering.getGuestIpType().equals(newServiceOffering.getGuestIpType())) { String errorMsg =
-         * "The service offering being upgraded to has a guest IP type: " + newServiceOffering.getGuestIpType(); errorMsg +=
-         * ". Please select a service offering with the same guest IP type as the VM's current service offering (" +
-         * currentServiceOffering.getGuestIpType() + ")."; throw new InvalidParameterValueException(errorMsg); }
-         */
-
-        // Check that the service offering being upgraded to has the same storage pool preference as the VM's current service
-        // offering
-        if (currentServiceOffering.isUseLocalStorage() != newServiceOffering.isUseLocalStorage()) {
-            throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vmInstance.toString() +
-                    ", cannot switch between local storage and shared storage service offerings.  Current offering " + "useLocalStorage=" +
-                    currentServiceOffering.isUseLocalStorage() + ", target offering useLocalStorage=" + newServiceOffering.isUseLocalStorage());
-        }
+        checkIfNewOfferingStorageScopeMatchesStoragePool(vmInstance, newServiceOffering);
 
         // if vm is a system vm, check if it is a system service offering, if yes return with error as it cannot be used for user vms
         if (currentServiceOffering.isSystemUse() != newServiceOffering.isSystemUse()) {
@@ -3704,6 +3670,39 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new InvalidParameterValueException("Unable to upgrade virtual machine; the current service offering " + " should have tags as subset of " +
                     "the new service offering tags. Current service offering tags: " + currentTags + "; " + "new service " + "offering tags: " + newTags);
         }
+    }
+
+    /**
+     * Throws an InvalidParameterValueException in case the new service offerings does not match the storage scope (e.g. local or shared).
+     */
+    protected void checkIfNewOfferingStorageScopeMatchesStoragePool(VirtualMachine vmInstance, ServiceOffering newServiceOffering) {
+        boolean isRootVolumeOnLocalStorage = isRootVolumeOnLocalStorage(vmInstance.getId());
+
+        if (newServiceOffering.isUseLocalStorage() && !isRootVolumeOnLocalStorage) {
+            String message = String .format("Unable to upgrade virtual machine %s, target offering use local storage but the storage pool where "
+                    + "the volume is allocated is a shared storage.", vmInstance.toString());
+            throw new InvalidParameterValueException(message);
+        }
+
+        if (!newServiceOffering.isUseLocalStorage() && isRootVolumeOnLocalStorage) {
+            String message = String.format("Unable to upgrade virtual machine %s, target offering use shared storage but the storage pool where "
+                    + "the volume is allocated is a local storage.", vmInstance.toString());
+            throw new InvalidParameterValueException(message);
+        }
+    }
+
+    public boolean isRootVolumeOnLocalStorage(long vmId) {
+        ScopeType poolScope = ScopeType.ZONE;
+        List<VolumeVO> volumes = _volsDao.findByInstanceAndType(vmId, Type.ROOT);
+        if(CollectionUtils.isNotEmpty(volumes)) {
+            VolumeVO rootDisk = volumes.get(0);
+            Long poolId = rootDisk.getPoolId();
+            if (poolId != null) {
+                StoragePoolVO storagePoolVO = _storagePoolDao.findById(poolId);
+                poolScope = storagePoolVO.getScope();
+            }
+        }
+        return ScopeType.HOST == poolScope;
     }
 
     @Override
@@ -4706,7 +4705,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         String.format("VM %s is at %s and we received a %s report while there is no pending jobs on it"
                                 , vm.getInstanceName(), vm.getState(), vm.getPowerState()));
             }
-            if(vm.isHaEnabled() && vm.getState() == State.Running
+            if((HighAvailabilityManager.ForceHA.value() || vm.isHaEnabled()) && vm.getState() == State.Running
                     && HaVmRestartHostUp.value()
                     && vm.getHypervisorType() != HypervisorType.VMware
                     && vm.getHypervisorType() != HypervisorType.Hyperv) {
@@ -5913,4 +5912,53 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _jobMgr.marshallResultObject(result));
     }
 
+    private Pair<Long, Long> findClusterAndHostIdForVmFromVolumes(long vmId) {
+        Long clusterId = null;
+        Long hostId = null;
+        List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
+        for (VolumeVO volume : volumes) {
+            if (Volume.State.Ready.equals(volume.getState()) &&
+                    volume.getPoolId() != null) {
+                StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
+                if (pool != null && pool.getClusterId() != null) {
+                    clusterId = pool.getClusterId();
+                    // hostId to be used only for sending commands, capacity check skipped
+                    List<HostVO> hosts = _hostDao.findHypervisorHostInCluster(pool.getClusterId());
+                    if (CollectionUtils.isNotEmpty(hosts)) {
+                        hostId = hosts.get(0).getId();
+                        break;
+                    }
+                }
+            }
+        }
+        return new Pair<>(clusterId, hostId);
+    }
+
+    private Pair<Long, Long> findClusterAndHostIdForVm(VirtualMachine vm) {
+        Long hostId = vm.getHostId();
+        Long clusterId = null;
+        if(hostId == null) {
+            hostId = vm.getLastHostId();
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("host id is null, using last host id %d", hostId) );
+            }
+        }
+        if (hostId == null) {
+            return findClusterAndHostIdForVmFromVolumes(vm.getId());
+        }
+        HostVO host = _hostDao.findById(hostId);
+        if (host != null) {
+            clusterId = host.getClusterId();
+        }
+        return new Pair<>(clusterId, hostId);
+    }
+
+    @Override
+    public Pair<Long, Long> findClusterAndHostIdForVm(long vmId) {
+        VMInstanceVO vm = _vmDao.findById(vmId);
+        if (vm == null) {
+            return new Pair<>(null, null);
+        }
+        return findClusterAndHostIdForVm(vm);
+    }
 }

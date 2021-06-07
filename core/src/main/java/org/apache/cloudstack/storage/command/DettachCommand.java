@@ -31,6 +31,7 @@ public class DettachCommand extends StorageSubSystemCommand {
     private String _storageHost;
     private int _storagePort;
     private Map<String, String> params;
+    private boolean forced;
 
     public DettachCommand(final DiskTO disk, final String vmName) {
         super();
@@ -104,6 +105,14 @@ public class DettachCommand extends StorageSubSystemCommand {
 
     public void setParams(Map<String, String> params) {
         this.params = params;
+    }
+
+    public boolean isForced() {
+        return forced;
+    }
+
+    public void setForced(boolean forced) {
+        this.forced = forced;
     }
 
     @Override
