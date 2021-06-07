@@ -106,6 +106,12 @@
                             <target>
                                 <mkdir dir="${basedir}/dist" />
                                 <mkdir dir="${basedir}/target/build-patch" />
+                                <mkdir dir="${basedir}/target/systemvm-patches" />
+                                <copy overwrite="true" todir="${basedir}/dist/systemvm-patches">
+                                    <fileset dir="${basedir}/systemvm-patches/">
+                                        <include name="**/*" />
+                                    </fileset>
+                                </copy>
                                 <copy overwrite="true" todir="${basedir}/target/build-patch">
                                     <fileset dir="${basedir}/debian/">
                                         <include name="**/*" />
@@ -160,6 +166,7 @@
                         <argument>systemvm.iso</argument>
                         <argument>agent.zip</argument>
                         <argument>cloud-scripts.tgz</argument>
+                        <argument>systemvm-patches</argument>
                     </arguments>
                 </configuration>
             </plugin>

@@ -13,6 +13,8 @@ WantedBy=multi-user.target
 
 [Service]
 Type=oneshot
+ExecStartPre=bash -c "sleep 1"
+ExecStartPre=bash -c "while [ ! -f /root/cloudstack-mount.mounted ]; do sleep 0.1; done"
 ExecStart=/opt/cloud/bin/setup/cloud-early-config
 RemainAfterExit=true
 TimeoutStartSec=5min
