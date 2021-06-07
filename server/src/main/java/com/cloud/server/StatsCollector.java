@@ -147,7 +147,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 
 /**
  * Provides real time stats for various agent resources up to x seconds
