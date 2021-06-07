@@ -25,6 +25,7 @@
         "scripts/configure_login.sh",
         "../cloud_scripts_shar_archive.sh",
         "scripts/configure_systemvm_services.sh",
+        "scripts/configure_overlayfs.sh",
         "scripts/cleanup.sh",
         "scripts/finalize.sh"
       ]
