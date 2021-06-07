@@ -351,52 +351,12 @@
         </template>
       </a-pagination>
     </div>
-    <a-modal
-      :visible="showGroupActionModal"
-      :closable="true"
-      :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
-      @cancel="handleCancel"
-      width="50vw"
-      style="top: 20px;overflow-y: auto"
-      centered
-    >
-      <span slot="title">
-        {{ $t(modalInfo.label) }}
-        <a
-          v-if="modalInfo.docHelp || $route.meta.docHelp"
-          style="margin-left: 5px"
-          :href="$config.docBase + '/' + (modalInfo.docHelp || $route.meta.docHelp)"
-          target="_blank">
-          <a-icon type="question-circle-o"></a-icon>
-        </a>
-      </span>
-      <template slot="footer">
-        <a-button key="back" @click="handleCancel"> {{ $t('label.close') }} </a-button>
-      </template>
-      <div v-if="showGroupActionModal">
-        <a-table
-          v-if="selectedItems.length > 0"
-          size="middle"
-          :columns="selectedColumns"
-          :dataSource="selectedItems"
-          :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
-          :pagination="true"
-          style="overflow-y: auto">
-          <div slot="status" slot-scope="text">
-            <status :text=" text ? text : $t('state.inprogress')" displayText></status>
-          </div>
-        </a-table>
-        <a-divider />
-        <a-card :bordered="false" style="background:#f1f1f1">
-          <div><a-icon type="check-circle-o" style="color: #52c41a; margin-right: 8px"/> {{ $t('label.success') + ': ' + selectedItems.filter(item => item.status === 'success').length || 0 }}</div>
-          <div><a-icon type="close-circle-o" style="color: #f5222d; margin-right: 8px"/> {{ $t('state.failed') + ': ' + selectedItems.filter(item => item.status === 'failed').length || 0 }}</div>
-          <div><a-icon type="sync-o" style="color: #1890ff; margin-right: 8px"/> {{ $t('state.inprogress') + ': ' + selectedItems.filter(item => item.status === 'InProgress').length || 0 }}</div>
-        </a-card>
-        <br/>
-      </div>
-    </a-modal>
+    <bulk-action-progress
+      :showGroupActionModal="showGroupActionModal"
+      :selectedItems="selectedItems"
+      :selectedColumns="selectedColumns"
+      :message="modalInfo"
+      @handle-cancel="handleCancel" />
   </div>
 </template>
 
@@ -414,6 +374,7 @@ import ListView from '@/components/view/ListView'
 import ResourceView from '@/components/view/ResourceView'
 import ActionButton from '@/components/view/ActionButton'
 import SearchView from '@/components/view/SearchView'
+import BulkActionProgress from '@/components/view/BulkActionProgress'
 
 export default {
   name: 'Resource',
@@ -424,7 +385,8 @@ export default {
     ListView,
     Status,
     ActionButton,
-    SearchView
+    SearchView,
+    BulkActionProgress
   },
   mixins: [mixinDevice],
   provide: function () {
@@ -492,6 +454,10 @@ export default {
         (this.$route.path.includes('/guestnetwork/') && (this.$route.query.tab === 'egress.rules' || this.$route.query.tab === 'public.ip.addresses'))) {
         return
       }
+
+      if (this.$route.path.includes('/template/')) {
+        return
+      }
       this.fetchData()
     })
     eventBus.$on('exec-action', (action, isGroupAction) => {
@@ -521,6 +487,35 @@ export default {
       })
 
       this.$store.commit('SET_ASYNC_JOB_IDS', jobs)
+    })
+
+    eventBus.$on('update-resource-state', (selectedItems, resource, state, jobid) => {
+      if (selectedItems.length === 0) {
+        return
+      }
+      var tempResource = []
+      if (selectedItems && resource) {
+        if (resource.includes(',')) {
+          resource = resource.split(',')
+          tempResource = resource
+        } else {
+          tempResource.push(resource)
+        }
+        for (var r = 0; r < tempResource.length; r++) {
+          var objIndex = 0
+          if (this.$route.path.includes('/template') || this.$route.path.includes('/iso')) {
+            objIndex = selectedItems.findIndex(obj => (obj.zoneid === tempResource[r]))
+          } else {
+            objIndex = selectedItems.findIndex(obj => (obj.id === tempResource[r] || obj.username === tempResource[r]))
+          }
+          if (state) {
+            selectedItems[objIndex].status = state
+          }
+          if (jobid) {
+            selectedItems[objIndex].jobid = jobid
+          }
+        }
+      }
     })
 
     if (this.device === 'desktop') {
@@ -701,7 +696,8 @@ export default {
       this.chosenColumns = this.columns.filter(column => {
         return ![this.$t('label.state'), this.$t('label.hostname'), this.$t('label.hostid'), this.$t('label.zonename'),
           this.$t('label.zone'), this.$t('label.zoneid'), this.$t('label.ip'), this.$t('label.ipaddress'), this.$t('label.privateip'),
-          this.$t('label.linklocalip'), this.$t('label.size'), this.$t('label.sizegb')].includes(column.title)
+          this.$t('label.linklocalip'), this.$t('label.size'), this.$t('label.sizegb'), this.$t('label.current'),
+          this.$t('label.created')].includes(column.title)
       })
 
       if (['listTemplates', 'listIsos'].includes(this.apiName) && this.dataView) {
@@ -979,7 +975,7 @@ export default {
         successMethod: result => {
           this.fetchData()
           if (this.selectedItems.length > 0) {
-            this.updateResourceState(resource, 'success')
+            eventBus.$emit('update-resource-state', this.selectedItems, resource, 'success')
           }
           if (action.response) {
             const description = action.response(result.jobresult)
@@ -995,7 +991,7 @@ export default {
         errorMethod: () => {
           this.fetchData()
           if (this.selectedItems.length > 0) {
-            this.updateResourceState(resource, 'failed')
+            eventBus.$emit('update-resource-state', this.selectedItems, resource, 'failed')
           }
         },
         loadingMessage: `${this.$t(action.label)} - ${resourceName}`,
@@ -1028,7 +1024,7 @@ export default {
       this.selectedItems = []
       this.selectedColumns = []
       this.selectedRowKeys = []
-      this.modalInfo = {}
+      this.message = {}
     },
     handleSubmit (e) {
       if (!this.dataView && this.currentAction.groupAction && this.selectedRowKeys.length > 0) {
@@ -1041,7 +1037,7 @@ export default {
             scopedSlots: { customRender: 'status' }
           })
           this.showGroupActionModal = true
-          this.modalInfo.label = this.currentAction.label
+          this.modalInfo.title = this.currentAction.label
           this.modalInfo.docHelp = this.currentAction.docHelp
         }
         this.form.validateFields((err, values) => {
@@ -1053,7 +1049,7 @@ export default {
             })
             const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values, this.items)
             for (const params of paramsList) {
-              var resourceName = itemsNameMap[params.id]
+              var resourceName = itemsNameMap[params.id || params.vmsnapshotid || params.username || params.name]
               // Using a method for this since it's an async call and don't want wrong prarms to be passed
               this.callGroupApi(params, resourceName)
             }
@@ -1083,32 +1079,13 @@ export default {
         }
         if (this.selectedItems.length !== 0) {
           this.$notifyError(error)
+          eventBus.$emit('update-resource-state', this.selectedItems, this.getDataIdentifier(params), 'failed')
         }
       })
     },
-    updateResourceState (resource, state, jobid) {
-      var tempResource = []
-      if (this.selectedItems && resource) {
-        if (resource.includes(',')) {
-          resource = resource.split(',')
-          tempResource = resource
-        } else {
-          tempResource.push(resource)
-        }
-        for (var r = 0; r < tempResource.length; r++) {
-          const objIndex = this.selectedItems.findIndex(obj => (obj.id === tempResource[r] || obj.username === tempResource[r]))
-          this.selectedItems[objIndex].status = state
-          if (jobid) {
-            this.selectedItems[objIndex].jobid = jobid
-          }
-        }
-      }
-    },
     getDataIdentifier (params) {
       var dataIdentifier = ''
-      if (this.selectedItems.length > 0) {
-        dataIdentifier = params.id || params.username || params.name || params.vmsnapshotid || params.ids
-      }
+      dataIdentifier = params.id || params.username || params.name || params.vmsnapshotid || params.ids
       return dataIdentifier
     },
     handleResponse (response, resourceName, resource, action, showLoading = true) {
@@ -1123,12 +1100,12 @@ export default {
               status: 'progress',
               bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
             })
-            this.updateResourceState(resource, 'InProgress', jobid)
+            eventBus.$emit('update-resource-state', this.selectedItems, resource, 'InProgress', jobid)
             this.pollActionCompletion(jobid, action, resourceName, resource, showLoading)
             return true
           } else {
             if (this.selectedItems.length > 0) {
-              this.updateResourceState(resource, 'success')
+              eventBus.$emit('update-resource-state', this.selectedItems, resource, 'success')
               if (resource) {
                 this.selectedItems.filter(item => item === resource)
               }
@@ -1242,6 +1219,7 @@ export default {
           }
 
           console.log(error)
+          eventBus.$emit('update-resource-state', this.selectedItems, this.getDataIdentifier(params), 'failed')
           this.$notifyError(error)
         }).finally(f => {
           this.actionLoading = false

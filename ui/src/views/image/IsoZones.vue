@@ -17,6 +17,14 @@
 
 <template>
   <div>
+    <a-button
+      v-if="(('deleteIso' in $store.getters.apis) && this.selectedItems.length > 0)"
+      type="danger"
+      icon="plus"
+      style="width: 100%; margin-bottom: 15px"
+      @click="bulkActionConfirmation()">
+      {{ $t(message.title) }}
+    </a-button>
     <a-table
       size="small"
       style="overflow-y: auto"
@@ -24,6 +32,7 @@
       :columns="columns"
       :dataSource="dataSource"
       :pagination="false"
+      :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.zoneid">
       <div slot="isready" slot-scope="text, record">
         <span v-if="record.isready">{{ $t('label.yes') }}</span>
@@ -118,17 +127,35 @@
         </a-form>
       </a-spin>
     </a-modal>
+    <bulk-action-view
+      v-if="showConfirmationAction || showGroupActionModal"
+      :showConfirmationAction="showConfirmationAction"
+      :showGroupActionModal="showGroupActionModal"
+      :items="dataSource"
+      :selectedRowKeys="selectedRowKeys"
+      :selectedItems="selectedItems"
+      :columns="columns"
+      :selectedColumns="selectedColumns"
+      action="deleteIso"
+      :loading="loading"
+      :message="message"
+      @group-action="deleteIsos"
+      @handle-cancel="handleCancel"
+      @close-modal="closeModal" />
   </div>
 </template>
 
 <script>
 import { api } from '@/api'
 import TooltipButton from '@/components/view/TooltipButton'
+import BulkActionView from '@/components/view/BulkActionView'
+import eventBus from '@/config/eventBus'
 
 export default {
   name: 'IsoZones',
   components: {
-    TooltipButton
+    TooltipButton,
+    BulkActionView
   },
   props: {
     resource: {
@@ -153,7 +180,18 @@ export default {
       zones: [],
       zoneLoading: false,
       copyLoading: false,
-      deleteLoading: false
+      deleteLoading: false,
+      selectedRowKeys: [],
+      showGroupActionModal: false,
+      selectedItems: [],
+      selectedColumns: [],
+      filterColumns: ['Status', 'Ready'],
+      showConfirmationAction: false,
+      message: {
+        title: this.$t('label.action.bulk.delete.isos'),
+        confirmMessage: this.$t('label.confirm.delete.isos')
+      },
+      modalWidth: '30vw'
     }
   },
   beforeCreate () {
@@ -242,6 +280,47 @@ export default {
         (this.resource.isready || !this.resource.status || this.resource.status.indexOf('Downloaded') === -1) && // Iso is ready or downloaded
         this.resource.account !== 'system'
     },
+    setSelection (selection) {
+      this.selectedRowKeys = selection
+      this.$emit('selection-change', this.selectedRowKeys)
+      this.selectedItems = (this.dataSource.filter(function (item) {
+        return selection.indexOf(item.zoneid) !== -1
+      }))
+    },
+    resetSelection () {
+      this.setSelection([])
+    },
+    onSelectChange (selectedRowKeys, selectedRows) {
+      this.setSelection(selectedRowKeys)
+    },
+    bulkActionConfirmation () {
+      this.showConfirmationAction = true
+      this.selectedColumns = this.columns.filter(column => {
+        return !this.filterColumns.includes(column.title)
+      })
+      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
+    },
+    handleCancel () {
+      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      this.showGroupActionModal = false
+      this.selectedItems = []
+      this.selectedColumns = []
+      this.selectedRowKeys = []
+    },
+    deleteIsos (e) {
+      this.showConfirmationAction = false
+      this.selectedColumns.splice(0, 0, {
+        dataIndex: 'status',
+        title: this.$t('label.operation.status'),
+        scopedSlots: { customRender: 'status' }
+      })
+      if (this.selectedRowKeys.length > 0) {
+        this.showGroupActionModal = true
+      }
+      for (const iso of this.selectedItems) {
+        this.deleteIso(iso)
+      }
+    },
     deleteIso (record) {
       const params = {
         id: record.id,
@@ -254,21 +333,37 @@ export default {
           title: this.$t('label.action.delete.iso'),
           jobid: jobId,
           description: this.resource.name,
-          status: 'progress'
+          status: 'progress',
+          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
         })
         const singleZone = (this.dataSource.length === 1)
         this.$pollJob({
           jobId,
           successMethod: result => {
             if (singleZone) {
-              this.$router.go(-1)
+              if (this.selectedItems.length === 0) {
+                this.$router.go(-1)
+              }
             } else {
-              this.fetchData()
+              if (this.selectedItems.length === 0) {
+                this.fetchData()
+              }
+            }
+            if (this.selectedItems.length > 0) {
+              eventBus.$emit('update-resource-state', this.selectedItems, record.zoneid, 'success')
             }
           },
-          errorMethod: () => this.fetchData(),
+          errorMethod: () => {
+            if (this.selectedItems.length === 0) {
+              this.fetchData()
+            }
+            if (this.selectedItems.length > 0) {
+              eventBus.$emit('update-resource-state', this.selectedItems, record.zoneid, 'failed')
+            }
+          },
           loadingMessage: `${this.$t('label.deleting.iso')} ${this.resource.name} ${this.$t('label.in.progress')}`,
-          catchMessage: this.$t('error.fetching.async.job.result')
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
         })
       }).catch(error => {
         this.$notifyError(error)
@@ -340,6 +435,9 @@ export default {
           this.fetchData()
         })
       })
+    },
+    closeModal () {
+      this.showConfirmationAction = false
     }
   }
 }

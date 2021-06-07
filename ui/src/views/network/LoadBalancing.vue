@@ -1001,17 +1001,12 @@ export default {
       this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
     },
     handleCancel () {
+      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []
       this.selectedRowKeys = []
       this.parentFetchData()
-    },
-    updateResourceState (resource, state) {
-      if (this.selectedItems && resource) {
-        const objIndex = this.selectedItems.findIndex(obj => obj.id === resource)
-        this.selectedItems[objIndex].status = state
-      }
     },
     deleteRules (e) {
       this.showConfirmationAction = false
@@ -1046,7 +1041,7 @@ export default {
           successMessage: this.$t('message.success.remove.rule'),
           successMethod: () => {
             if (this.selectedItems.length > 0) {
-              this.updateResourceState(rule.id, 'success')
+              eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'success')
             }
             if (this.selectedRowKeys.length === 0) {
               this.parentFetchData()
@@ -1057,7 +1052,7 @@ export default {
           errorMessage: this.$t('message.remove.rule.failed'),
           errorMethod: () => {
             if (this.selectedItems.length > 0) {
-              this.updateResourceState(rule.id, 'failed')
+              eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'failed')
             }
             if (this.selectedRowKeys.length === 0) {
               this.parentFetchData()
