@@ -40,7 +40,7 @@ public enum DiskControllerType {
             return DiskControllerType.ide;
         } else if (diskController.equalsIgnoreCase("vim.vm.device.ParaVirtualSCSIController") || diskController.equalsIgnoreCase("ParaVirtualSCSIController")
                 || diskController.equalsIgnoreCase(ScsiDiskControllerType.VMWARE_PARAVIRTUAL)
-                || diskController.equalsIgnoreCase(ScsiDiskControllerType.VMWARE_VIRTUAL_SCSI)) {
+                || diskController.equalsIgnoreCase(ScsiDiskControllerType.VIRTUAL_SCSI)) {
             return DiskControllerType.pvscsi;
         } else if (diskController.equalsIgnoreCase("vim.vm.device.VirtualBusLogicController") || diskController.equalsIgnoreCase("VirtualBusLogicController")
                 || diskController.equalsIgnoreCase(ScsiDiskControllerType.BUSLOGIC)) {
