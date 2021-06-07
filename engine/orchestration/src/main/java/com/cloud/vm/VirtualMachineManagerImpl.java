@@ -4680,16 +4680,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 new ScaleVmCommand(vm.getInstanceName(), newServiceOffering.getCpu(), minSpeed,
                         newServiceOffering.getSpeed(), minMemory * 1024L * 1024L, newServiceOffering.getRamSize() * 1024L * 1024L, newServiceOffering.getLimitCpuUse());
 
-        reconfigureCmd.getVirtualMachine().setId(vm.getId());
-        reconfigureCmd.getVirtualMachine().setUuid(vm.getUuid());
-        reconfigureCmd.getVirtualMachine().setType(vm.getType());
+        scaleVmCommand.getVirtualMachine().setId(vm.getId());
+        scaleVmCommand.getVirtualMachine().setUuid(vm.getUuid());
+        scaleVmCommand.getVirtualMachine().setType(vm.getType());
 
         final Long dstHostId = vm.getHostId();
         if(vm.getHypervisorType().equals(HypervisorType.VMware)) {
             final HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
             Map<String, String> details = null;
             details = hvGuru.getClusterSettings(vm.getId());
-            reconfigureCmd.getVirtualMachine().setDetails(details);
+            scaleVmCommand.getVirtualMachine().setDetails(details);
         }
 
         ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Running, vm.getType(), vm.getId());
@@ -4700,7 +4700,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         _workDao.persist(work);
 
         try {
-            Answer reconfigureAnswer = _agentMgr.send(vm.getHostId(), reconfigureCmd);
+            Answer reconfigureAnswer = _agentMgr.send(vm.getHostId(), scaleVmCommand);
 
             if (reconfigureAnswer == null || !reconfigureAnswer.getResult()) {
                 s_logger.error("Unable to scale vm due to " + (reconfigureAnswer == null ? "" : reconfigureAnswer.getDetails()));
