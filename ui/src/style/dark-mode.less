@@ -17,16 +17,22 @@
 
 @primary-color: #1890ff;
 @dark-background-color: #090c10;
-@dark-secondary-bgColor: #161b22;
+@dark-secondary-bgColor: #141414;
 @dark-text-color-1: rgba(255, 255, 255, 0.25);
 @dark-text-color-2: rgba(255, 255, 255, 0.45);
 @dark-text-color-3: rgba(255, 255, 255, 0.65);
 @dark-text-color-4: rgba(255, 255, 255, 0.85);
 @dark-border-color: #434343;
-@light-text-color-1: rgba(0, 0, 0, 0.25);
-@light-text-color-2: rgba(0, 0, 0, 0.45);
-@light-text-color-3: rgba(0, 0, 0, 0.65);
-@light-text-color-4: rgba(0, 0, 0, 0.85);
+@light-text-color: rgba(0, 0, 0, 0.65);
+@box-shadow-1: rgba(0, 0, 0, 0.32);
+@box-shadow-2: rgba(0, 0, 0, 0.20);
+@box-shadow-3: rgba(0, 0, 0, 0.12);
+@dropdown-background-color: #1f1f1f;
+@dropdown-menu-hover-color: rgba(255, 255, 255, 0.08);
+@notice-background-color: #1f1f1f;
+@table-header-background: #1d1d1d;
+@table-header-hover: #303030;
+@table-body-hover: #262626;
 
 .dark {
   background: @dark-background-color;
@@ -200,19 +206,23 @@
     color: @dark-text-color-3;
 
     &-thead {
-      background-color: @dark-secondary-bgColor;
+      background-color: @table-header-background;
 
       tr th {
-        color: @dark-text-color-3;
-        background-color: @dark-secondary-bgColor;
+        color: @dark-text-color-4;
+        background-color: @table-header-background;
         border-color: @dark-border-color;
 
         .ant-table-column-has-actions.ant-table-column-has-sorters:hover,
         .ant-table-column-has-actions.ant-table-column-has-sorters:hover,
         .ant-table-column-has-actions.ant-table-column-has-sorters:hover .ant-table-filter-icon,
         .ant-table-column-has-actions.ant-table-column-has-sorters:hover .anticon-filter {
-          background-color: @dark-background-color;
+          background-color: @table-header-hover;
         }
+      }
+
+      & > tr > th.ant-table-column-has-actions.ant-table-column-has-sorters:hover {
+        background-color: @table-header-hover;
       }
 
       & > tr:hover.ant-table-row-selected > td,
@@ -231,7 +241,7 @@
       & > tr:hover.ant-table-row-selected > td,
       & > tr.ant-table-row-hover:not(.ant-table-expanded-row):not(.ant-table-row-selected) > td,
       & > tr:hover:not(.ant-table-expanded-row):not(.ant-table-row-selected) > td {
-        background-color: transparent;
+        background-color: @table-body-hover;
       }
 
       & > tr > th.ant-table-column-sort {
@@ -330,9 +340,9 @@
       background-color: @dark-secondary-bgColor;
       border: 1px solid @dark-border-color;
       box-shadow:
-        0 3px 6px -4px @light-text-color-3,
-        0 6px 16px 0 @light-text-color-2,
-        0 9px 28px 8px @light-text-color-1;
+        0 3px 6px -4px @box-shadow-1,
+        0 6px 16px 0 @box-shadow-2,
+        0 9px 28px 8px @box-shadow-3;
     }
 
     &-placement {
@@ -389,9 +399,9 @@
     &-content {
       background-color: @dark-secondary-bgColor;
       box-shadow:
-        0 3px 6px -4px @light-text-color-3,
-        0 6px 16px 0 @light-text-color-2,
-        0 9px 28px 8px @light-text-color-1;
+        0 3px 6px -4px @box-shadow-1,
+        0 6px 16px 0 @box-shadow-2,
+        0 9px 28px 8px @box-shadow-3;
     }
 
     &-header {
@@ -418,16 +428,20 @@
   .ant-input-number,
   .ant-time-picker-input {
     background-color: transparent;
-    border-color: @dark-border-color;
     color: @dark-text-color-3;
+
+    &:not(:hover, :focus) {
+      border-color: @dark-border-color;
+    }
   }
 
-  .ant-checkbox-wrapper {
+  .ant-checkbox-wrapper,
+  .ant-select-arrow {
     color: @dark-text-color-3;
   }
 
   .ant-switch {
-    color: @light-text-color-3;
+    color: @light-text-color;
     background-color: @dark-text-color-2;
 
     &-checked {
@@ -439,20 +453,76 @@
     }
   }
 
-  .ant-dropdown-menu {
-    background-color: @dark-secondary-bgColor;
-    border: 1px solid @dark-border-color;
+  .ant-select-dropdown {
+    background-color: @dropdown-background-color;
+    color: @dark-text-color-3;
+    box-shadow:
+      0 3px 6px -4px @box-shadow-1,
+      0 6px 16px 0 @box-shadow-2,
+      0 9px 28px 8px @box-shadow-3;
 
-    &-item > a:hover {
-      .ant-switch:not(.ant-switch-checked) {
-        background-color: @light-text-color-3;
+    &-menu-item {
+      color: @dark-text-color-3;
+
+      &-selected {
+        background-color: @dropdown-menu-hover-color;
       }
     }
 
-    &-item:not(.ant-dropdown-menu-item-selected, :hover),
-    &-submenu-title,
-    &-item > a:not(:hover),
-    &-submenu-title > a:not(:hover) {
+    &-menu-item:hover:not(.ant-select-dropdown-menu-item-disabled),
+    &-menu-item-active:not(.ant-select-dropdown-menu-item-disabled) {
+      background-color: @dropdown-menu-hover-color;
+    }
+  }
+
+  .ant-time {
+    &-picker-panel {
+      color: @dark-text-color-3;
+
+      &-inner {
+        background-color: @dropdown-background-color;
+        box-shadow:
+          0 3px 6px -4px @box-shadow-1,
+          0 6px 16px 0 @box-shadow-2,
+          0 9px 28px 8px @box-shadow-3;
+      }
+
+      &-input {
+        background-color: transparent;
+
+        &-wrap {
+          border-color: @dark-border-color;
+        }
+      }
+
+      &-select {
+        border-color: @dark-border-color;
+
+        li:hover,
+        li.ant-time-picker-panel-select-option-selected,
+        li.ant-time-picker-panel-select-option-selected:hover {
+          background-color: @dropdown-menu-hover-color;
+        }
+      }
+    }
+  }
+
+  .ant-dropdown-menu {
+    background-color: @dropdown-background-color;
+    box-shadow:
+      0 6px 16px -8px @box-shadow-1,
+      0 9px 28px 0 @box-shadow-2,
+      0 12px 48px 16px @box-shadow-3;
+
+    &-item:not(.ant-dropdown-menu-item-selected):hover,
+    &-submenu-title:not(.ant-dropdown-menu-item-selected):hover {
+      background-color: @dropdown-menu-hover-color;
+    }
+
+    &-item:not(.ant-dropdown-menu-item-selected),
+    &-submenu-title:not(.ant-dropdown-menu-item-selected),
+    &-item:not(.ant-dropdown-menu-item-selected) > a,
+    &-submenu-title:not(.ant-dropdown-menu-item-selected) > a {
       color: @dark-text-color-3;
     }
   }
@@ -478,6 +548,10 @@
   .ant-time-picker-icon .ant-time-picker-clock-icon,
   .ant-time-picker-clear .ant-time-picker-clock-icon {
     color: @dark-text-color-3;
+  }
+
+  .ant-steps-item-finish .ant-steps-item-icon {
+    background-color: transparent;
   }
 
   .ant-steps-item-process > .ant-steps-item-container > .ant-steps-item-content > .ant-steps-item-title,
@@ -580,13 +654,12 @@
   }
 
   .ant-message-notice-content {
-    background-color: @dark-secondary-bgColor;
+    background-color: @notice-background-color;
     color: @dark-text-color-3;
     box-shadow:
-      0 3px 6px -4px @light-text-color-3,
-      0 6px 16px 0 @light-text-color-2,
-      0 9px 28px 8px @light-text-color-1;
-    border: 1px solid @dark-border-color;
+      0 3px 6px -4px @box-shadow-1,
+      0 6px 16px 0 @box-shadow-2,
+      0 9px 28px 8px @box-shadow-3;
   }
 
   .btn-add-tag {
@@ -608,9 +681,9 @@
       background-color: @dark-secondary-bgColor;
       border: 1px solid @dark-border-color;
       box-shadow:
-        0 3px 6px -4px @light-text-color-3,
-        0 6px 16px 0 @light-text-color-2,
-        0 9px 28px 8px @light-text-color-1;
+        0 3px 6px -4px @box-shadow-1,
+        0 6px 16px 0 @box-shadow-2,
+        0 9px 28px 8px @box-shadow-3;
 
       &-message {
         color: @dark-text-color-4;
