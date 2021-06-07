@@ -465,26 +465,7 @@ import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
-import org.apache.cloudstack.api.command.user.vm.AddIpToVmNicCmd;
-import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
-import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
-import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
-import org.apache.cloudstack.api.command.user.vm.GetVMPasswordCmd;
-import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
-import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
-import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
-import org.apache.cloudstack.api.command.user.vm.RemoveIpFromVmNicCmd;
-import org.apache.cloudstack.api.command.user.vm.RemoveNicFromVMCmd;
-import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
-import org.apache.cloudstack.api.command.user.vm.ResetVMSSHKeyCmd;
-import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
-import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
-import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
-import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateDefaultNicForVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpCmd;
-import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
+import org.apache.cloudstack.api.command.user.vm.*;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
@@ -2797,6 +2778,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(CloneVMCmd.class);
         cmdList.add(CreateAccountCmd.class);
         cmdList.add(DeleteAccountCmd.class);
         cmdList.add(DisableAccountCmd.class);
