@@ -697,7 +697,7 @@ export default {
         return ![this.$t('label.state'), this.$t('label.hostname'), this.$t('label.hostid'), this.$t('label.zonename'),
           this.$t('label.zone'), this.$t('label.zoneid'), this.$t('label.ip'), this.$t('label.ipaddress'), this.$t('label.privateip'),
           this.$t('label.linklocalip'), this.$t('label.size'), this.$t('label.sizegb'), this.$t('label.current'),
-          this.$t('label.created')].includes(column.title)
+          this.$t('label.created'), this.$t('label.order')].includes(column.title)
       })
 
       if (['listTemplates', 'listIsos'].includes(this.apiName) && this.dataView) {
