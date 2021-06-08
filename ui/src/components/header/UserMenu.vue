@@ -17,7 +17,7 @@
 
 <template>
   <div class="user-menu">
-
+    <keyboard-shortcuts class="action" />
     <translation-menu class="action"/>
     <header-notice class="action"/>
     <a-dropdown>
@@ -60,12 +60,14 @@
 
 <script>
 import HeaderNotice from './HeaderNotice'
+import KeyboardShortcuts from './KeyboardShortcuts.vue'
 import TranslationMenu from './TranslationMenu'
 import { mapActions, mapGetters } from 'vuex'
 
 export default {
   name: 'UserMenu',
   components: {
+    KeyboardShortcuts,
     TranslationMenu,
     HeaderNotice
   },

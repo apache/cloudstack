@@ -26,7 +26,9 @@
       <a-icon
         v-else
         class="trigger"
+        v-shortkey="['t']"
         :type="collapsed ? 'menu-unfold' : 'menu-fold'"
+        @shortkey.native="toggle"
         @click="toggle"/>
       <project-menu v-if="device !== 'mobile'" />
       <saml-domain-switcher style="margin-left: 20px" />

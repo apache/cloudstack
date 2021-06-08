@@ -34,6 +34,7 @@ Vue.use(VueAxios, router)
 Vue.use(pollJobPlugin)
 Vue.use(notifierPlugin)
 Vue.use(toLocaleDatePlugin)
+Vue.use(require('vue-shortkey'))
 
 fetch('config.json').then(response => response.json()).then(config => {
   Vue.prototype.$config = config
