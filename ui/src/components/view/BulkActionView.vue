@@ -42,7 +42,7 @@
           size="middle"
           :columns="selectedColumns"
           :dataSource="selectedItems"
-          :rowKey="(record, idx) => record.id"
+          :rowKey="(record, idx) => this.$route.path.includes('/iso/') ? record.zoneid : record.id"
           :pagination="true"
           style="overflow-y: auto">
           <template slot="algorithm" slot-scope="record">

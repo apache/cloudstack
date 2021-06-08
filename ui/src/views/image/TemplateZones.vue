@@ -468,6 +468,7 @@ export default {
             description: this.resource.name,
             status: 'progress'
           })
+          eventBus.$emit('update-job-details', jobId, null)
           this.$pollJob({
             jobId,
             successMethod: result => {

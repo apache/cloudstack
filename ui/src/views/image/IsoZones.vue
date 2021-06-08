@@ -306,6 +306,9 @@ export default {
       this.selectedItems = []
       this.selectedColumns = []
       this.selectedRowKeys = []
+      if (this.dataSource.length === 0) {
+        this.$router.go(-1)
+      }
     },
     deleteIsos (e) {
       this.showConfirmationAction = false
@@ -336,6 +339,7 @@ export default {
           status: 'progress',
           bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
         })
+        eventBus.$emit('update-job-details', jobId, null)
         const singleZone = (this.dataSource.length === 1)
         this.$pollJob({
           jobId,
@@ -414,6 +418,7 @@ export default {
             description: this.resource.name,
             status: 'progress'
           })
+          eventBus.$emit('update-job-details', jobId, null)
           this.$pollJob({
             jobId,
             successMethod: result => {

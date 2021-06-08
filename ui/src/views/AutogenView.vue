@@ -455,7 +455,7 @@ export default {
         return
       }
 
-      if (this.$route.path.includes('/template/')) {
+      if (this.$route.path.includes('/template/') || this.$route.path.includes('/iso/')) {
         return
       }
       this.fetchData()
