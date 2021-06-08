@@ -1223,7 +1223,7 @@
 "label.ovm3cluster": "inheems clustering",
 "label.ovm3networklabel": "OVM3 verkeer etiket",
 "label.ovm3pool": "inheemse pooling",
-"label.ovm3vip": "Master VIP IP ip",
+"label.ovm3vip": "Primary VIP IP ip",
 "label.ovmnetworklabel": "OVM verkeerslabel",
 "label.ovs": "OVS",
 "label.owned.public.ips": "Publieke IP Adressen in beheer",

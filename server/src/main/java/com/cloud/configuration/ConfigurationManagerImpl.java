@@ -1021,7 +1021,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     if (route != null) {
                         final String routeToVerify = route.trim();
                         if (!NetUtils.isValidIp4Cidr(routeToVerify)) {
-                            throw new InvalidParameterValueException("Invalid value for blacklisted route: " + route + ". Valid format is list"
+                            throw new InvalidParameterValueException("Invalid value for route: " + route + " in deny list. Valid format is list"
                                     + " of cidrs separated by coma. Example: 10.1.1.0/24,192.168.0.0/24");
                         }
                     }
@@ -3765,7 +3765,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (newVlanGateway == null && newVlanNetmask == null) {
             newVlanGateway = vlanGateway;
             newVlanNetmask = vlanNetmask;
-            // this means he is trying to add to the existing subnet.
+            // this means we are trying to add to the existing subnet.
             if (NetUtils.sameSubnet(newStartIP, newVlanGateway, newVlanNetmask)) {
                 if (NetUtils.sameSubnet(newEndIP, newVlanGateway, newVlanNetmask)) {
                     return NetUtils.SupersetOrSubset.sameSubnet;
@@ -3840,7 +3840,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 // this implies the user is trying to add a new subnet
                 // which is not a superset or subset of this subnet.
             } else if (val == NetUtils.SupersetOrSubset.isSubset) {
-                // this means he is trying to add to the same subnet.
+                // this means we are trying to add to the same subnet.
                 throw new InvalidParameterValueException("The subnet you are trying to add is a subset of the existing subnet having gateway " + vlanGateway
                         + " and netmask " + vlanNetmask);
             } else if (val == NetUtils.SupersetOrSubset.sameSubnet) {

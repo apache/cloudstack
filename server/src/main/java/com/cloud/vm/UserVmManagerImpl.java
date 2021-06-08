@@ -2545,7 +2545,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 scanLock.releaseRef();
             }
         }
-
     }
 
     @Override
@@ -2581,7 +2580,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             updateDisplayVmFlag(isDisplayVm, id, vmInstance);
         }
         final Account caller = CallContext.current().getCallingAccount();
-        final List<String> userBlacklistedSettings = Stream.of(QueryService.UserVMBlacklistedDetails.value().split(","))
+        final List<String> userDenyListedSettings = Stream.of(QueryService.UserVMDeniedDetails.value().split(","))
                 .map(item -> (item).trim())
                 .collect(Collectors.toList());
         final List<String> userReadOnlySettings = Stream.of(QueryService.UserVMReadOnlyDetails.value().split(","))
@@ -2592,7 +2591,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 userVmDetailsDao.removeDetails(id);
             } else {
                 for (final UserVmDetailVO detail : userVmDetailsDao.listDetails(id)) {
-                    if (detail != null && !userBlacklistedSettings.contains(detail.getName())
+                    if (detail != null && !userDenyListedSettings.contains(detail.getName())
                             && !userReadOnlySettings.contains(detail.getName())) {
                         userVmDetailsDao.removeDetail(id, detail.getName());
                     }
@@ -2605,18 +2604,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
 
                 if (caller != null && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                    // Ensure blacklisted or read-only detail is not passed by non-root-admin user
+                    // Ensure denied or read-only detail is not passed by non-root-admin user
                     for (final String detailName : details.keySet()) {
-                        if (userBlacklistedSettings.contains(detailName)) {
+                        if (userDenyListedSettings.contains(detailName)) {
                             throw new InvalidParameterValueException("You're not allowed to add or edit the restricted setting: " + detailName);
                         }
                         if (userReadOnlySettings.contains(detailName)) {
                             throw new InvalidParameterValueException("You're not allowed to add or edit the read-only setting: " + detailName);
                         }
                     }
-                    // Add any hidden/blacklisted or read-only detail
+                    // Add any hidden/denied or read-only detail
                     for (final UserVmDetailVO detail : userVmDetailsDao.listDetails(id)) {
-                        if (userBlacklistedSettings.contains(detail.getName()) || userReadOnlySettings.contains(detail.getName())) {
+                        if (userDenyListedSettings.contains(detail.getName()) || userReadOnlySettings.contains(detail.getName())) {
                             details.put(detail.getName(), detail.getValue());
                         }
                     }
@@ -5569,7 +5568,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @param vm
      */
     protected void persistExtraConfigKvm(String decodedUrl, UserVm vm) {
-        // validate config against blacklisted cfg commands
+        // validate config against denied cfg commands
         validateKvmExtraConfig(decodedUrl);
         String[] extraConfigs = decodedUrl.split("\n\n");
         for (String cfg : extraConfigs) {
@@ -5591,7 +5590,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     /**
      * This method is called by the persistExtraConfigKvm
-     * Validates passed extra configuration data for KVM and validates against blacklist of unwanted commands
+     * Validates passed extra configuration data for KVM and validates against deny-list of unwanted commands
      * controlled by Root admin
      * @param decodedUrl string containing xml configuration to be validated
      */

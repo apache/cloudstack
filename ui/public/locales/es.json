@@ -1242,7 +1242,7 @@
 "label.ovm3cluster": "Clustering Nativo",
 "label.ovm3networklabel": "Etiqueta de tr\u00e1fico OVM3",
 "label.ovm3pool": "Pooling Nativo",
-"label.ovm3vip": "IP del VIP Master",
+"label.ovm3vip": "IP del VIP Primary",
 "label.ovmnetworklabel": "Etiqueta de tr\u00e1fico OVM",
 "label.ovs": "OVS",
 "label.owned.public.ips": "Direcciones IP P\u00fablicas Propias",

@@ -26,11 +26,11 @@ import com.cloud.utils.db.Merovingian2;
  * when a management server is down.
  *
  */
-public class LockMasterListener implements ClusterManagerListener {
-    Merovingian2 _lockMaster;
+public class LockControllerListener implements ClusterManagerListener {
+    Merovingian2 _lockController;
 
-    public LockMasterListener(long msId) {
-        _lockMaster = Merovingian2.createLockMaster(msId);
+    public LockControllerListener(long msId) {
+        _lockController = Merovingian2.createLockController(msId);
     }
 
     @Override
@@ -40,7 +40,7 @@ public class LockMasterListener implements ClusterManagerListener {
     @Override
     public void onManagementNodeLeft(List<? extends ManagementServerHost> nodeList, long selfNodeId) {
         for (ManagementServerHost node : nodeList) {
-            _lockMaster.cleanupForServer(node.getMsid());
+            _lockController.cleanupForServer(node.getMsid());
         }
     }
 
