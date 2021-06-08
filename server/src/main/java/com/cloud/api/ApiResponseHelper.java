@@ -1470,6 +1470,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 vmResponse.setState(vm.getState().toString());
             }
 
+            vmResponse.setDynamicallyScalable(vm.isDynamicallyScalable());
             // for console proxies, add the active sessions
             if (vm.getType() == Type.ConsoleProxy) {
                 ConsoleProxyVO proxy = ApiDBUtils.findConsoleProxy(vm.getId());

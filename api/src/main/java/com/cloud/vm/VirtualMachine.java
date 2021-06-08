@@ -342,4 +342,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
     @Override
     boolean isDisplay();
 
+    boolean isDynamicallyScalable();
+
 }

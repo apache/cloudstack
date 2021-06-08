@@ -211,7 +211,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         controlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null);
+                requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null, true);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created control VM ID: %s, %s in the Kubernetes cluster : %s", controlVm.getUuid(), hostName, kubernetesCluster.getName()));
         }
@@ -265,7 +265,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         additionalControlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                null, addrs, null, null, null, customParameterMap, null, null, null, null);
+                null, addrs, null, null, null, customParameterMap, null, null, null, null, true);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created control VM ID : %s, %s in the Kubernetes cluster : %s", additionalControlVm.getUuid(), hostName, kubernetesCluster.getName()));
         }

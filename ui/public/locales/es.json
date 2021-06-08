@@ -670,6 +670,7 @@
 "label.drag.new.position": "Arrastrar a una nueva ubicaci\u00f3n",
 "label.driver": "Controlador",
 "label.duration.in.sec": "Duraci\u00f3n (en seg)",
+"label.dynamicscalingenabled": "Escalado din\u00e1mico habilitado",
 "label.edit": "Editar",
 "label.edit.acl.list": "Edit ACL List",
 "label.edit.acl.rule": "Editar regla ACL",

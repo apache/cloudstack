@@ -783,6 +783,7 @@
 "label.drag.new.position": "Ziehe zu neuer Position",
 "label.driver": "Treiber",
 "label.duration.in.sec": "Dauer (in Sekunden)",
+"label.dynamicscalingenabled": "Dynamische Skalierung aktiviert",
 "label.edit": "Bearbeiten",
 "label.edit.acl.list": "Edit ACL List",
 "label.edit.acl.rule": "ACL-Regel bearbeiten",
