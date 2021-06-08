@@ -15,34 +15,33 @@
 // specific language governing permissions and limitations
 // under the License.
 
-@primary-color: #1890ff;
-@dark-background-color: #090c10;
+@dark-bgColor: #090c10;
 @dark-secondary-bgColor: #141414;
 @dark-text-color-1: rgba(255, 255, 255, 0.25);
 @dark-text-color-2: rgba(255, 255, 255, 0.45);
 @dark-text-color-3: rgba(255, 255, 255, 0.65);
 @dark-text-color-4: rgba(255, 255, 255, 0.85);
-@dark-border-color: #434343;
-@light-text-color: rgba(0, 0, 0, 0.65);
 @box-shadow-1: rgba(0, 0, 0, 0.32);
 @box-shadow-2: rgba(0, 0, 0, 0.20);
 @box-shadow-3: rgba(0, 0, 0, 0.12);
-@dropdown-background-color: #1f1f1f;
-@dropdown-menu-hover-color: rgba(255, 255, 255, 0.08);
-@notice-background-color: #1f1f1f;
-@table-header-background: #1d1d1d;
-@table-header-hover: #303030;
-@table-body-hover: #262626;
+@light-text-color: rgba(0, 0, 0, 0.65);
+@dark-border-color: #434343;
+@dropdown-bgColor: #1f1f1f;
+@dropdown-hover-bgColor: rgba(255, 255, 255, 0.08);
+@table-header-bgColor: #1d1d1d;
+@table-header-hover-bgColor: #303030;
+@table-body-hover-bgColor: #262626;
+@disabled-bgColor: #555;
 
 .dark {
-  background: @dark-background-color;
+  background: @dark-bgColor;
 
   h1, h2, h3, h4, h5, h6 {
     color: @dark-text-color-3;
   }
 
   .user-layout, .ant-layout {
-    background: @dark-background-color;
+    background: @dark-bgColor;
   }
 
   .layout.ant-layout .header {
@@ -166,10 +165,15 @@
   }
 
   .ant-btn {
-    &:not(.ant-btn-primary, .ant-btn-danger) {
+    &:not(.ant-btn-primary, .ant-btn-danger, :disabled) {
       color: @dark-text-color-3;
       background-color: transparent;
       border-color: @dark-border-color;
+    }
+
+    &:disabled {
+      background-color: @disabled-bgColor;
+      color: @dark-text-color-3;
     }
 
     &-primary-disabled,
@@ -188,7 +192,7 @@
     &-primary.disabled.active,
     &-primary[disabled].active {
       color: @dark-text-color-3;
-      background-color: transparent;
+      background-color: @disabled-bgColor;
     }
   }
 
@@ -206,23 +210,23 @@
     color: @dark-text-color-3;
 
     &-thead {
-      background-color: @table-header-background;
+      background-color: @table-header-bgColor;
 
       tr th {
         color: @dark-text-color-4;
-        background-color: @table-header-background;
+        background-color: @table-header-bgColor;
         border-color: @dark-border-color;
 
         .ant-table-column-has-actions.ant-table-column-has-sorters:hover,
         .ant-table-column-has-actions.ant-table-column-has-sorters:hover,
         .ant-table-column-has-actions.ant-table-column-has-sorters:hover .ant-table-filter-icon,
         .ant-table-column-has-actions.ant-table-column-has-sorters:hover .anticon-filter {
-          background-color: @table-header-hover;
+          background-color: @table-header-hover-bgColor;
         }
       }
 
       & > tr > th.ant-table-column-has-actions.ant-table-column-has-sorters:hover {
-        background-color: @table-header-hover;
+        background-color: @table-header-hover-bgColor;
       }
 
       & > tr:hover.ant-table-row-selected > td,
@@ -241,11 +245,11 @@
       & > tr:hover.ant-table-row-selected > td,
       & > tr.ant-table-row-hover:not(.ant-table-expanded-row):not(.ant-table-row-selected) > td,
       & > tr:hover:not(.ant-table-expanded-row):not(.ant-table-row-selected) > td {
-        background-color: @table-body-hover;
+        background-color: @table-body-hover-bgColor;
       }
 
       & > tr > th.ant-table-column-sort {
-        background-color: @dark-background-color;
+        background-color: @dark-bgColor;
       }
     }
 
@@ -265,11 +269,15 @@
 
     &-small {
       border-color: @dark-border-color;
+
+      & > .ant-table-content > .ant-table-body .ant-table-thead {
+        background-color: transparent;
+      }
     }
 
     tr.ant-table-expanded-row,
     tr.ant-table-expanded-row:hover {
-      background-color: @dark-background-color;
+      background-color: @dark-bgColor;
     }
 
     &-placeholder {
@@ -376,6 +384,14 @@
     background-image: none;
     border-color: @dark-border-color;
     color: @dark-text-color-3;
+
+    .anticon-close {
+      color: @dark-text-color-3;
+
+      &:hover {
+        color: @dark-text-color-4;
+      }
+    }
   }
 
   .ant-avatar {
@@ -433,6 +449,14 @@
     &:not(:hover, :focus) {
       border-color: @dark-border-color;
     }
+
+    &:disabled, &-disabled {
+      background-color: @disabled-bgColor;
+    }
+  }
+
+  .ant-select-disabled {
+    background-color: @disabled-bgColor;
   }
 
   .ant-checkbox-wrapper,
@@ -451,10 +475,14 @@
     &-loading-icon, &:after {
       background-color: @dark-secondary-bgColor;
     }
+
+    &:disabled {
+      background-color: @disabled-bgColor;
+    }
   }
 
   .ant-select-dropdown {
-    background-color: @dropdown-background-color;
+    background-color: @dropdown-bgColor;
     color: @dark-text-color-3;
     box-shadow:
       0 3px 6px -4px @box-shadow-1,
@@ -465,13 +493,130 @@
       color: @dark-text-color-3;
 
       &-selected {
-        background-color: @dropdown-menu-hover-color;
+        background-color: @dropdown-hover-bgColor;
       }
     }
 
     &-menu-item:hover:not(.ant-select-dropdown-menu-item-disabled),
     &-menu-item-active:not(.ant-select-dropdown-menu-item-disabled) {
-      background-color: @dropdown-menu-hover-color;
+      background-color: @dropdown-hover-bgColor;
+    }
+  }
+
+  .ant-calendar {
+    background-color: @dropdown-bgColor;
+    border-color: @dark-border-color;
+
+    &-last-month-cell .ant-calendar-date,
+    &-last-month-cell .ant-calendar-date:hover,
+    &-next-month-btn-day .ant-calendar-date,
+    &-next-month-btn-day .ant-calendar-date:hover {
+      color: @dark-text-color-1;
+    }
+
+    &-picker-container, &-date {
+      color: @dark-text-color-3;
+    }
+
+    &-input-wrap {
+      border-color: @dark-border-color;
+    }
+
+    &-range {
+      .ant-calendar-input,
+      .ant-calendar-time-picker-input,
+      .ant-calendar-input:placeholder-shown,
+      .ant-calendar-time-picker-input:placeholder-shown {
+        background-color: transparent;
+        color: @dark-text-color-3;
+      }
+
+      &-middle, &-picker-separator {
+        color: @dark-text-color-3;
+      }
+
+      .ant-calendar-body,
+      .ant-calendar-decade-panel-body,
+      .ant-calendar-month-panel-body,
+      .ant-calendar-year-panel-body {
+        border-color: @dark-border-color;
+      }
+
+      .ant-calendar-in-range-cell > div {
+        color: #000;
+      }
+    }
+
+    &-header {
+      .ant-calendar-next-century-btn,
+      .ant-calendar-next-decade-btn,
+      .ant-calendar-next-month-btn,
+      .ant-calendar-next-year-btn,
+      .ant-calendar-prev-century-btn,
+      .ant-calendar-prev-decade-btn,
+      .ant-calendar-prev-month-btn,
+      .ant-calendar-prev-year-btn {
+        color: @dark-text-color-2;
+      }
+
+      .ant-calendar-prev-month-btn:after,
+      .ant-calendar-prev-month-btn:before,
+      .ant-calendar-next-month-btn::before,
+      .ant-calendar-next-month-btn::after {
+        border-color: @dark-text-color-2;
+      }
+
+      .ant-calendar-prev-month-btn:hover:after,
+      .ant-calendar-prev-month-btn:hover:before,
+      .ant-calendar-next-month-btn:hover::before,
+      .ant-calendar-next-month-btn:hover::after {
+        border-color: @dark-text-color-4;
+      }
+
+      .ant-calendar-century-select:not(:hover),
+      .ant-calendar-decade-select:not(:hover),
+      .ant-calendar-month-select:not(:hover),
+      .ant-calendar-year-select:not(:hover) {
+        color: @dark-text-color-3;
+      }
+
+
+      .ant-calendar-prev-century-btn::before,
+      .ant-calendar-prev-decade-btn::before,
+      .ant-calendar-prev-year-btn::before,
+      .ant-calendar-prev-century-btn::after,
+      .ant-calendar-prev-decade-btn::after,
+      .ant-calendar-prev-year-btn::after,
+      .ant-calendar-next-century-btn::before,
+      .ant-calendar-next-decade-btn::before,
+      .ant-calendar-next-year-btn::before,
+      .ant-calendar-next-century-btn::after,
+      .ant-calendar-next-decade-btn::after,
+      .ant-calendar-next-year-btn::after {
+        border-color: @dark-text-color-2;
+      }
+
+      .ant-calendar-prev-century-btn:hover::before,
+      .ant-calendar-prev-decade-btn:hover::before,
+      .ant-calendar-prev-year-btn:hover::before,
+      .ant-calendar-prev-century-btn:hover::after,
+      .ant-calendar-prev-decade-btn:hover::after,
+      .ant-calendar-prev-year-btn:hover::after {
+        border-color: @dark-text-color-4;
+      }
+    }
+
+    &-date:hover {
+      color: #000;
+    }
+
+    &-picker-clear {
+      color: @dark-text-color-2;
+      background: transparent;
+
+      &:hover {
+        color: @dark-text-color-4;
+      }
     }
   }
 
@@ -480,7 +625,7 @@
       color: @dark-text-color-3;
 
       &-inner {
-        background-color: @dropdown-background-color;
+        background-color: @dropdown-bgColor;
         box-shadow:
           0 3px 6px -4px @box-shadow-1,
           0 6px 16px 0 @box-shadow-2,
@@ -501,14 +646,14 @@
         li:hover,
         li.ant-time-picker-panel-select-option-selected,
         li.ant-time-picker-panel-select-option-selected:hover {
-          background-color: @dropdown-menu-hover-color;
+          background-color: @dropdown-hover-bgColor;
         }
       }
     }
   }
 
   .ant-dropdown-menu {
-    background-color: @dropdown-background-color;
+    background-color: @dropdown-bgColor;
     box-shadow:
       0 6px 16px -8px @box-shadow-1,
       0 9px 28px 0 @box-shadow-2,
@@ -516,7 +661,7 @@
 
     &-item:not(.ant-dropdown-menu-item-selected):hover,
     &-submenu-title:not(.ant-dropdown-menu-item-selected):hover {
-      background-color: @dropdown-menu-hover-color;
+      background-color: @dropdown-hover-bgColor;
     }
 
     &-item:not(.ant-dropdown-menu-item-selected),
@@ -626,7 +771,7 @@
   }
 
   .form-content, .zone-support {
-    background-color: @dark-background-color;
+    background-color: @dark-bgColor;
     border-color: @dark-border-color;
   }
 
@@ -654,7 +799,7 @@
   }
 
   .ant-message-notice-content {
-    background-color: @notice-background-color;
+    background-color: @dropdown-bgColor;
     color: @dark-text-color-3;
     box-shadow:
       0 3px 6px -4px @box-shadow-1,
@@ -707,7 +852,7 @@
     }
 
     & > .ant-collapse-item {
-      background-color: @dark-background-color;
+      background-color: @dark-bgColor;
 
       & > .ant-collapse-header {
         color: @dark-text-color-3;
