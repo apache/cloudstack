@@ -31,6 +31,8 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -217,6 +219,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private SnapshotDao _snapshotDao;
     @Inject
     private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+    @Inject
+    private ServiceOfferingJoinDao serviceOfferingJoinDao;
     @Inject
     private UserVmDao _userVmDao;
     @Inject
@@ -928,12 +932,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 format = template.getFormat();
             }
 
-            if (volume.getVolumeType().equals(Volume.Type.ROOT) && diskOffering.getDiskSize() > 0 && format != null && format != ImageFormat.ISO) {
-                throw new InvalidParameterValueException(
-                        "Failed to resize Root volume. The service offering of this Volume has been configured with a root disk size; "
-                                + "on such case a Root Volume can only be resized when changing to another Service Offering with a Root disk size. "
-                                + "For more details please check out the Official Resizing Volumes documentation.");
-            }
             newSize = cmd.getSize();
             newHypervisorSnapshotReserve = volume.getHypervisorSnapshotReserve();
 
@@ -942,6 +940,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (!diskOffering.isCustomized() && !volume.getVolumeType().equals(Volume.Type.ROOT)) {
                     throw new InvalidParameterValueException("To change a volume's size without providing a new disk offering, its current disk offering must be "
                             + "customizable or it must be a root volume (if providing a disk offering, make sure it is different from the current disk offering).");
+                }
+
+                if (isNotPossibleToResize(volume, format, diskOffering)) {
+                    throw new InvalidParameterValueException(
+                            "Failed to resize Root volume. The service offering of this Volume has been configured with a root disk size; "
+                                    + "on such case a Root Volume can only be resized when changing to another Service Offering with a Root disk size. "
+                                    + "For more details please check out the Official Resizing Volumes documentation.");
                 }
 
                 // convert from bytes to GiB
@@ -1165,6 +1170,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         return orchestrateResizeVolume(volume.getId(), currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve, newDiskOffering != null ? cmd.getNewDiskOfferingId() : null,
                 shrinkOk);
+    }
+
+    /**
+     * A volume should not be resized if it covers ALL the following scenarios: <br>
+     * 1 - Root volume <br>
+     * 2 - && Current Disk Offering enforces a root disk size (in this case one can resize only by changing the Service Offering) <br>
+     */
+    private boolean isNotPossibleToResize(VolumeVO volume, ImageFormat format, DiskOfferingVO diskOffering) {
+        ServiceOfferingJoinVO serviceOfferingView = serviceOfferingJoinDao.findById(diskOffering.getId());
+        return serviceOfferingView.getRootDiskSize() > 0 && volume.getVolumeType().equals(Volume.Type.ROOT);
     }
 
     private void checkIfVolumeIsRootAndVmIsRunning(Long newSize, VolumeVO volume, VMInstanceVO vmInstanceVO) {
