@@ -170,7 +170,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         final ServiceOffering serviceOffering = newServiceOffering == null ?
                 serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId()) : newServiceOffering;
         final Long serviceOfferingId = newServiceOffering == null ? null : serviceOffering.getId();
-        final long size = newSize == null ? kubernetesCluster.getTotalNodeCount() : (newSize + kubernetesCluster.getMasterNodeCount());
+        final long size = newSize == null ? kubernetesCluster.getTotalNodeCount() : (newSize + kubernetesCluster.getControlNodeCount());
         final long cores = serviceOffering.getCpu() * size;
         final long memory = serviceOffering.getRamSize() * size;
         KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(cores, memory, newSize, serviceOfferingId,
@@ -344,7 +344,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             vmList = getKubernetesClusterVMMapsForNodes(this.nodeIds);
         } else {
             vmList  = getKubernetesClusterVMMaps();
-            vmList = vmList.subList((int) (kubernetesCluster.getMasterNodeCount() + clusterSize), vmList.size());
+            vmList = vmList.subList((int) (kubernetesCluster.getControlNodeCount() + clusterSize), vmList.size());
         }
         Collections.reverse(vmList);
         removeNodesFromCluster(vmList);

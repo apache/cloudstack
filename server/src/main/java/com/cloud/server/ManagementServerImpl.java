@@ -879,7 +879,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private VpcDao _vpcDao;
 
-    private LockMasterListener _lockMasterListener;
+    private LockControllerListener _lockControllerListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
 
@@ -985,11 +985,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // Set human readable sizes
         NumbersUtil.enableHumanReadableSizes = _configDao.findByName("display.human.readable.sizes").getValue().equals("true");
 
-        if (_lockMasterListener == null) {
-            _lockMasterListener = new LockMasterListener(ManagementServerNode.getManagementServerId());
+        if (_lockControllerListener == null) {
+            _lockControllerListener = new LockControllerListener(ManagementServerNode.getManagementServerId());
         }
 
-        _clusterMgr.registerListener(_lockMasterListener);
+        _clusterMgr.registerListener(_lockControllerListener);
 
         enableAdminUser("password");
         return true;
@@ -3815,7 +3815,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         String signature = "";
         try {
-            // get the user obj to get his secret key
+            // get the user obj to get their secret key
             user = _accountMgr.getActiveUser(userId);
             final String secretKey = user.getSecretKey();
             final String input = cloudIdentifier;
@@ -4551,12 +4551,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         _storagePoolAllocators = storagePoolAllocators;
     }
 
-    public LockMasterListener getLockMasterListener() {
-        return _lockMasterListener;
+    public LockControllerListener getLockControllerListener() {
+        return _lockControllerListener;
     }
 
-    public void setLockMasterListener(final LockMasterListener lockMasterListener) {
-        _lockMasterListener = lockMasterListener;
+    public void setLockControllerListener(final LockControllerListener lockControllerListener) {
+        _lockControllerListener = lockControllerListener;
     }
 
 }

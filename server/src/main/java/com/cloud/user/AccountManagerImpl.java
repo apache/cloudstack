@@ -581,7 +581,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId) {
-        // We just care for resource domain admin for now. He should be permitted to see only his zone.
+        // We just care for resource domain admins for now, and they should be permitted to see only their zone.
         if (isResourceDomainAdmin(caller.getAccountId())) {
             if (zoneId == null) {
                 return getZoneIdForAccount(caller);

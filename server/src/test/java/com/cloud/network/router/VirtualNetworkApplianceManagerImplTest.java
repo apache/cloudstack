@@ -263,7 +263,7 @@ public class VirtualNetworkApplianceManagerImplTest {
     @Test
     public void testUpdateSite2SiteVpnConnectionState() throws Exception{
 
-        DomainRouterVO router = new DomainRouterVO(1L, 1L, 1L, "First testing router", 1L, Hypervisor.HypervisorType.XenServer, 1L, 1L, 1L, 1L, false, VirtualRouter.RedundantState.MASTER, true, true, 1L);
+        DomainRouterVO router = new DomainRouterVO(1L, 1L, 1L, "First testing router", 1L, Hypervisor.HypervisorType.XenServer, 1L, 1L, 1L, 1L, false, VirtualRouter.RedundantState.PRIMARY, true, true, 1L);
         router.setState(VirtualMachine.State.Running);
         router.setPrivateIpAddress("192.168.50.15");
 

@@ -192,9 +192,9 @@ public class Ovm3HypervisorSupportTest {
     }
 
     @Test
-    public void masterCheckTest() throws ConfigurationException {
+    public void primaryCheckTest() throws ConfigurationException {
         con = prepare();
-        // System.out.println(hypervisor.masterCheck());
+        // System.out.println(hypervisor.primaryCheck());
     }
 
     @Test

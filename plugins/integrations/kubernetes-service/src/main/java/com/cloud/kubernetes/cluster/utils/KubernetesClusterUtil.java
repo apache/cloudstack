@@ -254,25 +254,25 @@ public class KubernetesClusterUtil {
         return k8sApiServerSetup;
     }
 
-    public static boolean isKubernetesClusterMasterVmRunning(final KubernetesCluster kubernetesCluster, final String ipAddress,
-                                                             final int port, final long timeoutTime) {
-        boolean masterVmRunning = false;
-        while (!masterVmRunning && System.currentTimeMillis() < timeoutTime) {
+    public static boolean isKubernetesClusterControlVmRunning(final KubernetesCluster kubernetesCluster, final String ipAddress,
+                                                              final int port, final long timeoutTime) {
+        boolean controlVmRunning = false;
+        while (!controlVmRunning && System.currentTimeMillis() < timeoutTime) {
             try (Socket socket = new Socket()) {
                 socket.connect(new InetSocketAddress(ipAddress, port), 10000);
-                masterVmRunning = true;
+                controlVmRunning = true;
             } catch (IOException e) {
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(String.format("Waiting for Kubernetes cluster : %s master node VMs to be accessible", kubernetesCluster.getName()));
+                    LOGGER.info(String.format("Waiting for Kubernetes cluster : %s control node VMs to be accessible", kubernetesCluster.getName()));
                 }
                 try {
                     Thread.sleep(10000);
                 } catch (InterruptedException ex) {
-                    LOGGER.warn(String.format("Error while waiting for Kubernetes cluster : %s master node VMs to be accessible", kubernetesCluster.getName()), ex);
+                    LOGGER.warn(String.format("Error while waiting for Kubernetes cluster : %s control node VMs to be accessible", kubernetesCluster.getName()), ex);
                 }
             }
         }
-        return masterVmRunning;
+        return controlVmRunning;
     }
 
     public static boolean validateKubernetesClusterReadyNodesCount(final KubernetesCluster kubernetesCluster,
