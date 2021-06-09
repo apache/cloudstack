@@ -68,13 +68,14 @@ cat >/lib/systemd/system/cloudstack-mount.service <<EOF
 [Unit]
 Description=Mount overlayfs and unpack cloudstack packages
 ConditionPathExists=/root/cloudstack-mount.sh
-Before=cloud-early-config.service
+Before=cloud-early-config.service network-pre.target
+Wants=cloud-early-config.service network-pre.target
 
 Requires=local-fs.target
 After=local-fs.target
 
 [Install]
-WantedBy=cloud-early-config.service
+WantedBy=multi-user.target
 
 [Service]
 Type=oneshot
@@ -108,3 +109,4 @@ EOF
 
 systemctl daemon-reload
 systemctl enable cloudstack-mount.service
+systemctl enable cloud-early-config.service
