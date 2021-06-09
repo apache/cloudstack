@@ -106,6 +106,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -2702,6 +2703,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long userId = CallContext.current().getCallingUserId();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
+        String tags = cmd.getTags();
+        String hostTag = cmd.getHostTag();
 
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -2783,84 +2786,140 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to update service offering: %s by id user: %s because it is not root-admin or domain-admin", offeringHandle.getUuid(), user.getUuid()));
         }
 
-        final boolean updateNeeded = name != null || displayText != null || sortKey != null;
-        final boolean detailsUpdateNeeded = !filteredDomainIds.equals(existingDomainIds) || !filteredZoneIds.equals(existingZoneIds);
-        if (!updateNeeded && !detailsUpdateNeeded) {
-            return _serviceOfferingDao.findById(id);
-        }
+        executeServiceOfferingUpdate(displayText, id, name, sortKey, tags, hostTag);
+        updateServiceOfferingDetails(id, existingDomainIds, existingZoneIds, filteredDomainIds, filteredZoneIds);
 
-        ServiceOfferingVO offering = _serviceOfferingDao.createForUpdate(id);
+        ServiceOfferingVO offering = _serviceOfferingDao.findById(id);
+        CallContext.current().setEventDetails("Service offering id=" + offering.getId());
+        return offering;
+    }
+
+    /**
+     * Update Service Offering display text, name, sort key, tags and host tag for a specific Service Offering ID, if needed.
+     */
+    protected void executeServiceOfferingUpdate(String displayText, Long serviceOfferingId, String name, Integer sortKey, String tags, String hostTag) {
+        boolean updateNeeded = ObjectUtils.anyNotNull(name, displayText, sortKey, tags, hostTag);
+        if (!updateNeeded) {
+            s_logger.debug(String.format("No need to update service offering ID [%s] because there is no change in name, display text, " + "sort key, host tag or tags.",
+                    serviceOfferingId));
+            return;
+        }
+        ServiceOfferingVO offering = _serviceOfferingDao.createForUpdate(serviceOfferingId);
+
+        List<String> fields = new ArrayList<>();
 
         if (name != null) {
+            fields.add("name: " + name);
             offering.setName(name);
         }
 
         if (displayText != null) {
+            fields.add("display text: " + displayText);
             offering.setDisplayText(displayText);
         }
 
         if (sortKey != null) {
+            fields.add("sort key: " + sortKey);
             offering.setSortKey(sortKey);
         }
 
-        // Note: tag editing commented out for now; keeping the code intact,
-        // might need to re-enable in next releases
-        // if (tags != null)
-        // {
-        // if (tags.trim().isEmpty() && offeringHandle.getTags() == null)
-        // {
-        // //no new tags; no existing tags
-        // offering.setTagsArray(csvTagsToList(null));
-        // }
-        // else if (!tags.trim().isEmpty() && offeringHandle.getTags() != null)
-        // {
-        // //new tags + existing tags
-        // List<String> oldTags = csvTagsToList(offeringHandle.getTags());
-        // List<String> newTags = csvTagsToList(tags);
-        // oldTags.addAll(newTags);
-        // offering.setTagsArray(oldTags);
-        // }
-        // else if(!tags.trim().isEmpty())
-        // {
-        // //new tags; NO existing tags
-        // offering.setTagsArray(csvTagsToList(tags));
-        // }
-        // }
+        if (tags != null) {
+            fields.add("tags: " + tags);
+            offering.setTags(StringUtils.cleanupTags(tags));
+        }
 
-        if (updateNeeded && !_serviceOfferingDao.update(id, offering)) {
-            return null;
+        if (hostTag != null) {
+            if (hostTag.trim().isEmpty()) {
+                fields.add("removing host tag");
+                offering.setHostTag(null);
+            } else {
+                fields.add("host tag: " + hostTag);
+                offering.setHostTag(hostTag);
+            }
+        }
+
+        s_logger.debug(String.format("Updating service offering ID [%s] with [%s].", serviceOfferingId, String.join(", ", fields)));
+
+        if (!_serviceOfferingDao.update(serviceOfferingId, offering)) {
+            s_logger.warn(String.format("Can't update service offering ID [%s] with [%s].", serviceOfferingId, String.join(", ", fields)));
+        }
+    }
+
+    /**
+     * Update Service Offering Details for specific domains and zones.
+     */
+    private void updateServiceOfferingDetails(final Long serviceOfferingId, List<Long> existingDomainIds, List<Long> existingZoneIds, List<Long> filteredDomainIds,
+            List<Long> filteredZoneIds) {
+        boolean detailsUpdateNeeded = !filteredDomainIds.equals(existingDomainIds) || !filteredZoneIds.equals(existingZoneIds);
+        if (!detailsUpdateNeeded) {
+            s_logger.debug(String.format("No need to update details for service offering ID [%s] for filtered domain IDs [%s], existing domain IDs [%s], "
+                    + "filtered zone IDs [%s], and existing zone IDs [%s].", serviceOfferingId, filteredDomainIds, existingDomainIds, filteredZoneIds, existingZoneIds));
+            return;
         }
         List<ServiceOfferingDetailsVO> detailsVO = new ArrayList<>();
-        if(detailsUpdateNeeded) {
-            SearchBuilder<ServiceOfferingDetailsVO> sb = _serviceOfferingDetailsDao.createSearchBuilder();
-            sb.and("offeringId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
-            sb.and("detailName", sb.entity().getName(), SearchCriteria.Op.EQ);
-            sb.done();
-            SearchCriteria<ServiceOfferingDetailsVO> sc = sb.create();
-            sc.setParameters("offeringId", String.valueOf(id));
-            if(!filteredDomainIds.equals(existingDomainIds)) {
-                sc.setParameters("detailName", ApiConstants.DOMAIN_ID);
-                _serviceOfferingDetailsDao.remove(sc);
-                for (Long domainId : filteredDomainIds) {
-                    detailsVO.add(new ServiceOfferingDetailsVO(id, ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
-                }
-            }
-            if(!filteredZoneIds.equals(existingZoneIds)) {
-                sc.setParameters("detailName", ApiConstants.ZONE_ID);
-                _serviceOfferingDetailsDao.remove(sc);
-                for (Long zoneId : filteredZoneIds) {
-                    detailsVO.add(new ServiceOfferingDetailsVO(id, ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
-                }
-            }
+
+        removeServiceOfferingsForDomains(serviceOfferingId, existingDomainIds, filteredDomainIds, detailsVO);
+        removeServiceOfferingsForZones(serviceOfferingId, existingZoneIds, filteredZoneIds, detailsVO);
+
+        if (detailsVO.isEmpty()) {
+            s_logger.info(String.format("No need to update service offering details for service offering ID [%s], because the details remained the same.", serviceOfferingId));
+            return;
         }
-        if (!detailsVO.isEmpty()) {
-            for (ServiceOfferingDetailsVO detailVO : detailsVO) {
-                _serviceOfferingDetailsDao.persist(detailVO);
-            }
+
+        for (ServiceOfferingDetailsVO detailVO : detailsVO) {
+            s_logger.debug(String.format("Creating service offering details ID [%s] with resource ID [%s], name [%s] and value [%s]. ", detailVO.getId(), detailVO.getResourceId(),
+                    detailVO.getName(), detailVO.getValue()));
+            _serviceOfferingDetailsDao.persist(detailVO);
         }
-        offering = _serviceOfferingDao.findById(id);
-        CallContext.current().setEventDetails("Service offering id=" + offering.getId());
-        return offering;
+    }
+
+    private SearchCriteria<ServiceOfferingDetailsVO> createSearchCriteriaDeleteServiceOffering(final Long serviceOfferingId) {
+        SearchBuilder<ServiceOfferingDetailsVO> sb = _serviceOfferingDetailsDao.createSearchBuilder();
+        sb.and("offeringId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+        sb.and("detailName", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<ServiceOfferingDetailsVO> sc = sb.create();
+        sc.setParameters("offeringId", String.valueOf(serviceOfferingId));
+        return sc;
+    }
+
+    private void removeServiceOfferingsForZones(final Long serviceOfferingId, List<Long> existingZoneIds, List<Long> filteredZoneIds, List<ServiceOfferingDetailsVO> detailsVO) {
+        SearchCriteria<ServiceOfferingDetailsVO> sc = createSearchCriteriaDeleteServiceOffering(serviceOfferingId);
+
+        if (filteredZoneIds.equals(existingZoneIds)) {
+            s_logger.debug(String.format("No need to remove service offering details ID [%s] for all zones.", serviceOfferingId));
+            return;
+        }
+
+        s_logger.debug(String.format("Removing service offering details ID [%s] for all zones.", serviceOfferingId));
+        sc.setParameters("detailName", ApiConstants.ZONE_ID);
+        _serviceOfferingDetailsDao.remove(sc);
+        for (Long zoneId : filteredZoneIds) {
+            ServiceOfferingDetailsVO serviceOfferingDetailsVO = new ServiceOfferingDetailsVO(serviceOfferingId, ApiConstants.ZONE_ID, String.valueOf(zoneId), false);
+            s_logger.debug(String.format("Adding new service offering details with ID [%s], zone ID [%s], name [%s] and value [%s].", serviceOfferingDetailsVO.getId(), zoneId,
+                    serviceOfferingDetailsVO.getName(), serviceOfferingDetailsVO.getValue()));
+            detailsVO.add(serviceOfferingDetailsVO);
+        }
+    }
+
+    private void removeServiceOfferingsForDomains(final Long serviceOfferingId, List<Long> existingDomainIds, List<Long> filteredDomainIds,
+            List<ServiceOfferingDetailsVO> detailsVO) {
+        SearchCriteria<ServiceOfferingDetailsVO> sc = createSearchCriteriaDeleteServiceOffering(serviceOfferingId);
+
+        if (filteredDomainIds.equals(existingDomainIds)) {
+            s_logger.debug(String.format("No need to remove service offering details ID [%s] for all domains.", serviceOfferingId));
+            return;
+        }
+
+        s_logger.debug(String.format("Removing service offering details ID [%s] for all domains.", serviceOfferingId));
+        sc.setParameters("detailName", ApiConstants.DOMAIN_ID);
+        _serviceOfferingDetailsDao.remove(sc);
+        for (Long domainId : filteredDomainIds) {
+            ServiceOfferingDetailsVO serviceOfferingDetailsVO = new ServiceOfferingDetailsVO(serviceOfferingId, ApiConstants.DOMAIN_ID, String.valueOf(domainId), false);
+            s_logger.debug(String.format("Adding new service offering details with ID [%s], domain ID [%s], name [%s] and value [%s].", serviceOfferingDetailsVO.getId(), domainId,
+                    serviceOfferingDetailsVO.getName(), serviceOfferingDetailsVO.getValue()));
+            detailsVO.add(serviceOfferingDetailsVO);
+        }
     }
 
     @Override
