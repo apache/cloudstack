@@ -68,7 +68,7 @@
           <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
           <action-button
             v-else
-            :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: 'inline-flex' }"
+            :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: getStyle(), padding: '5px' }"
             :loading="loading"
             :actions="actions"
             :selectedRowKeys="selectedRowKeys"
@@ -567,6 +567,12 @@ export default {
     }
   },
   methods: {
+    getStyle () {
+      if (['snapshot', 'vmsnapshot', 'publicip'].includes(this.$route.name)) {
+        return 'table-cell'
+      }
+      return 'inline-flex'
+    },
     switchProject (projectId) {
       if (!projectId || !projectId.length || projectId.length !== 36) {
         return

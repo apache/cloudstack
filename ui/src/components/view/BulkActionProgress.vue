@@ -38,6 +38,12 @@
     <template slot="footer">
       <a-button key="back" @click="handleCancel"> {{ $t('label.close') }} </a-button>
     </template>
+    <a-card :bordered="false" style="background:#f1f1f1">
+      <div><a-icon type="check-circle-o" style="color: #52c41a; margin-right: 8px"/> {{ $t('label.success') + ': ' + selectedItems.filter(item => item.status === 'success').length || 0 }}</div>
+      <div><a-icon type="close-circle-o" style="color: #f5222d; margin-right: 8px"/> {{ $t('state.failed') + ': ' + selectedItems.filter(item => item.status === 'failed').length || 0 }}</div>
+      <div><a-icon type="sync-o" style="color: #1890ff; margin-right: 8px"/> {{ $t('state.inprogress') + ': ' + selectedItems.filter(item => item.status === 'InProgress').length || 0 }}</div>
+    </a-card>
+    <a-divider />
     <div v-if="showGroupActionModal">
       <a-table
         v-if="selectedItems.length > 0"
@@ -72,12 +78,6 @@
           <div><a-icon type="desktop"/> {{ record.virtualmachinename }} ({{ record.vmguestip }})</div>
         </template>
       </a-table>
-      <a-divider />
-      <a-card :bordered="false" style="background:#f1f1f1">
-        <div><a-icon type="check-circle-o" style="color: #52c41a; margin-right: 8px"/> {{ $t('label.success') + ': ' + selectedItems.filter(item => item.status === 'success').length || 0 }}</div>
-        <div><a-icon type="close-circle-o" style="color: #f5222d; margin-right: 8px"/> {{ $t('state.failed') + ': ' + selectedItems.filter(item => item.status === 'failed').length || 0 }}</div>
-        <div><a-icon type="sync-o" style="color: #1890ff; margin-right: 8px"/> {{ $t('state.inprogress') + ': ' + selectedItems.filter(item => item.status === 'InProgress').length || 0 }}</div>
-      </a-card>
       <br/>
     </div>
   </a-modal>

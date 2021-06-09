@@ -131,7 +131,10 @@ export default {
               }
             }
             return fields
-          }
+          },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
         },
         {
           api: 'restoreVirtualMachine',

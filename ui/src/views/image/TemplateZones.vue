@@ -398,9 +398,10 @@ export default {
               eventBus.$emit('update-resource-state', this.selectedItems, template.zoneid, 'failed')
             }
           },
+          showLoading: !(this.selectedItems.length > 0 && this.showGroupActionModal),
           loadingMessage: `${this.$t('label.deleting.template')} ${this.resource.name} ${this.$t('label.in.progress')}`,
           catchMessage: this.$t('error.fetching.async.job.result'),
-          bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal
+          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
         })
         this.onCloseModal()
         if (this.selectedItems.length === 0) {
