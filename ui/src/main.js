@@ -28,13 +28,14 @@ import './permission' // permission control
 import './utils/filter' // global filter
 import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin } from './utils/plugins'
 import { VueAxios } from './utils/request'
+import VueShortkey from 'vue-shortkey' // keyboard shortcuts
 
 Vue.config.productionTip = false
 Vue.use(VueAxios, router)
 Vue.use(pollJobPlugin)
 Vue.use(notifierPlugin)
 Vue.use(toLocaleDatePlugin)
-Vue.use(require('vue-shortkey'))
+Vue.use(VueShortkey)
 
 fetch('config.json').then(response => response.json()).then(config => {
   Vue.prototype.$config = config
