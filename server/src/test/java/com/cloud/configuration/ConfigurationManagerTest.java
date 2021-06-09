@@ -89,6 +89,8 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.projects.ProjectManager;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -169,6 +171,8 @@ public class ConfigurationManagerTest {
     ConfigurationDao _configDao;
     @Mock
     DiskOfferingVO diskOfferingVOMock;
+    @Mock
+    private ServiceOfferingDao serviceOfferingDaoMock;
 
     VlanVO vlan = new VlanVO(Vlan.VlanType.VirtualNetwork, "vlantag", "vlangateway", "vlannetmask", 1L, "iprange", 1L, 1L, null, null, null);
 
@@ -1001,5 +1005,53 @@ public class ConfigurationManagerTest {
         Mockito.doNothing().when(configurationMgr).updateDiskOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
         this.configurationMgr.updateDiskOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
         Mockito.verify(configurationMgr, Mockito.times(1)).updateDiskOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
+    }
+
+    @Test
+    public void executeServiceOfferingUpdateTestNoNeedToUpdateOffering() {
+        Mockito.doReturn(Mockito.mock(ServiceOfferingVO.class)).when(serviceOfferingDaoMock).createForUpdate(Mockito.anyLong());
+        Mockito.doReturn(true).when(serviceOfferingDaoMock).update(Mockito.anyLong(), Mockito.any(ServiceOfferingVO.class));
+        configurationMgr.executeServiceOfferingUpdate(null, null, null, null, null, null);
+        Mockito.verify(serviceOfferingDaoMock, Mockito.times(0)).createForUpdate(Mockito.anyLong());
+        Mockito.verify(serviceOfferingDaoMock, Mockito.times(0)).update(Mockito.anyLong(), Mockito.any(ServiceOfferingVO.class));
+    }
+
+    @Test
+    public void executeServiceOfferingUpdateTestUpdateServiceOfferingDisplayText() {
+        ServiceOfferingVO serviceOfferingMock = Mockito.mock(ServiceOfferingVO.class);
+        long serviceOfferingId = 1L;
+        Mockito.doReturn(serviceOfferingMock).when(serviceOfferingDaoMock).createForUpdate(Mockito.eq(serviceOfferingId));
+        Mockito.doReturn(true).when(serviceOfferingDaoMock).update(Mockito.anyLong(), Mockito.eq(serviceOfferingMock));
+
+        String displayText = "Name";
+        configurationMgr.executeServiceOfferingUpdate(displayText, serviceOfferingId, null, null, null, null);
+
+        Mockito.verify(serviceOfferingMock).setDisplayText(displayText);
+        Mockito.verify(serviceOfferingDaoMock).createForUpdate(Mockito.eq(serviceOfferingId));
+        Mockito.verify(serviceOfferingDaoMock).update(Mockito.eq(serviceOfferingId), Mockito.eq(serviceOfferingMock));
+    }
+
+    @Test
+    public void executeServiceOfferingUpdateTestUpdateServiceOfferingAllParameters() {
+        ServiceOfferingVO serviceOfferingMock = Mockito.mock(ServiceOfferingVO.class);
+        long serviceOfferingId = 1L;
+        Mockito.doReturn(serviceOfferingMock).when(serviceOfferingDaoMock).createForUpdate(Mockito.eq(serviceOfferingId));
+        Mockito.doReturn(true).when(serviceOfferingDaoMock).update(Mockito.anyLong(), Mockito.eq(serviceOfferingMock));
+
+        String displayText = "Display Text";
+        String name = "Name";
+        int key = 2;
+        String tags = "tag1,tag2";
+        String hostTag = "host tag";
+
+        configurationMgr.executeServiceOfferingUpdate(displayText, serviceOfferingId, name, key, tags, hostTag);
+        Mockito.verify(serviceOfferingMock).setDisplayText(displayText);
+        Mockito.verify(serviceOfferingMock).setName(name);
+        Mockito.verify(serviceOfferingMock).setSortKey(key);
+        Mockito.verify(serviceOfferingMock).setTags(tags);
+        Mockito.verify(serviceOfferingMock).setHostTag(hostTag);
+
+        Mockito.verify(serviceOfferingDaoMock).createForUpdate(Mockito.eq(serviceOfferingId));
+        Mockito.verify(serviceOfferingDaoMock).update(Mockito.eq(serviceOfferingId), Mockito.eq(serviceOfferingMock));
     }
 }
