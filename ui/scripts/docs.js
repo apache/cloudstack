@@ -630,7 +630,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpNetworkOfferingTungsten: {
-        desc: 'Specify whether this offering is for tungsten SDN',
+        desc: 'Specify whether this offering is for Tungsten-Fabric SDN',
         externalLink: ''
     },
     helpNetworkOfferingSystemOffering: {

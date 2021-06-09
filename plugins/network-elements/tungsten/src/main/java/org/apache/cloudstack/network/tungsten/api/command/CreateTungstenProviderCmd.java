@@ -45,28 +45,28 @@ public class CreateTungstenProviderCmd extends BaseCmd {
         , description = "the ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Tungsten Fabric provider"
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Tungsten-Fabric provider"
         + " name")
     private String name;
 
     @Parameter(name = ApiConstants.TUNGSTEN_PROVIDER_HOSTNAME, type = CommandType.STRING, required = true,
-        description = "Tungsten Fabric provider hostname")
+        description = "Tungsten-Fabric provider hostname")
     private String hostname;
 
     @Parameter(name = ApiConstants.TUNGSTEN_PROVIDER_PORT, type = CommandType.STRING, required = false, description =
-        "Tungsten Fabric provider port")
+        "Tungsten-Fabric provider port")
     private String port;
 
     @Parameter(name = ApiConstants.TUNGSTEN_GATEWAY, type = CommandType.STRING, required = true,
-        description = "Tungsten gateway")
+        description = "Tungsten-Fabric gateway")
     private String gateway;
 
     @Parameter(name = ApiConstants.TUNGSTEN_PROVIDER_VROUTER_PORT, type = CommandType.STRING, required = false,
-        description = "Tungsten Fabric provider vrouter port")
+        description = "Tungsten-Fabric provider vrouter port")
     private String vrouterPort;
 
     @Parameter(name = ApiConstants.TUNGSTEN_PROVIDER_INTROSPECT_PORT, type = CommandType.STRING, required = false,
-        description = "Tungsten Fabric provider introspect port")
+        description = "Tungsten-Fabric provider introspect port")
     private String introspectPort;
 
     public String getName() {

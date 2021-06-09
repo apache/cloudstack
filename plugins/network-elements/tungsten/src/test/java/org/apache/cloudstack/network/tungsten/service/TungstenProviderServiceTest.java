@@ -100,7 +100,7 @@ public class TungstenProviderServiceTest {
             assertNotNull(tungstenProvider);
         } catch (CloudRuntimeException e) {
             e.printStackTrace();
-            fail("Failed to add Tungsten Fabric provider due to internal error.");
+            fail("Failed to add Tungsten-Fabric provider due to internal error.");
         }
     }
 }

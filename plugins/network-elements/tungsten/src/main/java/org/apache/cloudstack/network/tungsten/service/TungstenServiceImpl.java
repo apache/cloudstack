@@ -776,7 +776,7 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
             publicNetwork.getUuid(), TungstenUtils.getFloatingIpPoolName(zoneId));
         _tungstenFabricUtils.sendTungstenCommand(deleteTungstenFloatingIpPoolCommand, zoneId);
 
-        // get tungsten fabric network and remove default network policy
+        // get Tungsten-Fabric network and remove default network policy
         GetTungstenFabricNetworkCommand getTungstenFabricNetworkCommand = new GetTungstenFabricNetworkCommand();
         TungstenAnswer getTungstenFabricNetworkAnswer = _tungstenFabricUtils.sendTungstenCommand(
             getTungstenFabricNetworkCommand, zoneId);

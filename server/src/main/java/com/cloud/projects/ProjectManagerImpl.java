@@ -298,7 +298,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
                 s_logger.warn("Failed to cleanup project's id=" + project.getId() + " resources, not removing the project yet");
                 return false;
             } else {
-                ////check if any tungsten fabric provider exists and delete the project from tungsten fabric providers
+                ////check if any Tungsten-Fabric provider exists and delete the project from Tungsten-Fabric providers
                 _messageBus.publish(_name, ProjectManager.MESSAGE_DELETE_TUNGSTEN_PROJECT_EVENT, PublishScope.LOCAL, project);
                 //remove cloudstack project
                 return _projectDao.remove(project.getId());

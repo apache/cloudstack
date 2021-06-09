@@ -35,7 +35,7 @@ import org.apache.cloudstack.network.tungsten.service.TungstenProviderService;
 import javax.inject.Inject;
 import java.util.Arrays;
 
-@APICommand(name = "listTungstenProviders", responseObject = TungstenProviderResponse.class, description = "Lists Tungsten Fabric providers",
+@APICommand(name = "listTungstenProviders", responseObject = TungstenProviderResponse.class, description = "Lists Tungsten-Fabric providers",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListTungstenProvidersCmd extends BaseCmd {
 
