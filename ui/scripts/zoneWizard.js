@@ -3060,9 +3060,9 @@
                             var thisPhysicalNetwork = this;
 
                             // ***** Tungsten Start *******
-                            // TODO : need make a UI to add tungsten provider && for zone instead of physical network
+                            // TODO : need make a UI to add tungsten fabric provider && for zone instead of physical network
                             // tungsten zone will have tungsten public network by default
-                            // add tungsten provider with physical network have tungsten public network
+                            // add tungsten fabric provider with physical network have tungsten public network
                             if (thisPhysicalNetwork.isolationmethods == "TF"
                                 && thisPhysicalNetwork.returnedTrafficTypes.filter(traffic => traffic.traffictype == "Public").length > 0)
                             {

@@ -100,7 +100,7 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     private Boolean forVpc;
 
     @SerializedName(ApiConstants.FOR_TUNGSTEN)
-    @Param(description = "true if network offering can be used by tungsten networks only")
+    @Param(description = "true if network offering can be used by Tungsten-Fabric networks only")
     private Boolean forTungsten;
 
     @SerializedName(ApiConstants.IS_PERSISTENT)

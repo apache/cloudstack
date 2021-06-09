@@ -35,7 +35,7 @@ import org.apache.cloudstack.network.tungsten.service.TungstenProviderService;
 
 import javax.inject.Inject;
 
-@APICommand(name = "createTungstenProvider", description = "Create tungsten provider in cloudstack", responseObject =
+@APICommand(name = "createTungstenProvider", description = "Create Tungsten-Fabric provider in cloudstack", responseObject =
     TungstenProviderResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateTungstenProviderCmd extends BaseCmd {
 
@@ -45,16 +45,16 @@ public class CreateTungstenProviderCmd extends BaseCmd {
         , description = "the ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Tungsten provider"
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Tungsten Fabric provider"
         + " name")
     private String name;
 
     @Parameter(name = ApiConstants.TUNGSTEN_PROVIDER_HOSTNAME, type = CommandType.STRING, required = true,
-        description = "Tungsten provider hostname")
+        description = "Tungsten Fabric provider hostname")
     private String hostname;
 
     @Parameter(name = ApiConstants.TUNGSTEN_PROVIDER_PORT, type = CommandType.STRING, required = false, description =
-        "Tungsten provider port")
+        "Tungsten Fabric provider port")
     private String port;
 
     @Parameter(name = ApiConstants.TUNGSTEN_GATEWAY, type = CommandType.STRING, required = true,
@@ -62,11 +62,11 @@ public class CreateTungstenProviderCmd extends BaseCmd {
     private String gateway;
 
     @Parameter(name = ApiConstants.TUNGSTEN_PROVIDER_VROUTER_PORT, type = CommandType.STRING, required = false,
-        description = "Tungsten provider vrouter port")
+        description = "Tungsten Fabric provider vrouter port")
     private String vrouterPort;
 
     @Parameter(name = ApiConstants.TUNGSTEN_PROVIDER_INTROSPECT_PORT, type = CommandType.STRING, required = false,
-        description = "Tungsten provider introspect port")
+        description = "Tungsten Fabric provider introspect port")
     private String introspectPort;
 
     public String getName() {
@@ -118,7 +118,7 @@ public class CreateTungstenProviderCmd extends BaseCmd {
         TungstenProvider tungstenProvider = tungstenProviderService.addProvider(this);
         TungstenProviderResponse tungstenProviderResponse = tungstenProviderService.getTungstenProvider(zoneId);
         if (tungstenProviderResponse == null)
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create tungsten provider");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Tungsten-Fabric provider");
         else {
             tungstenProviderResponse.setResponseName(getCommandName());
             setResponseObject(tungstenProviderResponse);

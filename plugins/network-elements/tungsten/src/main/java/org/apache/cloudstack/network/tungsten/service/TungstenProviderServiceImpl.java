@@ -142,7 +142,7 @@ public class TungstenProviderServiceImpl extends ManagerBase implements Tungsten
                 _messageBus.publish(_name, TungstenService.MESSAGE_SYNC_TUNGSTEN_DB_WITH_DOMAINS_AND_PROJECTS_EVENT,
                     PublishScope.LOCAL, tungstenProvider);
             } else {
-                throw new CloudRuntimeException("Failed to add Tungsten provider due to internal error.");
+                throw new CloudRuntimeException("Failed to add Tungsten Fabric provider due to internal error.");
             }
         } catch (ConfigurationException e) {
             throw new CloudRuntimeException(e.getMessage());

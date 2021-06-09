@@ -129,7 +129,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.FOR_TUNGSTEN,
             type = CommandType.BOOLEAN,
-            description = "true if network offering is meant to be used for TUNGSTEN, false otherwise.")
+            description = "true if network offering is meant to be used for Tungsten-Fabric, false otherwise.")
     private Boolean forTungsten;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.2.0", description = "Network offering details in key/value pairs."

@@ -41,7 +41,7 @@ import javax.inject.Inject;
     TlsDataResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetLoadBalancerSslCertificateCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GetLoadBalancerSslCertificateCmd.class.getName());
-    private static final String s_name = "response";
+    private static final String s_name = "getloadbalancersslcertificateresponse";
 
     @Inject
     private LoadBalancingRulesManager _lbMgr;

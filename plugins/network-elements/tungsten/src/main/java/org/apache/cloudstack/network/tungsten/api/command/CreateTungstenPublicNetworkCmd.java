@@ -43,7 +43,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = "createTungstenPublicNetwork", description = "create tungsten public network", responseObject =
+@APICommand(name = "createTungstenPublicNetwork", description = "create a Tungsten-Fabric public network", responseObject =
     SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateTungstenPublicNetworkCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTungstenPublicNetworkCmd.class.getName());

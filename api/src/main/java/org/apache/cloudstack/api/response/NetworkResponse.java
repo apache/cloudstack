@@ -191,7 +191,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     private String vpcId;
 
     @SerializedName(ApiConstants.TUNGSTEN_VIRTUAL_ROUTER_UUID)
-    @Param(description = "Tungsten virtual router the network belongs to")
+    @Param(description = "Tungsten-Fabric virtual router the network belongs to")
     private String tungstenVirtualRouterUuid;
 
     @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY)

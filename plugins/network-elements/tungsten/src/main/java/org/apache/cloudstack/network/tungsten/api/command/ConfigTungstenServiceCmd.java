@@ -151,7 +151,7 @@ public class ConfigTungstenServiceCmd extends BaseCmd {
         });
 
         SuccessResponse response = new SuccessResponse(getCommandName());
-        response.setDisplayText("config tungsten service successfully");
+        response.setDisplayText("configured tungsten service successfully");
 
         setResponseObject(response);
     }

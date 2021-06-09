@@ -40,8 +40,8 @@ public class TungstenFabricUtils {
 
         TungstenProviderVO tungstenProviderVO = tungstenProviderDao.findByZoneId(zoneId);
         if (tungstenProviderVO == null) {
-            s_logger.error("No tungsten provider have been found!");
-            throw new IllegalArgumentException("Failed to find a tungsten provider");
+            s_logger.error("No Tungsten-Fabric provider have been found!");
+            throw new IllegalArgumentException("Failed to find a Tungsten-Fabric provider");
         }
 
         TungstenAnswer answer = (TungstenAnswer) agentMgr.easySend(tungstenProviderVO.getHostId(), cmd);

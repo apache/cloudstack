@@ -37,7 +37,7 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = "createTungstenManagementNetwork", description = "create tungsten management network",
+@APICommand(name = "createTungstenManagementNetwork", description = "create a Tungsten-Fabric management network",
     responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateTungstenManagementNetworkCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTungstenManagementNetworkCmd.class.getName());

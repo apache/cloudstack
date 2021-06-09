@@ -202,7 +202,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Provider BigSwitchBcf = new Provider("BigSwitchBcf", false);
         //Add ConfigDrive provider
         public static final Provider ConfigDrive = new Provider("ConfigDrive", false);
-        //Add Tungsten provider
+        //Add Tungsten Fabric provider
         public static final Provider Tungsten = new Provider("Tungsten", false);
 
         private final String name;

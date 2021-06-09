@@ -513,7 +513,7 @@
             }),
 
             /**
-             * Add tungsten provider form
+             * Add Tungsten-Fabric provider form
              * @param args
              */
             addTungstenProvider: elems.step({

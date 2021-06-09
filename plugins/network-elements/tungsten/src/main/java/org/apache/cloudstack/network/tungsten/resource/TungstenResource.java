@@ -104,12 +104,11 @@ import org.apache.cloudstack.network.tungsten.vrouter.Subnet;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
+import javax.naming.ConfigurationException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import javax.naming.ConfigurationException;
 
 public class TungstenResource implements ServerResource {
 
@@ -201,7 +200,7 @@ public class TungstenResource implements ServerResource {
         try {
             _tungstenApi.checkTungstenProviderConnection();
         } catch (ServerApiException e) {
-            s_logger.error("Check tungsten provider connection failed", e);
+            s_logger.error("Check Tungsten-Fabric provider connection failed", e);
             return null;
         }
         return new PingCommand(Host.Type.L2Networking, id);
@@ -704,7 +703,7 @@ public class TungstenResource implements ServerResource {
         if (fabricNetwork != null) {
             return new TungstenAnswer(cmd, fabricNetwork, true, null);
         } else {
-            return new TungstenAnswer(cmd, false, "tungsten fabric network doesn't exist");
+            return new TungstenAnswer(cmd, false, "Tungsten-Fabric network doesn't exist");
         }
     }
 

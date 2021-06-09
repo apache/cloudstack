@@ -125,11 +125,11 @@ public class TungstenApi {
 
             if (huc.getResponseCode() != 200) {
                 throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR,
-                    "There is not a tungsten provider using hostname: " + hostname + " and port: " + port);
+                    "There is not a Tungsten-Fabric provider using hostname: " + hostname + " and port: " + port);
             }
         } catch (IOException e) {
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR,
-                "There is not a tungsten provider using hostname: " + hostname + " and port: " + port);
+                "There is not a Tungsten-Fabric provider using hostname: " + hostname + " and port: " + port);
         }
     }
 
@@ -197,7 +197,6 @@ public class TungstenApi {
         VirtualNetwork virtualNetwork = null;
         VirtualMachine virtualMachine = null;
         Project project = null;
-        SecurityGroup securityGroup = null;
 
         try {
             virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, virtualNetworkUuid);

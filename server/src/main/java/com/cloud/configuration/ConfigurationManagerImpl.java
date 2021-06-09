@@ -4927,13 +4927,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        // if network offering is for tungsten check if every item from serviceProviderList has Tungsten provider
+        // if network offering is for tungsten check if every item from serviceProviderList has Tungsten Fabric provider
         if(forTungsten){
             for(Map.Entry<String, List<String>> item : cmd.getServiceProviders().entrySet()){
                 if(item.getValue().size() == 1 && item.getValue().contains("Tungsten"))
                     continue;
                 else
-                    throw new InvalidParameterValueException("Please specify Tungsten provider for the " + item.getKey() + " service provider.");
+                    throw new InvalidParameterValueException("Please specify Tungsten Fabric provider for the " + item.getKey() + " service provider.");
             }
         }
 
