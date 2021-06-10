@@ -485,8 +485,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         """Test to delete an existing Kubernetes cluster
 
         # Validate the following:
-        # 1. scaleKubernetesCluster should return valid info for the cluster when it is autoscaled
-        # 2. cluster-autoscaler pod should be running
+        # 1. deleteKubernetesCluster should delete an existing Kubernetes cluster
         """
         if self.setup_failed == True:
             self.fail("Setup incomplete")
