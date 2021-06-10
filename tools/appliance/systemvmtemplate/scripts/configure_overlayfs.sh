@@ -107,6 +107,23 @@ RemainAfterExit=true
 TimeoutStartSec=5min
 EOF
 
+cat >/etc/systemd/system/cloud-postinit.service <<EOF
+[Unit]
+Description=CloudStack post-patching init script
+After=cloud-early-config.service network.target local-fs.target
+Before=ssh.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/cloud/bin/setup/postinit.sh
+RemainAfterExit=true
+TimeoutStartSec=10min
+EOF
+
 systemctl daemon-reload
 systemctl enable cloudstack-mount.service
 systemctl enable cloud-early-config.service
+systemctl enable cloud-postinit.service

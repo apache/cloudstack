@@ -63,7 +63,8 @@
                             <configuration>
                                 <url>http://10.0.34.6/cloudstack-patches-debian-10.tgz</url>
                                 <outputFileName>cloudstack-patches-debian-10.tgz</outputFileName>
-				<outputDirectory>${basedir}/dist/systemvm-patches</outputDirectory>
+                                <outputDirectory>${basedir}/dist/systemvm-patches</outputDirectory>
+                                <skipCache>true</skipCache>
                             </configuration>
                     </execution>
                     <execution>
@@ -74,7 +75,8 @@
                             <configuration>
                                 <url>http://10.0.34.6/cloudstack-patches-debian-10.tgz.sha512sum</url>
                                 <outputFileName>cloudstack-patches-debian-10.tgz.sha512sum</outputFileName>
-				<outputDirectory>${basedir}/dist/systemvm-patches</outputDirectory>
+                                <outputDirectory>${basedir}/dist/systemvm-patches</outputDirectory>
+                                <skipCache>true</skipCache>
                             </configuration>
                     </execution>
                 </executions>
