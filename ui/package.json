@@ -57,6 +57,7 @@
     "vue-i18n": "^8.22.4",
     "vue-ls": "^3.2.2",
     "vue-router": "^3.5.1",
+    "vue-shortkey": "^3.1.7",
     "vue-svg-component-runtime": "^1.0.1",
     "vuedraggable": "^2.24.3",
     "vuex": "^3.6.2"

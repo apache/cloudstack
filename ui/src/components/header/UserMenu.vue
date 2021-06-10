@@ -17,27 +17,26 @@
 
 <template>
   <div class="user-menu">
-
-    <translation-menu class="action"/>
-    <header-notice class="action"/>
+    <span v-shortkey="['h']" @shortkey.native="toggleShowShortkey" @click="toggleShowShortkey" > hello</span>
+    <translation-menu class="action" />
+    <header-notice class="action" />
     <a-dropdown>
       <span class="user-menu-dropdown action">
-        <a-avatar class="user-menu-avatar avatar" size="small" :src="avatar()"/>
+        <a-avatar class="user-menu-avatar avatar" size="small" :src="avatar()" />
         <span>{{ nickname() }}</span>
       </span>
       <a-menu slot="overlay" class="user-menu-wrapper">
         <a-menu-item class="user-menu-item" key="0">
           <router-link :to="{ path: '/accountuser/' + $store.getters.userInfo.id }">
-            <a-icon class="user-menu-item-icon" type="user"/>
+            <a-icon class="user-menu-item-icon" type="user" />
             <span class="user-menu-item-name">{{ $t('label.profilename') }}</span>
           </router-link>
         </a-menu-item>
         <a-menu-item class="user-menu-item" key="1">
           <a @click="toggleUseBrowserTimezone">
-            <a-icon class="user-menu-item-icon" type="clock-circle"/>
+            <a-icon class="user-menu-item-icon" type="clock-circle" />
             <span class="user-menu-item-name" style="margin-right: 5px">{{ $t('label.use.local.timezone') }}</span>
-            <a-switch
-              :checked="$store.getters.usebrowsertimezone" />
+            <a-switch :checked="$store.getters.usebrowsertimezone" />
           </a>
         </a-menu-item>
         <a-menu-item class="user-menu-item" key="2" disabled>
@@ -46,10 +45,10 @@
             <span class="user-menu-item-name">{{ $t('label.help') }}</span>
           </a>
         </a-menu-item>
-        <a-menu-divider/>
+        <a-menu-divider />
         <a-menu-item class="user-menu-item" key="3">
           <a href="javascript:;" @click="handleLogout">
-            <a-icon class="user-menu-item-icon" type="logout"/>
+            <a-icon class="user-menu-item-icon" type="logout" />
             <span class="user-menu-item-name">{{ $t('label.logout') }}</span>
           </a>
         </a-menu-item>
@@ -74,6 +73,11 @@ export default {
     ...mapGetters(['nickname', 'avatar']),
     toggleUseBrowserTimezone () {
       this.$store.dispatch('SetUseBrowserTimezone', !this.$store.getters.usebrowsertimezone)
+    },
+    toggleShowShortkey () {
+      this.$store.dispatch('SET_SHOW_KEYBOARD_SHORTKEYS', !this.$store.getters.showShortkeys)
+      console.log(this.$store.getters.showShortkeys)
+      console.log(this.$store.state.showShortkeys)
     },
     handleLogout () {
       return this.Logout({}).then(() => {
