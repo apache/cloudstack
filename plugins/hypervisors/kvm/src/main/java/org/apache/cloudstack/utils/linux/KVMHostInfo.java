@@ -42,7 +42,7 @@ public class KVMHostInfo {
     private long overCommitMemory;
     private List<String> capabilities = new ArrayList<>();
 
-    public static String cpuInfoMaxFreqFileName = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq";
+    private static String cpuInfoMaxFreqFileName = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq";
 
     public KVMHostInfo(long reservedMemory, long overCommitMemory) {
         this.reservedMemory = reservedMemory;
