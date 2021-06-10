@@ -84,12 +84,14 @@ export default {
       }, 4000)
     },
     getResourceName (description, data) {
-      if (data === 'name') {
-        const name = description.match(/\(([^)]+)\)/)
-        return name ? name[1] : null
+      if (description) {
+        if (data === 'name') {
+          const name = description.match(/\(([^)]+)\)/)
+          return name ? name[1] : null
+        }
+        const msg = description.substring(description.indexOf(')') + 1)
+        return msg
       }
-      const msg = description.substring(description.indexOf(')') + 1)
-      return msg
     },
     async pollJobs () {
       var hasUpdated = false

@@ -59,7 +59,7 @@
       type="danger"
       icon="plus"
       style="width: 100%; margin-bottom: 15px"
-      @click="bulkDeleteRulesConfirmation()">
+      @click="bulkActionConfirmation()">
       {{ $t('label.action.bulk.delete.firewall.rules') }}
     </a-button>
     <a-table
@@ -163,6 +163,7 @@ import { api } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/view/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
+import eventBus from '@/config/eventBus'
 
 export default {
   components: {
@@ -292,31 +293,26 @@ export default {
     onSelectChange (selectedRowKeys, selectedRows) {
       this.setSelection(selectedRowKeys)
     },
-    bulkDeleteRulesConfirmation () {
+    bulkActionConfirmation () {
       this.showConfirmationAction = true
       this.selectedColumns = this.columns.filter(column => {
         return !this.filterColumns.includes(column.title)
       })
-      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'inprogress' }))
+      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
     },
     handleCancel () {
+      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []
       this.selectedRowKeys = []
       this.parentFetchData()
     },
-    updateResourceState (resource, state) {
-      if (this.selectedItems && resource) {
-        const objIndex = this.selectedItems.findIndex(obj => obj.id === resource)
-        this.selectedItems[objIndex].status = state
-      }
-    },
     deleteRules (e) {
       this.showConfirmationAction = false
       this.selectedColumns.splice(0, 0, {
         dataIndex: 'status',
-        title: this.$t('label.status'),
+        title: this.$t('label.operation.status'),
         scopedSlots: { customRender: 'status' }
       })
       if (this.selectedRowKeys.length > 0) {
@@ -331,24 +327,26 @@ export default {
       api('deleteFirewallRule', { id: rule.id }).then(response => {
         const jobId = response.deletefirewallruleresponse.jobid
         this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('label.firewall'),
+          title: this.$t('label.action.delete.firewall'),
           jobid: jobId,
           description: rule.id,
-          status: 'progress'
+          status: 'progress',
+          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
         })
+        eventBus.$emit('update-job-details', jobId, null)
         this.$pollJob({
           jobId: jobId,
           successMessage: this.$t('message.success.remove.firewall.rule'),
           successMethod: () => {
             if (this.selectedItems.length > 0) {
-              this.updateResourceState(rule.id, 'success')
+              eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'success')
             }
             this.fetchData()
           },
           errorMessage: this.$t('message.remove.firewall.rule.failed'),
           errorMethod: () => {
             if (this.selectedItems.length > 0) {
-              this.updateResourceState(rule.id, 'failure')
+              eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'failed')
             }
             this.fetchData()
           },
