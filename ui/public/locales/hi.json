@@ -226,6 +226,7 @@
 "label.issourcenat": "स्रोत NAT",
 "label.issystem": "सिस्टम है",
 "label.keyboardtype": "कीबोर्ड प्रकार",
+"label.keyboard.shortcuts": "कीबोर्ड शॉर्टकट [F6]",
 "label.kubernetesversionid": "Kubernetes संस्करण",
 "label.kubernetesversionname": "कुबेरनेट्स संस्करण",
 "label.kvmnetworklabel": "KVM ट्रैफ़िक label",

@@ -22,7 +22,7 @@
       type="primary"
       @click="() => showKeyboardModal(true)"
     >
-      Keyboard Shortcuts [F6]
+      {{ $t('label.keyboard.shortcuts') }}
     </a-button>
     <a-modal v-model="modalVisible" title="Keyboard Shortcuts" centered footer>
       <a-table :columns="columns" :data-source="data" :pagination="false" >

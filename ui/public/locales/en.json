@@ -1172,6 +1172,7 @@
 "label.keep.colon": "Keep:",
 "label.key": "Key",
 "label.keyboard": "Keyboard language",
+"label.keyboard.shortcuts": "Keyboard Shortcuts [F6]",
 "label.keyboardtype": "Keyboard type",
 "label.keypair": "SSH Key Pair",
 "label.kubeconfig.cluster": "Kubernetes Cluster Config",
