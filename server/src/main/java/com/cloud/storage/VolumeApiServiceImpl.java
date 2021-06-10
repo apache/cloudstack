@@ -924,14 +924,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // if we are to use the existing disk offering
-        ImageFormat format = null;
         if (newDiskOffering == null) {
-            Long templateId = volume.getTemplateId();
-            if (templateId != null) {
-                VMTemplateVO template = _templateDao.findById(templateId);
-                format = template.getFormat();
-            }
-
             newSize = cmd.getSize();
             newHypervisorSnapshotReserve = volume.getHypervisorSnapshotReserve();
 
@@ -942,7 +935,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                             + "customizable or it must be a root volume (if providing a disk offering, make sure it is different from the current disk offering).");
                 }
 
-                if (isNotPossibleToResize(volume, format, diskOffering)) {
+                if (isNotPossibleToResize(volume, diskOffering)) {
                     throw new InvalidParameterValueException(
                             "Failed to resize Root volume. The service offering of this Volume has been configured with a root disk size; "
                                     + "on such case a Root Volume can only be resized when changing to another Service Offering with a Root disk size. "
@@ -1177,7 +1170,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * 1 - Root volume <br>
      * 2 - && Current Disk Offering enforces a root disk size (in this case one can resize only by changing the Service Offering) <br>
      */
-    private boolean isNotPossibleToResize(VolumeVO volume, ImageFormat format, DiskOfferingVO diskOffering) {
+    private boolean isNotPossibleToResize(VolumeVO volume, DiskOfferingVO diskOffering) {
         ServiceOfferingJoinVO serviceOfferingView = serviceOfferingJoinDao.findById(diskOffering.getId());
         return serviceOfferingView.getRootDiskSize() > 0 && volume.getVolumeType().equals(Volume.Type.ROOT);
     }
