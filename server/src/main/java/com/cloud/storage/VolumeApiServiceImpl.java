@@ -924,8 +924,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (newDiskOffering == null) {
             Long templateId = volume.getTemplateId();
             if (templateId != null) {
-                VMTemplateVO template = _templateDao.findById(templateId);
-                format = template.getFormat();
+                VMTemplateVO template = _templateDao.findByIdIncludingRemoved(templateId);
+                format = template != null ? template.getFormat() : null;
             }
 
             if (volume.getVolumeType().equals(Volume.Type.ROOT) && diskOffering.getDiskSize() > 0 && format != null && format != ImageFormat.ISO) {
