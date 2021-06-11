@@ -100,8 +100,6 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
     private static final long MAX_IDLE_TIME_IN_MILLISECS = MAX_IDLE_TIME_IN_MINS * 60 * 1000;
     private static final long BUFFER_TIME_IN_MILLISECS = 30 * 1000; // keep 30 secs buffer before the expiration (to avoid any last-minute operations)
 
-    private static final int MAX_CLIENT_CONNECTIONS = 100;
-
     private boolean authenticating = false;
     private long createTime = 0;
     private long lastUsedTime = 0;
@@ -143,6 +141,8 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         this.password = password;
 
         authenticate();
+        LOG.debug("API client for the PowerFlex gateway " + apiURI.getHost() + " is created successfully, with max connections: "
+                + maxConnections + " and timeout: " + timeout + " secs");
     }
 
     /////////////////////////////////////////////////////////////
