@@ -17,7 +17,6 @@
 
 <template>
   <div class="user-menu">
-    <span v-shortkey="['h']" @shortkey.native="toggleShowShortkey" @click="toggleShowShortkey" > hello</span>
     <translation-menu class="action" />
     <header-notice class="action" />
     <a-dropdown>
@@ -73,11 +72,6 @@ export default {
     ...mapGetters(['nickname', 'avatar']),
     toggleUseBrowserTimezone () {
       this.$store.dispatch('SetUseBrowserTimezone', !this.$store.getters.usebrowsertimezone)
-    },
-    toggleShowShortkey () {
-      this.$store.dispatch('SET_SHOW_KEYBOARD_SHORTKEYS', !this.$store.getters.showShortkeys)
-      console.log(this.$store.getters.showShortkeys)
-      console.log(this.$store.state.showShortkeys)
     },
     handleLogout () {
       return this.Logout({}).then(() => {

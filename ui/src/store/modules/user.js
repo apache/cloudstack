@@ -33,7 +33,8 @@ import {
   TIMEZONE_OFFSET,
   USE_BROWSER_TIMEZONE,
   ASYNC_JOB_IDS,
-  DOMAIN_STORE
+  DOMAIN_STORE,
+  SHOW_KEYBOARD_SHORTKEYS
 } from '@/store/mutation-types'
 
 const user = {
@@ -51,6 +52,7 @@ const user = {
     zones: {},
     timezoneoffset: 0.0,
     usebrowsertimezone: false,
+    showshortkeys: false,
     domainStore: {}
   },
 
@@ -65,6 +67,10 @@ const user = {
     SET_USE_BROWSER_TIMEZONE: (state, bool) => {
       Vue.ls.set(USE_BROWSER_TIMEZONE, bool)
       state.usebrowsertimezone = bool
+    },
+    SET_SHOW_KEYBOARD_SHORTKEYS: (state, bool) => {
+      Vue.ls.set(SHOW_KEYBOARD_SHORTKEYS, bool)
+      state.showshortkeys = bool
     },
     SET_PROJECT: (state, project = {}) => {
       Vue.ls.set(CURRENT_PROJECT, project)
@@ -112,6 +118,9 @@ const user = {
   actions: {
     SetProject ({ commit }, project) {
       commit('SET_PROJECT', project)
+    },
+    SetShowKeyboardShortkeys ({ commit }, bool) {
+      commit('SET_SHOW_KEYBOARD_SHORTKEYS', bool)
     },
     Login ({ commit }, userInfo) {
       return new Promise((resolve, reject) => {

@@ -27,8 +27,7 @@ import {
   DEFAULT_FIXED_HEADER_HIDDEN,
   DEFAULT_CONTENT_WIDTH_TYPE,
   DEFAULT_MULTI_TAB,
-  USE_BROWSER_TIMEZONE,
-  SHOW_KEYBOARD_SHORTKEYS
+  USE_BROWSER_TIMEZONE
 } from '@/store/mutation-types'
 
 const app = {
@@ -45,8 +44,7 @@ const app = {
     color: null,
     inverted: true,
     multiTab: true,
-    metrics: false,
-    showShortKey: false
+    metrics: false
   },
   mutations: {
     SET_SIDEBAR_TYPE: (state, type) => {
@@ -102,11 +100,6 @@ const app = {
     SET_USE_BROWSER_TIMEZONE: (state, bool) => {
       Vue.ls.set(USE_BROWSER_TIMEZONE, bool)
       state.usebrowsertimezone = bool
-    },
-    SET_SHOW_KEYBOARD_SHORTKEYS: (state, bool) => {
-      console.log(bool)
-      Vue.ls.set(SHOW_KEYBOARD_SHORTKEYS, bool)
-      state.showShortKey = bool
     }
   },
   actions: {
@@ -154,9 +147,6 @@ const app = {
     },
     SetUseBrowserTimezone ({ commit }, bool) {
       commit('SET_USE_BROWSER_TIMEZONE', bool)
-    },
-    SetShowKeyboardShortkeys ({ commit }, bool) {
-      commit('SET_SHOW_KEYBOARD_SHORTKEYS', bool)
     }
   }
 }
