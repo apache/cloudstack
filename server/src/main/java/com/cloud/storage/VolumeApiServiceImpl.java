@@ -1181,7 +1181,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         boolean isRoot = Volume.Type.ROOT.equals(volume.getVolumeType());
 
         ServiceOfferingJoinVO serviceOfferingView = serviceOfferingJoinDao.findById(diskOffering.getId());
-        boolean isOfferingEnforcingRootDiskSize = serviceOfferingView.getRootDiskSize() > 0;
+        boolean isOfferingEnforcingRootDiskSize = serviceOfferingView != null && serviceOfferingView.getRootDiskSize() > 0;
 
         return isOfferingEnforcingRootDiskSize && isRoot && isNotIso;
     }

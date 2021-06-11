@@ -1117,6 +1117,7 @@ public class VolumeApiServiceImplTest {
         VolumeVO volume = Mockito.mock(VolumeVO.class);
         when(volume.getVolumeType()).thenReturn(volumeType);
 
+        when(volume.getTemplateId()).thenReturn(1l);
         DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
 
         ServiceOfferingJoinVO serviceOfferingJoinVO = Mockito.mock(ServiceOfferingJoinVO.class);
@@ -1125,7 +1126,7 @@ public class VolumeApiServiceImplTest {
 
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
         when(template.getFormat()).thenReturn(imageFormat);
-        when(templateDao.findById(Mockito.anyLong())).thenReturn(template);
+        when(templateDao.findByIdIncludingRemoved(Mockito.anyLong())).thenReturn(template);
 
         boolean result = volumeApiServiceImpl.isNotPossibleToResize(volume, diskOffering);
         Assert.assertEquals(expectedIsNotPossibleToResize, result);
