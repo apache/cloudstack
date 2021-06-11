@@ -1168,11 +1168,22 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     /**
      * A volume should not be resized if it covers ALL the following scenarios: <br>
      * 1 - Root volume <br>
-     * 2 - && Current Disk Offering enforces a root disk size (in this case one can resize only by changing the Service Offering) <br>
+     * 2 - && Current Disk Offering enforces a root disk size (in this case one can resize only by changing the Service Offering)
      */
     private boolean isNotPossibleToResize(VolumeVO volume, DiskOfferingVO diskOffering) {
+        Long templateId = volume.getTemplateId();
+        ImageFormat format = null;
+        if (templateId != null) {
+            VMTemplateVO template = _templateDao.findById(templateId);
+            format = template.getFormat();
+        }
+        boolean isNotIso = format != null && format != ImageFormat.ISO;
+        boolean isRoot = Volume.Type.ROOT.equals(volume.getVolumeType());
+
         ServiceOfferingJoinVO serviceOfferingView = serviceOfferingJoinDao.findById(diskOffering.getId());
-        return serviceOfferingView.getRootDiskSize() > 0 && volume.getVolumeType().equals(Volume.Type.ROOT);
+        boolean isOfferingEnforcingRootDiskSize = serviceOfferingView.getRootDiskSize() > 0;
+
+        return isOfferingEnforcingRootDiskSize && isRoot && isNotIso;
     }
 
     private void checkIfVolumeIsRootAndVmIsRunning(Long newSize, VolumeVO volume, VMInstanceVO vmInstanceVO) {
