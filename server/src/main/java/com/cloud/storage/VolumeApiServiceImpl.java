@@ -1174,7 +1174,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long templateId = volume.getTemplateId();
         ImageFormat format = null;
         if (templateId != null) {
-            VMTemplateVO template = _templateDao.findById(templateId);
+            VMTemplateVO template = _templateDao.findByIdIncludingRemoved(templateId);
             format = template.getFormat();
         }
         boolean isNotIso = format != null && format != ImageFormat.ISO;
