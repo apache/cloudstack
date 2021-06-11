@@ -22,7 +22,7 @@ set -x
 function install_vhd_util() {
   [[ -f /bin/vhd-util ]] && return
 
-  wget --no-check-certificate https://github.com/rhtyd/cloudstack-nonoss/raw/master/vhd-util -O /bin/vhd-util
+  wget --no-check-certificate https://github.com/shapeblue/cloudstack-nonoss/raw/master/vhd-util -O /bin/vhd-util
   chmod a+x /bin/vhd-util
 }
 
@@ -68,7 +68,7 @@ function install_packages() {
     haproxy \
     haveged \
     radvd \
-    sharutils genisoimage aria2 \
+    sharutils genisoimage \
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins strongswan-charon strongswan-starter \
     virt-what open-vm-tools qemu-guest-agent hyperv-daemons
 

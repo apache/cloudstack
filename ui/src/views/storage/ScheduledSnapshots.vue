@@ -61,18 +61,14 @@
         <a-tag v-for="(tag, index) in record.tags" :key="index">{{ tag.key + '=' + tag.value }}</a-tag>
       </div>
       <div slot="action" class="account-button-action" slot-scope="text, record">
-        <a-tooltip placement="top">
-          <template slot="title">
-            {{ $t('label.delete') }}
-          </template>
-          <a-button
-            type="danger"
-            shape="circle"
-            icon="close"
-            size="small"
-            :loading="actionLoading"
-            @click="handleClickDelete(record)"/>
-        </a-tooltip>
+        <tooltip-button
+          tooltipPlacement="top"
+          :tooltip="$t('label.delete')"
+          type="danger"
+          icon="close"
+          size="small"
+          :loading="actionLoading"
+          @click="handleClickDelete(record)" />
       </div>
     </a-table>
   </div>
@@ -80,10 +76,14 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 import { timeZoneName } from '@/utils/timezone'
 
 export default {
   name: 'ScheduledSnapshots',
+  components: {
+    TooltipButton
+  },
   props: {
     loading: {
       type: Boolean,

@@ -963,6 +963,9 @@ export default {
           break
         }
       }
+      if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
+        this.$store.dispatch('UpdateConfiguration')
+      }
       return false
     },
     execSubmit (e) {

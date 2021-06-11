@@ -324,12 +324,12 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
 
         self.assertTrue('mks.enable3d' in detailKeys and 'mks.use3dRenderer' in detailKeys and 'svga.autodetect' in detailKeys and 'svga.vramSize' in detailKeys, "VM details do not contain 3D GPU details")
 
-        self.assertEquals('true', qresultset[detailKeys.index('mks.enable3d')][1], "Expected detail 'mks.enable3d'='true'")
+        self.assertEqual('true', qresultset[detailKeys.index('mks.enable3d')][1], "Expected detail 'mks.enable3d'='true'")
 
-        self.assertEquals('automatic', qresultset[detailKeys.index('mks.use3dRenderer')][1], "Expected detail 'mks.use3dRenderer'='automatic'")
+        self.assertEqual('automatic', qresultset[detailKeys.index('mks.use3dRenderer')][1], "Expected detail 'mks.use3dRenderer'='automatic'")
 
-        self.assertEquals('false', qresultset[detailKeys.index('svga.autodetect')][1], "Expected detail 'svga.autodetect'='false'")
+        self.assertEqual('false', qresultset[detailKeys.index('svga.autodetect')][1], "Expected detail 'svga.autodetect'='false'")
 
-        self.assertEquals('131072', qresultset[detailKeys.index('svga.vramSize')][1], "Expected detail 'svga.vramSize'='131072'")
+        self.assertEqual('131072', qresultset[detailKeys.index('svga.vramSize')][1], "Expected detail 'svga.vramSize'='131072'")
 
         return

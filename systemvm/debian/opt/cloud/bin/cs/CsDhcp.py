@@ -71,7 +71,7 @@ class CsDhcp(CsDataBag):
 
         self.write_hosts()
 
-        if not self.cl.is_redundant() or self.cl.is_master():
+        if not self.cl.is_redundant() or self.cl.is_primary():
             if restart_dnsmasq:
                 CsHelper.service("dnsmasq", "restart")
             else:

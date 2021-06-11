@@ -163,12 +163,8 @@
                 <a-input ref="input" :value="inputKey" @change="handleKeyChange" style="width: 100px; text-align: center" :placeholder="$t('label.key')" />
                 <a-input style=" width: 30px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
                 <a-input :value="inputValue" @change="handleValueChange" style="width: 100px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-                <a-button shape="circle" size="small" @click="handleInputConfirm">
-                  <a-icon type="check"/>
-                </a-button>
-                <a-button shape="circle" size="small" @click="inputVisible=false">
-                  <a-icon type="close"/>
-                </a-button>
+                <tooltip-button :tooltip="$t('label.ok')" icon="check" size="small" @click="handleInputConfirm" />
+                <tooltip-button :tooltip="$t('label.cancel')" icon="close" size="small" @click="inputVisible=false" />
               </a-input-group>
             </div>
             <a-tag v-else @click="showInput" style="background: #fff; borderStyle: dashed;">
@@ -197,11 +193,15 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
 
 export default {
   name: 'FormSchedule',
+  components: {
+    TooltipButton
+  },
   props: {
     loading: {
       type: Boolean,

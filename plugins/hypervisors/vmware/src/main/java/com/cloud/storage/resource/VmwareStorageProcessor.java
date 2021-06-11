@@ -50,6 +50,8 @@ import org.apache.cloudstack.storage.command.ResignatureAnswer;
 import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
+import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
+import org.apache.cloudstack.storage.command.SyncVolumePathAnswer;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -2045,7 +2047,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer attachIso(AttachCommand cmd) {
-        return this.attachIso(cmd.getDisk(), true, cmd.getVmName());
+        return this.attachIso(cmd.getDisk(), true, cmd.getVmName(), cmd.isForced());
     }
 
     @Override
@@ -2411,7 +2413,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return morDatastore;
     }
 
-    private Answer attachIso(DiskTO disk, boolean isAttach, String vmName) {
+    private Answer attachIso(DiskTO disk, boolean isAttach, String vmName, boolean force) {
         try {
             VmwareContext context = hostService.getServiceContext(null);
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
@@ -2441,7 +2443,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                                 return new AttachAnswer("Failed to unmount vmware-tools installer ISO as the corresponding CDROM device is locked by VM. Please unmount the CDROM device inside the VM and ret-try.");
                             }
                         } catch(Throwable e){
-                            vmMo.detachIso(null);
+                            vmMo.detachIso(null, force);
                         }
                     }
 
@@ -2469,9 +2471,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
             String isoDatastorePath = String.format("[%s] %s/%s", storeName, isoStorePathFromRoot, isoFileName);
 
             if (isAttach) {
-                vmMo.attachIso(isoDatastorePath, morSecondaryDs, true, false);
+                vmMo.attachIso(isoDatastorePath, morSecondaryDs, true, false, force);
             } else {
-                vmMo.detachIso(isoDatastorePath);
+                vmMo.detachIso(isoDatastorePath, force);
             }
 
             return new AttachAnswer(disk);
@@ -2497,7 +2499,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer dettachIso(DettachCommand cmd) {
-        return this.attachIso(cmd.getDisk(), false, cmd.getVmName());
+        return this.attachIso(cmd.getDisk(), false, cmd.getVmName(), cmd.isForced());
     }
 
     @Override
@@ -3770,6 +3772,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             if(!primaryDsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
+                HypervisorHostHelper.createBaseFolderInDatastore(primaryDsMo, primaryDsMo.getDataCenterMor());
                 clonedVm.moveAllVmDiskFiles(primaryDsMo, HypervisorHostHelper.VSPHERE_DATASTORE_BASE_FOLDER, false);
             }
             clonedVm.detachAllDisks();
@@ -3892,7 +3895,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer CheckDataStoreStoragePolicyComplaince(CheckDataStoreStoragePolicyComplainceCommand cmd) {
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd) {
         String primaryStorageNameLabel = cmd.getStoragePool().getUuid();
         String storagePolicyId = cmd.getStoragePolicyId();
         VmwareContext context = hostService.getServiceContext(cmd);
@@ -3960,6 +3963,83 @@ public class VmwareStorageProcessor implements StorageProcessor {
             String msg = "Error cloning VM from template in primary storage: %s" + e.getMessage();
             s_logger.error(msg, e);
             throw new CloudRuntimeException(msg, e);
+        }
+    }
+
+    @Override
+    public Answer syncVolumePath(SyncVolumePathCommand cmd) {
+        DiskTO disk = cmd.getDisk();
+        VolumeObjectTO volumeTO = (VolumeObjectTO)disk.getData();
+        DataStoreTO primaryStore = volumeTO.getDataStore();
+        String volumePath = volumeTO.getPath();
+        String vmName = volumeTO.getVmName();
+
+        boolean datastoreChangeObserved = false;
+        boolean volumePathChangeObserved = false;
+        String chainInfo = null;
+        try {
+            VmwareContext context = hostService.getServiceContext(null);
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
+            if (vmMo == null) {
+                vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
+                if (vmMo == null) {
+                    String msg = "Unable to find the VM to execute SyncVolumePathCommand, vmName: " + vmName;
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
+            }
+
+            String datastoreUUID = primaryStore.getUuid();
+            if (disk.getDetails().get(DiskTO.PROTOCOL_TYPE) != null && disk.getDetails().get(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
+                VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(hyperHost, context, vmMo, disk);
+                VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
+                if (diskInfoBuilder != null && matchingExistingDisk != null) {
+                    String[] diskChain = matchingExistingDisk.getDiskChain();
+                    assert (diskChain.length > 0);
+                    DatastoreFile file = new DatastoreFile(diskChain[0]);
+                    if (!file.getFileBaseName().equalsIgnoreCase(volumePath)) {
+                        if (s_logger.isInfoEnabled())
+                            s_logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumePath + " -> " + file.getFileBaseName());
+                        volumePathChangeObserved = true;
+                        volumePath = file.getFileBaseName();
+                        volumeTO.setPath(volumePath);
+                        chainInfo = _gson.toJson(matchingExistingDisk);
+                    }
+
+                    DatastoreMO diskDatastoreMofromVM = getDiskDatastoreMofromVM(hyperHost, context, vmMo, disk, diskInfoBuilder);
+                    if (diskDatastoreMofromVM != null) {
+                        String actualPoolUuid = diskDatastoreMofromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
+                        if (!actualPoolUuid.equalsIgnoreCase(primaryStore.getUuid())) {
+                            s_logger.warn(String.format("Volume %s found to be in a different storage pool %s", volumePath, actualPoolUuid));
+                            datastoreChangeObserved = true;
+                            datastoreUUID = actualPoolUuid;
+                            chainInfo = _gson.toJson(matchingExistingDisk);
+                        }
+                    }
+                }
+            }
+
+            SyncVolumePathAnswer answer = new SyncVolumePathAnswer(disk);
+            if (datastoreChangeObserved) {
+                answer.setContextParam("datastoreName", datastoreUUID);
+            }
+            if (volumePathChangeObserved) {
+                answer.setContextParam("volumePath", volumePath);
+            }
+            if (chainInfo != null && !chainInfo.isEmpty()) {
+                answer.setContextParam("chainInfo", chainInfo);
+            }
+
+            return answer;
+        }  catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+
+                hostService.invalidateServiceContext(null);
+            }
+
+            return new SyncVolumePathAnswer("Failed to process SyncVolumePathCommand due to " + e.getMessage());
         }
     }
 }

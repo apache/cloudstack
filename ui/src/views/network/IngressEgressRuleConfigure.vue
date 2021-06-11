@@ -106,14 +106,19 @@
         <div v-else>{{ text }}</div>
       </template>
       <template slot="actions" slot-scope="record">
-        <a-button shape="circle" icon="tag" class="rule-action" @click="() => openTagsModal(record)" />
+        <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag" buttonClass="rule-action" @click="() => openTagsModal(record)" />
         <a-popconfirm
           :title="$t('label.delete') + '?'"
           @confirm="handleDeleteRule(record)"
           :okText="$t('label.yes')"
           :cancelText="$t('label.no')"
         >
-          <a-button :disabled="!('revokeSecurityGroupIngress' in $store.getters.apis) && !('revokeSecurityGroupEgress' in $store.getters.apis)" shape="circle" type="danger" icon="delete" class="rule-action" />
+          <tooltip-button
+            :disabled="!('revokeSecurityGroupIngress' in $store.getters.apis) && !('revokeSecurityGroupEgress' in $store.getters.apis)"
+            :tooltip="$t('label.delete')"
+            type="danger"
+            icon="delete"
+            buttonClass="rule-action" />
         </a-popconfirm>
       </template>
     </a-table>
@@ -165,8 +170,12 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
+  components: {
+    TooltipButton
+  },
   props: {
     resource: {
       type: Object,

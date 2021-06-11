@@ -347,10 +347,6 @@ public class HostResponse extends BaseResponse {
         this.cpuSpeed = cpuSpeed;
     }
 
-    public String getCpuAllocated() {
-        return cpuAllocated;
-    }
-
     public void setCpuAllocated(String cpuAllocated) {
         this.cpuAllocated = cpuAllocated;
     }
@@ -620,6 +616,10 @@ public class HostResponse extends BaseResponse {
 
     public String getCpuUsed() {
         return cpuUsed;
+    }
+
+    public String getCpuAllocated() {
+        return cpuAllocated;
     }
 
     public Double getAverageLoad() {

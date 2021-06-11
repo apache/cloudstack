@@ -21,9 +21,9 @@ package com.cloud.agent.resource.virtualnetwork.model;
 
 public class Site2SiteVpn extends ConfigBase {
 
-    private String localPublicIp, localGuestCidr, localPublicGateway, peerGatewayIp, peerGuestCidrList, espPolicy, ikePolicy, ipsecPsk;
+    private String localPublicIp, localGuestCidr, localPublicGateway, peerGatewayIp, peerGuestCidrList, espPolicy, ikePolicy, ipsecPsk, ikeVersion;
     private Long ikeLifetime, espLifetime;
-    private boolean create, dpd, passive, encap;
+    private boolean create, dpd, passive, encap, splitConnections;
 
     public Site2SiteVpn() {
         super(ConfigBase.SITE2SITEVPN);
@@ -31,7 +31,7 @@ public class Site2SiteVpn extends ConfigBase {
 
     public Site2SiteVpn(String localPublicIp, String localGuestCidr, String localPublicGateway, String peerGatewayIp, String peerGuestCidrList, String espPolicy,
  String ikePolicy,
-            String ipsecPsk, Long ikeLifetime, Long espLifetime, boolean create, Boolean dpd, boolean passive, boolean encap) {
+            String ipsecPsk, Long ikeLifetime, Long espLifetime, boolean create, Boolean dpd, boolean passive, boolean encap, boolean splitConnections, String ikeVersion) {
         super(ConfigBase.SITE2SITEVPN);
         this.localPublicIp = localPublicIp;
         this.localGuestCidr = localGuestCidr;
@@ -47,6 +47,8 @@ public class Site2SiteVpn extends ConfigBase {
         this.dpd = dpd;
         this.passive = passive;
         this.encap = encap;
+        this.splitConnections = splitConnections;
+        this.ikeVersion = ikeVersion;
     }
 
     public String getLocalPublicIp() {
@@ -159,6 +161,22 @@ public class Site2SiteVpn extends ConfigBase {
 
     public void setEncap(boolean encap) {
         this.encap = encap;
+    }
+
+    public boolean getSplitConnections() {
+        return splitConnections;
+    }
+
+    public void setSplitConnections(boolean splitConnections) {
+        this.splitConnections = splitConnections;
+    }
+
+    public String getIkeVersion() {
+        return ikeVersion;
+    }
+
+    public void setIkeVersion(String ikeVersion) {
+        this.ikeVersion = ikeVersion;
     }
 
 }

@@ -102,6 +102,14 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse implements Co
     @Param(description = "the date and time the host was removed")
     private Date removed;
 
+    @SerializedName(ApiConstants.SPLIT_CONNECTIONS)
+    @Param(description = "For IKEv2, whether to split multiple right subnet cidrs into multiple connection statements.")
+    private Boolean splitConnections;
+
+    @SerializedName(ApiConstants.IKE_VERSION)
+    @Param(description = "Which IKE Version to use, one of ike (autoselect), ikev1, or ikev2. Defaults to ike")
+    private String ikeVersion;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -147,6 +155,14 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse implements Co
     }
 
     public void setEncap(Boolean encap) { this.encap = encap; }
+
+    public void setSplitConnections(Boolean splitConnections) {
+        this.splitConnections = splitConnections;
+    }
+
+    public void setIkeVersion(String ikeVersion) {
+        this.ikeVersion = ikeVersion;
+    }
 
     public void setRemoved(Date removed) {
         this.removed = removed;
