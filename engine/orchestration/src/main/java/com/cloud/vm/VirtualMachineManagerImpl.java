@@ -2419,10 +2419,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final Long sourceClusterId = vmClusterAndHost.first();
         final Long sourceHostId = vmClusterAndHost.second();
         Answer[] hypervisorMigrationResults = attemptHypervisorMigration(vm, volumeToPool, sourceHostId);
-        boolean migrationResult = false;
         if (hypervisorMigrationResults == null) {
             // OfflineVmwareMigration: if the HypervisorGuru can't do it, let the volume manager take care of it.
-            migrationResult = volumeMgr.storageMigration(profile, volumeToPool);
+            boolean migrationResult = volumeMgr.storageMigration(profile, volumeToPool);
             if (migrationResult) {
                 postStorageMigrationCleanup(vm, volumeToPool, _hostDao.findById(sourceHostId), sourceClusterId);
             } else {
@@ -2550,13 +2549,32 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private void afterStorageMigrationVmwareVMCleanup(StoragePool destPool, VMInstanceVO vm, HostVO srcHost, Long srcClusterId) {
         // OfflineVmwareMigration: this should only happen on storage migration, else the guru would already have issued the command
-        final Long destClusterId = destPool.getClusterId();
-        if (srcClusterId != null && destClusterId != null && ! srcClusterId.equals(destClusterId) && srcHost != null) {
-            final String srcDcName = _clusterDetailsDao.getVmwareDcName(srcClusterId);
-            final String destDcName = _clusterDetailsDao.getVmwareDcName(destClusterId);
-            if (srcDcName != null && destDcName != null && !srcDcName.equals(destDcName)) {
-                removeStaleVmFromSource(vm, srcHost);
-            }
+        Long destClusterId = destPool.getClusterId();
+        if (destClusterId == null ) {
+            s_logger.debug(String.format("No Cluster destination ID was found when doing cleanup after Vmware"));
+            return;
+        }
+        Long srcHostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+        if (srcHostId == null) {
+            s_logger.debug(String.format("No Host ID was found when doing cleanup after Vmware migration for VM with ID = [%d] and Cluster destination ID = [%d]", vm.getId(), destClusterId));
+            return;
+        }
+        if (srcHost == null) {
+            s_logger.debug(String.format("When doing cleanup after Vmware migration could not find a host for the given ID = [%d]", srcHostId));
+            return;
+        }
+        if (srcClusterId == null ) {
+            s_logger.debug(String.format("No Cluster ID was found when doing cleanup after Vmware"));
+            return;
+        }
+        if (srcClusterId.equals(destClusterId)) {
+            s_logger.debug("Since the Source cluster ID [%s] is equal to the Destination cluster ID [%s] we do not need to proceed with the clean up after migration");
+            return;
+        }
+        String srcDcName = _clusterDetailsDao.getVmwareDcName(srcClusterId);
+        String destDcName = _clusterDetailsDao.getVmwareDcName(destClusterId);
+        if (StringUtils.isNotBlank(srcDcName) && StringUtils.isNotBlank(destDcName)) {
+            removeStaleVmFromSource(vm, srcHost);
         }
     }
 
