@@ -695,3 +695,5 @@ CREATE VIEW `cloud`.`host_view` AS
         `cloud`.`user` ON `user`.`uuid` = `last_annotation_view`.`user_uuid`
     GROUP BY
         `host`.`id`;
+
+ALTER TABLE `cloud`.`annotations` ADD COLUMN `admins_only` tinyint(1) unsigned NOT NULL DEFAULT 0;

@@ -25,6 +25,7 @@ import java.util.List;
  * @since 4.11
  */
 public interface AnnotationDao extends GenericDao<AnnotationVO, Long> {
-    public List<AnnotationVO> findByEntityType(String entityType);
-    public List<AnnotationVO> findByEntity(String entityType, String entityUuid);
+    List<AnnotationVO> listByEntityType(String entityType, String userUuid);
+    List<AnnotationVO> listByEntity(String entityType, String entityUuid, String userUuid);
+    List<AnnotationVO> listAllAnnotations(String userUuid);
 }

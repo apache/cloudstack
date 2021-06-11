@@ -26,7 +26,7 @@ public interface AnnotationService {
     ListResponse<AnnotationResponse> searchForAnnotations(ListAnnotationsCmd cmd);
 
     AnnotationResponse addAnnotation(AddAnnotationCmd addAnnotationCmd);
-    AnnotationResponse addAnnotation(String text, EntityType type, String uuid);
+    AnnotationResponse addAnnotation(String text, EntityType type, String uuid, boolean adminsOnly);
 
     AnnotationResponse removeAnnotation(RemoveAnnotationCmd removeAnnotationCmd);
 
