@@ -1170,7 +1170,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * 1 - Root volume <br>
      * 2 - && Current Disk Offering enforces a root disk size (in this case one can resize only by changing the Service Offering)
      */
-    private boolean isNotPossibleToResize(VolumeVO volume, DiskOfferingVO diskOffering) {
+    protected boolean isNotPossibleToResize(VolumeVO volume, DiskOfferingVO diskOffering) {
         Long templateId = volume.getTemplateId();
         ImageFormat format = null;
         if (templateId != null) {
