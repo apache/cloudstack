@@ -58,6 +58,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 class VmwareVmImplementer {
     private static final Logger LOGGER = Logger.getLogger(VmwareVmImplementer.class);
@@ -141,7 +142,7 @@ class VmwareVmImplementer {
                 }
             }
             if(StringUtils.isEmpty(details.get(VmDetailConstants.RAM_RESERVATION))){
-                details.put(VmDetailConstants.RAM_RESERVATION, "0.0");
+                details.put(VmDetailConstants.RAM_RESERVATION, NumberUtils.DOUBLE_ZERO.toString());
             }
         }
 
