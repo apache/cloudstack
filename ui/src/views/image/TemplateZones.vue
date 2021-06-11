@@ -128,12 +128,17 @@
       :width="showTable ? modalWidth : '30vw'"
       @ok="selectedItems.length > 0 ? deleteTemplates() : deleteTemplate(currentRecord)"
       @cancel="onCloseModal"
+      :ok-button-props="getOkProps()"
+      :cancel-button-props="getCancelProps()"
       :confirmLoading="deleteLoading"
       centered>
-      <a-alert type="warning" v-if="selectedRowKeys.length > 0">
-        <span v-if="selectedItems.length > 0 && showTable" slot="message" v-html="`<b>${selectedItems.length} ` + $t('label.items.selected') + `. </b>`" />
-        <span slot="message" v-html="$t(message.confirmMessage)" />
-      </a-alert>
+      <div v-if="selectedRowKeys.length > 0">
+        <a-alert type="error">
+          <a-icon slot="message" type="exclamation-circle" style="color: red; fontSize: 30px; display: inline-flex" />
+          <span style="padding-left: 5px" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+          <span slot="message" v-html="$t(message.confirmMessage)" />
+        </a-alert>
+      </div>
       <a-alert v-else :message="$t('message.action.delete.template')" type="warning" />
       <br />
       <a-table
@@ -339,12 +344,31 @@ export default {
         this.$router.go(-1)
       }
     },
+    getOkProps () {
+      if (this.selectedRowKeys.length > 0) {
+        return { props: { type: 'default' } }
+      } else {
+        return { props: { type: 'primary' } }
+      }
+    },
+    getCancelProps () {
+      if (this.selectedRowKeys.length > 0) {
+        return { props: { type: 'primary' } }
+      } else {
+        return { props: { type: 'default' } }
+      }
+    },
     deleteTemplates (e) {
       this.showConfirmationAction = false
       this.selectedColumns.splice(0, 0, {
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        scopedSlots: { customRender: 'status' }
+        scopedSlots: { customRender: 'status' },
+        filters: [
+          { text: 'In Progress', value: 'InProgress' },
+          { text: 'Success', value: 'success' },
+          { text: 'Failed', value: 'failed' }
+        ]
       })
       if (this.selectedRowKeys.length > 0 && this.showTable) {
         this.showGroupActionModal = true

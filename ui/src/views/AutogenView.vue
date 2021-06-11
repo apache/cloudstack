@@ -130,6 +130,8 @@
         :width="modalWidth"
         @ok="handleSubmit"
         @cancel="closeAction"
+        :ok-button-props="getOkProps()"
+        :cancel-button-props="getCancelProps()"
         :confirmLoading="actionLoading"
         centered
       >
@@ -145,10 +147,24 @@
         </span>
         <a-spin :spinning="actionLoading">
           <span v-if="currentAction.message">
-            <a-alert type="warning">
-              <span v-if="selectedRowKeys.length > 0" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
-              <span slot="message" v-html="$t(currentAction.message)" />
-            </a-alert>
+            <div v-if="selectedRowKeys.length > 0">
+              <a-alert
+                v-if="['delete', 'poweroff'].includes(currentAction.icon)"
+                type="error">
+                <a-icon slot="message" type="exclamation-circle" style="color: red; fontSize: 30px; display: inline-flex" />
+                <span style="padding-left: 5px" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+                <span slot="message" v-html="$t(currentAction.message)" />
+              </a-alert>
+              <a-alert v-else type="warning">
+                <span v-if="selectedRowKeys.length > 0" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+                <span slot="message" v-html="$t(currentAction.message)" />
+              </a-alert>
+            </div>
+            <div v-else>
+              <a-alert type="warning">
+                <span slot="message" v-html="$t(currentAction.message)" />
+              </a-alert>
+            </div>
             <div v-if="selectedRowKeys.length > 0">
               <a-divider />
               <a-table
@@ -508,10 +524,10 @@ export default {
           } else {
             objIndex = selectedItems.findIndex(obj => (obj.id === tempResource[r] || obj.username === tempResource[r]))
           }
-          if (state) {
+          if (state && objIndex !== -1) {
             selectedItems[objIndex].status = state
           }
-          if (jobid) {
+          if (jobid && objIndex !== -1) {
             selectedItems[objIndex].jobid = jobid
           }
         }
@@ -572,6 +588,20 @@ export default {
         return 'table-cell'
       }
       return 'inline-flex'
+    },
+    getOkProps () {
+      if (this.selectedRowKeys.length > 0 && this.currentAction?.groupAction) {
+        return { props: { type: 'default' } }
+      } else {
+        return { props: { type: 'primary' } }
+      }
+    },
+    getCancelProps () {
+      if (this.selectedRowKeys.length > 0 && this.currentAction?.groupAction) {
+        return { props: { type: 'primary' } }
+      } else {
+        return { props: { type: 'default' } }
+      }
     },
     switchProject (projectId) {
       if (!projectId || !projectId.length || projectId.length !== 36) {
@@ -1040,7 +1070,12 @@ export default {
           this.selectedColumns.splice(0, 0, {
             dataIndex: 'status',
             title: this.$t('label.operation.status'),
-            scopedSlots: { customRender: 'status' }
+            scopedSlots: { customRender: 'status' },
+            filters: [
+              { text: 'In Progress', value: 'InProgress' },
+              { text: 'Success', value: 'success' },
+              { text: 'Failed', value: 'failed' }
+            ]
           })
           this.showGroupActionModal = true
           this.modalInfo.title = this.currentAction.label

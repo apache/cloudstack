@@ -49,9 +49,10 @@
         v-if="selectedItems.length > 0"
         size="middle"
         :columns="selectedColumns"
-        :dataSource="selectedItems"
+        :dataSource="tableChanged ? filteredItems : selectedItems"
         :rowKey="(record, idx) => (this.$route.path.includes('/template') || this.$route.path.includes('/iso')) ? record.zoneid: record.id"
         :pagination="true"
+        @change="handleTableChange"
         style="overflow-y: auto">
         <div slot="status" slot-scope="text">
           <status :text=" text ? text : $t('state.inprogress') " displayText></status>
@@ -114,9 +115,31 @@ export default {
       default: () => {}
     }
   },
+  created () {
+    this.filteredItems = this.selectedItems
+  },
+  data () {
+    return {
+      filteredItems: [],
+      tableChanged: false
+    }
+  },
   inject: ['parentFetchData'],
   methods: {
+    handleTableChange (pagination, filters, sorter) {
+      this.filteredItems = this.selectedItems
+      if (filters?.status.length > 0) {
+        this.filteredItems = this.selectedItems.filter(item => {
+          if (filters.status.includes(item.status)) {
+            return item
+          }
+        })
+      }
+      this.tableChanged = true
+    },
     handleCancel () {
+      this.filteredItems = []
+      this.tableChanged = false
       this.$emit('handle-cancel')
     },
     returnAlgorithmName (name) {

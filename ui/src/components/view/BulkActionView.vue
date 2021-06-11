@@ -28,13 +28,22 @@
       width="50vw"
       @ok="groupAction"
       @cancel="closeModal"
+      :ok-button-props="{props: { type: 'default' } }"
+      :cancel-button-props="{props: { type: 'primary' } }"
       centered>
       <span slot="title">
         {{ $t(message.title) }}
       </span>
       <span>
-        <a-alert type="warning">
-          <span v-if="selectedItems.length > 0" slot="message" v-html="`<b>${selectedItems.length} ` + $t('label.items.selected') + `. </b>`" />
+        <a-alert
+          v-if="isDestructiveAction()"
+          type="error">
+          <a-icon slot="message" type="exclamation-circle" style="color: red; fontSize: 30px; display: inline-flex" />
+          <span style="padding-left: 5px" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+          <span slot="message" v-html="$t(message.confirmMessage)" />
+        </a-alert>
+        <a-alert v-else type="warning">
+          <span v-if="selectedRowKeys.length > 0" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
           <span slot="message" v-html="$t(message.confirmMessage)" />
         </a-alert>
         <a-divider />
@@ -156,6 +165,12 @@ export default {
     },
     groupAction () {
       this.$emit('group-action')
+    },
+    isDestructiveAction () {
+      if (new RegExp(['remove', 'delete', 'destroy', 'stop', 'release', 'disassociate'].join('|')).test(this.action)) {
+        return true
+      }
+      return false
     },
     returnAlgorithmName (name) {
       switch (name) {
