@@ -841,7 +841,9 @@ public class ApiConstants {
     public static final String SOURCETEMPLATEID = "sourcetemplateid";
     public static final String DYNAMIC_SCALING_ENABLED = "dynamicscalingenabled";
 
-    public static final String POOL_TYPE ="pooltype";
+    public static final String POOL_TYPE = "pooltype";
+
+    public static final String ADMINS_ONLY = "adminsonly";
 
     public enum BootType {
         UEFI, BIOS;

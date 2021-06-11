@@ -40,10 +40,16 @@ public class AddAnnotationCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ANNOTATION, type = CommandType.STRING, description = "the annotation text")
     private String annotation;
+
     @Parameter(name = ApiConstants.ENTITY_TYPE, type = CommandType.STRING, description = "the entity type (only HOST is allowed atm)")
     private String entityType;
+
     @Parameter(name = ApiConstants.ENTITY_ID, type = CommandType.STRING, description = "the id of the entity to annotate")
     private String entityUuid;
+
+    @Parameter(name = ApiConstants.ADMINS_ONLY, type = CommandType.BOOLEAN,
+            description = "the annotation is visible for admins only")
+    private Boolean adminsOnly;
 
     public String getAnnotation() {
         return annotation;
@@ -61,6 +67,10 @@ public class AddAnnotationCmd extends BaseCmd {
     }
     public String getEntityUuid() {
         return entityUuid;
+    }
+
+    public boolean isAdminsOnly() {
+        return adminsOnly != null && adminsOnly;
     }
 
     @Override

@@ -53,6 +53,9 @@ public class AnnotationVO implements Annotation {
     @Column(name = "user_uuid")
     private String userUuid;
 
+    @Column(name = "admins_only")
+    private boolean adminsOnly;
+
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
@@ -64,19 +67,14 @@ public class AnnotationVO implements Annotation {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public AnnotationVO(String text, AnnotationService.EntityType type, String uuid) {
+    public AnnotationVO(String text, AnnotationService.EntityType type, String uuid, boolean adminsOnly) {
         this();
         setAnnotation(text);
         setEntityType(type);
         setEntityUuid(uuid);
+        setAdminsOnly(adminsOnly);
     }
 
-    public AnnotationVO(String text, String type, String uuid) {
-        this();
-        setAnnotation(text);
-        setEntityType(type);
-        setEntityUuid(uuid);
-    }
     // access
 
     @Override
@@ -150,5 +148,13 @@ public class AnnotationVO implements Annotation {
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    public boolean isAdminsOnly() {
+        return adminsOnly;
+    }
+
+    public void setAdminsOnly(boolean adminsOnly) {
+        this.adminsOnly = adminsOnly;
     }
 }

@@ -16,10 +16,12 @@
 // under the License.
 package org.apache.cloudstack.annotation.dao;
 
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.annotation.AnnotationVO;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -29,31 +31,48 @@ import java.util.List;
  */
 @Component
 public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implements AnnotationDao {
-    private final SearchBuilder<AnnotationVO> AnnotationSearchByType;
-    private final SearchBuilder<AnnotationVO> AnnotationSearchByTypeAndUuid;
+    private final SearchBuilder<AnnotationVO> AnnotationSearchBuilder;
 
     public AnnotationDaoImpl() {
         super();
-        AnnotationSearchByType = createSearchBuilder();
-        AnnotationSearchByType.and("entityType", AnnotationSearchByType.entity().getEntityType(), SearchCriteria.Op.EQ);
-        AnnotationSearchByType.done();
-        AnnotationSearchByTypeAndUuid = createSearchBuilder();
-        AnnotationSearchByTypeAndUuid.and("entityType", AnnotationSearchByTypeAndUuid.entity().getEntityType(), SearchCriteria.Op.EQ);
-        AnnotationSearchByTypeAndUuid.and("entityUuid", AnnotationSearchByTypeAndUuid.entity().getEntityUuid(), SearchCriteria.Op.EQ);
-        AnnotationSearchByTypeAndUuid.done();
-
+        AnnotationSearchBuilder = createSearchBuilder();
+        AnnotationSearchBuilder.and("entityType", AnnotationSearchBuilder.entity().getEntityType(), SearchCriteria.Op.EQ);
+        AnnotationSearchBuilder.and("entityUuid", AnnotationSearchBuilder.entity().getEntityUuid(), SearchCriteria.Op.EQ);
+        AnnotationSearchBuilder.and("userUuid", AnnotationSearchBuilder.entity().getUserUuid(), SearchCriteria.Op.EQ);
+        AnnotationSearchBuilder.done();
     }
 
-    @Override public List<AnnotationVO> findByEntityType(String entityType) {
-        SearchCriteria<AnnotationVO> sc = createSearchCriteria();
+    private List<AnnotationVO> listAnnotationsOrderedByCreatedDate(SearchCriteria<AnnotationVO> sc) {
+        Filter filter = new Filter(AnnotationVO.class, "created", false, null, null);
+        return listBy(sc, filter);
+    }
+
+    @Override public List<AnnotationVO> listByEntityType(String entityType, String userUuid) {
+        SearchCriteria<AnnotationVO> sc = AnnotationSearchBuilder.create();
         sc.addAnd("entityType", SearchCriteria.Op.EQ, entityType);
-        return listBy(sc);
+        if (StringUtils.isNotBlank(userUuid)) {
+            sc.addAnd("userUuid", SearchCriteria.Op.EQ, userUuid);
+        }
+        return listAnnotationsOrderedByCreatedDate(sc);
     }
 
-    @Override public List<AnnotationVO> findByEntity(String entityType, String entityUuid) {
-        SearchCriteria<AnnotationVO> sc = createSearchCriteria();
+    @Override public List<AnnotationVO> listByEntity(String entityType, String entityUuid, String userUuid) {
+        SearchCriteria<AnnotationVO> sc = AnnotationSearchBuilder.create();
         sc.addAnd("entityType", SearchCriteria.Op.EQ, entityType);
         sc.addAnd("entityUuid", SearchCriteria.Op.EQ, entityUuid);
-        return listBy(sc, null);
+        if (StringUtils.isNotBlank(userUuid)) {
+            sc.addAnd("userUuid", SearchCriteria.Op.EQ, userUuid);
+        }
+        return listAnnotationsOrderedByCreatedDate(sc);
+    }
+
+    @Override
+    public List<AnnotationVO> listAllAnnotations(String userUuid) {
+        if (StringUtils.isBlank(userUuid)) {
+            return listAll(new Filter(AnnotationVO.class, "created", false, null, null));
+        }
+        SearchCriteria<AnnotationVO> sc = AnnotationSearchBuilder.create();
+        sc.addAnd("userUuid", SearchCriteria.Op.EQ, userUuid);
+        return listAnnotationsOrderedByCreatedDate(sc);
     }
 }

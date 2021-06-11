@@ -41,10 +41,16 @@ public class ListAnnotationsCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.ID, type = CommandType.STRING, description = "the id of the annotation")
     private String uuid;
+
     @Parameter(name = ApiConstants.ENTITY_TYPE, type = CommandType.STRING, description = "the entity type")
     private String entityType;
+
     @Parameter(name = ApiConstants.ENTITY_ID, type = CommandType.STRING, description = "the id of the entity for which to show annotations")
     private String entityUuid;
+
+    @Parameter(name = ApiConstants.USER_ID, type = CommandType.STRING,
+            description = "optional: the id of the user of the annotation", required = false)
+    private String userUuid;
 
     public String getUuid() {
         return uuid;
@@ -56,6 +62,10 @@ public class ListAnnotationsCmd extends BaseListCmd {
 
     public String getEntityUuid() {
         return entityUuid;
+    }
+
+    public String getUserUuid() {
+        return userUuid;
     }
 
     @Override public void execute()

@@ -53,14 +53,15 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ANNOTATION_CREATE, eventDescription = "creating an annotation on an entity")
     public AnnotationResponse addAnnotation(AddAnnotationCmd addAnnotationCmd) {
-        return addAnnotation(addAnnotationCmd.getAnnotation(), addAnnotationCmd.getEntityType(), addAnnotationCmd.getEntityUuid());
+        return addAnnotation(addAnnotationCmd.getAnnotation(), addAnnotationCmd.getEntityType(),
+                addAnnotationCmd.getEntityUuid(), addAnnotationCmd.isAdminsOnly());
     }
 
-    public AnnotationResponse addAnnotation(String text, EntityType type, String uuid) {
+    public AnnotationResponse addAnnotation(String text, EntityType type, String uuid, boolean adminsOnly) {
         CallContext ctx = CallContext.current();
         String userUuid = ctx.getCallingUserUuid();
 
-        AnnotationVO annotation = new AnnotationVO(text, type, uuid);
+        AnnotationVO annotation = new AnnotationVO(text, type, uuid, adminsOnly);
         annotation.setUserUuid(userUuid);
         annotation = annotationDao.persist(annotation);
         return createAnnotationResponse(annotation);
@@ -80,6 +81,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
 
     private List<AnnotationVO> getAnnotationsForApiCmd(ListAnnotationsCmd cmd) {
         List<AnnotationVO> annotations;
+        String userUuid = cmd.getUserUuid();
         if(cmd.getUuid() != null) {
             annotations = new ArrayList<>();
             String uuid = cmd.getUuid().toString();
@@ -87,26 +89,29 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
                 LOGGER.debug("getting single annotation by uuid: " + uuid);
             }
 
-            annotations.add(annotationDao.findByUuid(uuid));
+            AnnotationVO annotationVO = annotationDao.findByUuid(uuid);
+            if (annotationVO != null && annotationVO.getUserUuid().equals(userUuid)) {
+                annotations.add(annotationVO);
+            }
         } else if( ! (cmd.getEntityType() == null || cmd.getEntityType().isEmpty()) ) {
             String type = cmd.getEntityType();
             if(LOGGER.isDebugEnabled()) {
                 LOGGER.debug("getting annotations for type: " + type);
             }
             if (cmd.getEntityUuid() != null) {
-                String uuid = cmd.getEntityUuid().toString();
+                String uuid = cmd.getEntityUuid();
                 if(LOGGER.isDebugEnabled()) {
                     LOGGER.debug("getting annotations for entity: " + uuid);
                 }
-                annotations = annotationDao.findByEntity(type,cmd.getEntityUuid().toString());
+                annotations = annotationDao.listByEntity(type, cmd.getEntityUuid(), userUuid);
             } else {
-                annotations = annotationDao.findByEntityType(type);
+                annotations = annotationDao.listByEntityType(type, userUuid);
             }
         } else {
             if(LOGGER.isDebugEnabled()) {
                 LOGGER.debug("getting all annotations");
             }
-            annotations = annotationDao.listAll();
+            annotations = annotationDao.listAllAnnotations(userUuid);
         }
         return annotations;
     }
