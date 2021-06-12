@@ -23,8 +23,16 @@ import javax.inject.Inject;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.user.AccountVO;
+import com.cloud.user.UserVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.command.admin.annotation.AddAnnotationCmd;
 import org.apache.cloudstack.api.command.admin.annotation.ListAnnotationsCmd;
@@ -42,6 +50,12 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
 
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private UserDao userDao;
+    @Inject
+    private AccountDao accountDao;
+    @Inject
+    private RoleService roleService;
 
     @Override
     public ListResponse<AnnotationResponse> searchForAnnotations(ListAnnotationsCmd cmd) {
@@ -58,8 +72,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     }
 
     public AnnotationResponse addAnnotation(String text, EntityType type, String uuid, boolean adminsOnly) {
-        CallContext ctx = CallContext.current();
-        String userUuid = ctx.getCallingUserUuid();
+        UserVO userVO = getCallingUserFromContext();
+        String userUuid = userVO.getUuid();
 
         AnnotationVO annotation = new AnnotationVO(text, type, uuid, adminsOnly);
         annotation.setUserUuid(userUuid);
@@ -79,18 +93,47 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         return createAnnotationResponse(annotation);
     }
 
+    private UserVO getCallingUserFromContext() {
+        CallContext ctx = CallContext.current();
+        long userId = ctx.getCallingUserId();
+        UserVO userVO = userDao.findById(userId);
+        if (userVO == null) {
+            throw new CloudRuntimeException("Cannot find a user with ID " + userId);
+        }
+        return userVO;
+    }
+
+    private boolean isCallingUserAdmin() {
+        UserVO userVO = getCallingUserFromContext();
+        long accountId = userVO.getAccountId();
+        AccountVO accountVO = accountDao.findById(accountId);
+        if (accountVO == null) {
+            throw new CloudRuntimeException("Cannot find account with ID + " + accountId);
+        }
+        Long roleId = accountVO.getRoleId();
+        Role role = roleService.findRole(roleId);
+        if (role == null) {
+            throw new CloudRuntimeException("Cannot find role with ID " + roleId);
+        }
+        return RoleType.Admin.equals(role.getRoleType()) || RoleType.DomainAdmin.equals(role.getRoleType()) ||
+                RoleType.ResourceAdmin.equals(role.getRoleType());
+    }
+
     private List<AnnotationVO> getAnnotationsForApiCmd(ListAnnotationsCmd cmd) {
         List<AnnotationVO> annotations;
         String userUuid = cmd.getUserUuid();
+        boolean isCallerAdmin = isCallingUserAdmin();
+
         if(cmd.getUuid() != null) {
             annotations = new ArrayList<>();
-            String uuid = cmd.getUuid().toString();
+            String uuid = cmd.getUuid();
             if(LOGGER.isDebugEnabled()) {
                 LOGGER.debug("getting single annotation by uuid: " + uuid);
             }
 
             AnnotationVO annotationVO = annotationDao.findByUuid(uuid);
-            if (annotationVO != null && annotationVO.getUserUuid().equals(userUuid)) {
+            if (annotationVO != null && annotationVO.getUserUuid().equals(userUuid) &&
+                annotationVO.isAdminsOnly() == isCallerAdmin) {
                 annotations.add(annotationVO);
             }
         } else if( ! (cmd.getEntityType() == null || cmd.getEntityType().isEmpty()) ) {
@@ -103,15 +146,15 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
                 if(LOGGER.isDebugEnabled()) {
                     LOGGER.debug("getting annotations for entity: " + uuid);
                 }
-                annotations = annotationDao.listByEntity(type, cmd.getEntityUuid(), userUuid);
+                annotations = annotationDao.listByEntity(type, cmd.getEntityUuid(), userUuid, isCallerAdmin);
             } else {
-                annotations = annotationDao.listByEntityType(type, userUuid);
+                annotations = annotationDao.listByEntityType(type, userUuid, isCallerAdmin);
             }
         } else {
             if(LOGGER.isDebugEnabled()) {
                 LOGGER.debug("getting all annotations");
             }
-            annotations = annotationDao.listAllAnnotations(userUuid);
+            annotations = annotationDao.listAllAnnotations(userUuid, isCallerAdmin);
         }
         return annotations;
     }

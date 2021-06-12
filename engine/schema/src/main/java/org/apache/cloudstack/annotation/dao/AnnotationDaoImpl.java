@@ -39,6 +39,7 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
         AnnotationSearchBuilder.and("entityType", AnnotationSearchBuilder.entity().getEntityType(), SearchCriteria.Op.EQ);
         AnnotationSearchBuilder.and("entityUuid", AnnotationSearchBuilder.entity().getEntityUuid(), SearchCriteria.Op.EQ);
         AnnotationSearchBuilder.and("userUuid", AnnotationSearchBuilder.entity().getUserUuid(), SearchCriteria.Op.EQ);
+        AnnotationSearchBuilder.and("adminsOnly", AnnotationSearchBuilder.entity().getUserUuid(), SearchCriteria.Op.EQ);
         AnnotationSearchBuilder.done();
     }
 
@@ -47,32 +48,42 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
         return listBy(sc, filter);
     }
 
-    @Override public List<AnnotationVO> listByEntityType(String entityType, String userUuid) {
+    @Override public List<AnnotationVO> listByEntityType(String entityType, String userUuid, boolean isCallerAdmin) {
         SearchCriteria<AnnotationVO> sc = AnnotationSearchBuilder.create();
         sc.addAnd("entityType", SearchCriteria.Op.EQ, entityType);
         if (StringUtils.isNotBlank(userUuid)) {
             sc.addAnd("userUuid", SearchCriteria.Op.EQ, userUuid);
         }
+        if (!isCallerAdmin) {
+            sc.addAnd("adminsOnly", SearchCriteria.Op.EQ, false);
+        }
         return listAnnotationsOrderedByCreatedDate(sc);
     }
 
-    @Override public List<AnnotationVO> listByEntity(String entityType, String entityUuid, String userUuid) {
+    @Override public List<AnnotationVO> listByEntity(String entityType, String entityUuid, String userUuid,
+                                                     boolean isCallerAdmin) {
         SearchCriteria<AnnotationVO> sc = AnnotationSearchBuilder.create();
         sc.addAnd("entityType", SearchCriteria.Op.EQ, entityType);
         sc.addAnd("entityUuid", SearchCriteria.Op.EQ, entityUuid);
         if (StringUtils.isNotBlank(userUuid)) {
             sc.addAnd("userUuid", SearchCriteria.Op.EQ, userUuid);
         }
+        if (!isCallerAdmin) {
+            sc.addAnd("adminsOnly", SearchCriteria.Op.EQ, false);
+        }
         return listAnnotationsOrderedByCreatedDate(sc);
     }
 
     @Override
-    public List<AnnotationVO> listAllAnnotations(String userUuid) {
+    public List<AnnotationVO> listAllAnnotations(String userUuid, boolean isCallerAdmin) {
         if (StringUtils.isBlank(userUuid)) {
             return listAll(new Filter(AnnotationVO.class, "created", false, null, null));
         }
         SearchCriteria<AnnotationVO> sc = AnnotationSearchBuilder.create();
         sc.addAnd("userUuid", SearchCriteria.Op.EQ, userUuid);
+        if (!isCallerAdmin) {
+            sc.addAnd("adminsOnly", SearchCriteria.Op.EQ, false);
+        }
         return listAnnotationsOrderedByCreatedDate(sc);
     }
 }
