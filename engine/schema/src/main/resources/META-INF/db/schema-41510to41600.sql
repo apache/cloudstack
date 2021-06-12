@@ -590,6 +590,7 @@ ALTER TABLE `cloud`.`kubernetes_cluster` CHANGE master_node_count control_node_c
 
 UPDATE `cloud`.`domain_router` SET redundant_state = 'PRIMARY' WHERE redundant_state = 'MASTER';
 
+<<<<<<< HEAD
 DROP TABLE IF EXISTS `cloud`.`external_bigswitch_vns_devices`;
 DROP TABLE IF EXISTS `cloud`.`template_s3_ref`;
 DROP TABLE IF EXISTS `cloud`.`template_swift_ref`;
@@ -697,3 +698,9 @@ CREATE VIEW `cloud`.`host_view` AS
         `host`.`id`;
 
 ALTER TABLE `cloud`.`annotations` ADD COLUMN `admins_only` tinyint(1) unsigned NOT NULL DEFAULT 0;
+
+-- Allow annotations for users
+INSERT INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission) VALUES (UUID(), 4, 'listAnnotations', 'ALLOW');
+INSERT INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission) VALUES (UUID(), 4, 'addAnnotation', 'ALLOW');
+INSERT INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission) VALUES (UUID(), 4, 'removeAnnotation', 'ALLOW');
+

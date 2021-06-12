@@ -924,6 +924,7 @@ export default {
       args.entityid = this.resource.id
       args.entitytype = this.annotationType
       args.annotation = this.annotation
+      args.adminsonly = ['Admin'].includes(this.$store.getters.userInfo.roletype)
       api('addAnnotation', args).then(json => {
       }).finally(e => {
         this.getNotes()
