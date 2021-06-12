@@ -64,8 +64,9 @@ Requires: bzip2
 Requires: gzip
 Requires: unzip
 Requires: /sbin/mount.nfs
-Requires: openssh-clients
+Requires: openssh
 Requires: nfs-utils
+Requires: nfs-client
 Requires: iproute
 Requires: wget
 Requires: mysql
@@ -73,14 +74,14 @@ Requires: sudo
 Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: /usr/bin/ssh-keygen
-Requires: genisoimage
+# Requires: genisoimage -> renamed to mkisofs
 Requires: ipmitool
 Requires: %{name}-common = %{_ver}
-Requires: iptables-services
-Requires: qemu-img
+# Requires: iptables-services
+Requires: qemu-tools
 Requires: python3-pip
 Requires: python3-setuptools
-Requires: libgcrypt > 1.8.3
+# Requires: libgcrypt > 1.8.3
 Group:     System Environment/Libraries
 %description management
 The CloudStack management server is the central point of coordination,
