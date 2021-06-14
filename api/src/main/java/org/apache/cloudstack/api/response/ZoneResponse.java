@@ -125,6 +125,12 @@ public class ZoneResponse extends BaseResponse {
     @Param(description = "Meta data associated with the zone (key/value pairs)", since = "4.3.0")
     private Map<String, String> resourceDetails;
 
+    @SerializedName(ApiConstants.RESOURCE_ICON)
+    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
+    private ResourceIconResponse resourceIcon;
+
+
+
     public ZoneResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
     }
@@ -232,6 +238,10 @@ public class ZoneResponse extends BaseResponse {
         this.resourceDetails = new HashMap<>(details);
     }
 
+    public void setResourceIcon(ResourceIconResponse resourceIcon) {
+        this.resourceIcon = resourceIcon;
+    }
+
     public String getId() {
         return id;
     }
@@ -315,4 +325,5 @@ public class ZoneResponse extends BaseResponse {
     public Map<String, String> getResourceDetails() {
         return resourceDetails;
     }
+
 }

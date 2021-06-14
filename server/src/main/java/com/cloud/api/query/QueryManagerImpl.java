@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.cloud.server.ResourceManagerUtil;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -376,6 +377,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private TaggedResourceService _taggedResourceMgr;
+
+    @Inject
+    private ResourceManagerUtil resourceManagerUtil;
 
     @Inject
     private AffinityGroupVMMapDao _affinityGroupVMMapDao;
@@ -4032,7 +4036,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         //Validation - 1.3
         if (resourceIdStr != null) {
-            resourceId = _taggedResourceMgr.getResourceId(resourceIdStr, resourceType);
+            resourceId = resourceManagerUtil.getResourceId(resourceIdStr, resourceType);
             if (resourceId == null) {
                 throw new InvalidParameterValueException("Cannot find resource with resourceId " + resourceIdStr + " and of resource type " + resourceType);
             }
@@ -4068,7 +4072,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     protected ResourceDetailResponse createResourceDetailsResponse(ResourceDetail requestedDetail, ResourceTag.ResourceObjectType resourceType) {
         ResourceDetailResponse resourceDetailResponse = new ResourceDetailResponse();
-        resourceDetailResponse.setResourceId(_taggedResourceMgr.getUuid(String.valueOf(requestedDetail.getResourceId()), resourceType));
+        resourceDetailResponse.setResourceId(resourceManagerUtil.getUuid(String.valueOf(requestedDetail.getResourceId()), resourceType));
         resourceDetailResponse.setName(requestedDetail.getName());
         resourceDetailResponse.setValue(requestedDetail.getValue());
         resourceDetailResponse.setForDisplay(requestedDetail.isDisplay());

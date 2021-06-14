@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.user.tag;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.user.Account;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -68,7 +69,7 @@ public class CreateTagsCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     public ResourceObjectType getResourceType() {
-        return _taggedResourceService.getResourceType(resourceType);
+        return resourceManagerUtil.getResourceType(resourceType);
     }
 
     public Map<String, String> getTags() {
@@ -95,7 +96,7 @@ public class CreateTagsCmd extends BaseAsyncCmd {
     @Override
     public long getEntityOwnerId() {
         //FIXME - validate the owner here
-        return 1;
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override
@@ -106,17 +107,17 @@ public class CreateTagsCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create tags");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to upload resource icon");
         }
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_TAGS_CREATE;
+        return EventTypes.EVENT_RESOURCE_ICON_UPLOAD;
     }
 
     @Override
     public String getEventDescription() {
-        return "creating tags";
+        return "Uploading resource icon";
     }
 }

@@ -92,7 +92,7 @@ public class ListResourceDetailsCmd extends BaseListProjectAndAccountResourcesCm
     }
 
     public ResourceTag.ResourceObjectType getResourceType() {
-        return _taggedResourceService.getResourceType(resourceType);
+        return resourceManagerUtil.getResourceType(resourceType);
     }
 
 }

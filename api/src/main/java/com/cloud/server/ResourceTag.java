@@ -25,8 +25,8 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
     // FIXME - extract enum to another interface as its used both by resourceTags and resourceMetaData code
     public enum ResourceObjectType {
         UserVm(true, true),
-        Template(true, true),
-        ISO(true, false),
+        Template(true, true, true),
+        ISO(true, false, true),
         Volume(true, true),
         Snapshot(true, false),
         Backup(true, false),
@@ -39,13 +39,13 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         SecurityGroupRule(true, false),
         PublicIpAddress(true, true),
         Project(true, false),
-        Account(true, false),
+        Account(true, false, true),
         Vpc(true, true),
         NetworkACL(true, true),
         StaticRoute(true, false),
         VMSnapshot(true, false),
         RemoteAccessVpn(true, true),
-        Zone(false, true),
+        Zone(false, true, true),
         ServiceOffering(false, true),
         Storage(false, true),
         PrivateGateway(false, true),
@@ -53,7 +53,7 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         VpnGateway(false, true),
         CustomerGateway(false, true),
         VpnConnection(false, true),
-        User(true, true),
+        User(true, true, true),
         DiskOffering(false, true),
         AutoScaleVmProfile(false, true),
         AutoScaleVmGroup(false, true),
@@ -70,8 +70,14 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
             metadataSupport = resourceMetadataSupport;
         }
 
+        ResourceObjectType(boolean resourceTagsSupport, boolean resourceMetadataSupport, boolean resourceIconSupport) {
+            this(resourceTagsSupport, resourceMetadataSupport);
+            this.resourceIconSupport = resourceIconSupport;
+        }
+
         private final boolean resourceTagsSupport;
         private final boolean metadataSupport;
+        private boolean resourceIconSupport;
 
         public boolean resourceTagsSupport() {
             return resourceTagsSupport;
@@ -79,6 +85,10 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
 
         public boolean resourceMetadataSupport() {
             return metadataSupport;
+        }
+
+        public boolean resourceIconSupport() {
+            return resourceIconSupport;
         }
     }
 

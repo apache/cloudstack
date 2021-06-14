@@ -136,6 +136,7 @@ known_categories = {
     'Simulator': 'simulator',
     'StaticRoute': 'VPC',
     'Tags': 'Resource tags',
+    'Icon': 'Resource Icon',
     'NiciraNvpDevice': 'Nicira NVP',
     'BrocadeVcsDevice': 'Brocade VCS',
     'BigSwitchBcfDevice': 'BigSwitch BCF',
@@ -199,7 +200,7 @@ known_categories = {
     'UnmanagedInstance': 'Virtual Machine',
     'Rolling': 'Rolling Maintenance',
     'importVsphereStoragePolicies' : 'vSphere storage policies',
-    'listVsphereStoragePolicies' : 'vSphere storage policies'
+    'listVsphereStoragePolicies' : 'vSphere storage policies',
 }
 
 

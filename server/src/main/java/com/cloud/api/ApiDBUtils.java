@@ -27,6 +27,8 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.resource.icon.ResourceIconVO;
+import com.cloud.resource.icon.dao.ResourceIconDao;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -55,6 +57,7 @@ import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
@@ -258,6 +261,7 @@ import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.StatsCollector;
 import com.cloud.server.TaggedResourceService;
+import com.cloud.server.ResourceManagerUtil;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -335,8 +339,10 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.log4j.Logger;
 
 public class ApiDBUtils {
+    public static final Logger s_logger = Logger.getLogger(ApiDBUtils.class);
     private static ManagementServer s_ms;
     static AsyncJobManager s_asyncMgr;
     static SecurityGroupManager s_securityGroupMgr;
@@ -418,6 +424,7 @@ public class ApiDBUtils {
     static AutoScaleVmGroupDao s_asVmGroupDao;
     static CounterDao s_counterDao;
     static ResourceTagJoinDao s_tagJoinDao;
+    static ResourceIconDao s_resourceIconDao;
     static EventJoinDao s_eventJoinDao;
     static InstanceGroupJoinDao s_vmGroupJoinDao;
     static UserAccountJoinDao s_userAccountJoinDao;
@@ -462,6 +469,7 @@ public class ApiDBUtils {
     static BackupScheduleDao s_backupScheduleDao;
     static BackupOfferingDao s_backupOfferingDao;
     static NicDao s_nicDao;
+    static ResourceManagerUtil s_resourceManagerUtil;
 
     @Inject
     private ManagementServer ms;
@@ -708,6 +716,10 @@ public class ApiDBUtils {
     private BackupScheduleDao backupScheduleDao;
     @Inject
     private NicDao nicDao;
+    @Inject
+    private ResourceIconDao resourceIconDao;
+    @Inject
+    private ResourceManagerUtil resourceManagerUtil;
 
     @PostConstruct
     void init() {
@@ -834,6 +846,8 @@ public class ApiDBUtils {
         s_backupDao = backupDao;
         s_backupScheduleDao = backupScheduleDao;
         s_backupOfferingDao = backupOfferingDao;
+        s_resourceIconDao = resourceIconDao;
+        s_resourceManagerUtil = resourceManagerUtil;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -1484,7 +1498,7 @@ public class ApiDBUtils {
     }
 
     public static String getUuid(String resourceId, ResourceObjectType resourceType) {
-        return s_taggedResourceService.getUuid(resourceId, resourceType);
+        return s_resourceManagerUtil.getUuid(resourceId, resourceType);
     }
 
     public static List<? extends ResourceTag> listByResourceTypeAndId(ResourceObjectType type, long resourceId) {
@@ -1800,6 +1814,10 @@ public class ApiDBUtils {
         return s_tagJoinDao.newResourceTagResponse(vsg, keyValueOnly);
     }
 
+    public static ResourceIconResponse newResourceIconResponse(ResourceIconVO resourceIconVO) {
+        return s_resourceIconDao.newResourceIconResponse(resourceIconVO);
+    }
+
     public static ResourceTagJoinVO newResourceTagView(ResourceTag sg) {
         return s_tagJoinDao.newResourceTagView(sg);
     }
@@ -2087,6 +2105,10 @@ public class ApiDBUtils {
 
     public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
         return s_tagJoinDao.listBy(resourceUUID, resourceType);
+    }
+
+    public static ResourceIconVO getResourceIconByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
+        return s_resourceIconDao.findByResourceUuid(resourceUUID, resourceType);
     }
 
     public static BackupResponse newBackupResponse(Backup backup) {

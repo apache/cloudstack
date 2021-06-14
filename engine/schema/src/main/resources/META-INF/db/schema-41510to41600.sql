@@ -405,3 +405,14 @@ UPDATE `cloud`.`configuration` SET name='denied.routes', description='Routes tha
 ALTER TABLE `cloud`.`kubernetes_cluster` CHANGE master_node_count control_node_count bigint NOT NULL default '0' COMMENT 'the number of the control nodes deployed for this Kubernetes cluster';
 
 UPDATE `cloud`.`domain_router` SET redundant_state = 'PRIMARY' WHERE redundant_state = 'MASTER';
+
+CREATE TABLE `cloud`.`resource_icon` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40),
+  `resource_icon` text COMMENT 'Base64 version of the resource icon',
+  `resource_id` bigint unsigned NOT NULL,
+  `resource_uuid` varchar(40),
+  `resource_type` varchar(255),
+  PRIMARY KEY (`id`),
+  CONSTRAINT `uc_resource_icon__uuid` UNIQUE (`uuid`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

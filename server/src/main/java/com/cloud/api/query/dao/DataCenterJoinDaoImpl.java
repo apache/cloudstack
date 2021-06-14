@@ -20,6 +20,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.resource.icon.ResourceIconVO;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -100,6 +102,12 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         for (ResourceTagJoinVO resourceTag : resourceTags) {
             ResourceTagResponse tagResponse = ApiDBUtils.newResourceTagResponse(resourceTag, false);
             zoneResponse.addTag(tagResponse);
+        }
+
+        ResourceIconVO resourceIcon = ApiDBUtils.getResourceIconByResourceUUID(dataCenter.getUuid(), ResourceObjectType.Zone);
+        if (resourceIcon != null) {
+            ResourceIconResponse iconResponse = ApiDBUtils.newResourceIconResponse(resourceIcon);
+            zoneResponse.setResourceIcon(iconResponse);
         }
 
         zoneResponse.setResourceDetails(ApiDBUtils.getResourceDetails(dataCenter.getId(), ResourceObjectType.Zone));

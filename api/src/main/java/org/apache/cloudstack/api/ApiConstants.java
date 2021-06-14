@@ -36,6 +36,7 @@ public class ApiConstants {
     public static final String BACKUP_ID = "backupid";
     public static final String BACKUP_OFFERING_NAME = "backupofferingname";
     public static final String BACKUP_OFFERING_ID = "backupofferingid";
+    public static final String BASE64_IMAGE = "base64image";
     public static final String BITS = "bits";
     public static final String BOOTABLE = "bootable";
     public static final String BIND_DN = "binddn";
@@ -128,6 +129,7 @@ public class ApiConstants {
     public static final String DISPLAY_VM = "displayvm";
     public static final String DISPLAY_OFFERING = "displayoffering";
     public static final String DISPLAY_VOLUME = "displayvolume";
+    public static final String DISPLAY_RESOURCE_ICON = "displayresourceicon";
     public static final String DNS1 = "dns1";
     public static final String DNS2 = "dns2";
     public static final String IP6_DNS1 = "ip6dns1";
@@ -742,6 +744,7 @@ public class ApiConstants {
     public static final String ACCESS_TYPE = "accesstype";
 
     public static final String RESOURCE_DETAILS = "resourcedetails";
+    public static final String RESOURCE_ICON = "resourceicon";
     public static final String EXPUNGE = "expunge";
     public static final String FOR_DISPLAY = "fordisplay";
     public static final String PASSIVE = "passive";
