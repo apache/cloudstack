@@ -288,16 +288,17 @@ public class ViewResponseHelper {
             vrDataList.put(vr.getId(), vrData);
 
             VolumeStats vs = null;
-            if (vr.getFormat() == ImageFormat.VHD || vr.getFormat() == ImageFormat.QCOW2) {
-                vs = ApiDBUtils.getVolumeStatistics(vrData.getPath());
-            }
-            else if (vr.getFormat() == ImageFormat.OVA) {
+            if (vr.getFormat() == ImageFormat.VHD || vr.getFormat() == ImageFormat.QCOW2 || vr.getFormat() == ImageFormat.RAW) {
+                if (vrData.getPath() != null) {
+                    vs = ApiDBUtils.getVolumeStatistics(vrData.getPath());
+                }
+            } else if (vr.getFormat() == ImageFormat.OVA) {
                 if (vrData.getChainInfo() != null) {
                     vs = ApiDBUtils.getVolumeStatistics(vrData.getChainInfo());
                 }
             }
 
-            if (vs != null){
+            if (vs != null) {
                 long vsz = vs.getVirtualSize();
                 long psz = vs.getPhysicalSize() ;
                 double util = (double)psz/vsz;

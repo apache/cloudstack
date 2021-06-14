@@ -223,6 +223,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.STORAGE_POLICY, type = CommandType.UUID, entityType = VsphereStoragePoliciesResponse.class,required = false, description = "Name of the storage policy defined at vCenter, this is applicable only for VMware", since = "4.15")
     private Long storagePolicy;
 
+    @Parameter(name = ApiConstants.DYNAMIC_SCALING_ENABLED, type = CommandType.BOOLEAN, since = "4.16",
+            description = "true if virtual machine needs to be dynamically scalable of cpu or memory")
+    protected Boolean isDynamicScalingEnabled;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -321,7 +325,15 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             Collection<?> props = details.values();
             for (Object prop : props) {
                 HashMap<String, String> detail = (HashMap<String, String>) prop;
-                detailsMap.put(detail.get("key"), detail.get("value"));
+                // Compatibility with key and value pairs input from API cmd for details map parameter
+                if (!Strings.isNullOrEmpty(detail.get("key")) && !Strings.isNullOrEmpty(detail.get("value"))) {
+                    detailsMap.put(detail.get("key"), detail.get("value"));
+                    continue;
+                }
+
+                for (Map.Entry<String, String> entry: detail.entrySet()) {
+                    detailsMap.put(entry.getKey(),entry.getValue());
+                }
             }
         }
         return detailsMap;
@@ -431,6 +443,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public Long getStoragePolicy() {
         return storagePolicy;
+    }
+
+    public boolean getDynamicScalingEnabled() {
+        return isDynamicScalingEnabled == null ? true : isDynamicScalingEnabled;
     }
 
     /////////////////////////////////////////////////////

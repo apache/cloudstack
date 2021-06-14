@@ -96,6 +96,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     @Override
     public Answer execute(final MigrateCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final String vmName = command.getVmName();
+        final Map<String, Boolean> vlanToPersistenceMap = command.getVlanToPersistenceMap();
         final String destinationUri = createMigrationURI(command.getDestinationIp(), libvirtComputingResource);
         final List<MigrateDiskInfo> migrateDiskInfoList = command.getMigrateDiskInfoList();
 
@@ -154,6 +155,14 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
             // delete the metadata of vm snapshots before migration
             vmsnapshots = libvirtComputingResource.cleanVMSnapshotMetadata(dm);
+
+            // Verify Format of backing file
+            for (DiskDef disk : disks) {
+                if (disk.getDeviceType() == DiskDef.DeviceType.DISK
+                        && disk.getDiskFormatType() == DiskDef.DiskFmtType.QCOW2) {
+                    libvirtComputingResource.setBackingFileFormat(disk.getDiskPath());
+                }
+            }
 
             Map<String, MigrateCommand.MigrateDiskInfo> mapMigrateStorage = command.getMigrateStorage();
             // migrateStorage is declared as final because the replaceStorage method may mutate mapMigrateStorage, but
@@ -276,11 +285,12 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         } else {
             libvirtComputingResource.destroyNetworkRulesForVM(conn, vmName);
             for (final InterfaceDef iface : ifaces) {
+                String vlanId = libvirtComputingResource.getVlanIdFromBridgeName(iface.getBrName());
                 // We don't know which "traffic type" is associated with
                 // each interface at this point, so inform all vif drivers
                 final List<VifDriver> allVifDrivers = libvirtComputingResource.getAllVifDrivers();
                 for (final VifDriver vifDriver : allVifDrivers) {
-                    vifDriver.unplug(iface);
+                    vifDriver.unplug(iface, libvirtComputingResource.shouldDeleteBridge(vlanToPersistenceMap, vlanId));
                 }
             }
         }

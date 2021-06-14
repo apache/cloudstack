@@ -31,6 +31,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.ca.SetupCertificateCommand;
+import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.log4j.Logger;
@@ -53,6 +54,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.PhysicalNetworkSetupInfo;
@@ -80,7 +82,11 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     @Inject
     private CAManager caManager;
     @Inject
+    DirectDownloadManager directDownloadManager;
+    @Inject
     private IndirectAgentLB indirectAgentLB;
+    @Inject
+    private HostDao hostDao;
 
     @Override
     public abstract Hypervisor.HypervisorType getHypervisorType();
@@ -105,6 +111,10 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
     @Override
     public void processHostAdded(long hostId) {
+        HostVO host = hostDao.findById(hostId);
+        if (host != null) {
+            directDownloadManager.syncCertificatesToHost(hostId, host.getDataCenterId());
+        }
     }
 
     @Override
@@ -405,6 +415,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             _kvmGuestNic = _kvmPrivateNic;
         }
 
+        agentMgr.registerForHostEvents(this, true, false, false);
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }

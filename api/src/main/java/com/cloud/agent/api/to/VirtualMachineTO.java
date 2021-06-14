@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
+import com.cloud.network.element.NetworkElement;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
@@ -73,6 +74,7 @@ public class VirtualMachineTO {
     String configDriveLabel = null;
     String configDriveIsoRootFolder = null;
     String configDriveIsoFile = null;
+    NetworkElement.Location configDriveLocation = NetworkElement.Location.SECONDARY;
 
     Double cpuQuotaPercentage = null;
 
@@ -347,6 +349,18 @@ public class VirtualMachineTO {
 
     public void setConfigDriveIsoFile(String configDriveIsoFile) {
         this.configDriveIsoFile = configDriveIsoFile;
+    }
+
+    public boolean isConfigDriveOnHostCache() {
+        return (this.configDriveLocation == NetworkElement.Location.HOST);
+    }
+
+    public NetworkElement.Location getConfigDriveLocation() {
+        return configDriveLocation;
+    }
+
+    public void setConfigDriveLocation(NetworkElement.Location configDriveLocation) {
+        this.configDriveLocation = configDriveLocation;
     }
 
     public Map<String, String> getGuestOsDetails() {

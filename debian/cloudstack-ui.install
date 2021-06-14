@@ -15,16 +15,5 @@
 # specific language governing permissions and limitations
 # under the License.
 
-server {
-    listen       80;
-    server_name  localhost;
-    location / {
-        root   /usr/share/nginx/html;
-        index  index.html;
-    }
-    location /client/ {
-        # http://127.0.0.1:8080 should be replaced your CloudStack management
-        # Server's actual URI
-        proxy_pass   http://127.0.0.1:8080;
-    }
-}
+/etc/cloudstack/ui/config.json
+/usr/share/cloudstack-ui/*

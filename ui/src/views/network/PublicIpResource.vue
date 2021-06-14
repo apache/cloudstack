@@ -33,7 +33,9 @@
           v-if="isPublicIpAddress && 'id' in resource"
           :loading="loading"
           :resource="resource"
-          :tabs="tabs" />
+          :historyTab="activeTab"
+          :tabs="tabs"
+          @onTabChange="(tab) => { this.activeTab = tab }" />
       </div>
     </autogen-view>
   </div>
@@ -63,7 +65,8 @@ export default {
       tabs: [{
         name: 'details',
         component: () => import('@/components/view/DetailsTab.vue')
-      }]
+      }],
+      activeTab: ''
     }
   },
   mixins: [mixinDevice],
@@ -85,7 +88,7 @@ export default {
       }
     }
   },
-  mounted () {
+  created () {
     if ('id' in this.resource) {
       this.fetchData()
     }

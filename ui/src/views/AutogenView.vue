@@ -173,7 +173,7 @@
                   }]"
                   v-model="formModel[field.name]"
                   :placeholder="field.description"
-                  :autoFocus="fieldIndex === 0"
+                  :autoFocus="fieldIndex === firstIndex"
                 />
               </span>
               <span v-else-if="currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].options">
@@ -183,6 +183,7 @@
                     rules: [{ required: field.required, message: `${$t('message.error.select')}` }]
                   }]"
                   :placeholder="field.description"
+                  :autoFocus="fieldIndex === firstIndex"
                 >
                   <a-select-option key="" >{{ }}</a-select-option>
                   <a-select-option v-for="(opt, optIndex) in currentAction.mapping[field.name].options" :key="optIndex">
@@ -204,6 +205,7 @@
                   :filterOption="(input, option) => {
                     return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
+                  :autoFocus="fieldIndex === firstIndex"
                 >
                   <a-select-option key="">{{ }}</a-select-option>
                   <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
@@ -224,6 +226,7 @@
                   :filterOption="(input, option) => {
                     return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
+                  :autoFocus="fieldIndex === firstIndex"
                 >
                   <a-select-option key="">{{ }}</a-select-option>
                   <a-select-option v-for="opt in field.opts" :key="opt.id">
@@ -239,6 +242,7 @@
                     rules: [{ required: field.required, message: `${$t('message.error.select')}` }]
                   }]"
                   :placeholder="field.description"
+                  :autoFocus="fieldIndex === firstIndex"
                 >
                   <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                     {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
@@ -247,7 +251,7 @@
               </span>
               <span v-else-if="field.type==='long'">
                 <a-input-number
-                  :autoFocus="fieldIndex === 0"
+                  :autoFocus="fieldIndex === firstIndex"
                   style="width: 100%;"
                   v-decorator="[field.name, {
                     rules: [{ required: field.required, message: `${$t('message.validate.number')}` }]
@@ -270,6 +274,7 @@
                   }]"
                   :placeholder="field.description"
                   @blur="($event) => handleConfirmBlur($event, field.name)"
+                  :autoFocus="fieldIndex === firstIndex"
                 />
               </span>
               <span v-else-if="field.name==='certificate' || field.name==='privatekey' || field.name==='certchain'">
@@ -279,11 +284,12 @@
                     rules: [{ required: field.required, message: `${$t('message.error.required.input')}` }]
                   }]"
                   :placeholder="field.description"
+                  :autoFocus="fieldIndex === firstIndex"
                 />
               </span>
               <span v-else>
                 <a-input
-                  :autoFocus="fieldIndex === 0"
+                  :autoFocus="fieldIndex === firstIndex"
                   v-decorator="[field.name, {
                     rules: [{ required: field.required, message: `${$t('message.error.required.input')}` }]
                   }]"
@@ -394,7 +400,8 @@ export default {
       searchParams: {},
       actions: [],
       formModel: {},
-      confirmDirty: false
+      confirmDirty: false,
+      firstIndex: 0
     }
   },
   beforeCreate () {
@@ -417,8 +424,7 @@ export default {
     eventBus.$on('exec-action', (action, isGroupAction) => {
       this.execAction(action, isGroupAction)
     })
-  },
-  mounted () {
+
     if (this.device === 'desktop') {
       this.pageSize = 20
     }
@@ -528,7 +534,7 @@ export default {
 
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
 
-      if (this.$route && this.$route.params && this.$route.params.id) {
+      if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
         if (!refreshed) {
           this.resource = {}
@@ -608,6 +614,7 @@ export default {
 
       params.page = this.page
       params.pagesize = this.pageSize
+      this.searchParams = params
       api(this.apiName, params).then(json => {
         var responseName
         var objectName
@@ -727,6 +734,13 @@ export default {
         return 0
       })
       this.currentAction.paramFields = []
+      if ('message' in action) {
+        var message = action.message
+        if (typeof action.message === 'function') {
+          message = action.message(action.resource)
+        }
+        action.message = message
+      }
       if ('args' in action) {
         var args = action.args
         if (typeof action.args === 'function') {
@@ -748,6 +762,7 @@ export default {
           })
         }
       }
+      this.getFirstIndexFocus()
 
       this.showAction = true
       for (const param of this.currentAction.paramFields) {
@@ -761,6 +776,16 @@ export default {
       this.actionLoading = false
       if (action.dataView && ['copy', 'edit', 'share-alt'].includes(action.icon)) {
         this.fillEditFormFieldValues()
+      }
+    },
+    getFirstIndexFocus () {
+      this.firstIndex = 0
+      for (let fieldIndex = 0; fieldIndex < this.currentAction.paramFields.length; fieldIndex++) {
+        const field = this.currentAction.paramFields[fieldIndex]
+        if (!(this.currentAction.mapping && field.name in this.currentAction.mapping && this.currentAction.mapping[field.name].value)) {
+          this.firstIndex = fieldIndex
+          break
+        }
       }
     },
     listUuidOpts (param) {
@@ -938,6 +963,9 @@ export default {
           break
         }
       }
+      if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
+        this.$store.dispatch('UpdateConfiguration')
+      }
       return false
     },
     execSubmit (e) {
@@ -958,11 +986,14 @@ export default {
               continue
             }
             if (!input === undefined || input === null ||
-              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork'].includes(action.api))) {
+              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering'].includes(action.api))) {
               if (param.type === 'boolean') {
                 params[key] = false
               }
               break
+            }
+            if (!input && input !== 0 && !['tags'].includes(key)) {
+              continue
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {
               params[key] = action.mapping[key].options[input]
@@ -987,12 +1018,14 @@ export default {
           }
         }
 
-        if (action.mapping) {
-          for (const key in action.mapping) {
-            if (!action.mapping[key].value) {
-              continue
+        if (!this.projectView || !['uploadSslCert'].includes(action.api)) {
+          if (action.mapping) {
+            for (const key in action.mapping) {
+              if (!action.mapping[key].value) {
+                continue
+              }
+              params[key] = action.mapping[key].value(this.resource, params)
             }
-            params[key] = action.mapping[key].value(this.resource, params)
           }
         }
 

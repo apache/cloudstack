@@ -30,7 +30,8 @@
             v-decorator="['username', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
-            :placeholder="apiParams.username.description" />
+            :placeholder="apiParams.username.description"
+            autoFocus/>
         </a-form-item>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
@@ -124,7 +125,7 @@
             v-decorator="['domainid']"
             :placeholder="apiParams.domainid.description">
             <a-select-option v-for="domain in domainsList" :key="domain.id">
-              {{ domain.name }}
+              {{ domain.path || domain.name || domain.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -136,7 +137,9 @@
             </a-tooltip>
           </span>
           <a-select
-            v-decorator="['account']"
+            v-decorator="['account', {
+              rules: [{ required: true, message: $t('message.error.required.input') }]
+            }]"
             :loading="loadingAccount"
             :placeholder="apiParams.account.description">
             <a-select-option v-for="(item, idx) in accountList" :key="idx">
@@ -217,19 +220,17 @@ export default {
       domainid: null
     }
   },
-  beforeCreate () {
+  created () {
     this.form = this.$form.createForm(this)
     this.apiConfig = this.$store.getters.apis.createUser || {}
     this.apiParams = {}
     this.apiConfig.params.forEach(param => {
       this.apiParams[param.name] = param
     })
-    this.apiConfig = this.$store.getters.apis.authorizeSamlSso || {}
+    this.apiConfig = this.$store.getters.apis.authorizeSamlSso || { params: [] }
     this.apiConfig.params.forEach(param => {
       this.apiParams[param.name] = param
     })
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {
@@ -320,7 +321,7 @@ export default {
 
         if (this.account) {
           params.account = this.account
-        } else if (values.account) {
+        } else if (this.accountList[values.account]) {
           params.account = this.accountList[values.account].name
         }
 

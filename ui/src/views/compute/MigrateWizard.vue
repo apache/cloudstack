@@ -21,7 +21,8 @@
       :placeholder="$t('label.search')"
       v-model="searchQuery"
       style="margin-bottom: 10px;"
-      @search="fetchData" />
+      @search="fetchData"
+      autoFocus />
     <a-table
       size="small"
       style="overflow-y: auto"
@@ -46,6 +47,18 @@
       </div>
       <div slot="memused" slot-scope="record">
         {{ record.memoryused | byteToGigabyte }} GB
+      </div>
+      <div slot="memoryallocatedpercentage" slot-scope="record">
+        {{ record.memoryallocatedpercentage }}
+      </div>
+      <div slot="cluster" slot-scope="record">
+        {{ record.clustername }}
+      </div>
+      <div slot="pod" slot-scope="record">
+        {{ record.podname }}
+      </div>
+      <div slot="requiresstoragemigration" slot-scope="record">
+        {{ record.requiresStorageMotion ? $t('label.yes') : $t('label.no') }}
       </div>
       <template slot="select" slot-scope="record">
         <a-radio
@@ -114,8 +127,24 @@ export default {
           dataIndex: 'cpuused'
         },
         {
+          title: this.$t('label.memoryallocated'),
+          scopedSlots: { customRender: 'memoryallocatedpercentage' }
+        },
+        {
           title: this.$t('label.memused'),
           scopedSlots: { customRender: 'memused' }
+        },
+        {
+          title: this.$t('label.cluster'),
+          scopedSlots: { customRender: 'cluster' }
+        },
+        {
+          title: this.$t('label.pod'),
+          scopedSlots: { customRender: 'pod' }
+        },
+        {
+          title: this.$t('label.storage.migration.required'),
+          scopedSlots: { customRender: 'requiresstoragemigration' }
         },
         {
           title: this.$t('label.select'),
@@ -124,7 +153,7 @@ export default {
       ]
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {
@@ -149,19 +178,28 @@ export default {
     },
     submitForm () {
       this.loading = true
-      api(this.selectedHost.requiresStorageMotion ? 'migrateVirtualMachineWithVolume' : 'migrateVirtualMachine', {
+      var isUserVm = true
+      if (this.$route.meta.name !== 'vm') {
+        isUserVm = false
+      }
+      var migrateApi = isUserVm
+        ? this.selectedHost.requiresStorageMotion ? 'migrateVirtualMachineWithVolume' : 'migrateVirtualMachine'
+        : 'migrateSystemVm'
+      api(migrateApi, {
         hostid: this.selectedHost.id,
         virtualmachineid: this.resource.id
       }).then(response => {
-        const jobid = this.selectedHost.requiresStorageMotion ? response.migratevirtualmachinewithvolumeresponse.jobid : response.migratevirtualmachineresponse.jobid
+        var migrateResponse = isUserVm
+          ? this.selectedHost.requiresStorageMotion ? response.migratevirtualmachinewithvolumeresponse : response.migratevirtualmachineresponse
+          : response.migratesystemvmresponse
         this.$store.dispatch('AddAsyncJob', {
           title: `${this.$t('label.migrating')} ${this.resource.name}`,
-          jobid: jobid,
+          jobid: migrateResponse.jobid,
           description: this.resource.name,
           status: 'progress'
         })
         this.$pollJob({
-          jobId: jobid,
+          jobId: migrateResponse.jobid,
           successMessage: `${this.$t('message.success.migrating')} ${this.resource.name}`,
           successMethod: () => {
             this.$emit('close-action')
@@ -209,9 +247,9 @@ export default {
 <style scoped lang="scss">
 
   .form {
-    width: 85vw;
-    @media (min-width: 800px) {
-      width: 750px;
+    width: 95vw;
+    @media (min-width: 900px) {
+      width: 850px;
     }
   }
 

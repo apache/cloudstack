@@ -46,9 +46,9 @@ public class PoolTest {
                     + "    <Pool_Alias>"
                     + ALIAS
                     + "</Pool_Alias>"
-                    + "    <Master_Virtual_Ip>"
+                    + "    <Primary_Virtual_Ip>"
                     + VIP
-                    + "</Master_Virtual_Ip>"
+                    + "</Primary_Virtual_Ip>"
                     + "    <Member_List>"
                     + "      <Member>"
                     + "        <Registered_IP>"
@@ -78,7 +78,7 @@ public class PoolTest {
         results.basicStringTest(pool.getPoolId(), UUID);
         results.basicStringTest(pool.getPoolId(), UUID);
         results.basicStringTest(pool.getPoolAlias(), ALIAS);
-        results.basicStringTest(pool.getPoolMasterVip(), VIP);
+        results.basicStringTest(pool.getPoolPrimaryVip(), VIP);
         results.basicBooleanTest(pool.getPoolMemberList().contains(IP));
         results.basicBooleanTest(pool.getPoolMemberList().contains(IP2));
     }

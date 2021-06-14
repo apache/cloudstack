@@ -63,6 +63,10 @@ export default {
       type: Array,
       default: () => []
     },
+    selectedTemplate: {
+      type: Object,
+      default: () => {}
+    },
     rowCount: {
       type: Number,
       default: () => 0
@@ -161,6 +165,9 @@ export default {
             (item.iscustomized === true && maxMemory < this.minimumMemory))) {
           disabled = true
         }
+        if (this.selectedTemplate && this.selectedTemplate.hypervisor === 'VMware' && this.selectedTemplate.deployasis && item.rootdisksize) {
+          disabled = true
+        }
         return {
           key: item.id,
           name: item.name,
@@ -238,6 +245,9 @@ export default {
       return {
         on: {
           click: () => {
+            if (record.disabled) {
+              return
+            }
             this.selectedRowKeys = [record.key]
             this.$emit('select-compute-item', record.key)
           }

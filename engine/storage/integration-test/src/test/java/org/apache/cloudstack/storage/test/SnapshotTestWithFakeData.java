@@ -73,7 +73,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.org.Cluster;
 import com.cloud.org.Managed;
-import com.cloud.server.LockMasterListener;
+import com.cloud.server.LockControllerListener;
 import com.cloud.storage.CreateSnapshotPayload;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
@@ -134,12 +134,12 @@ public class SnapshotTestWithFakeData {
     ImageStoreVO imageStore;
     @Inject
     AccountManager accountManager;
-    LockMasterListener lockMasterListener;
+    LockControllerListener lockControllerListener;
     VolumeInfo vol = null;
     FakePrimaryDataStoreDriver driver = new FakePrimaryDataStoreDriver();
     @Inject
     MockStorageMotionStrategy mockStorageMotionStrategy;
-    Merovingian2 _lockMaster;
+    Merovingian2 _lockController;
     @Inject
     SnapshotPolicyDao snapshotPolicyDao;
 
@@ -189,18 +189,18 @@ public class SnapshotTestWithFakeData {
         when(accountManager.getSystemAccount()).thenReturn(account);
         when(accountManager.getSystemUser()).thenReturn(user);
 
-        if (Merovingian2.getLockMaster() == null) {
-            _lockMaster = Merovingian2.createLockMaster(1234);
+        if (Merovingian2.getLockController() == null) {
+            _lockController = Merovingian2.createLockController(1234);
         } else {
-            _lockMaster = Merovingian2.getLockMaster();
+            _lockController = Merovingian2.getLockController();
         }
-        _lockMaster.cleanupThisServer();
+        _lockController.cleanupThisServer();
         ComponentContext.initComponentsLifeCycle();
     }
 
     @After
     public void tearDown() throws Exception {
-        _lockMaster.cleanupThisServer();
+        _lockController.cleanupThisServer();
     }
 
     private SnapshotVO createSnapshotInDb() {

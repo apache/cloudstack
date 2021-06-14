@@ -67,61 +67,47 @@
         </a-button>
         <NicsTable :resource="vm" :loading="loading">
           <span slot="actions" slot-scope="record">
-            <a-tooltip placement="bottom">
-              <template slot="title">
-                {{ $t('label.set.default.nic') }}
-              </template>
-              <a-popconfirm
-                :title="$t('label.set.default.nic')"
-                @confirm="setAsDefault(record.nic)"
-                :okText="$t('label.yes')"
-                :cancelText="$t('label.no')"
-                v-if="!record.nic.isdefault"
-              >
-                <a-button
-                  :disabled="!('updateDefaultNicForVirtualMachine' in $store.getters.apis)"
-                  icon="check-square"
-                  shape="circle" />
-              </a-popconfirm>
-            </a-tooltip>
-            <a-tooltip placement="bottom" v-if="record.nic.type !== 'L2'">
-              <template slot="title">
-                {{ $t('label.change.ip.addess') }}
-              </template>
-              <a-button
-                icon="swap"
-                shape="circle"
-                :disabled="!('updateVmNicIp' in $store.getters.apis)"
-                @click="onChangeIPAddress(record)" />
-            </a-tooltip>
-            <a-tooltip placement="bottom" v-if="record.nic.type !== 'L2'">
-              <template slot="title">
-                {{ $t('label.edit.secondary.ips') }}
-              </template>
-              <a-button
-                icon="environment"
-                shape="circle"
-                :disabled="(!('addIpToNic' in $store.getters.apis) && !('addIpToNic' in $store.getters.apis))"
-                @click="fetchSecondaryIPs(record.nic.id)" />
-            </a-tooltip>
-            <a-tooltip placement="bottom">
-              <template slot="title">
-                {{ $t('label.action.delete.nic') }}
-              </template>
-              <a-popconfirm
-                :title="$t('message.network.removenic')"
-                @confirm="removeNIC(record.nic)"
-                :okText="$t('label.yes')"
-                :cancelText="$t('label.no')"
-                v-if="!record.nic.isdefault"
-              >
-                <a-button
-                  :disabled="!('removeNicFromVirtualMachine' in $store.getters.apis)"
-                  type="danger"
-                  icon="delete"
-                  shape="circle" />
-              </a-popconfirm>
-            </a-tooltip>
+            <a-popconfirm
+              :title="$t('label.set.default.nic')"
+              @confirm="setAsDefault(record.nic)"
+              :okText="$t('label.yes')"
+              :cancelText="$t('label.no')"
+              v-if="!record.nic.isdefault"
+            >
+              <tooltip-button
+                tooltipPlacement="bottom"
+                :tooltip="$t('label.set.default.nic')"
+                :disabled="!('updateDefaultNicForVirtualMachine' in $store.getters.apis)"
+                icon="check-square" />
+            </a-popconfirm>
+            <tooltip-button
+              v-if="record.nic.type !== 'L2'"
+              tooltipPlacement="bottom"
+              :tooltip="$t('label.change.ip.addess')"
+              icon="swap"
+              :disabled="!('updateVmNicIp' in $store.getters.apis)"
+              @click="onChangeIPAddress(record)" />
+            <tooltip-button
+              v-if="record.nic.type !== 'L2'"
+              tooltipPlacement="bottom"
+              :tooltip="$t('label.edit.secondary.ips')"
+              icon="environment"
+              :disabled="(!('addIpToNic' in $store.getters.apis) && !('addIpToNic' in $store.getters.apis))"
+              @click="onAcquireSecondaryIPAddress(record)" />
+            <a-popconfirm
+              :title="$t('message.network.removenic')"
+              @confirm="removeNIC(record.nic)"
+              :okText="$t('label.yes')"
+              :cancelText="$t('label.no')"
+              v-if="!record.nic.isdefault"
+            >
+              <tooltip-button
+                tooltipPlacement="bottom"
+                :tooltip="$t('label.action.delete.nic')"
+                :disabled="!('removeNicFromVirtualMachine' in $store.getters.apis)"
+                type="danger"
+                icon="delete" />
+            </a-popconfirm>
           </span>
         </NicsTable>
       </a-tab-pane>
@@ -165,7 +151,7 @@
       {{ $t('message.network.addvm.desc') }}
       <div class="modal-form">
         <p class="modal-form__label">{{ $t('label.network') }}:</p>
-        <a-select :defaultValue="addNetworkData.network" @change="e => addNetworkData.network = e">
+        <a-select :defaultValue="addNetworkData.network" @change="e => addNetworkData.network = e" autoFocus>
           <a-select-option
             v-for="network in addNetworkData.allNetworks"
             :key="network.id"
@@ -195,14 +181,16 @@
           showSearch
           v-if="editNicResource.type==='Shared'"
           v-model="editIpAddressValue"
-          :loading="listIps.loading">
+          :loading="listIps.loading"
+          :autoFocus="editNicResource.type==='Shared'">
           <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
             {{ ip.ipaddress }}
           </a-select-option>
         </a-select>
         <a-input
           v-else
-          v-model="editIpAddressValue"></a-input>
+          v-model="editIpAddressValue"
+          :autoFocus="editNicResource.type!=='Shared'"></a-input>
       </div>
     </a-modal>
 
@@ -218,7 +206,23 @@
         {{ $t('message.network.secondaryip') }}
       </p>
       <a-divider />
-      <a-input :placeholder="$t('label.new.secondaryip.description')" v-model="newSecondaryIp"></a-input>
+      <div class="modal-form">
+        <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
+        <a-select
+          showSearch
+          v-if="editNicResource.type==='Shared'"
+          v-model="newSecondaryIp"
+          :loading="listIps.loading">
+          <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
+            {{ ip.ipaddress }}
+          </a-select-option>
+        </a-select>
+        <a-input
+          v-else
+          :placeholder="$t('label.new.secondaryip.description')"
+          v-model="newSecondaryIp"></a-input>
+      </div>
+
       <div style="margin-top: 10px; display: flex; justify-content:flex-end;">
         <a-button @click="submitSecondaryIP" type="primary" style="margin-right: 10px;">{{ $t('label.add.secondary.ip') }}</a-button>
         <a-button @click="closeModals">{{ $t('label.close') }}</a-button>
@@ -233,9 +237,10 @@
             :okText="$t('label.yes')"
             :cancelText="$t('label.no')"
           >
-            <a-button
+            <tooltip-button
+              tooltipPlacement="top"
+              :tooltip="$t('label.action.release.ip')"
               type="danger"
-              shape="circle"
               icon="delete" />
             {{ ip.ipaddress }}
           </a-popconfirm>
@@ -256,6 +261,7 @@ import DetailsTab from '@/components/view/DetailsTab'
 import DetailSettings from '@/components/view/DetailSettings'
 import NicsTable from '@/views/network/NicsTable'
 import ListResourceTable from '@/components/view/ListResourceTable'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'InstanceTab',
@@ -265,7 +271,8 @@ export default {
     DetailSettings,
     NicsTable,
     Status,
-    ListResourceTable
+    ListResourceTable,
+    TooltipButton
   },
   mixins: [mixinDevice],
   props: {
@@ -296,6 +303,7 @@ export default {
       loadingNic: false,
       editIpAddressNic: '',
       editIpAddressValue: '',
+      editNetworkId: '',
       secondaryIPs: [],
       selectedNicId: '',
       newSecondaryIp: '',
@@ -441,6 +449,17 @@ export default {
       if (record.nic.type === 'Shared') {
         this.fetchPublicIps(record.nic.networkid)
       }
+    },
+    onAcquireSecondaryIPAddress (record) {
+      if (record.nic.type === 'Shared') {
+        this.fetchPublicIps(record.nic.networkid)
+      } else {
+        this.listIps.opts = []
+      }
+
+      this.editNicResource = record.nic
+      this.editNetworkId = record.nic.networkid
+      this.fetchSecondaryIPs(record.nic.id)
     },
     submitAddNetwork () {
       const params = {}
@@ -611,6 +630,9 @@ export default {
       }).catch(error => {
         this.$notifyError(error)
         this.loadingNic = false
+      }).finally(() => {
+        this.newSecondaryIp = null
+        this.fetchPublicIps(this.editNetworkId)
       })
     },
     removeSecondaryIP (id) {
@@ -623,6 +645,7 @@ export default {
           successMethod: () => {
             this.loadingNic = false
             this.fetchSecondaryIPs(this.selectedNicId)
+            this.fetchPublicIps(this.editNetworkId)
             this.parentFetchData()
           },
           errorMessage: this.$t('message.error.remove.secondary.ipaddress'),

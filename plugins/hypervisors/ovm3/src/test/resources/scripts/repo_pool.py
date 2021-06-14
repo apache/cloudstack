@@ -44,14 +44,14 @@ def is_it_up(host, port):
     print "host: %s:%s UP" % (host, port)
     return True
 
-# hmm master actions don't apply to a slave
-master = "192.168.1.161"
+# hmm primary actions don't apply to a secondary
+primary = "192.168.1.161"
 port = 8899
 user = "oracle"
 password = "*******"
 auth = "%s:%s" % (user, password)
 server = ServerProxy("http://%s:%s" % ("localhost", port))
-mserver = ServerProxy("http://%s@%s:%s" % (auth, master, port))
+mserver = ServerProxy("http://%s@%s:%s" % (auth, primary, port))
 poolNode = True
 interface = "c0a80100"
 role = 'xen,utility'
@@ -63,11 +63,11 @@ xserver = server
 print "setting up password"
 server.update_agent_password(user, password)
 
-if (is_it_up(master, port)):
-    print "master seems to be up, slaving"
+if (is_it_up(primary, port)):
+    print "primary seems to be up, will become secondary"
     xserver = mserver
 else:
-    print "no master yet, will become master"
+    print "no primary yet, will become primary"
 
 # other mechanism must be used to make interfaces equal...
 try:
@@ -79,7 +79,7 @@ try:
     poolfsuuid = poolid
     clusterid = "ba9aaf00ae5e2d72"
     mgr = "d1a749d4295041fb99854f52ea4dea97"
-    poolmvip = master
+    poolmvip = primary
 
     poolfsnfsbaseuuid = "6824e646-5908-48c9-ba44-bb1a8a778084"
     repoid = "6824e646590848c9ba44bb1a8a778084"
@@ -114,7 +114,7 @@ try:
             for node in poolDom.getElementsByTagName('Server_Pool'):
                 id = node.getElementsByTagName('Unique_Id')[0].firstChild.nodeValue
                 alias = node.getElementsByTagName('Pool_Alias')[0].firstChild.nodeValue
-                mvip = node.getElementsByTagName('Master_Virtual_Ip')[0].firstChild.nodeValue
+                mvip = node.getElementsByTagName('Primary_Virtual_Ip')[0].firstChild.nodeValue
                 print "pool: %s, %s, %s" % (id, mvip, alias)
                 members = node.getElementsByTagName('Member')
                 for member in members:
@@ -127,7 +127,7 @@ try:
                         poolMembers.append(mip)
 
         except Error, v:
-            print "no master will become master, %s" % v
+            print "no primary will become primary, %s" % v
 
         if (pooled == False):
             # setup the repository

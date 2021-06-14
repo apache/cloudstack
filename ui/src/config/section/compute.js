@@ -38,7 +38,7 @@ export default {
         return filters
       },
       columns: () => {
-        const fields = ['name', 'state', 'ipaddress']
+        const fields = ['displayname', 'name', 'state', 'ipaddress']
         const metricsFields = ['cpunumber', 'cpuused', 'cputotal',
           {
             memoryused: (record) => {
@@ -58,17 +58,15 @@ export default {
           fields.push('hostname')
           fields.push('zonename')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
-          fields.splice(2, 0, 'displayname')
           fields.push('account')
           fields.push('zonename')
         } else {
-          fields.splice(2, 0, 'displayname')
           fields.push('zonename')
         }
         return fields
       },
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
-      details: ['displayname', 'name', 'id', 'state', 'ipaddress', 'templatename', 'ostypename', 'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account', 'domain', 'zonename'],
+      details: ['displayname', 'name', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename', 'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account', 'domain', 'zonename'],
       tabs: [{
         component: () => import('@/views/compute/InstanceTab.vue')
       }],
@@ -87,8 +85,9 @@ export default {
           label: 'label.action.edit.instance',
           docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
           dataView: true,
-          args: ['name', 'displayname', 'ostypeid', 'isdynamicallyscalable', 'haenable', 'group'],
-          show: (record) => { return ['Stopped'].includes(record.state) }
+          popup: true,
+          show: (record) => { return ['Stopped'].includes(record.state) },
+          component: () => import('@/views/compute/EditVM.vue')
         },
         {
           api: 'startVirtualMachine',
@@ -125,6 +124,7 @@ export default {
           show: (record) => { return ['Running'].includes(record.state) },
           args: (record, store) => {
             var fields = []
+            fields.push('forced')
             if (record.hypervisor === 'VMware') {
               if (store.apis.rebootVirtualMachine.params.filter(x => x.name === 'bootintosetup').length > 0) {
                 fields.push('bootintosetup')
@@ -156,7 +156,8 @@ export default {
           args: ['virtualmachineid', 'name', 'description', 'snapshotmemory', 'quiescevm'],
           show: (record) => {
             return ((['Running'].includes(record.state) && record.hypervisor !== 'LXC') ||
-              (['Stopped'].includes(record.state) && record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC'))
+              (['Stopped'].includes(record.state) && ((record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') ||
+              (record.hypervisor === 'KVM' && record.pooltype === 'PowerFlex'))))
           },
           mapping: {
             virtualmachineid: {
@@ -252,7 +253,13 @@ export default {
           label: 'label.action.detach.iso',
           message: 'message.detach.iso.confirm',
           dataView: true,
-          args: ['virtualmachineid'],
+          args: (record, store) => {
+            var args = ['virtualmachineid']
+            if (record && record.hypervisor && record.hypervisor === 'VMware') {
+              args.push('forced')
+            }
+            return args
+          },
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) && 'isoid' in record && record.isoid },
           mapping: {
             virtualmachineid: {
@@ -278,6 +285,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#how-to-dynamically-scale-cpu-and-ram',
           dataView: true,
           show: (record) => { return ['Stopped'].includes(record.state) || (['Running'].includes(record.state) && record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') },
+          disabled: (record) => { return !record.isdynamicallyscalable },
           popup: true,
           component: () => import('@/views/compute/ScaleVM.vue')
         },
@@ -299,16 +307,8 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#moving-vms-between-hosts-manual-live-migration',
           dataView: true,
           show: (record, store) => { return ['Stopped'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
-          args: ['storageid', 'virtualmachineid'],
-          mapping: {
-            storageid: {
-              api: 'listStoragePools',
-              params: (record) => { return { zoneid: record.zoneid } }
-            },
-            virtualmachineid: {
-              value: (record) => { return record.id }
-            }
-          }
+          component: () => import('@/views/compute/MigrateVMStorage'),
+          popup: true
         },
         {
           api: 'resetPasswordForVirtualMachine',
@@ -316,8 +316,8 @@ export default {
           label: 'label.action.reset.password',
           message: 'message.action.instance.reset.password',
           dataView: true,
-          show: (record) => { return ['Running', 'Stopped'].includes(record.state) && record.passwordenabled },
-          response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `Password of the VM is ${result.virtualmachine.password}` : null }
+          show: (record) => { return ['Stopped'].includes(record.state) && record.passwordenabled },
+          response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null }
         },
         {
           api: 'resetSSHKeyForVirtualMachine',
@@ -370,7 +370,7 @@ export default {
           api: 'expungeVirtualMachine',
           icon: 'delete',
           label: 'label.action.expunge.instance',
-          message: 'message.action.expunge.instance',
+          message: (record) => { return record.backupofferingid ? 'message.action.expunge.instance.with.backups' : 'message.action.expunge.instance' },
           docHelp: 'adminguide/virtual_machines.html#deleting-vms',
           dataView: true,
           show: (record, store) => { return ['Destroyed', 'Expunging'].includes(record.state) && store.features.allowuserexpungerecovervm }
@@ -543,6 +543,7 @@ export default {
           api: 'deleteSSHKeyPair',
           icon: 'delete',
           label: 'label.remove.ssh.key.pair',
+          message: 'message.please.confirm.remove.ssh.key.pair',
           dataView: true,
           args: ['name', 'account', 'domainid'],
           mapping: {

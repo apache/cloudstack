@@ -20,13 +20,19 @@ Install tools and dependencies used for development:
 
 Set up Maven (3.6.0):
 
-    # wget http://www.us.apache.org/dist/maven/maven-3/3.6.0/binaries/apache-maven-3.6.0-bin.tar.gz
-    # tar -zxvf apache-maven-3.6.0-bin.tar.gz -C /usr/local
+    # wget http://www.us.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz
+    # tar -zxvf apache-maven-3.6.3-bin.tar.gz -C /usr/local
     # cd /usr/local
-    # ln -s apache-maven-3.6.0 maven
+    # ln -s apache-maven-3.6.3 maven
     # echo export M2_HOME=/usr/local/maven >> ~/.bashrc # or .zshrc or .profile
     # echo export PATH=/usr/local/maven/bin:${PATH} >> ~/.bashrc # or .zshrc or .profile
     # source ~/.bashrc
+
+Setup up NodeJS (LTS):
+
+    # curl -sL https://rpm.nodesource.com/setup_12.x | sudo bash -
+    # sudo yum install nodejs
+    # sudo npm install -g @vue/cli npm-check-updates
 
 Start the MySQL service:
 
@@ -130,7 +136,7 @@ To create rpms, install the following extra packages:
 
     # yum -y install rpm-build
     # yum -y install ws-commons-util
-    # yum -y instal gcc
+    # yum -y install gcc
     # yum -y install glibc-devel
     # yum -y install MySQL-python
 

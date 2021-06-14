@@ -16,11 +16,16 @@
 // under the License.
 package com.cloud.capacity;
 
+import java.util.Map;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.host.Host;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 
 /**
@@ -99,6 +104,8 @@ public interface CapacityManager {
 
     void updateCapacityForHost(Host host);
 
+    void updateCapacityForHost(Host host, Map<Long, ServiceOfferingVO> offeringsMap);
+
     /**
      * @param pool storage pool
      * @param templateForVmCreation template that will be used for vm creation
@@ -136,4 +143,6 @@ public interface CapacityManager {
     long getUsedBytes(StoragePoolVO pool);
 
     long getUsedIops(StoragePoolVO pool);
+
+    Pair<Boolean, Boolean> checkIfHostHasCpuCapabilityAndCapacity(Host host, ServiceOffering offering, boolean considerReservedCapacity);
 }

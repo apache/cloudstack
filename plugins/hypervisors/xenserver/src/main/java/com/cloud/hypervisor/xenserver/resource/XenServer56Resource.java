@@ -37,38 +37,40 @@ public class XenServer56Resource extends CitrixResourceBase {
     }
 
     @Override
-    public void disableVlanNetwork(final Connection conn, final Network network) {
+    public void disableVlanNetwork(final Connection conn, final Network network, boolean deleteVlan) {
         try {
             final Network.Record networkr = network.getRecord(conn);
             if (!networkr.nameLabel.startsWith("VLAN")) {
                 return;
             }
-            final String bridge = networkr.bridge.trim();
-            for (final PIF pif : networkr.PIFs) {
-                final PIF.Record pifr = pif.getRecord(conn);
-                if (!pifr.host.getUuid(conn).equalsIgnoreCase(_host.getUuid())) {
-                    continue;
-                }
+            if (deleteVlan) {
+                final String bridge = networkr.bridge.trim();
+                for (final PIF pif : networkr.PIFs) {
+                    final PIF.Record pifr = pif.getRecord(conn);
+                    if (!pifr.host.getUuid(conn).equalsIgnoreCase(_host.getUuid())) {
+                        continue;
+                    }
 
-                final VLAN vlan = pifr.VLANMasterOf;
-                if (vlan != null) {
-                    final String vlannum = pifr.VLAN.toString();
-                    final String device = pifr.device.trim();
-                    if (vlannum.equals("-1")) {
-                        return;
+                    final VLAN vlan = pifr.VLANMasterOf;
+                    if (vlan != null) {
+                        final String vlannum = pifr.VLAN.toString();
+                        final String device = pifr.device.trim();
+                        if (vlannum.equals("-1")) {
+                            return;
+                        }
+                        try {
+                            vlan.destroy(conn);
+                            final Host host = Host.getByUuid(conn, _host.getUuid());
+                            host.forgetDataSourceArchives(conn, "pif_" + bridge + "_tx");
+                            host.forgetDataSourceArchives(conn, "pif_" + bridge + "_rx");
+                            host.forgetDataSourceArchives(conn, "pif_" + device + "." + vlannum + "_tx");
+                            host.forgetDataSourceArchives(conn, "pif_" + device + "." + vlannum + "_rx");
+                        } catch (final XenAPIException e) {
+                            s_logger.trace("Catch " + e.getClass().getName() + ": failed to destroy VLAN " + device + " on host " + _host.getUuid() + " due to " + e.toString());
+                        }
                     }
-                    try {
-                        vlan.destroy(conn);
-                        final Host host = Host.getByUuid(conn, _host.getUuid());
-                        host.forgetDataSourceArchives(conn, "pif_" + bridge + "_tx");
-                        host.forgetDataSourceArchives(conn, "pif_" + bridge + "_rx");
-                        host.forgetDataSourceArchives(conn, "pif_" + device + "." + vlannum + "_tx");
-                        host.forgetDataSourceArchives(conn, "pif_" + device + "." + vlannum + "_rx");
-                    } catch (final XenAPIException e) {
-                        s_logger.trace("Catch " + e.getClass().getName() + ": failed to destory VLAN " + device + " on host " + _host.getUuid() + " due to " + e.toString());
-                    }
+                    return;
                 }
-                return;
             }
         } catch (final XenAPIException e) {
             final String msg = "Unable to disable VLAN network due to " + e.toString();

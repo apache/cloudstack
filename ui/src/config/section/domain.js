@@ -23,7 +23,7 @@ export default {
   permission: ['listDomains', 'listDomainChildren'],
   resourceType: 'Domain',
   columns: ['name', 'state', 'path', 'parentdomainname', 'level'],
-  details: ['name', 'id', 'path', 'parentdomainname', 'level', 'networkdomain'],
+  details: ['name', 'id', 'path', 'parentdomainname', 'level', 'networkdomain', 'created'],
   component: () => import('@/views/iam/DomainView.vue'),
   related: [{
     name: 'account',
@@ -93,7 +93,7 @@ export default {
       api: 'updateResourceCount',
       icon: 'sync',
       label: 'label.action.update.resource.count',
-      message: 'message.update.resource.count',
+      message: 'message.update.resource.count.domain',
       listView: true,
       dataView: true,
       args: ['domainid'],

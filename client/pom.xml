@@ -89,6 +89,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-storage-volume-scaleio</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-server</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -607,7 +612,8 @@
                                 </copy>
                                 <copy todir="${project.build.directory}/classes/META-INF/webapp">
                                     <fileset dir="${basedir}/../ui">
-                                        <exclude name=".*"/>
+                                        <include name="index.html"/>
+                                        <include name="legacy/**"/>
                                     </fileset>
                                 </copy>
                                 <copy overwrite="true" todir="${basedir}/target/utilities/bin">

@@ -31,10 +31,10 @@
       </div>
       <template slot="action" slot-scope="text, record">
         <span style="margin-right: 5px">
-          <a-button
+          <tooltip-button
+            :tooltip="$t('label.action.copy.iso')"
             :disabled="!('copyIso' in $store.getters.apis && record.isready)"
             icon="copy"
-            shape="circle"
             :loading="copyLoading"
             @click="showCopyIso(record)" />
         </span>
@@ -48,10 +48,10 @@
             :loading="deleteLoading"
             @confirm="deleteIso(record)"
           >
-            <a-button
+            <tooltip-button
+              :tooltip="$t('label.action.delete.iso')"
               type="danger"
-              icon="delete"
-              shape="circle" />
+              icon="delete" />
           </a-popconfirm>
         </span>
       </template>
@@ -108,7 +108,8 @@
               :filterOption="(input, option) => {
                 return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
-              :loading="zoneLoading">
+              :loading="zoneLoading"
+              autoFocus>
               <a-select-option v-for="zone in zones" :key="zone.id">
                 {{ zone.name }}
               </a-select-option>
@@ -122,9 +123,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'IsoZones',
+  components: {
+    TooltipButton
+  },
   props: {
     resource: {
       type: Object,
@@ -190,8 +195,6 @@ export default {
       (userInfo.account !== this.resource.account || userInfo.domain !== this.resource.domain)) {
       this.columns = this.columns.filter(col => { return col.dataIndex !== 'status' })
     }
-  },
-  mounted () {
     this.fetchData()
   },
   watch: {

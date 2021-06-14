@@ -30,7 +30,7 @@
 	  <property name="format" value="^[a-zA-Z][a-zA-Z0-9_]*$" />
 	</module>
 	<module name="StaticVariableName">
-	  <property name="format" value="^(s_)?[a-z][a-zA-Z0-9]*$"/>
+	  <property name="format" value="^(s_)?[a-zA-Z][a-zA-Z0-9_]*$"/>
 	</module>
 	<module name="ConstantName">
 	  <property name="format" value="^[a-zA-Z][a-zA-Z0-9_]*$"/>

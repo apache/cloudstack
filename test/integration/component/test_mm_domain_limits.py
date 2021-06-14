@@ -18,7 +18,8 @@
 """
 # Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.base import (
                                         Account,
                                         ServiceOffering,
@@ -210,7 +211,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
                               domainid=self.child_do_admin_2.domainid)
         return
 
-    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="true")
     def test_01_change_service_offering(self):
         """Test Deploy VM with specified RAM & verify the usage"""
 
@@ -225,7 +226,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
         users =  { self.child_domain_1: self.child_do_admin_1,
                    self.child_domain_2: self.child_do_admin_2
                  }
-        for domain, admin in users.items():
+        for domain, admin in list(users.items()):
             self.account = admin
             self.domain = domain
 
@@ -369,7 +370,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
         users =  { self.child_domain_1: self.child_do_admin_1,
                    self.child_domain_2: self.child_do_admin_2
                  }
-        for domain, admin in users.items():
+        for domain, admin in list(users.items()):
             self.account = admin
             self.domain = domain
             self.debug("Creating an instance with service offering: %s" %
@@ -430,7 +431,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
         users =  { self.child_domain_1: self.child_do_admin_1,
                    self.child_domain_2: self.child_do_admin_2
                  }
-        for domain, admin in users.items():
+        for domain, admin in list(users.items()):
             self.account = admin
             self.domain = domain
             self.debug("Creating an instance with service offering: %s" %
@@ -490,7 +491,7 @@ class TestDomainMemoryLimits(cloudstackTestCase):
         users =  { self.child_domain_1: self.child_do_admin_1,
                    self.child_domain_2: self.child_do_admin_2
                  }
-        for domain, admin in users.items():
+        for domain, admin in list(users.items()):
             self.account = admin
             self.domain = domain
             self.debug("Creating an instance with service offering: %s" %

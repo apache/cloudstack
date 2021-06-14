@@ -46,19 +46,12 @@
           <a-input v-model="newRuleDescription" placeholder="Description"></a-input>
         </div>
         <div class="rules-table__col rules-table__col--actions">
-          <a-tooltip
-            placement="bottom">
-            <template slot="title">
-              Save new Rule
-            </template>
-            <a-button
-              icon="plus"
-              type="primary"
-              shape="circle"
-              @click="onRuleSave"
-            >
-            </a-button>
-          </a-tooltip>
+          <tooltip-button
+            tooltipPlacement="bottom"
+            :tooltip="$t('label.save.new.rule')"
+            icon="plus"
+            type="primary"
+            @click="onRuleSave" />
         </div>
       </div>
 
@@ -109,13 +102,15 @@ import { api } from '@/api'
 import draggable from 'vuedraggable'
 import PermissionEditable from '@/views/iam/PermissionEditable'
 import RuleDelete from '@/views/iam/RuleDelete'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'ProjectRolePermissionTab',
   components: {
     RuleDelete,
     PermissionEditable,
-    draggable
+    draggable,
+    TooltipButton
   },
   props: {
     resource: {
@@ -133,7 +128,7 @@ export default {
       updateTable: false,
       rules: null,
       newRule: '',
-      newRulePermission: 'allow',
+      newRulePermission: 'deny',
       newRuleDescription: '',
       newRuleSelectError: false,
       drag: false,
@@ -159,7 +154,7 @@ export default {
     },
     resetNewFields () {
       this.newRule = ''
-      this.newRulePermission = 'allow'
+      this.newRulePermission = 'deny'
       this.newRuleDescription = ''
       this.newRuleSelectError = false
     },

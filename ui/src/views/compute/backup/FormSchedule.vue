@@ -61,7 +61,8 @@
                       rules: [{required: true, message: $t('message.error.required.input')}]
                     }]"
                     :min="1"
-                    :max="59"/>
+                    :max="59"
+                    autoFocus />
                 </a-tooltip>
               </a-form-item>
             </a-col>

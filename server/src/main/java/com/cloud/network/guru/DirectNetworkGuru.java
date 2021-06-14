@@ -205,6 +205,13 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             if (userSpecified.getPvlanType() != null) {
                 config.setPvlanType(userSpecified.getPvlanType());
             }
+
+            if (userSpecified.getRouterIp() != null) {
+                config.setRouterIp(userSpecified.getRouterIp());
+            }
+            if (userSpecified.getRouterIpv6() != null) {
+                config.setRouterIpv6(userSpecified.getRouterIpv6());
+            }
         }
 
         boolean isSecurityGroupEnabled = _networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Service.SecurityGroup);

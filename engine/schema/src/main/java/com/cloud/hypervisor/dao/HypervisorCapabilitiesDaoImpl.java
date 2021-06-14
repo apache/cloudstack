@@ -119,4 +119,21 @@ public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapa
         }
         return hvs;
     }
+
+    @Override
+    public Boolean isStorageMotionSupported(HypervisorType hypervisorType, String hypervisorVersion) {
+        HypervisorCapabilitiesVO hostCapabilities = findByHypervisorTypeAndVersion(hypervisorType, hypervisorVersion);
+        if (hostCapabilities == null && HypervisorType.KVM.equals(hypervisorType)) {
+            List<HypervisorCapabilitiesVO> hypervisorCapabilitiesList = listAllByHypervisorType(HypervisorType.KVM);
+            if (hypervisorCapabilitiesList != null) {
+                for (HypervisorCapabilitiesVO hypervisorCapabilities : hypervisorCapabilitiesList) {
+                    if (hypervisorCapabilities.isStorageMotionSupported()) {
+                        hostCapabilities = hypervisorCapabilities;
+                        break;
+                    }
+                }
+            }
+        }
+        return hostCapabilities != null && hostCapabilities.isStorageMotionSupported();
+    }
 }

@@ -26,16 +26,18 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.response.GpuResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.VgpuResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.ha.HAResource;
+import org.apache.cloudstack.ha.dao.HAConfigDao;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -51,9 +53,6 @@ import com.cloud.storage.StorageStats;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-
-import org.apache.cloudstack.ha.HAResource;
-import org.apache.cloudstack.ha.dao.HAConfigDao;
 
 @Component
 public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements HostJoinDao {
@@ -164,13 +163,15 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
         DecimalFormat decimalFormat = new DecimalFormat("#.##");
         if (host.getType() == Host.Type.Routing) {
+            float cpuOverprovisioningFactor = ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId());
+            hostResponse.setCpuNumber((int)(host.getCpus() * cpuOverprovisioningFactor));
             if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity)) {
                 // set allocated capacities
                 Long mem = host.getMemReservedCapacity() + host.getMemUsedCapacity();
                 Long cpu = host.getCpuReservedCapacity() + host.getCpuUsedCapacity();
 
-                hostResponse.setMemoryTotal(host.getTotalMemory());
                 Float memWithOverprovisioning = host.getTotalMemory() * ApiDBUtils.getMemOverprovisioningFactor(host.getClusterId());
+                hostResponse.setMemoryTotal(memWithOverprovisioning.longValue());
                 hostResponse.setMemWithOverprovisioning(decimalFormat.format(memWithOverprovisioning));
                 hostResponse.setMemoryAllocated(mem);
                 hostResponse.setMemoryAllocatedBytes(mem);
@@ -178,27 +179,23 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 hostResponse.setMemoryAllocatedPercentage(memoryAllocatedPercentage);
 
                 String hostTags = host.getTag();
-                hostResponse.setHostTags(host.getTag());
+                hostResponse.setHostTags(hostTags);
 
+                hostResponse.setHaHost(false);
                 String haTag = ApiDBUtils.getHaTag();
-                if (haTag != null && !haTag.isEmpty() && hostTags != null && !hostTags.isEmpty()) {
-                    if (haTag.equalsIgnoreCase(hostTags)) {
-                        hostResponse.setHaHost(true);
-                    } else {
-                        hostResponse.setHaHost(false);
-                    }
-                } else {
-                    hostResponse.setHaHost(false);
+                if (StringUtils.isNotEmpty(haTag) && StringUtils.isNotEmpty(hostTags) &&
+                        haTag.equalsIgnoreCase(hostTags)) {
+                    hostResponse.setHaHost(true);
                 }
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
 
+                float cpuWithOverprovisioning = host.getCpus() * host.getSpeed() * cpuOverprovisioningFactor;
                 hostResponse.setCpuAllocatedValue(cpu);
-                String cpuAlloc = decimalFormat.format(((float)cpu / (float)(host.getCpus() * host.getSpeed())) * 100f) + "%";
-                hostResponse.setCpuAllocated(cpuAlloc);
-                hostResponse.setCpuAllocatedPercentage(cpuAlloc);
-                float cpuWithOverprovisioning = host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId());
-                hostResponse.setCpuAllocatedWithOverprovisioning(calculateResourceAllocatedPercentage(cpu, cpuWithOverprovisioning));
+                String cpuAllocated = calculateResourceAllocatedPercentage(cpu, cpuWithOverprovisioning);
+                hostResponse.setCpuAllocated(cpuAllocated);
+                hostResponse.setCpuAllocatedPercentage(cpuAllocated);
+                hostResponse.setCpuAllocatedWithOverprovisioning(cpuAllocated);
                 hostResponse.setCpuWithOverprovisioning(decimalFormat.format(cpuWithOverprovisioning));
             }
 
@@ -274,11 +271,18 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     @Override
     public HostResponse setHostResponse(HostResponse response, HostJoinVO host) {
         String tag = host.getTag();
-        if (tag != null) {
-            if (response.getHostTags() != null && response.getHostTags().length() > 0) {
+        if (StringUtils.isNotEmpty(tag)) {
+            if (StringUtils.isNotEmpty(response.getHostTags())) {
                 response.setHostTags(response.getHostTags() + "," + tag);
             } else {
                 response.setHostTags(tag);
+            }
+
+            if (Boolean.FALSE.equals(response.getHaHost())) {
+                String haTag = ApiDBUtils.getHaTag();
+                if (StringUtils.isNotEmpty(haTag) && haTag.equalsIgnoreCase(tag)) {
+                    response.setHaHost(true);
+                }
             }
         }
         return response;
@@ -334,17 +338,13 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 hostResponse.setMemoryAllocatedBytes(mem);
 
                 String hostTags = host.getTag();
-                hostResponse.setHostTags(host.getTag());
+                hostResponse.setHostTags(hostTags);
 
+                hostResponse.setHaHost(false);
                 String haTag = ApiDBUtils.getHaTag();
-                if (haTag != null && !haTag.isEmpty() && hostTags != null && !hostTags.isEmpty()) {
-                    if (haTag.equalsIgnoreCase(hostTags)) {
-                        hostResponse.setHaHost(true);
-                    } else {
-                        hostResponse.setHaHost(false);
-                    }
-                } else {
-                    hostResponse.setHaHost(false);
+                if (StringUtils.isNotEmpty(haTag) && StringUtils.isNotEmpty(hostTags) &&
+                        haTag.equalsIgnoreCase(hostTags)) {
+                    hostResponse.setHaHost(true);
                 }
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
@@ -418,6 +418,13 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 response.setHostTags(response.getHostTags() + "," + tag);
             } else {
                 response.setHostTags(tag);
+            }
+
+            if (Boolean.FALSE.equals(response.getHaHost())) {
+                String haTag = ApiDBUtils.getHaTag();
+                if (StringUtils.isNotEmpty(haTag) && haTag.equalsIgnoreCase(tag)) {
+                    response.setHaHost(true);
+                }
             }
         }
         return response;

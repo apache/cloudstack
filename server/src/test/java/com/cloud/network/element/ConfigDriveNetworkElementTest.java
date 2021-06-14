@@ -60,6 +60,7 @@ import org.reflections.ReflectionUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.HandleConfigDriveIsoAnswer;
 import com.cloud.agent.api.HandleConfigDriveIsoCommand;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -228,7 +229,7 @@ public class ConfigDriveNetworkElementTest {
         when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Stopped);
         when(_vmInstanceDao.updateState(VirtualMachine.State.Stopped, VirtualMachine.Event.ExpungeOperation, VirtualMachine.State.Expunging, virtualMachine, null)).thenReturn(true);
 
-        final Answer answer = mock(Answer.class);
+        final HandleConfigDriveIsoAnswer answer = mock(HandleConfigDriveIsoAnswer.class);
         when(agentManager.easySend(anyLong(), any(HandleConfigDriveIsoCommand.class))).thenReturn(answer);
         when(answer.getResult()).thenReturn(true);
 
@@ -267,10 +268,11 @@ public class ConfigDriveNetworkElementTest {
         Method method = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("buildConfigDrive")).iterator().next();
         PowerMockito.when(ConfigDriveBuilder.class, method).withArguments(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.anyString()).thenReturn("content");
 
-        final Answer answer = mock(Answer.class);
+        final HandleConfigDriveIsoAnswer answer = mock(HandleConfigDriveIsoAnswer.class);
         final UserVmDetailVO userVmDetailVO = mock(UserVmDetailVO.class);
         when(agentManager.easySend(anyLong(), any(HandleConfigDriveIsoCommand.class))).thenReturn(answer);
         when(answer.getResult()).thenReturn(true);
+        when(answer.getConfigDriveLocation()).thenReturn(NetworkElement.Location.PRIMARY);
         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
         when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Stopped);
         when(virtualMachine.getUuid()).thenReturn("vm-uuid");
