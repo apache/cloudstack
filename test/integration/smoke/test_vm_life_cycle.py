@@ -584,6 +584,9 @@ class TestVMLifeCycle(cloudstackTestCase):
         # 2. DeployVM on suitable host (with another host in the cluster)
         # 3. Migrate the VM and assert migration successful
 
+        if self.zone.localstorageenabled :
+            self.skipTest("Migration is not supported on zones with local storage")
+
         suitable_hosts = None
 
         hosts = Host.list(
