@@ -70,7 +70,7 @@ public class PublicNetworkTest extends TestCase {
     private static boolean s_initDone = false;
     private static int s_mysqlServerPort;
     private static long s_msId;
-    private static Merovingian2 s_lockMaster;
+    private static Merovingian2 s_lockController;
     private ManagementServerMock _server;
     private ApiConnector _spy;
 
@@ -81,14 +81,14 @@ public class PublicNetworkTest extends TestCase {
         s_mysqlServerPort = TestDbSetup.init(null);
         s_logger.info("mysql server launched on port " + s_mysqlServerPort);
         s_msId = ManagementServerNode.getManagementServerId();
-        s_lockMaster = Merovingian2.createLockMaster(s_msId);
+        s_lockController = Merovingian2.createLockController(s_msId);
     }
 
     @AfterClass
     public static void globalTearDown() throws Exception {
-        s_lockMaster.cleanupForServer(s_msId);
+        s_lockController.cleanupForServer(s_msId);
         JmxUtil.unregisterMBean("Locks", "Locks");
-        s_lockMaster = null;
+        s_lockController = null;
 
         AbstractApplicationContext ctx = (AbstractApplicationContext)ComponentContext.getApplicationContext();
         Map<String, ComponentLifecycle> lifecycleComponents = ctx.getBeansOfType(ComponentLifecycle.class);

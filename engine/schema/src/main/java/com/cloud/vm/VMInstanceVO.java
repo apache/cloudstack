@@ -544,7 +544,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.dynamicallyScalable = dynamicallyScalable;
     }
 
-    public Boolean isDynamicallyScalable() {
+    public boolean isDynamicallyScalable() {
         return dynamicallyScalable;
     }
 

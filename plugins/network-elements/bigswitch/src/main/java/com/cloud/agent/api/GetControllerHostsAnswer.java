@@ -22,19 +22,19 @@ package com.cloud.agent.api;
 import com.cloud.host.HostVO;
 
 public class GetControllerHostsAnswer {
-    private HostVO master;
-    private HostVO slave;
+    private HostVO primary;
+    private HostVO secondary;
 
-    public HostVO getMaster() {
-        return master;
+    public HostVO getPrimary() {
+        return primary;
     }
-    public void setMaster(final HostVO master) {
-        this.master = master;
+    public void setPrimary(final HostVO primary) {
+        this.primary = primary;
     }
-    public HostVO getSlave() {
-        return slave;
+    public HostVO getSecondary() {
+        return secondary;
     }
-    public void setSlave(final HostVO slave) {
-        this.slave = slave;
+    public void setSecondary(final HostVO secondary) {
+        this.secondary = secondary;
     }
 }

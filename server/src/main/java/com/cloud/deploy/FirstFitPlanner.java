@@ -297,7 +297,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
     private Map<Short, Float> getCapacityThresholdMap() {
         // Lets build this real time so that the admin wont have to restart MS
-        // if he changes these values
+        // if anyone changes these values
         Map<Short, Float> disableThresholdMap = new HashMap<Short, Float>();
 
         String cpuDisableThresholdString = ClusterCPUCapacityDisableThreshold.value().toString();

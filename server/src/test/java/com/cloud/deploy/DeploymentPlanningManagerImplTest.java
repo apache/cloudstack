@@ -214,7 +214,7 @@ public class DeploymentPlanningManagerImplTest {
         ServiceOfferingVO svcOffering =
             new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false, "test dpm",
                     ProvisioningType.THIN, false, false, null, false, VirtualMachine.Type.User,
-                    null, "FirstFitPlanner");
+                    null, "FirstFitPlanner", true);
         Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
@@ -229,7 +229,7 @@ public class DeploymentPlanningManagerImplTest {
         ServiceOfferingVO svcOffering =
             new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false, "test dpm",
                     ProvisioningType.THIN, false, false, null, false, VirtualMachine.Type.User,
-                    null, "UserDispersingPlanner");
+                    null, "UserDispersingPlanner", true);
         Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
@@ -245,7 +245,7 @@ public class DeploymentPlanningManagerImplTest {
         ServiceOfferingVO svcOffering =
             new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false, "test dpm",
                 ProvisioningType.THIN, false, false, null, false, VirtualMachine.Type.User,
-                    null, "FirstFitPlanner");
+                    null, "FirstFitPlanner", true);
         Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);

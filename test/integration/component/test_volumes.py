@@ -1191,7 +1191,7 @@ class TestVolumes(cloudstackTestCase):
         2. Create a user within this domain
         3. As user in step 2. create a volume with standard disk offering
         4. Ensure the volume is created in the domain and available to the
-           user in his listVolumes call
+           user in their listVolumes call
         """
         dom = Domain.create(
             self.apiclient,
