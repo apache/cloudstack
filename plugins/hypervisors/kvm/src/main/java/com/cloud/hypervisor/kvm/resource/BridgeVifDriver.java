@@ -224,7 +224,7 @@ public class BridgeVifDriver extends VifDriverBase {
                         String brName = createVnetBr(vNetId, trafficLabel, protocol);
                         intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
                     } else {
-                        String brName = createVnetBr(vNetId, "private", protocol);
+                        String brName = createVnetBr(vNetId, _bridges.get("private"), protocol);
                         intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
                     }
             } else {
