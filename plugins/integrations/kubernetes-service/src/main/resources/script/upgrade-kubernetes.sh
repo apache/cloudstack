@@ -18,14 +18,14 @@
 
 # Version 1.14 and below needs extra flags with kubeadm upgrade node
 if [ $# -lt 4 ]; then
-    echo "Invalid input. Valid usage: ./upgrade-kubernetes.sh UPGRADE_VERSION IS_MASTER IS_OLD_VERSION IS_EJECT_ISO"
+    echo "Invalid input. Valid usage: ./upgrade-kubernetes.sh UPGRADE_VERSION IS_CONTROL_NODE IS_OLD_VERSION IS_EJECT_ISO"
     echo "eg: ./upgrade-kubernetes.sh 1.16.3 true false false"
     exit 1
 fi
 UPGRADE_VERSION="${1}"
-IS_MAIN_MASTER=""
+IS_MAIN_CONTROL=""
 if [ $# -gt 1 ]; then
-  IS_MAIN_MASTER="${2}"
+  IS_MAIN_CONTROL="${2}"
 fi
 IS_OLD_VERSION=""
 if [ $# -gt 2 ]; then
@@ -100,7 +100,7 @@ if [ -d "$BINARIES_DIR" ]; then
   tar -f "${BINARIES_DIR}/cni/cni-plugins-amd64.tgz" -C /opt/cni/bin -xz
   tar -f "${BINARIES_DIR}/cri-tools/crictl-linux-amd64.tar.gz" -C /opt/bin -xz
 
-  if [ "${IS_MAIN_MASTER}" == 'true' ]; then
+  if [ "${IS_MAIN_CONTROL}" == 'true' ]; then
     set +e
     kubeadm upgrade apply ${UPGRADE_VERSION} -y
     retval=$?
@@ -121,7 +121,7 @@ if [ -d "$BINARIES_DIR" ]; then
   chmod +x {kubelet,kubectl}
   systemctl restart kubelet
 
-  if [ "${IS_MAIN_MASTER}" == 'true' ]; then
+  if [ "${IS_MAIN_CONTROL}" == 'true' ]; then
     kubectl apply -f ${BINARIES_DIR}/network.yaml
     kubectl apply -f ${BINARIES_DIR}/dashboard.yaml
   fi

@@ -583,7 +583,7 @@ class TestAddRemoveHosts(cloudstackTestCase):
         self.assertTrue(host_iqn, "'host_iqn' should not be 'None'.")
         self.assertTrue(vags, "'vags' should not be 'None'.")
 
-        self.assertTrue(isinstance(host_iqn, basestring), "'host_iqn' should be a 'string'.")
+        self.assertTrue(isinstance(host_iqn, str), "'host_iqn' should be a 'string'.")
         self.assertTrue(isinstance(vags, list), "'vags' should be a 'list'.")
 
         for vag in vags:
@@ -848,7 +848,7 @@ class TestAddRemoveHosts(cloudstackTestCase):
             if volume.type.upper() == "ROOT":
                 return volume
 
-        self.assert_(False, "Unable to locate the ROOT volume of the VM with the following ID: " + str(vm.id))
+        self.assertTrue(False, "Unable to locate the ROOT volume of the VM with the following ID: " + str(vm.id))
 
     def _get_iqn_2(self, primary_storage):
         sql_query = "Select path From storage_pool Where uuid = '" + str(primary_storage.id) + "'"

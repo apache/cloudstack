@@ -231,9 +231,9 @@ public class KubernetesClusterActionWorker {
         });
     }
 
-    private UserVm fetchMasterVmIfMissing(final UserVm masterVm) {
-        if (masterVm != null) {
-            return masterVm;
+    private UserVm fetchControlVmIfMissing(final UserVm controlVm) {
+        if (controlVm != null) {
+            return controlVm;
         }
         List<KubernetesClusterVmMapVO> clusterVMs = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         if (CollectionUtils.isEmpty(clusterVMs)) {
@@ -248,16 +248,16 @@ public class KubernetesClusterActionWorker {
         return userVmDao.findById(vmIds.get(0));
     }
 
-    protected String getMasterVmPrivateIp() {
+    protected String getControlVmPrivateIp() {
         String ip = null;
-        UserVm vm = fetchMasterVmIfMissing(null);
+        UserVm vm = fetchControlVmIfMissing(null);
         if (vm != null) {
             ip = vm.getPrivateIpAddress();
         }
         return ip;
     }
 
-    protected Pair<String, Integer> getKubernetesClusterServerIpSshPort(UserVm masterVm) {
+    protected Pair<String, Integer> getKubernetesClusterServerIpSshPort(UserVm controlVm) {
         int port = CLUSTER_NODES_DEFAULT_START_SSH_PORT;
         KubernetesClusterDetailsVO detail = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS);
         if (detail != null && !Strings.isNullOrEmpty(detail.getValue())) {
@@ -283,12 +283,12 @@ public class KubernetesClusterActionWorker {
             return new Pair<>(null, port);
         } else if (Network.GuestType.Shared.equals(network.getGuestType())) {
             port = 22;
-            masterVm = fetchMasterVmIfMissing(masterVm);
-            if (masterVm == null) {
-                LOGGER.warn(String.format("Unable to retrieve master VM for Kubernetes cluster : %s", kubernetesCluster.getName()));
+            controlVm = fetchControlVmIfMissing(controlVm);
+            if (controlVm == null) {
+                LOGGER.warn(String.format("Unable to retrieve control VM for Kubernetes cluster : %s", kubernetesCluster.getName()));
                 return new Pair<>(null, port);
             }
-            return new Pair<>(masterVm.getPrivateIpAddress(), port);
+            return new Pair<>(controlVm.getPrivateIpAddress(), port);
         }
         LOGGER.warn(String.format("Unable to retrieve server IP address for Kubernetes cluster : %s", kubernetesCluster.getName()));
         return  new Pair<>(null, port);
@@ -319,7 +319,7 @@ public class KubernetesClusterActionWorker {
         }
         for (UserVm vm : clusterVMs) {
             try {
-                templateService.attachIso(iso.getId(), vm.getId());
+                templateService.attachIso(iso.getId(), vm.getId(), true);
                 if (LOGGER.isInfoEnabled()) {
                     LOGGER.info(String.format("Attached binaries ISO for VM : %s in cluster: %s", vm.getDisplayName(), kubernetesCluster.getName()));
                 }
@@ -337,7 +337,7 @@ public class KubernetesClusterActionWorker {
         for (UserVm vm : clusterVMs) {
             boolean result = false;
             try {
-                result = templateService.detachIso(vm.getId());
+                result = templateService.detachIso(vm.getId(), true);
             } catch (CloudRuntimeException ex) {
                 LOGGER.warn(String.format("Failed to detach binaries ISO from VM : %s in the Kubernetes cluster : %s ", vm.getDisplayName(), kubernetesCluster.getName()), ex);
             }

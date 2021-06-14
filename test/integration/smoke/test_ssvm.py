@@ -470,27 +470,46 @@ class TestSSVMs(cloudstackTestCase):
         if self.hypervisor.lower() in ('vmware', 'hyperv'):
             # SSH into SSVMs is done via management server for Vmware and
             # Hyper-V
-            result = get_process_status(
-                self.apiclient.connection.mgtSvr,
-                22,
-                self.apiclient.connection.user,
-                self.apiclient.connection.passwd,
-                ssvm.privateip,
-                "systemctl is-active cloud",
-                hypervisor=self.hypervisor
-            )
+            retries = 3
+            while retries > -1:
+                result = get_process_status(
+                                self.apiclient.connection.mgtSvr,
+                                22,
+                                self.apiclient.connection.user,
+                                self.apiclient.connection.passwd,
+                                ssvm.privateip,
+                                "systemctl is-active cloud",
+                                hypervisor=self.hypervisor
+                            )
+                if ("deactivating" in result) or ("activating" in result):
+                    if retries >= 0:
+                        retries = retries - 1
+                        time.sleep(10)
+                        continue
+                else:
+                    return result
         else:
             try:
                 host.user, host.passwd = get_host_credentials(
                     self.config, host.ipaddress)
-                result = get_process_status(
-                    host.ipaddress,
-                    22,
-                    host.user,
-                    host.passwd,
-                    ssvm.linklocalip,
-                    "systemctl is-active cloud"
-                )
+                retries = 3
+                while retries > -1:
+                    result = get_process_status(
+                        host.ipaddress,
+                        22,
+                        host.user,
+                        host.passwd,
+                        ssvm.linklocalip,
+                        "systemctl is-active cloud"
+                    )
+                    print("result is %s" % result)
+                    if ("deactivating" in result) or ("activating" in result):
+                        if retries >= 0:
+                            retries = retries - 1
+                            time.sleep(10)
+                            continue
+                    else:
+                        return result
             except KeyError:
                 self.skipTest(
                     "Marvin configuration has no host\

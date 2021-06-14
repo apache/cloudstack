@@ -261,9 +261,9 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         final MockVm vm = _mockVmDao.findByVmName(router_name);
         final String args = vm.getBootargs();
         if (args.indexOf("router_pr=100") > 0) {
-            s_logger.debug("Router priority is for MASTER");
-            final CheckRouterAnswer ans = new CheckRouterAnswer(cmd, "Status: MASTER", true);
-            ans.setState(VirtualRouter.RedundantState.MASTER);
+            s_logger.debug("Router priority is for PRIMARY");
+            final CheckRouterAnswer ans = new CheckRouterAnswer(cmd, "Status: PRIMARY", true);
+            ans.setState(VirtualRouter.RedundantState.PRIMARY);
             return ans;
         } else {
             s_logger.debug("Router priority is for BACKUP");

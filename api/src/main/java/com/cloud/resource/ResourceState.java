@@ -114,6 +114,7 @@ public enum ResourceState {
         s_fsm.addTransition(ResourceState.Enabled, Event.Disable, ResourceState.Disabled);
         s_fsm.addTransition(ResourceState.Enabled, Event.AdminAskMaintenance, ResourceState.PrepareForMaintenance);
         s_fsm.addTransition(ResourceState.Enabled, Event.InternalEnterMaintenance, ResourceState.Maintenance);
+        s_fsm.addTransition(ResourceState.Enabled, Event.DeleteHost, ResourceState.Disabled);
         s_fsm.addTransition(ResourceState.Disabled, Event.Enable, ResourceState.Enabled);
         s_fsm.addTransition(ResourceState.Disabled, Event.Disable, ResourceState.Disabled);
         s_fsm.addTransition(ResourceState.Disabled, Event.InternalCreated, ResourceState.Disabled);

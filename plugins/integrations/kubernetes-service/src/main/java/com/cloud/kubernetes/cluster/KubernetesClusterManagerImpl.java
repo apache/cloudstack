@@ -583,7 +583,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         DataCenterVO zone = ApiDBUtils.findZoneById(kubernetesCluster.getZoneId());
         response.setZoneId(zone.getUuid());
         response.setZoneName(zone.getName());
-        response.setMasterNodes(kubernetesCluster.getMasterNodeCount());
+        response.setMasterNodes(kubernetesCluster.getControlNodeCount());
+        response.setControlNodes(kubernetesCluster.getControlNodeCount());
         response.setClusterSize(kubernetesCluster.getNodeCount());
         VMTemplateVO template = ApiDBUtils.findTemplateById(kubernetesCluster.getTemplateId());
         response.setTemplateId(template.getUuid());
@@ -651,7 +652,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final Account owner = accountService.getActiveAccountById(cmd.getEntityOwnerId());
         final Long networkId = cmd.getNetworkId();
         final String sshKeyPair = cmd.getSSHKeyPairName();
-        final Long masterNodeCount = cmd.getMasterNodes();
+        final Long controlNodeCount = cmd.getControlNodes();
         final Long clusterSize = cmd.getClusterSize();
         final String dockerRegistryUserName = cmd.getDockerRegistryUserName();
         final String dockerRegistryPassword = cmd.getDockerRegistryPassword();
@@ -664,8 +665,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException("Invalid name for the Kubernetes cluster name:" + name);
         }
 
-        if (masterNodeCount < 1 || masterNodeCount > 100) {
-            throw new InvalidParameterValueException("Invalid cluster master nodes count: " + masterNodeCount);
+        if (controlNodeCount < 1 || controlNodeCount > 100) {
+            throw new InvalidParameterValueException("Invalid cluster control nodes count: " + controlNodeCount);
         }
 
         if (clusterSize < 1 || clusterSize > 100) {
@@ -695,7 +696,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (clusterKubernetesVersion.getZoneId() != null && !clusterKubernetesVersion.getZoneId().equals(zone.getId())) {
             throw new InvalidParameterValueException(String.format("Kubernetes version ID: %s is not available for zone ID: %s", clusterKubernetesVersion.getUuid(), zone.getUuid()));
         }
-        if (masterNodeCount > 1 ) {
+        if (controlNodeCount > 1 ) {
             try {
                 if (KubernetesVersionManagerImpl.compareSemanticVersions(clusterKubernetesVersion.getSemanticVersion(), MIN_KUBERNETES_VERSION_HA_SUPPORT) < 0) {
                     throw new InvalidParameterValueException(String.format("HA support is available only for Kubernetes version %s and above. Given version ID: %s is %s", MIN_KUBERNETES_VERSION_HA_SUPPORT, clusterKubernetesVersion.getUuid(), clusterKubernetesVersion.getSemanticVersion()));
@@ -765,14 +766,14 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
-    private Network getKubernetesClusterNetworkIfMissing(final String clusterName, final DataCenter zone,  final Account owner, final int masterNodesCount,
+    private Network getKubernetesClusterNetworkIfMissing(final String clusterName, final DataCenter zone,  final Account owner, final int controlNodesCount,
                          final int nodesCount, final String externalLoadBalancerIpAddress, final Long networkId) throws CloudRuntimeException {
         Network network = null;
         if (networkId != null) {
             network = networkDao.findById(networkId);
             if (Network.GuestType.Isolated.equals(network.getGuestType())) {
                 if (kubernetesClusterDao.listByNetworkId(network.getId()).isEmpty()) {
-                    if (!validateNetwork(network, masterNodesCount + nodesCount)) {
+                    if (!validateNetwork(network, controlNodesCount + nodesCount)) {
                         throw new InvalidParameterValueException(String.format("Network ID: %s is not suitable for Kubernetes cluster", network.getUuid()));
                     }
                     networkModel.checkNetworkPermissions(owner, network);
@@ -780,8 +781,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     throw new InvalidParameterValueException(String.format("Network ID: %s is already under use by another Kubernetes cluster", network.getUuid()));
                 }
             } else if (Network.GuestType.Shared.equals(network.getGuestType())) {
-                if (masterNodesCount > 1 && Strings.isNullOrEmpty(externalLoadBalancerIpAddress)) {
-                    throw new InvalidParameterValueException(String.format("Multi-master, HA Kubernetes cluster with %s network ID: %s needs an external load balancer IP address. %s parameter can be used",
+                if (controlNodesCount > 1 && Strings.isNullOrEmpty(externalLoadBalancerIpAddress)) {
+                    throw new InvalidParameterValueException(String.format("Multi-control nodes, HA Kubernetes cluster with %s network ID: %s needs an external load balancer IP address. %s parameter can be used",
                             network.getGuestType().toString(), network.getUuid(), ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS));
                 }
             }
@@ -1005,9 +1006,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         validateKubernetesClusterCreateParameters(cmd);
 
         final DataCenter zone = dataCenterDao.findById(cmd.getZoneId());
-        final long masterNodeCount = cmd.getMasterNodes();
+        final long controlNodeCount = cmd.getControlNodes();
         final long clusterSize = cmd.getClusterSize();
-        final long totalNodeCount = masterNodeCount + clusterSize;
+        final long totalNodeCount = controlNodeCount + clusterSize;
         final ServiceOffering serviceOffering = serviceOfferingDao.findById(cmd.getServiceOfferingId());
         final Account owner = accountService.getActiveAccountById(cmd.getEntityOwnerId());
         final KubernetesSupportedVersion clusterKubernetesVersion = kubernetesSupportedVersionDao.findById(cmd.getKubernetesVersionId());
@@ -1022,17 +1023,17 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             logAndThrow(Level.ERROR, String.format("Creating Kubernetes cluster failed due to error while finding suitable deployment plan for cluster in zone : %s", zone.getName()));
         }
 
-        final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)masterNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId());
+        final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)controlNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId());
         final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(deployDestination.getCluster().getHypervisorType());
-        final long cores = serviceOffering.getCpu() * (masterNodeCount + clusterSize);
-        final long memory = serviceOffering.getRamSize() * (masterNodeCount + clusterSize);
+        final long cores = serviceOffering.getCpu() * (controlNodeCount + clusterSize);
+        final long memory = serviceOffering.getRamSize() * (controlNodeCount + clusterSize);
 
         final KubernetesClusterVO cluster = Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
             @Override
             public KubernetesClusterVO doInTransaction(TransactionStatus status) {
                 KubernetesClusterVO newCluster = new KubernetesClusterVO(cmd.getName(), cmd.getDisplayName(), zone.getId(), clusterKubernetesVersion.getId(),
                         serviceOffering.getId(), finalTemplate.getId(), defaultNetwork.getId(), owner.getDomainId(),
-                        owner.getAccountId(), masterNodeCount, clusterSize, KubernetesCluster.State.Created, cmd.getSSHKeyPairName(), cores, memory, cmd.getNodeRootDiskSize(), "");
+                        owner.getAccountId(), controlNodeCount, clusterSize, KubernetesCluster.State.Created, cmd.getSSHKeyPairName(), cores, memory, cmd.getNodeRootDiskSize(), "");
                 kubernetesClusterDao.persist(newCluster);
                 return newCluster;
             }
@@ -1318,7 +1319,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     /* Kubernetes cluster scanner checks if the Kubernetes cluster is in desired state. If it detects Kubernetes cluster
        is not in desired state, it will trigger an event and marks the Kubernetes cluster to be 'Alert' state. For e.g a
        Kubernetes cluster in 'Running' state should mean all the cluster of node VM's in the custer should be running and
-       number of the node VM's should be of cluster size, and the master node VM's is running. It is possible due to
+       number of the node VM's should be of cluster size, and the control node VM's is running. It is possible due to
        out of band changes by user or hosts going down, we may end up one or more VM's in stopped state. in which case
        scanner detects these changes and marks the cluster in 'Alert' state. Similarly cluster in 'Stopped' state means
        all the cluster VM's are in stopped state any mismatch in states should get picked up by Kubernetes cluster and
@@ -1442,7 +1443,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     boolean isClusterVMsInDesiredState(KubernetesCluster kubernetesCluster, VirtualMachine.State state) {
         List<KubernetesClusterVmMapVO> clusterVMs = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
 
-        // check cluster is running at desired capacity include master nodes as well
+        // check cluster is running at desired capacity include control nodes as well
         if (clusterVMs.size() < kubernetesCluster.getTotalNodeCount()) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(String.format("Found only %d VMs in the Kubernetes cluster ID: %s while expected %d VMs to be in state: %s",
