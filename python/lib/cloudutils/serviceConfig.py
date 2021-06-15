@@ -645,7 +645,7 @@ class libvirtConfigRedhat(serviceCfgBase):
             cfo.save()
 
             self.syscfg.svo.stopService("libvirtd")
-            return self.syscfg.svo.startService("libvirtd"):
+            return self.syscfg.svo.startService("libvirtd")
         except:
             raise
 
@@ -681,7 +681,7 @@ class libvirtConfigSUSE(serviceCfgBase):
             cfo.save()
 
             self.syscfg.svo.stopService("libvirtd")
-            return self.syscfg.svo.startService("libvirtd"):
+            return self.syscfg.svo.startService("libvirtd")
         except:
             raise
 
