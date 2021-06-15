@@ -75,13 +75,14 @@ Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: /usr/bin/ssh-keygen
 # Requires: genisoimage -> renamed to mkisofs
+Requires: mkisofs
 Requires: ipmitool
 Requires: %{name}-common = %{_ver}
 # Requires: iptables-services
 Requires: qemu-tools
 Requires: python3-pip
 Requires: python3-setuptools
-# Requires: libgcrypt > 1.8.3
+Requires: libgcrypt20
 Group:     System Environment/Libraries
 %description management
 The CloudStack management server is the central point of coordination,
@@ -112,6 +113,7 @@ Requires: ipset
 Requires: perl
 Requires: python3-libvirt-python
 Requires: qemu-kvm
+Requires: libgcrypt20
 Requires: qemu-tools
 Provides: cloud-agent
 Group: System Environment/Libraries
@@ -639,4 +641,3 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 
 * Fri Oct 5 2012 Hugo Trippaers <hugo@apache.org> 4.1.0
 - new style spec file
-

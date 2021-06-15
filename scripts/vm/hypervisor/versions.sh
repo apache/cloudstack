@@ -38,9 +38,9 @@ elif [ -f /etc/lsb-release ] ; then
 	REV=`cat /etc/lsb-release | grep DISTRIB_RELEASE | tr "\n" ' '| sed s/.*=//`
 	CODENAME=`cat /etc/lsb-release | grep DISTRIB_CODENAME | tr "\n" ' '| sed s/.*=//`
 elif [ -f /etc/os-release ] ; then
-	DIST=`cat /etc/os-release | grep NAME | head -n 1 | tr "\n" ' ' | tr -d '"' | sed s/.*=//`
-	REV=`cat /etc/os-release | grep VERSION_ID | tr "\n" ' ' | tr -d '"' | sed s/.*=//`
-	CODENAME=`cat /etc/os-release | grep PRETTY_NAME | tr "\n" ' ' | tr -d '"' | sed s/.*=//`
+	DIST=`grep -e "^NAME=" /etc/os-release | awk -F\" '{print $2}'`
+	REV=`grep -e "^VERSION_ID=" /etc/os-release | awk -F\" '{print $2}'`
+	CODENAME=`grep -e "^PRETTY_NAME=" /etc/os-release | awk -F\" '{print $2}'`
 fi
 
 echo Host.OS=${DIST}
