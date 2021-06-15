@@ -14,7 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from .utilities import Distribution, serviceOpsRedhat,serviceOpsUbuntu,serviceOpsRedhat7Later,serviceOpsOpenSUSE
+from .utilities import Distribution, serviceOpsRedhat,serviceOpsUbuntu,serviceOpsRedhat7Later,serviceOpsSUSE
 from .serviceConfig import *
 class sysConfigFactory:
     @staticmethod
@@ -45,8 +45,8 @@ class sysConfigAgentFactory:
             return sysConfigRedhat7(glbEnv)
         elif distribution == "RHEL8":
             return sysConfigRedhat8(glbEnv)
-        elif distribution == "openSUSE":
-            return sysConfigOpenSUSE(glbEnv)
+        elif distribution == "SUSE":
+            return sysConfigSUSE(glbEnv)
         else:
             print("Can't find the distribution version")
             return sysConfig()
@@ -156,10 +156,10 @@ class sysConfigAgentRedhat8Base(sysConfigAgent):
         self.svo = serviceOpsRedhat7Later()
         super(sysConfigAgentRedhat8Base, self).__init__(env)
 
-class sysConfigAgentOpenSUSE(sysConfigAgent):
+class sysConfigAgentSUSE(sysConfigAgent):
     def __init__(self, env):
-        self.svo = serviceOpsOpenSUSE()
-        super(sysConfigAgentOpenSUSE, self).__init__(env)
+        self.svo = serviceOpsSUSE()
+        super(sysConfigAgentSUSE, self).__init__(env)
 
 class sysConfigAgentUbuntu(sysConfigAgent):
     def __init__(self, glbEnv):
@@ -218,12 +218,12 @@ class sysConfigRedhat8(sysConfigAgentRedhat8Base):
                          nfsConfig(self),
                          cloudAgentConfig(self)]
 
-class sysConfigOpenSUSE(sysConfigAgentOpenSUSE):
+class sysConfigSUSE(sysConfigAgentSUSE):
     def __init__(self, glbEnv):
-        super(sysConfigOpenSUSE, self).__init__(glbEnv)
-        self.services = [securityPolicyConfigOpenSUSE(self),
-                         networkConfigOpenSUSE(self),
-                         libvirtConfigOpenSUSE(self),
+        super(sysConfigSUSE, self).__init__(glbEnv)
+        self.services = [securityPolicyConfigSUSE(self),
+                         networkConfigSUSE(self),
+                         libvirtConfigSUSE(self),
                          firewallConfigAgent(self), # TODO
                          nfsConfig(self),
                          cloudAgentConfig(self)]

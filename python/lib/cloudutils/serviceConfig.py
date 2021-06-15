@@ -32,7 +32,7 @@ Ubuntu = 4
 RHEL6 = 5
 RHEL7 = 6
 RHEL8 = 7
-OpenSUSE = 8
+SUSE = 8
 distro = None
 
 #=================== DISTRIBUTION DETECTION =================
@@ -53,7 +53,7 @@ elif os.path.exists("/etc/redhat-release"):
     elif version.find("Red Hat Enterprise Linux Server 8") != -1:
       distro = RHEL8
 elif os.path.exists("/etc/lsb-release") and "Ubuntu" in open("/etc/lsb-release").read(-1): distro = Ubuntu
-elif os.path.exists("/etc/os-release") and "openSUSE" in open("/etc/os-release").read(-1): distro = OpenSUSE
+elif os.path.exists("/etc/os-release") and "SUSE" in open("/etc/os-release").read(-1): distro = SUSE
 else: distro = Unknown
 #=================== DISTRIBUTION DETECTION =================
 
@@ -373,9 +373,9 @@ class networkConfigRedhat(serviceCfgBase, networkConfigBase):
             logging.debug(formatExceptionInfo())
             return False
 
-class networkConfigOpenSUSE(serviceCfgBase, networkConfigBase):
+class networkConfigSUSE(serviceCfgBase, networkConfigBase):
     def __init__(self, syscfg):
-        super(networkConfigOpenSUSE, self).__init__(syscfg)
+        super(networkConfigSUSE, self).__init__(syscfg)
         networkConfigBase.__init__(self, syscfg)
 
     def writeToCfgFile(self, brName, dev):
@@ -423,16 +423,16 @@ class networkConfigOpenSUSE(serviceCfgBase, networkConfigBase):
             cfo.addEntry("BRIDGE", "yes")
         else:
             raise CloudInternalException("Unknown network.bridge.type %s" % self.syscfg.env.bridgeType)
-        # Bridge is linked to the dev in opensuse not the other way round
+        # Bridge is linked to the dev in SUSE not the other way round
         cfo.addEntry("BRIDGE_PORTS", dev.name)
         cfo.save()
 
     def config(self):
         try:
-            if super(networkConfigOpenSUSE, self).isPreConfiged():
+            if super(networkConfigSUSE, self).isPreConfiged():
                 return True
 
-            super(networkConfigOpenSUSE, self).cfgNetwork()
+            super(networkConfigSUSE, self).cfgNetwork()
 
             self.netMgrRunning = self.syscfg.svo.isServiceRunning("NetworkManager")
             if self.netMgrRunning:
@@ -594,7 +594,7 @@ class securityPolicyConfigRedhat(serviceCfgBase):
             logging.debug(formatExceptionInfo())
             return False
 
-class securityPolicyConfigOpenSUSE(securityPolicyConfigRedhat):
+class securityPolicyConfigSUSE(securityPolicyConfigRedhat):
     pass
 
 def configureLibvirtConfig(tls_enabled = True, cfg = None):
@@ -652,9 +652,9 @@ class libvirtConfigRedhat(serviceCfgBase):
     def restore(self):
         pass
 
-class libvirtConfigOpenSUSE(serviceCfgBase):
+class libvirtConfigSUSE(serviceCfgBase):
     def __init__(self, syscfg):
-        super(libvirtConfigOpenSUSE, self).__init__(syscfg)
+        super(libvirtConfigSUSE, self).__init__(syscfg)
         self.serviceName = "Libvirt"
 
     def config(self):

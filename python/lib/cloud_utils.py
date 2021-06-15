@@ -56,7 +56,7 @@ Fedora = 1
 CentOS = 2
 Ubuntu = 3
 RHEL6 = 4
-OpenSUSE = 5
+SUSE = 5
 
 IPV4 = 4
 IPV6 = 6
@@ -74,7 +74,7 @@ elif os.path.exists("/etc/redhat-release"):
     else:
         distro = CentOS
 elif os.path.exists("/etc/legal") and "Ubuntu" in open("/etc/legal").read(-1): distro = Ubuntu
-elif os.path.exists("/etc/os-release") and "openSUSE" in open("/etc/os-release").read(-1): distro = OpenSUSE
+elif os.path.exists("/etc/os-release") and "SUSE" in open("/etc/os-release").read(-1): distro = SUSE
 else: distro = Unknown
 logFileName=None
 
@@ -295,7 +295,7 @@ def check_hostname():
 
 #check function
 def check_kvm():
-	if distro in (Fedora,CentOS,RHEL6,OpenSUSE):
+	if distro in (Fedora,CentOS,RHEL6,SUSE):
 		if os.path.exists("/dev/kvm"): return True
 		raise CheckFailed("KVM is not correctly installed on this system, or support for it is not enabled in the BIOS")
 	else:
@@ -315,7 +315,7 @@ def check_cgroups():
 
 #check function
 def check_selinux():
-	if distro not in [Fedora,CentOS,RHEL6,OpenSUSE]: return # no selinux outside of those
+	if distro not in [Fedora,CentOS,RHEL6,SUSE]: return # no selinux outside of those
 	enforcing = False
 	config_enforcing = False
 	try:
@@ -414,7 +414,7 @@ def device_exist(devName):
 		alreadysetup = False
 		if distro in (Fedora,CentOS, RHEL6):
 			alreadysetup = augtool._print("/files/etc/sysconfig/network-scripts/ifcfg-%s"%devName).stdout.strip()
-		elif distro == OpenSUSE:
+		elif distro == SUSE:
 			alreadysetup = augtool._print("/files/etc/sysconfig/network/ifcfg-%s"%devName).stdout.strip()
 		elif distro == Ubuntu:
 			alreadysetup = augtool.match("/files/etc/network/interfaces/iface",devName).stdout.strip()

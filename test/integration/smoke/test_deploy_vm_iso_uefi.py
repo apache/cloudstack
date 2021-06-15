@@ -181,7 +181,7 @@ class TestDeployVMFromISOWithUefi(cloudstackTestCase):
         machine = root.find(".os/type").get("machine")
         self.assertEqual(("q35" in machine), True, "The virtual machine is not with UEFI boot type")
 
-        if 'opensuse' not in hostos :
+        if 'suse' not in hostos :
             bootmode = root.find(".os/loader").get("secure")
             self.assertEqual((bootmode == bootmodesecure), True, "The VM is not in the right boot mode")
 
