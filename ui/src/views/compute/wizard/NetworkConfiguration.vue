@@ -33,7 +33,6 @@
     <template slot="ipAddress" slot-scope="text, record, index">
       <a-form-item v-if="record.type!=='L2' && index === 0">
         <a-input
-          :autoFocus="record.type!=='L2'"
           style="width: 150px;"
           v-decorator="['ipAddress' + record.id, {
             rules: [{
@@ -50,10 +49,9 @@
         </a-input>
       </a-form-item>
     </template>
-    <template slot="macAddress" slot-scope="text, record, index">
+    <template slot="macAddress" slot-scope="text, record">
       <a-form-item>
         <a-input
-          :autoFocus="record.type==='L2' && index === 0"
           style="width: 150px;"
           :placeholder="$t('label.macaddress')"
           v-decorator="[`macAddress` + record.id, {
