@@ -1485,6 +1485,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
+    private void removeVolume(long volumeId) {
+        final VolumeVO volume = _volsDao.findById(volumeId);
+        if (volume != null) {
+            _volsDao.remove(volumeId);
+        }
+    }
+
     protected boolean stateTransitTo(Volume vol, Volume.Event event) throws NoTransitionException {
         return _volStateMachine.transitTo(vol, event, null, _volsDao);
     }
@@ -1526,6 +1533,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
+        removeVolume(volume.getId());
         return volume;
     }
 
@@ -1621,6 +1629,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (destPrimaryStorage != null && (volumeToAttach.getState() == Volume.State.Allocated || volumeOnSecondary)) {
             try {
+                if (volumeOnSecondary && destPrimaryStorage.getPoolType() == Storage.StoragePoolType.PowerFlex) {
+                    throw new InvalidParameterValueException("Cannot attach uploaded volume, this operation is unsupported on storage pool type " + destPrimaryStorage.getPoolType());
+                }
                 newVolumeOnPrimaryStorage = _volumeMgr.createVolumeOnPrimaryStorage(vm, volumeToAttach, rootDiskHyperType, destPrimaryStorage);
             } catch (NoTransitionException e) {
                 s_logger.debug("Failed to create volume on primary storage", e);
