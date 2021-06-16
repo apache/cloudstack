@@ -2088,12 +2088,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("display", sb.entity().isDisplayVolume(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
-        sb.and().op("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.NEQ);
-        sb.or("nulltype", sb.entity().isSystemUse(), SearchCriteria.Op.NULL);
-        sb.cp();
-
+        sb.and().op("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.IN);
         // display UserVM volumes only
-        sb.and().op("type", sb.entity().getVmType(), SearchCriteria.Op.NIN);
+        sb.and().op("type", sb.entity().getVmType(), SearchCriteria.Op.IN);
         sb.or("nulltype", sb.entity().getVmType(), SearchCriteria.Op.NULL);
         sb.cp();
 
@@ -2120,7 +2117,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         setIdsListToSearchCriteria(sc, ids);
 
-        sc.setParameters("systemUse", 1);
+        sc.setParameters("systemUse", 0);
 
         if (tags != null && !tags.isEmpty()) {
             SearchCriteria<VolumeJoinVO> tagSc = _volumeJoinDao.createSearchCriteria();
@@ -2168,8 +2165,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (clusterId != null) {
             sc.setParameters("clusterId", clusterId);
         }
-        // Don't return DomR and ConsoleProxy volumes
-        sc.setParameters("type", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
+
+        sc.setParameters("type", VirtualMachine.Type.User);
+
+        // Display all volumes for ROOT admin
+        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+            sc.setParameters("systemUse", 0, 1);
+            sc.setParameters("type",
+                    VirtualMachine.Type.User, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
+        }
 
         if (state != null) {
             sc.setParameters("state", state);
