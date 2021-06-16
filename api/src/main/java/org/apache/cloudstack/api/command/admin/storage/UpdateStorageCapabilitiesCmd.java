@@ -31,6 +31,8 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
+import java.util.Locale;
+
 @APICommand(name = UpdateStorageCapabilitiesCmd.APINAME, description = "Syncs capabilities of storage pools",
         responseObject = StoragePoolResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.16.0")
@@ -74,7 +76,7 @@ public class UpdateStorageCapabilitiesCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-        return APINAME;
+        return APINAME.toLowerCase(Locale.ROOT) + "response" ;
     }
 
     @Override
