@@ -1754,7 +1754,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("Allocating ip to guest nic " + nicVO.getUuid() + " failed, please choose another ip");
                 }
 
-                final IPAddressVO newIp = _ipAddressDao.findByIpAndDcId(dc.getId(), ipaddr);
+                final IPAddressVO newIp = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), ipaddr);
                 final Vlan vlan = _vlanDao.findById(newIp.getVlanId());
                 nicVO.setIPv4Gateway(vlan.getVlanGateway());
                 nicVO.setIPv4Netmask(vlan.getVlanNetmask());
