@@ -126,7 +126,7 @@ class TestDeployVmWithUserDataMultiNic(cloudstackTestCase):
         """Test userdata update when non default nic is without userdata for deploy and update
         """
 
-        self.userdata = base64.b64encode(self.userdata)
+        self.userdata = base64.encodestring(self.userdata.encode()).decode()
 
         network1 = Network.create(
             self.apiclient,
@@ -166,10 +166,10 @@ class TestDeployVmWithUserDataMultiNic(cloudstackTestCase):
             domainid=self.account.domainid,
             id=deployVmResponse.id
         )
-        self.assert_(len(vms) > 0, "There are no Vms deployed in the account %s" % self.account.name)
+        self.assertTrue(len(vms) > 0, "There are no Vms deployed in the account %s" % self.account.name)
         vm = vms[0]
-        self.assert_(vm.id == str(deployVmResponse.id), "Vm deployed is different from the test")
-        self.assert_(vm.state == "Running", "VM is not in Running state")
+        self.assertTrue(vm.id == str(deployVmResponse.id), "Vm deployed is different from the test")
+        self.assertTrue(vm.state == "Running", "VM is not in Running state")
 
         try:
             updateresponse = deployVmResponse.update(self.apiclient, userdata=self.userdata)

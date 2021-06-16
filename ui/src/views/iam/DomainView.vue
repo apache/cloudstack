@@ -62,10 +62,11 @@
         v-else
         :treeData="treeData"
         :treeSelected="treeSelected"
+        :treeStore="domainStore"
         :loading="loading"
         :tabs="$route.meta.tabs"
         @change-resource="changeResource"
-        :actionData="actionData"/>
+        @change-tree-store="changeDomainStore"/>
     </div>
 
     <div v-if="showAction">
@@ -104,11 +105,11 @@ export default {
       loading: false,
       selectedRowKeys: [],
       treeData: [],
-      actionData: [],
       treeSelected: {},
       showAction: false,
       action: {},
-      dataView: false
+      dataView: false,
+      domainStore: {}
     }
   },
   computed: {
@@ -125,14 +126,16 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
-    this.fetchData()
-  },
   beforeRouteUpdate (to, from, next) {
     next()
   },
   beforeRouteLeave (to, from, next) {
+    this.changeDomainStore({})
     next()
+  },
+  created () {
+    this.domainStore = store.getters.domainStore
+    this.fetchData()
   },
   watch: {
     '$route' (to, from) {
@@ -149,7 +152,6 @@ export default {
   provide () {
     return {
       parentCloseAction: this.closeAction,
-      parentUpdActionData: this.updateActionData,
       parentFetchData: this.fetchData
     }
   },
@@ -306,11 +308,12 @@ export default {
       this.treeSelected = resource
       this.resource = this.treeSelected
     },
+    changeDomainStore (domainStore) {
+      this.domainStore = domainStore
+      store.dispatch('SetDomainStore', domainStore)
+    },
     closeAction () {
       this.showAction = false
-    },
-    updateActionData (data) {
-      this.actionData.push(data)
     }
   }
 }

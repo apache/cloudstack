@@ -115,7 +115,7 @@ body{
 }
 
 
-#main_master {
+#main_controller {
 	width:960px;
 	height:auto;
 	margin:0 auto;
@@ -548,14 +548,14 @@ a.cloud_logo {
 }
 
 
-#footer_mainmaster {
+#footer_maincontroller {
 	width:960px;
 	height:auto;
 	margin:0 auto;
 	padding:0;
 }
 
-#footer_mainmaster p{
+#footer_maincontroller p{
 	width:100%;
 	height:auto;
 	float:left;

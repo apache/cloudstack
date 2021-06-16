@@ -23,7 +23,7 @@
         <p class="required required-label">{{ $t('label.required') }}</p>
         <a-select style="width: 100%" @change="handleChangeDomain" v-model="domainId">
           <a-select-option v-for="(domain, index) in domainsList" :value="domain.id" :key="index">
-            {{ domain.name }}
+            {{ domain.path || domain.name || domain.description }}
           </a-select-option>
         </a-select>
       </a-spin>
@@ -64,7 +64,7 @@ export default {
       this.domainError = this.error
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

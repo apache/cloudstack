@@ -20,6 +20,7 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
@@ -45,6 +46,7 @@ public final class LibvirtUnPlugNicCommandWrapper extends CommandWrapper<UnPlugN
     public Answer execute(final UnPlugNicCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final NicTO nic = command.getNic();
         final String vmName = command.getVmName();
+        final Map<String, Boolean> vlanToPersistenceMap = command.getVlanToPersistenceMap();
         Domain vm = null;
         try {
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
@@ -59,10 +61,11 @@ public final class LibvirtUnPlugNicCommandWrapper extends CommandWrapper<UnPlugN
                         libvirtComputingResource.destroyNetworkRulesForNic(conn, vmName, nic);
                     }
                     vm.detachDevice(pluggedNic.toString());
+                    String vlanId = libvirtComputingResource.getVlanIdFromBridgeName(pluggedNic.getBrName());
                     // We don't know which "traffic type" is associated with
                     // each interface at this point, so inform all vif drivers
                     for (final VifDriver vifDriver : libvirtComputingResource.getAllVifDrivers()) {
-                        vifDriver.unplug(pluggedNic);
+                        vifDriver.unplug(pluggedNic, libvirtComputingResource.shouldDeleteBridge(vlanToPersistenceMap, vlanId));
                     }
                     return new UnPlugNicAnswer(command, true, "success");
                 }

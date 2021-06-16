@@ -29,24 +29,21 @@
           v-if="!quickview"
         >
           <span slot="action" slot-scope="text, record" class="cert-button-action">
-            <a-tooltip placement="top">
-              <template slot="title">
-                {{ $t('label.quickview') }}
-              </template>
-              <a-button type="primary" shape="circle" icon="eye" size="small" @click="onQuickView(record.id)" />
-            </a-tooltip>
-            <a-tooltip placement="top">
-              <template slot="title">
-                {{ $t('label.delete.sslcertificate') }}
-              </template>
-              <a-button
-                :disabled="!('deleteSslCert' in $store.getters.apis)"
-                type="danger"
-                shape="circle"
-                icon="delete"
-                size="small"
-                @click="onShowConfirm(record)"/>
-            </a-tooltip>
+            <tooltip-button
+              tooltipPlacement="top"
+              :tooltip="$t('label.quickview')"
+              type="primary"
+              icon="eye"
+              size="small"
+              @click="onQuickView(record.id)" />
+            <tooltip-button
+              tooltipPlacement="top"
+              :tooltip="$t('label.delete.sslcertificate')"
+              :disabled="!('deleteSslCert' in $store.getters.apis)"
+              type="danger"
+              icon="delete"
+              size="small"
+              @click="onShowConfirm(record)" />
           </span>
         </a-table>
 
@@ -71,9 +68,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'SSLCertificate',
+  components: {
+    TooltipButton
+  },
   data () {
     return {
       columns: [],
@@ -140,8 +141,6 @@ export default {
       }
     ]
     this.detailColumn = ['name', 'certificate', 'certchain']
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

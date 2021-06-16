@@ -31,10 +31,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import com.cloud.agent.api.ModifySshKeysCommand;
-import com.cloud.agent.api.ModifyStoragePoolCommand;
 import org.apache.cloudstack.agent.lb.SetupMSListCommand;
-import com.cloud.agent.api.RollingMaintenanceCommand;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 
@@ -48,10 +45,13 @@ import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.ModifySshKeysCommand;
+import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.ReadyCommand;
+import com.cloud.agent.api.RollingMaintenanceCommand;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.ShutdownCommand;
 import com.cloud.agent.api.StartCommand;
@@ -167,7 +167,7 @@ public abstract class AgentAttache {
 
         if (_maintenance) {
             for (final Command cmd : cmds) {
-                if (Arrays.binarySearch(s_commandsAllowedInMaintenanceMode, cmd.getClass().toString()) < 0) {
+                if (Arrays.binarySearch(s_commandsAllowedInMaintenanceMode, cmd.getClass().toString()) < 0 && !cmd.isBypassHostMaintenance()) {
                     throw new AgentUnavailableException("Unable to send " + cmd.getClass().toString() + " because agent " + _name + " is in maintenance mode", _id);
                 }
             }

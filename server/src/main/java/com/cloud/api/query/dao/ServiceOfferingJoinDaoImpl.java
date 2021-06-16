@@ -45,6 +45,13 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
 
     private SearchBuilder<ServiceOfferingJoinVO> sofIdSearch;
 
+    /**
+     * Constant used to convert GB into Bytes (or the other way around).
+     * GB   *  MB  *  KB  = Bytes //
+     * 1024 * 1024 * 1024 = 1073741824
+     */
+    private static final long GB_TO_BYTES = 1073741824;
+
     protected ServiceOfferingJoinDaoImpl() {
 
         sofIdSearch = createSearchBuilder();
@@ -113,6 +120,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setObjectName("serviceoffering");
         offeringResponse.setIscutomized(offering.isDynamic());
         offeringResponse.setCacheMode(offering.getCacheMode());
+        offeringResponse.setDynamicScalingEnabled(offering.isDynamicScalingEnabled());
 
         if (offeringDetails != null && !offeringDetails.isEmpty()) {
             String vsphereStoragePolicyId = offeringDetails.get(ApiConstants.STORAGE_POLICY);
@@ -123,7 +131,8 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
             }
         }
 
-        offeringResponse.setRootDiskSize(offering.getRootDiskSize());
+        long rootDiskSizeInGb = (long) offering.getRootDiskSize() / GB_TO_BYTES;
+        offeringResponse.setRootDiskSize(rootDiskSizeInGb);
 
         return offeringResponse;
     }

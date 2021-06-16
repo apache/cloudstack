@@ -227,7 +227,8 @@ class TestPublicIP(cloudstackTestCase):
         # 1.listPublicIpAddresses should no more return the released address
         list_pub_ip_addr_resp = list_publicIP(
             self.apiclient,
-            id=ip_address.ipaddress.id
+            id=ip_address.ipaddress.id,
+            allocatedonly=True
         )
         if list_pub_ip_addr_resp is None:
             return
@@ -279,7 +280,8 @@ class TestPublicIP(cloudstackTestCase):
 
         list_pub_ip_addr_resp = list_publicIP(
             self.apiclient,
-            id=ip_address.ipaddress.id
+            id=ip_address.ipaddress.id,
+            allocatedonly=True
         )
 
         self.assertEqual(
@@ -883,7 +885,8 @@ class TestReleaseIP(cloudstackTestCase):
         while retriesCount > 0:
             listResponse = list_publicIP(
                 self.apiclient,
-                id=self.ip_addr.id
+                id=self.ip_addr.id,
+                state="Allocated"
             )
             if listResponse is None:
                 isIpAddressDisassociated = True
@@ -1738,7 +1741,7 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
         return len(response) == 3
 
     def enable_l2_nic(self, vm):
-        vm_ip = list(filter(lambda x: x['networkid'] == self.isolated_network.id, vm.nic))[0]['ipaddress']
+        vm_ip = list([x for x in vm.nic if x['networkid'] == self.isolated_network.id])[0]['ipaddress']
         ssh_client = vm.get_ssh_client()
         eth_device = "eth0"
         if len(ssh_client.execute("/sbin/ifconfig %s | grep %s" % (eth_device, vm_ip))) > 0:

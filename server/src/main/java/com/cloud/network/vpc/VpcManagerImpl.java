@@ -2293,9 +2293,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw new InvalidParameterValueException("CIDR should be outside of link local cidr " + NetUtils.getLinkLocalCIDR());
         }
 
-        // 3) Verify against blacklisted routes
-        if (isCidrBlacklisted(cidr, vpc.getZoneId())) {
-            throw new InvalidParameterValueException("The static gateway cidr overlaps with one of the blacklisted routes of the zone the VPC belongs to");
+        // 3) Verify against denied routes
+        if (isCidrDenylisted(cidr, vpc.getZoneId())) {
+            throw new InvalidParameterValueException("The static gateway cidr overlaps with one of the denied routes of the zone the VPC belongs to");
         }
 
         return Transaction.execute(new TransactionCallbackWithException<StaticRouteVO, NetworkRuleConflictException>() {
@@ -2317,14 +2317,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         });
     }
 
-    protected boolean isCidrBlacklisted(final String cidr, final long zoneId) {
+    protected boolean isCidrDenylisted(final String cidr, final long zoneId) {
         final String routesStr = NetworkOrchestrationService.GuestDomainSuffix.valueIn(zoneId);
         if (routesStr != null && !routesStr.isEmpty()) {
-            final String[] cidrBlackList = routesStr.split(",");
+            final String[] cidrDenyList = routesStr.split(",");
 
-            if (cidrBlackList != null && cidrBlackList.length > 0) {
-                for (final String blackListedRoute : cidrBlackList) {
-                    if (NetUtils.isNetworksOverlap(blackListedRoute, cidr)) {
+            if (cidrDenyList != null && cidrDenyList.length > 0) {
+                for (final String denyListedRoute : cidrDenyList) {
+                    if (NetUtils.isNetworksOverlap(denyListedRoute, cidr)) {
                         return true;
                     }
                 }

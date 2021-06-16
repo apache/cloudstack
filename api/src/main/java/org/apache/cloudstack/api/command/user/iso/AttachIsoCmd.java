@@ -54,6 +54,10 @@ public class AttachIsoCmd extends BaseAsyncCmd implements UserCmd {
             required = true, description = "the ID of the virtual machine")
     protected Long virtualMachineId;
 
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN,
+            description = "If true, ejects existing ISO before attaching on VMware. Default: false", since = "4.15.1")
+    protected Boolean forced;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -64,6 +68,10 @@ public class AttachIsoCmd extends BaseAsyncCmd implements UserCmd {
 
     public Long getVirtualMachineId() {
         return virtualMachineId;
+    }
+
+    public Boolean isForced() {
+        return forced != null;
     }
 
     /////////////////////////////////////////////////////
@@ -98,7 +106,7 @@ public class AttachIsoCmd extends BaseAsyncCmd implements UserCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Vm Id: " + getVirtualMachineId() + " ISO ID: " + getId());
-        boolean result = _templateService.attachIso(id, virtualMachineId);
+        boolean result = _templateService.attachIso(id, virtualMachineId, isForced());
         if (result) {
             UserVm userVm = _responseGenerator.findUserVmById(virtualMachineId);
             if (userVm != null) {

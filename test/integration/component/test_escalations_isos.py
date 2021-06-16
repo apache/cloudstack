@@ -121,7 +121,7 @@ class TestIsos(cloudstackTestCase):
         if len(expected_vals) != len(actual_vals):
             return False
 
-        keys = expected_vals.keys()
+        keys = list(expected_vals.keys())
         for i in range(0, len(expected_vals)):
             exp_val = expected_vals[keys[i]]
             act_val = actual_vals[keys[i]]
@@ -189,13 +189,13 @@ class TestIsos(cloudstackTestCase):
                                   isofilter=self.services["templatefilter"]
                                   )
         status = validateList(list_iso_after)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "ISO's creation failed"
                           )
         # Verifying that list size is pagesize + 1
-        self.assertEquals(
+        self.assertEqual(
                           self.services["pagesize"] + 1,
                           len(list_iso_after),
                           "Failed to create pagesize + 1 number of ISO's"
@@ -209,13 +209,13 @@ class TestIsos(cloudstackTestCase):
                                   pagesize=self.services["pagesize"]
                                   )
         status = validateList(list_iso_page1)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Failed to list ISO's in page 1"
                           )
         # Verifying the list size to be equal to pagesize
-        self.assertEquals(
+        self.assertEqual(
                           self.services["pagesize"],
                           len(list_iso_page1),
                           "Size of ISO's in page 1 is not matching"
@@ -229,13 +229,13 @@ class TestIsos(cloudstackTestCase):
                                   pagesize=self.services["pagesize"]
                                   )
         status = validateList(list_iso_page2)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Failed to list ISo's in page 2"
                           )
         # Verifying the list size to be equal to 1
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_iso_page2),
                           "Size of ISO's in page 2 is not matching"
@@ -251,7 +251,7 @@ class TestIsos(cloudstackTestCase):
                                 id=iso_created.id
                                 )
             status = validateList(list_iso)
-            self.assertEquals(
+            self.assertEqual(
                               PASS,
                               status[0],
                               "Failed to list ISO by Id"
@@ -335,13 +335,13 @@ class TestIsos(cloudstackTestCase):
                                   isofilter=self.services["templatefilter"]
                                   )
         status = validateList(list_iso_after)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "ISO's creation failed"
                           )
         # Verifying that list size is 1
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_iso_after),
                           "Failed to create an ISO's"
@@ -357,7 +357,7 @@ class TestIsos(cloudstackTestCase):
                                 id=iso_created.id
                                 )
             status = validateList(list_iso)
-            self.assertEquals(
+            self.assertEqual(
                               PASS,
                               status[0],
                               "Failed to list ISO by Id"
@@ -386,7 +386,7 @@ class TestIsos(cloudstackTestCase):
                              "Download ISO failed"
                              )
          # Verifying the details of downloaded ISO
-        self.assertEquals(
+        self.assertEqual(
                           "DOWNLOAD_URL_CREATED",
                           download_iso.state,
                           "Download URL not created for ISO"
@@ -395,7 +395,7 @@ class TestIsos(cloudstackTestCase):
                              download_iso.url,
                              "Download URL not created for ISO"
                              )
-        self.assertEquals(
+        self.assertEqual(
                           iso_created.id,
                           download_iso.id,
                           "Download ISO details are not same as ISO created"
@@ -451,13 +451,13 @@ class TestIsos(cloudstackTestCase):
                                   isofilter=self.services["templatefilter"]
                                   )
         status = validateList(list_iso_after)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "ISO's creation failed"
                           )
         # Verifying that list size is 1
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_iso_after),
                           "Failed to create an ISO's"
@@ -473,7 +473,7 @@ class TestIsos(cloudstackTestCase):
                                 id=iso_created.id
                                 )
             status = validateList(list_iso)
-            self.assertEquals(
+            self.assertEqual(
                               PASS,
                               status[0],
                               "Failed to list ISO by Id"
@@ -534,7 +534,7 @@ class TestIsos(cloudstackTestCase):
         # Editing the ISO name, displaytext, ostypeid
         ostype_list = list_os_types(self.userapiclient)
         status = validateList(ostype_list)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Failed to list OS Types"
@@ -618,7 +618,7 @@ class TestIsos(cloudstackTestCase):
                                available=True
                                )
         status = validateList(zones_list)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Failed to list Zones"
@@ -669,13 +669,13 @@ class TestIsos(cloudstackTestCase):
                                        zoneid=zones_list[0].id
                                        )
             status = validateList(list_isos_zone1)
-            self.assertEquals(
+            self.assertEqual(
                               PASS,
                               status[0],
                               "ISO creation failed in Zone1"
                               )
             # Verifying that list size is 1
-            self.assertEquals(
+            self.assertEqual(
                               1,
                               len(list_isos_zone1),
                               "Failed to create a Template"
@@ -703,7 +703,7 @@ class TestIsos(cloudstackTestCase):
                                     id=iso_created.id
                                     )
                 status = validateList(list_iso)
-                self.assertEquals(
+                self.assertEqual(
                                   PASS,
                                   status[0],
                                   "Failed to list ISO by Id"
@@ -739,13 +739,13 @@ class TestIsos(cloudstackTestCase):
                                        zoneid=zones_list[0].id
                                        )
             status = validateList(list_isos_zone1)
-            self.assertEquals(
+            self.assertEqual(
                               PASS,
                               status[0],
                               "ISO creation failed in Zone1"
                               )
             # Verifying that list size is 1
-            self.assertEquals(
+            self.assertEqual(
                               1,
                               len(list_isos_zone1),
                               "Failed to create a Template"
@@ -758,23 +758,23 @@ class TestIsos(cloudstackTestCase):
                                        zoneid=zones_list[1].id
                                        )
             status = validateList(list_isos_zone2)
-            self.assertEquals(
+            self.assertEqual(
                               PASS,
                               status[0],
                               "ISO failed to copy into Zone2"
                               )
             # Verifying that list size is 1
-            self.assertEquals(
+            self.assertEqual(
                               1,
                               len(list_isos_zone2),
                               "ISO failed to copy into Zone2"
                               )
-            self.assertNotEquals(
+            self.assertNotEqual(
                                  "Connection refused",
                                  list_isos_zone2[0].status,
                                  "Failed to copy ISO"
                                  )
-            self.assertEquals(
+            self.assertEqual(
                               True,
                               list_isos_zone2[0].isready,
                               "Failed to copy ISO"

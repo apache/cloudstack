@@ -64,10 +64,10 @@
       :maskClosable="false"
       :footer="null"
       :cancelText="$t('label.cancel')"
-      @cancel="showCreateForm = false"
+      @cancel="closeAction"
       centered
       width="auto">
-      <CreateNetwork :resource="{ zoneid: resource.zoneid }"/>
+      <CreateNetwork :resource="{ zoneid: resource.zoneid }" @close-action="closeAction"/>
     </a-modal>
 
   </a-spin>
@@ -129,7 +129,7 @@ export default {
       ]
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {
@@ -149,7 +149,6 @@ export default {
         page: this.page,
         pagesize: this.pageSize
       }).then(response => {
-        console.log(response)
         this.items = response.listnetworksresponse.network ? response.listnetworksresponse.network : []
         this.total = response.listnetworksresponse.count || 0
       }).catch(error => {
@@ -160,6 +159,9 @@ export default {
     },
     handleOpenShowCreateForm () {
       this.showCreateForm = true
+    },
+    closeAction () {
+      this.showCreateForm = false
     },
     changePage (page, pageSize) {
       this.page = page
