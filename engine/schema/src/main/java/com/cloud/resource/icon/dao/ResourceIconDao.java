@@ -17,12 +17,13 @@
 package com.cloud.resource.icon.dao;
 
 import com.cloud.resource.icon.ResourceIconVO;
+import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 
 public interface ResourceIconDao extends GenericDao<ResourceIconVO, Long> {
-    ResourceIconResponse newResourceIconResponse(ResourceIconVO resourceIconVO);
+    ResourceIconResponse newResourceIconResponse(ResourceIcon resourceIconVO);
     ResourceIconVO findByResourceUuid(String resourceUuid, ResourceTag.ResourceObjectType resourceType);
 
 }

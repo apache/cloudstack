@@ -14,18 +14,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.query.dao;
+package org.apache.cloudstack.api.response;
 
-import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.response.ZoneResponse;
-
-import com.cloud.api.query.vo.DataCenterJoinVO;
-import com.cloud.dc.DataCenter;
-import com.cloud.utils.db.GenericDao;
-
-public interface DataCenterJoinDao extends GenericDao<DataCenterJoinVO, Long> {
-
-    ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dof, Boolean showCapacities, Boolean showResourceImage);
-
-    DataCenterJoinVO newDataCenterView(DataCenter dof);
+public interface SetResourceIconResponse {
+    void setResourceIcon(ResourceIconResponse icon);
 }

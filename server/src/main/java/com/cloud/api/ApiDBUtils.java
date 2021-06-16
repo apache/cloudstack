@@ -29,6 +29,7 @@ import javax.inject.Inject;
 
 import com.cloud.resource.icon.ResourceIconVO;
 import com.cloud.resource.icon.dao.ResourceIconDao;
+import com.cloud.server.ResourceIcon;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -339,10 +340,8 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.log4j.Logger;
 
 public class ApiDBUtils {
-    public static final Logger s_logger = Logger.getLogger(ApiDBUtils.class);
     private static ManagementServer s_ms;
     static AsyncJobManager s_asyncMgr;
     static SecurityGroupManager s_securityGroupMgr;
@@ -1814,8 +1813,8 @@ public class ApiDBUtils {
         return s_tagJoinDao.newResourceTagResponse(vsg, keyValueOnly);
     }
 
-    public static ResourceIconResponse newResourceIconResponse(ResourceIconVO resourceIconVO) {
-        return s_resourceIconDao.newResourceIconResponse(resourceIconVO);
+    public static ResourceIconResponse newResourceIconResponse(ResourceIcon resourceIcon) {
+        return s_resourceIconDao.newResourceIconResponse(resourceIcon);
     }
 
     public static ResourceTagJoinVO newResourceTagView(ResourceTag sg) {
@@ -2027,8 +2026,8 @@ public class ApiDBUtils {
         return s_serviceOfferingJoinDao.newServiceOfferingView(offering);
     }
 
-    public static ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dc, Boolean showCapacities) {
-        return s_dcJoinDao.newDataCenterResponse(view, dc, showCapacities);
+    public static ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dc, Boolean showCapacities, Boolean showResourceImage) {
+        return s_dcJoinDao.newDataCenterResponse(view, dc, showCapacities, showResourceImage);
     }
 
     public static DataCenterJoinVO newDataCenterView(DataCenter dc) {

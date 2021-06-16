@@ -17,15 +17,52 @@
 package org.apache.cloudstack.api.command.admin.resource.icon;
 
 import com.cloud.server.ResourceIcon;
+import com.cloud.server.ResourceTag;
+import com.cloud.user.Account;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.log4j.Logger;
+
+import java.util.List;
 
 @APICommand(name = "deleteResourceIcon", description = "deletes the resource icon from the specified resource(s)",
         responseObject = SuccessResponse.class, since = "4.16.0.0", entityType = {ResourceIcon.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class DeleteResourceIconCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(DeleteResourceIconCmd.class.getName());
+
+    private static final String s_name = "deleteresourceiconresponse";
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name = ApiConstants.RESOURCE_IDS,
+            type = BaseCmd.CommandType.LIST,
+            required = true,
+            collectionType = BaseCmd.CommandType.STRING,
+            description = "list of resources to upload the icon/image for")
+    private List<String> resourceIds;
+
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = BaseCmd.CommandType.STRING, required = true, description = "type of the resource")
+    private String resourceType;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public List<String> getResourceIds() {
+        return resourceIds;
+    }
+
+    public ResourceTag.ResourceObjectType getResourceType() {
+        return resourceManagerUtil.getResourceType(resourceType);
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -33,16 +70,28 @@ public class DeleteResourceIconCmd extends BaseCmd {
 
     @Override
     public void execute() {
+        try {
+            boolean result = resourceIconManager.deleteResourceIcon(getResourceIds(), getResourceType());
+            if (result) {
+                SuccessResponse response = new SuccessResponse(getCommandName());
+                setResponseObject(response);
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete resource image");
+            }
+
+        } catch (Exception e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getLocalizedMessage());
+        }
 
     }
 
     @Override
     public String getCommandName() {
-        return null;
+        return s_name;
     }
 
     @Override
     public long getEntityOwnerId() {
-        return 0;
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 }

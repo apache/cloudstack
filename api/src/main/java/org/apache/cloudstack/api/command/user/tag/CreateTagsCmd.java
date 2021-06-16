@@ -96,7 +96,7 @@ public class CreateTagsCmd extends BaseAsyncCmd {
     @Override
     public long getEntityOwnerId() {
         //FIXME - validate the owner here
-        return Account.ACCOUNT_ID_SYSTEM;
+        return 1;
     }
 
     @Override

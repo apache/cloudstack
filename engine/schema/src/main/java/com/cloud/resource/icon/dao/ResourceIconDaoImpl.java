@@ -17,14 +17,17 @@
 package com.cloud.resource.icon.dao;
 
 import com.cloud.resource.icon.ResourceIconVO;
+import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
+import org.apache.log4j.Logger;
 
 public class ResourceIconDaoImpl extends GenericDaoBase<ResourceIconVO, Long> implements ResourceIconDao {
+    public static final Logger s_logger = Logger.getLogger(ResourceIconDaoImpl.class);
     private final SearchBuilder<ResourceIconVO> AllFieldsSearch;
 
     protected ResourceIconDaoImpl() {
@@ -36,11 +39,11 @@ public class ResourceIconDaoImpl extends GenericDaoBase<ResourceIconVO, Long> im
     }
 
     @Override
-    public ResourceIconResponse newResourceIconResponse(ResourceIconVO resourceIconVO) {
+    public ResourceIconResponse newResourceIconResponse(ResourceIcon resourceIcon) {
         ResourceIconResponse resourceIconResponse = new ResourceIconResponse();
-        resourceIconResponse.setResourceId(resourceIconVO.getResourceUuid());
-        resourceIconResponse.setResourceType(resourceIconVO.getResourceType());
-        resourceIconResponse.setImage(resourceIconVO.getResourceIcon());
+        resourceIconResponse.setResourceId(resourceIcon.getResourceUuid());
+        resourceIconResponse.setResourceType(resourceIcon.getResourceType());
+        resourceIconResponse.setImage(resourceIcon.getIcon());
         resourceIconResponse.setObjectName(ApiConstants.RESOURCE_ICON);
         return resourceIconResponse;
     }

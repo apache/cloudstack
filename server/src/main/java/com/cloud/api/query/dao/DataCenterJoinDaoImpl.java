@@ -58,7 +58,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
     }
 
     @Override
-    public ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dataCenter, Boolean showCapacities) {
+    public ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dataCenter, Boolean showCapacities, Boolean showResourceImage) {
         ZoneResponse zoneResponse = new ZoneResponse();
         zoneResponse.setId(dataCenter.getUuid());
         zoneResponse.setName(dataCenter.getName());
@@ -104,10 +104,12 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
             zoneResponse.addTag(tagResponse);
         }
 
-        ResourceIconVO resourceIcon = ApiDBUtils.getResourceIconByResourceUUID(dataCenter.getUuid(), ResourceObjectType.Zone);
-        if (resourceIcon != null) {
-            ResourceIconResponse iconResponse = ApiDBUtils.newResourceIconResponse(resourceIcon);
-            zoneResponse.setResourceIcon(iconResponse);
+        if (showResourceImage) {
+            ResourceIconVO resourceIcon = ApiDBUtils.getResourceIconByResourceUUID(dataCenter.getUuid(), ResourceObjectType.Zone);
+            if (resourceIcon != null) {
+                ResourceIconResponse iconResponse = ApiDBUtils.newResourceIconResponse(resourceIcon);
+                zoneResponse.setResourceIcon(iconResponse);
+            }
         }
 
         zoneResponse.setResourceDetails(ApiDBUtils.getResourceDetails(dataCenter.getId(), ResourceObjectType.Zone));

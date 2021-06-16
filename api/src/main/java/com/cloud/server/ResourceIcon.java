@@ -25,5 +25,8 @@ public interface ResourceIcon extends Identity, InternalIdentity {
     void setResourceId(long resourceId);
 
     ResourceTag.ResourceObjectType getResourceType();
+
     String getResourceUuid();
+
+    String getIcon();
 }

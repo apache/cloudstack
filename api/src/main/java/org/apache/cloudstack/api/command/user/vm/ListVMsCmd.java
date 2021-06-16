@@ -20,7 +20,10 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import com.cloud.server.ResourceIcon;
+import com.cloud.server.ResourceTag;
 import org.apache.cloudstack.api.command.user.UserCmd;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.log4j.Logger;
@@ -141,6 +144,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     @Parameter(name = ApiConstants.HA_ENABLE, type = CommandType.BOOLEAN, description = "list by the High Availability offering; true if filtering VMs with HA enabled; false for VMs with HA disabled", since = "4.15")
     private Boolean haEnabled;
 
+    @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
+            description = "flag to display the resource image for VMs", since = "4.16.0.0", authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin})
+    private Boolean showIcon;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -252,6 +259,11 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         }
         return super.getDisplay();
     }
+
+    public Boolean getShowIcon() {
+        return showIcon;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -268,7 +280,21 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     @Override
     public void execute() {
         ListResponse<UserVmResponse> response = _queryService.searchForUserVMs(this);
+        if (response != null && response.getCount() > 0 && getShowIcon()) {
+            updateVMResponse(response.getResponses());
+        }
         response.setResponseName(getCommandName());
         setResponseObject(response);
+    }
+
+    private void updateVMResponse(List<UserVmResponse> response) {
+        for (UserVmResponse vmResponse : response) {
+            ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Template, vmResponse.getId());
+            if (resourceIcon == null) {
+                continue;
+            }
+            ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
+            vmResponse.setResourceIcon(iconResponse);
+        }
     }
 }

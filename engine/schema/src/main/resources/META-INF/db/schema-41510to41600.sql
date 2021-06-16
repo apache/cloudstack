@@ -409,10 +409,13 @@ UPDATE `cloud`.`domain_router` SET redundant_state = 'PRIMARY' WHERE redundant_s
 CREATE TABLE `cloud`.`resource_icon` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
-  `resource_icon` text COMMENT 'Base64 version of the resource icon',
+  `icon` blob COMMENT 'Base64 version of the resource icon',
   `resource_id` bigint unsigned NOT NULL,
   `resource_uuid` varchar(40),
   `resource_type` varchar(255),
+  `updated` datetime default NULL,
+  `created` datetime default NULL,
+  `removed` datetime default NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `uc_resource_icon__uuid` UNIQUE (`uuid`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

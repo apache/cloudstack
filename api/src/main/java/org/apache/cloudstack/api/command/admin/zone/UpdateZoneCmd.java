@@ -189,7 +189,7 @@ public class UpdateZoneCmd extends BaseCmd {
         CallContext.current().setEventDetails("Zone Id: " + getId());
         DataCenter result = _configService.editZone(this);
         if (result != null) {
-            ZoneResponse response = _responseGenerator.createZoneResponse(ResponseView.Full, result, false);
+            ZoneResponse response = _responseGenerator.createZoneResponse(ResponseView.Full, result, false, false);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {

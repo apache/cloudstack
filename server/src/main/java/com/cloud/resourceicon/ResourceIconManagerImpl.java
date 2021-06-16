@@ -43,21 +43,12 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class ResourceIconManagerImpl extends ManagerBase implements ResourceIconManager {
     public static final Logger s_logger = Logger.getLogger(ResourceMetaDataManagerImpl.class);
-
-//    private static final Map<ResourceTag.ResourceObjectType, Class<?>> s_typeMap = new HashMap<>();
-//    static {
-//        s_typeMap.put(ResourceTag.ResourceObjectType.UserVm, UserVmVO.class);
-//        s_typeMap.put(ResourceTag.ResourceObjectType.Template, VMTemplateVO.class);
-//        s_typeMap.put(ResourceTag.ResourceObjectType.ISO, VMTemplateVO.class);
-//        s_typeMap.put(ResourceTag.ResourceObjectType.Account, AccountVO.class);
-//        s_typeMap.put(ResourceTag.ResourceObjectType.Zone, DataCenterVO.class);
-//        s_typeMap.put(ResourceTag.ResourceObjectType.User, UserVO.class);
-//    }
 
     @Inject
     AccountService accountService;
@@ -89,7 +80,15 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
                     }
                     long id = resourceManagerUtil.getResourceId(resourceId, resourceType);
                     String resourceUuid = resourceManagerUtil.getUuid(resourceId, resourceType);
-                    ResourceIconVO resourceIcon = new ResourceIconVO(id, resourceType, resourceUuid, base64Image);
+                    ResourceIconVO existingResourceIcon = resourceIconDao.findByResourceUuid(resourceUuid, resourceType);
+                    ResourceIconVO resourceIcon = null;
+                    if (existingResourceIcon == null) {
+                        resourceIcon = new ResourceIconVO(id, resourceType, resourceUuid, base64Image);
+                    } else {
+                        resourceIcon = existingResourceIcon;
+                        resourceIcon.setIcon(base64Image);
+                        resourceIcon.setUpdated(new Date());
+                    }
                     try {
                         resourceIconDao.persist(resourceIcon);
                     } catch (EntityExistsException e) {
@@ -110,6 +109,7 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
         }
         List<? extends ResourceIcon> resourceIcons = searchResourceIcons(resourceIds, resourceType);
         if (resourceIcons.isEmpty()) {
+            s_logger.debug("No resource Icon(s) uploaded for the specified resources");
             return false;
         }
         Transaction.execute(new TransactionCallbackNoReturn() {
@@ -122,12 +122,12 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
                 }
             }
         });
-        return false;
+        return true;
     }
 
     @Override
-    public ResourceIcon getByResourceTypeAndId(ResourceTag.ResourceObjectType type, long resourceId) {
-        return null;
+    public ResourceIcon getByResourceTypeAndUuid(ResourceTag.ResourceObjectType type, String resourceId) {
+        return resourceIconDao.findByResourceUuid(resourceId, type);
     }
 
     private List<? extends ResourceIcon> searchResourceIcons(List<String> resourceIds, ResourceTag.ResourceObjectType resourceType) {

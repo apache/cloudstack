@@ -43,9 +43,9 @@ public class UploadResourceIconCmd extends BaseCmd {
 
     private static final String s_name = "uploadresourceiconresponse";
 
-    // ///////////////////////////////////////////////////
-    // ////////////// API parameters /////////////////////
-    // ///////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.RESOURCE_IDS,
             type = BaseCmd.CommandType.LIST,
@@ -58,13 +58,12 @@ public class UploadResourceIconCmd extends BaseCmd {
     private String resourceType;
 
     @Parameter(name = ApiConstants.BASE64_IMAGE, type = BaseCmd.CommandType.STRING, required = true,
-            description = "Base64 string representation of the resource icon/image")
+            description = "Base64 string representation of the resource icon/image", length = 2097152)
     private String image;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     public List<String> getResourceIds() {
         return resourceIds;
@@ -87,12 +86,16 @@ public class UploadResourceIconCmd extends BaseCmd {
 
     @Override
     public void execute()  {
-        boolean result = resourceIconManager.uploadResourceIcon(getResourceIds(), getResourceType(), getImage());
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create tags");
+        try {
+            boolean result = resourceIconManager.uploadResourceIcon(getResourceIds(), getResourceType(), getImage());
+            if (result) {
+                SuccessResponse response = new SuccessResponse(getCommandName());
+                setResponseObject(response);
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to upload resource image");
+            }
+        } catch (Exception e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getLocalizedMessage());
         }
     }
 

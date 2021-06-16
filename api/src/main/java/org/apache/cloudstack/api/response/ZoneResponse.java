@@ -32,7 +32,7 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = DataCenter.class)
-public class ZoneResponse extends BaseResponse {
+public class ZoneResponse extends BaseResponse implements SetResourceIconResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "Zone id")
     private String id;
@@ -127,9 +127,7 @@ public class ZoneResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.RESOURCE_ICON)
     @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
-    private ResourceIconResponse resourceIcon;
-
-
+    ResourceIconResponse icon;
 
     public ZoneResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
@@ -238,10 +236,6 @@ public class ZoneResponse extends BaseResponse {
         this.resourceDetails = new HashMap<>(details);
     }
 
-    public void setResourceIcon(ResourceIconResponse resourceIcon) {
-        this.resourceIcon = resourceIcon;
-    }
-
     public String getId() {
         return id;
     }
@@ -326,4 +320,8 @@ public class ZoneResponse extends BaseResponse {
         return resourceDetails;
     }
 
+    @Override
+    public void setResourceIcon(ResourceIconResponse icon) {
+        this.icon = icon;
+    }
 }

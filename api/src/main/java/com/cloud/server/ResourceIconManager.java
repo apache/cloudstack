@@ -24,5 +24,5 @@ public interface ResourceIconManager {
 
     boolean deleteResourceIcon(List<String> resourceIds, ResourceTag.ResourceObjectType resourceType);
 
-    ResourceIcon getByResourceTypeAndId(ResourceTag.ResourceObjectType type, long resourceId);
+    ResourceIcon getByResourceTypeAndUuid(ResourceTag.ResourceObjectType type, String resourceId);
 }

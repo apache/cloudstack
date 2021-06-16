@@ -27,7 +27,10 @@ import javax.persistence.GenerationType;
 import javax.persistence.Column;
 import javax.persistence.Enumerated;
 import javax.persistence.EnumType;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
+import java.util.Date;
 import java.util.UUID;
 
 @Entity
@@ -51,20 +54,32 @@ public class ResourceIconVO implements ResourceIcon {
     @Enumerated(value = EnumType.STRING)
     private ResourceTag.ResourceObjectType resourceType;
 
-    @Column(name = "resource_icon", length = 65535 )
-    private String resourceIcon;
+    @Column(name = "icon", length = 65535)
+    private String icon;
+
+    @Column(name = "created")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date created = null;
+
+    @Column(name = "updated")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    Date updated;
+
+    @Column(name = "removed")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date removed;
 
     protected ResourceIconVO() {
         uuid = UUID.randomUUID().toString();
     }
 
-    public ResourceIconVO(long resourceId, ResourceTag.ResourceObjectType resourceType, String resourceUuid, String resourceIcon) {
+    public ResourceIconVO(long resourceId, ResourceTag.ResourceObjectType resourceType, String resourceUuid, String icon) {
         super();
         this.resourceId = resourceId;
         this.resourceType = resourceType;
         uuid = UUID.randomUUID().toString();
         this.resourceUuid = resourceUuid;
-        this.resourceIcon = resourceIcon;
+        this.icon = icon;
     }
 
     public long getId() {
@@ -107,11 +122,46 @@ public class ResourceIconVO implements ResourceIcon {
         this.resourceType = resourceType;
     }
 
-    public String getResourceIcon() {
-        return resourceIcon;
+    public String getIcon() {
+        return icon;
     }
 
-    public void setResourceIcon(String resourceIcon) {
-        this.resourceIcon = resourceIcon;
+    public void setIcon(String icon) {
+        this.icon = icon;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
+    public Date getUpdated() {
+        return updated;
+    }
+
+    public void setUpdated(Date updated) {
+        this.updated = updated;
+    }
+
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
+    @Override
+    public String toString() {
+        return "ResourceIconVO{" +
+                "id=" + id +
+                ", uuid='" + uuid + '\'' +
+                ", resourceId=" + resourceId +
+                ", resourceUuid='" + resourceUuid + '\'' +
+                ", resourceType=" + resourceType +
+                '}';
     }
 }
