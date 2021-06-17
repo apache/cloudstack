@@ -141,6 +141,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
 
         long rootDiskSizeInGb = (long) offering.getRootDiskSize() / GB_TO_BYTES;
         offeringResponse.setRootDiskSize(rootDiskSizeInGb);
+        offeringResponse.setDiskOfferingStrictness(offering.getDiskOfferingStrictness());
 
         offeringResponse.setHasAnnotation(annotationDao.hasAnnotations(offering.getUuid(), AnnotationService.EntityType.SERVICE_OFFERING.name(),
                 accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));

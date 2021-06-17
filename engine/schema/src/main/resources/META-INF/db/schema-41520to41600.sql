@@ -79,6 +79,7 @@ CREATE VIEW `cloud`.`service_offering_view` AS
         `service_offering`.`is_volatile` AS `is_volatile`,
         `service_offering`.`deployment_planner` AS `deployment_planner`,
         `service_offering`.`dynamic_scaling_enabled` AS `dynamic_scaling_enabled`,
+        `service_offering`.`disk_offering_strictness` AS `disk_offering_strictness`,
         `vsphere_storage_policy`.`value` AS `vsphere_storage_policy`,
         GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
         GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,

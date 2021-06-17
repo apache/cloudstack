@@ -208,6 +208,10 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "true if virtual machine needs to be dynamically scalable of cpu or memory", since = "4.16")
     private Boolean dynamicScalingEnabled;
 
+    @SerializedName(ApiConstants.DISK_OFFERING_STRICTNESS)
+    @Param(description = "True/False to indicate the strictness of the disk offering association with the compute offering. When set to true, override of disk offering is not allowed when VM is deployed and change disk offering is not allowed for the ROOT disk after the VM is deployed", since = "4.16")
+    private Boolean diskOfferingStrictness;
+
     public ServiceOfferingResponse() {
     }
 
@@ -485,5 +489,13 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setDynamicScalingEnabled(Boolean dynamicScalingEnabled) {
         this.dynamicScalingEnabled = dynamicScalingEnabled;
+    }
+
+    public Boolean getDiskOfferingStrictness() {
+        return diskOfferingStrictness;
+    }
+
+    public void setDiskOfferingStrictness(Boolean diskOfferingStrictness) {
+        this.diskOfferingStrictness = diskOfferingStrictness;
     }
 }

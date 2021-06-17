@@ -196,6 +196,9 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name = "dynamic_scaling_enabled")
     private boolean dynamicScalingEnabled;
 
+    @Column(name = "disk_offering_strictness")
+    private boolean diskOfferingStrictness;
+
     public ServiceOfferingJoinVO() {
     }
 
@@ -408,4 +411,9 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     public void setDynamicScalingEnabled(boolean dynamicScalingEnabled) {
         this.dynamicScalingEnabled = dynamicScalingEnabled;
     }
+
+    public boolean getDiskOfferingStrictness() {
+        return diskOfferingStrictness;
+    }
+
 }
