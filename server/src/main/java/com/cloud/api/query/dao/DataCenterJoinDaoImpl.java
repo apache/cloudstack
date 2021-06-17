@@ -108,7 +108,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
             ResourceIconVO resourceIcon = ApiDBUtils.getResourceIconByResourceUUID(dataCenter.getUuid(), ResourceObjectType.Zone);
             if (resourceIcon != null) {
                 ResourceIconResponse iconResponse = ApiDBUtils.newResourceIconResponse(resourceIcon);
-                zoneResponse.setResourceIcon(iconResponse);
+                zoneResponse.setResourceIconResponse(iconResponse);
             }
         }
 

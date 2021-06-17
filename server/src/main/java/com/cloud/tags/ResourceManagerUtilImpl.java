@@ -151,6 +151,6 @@ public class ResourceManagerUtilImpl implements ResourceManagerUtil {
                 return type;
             }
         }
-        throw new InvalidParameterValueException("Invalid resource type " + resourceTypeStr);
+        throw new InvalidParameterValueException("Invalid resource type: " + resourceTypeStr);
     }
 }

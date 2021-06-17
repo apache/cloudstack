@@ -464,7 +464,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     }
 
     @Override
-    public void setResourceIcon(ResourceIconResponse icon) {
+    public void setResourceIconResponse(ResourceIconResponse icon) {
         this.icon = icon;
     }
 }

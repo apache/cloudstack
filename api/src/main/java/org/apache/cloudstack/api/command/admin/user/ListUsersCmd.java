@@ -110,7 +110,7 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd {
                 continue;
             }
             ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
-            userResponse.setResourceIcon(iconResponse);
+            userResponse.setResourceIconResponse(iconResponse);
         }
     }
 }

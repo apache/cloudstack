@@ -32,7 +32,7 @@ public class ResourceIconResponse extends BaseResponse {
     private String resourceId;
 
     @SerializedName(ApiConstants.BASE64_IMAGE)
-    @Param(description = "base64 respresentation of resource icon")
+    @Param(description = "base64 representation of resource icon")
     private String image;
 
     public ResourceTag.ResourceObjectType getResourceType() {

@@ -261,7 +261,7 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     }
 
     public Boolean getShowIcon() {
-        return showIcon;
+        return showIcon != null ? showIcon : false;
     }
 
     /////////////////////////////////////////////////////
@@ -287,14 +287,14 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         setResponseObject(response);
     }
 
-    private void updateVMResponse(List<UserVmResponse> response) {
+    protected void updateVMResponse(List<UserVmResponse> response) {
         for (UserVmResponse vmResponse : response) {
-            ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Template, vmResponse.getId());
+            ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.UserVm, vmResponse.getId());
             if (resourceIcon == null) {
                 continue;
             }
             ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
-            vmResponse.setResourceIcon(iconResponse);
+            vmResponse.setResourceIconResponse(iconResponse);
         }
     }
 }

@@ -44,6 +44,7 @@ public class ListVMsMetricsCmd extends ListVMsCmd {
     @Override
     public void execute() {
         ListResponse<UserVmResponse> userVms = _queryService.searchForUserVMs(this);
+        updateVMResponse(userVms.getResponses());
         final List<VmMetricsResponse> metricsResponses = metricsService.listVmMetrics(userVms.getResponses());
         ListResponse<VmMetricsResponse> response = new ListResponse<>();
         response.setResponses(metricsResponses, userVms.getCount());

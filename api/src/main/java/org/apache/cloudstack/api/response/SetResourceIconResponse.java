@@ -17,5 +17,5 @@
 package org.apache.cloudstack.api.response;
 
 public interface SetResourceIconResponse {
-    void setResourceIcon(ResourceIconResponse icon);
+    void setResourceIconResponse(ResourceIconResponse icon);
 }

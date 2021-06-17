@@ -149,7 +149,7 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
                 continue;
             }
             ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
-            accountResponse.setResourceIcon(iconResponse);
+            accountResponse.setResourceIconResponse(iconResponse);
         }
     }
 }

@@ -20,7 +20,6 @@ package org.apache.cloudstack.api.command.user.tag;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.user.Account;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;

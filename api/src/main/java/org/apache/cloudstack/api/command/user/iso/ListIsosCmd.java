@@ -188,7 +188,7 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
                 continue;
             }
             ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
-            templateResponse.setResourceIcon(iconResponse);
+            templateResponse.setResourceIconResponse(iconResponse);
         }
     }
 }

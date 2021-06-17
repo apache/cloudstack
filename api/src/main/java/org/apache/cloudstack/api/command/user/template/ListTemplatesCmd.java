@@ -202,7 +202,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
                 continue;
             }
             ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
-            templateResponse.setResourceIcon(iconResponse);
+            templateResponse.setResourceIconResponse(iconResponse);
         }
     }
 

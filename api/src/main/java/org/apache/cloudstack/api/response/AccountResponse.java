@@ -542,7 +542,7 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     }
 
     @Override
-    public void setResourceIcon(ResourceIconResponse icon) {
+    public void setResourceIconResponse(ResourceIconResponse icon) {
         this.icon = icon;
     }
 }

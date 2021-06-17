@@ -72,7 +72,12 @@
         <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
           <tooltip-button type="dashed" size="small" icon="login" @click="changeProject(record)" />
         </span>
-        <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
+        <span v-if="['template', 'iso'].includes($route.path.split('/')[1]) && record.icon && record.icon.base64image">
+          <img :src="getImg(record.icon.base64image)" height="16px" width="16px" />
+        </span>
+        <span v-else>
+          <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
+        </span>
 
         <span v-if="$route.path.startsWith('/globalsetting')">{{ text }}</span>
         <span v-else-if="$route.path.startsWith('/alert')">
@@ -362,6 +367,7 @@ export default {
       selectedRowKeys: [],
       editableValueKey: null,
       editableValue: '',
+      resourceIcon: '',
       thresholdMapping: {
         cpuused: {
           notification: 'cputhreshold',
@@ -421,6 +427,9 @@ export default {
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering'].join('|'))
         .test(this.$route.path)
+    },
+    getImg (image) {
+      return 'data:image/png;charset=utf-8;base64, ' + image
     },
     fetchColumns () {
       if (this.isOrderUpdatable()) {

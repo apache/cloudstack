@@ -316,7 +316,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     @SerializedName(ApiConstants.RESOURCE_ICON)
     @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
-    ResourceIconResponse icon;
+    ResourceIconResponse resourceIconResponse;
 
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
@@ -915,7 +915,11 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     public void setPoolType(String poolType) { this.poolType = poolType; }
 
     @Override
-    public void setResourceIcon(ResourceIconResponse icon) {
-        this.icon = icon;
+    public void setResourceIconResponse(ResourceIconResponse resourceIconResponse) {
+        this.resourceIconResponse = resourceIconResponse;
+    }
+
+    public ResourceIconResponse getResourceIconResponse() {
+        return resourceIconResponse;
     }
 }

@@ -281,7 +281,7 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
     }
 
     @Override
-    public void setResourceIcon(ResourceIconResponse icon) {
+    public void setResourceIconResponse(ResourceIconResponse icon) {
         this.icon = icon;
     }
 }

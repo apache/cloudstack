@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+// $message.success(`${$t('label.copied.clipboard')} : ${name}`)
 <template>
   <a-spin :spinning="loading">
     <a-card class="spin-content" :bordered="bordered" :title="title">
@@ -23,12 +23,18 @@
           <div class="resource-details__name">
             <div
               class="avatar"
-              @click="$message.success(`${$t('label.copied.clipboard')} : ${name}`)"
+              @click="showUploadModal(true)"
               v-clipboard:copy="name" >
+              <resource-icon :visible="showUpload" :resource="resource" @handle-close="showUpload(false)"/>
               <slot name="avatar">
-                <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" @update-osname="(name) => this.resource.ostypename = name"/>
-                <a-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :type="$route.meta.icon" />
-                <a-icon v-else style="font-size: 36px" :component="$route.meta.icon" />
+                <span v-if="['zone', 'template', 'iso', 'account', 'user', 'vm'].includes($route.path.split('/')[1]) && resource.icon && resource.icon.base64image">
+                  <img :src="getImg(resource.icon.base64image)" height="56px" width="56px" />
+                </span>
+                <span v-else>
+                  <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" @update-osname="(name) => this.resource.ostypename = name"/>
+                  <a-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :type="$route.meta.icon"/>
+                  <a-icon v-else style="font-size: 36px" :component="$route.meta.icon" />
+                </span>
               </slot>
             </div>
             <slot name="name">
@@ -694,6 +700,8 @@ import Console from '@/components/widgets/Console'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/view/TooltipButton'
+import ResourceIcon from '@/components/view/ResourceIcon'
+import eventBus from '@/config/eventBus'
 
 export default {
   name: 'InfoCard',
@@ -701,7 +709,8 @@ export default {
     Console,
     OsLogo,
     Status,
-    TooltipButton
+    TooltipButton,
+    ResourceIcon
   },
   props: {
     resource: {
@@ -735,7 +744,8 @@ export default {
       showKeys: false,
       showNotesInput: false,
       loadingTags: false,
-      loadingAnnotations: false
+      loadingAnnotations: false,
+      showUpload: false
     }
   },
   watch: {
@@ -777,6 +787,9 @@ export default {
   },
   created () {
     this.setData()
+    eventBus.$on('handle-close', (showModal) => {
+      this.showUploadModal(showModal)
+    })
   },
   computed: {
     name () {
@@ -792,6 +805,18 @@ export default {
     }
   },
   methods: {
+    showUploadModal (show) {
+      if (show) {
+        if (['zone', 'template', 'iso', 'account', 'user', 'vm'].includes(this.$route?.path?.split('/')[1])) {
+          this.showUpload = true
+        }
+      } else {
+        this.showUpload = false
+      }
+    },
+    getImg (image) {
+      return 'data:image/png;charset=utf-8;base64, ' + image
+    },
     setData () {
       if (this.resource.nic && this.resource.nic.length > 0) {
         this.ipaddress = this.resource.nic.filter(e => { return e.ipaddress }).map(e => { return e.ipaddress }).join(', ')

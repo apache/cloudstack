@@ -615,6 +615,10 @@ export default {
       params.page = this.page
       params.pagesize = this.pageSize
       this.searchParams = params
+      const resourceType = this.$route?.path?.split('/')[1]
+      if (['zone', 'template', 'iso', 'account', 'user', 'vm'].includes(resourceType)) {
+        params.showIcon = true
+      }
       api(this.apiName, params).then(json => {
         var responseName
         var objectName
