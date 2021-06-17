@@ -138,7 +138,6 @@ public class ServiceOfferingVO implements ServiceOffering {
         super();
     }
 
-    //FR123 split the usage of below constructor to create service offering vo and disk offering vo in different daoImpl.java files. Currently it is only under serviceofferingdaoimpl.java
     public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText,
             ProvisioningType provisioningType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vmType, boolean defaultUse) {
         //super(name, displayText, provisioningType, false, tags, recreatable, useLocalStorage, systemUse, true);
