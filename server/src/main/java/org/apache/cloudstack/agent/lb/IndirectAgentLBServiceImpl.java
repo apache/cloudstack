@@ -98,8 +98,11 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
     }
 
     @Override
-    public boolean compareManagementServerList(final Long hostId, final Long dcId, final List<String> receivedMSHosts) {
+    public boolean compareManagementServerList(final Long hostId, final Long dcId, final List<String> receivedMSHosts, final String lbAlgorithm) {
         if (receivedMSHosts == null || receivedMSHosts.size() < 1) {
+            return false;
+        }
+        if (getLBAlgorithmName() != lbAlgorithm) {
             return false;
         }
         final List<String> expectedMSList = getManagementServerList(hostId, dcId, null);

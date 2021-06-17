@@ -19,7 +19,6 @@ from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import Account, VirtualMachine, ServiceOffering, Host, Cluster
 from marvin.lib.common import get_zone, get_domain, get_test_template
-from marvin.lib.utils import cleanup_resources
 from nose.plugins.attrib import attr
 
 class TestDeployVmWithVariedPlanners(cloudstackTestCase):
@@ -57,9 +56,8 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
         )
         cls.hosts = Host.list(cls.apiclient, type='Routing')
         cls.clusters = Cluster.list(cls.apiclient)
-        cls.cleanup = [
-            cls.account
-        ]
+        cls._cleanup = []
+        cls._cleanup.append(cls.account)
 
     @attr(tags=["advanced", "basic", "sg"], required_hardware="false")
     def test_deployvm_firstfit(self):
@@ -158,8 +156,8 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
             "Running",
             msg="VM is not in Running state"
         )
-        vm1clusterid = filter(lambda c: c.id == vm1.hostid, self.hosts)[0].clusterid
-        vm2clusterid = filter(lambda c: c.id == vm2.hostid, self.hosts)[0].clusterid
+        vm1clusterid = [c for c in self.hosts if c.id == vm1.hostid][0].clusterid
+        vm2clusterid = [c for c in self.hosts if c.id == vm2.hostid][0].clusterid
         if vm1clusterid == vm2clusterid:
             self.debug("VMs (%s, %s) meant to be dispersed are deployed in the same cluster %s" % (
             vm1.id, vm2.id, vm1clusterid))
@@ -217,11 +215,11 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
             "Running",
             msg="VM is not in Running state"
         )
-        vm1clusterid = filter(lambda c: c.id == vm1.hostid, self.hosts)[0].clusterid
-        vm2clusterid = filter(lambda c: c.id == vm2.hostid, self.hosts)[0].clusterid
+        vm1clusterid = [c for c in self.hosts if c.id == vm1.hostid][0].clusterid
+        vm2clusterid = [c for c in self.hosts if c.id == vm2.hostid][0].clusterid
 
-        vm1podid = filter(lambda p: p.id == vm1clusterid, self.clusters)[0].podid
-        vm2podid = filter(lambda p: p.id == vm2clusterid, self.clusters)[0].podid
+        vm1podid = [p for p in self.clusters if p.id == vm1clusterid][0].podid
+        vm2podid = [p for p in self.clusters if p.id == vm2clusterid][0].podid
         self.assertEqual(
             vm1podid,
             vm2podid,
@@ -230,7 +228,4 @@ class TestDeployVmWithVariedPlanners(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestDeployVmWithVariedPlanners,cls).tearDownClass()

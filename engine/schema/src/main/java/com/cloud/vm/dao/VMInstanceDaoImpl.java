@@ -274,6 +274,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
         SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
         nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        nicSearch.and("removedNic", nicSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
 
         DistinctHostNameSearch = createSearchBuilder(String.class);
         DistinctHostNameSearch.selectFields(DistinctHostNameSearch.entity().getHostName());
@@ -299,6 +300,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         LastHostAndStatesSearch.and("lastHost", LastHostAndStatesSearch.entity().getLastHostId(), Op.EQ);
         LastHostAndStatesSearch.and("states", LastHostAndStatesSearch.entity().getState(), Op.IN);
         LastHostAndStatesSearch.done();
+
     }
 
     @Override

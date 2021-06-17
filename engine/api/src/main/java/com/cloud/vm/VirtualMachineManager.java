@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.to.NicTO;
@@ -39,8 +40,10 @@ import com.cloud.network.Network;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.storage.StoragePool;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -56,10 +59,38 @@ public interface VirtualMachineManager extends Manager {
             "The default label name for the config drive", false);
 
     ConfigKey<Boolean> VmConfigDriveOnPrimaryPool = new ConfigKey<>("Advanced", Boolean.class, "vm.configdrive.primarypool.enabled", "false",
-            "If config drive need to be created and hosted on primary storage pool. Currently only supported for KVM.", true);
+            "If config drive need to be created and hosted on primary storage pool. Currently only supported for KVM.", true, ConfigKey.Scope.Zone);
+
+    ConfigKey<Boolean> VmConfigDriveUseHostCacheOnUnsupportedPool = new ConfigKey<>("Advanced", Boolean.class, "vm.configdrive.use.host.cache.on.unsupported.pool", "true",
+            "If true, config drive is created on the host cache storage when vm.configdrive.primarypool.enabled is true and the primary pool type doesn't support config drive.", true, ConfigKey.Scope.Zone);
+
+    ConfigKey<Boolean> VmConfigDriveForceHostCacheUse = new ConfigKey<>("Advanced", Boolean.class, "vm.configdrive.force.host.cache.use", "false",
+            "If true, config drive is forced to create on the host cache storage. Currently only supported for KVM.", true, ConfigKey.Scope.Zone);
 
     ConfigKey<Boolean> ResoureCountRunningVMsonly = new ConfigKey<Boolean>("Advanced", Boolean.class, "resource.count.running.vms.only", "false",
             "Count the resources of only running VMs in resource limitation.", true);
+
+    ConfigKey<Boolean> AllowExposeHypervisorHostnameAccountLevel = new ConfigKey<Boolean>("Advanced", Boolean.class, "account.allow.expose.host.hostname",
+            "false", "If set to true, it allows the hypervisor host name on which the VM is spawned on to be exposed to the VM", true, ConfigKey.Scope.Account);
+
+    ConfigKey<Boolean> AllowExposeHypervisorHostname = new ConfigKey<Boolean>("Advanced", Boolean.class, "global.allow.expose.host.hostname",
+            "false", "If set to true, it allows the hypervisor host name on which the VM is spawned on to be exposed to the VM", true, ConfigKey.Scope.Global);
+
+    static final ConfigKey<Integer> VmServiceOfferingMaxCPUCores = new ConfigKey<Integer>("Advanced",
+            Integer.class,
+            "vm.serviceoffering.cpu.cores.max",
+            "0",
+            "Maximum CPU cores for vm service offering. If 0 - no limitation",
+            true
+    );
+
+    static final ConfigKey<Integer> VmServiceOfferingMaxRAMSize = new ConfigKey<Integer>("Advanced",
+            Integer.class,
+            "vm.serviceoffering.ram.size.max",
+            "0",
+            "Maximum RAM size in MB for vm service offering. If 0 - no limitation",
+            true
+    );
 
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
@@ -142,7 +173,7 @@ public interface VirtualMachineManager extends Manager {
 
     VirtualMachine findById(long vmId);
 
-    void storageMigration(String vmUuid, StoragePool storagePoolId);
+    void storageMigration(String vmUuid, Map<Long, Long> volumeToPool);
 
     /**
      * @param vmInstance
@@ -155,7 +186,7 @@ public interface VirtualMachineManager extends Manager {
      * @param serviceOfferingId
      * @return
      */
-    boolean upgradeVmDb(long vmId, long serviceOfferingId);
+    boolean upgradeVmDb(long vmId, ServiceOffering newServiceOffering, ServiceOffering currentServiceOffering);
 
     /**
      * @param vm
@@ -177,6 +208,8 @@ public interface VirtualMachineManager extends Manager {
      * @throws ConcurrentOperationException
      */
     boolean removeNicFromVm(VirtualMachine vm, Nic nic) throws ConcurrentOperationException, ResourceUnavailableException;
+
+    Boolean updateDefaultNicForVM(VirtualMachine vm, Nic nic, Nic defaultNic);
 
     /**
      * @param vm
@@ -204,13 +237,36 @@ public interface VirtualMachineManager extends Manager {
     boolean replugNic(Network network, NicTO nic, VirtualMachineTO vm, ReservationContext context, DeployDestination dest) throws ConcurrentOperationException,
             ResourceUnavailableException, InsufficientCapacityException;
 
-    VirtualMachine reConfigureVm(String vmUuid, ServiceOffering newServiceOffering, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException,
+    VirtualMachine reConfigureVm(String vmUuid, ServiceOffering oldServiceOffering, ServiceOffering newServiceOffering, Map<String, String> customParameters, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException,
             InsufficientServerCapacityException;
 
-    void findHostAndMigrate(String vmUuid, Long newSvcOfferingId, DeploymentPlanner.ExcludeList excludeHostList) throws InsufficientCapacityException,
+    void findHostAndMigrate(String vmUuid, Long newSvcOfferingId, Map<String, String> customParameters, DeploymentPlanner.ExcludeList excludeHostList) throws InsufficientCapacityException,
         ConcurrentOperationException, ResourceUnavailableException;
 
     void migrateForScale(String vmUuid, long srcHostId, DeployDestination dest, Long newSvcOfferingId) throws ResourceUnavailableException, ConcurrentOperationException;
 
     boolean getExecuteInSequence(HypervisorType hypervisorType);
+
+    static String getHypervisorHostname(String name) {
+        final Account caller = CallContext.current().getCallingAccount();
+        String destHostname = (AllowExposeHypervisorHostname.value() && AllowExposeHypervisorHostnameAccountLevel.valueIn(caller.getId())) ? name : null;
+        return destHostname;
+    }
+
+    /**
+     * Unmanage a VM from CloudStack:
+     * - Remove the references of the VM and its volumes, nics, IPs from database
+     * - Keep the VM as it is on the hypervisor
+     */
+    boolean unmanage(String vmUuid);
+
+    UserVm restoreVirtualMachine(long vmId, Long newTemplateId) throws ResourceUnavailableException, InsufficientCapacityException;
+
+    /**
+     * Returns true if the VM's Root volume is allocated at a local storage pool
+     */
+    boolean isRootVolumeOnLocalStorage(long vmId);
+
+    Pair<Long, Long> findClusterAndHostIdForVm(long vmId);
+
 }

@@ -33,6 +33,7 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.agent.api.GetVolumeStatsAnswer;
 import com.cloud.agent.api.GetVolumeStatsCommand;
 import com.cloud.agent.api.VolumeStatsEntry;
@@ -49,18 +50,30 @@ public final class LibvirtGetVolumeStatsCommandWrapper extends CommandWrapper<Ge
             StoragePoolType poolType = cmd.getPoolType();
             HashMap<String, VolumeStatsEntry> statEntry = new HashMap<String, VolumeStatsEntry>();
             for (String volumeUuid : cmd.getVolumeUuids()) {
-                statEntry.put(volumeUuid, getVolumeStat(libvirtComputingResource, conn, volumeUuid, storeUuid, poolType));
+                VolumeStatsEntry volumeStatsEntry = getVolumeStat(libvirtComputingResource, conn, volumeUuid, storeUuid, poolType);
+                if (volumeStatsEntry == null) {
+                    String msg = "Can't get disk stats as pool or disk details unavailable for volume: " + volumeUuid + " on the storage pool: " + storeUuid;
+                    return new GetVolumeStatsAnswer(cmd, msg, null);
+                }
+                statEntry.put(volumeUuid, volumeStatsEntry);
             }
             return new GetVolumeStatsAnswer(cmd, "", statEntry);
-        } catch (LibvirtException e) {
+        } catch (LibvirtException | CloudRuntimeException e) {
             return new GetVolumeStatsAnswer(cmd, "Can't get vm disk stats: " + e.getMessage(), null);
         }
     }
 
-
     private VolumeStatsEntry getVolumeStat(final LibvirtComputingResource libvirtComputingResource, final Connect conn, final String volumeUuid, final String storeUuid, final StoragePoolType poolType) throws LibvirtException {
         KVMStoragePool sourceKVMPool = libvirtComputingResource.getStoragePoolMgr().getStoragePool(poolType, storeUuid);
+        if (sourceKVMPool == null) {
+            return null;
+        }
+
         KVMPhysicalDisk sourceKVMVolume = sourceKVMPool.getPhysicalDisk(volumeUuid);
+        if (sourceKVMVolume == null) {
+            return null;
+        }
+
         return new VolumeStatsEntry(volumeUuid, sourceKVMVolume.getSize(), sourceKVMVolume.getVirtualSize());
     }
 }

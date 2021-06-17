@@ -95,6 +95,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
     protected SearchBuilder<VMTemplateVO> AccountIdSearch;
     protected SearchBuilder<VMTemplateVO> NameSearch;
+    protected SearchBuilder<VMTemplateVO> ValidNameSearch;
     protected SearchBuilder<VMTemplateVO> TmpltsInZoneSearch;
     protected SearchBuilder<VMTemplateVO> ActiveTmpltSearch;
     private SearchBuilder<VMTemplateVO> PublicSearch;
@@ -105,6 +106,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     // private SearchBuilder<VMTemplateVO> updateStateSearch;
     private SearchBuilder<VMTemplateVO> AllFieldsSearch;
     protected SearchBuilder<VMTemplateVO> ParentTemplateIdSearch;
+    private SearchBuilder<VMTemplateVO> InactiveUnremovedTmpltSearch;
 
     @Inject
     ResourceTagDao _tagsDao;
@@ -134,6 +136,14 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         SearchCriteria<VMTemplateVO> sc = NameSearch.create();
         sc.setParameters("name", templateName);
         return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public VMTemplateVO findValidByTemplateName(String templateName) {
+        SearchCriteria<VMTemplateVO> sc = ValidNameSearch.create();
+        sc.setParameters("name", templateName);
+        sc.setParameters("state", VirtualMachineTemplate.State.Active);
+        return findOneBy(sc);
     }
 
     @Override
@@ -312,6 +322,10 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         UniqueNameSearch.and("uniqueName", UniqueNameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        ValidNameSearch = createSearchBuilder();
+        ValidNameSearch.and("name", ValidNameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        ValidNameSearch.and("state", ValidNameSearch.entity().getState(), SearchCriteria.Op.EQ);
+        ValidNameSearch.and("removed", ValidNameSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
 
         NameAccountIdSearch = createSearchBuilder();
         NameAccountIdSearch.and("name", NameAccountIdSearch.entity().getName(), SearchCriteria.Op.EQ);
@@ -363,6 +377,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         tmpltTypeHyperSearch2.and("templateType", tmpltTypeHyperSearch2.entity().getTemplateType(), SearchCriteria.Op.EQ);
         tmpltTypeHyperSearch2.and("hypervisorType", tmpltTypeHyperSearch2.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         tmpltTypeHyperSearch2.and("templateName", tmpltTypeHyperSearch2.entity().getName(), SearchCriteria.Op.EQ);
+        tmpltTypeHyperSearch2.and("state", tmpltTypeHyperSearch2.entity().getState(), SearchCriteria.Op.EQ);
 
         tmpltTypeSearch = createSearchBuilder();
         tmpltTypeSearch.and("state", tmpltTypeSearch.entity().getState(), SearchCriteria.Op.EQ);
@@ -416,6 +431,11 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         ParentTemplateIdSearch.and("parentTemplateId", ParentTemplateIdSearch.entity().getParentTemplateId(), SearchCriteria.Op.EQ);
         ParentTemplateIdSearch.and("state", ParentTemplateIdSearch.entity().getState(), SearchCriteria.Op.EQ);
         ParentTemplateIdSearch.done();
+
+        InactiveUnremovedTmpltSearch = createSearchBuilder();
+        InactiveUnremovedTmpltSearch.and("state", InactiveUnremovedTmpltSearch.entity().getState(), SearchCriteria.Op.IN);
+        InactiveUnremovedTmpltSearch.and("removed", InactiveUnremovedTmpltSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        InactiveUnremovedTmpltSearch.done();
 
         return result;
     }
@@ -884,6 +904,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         SearchCriteria<VMTemplateVO> sc = tmpltTypeHyperSearch2.create();
         sc.setParameters("templateType", TemplateType.ROUTING);
         sc.setParameters("hypervisorType", hType);
+        sc.setParameters("state", VirtualMachineTemplate.State.Active.toString());
         if (templateName != null) {
             sc.setParameters("templateName", templateName);
         }
@@ -898,6 +919,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             sc = tmpltTypeHyperSearch2.create();
             sc.setParameters("templateType", TemplateType.SYSTEM);
             sc.setParameters("hypervisorType", hType);
+            sc.setParameters("state", VirtualMachineTemplate.State.Active.toString());
             if (templateName != null) {
                 sc.setParameters("templateName", templateName);
             }
@@ -920,6 +942,13 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         sc.setParameters("account", accountId);
         sc.setParameters("state", VirtualMachineTemplate.State.Active.toString());
         return customSearch(sc, null).get(0);
+    }
+
+    @Override
+     public List<VMTemplateVO> listUnRemovedTemplatesByStates(VirtualMachineTemplate.State ...states) {
+        SearchCriteria<VMTemplateVO> sc = InactiveUnremovedTmpltSearch.create();
+        sc.setParameters("state", (Object[]) states);
+        return listBy(sc);
     }
 
     @Override

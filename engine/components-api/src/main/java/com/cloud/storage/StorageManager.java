@@ -19,6 +19,7 @@ package com.cloud.storage;
 import java.math.BigDecimal;
 import java.util.List;
 
+import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -109,8 +110,41 @@ public interface StorageManager extends StorageService {
             ConfigKey.Scope.Cluster,
             null);
 
+    ConfigKey<Integer> STORAGE_POOL_DISK_WAIT = new ConfigKey<>(Integer.class,
+            "storage.pool.disk.wait",
+            "Storage",
+            "60",
+            "Timeout (in secs) for the storage pool disk (of managed pool) to become available in the host. Currently only supported for PowerFlex.",
+            true,
+            ConfigKey.Scope.StoragePool,
+            null);
+
+    ConfigKey<Integer> STORAGE_POOL_CLIENT_TIMEOUT = new ConfigKey<>(Integer.class,
+            "storage.pool.client.timeout",
+            "Storage",
+            "60",
+            "Timeout (in secs) for the storage pool client connection timeout (for managed pools). Currently only supported for PowerFlex.",
+            false,
+            ConfigKey.Scope.StoragePool,
+            null);
+
+    ConfigKey<Integer> STORAGE_POOL_CLIENT_MAX_CONNECTIONS = new ConfigKey<>(Integer.class,
+            "storage.pool.client.max.connections",
+            "Storage",
+            "100",
+            "Maximum connections for the storage pool client (for managed pools). Currently only supported for PowerFlex.",
+            false,
+            ConfigKey.Scope.StoragePool,
+            null);
+
     ConfigKey<Integer> PRIMARY_STORAGE_DOWNLOAD_WAIT = new ConfigKey<Integer>("Storage", Integer.class, "primary.storage.download.wait", "10800",
             "In second, timeout for download template to primary storage", false);
+
+    ConfigKey<Integer>  SecStorageMaxMigrateSessions = new ConfigKey<Integer>("Advanced", Integer.class, "secstorage.max.migrate.sessions", "2",
+            "The max number of concurrent copy command execution sessions that an SSVM can handle", false, ConfigKey.Scope.Global);
+
+    ConfigKey<Integer> MaxDataMigrationWaitTime = new ConfigKey<Integer>("Advanced", Integer.class, "max.data.migration.wait.time", "15",
+            "Maximum wait time for a data migration task before spawning a new SSVM", false, ConfigKey.Scope.Global);
 
     /**
      * Returns a comma separated list of tags for the specified storage pool
@@ -137,6 +171,8 @@ public interface StorageManager extends StorageService {
     Pair<Long, Answer[]> sendToPool(StoragePool pool, long[] hostIdsToTryFirst, List<Long> hostIdsToAvoid, Commands cmds) throws StorageUnavailableException;
 
     Pair<Long, Answer> sendToPool(StoragePool pool, long[] hostIdsToTryFirst, List<Long> hostIdsToAvoid, Command cmd) throws StorageUnavailableException;
+
+    public Answer getVolumeStats(StoragePool pool, Command cmd);
 
     /**
      * Checks if a host has running VMs that are using its local storage pool.
@@ -165,6 +201,14 @@ public interface StorageManager extends StorageService {
     List<VMInstanceVO> listByStoragePool(long storagePoolId);
 
     StoragePoolVO findLocalStorageOnHost(long hostId);
+
+    Host findUpAndEnabledHostWithAccessToStoragePools(List<Long> poolIds);
+
+    List<StoragePoolHostVO> findStoragePoolsConnectedToHost(long hostId);
+
+    boolean canHostAccessStoragePool(Host host, StoragePool pool);
+
+    Host getHost(long hostId);
 
     Host updateSecondaryStorage(long secStorageId, String newUrl);
 
@@ -204,11 +248,17 @@ public interface StorageManager extends StorageService {
      */
     boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool, Long clusterId);
 
-    boolean storagePoolHasEnoughSpaceForResize(StoragePool pool, long currentSize, long newSiz);
+    boolean storagePoolHasEnoughSpaceForResize(StoragePool pool, long currentSize, long newSize);
+
+    boolean storagePoolCompatibleWithVolumePool(StoragePool pool, Volume volume);
+
+    boolean isStoragePoolComplaintWithStoragePolicy(List<Volume> volumes, StoragePool pool) throws StorageUnavailableException;
 
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 
     void connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
+
+    void disconnectHostFromSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
 
     void createCapacityEntry(long poolId);
 
@@ -229,5 +279,9 @@ public interface StorageManager extends StorageService {
     void setDiskProfileThrottling(DiskProfile dskCh, ServiceOffering offering, DiskOffering diskOffering);
 
     DiskTO getDiskWithThrottling(DataTO volTO, Volume.Type volumeType, long deviceId, String path, long offeringId, long diskOfferingId);
+
+    boolean isStoragePoolDatastoreClusterParent(StoragePool pool);
+
+    void syncDatastoreClusterStoragePool(long datastoreClusterPoolId, List<ModifyStoragePoolAnswer> childDatastoreAnswerList, long hostId);
 
 }

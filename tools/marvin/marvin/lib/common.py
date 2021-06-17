@@ -348,7 +348,7 @@ def get_template(
     return list_templatesout[0]
 
 
-def get_test_template(apiclient, zone_id=None, hypervisor=None, test_templates=None):
+def get_test_template(apiclient, zone_id=None, hypervisor=None, test_templates=None, deploy_as_is=False):
     """
     @Name : get_test_template
     @Desc : Retrieves the test template used to running tests. When the template
@@ -368,11 +368,13 @@ def get_test_template(apiclient, zone_id=None, hypervisor=None, test_templates=N
     if hypervisor == 'simulator':
         return get_template(apiclient, zone_id)
 
-    if hypervisor not in test_templates.keys():
-        print "Provided hypervisor has no test template"
+    if hypervisor not in list(test_templates.keys()):
+        print("Provided hypervisor has no test template")
         return FAILED
 
     test_template = test_templates[hypervisor]
+    if deploy_as_is:
+        test_template['deployasis'] = True
 
     cmd = listTemplates.listTemplatesCmd()
     cmd.name = test_template['name']
@@ -393,6 +395,74 @@ def get_test_template(apiclient, zone_id=None, hypervisor=None, test_templates=N
             return template
 
     return FAILED
+
+
+def get_test_ovf_templates(apiclient, zone_id=None, test_ovf_templates=None, hypervisor=None):
+    """
+    @Name : get_test_ovf_templates
+    @Desc : Retrieves the list of test ovf templates used to running tests. When the template
+            is missing it will be download at most one in a zone for a hypervisor.
+    @Input : returns a list of templates
+    """
+    result = []
+
+    if test_ovf_templates is None:
+        test_ovf_templates = test_data["test_ovf_templates"]
+    if test_ovf_templates is None:
+        return result
+    if hypervisor is None:
+        return result
+    hypervisor = hypervisor.lower()
+    if hypervisor != 'vmware':
+        return result
+
+    for test_template in test_ovf_templates:
+
+        cmd = listTemplates.listTemplatesCmd()
+        cmd.name = test_template['name']
+        cmd.templatefilter = 'all'
+        if zone_id is not None:
+            cmd.zoneid = zone_id
+        if hypervisor is not None:
+            cmd.hypervisor = hypervisor
+        templates = apiclient.listTemplates(cmd)
+
+        if validateList(templates)[0] != PASS:
+            template = Template.register(apiclient, test_template, zoneid=zone_id, hypervisor=hypervisor.lower(), randomize_name=False)
+            template.download(apiclient)
+            retries = 3
+            while (not hasattr(template, 'deployasisdetails') or len(template.deployasisdetails.__dict__) == 0) and retries > 0:
+                time.sleep(10)
+                template_list = Template.list(apiclient, id=template.id, zoneid=zone_id, templatefilter='all')
+                if isinstance(template_list, list):
+                    template = Template(template_list[0].__dict__)
+                retries = retries - 1
+            if not hasattr(template, 'deployasisdetails') or len(template.deployasisdetails.__dict__) == 0:
+                template.delete(apiclient)
+            else:
+                result.append(template)
+
+        if templates:
+            for template in templates:
+                if template.isready and template.ispublic and template.deployasisdetails and len(template.deployasisdetails.__dict__) > 0:
+                    result.append(template)
+
+    return result
+
+def get_vm_vapp_configs(apiclient, config, setup_zone, vm_name):
+    zoneDetailsInConfig = [zone for zone in config.zones
+                           if zone.name == setup_zone.name][0]
+    vcenterusername = zoneDetailsInConfig.vmwaredc.username
+    vcenterpassword = zoneDetailsInConfig.vmwaredc.password
+    vcenterip = zoneDetailsInConfig.vmwaredc.vcenter
+    vcenterObj = Vcenter(
+        vcenterip,
+        vcenterusername,
+        vcenterpassword)
+
+    vms = vcenterObj.get_vms(vm_name)
+    if vms:
+        return vms[0]['vm']['properties']
 
 
 def get_windows_template(
@@ -445,7 +515,30 @@ def get_windows_template(
 
     return FAILED
 
-
+def get_suitable_test_template(apiclient, zoneid, ostypeid, hypervisor, deploy_as_is=False):
+    '''
+    @Name : get_suitable_test_template
+    @Desc : Retrieves the test template information based upon inputs provided
+            For Xenserver, get_test_template is used for retrieving the template
+            while get_template is used for other hypervisors or when
+            get_test_template fails
+    @Input : returns a template"
+    @Output : FAILED in case of any failure
+              template Information matching the inputs
+    '''
+    template = FAILED
+    if hypervisor.lower() in ["xenserver"] or (hypervisor.lower() in ["vmware"] and deploy_as_is):
+        template = get_test_template(
+            apiclient,
+            zoneid,
+            hypervisor,
+            deploy_as_is=deploy_as_is)
+    if template == FAILED:
+        template = get_template(
+            apiclient,
+            zoneid,
+            ostypeid)
+    return template
 
 def download_systemplates_sec_storage(server, services):
     """Download System templates on sec storage"""
@@ -636,8 +729,8 @@ def list_os_types(apiclient, **kwargs):
     """List all os types matching criteria"""
 
     cmd = listOsTypes.listOsTypesCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listOsTypes(cmd))
 
@@ -646,8 +739,8 @@ def list_routers(apiclient, **kwargs):
     """List all Routers matching criteria"""
 
     cmd = listRouters.listRoutersCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listRouters(cmd))
 
@@ -656,8 +749,8 @@ def list_zones(apiclient, **kwargs):
     """List all Zones matching criteria"""
 
     cmd = listZones.listZonesCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listZones(cmd))
 
@@ -666,8 +759,8 @@ def list_networks(apiclient, **kwargs):
     """List all Networks matching criteria"""
 
     cmd = listNetworks.listNetworksCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listNetworks(cmd))
 
@@ -676,8 +769,8 @@ def list_clusters(apiclient, **kwargs):
     """List all Clusters matching criteria"""
 
     cmd = listClusters.listClustersCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listClusters(cmd))
 
@@ -686,8 +779,8 @@ def list_ssvms(apiclient, **kwargs):
     """List all SSVMs matching criteria"""
 
     cmd = listSystemVms.listSystemVmsCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listSystemVms(cmd))
 
@@ -696,8 +789,8 @@ def list_storage_pools(apiclient, **kwargs):
     """List all storage pools matching criteria"""
 
     cmd = listStoragePools.listStoragePoolsCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listStoragePools(cmd))
 
@@ -706,8 +799,8 @@ def list_virtual_machines(apiclient, **kwargs):
     """List all VMs matching criteria"""
 
     cmd = listVirtualMachines.listVirtualMachinesCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listVirtualMachines(cmd))
 
@@ -716,8 +809,8 @@ def list_hosts(apiclient, **kwargs):
     """List all Hosts matching criteria"""
 
     cmd = listHosts.listHostsCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listHosts(cmd))
 
@@ -726,8 +819,8 @@ def list_configurations(apiclient, **kwargs):
     """List configuration with specified name"""
 
     cmd = listConfigurations.listConfigurationsCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listConfigurations(cmd))
 
@@ -736,8 +829,8 @@ def list_publicIP(apiclient, **kwargs):
     """List all Public IPs matching criteria"""
 
     cmd = listPublicIpAddresses.listPublicIpAddressesCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listPublicIpAddresses(cmd))
 
@@ -746,8 +839,8 @@ def list_nat_rules(apiclient, **kwargs):
     """List all NAT rules matching criteria"""
 
     cmd = listPortForwardingRules.listPortForwardingRulesCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listPortForwardingRules(cmd))
 
@@ -756,8 +849,8 @@ def list_lb_rules(apiclient, **kwargs):
     """List all Load balancing rules matching criteria"""
 
     cmd = listLoadBalancerRules.listLoadBalancerRulesCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listLoadBalancerRules(cmd))
 
@@ -766,8 +859,8 @@ def list_lb_instances(apiclient, **kwargs):
     """List all Load balancing instances matching criteria"""
 
     cmd = listLoadBalancerRuleInstances.listLoadBalancerRuleInstancesCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listLoadBalancerRuleInstances(cmd))
 
@@ -776,8 +869,8 @@ def list_firewall_rules(apiclient, **kwargs):
     """List all Firewall Rules matching criteria"""
 
     cmd = listFirewallRules.listFirewallRulesCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listFirewallRules(cmd))
 
@@ -786,8 +879,8 @@ def list_volumes(apiclient, **kwargs):
     """List all volumes matching criteria"""
 
     cmd = listVolumes.listVolumesCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listVolumes(cmd))
 
@@ -796,8 +889,8 @@ def list_isos(apiclient, **kwargs):
     """Lists all available ISO files."""
 
     cmd = listIsos.listIsosCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listIsos(cmd))
 
@@ -806,8 +899,8 @@ def list_snapshots(apiclient, **kwargs):
     """List all snapshots matching criteria"""
 
     cmd = listSnapshots.listSnapshotsCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listSnapshots(cmd))
 
@@ -816,8 +909,8 @@ def list_templates(apiclient, **kwargs):
     """List all templates matching criteria"""
 
     cmd = listTemplates.listTemplatesCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listTemplates(cmd))
 
@@ -826,8 +919,8 @@ def list_domains(apiclient, **kwargs):
     """Lists domains"""
 
     cmd = listDomains.listDomainsCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listDomains(cmd))
 
@@ -837,8 +930,8 @@ def list_accounts(apiclient, **kwargs):
     listed accounts"""
 
     cmd = listAccounts.listAccountsCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listAccounts(cmd))
 
@@ -848,8 +941,8 @@ def list_users(apiclient, **kwargs):
     listed users"""
 
     cmd = listUsers.listUsersCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listUsers(cmd))
 
@@ -858,8 +951,8 @@ def list_snapshot_policy(apiclient, **kwargs):
     """Lists snapshot policies."""
 
     cmd = listSnapshotPolicies.listSnapshotPoliciesCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listSnapshotPolicies(cmd))
 
@@ -868,8 +961,8 @@ def list_events(apiclient, **kwargs):
     """Lists events"""
 
     cmd = listEvents.listEventsCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listEvents(cmd))
 
@@ -878,8 +971,8 @@ def list_disk_offering(apiclient, **kwargs):
     """Lists all available disk offerings."""
 
     cmd = listDiskOfferings.listDiskOfferingsCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listDiskOfferings(cmd))
 
@@ -888,8 +981,8 @@ def list_service_offering(apiclient, **kwargs):
     """Lists all available service offerings."""
 
     cmd = listServiceOfferings.listServiceOfferingsCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listServiceOfferings(cmd))
 
@@ -898,8 +991,8 @@ def list_vlan_ipranges(apiclient, **kwargs):
     """Lists all VLAN IP ranges."""
 
     cmd = listVlanIpRanges.listVlanIpRangesCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listVlanIpRanges(cmd))
 
@@ -908,8 +1001,8 @@ def list_usage_records(apiclient, **kwargs):
     """Lists usage records for accounts"""
 
     cmd = listUsageRecords.listUsageRecordsCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listUsageRecords(cmd))
 
@@ -918,8 +1011,8 @@ def list_nw_service_prividers(apiclient, **kwargs):
     """Lists Network service providers"""
 
     cmd = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listNetworkServiceProviders(cmd))
 
@@ -928,8 +1021,8 @@ def list_virtual_router_elements(apiclient, **kwargs):
     """Lists Virtual Router elements"""
 
     cmd = listVirtualRouterElements.listVirtualRouterElementsCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listVirtualRouterElements(cmd))
 
@@ -938,8 +1031,8 @@ def list_network_offerings(apiclient, **kwargs):
     """Lists network offerings"""
 
     cmd = listNetworkOfferings.listNetworkOfferingsCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listNetworkOfferings(cmd))
 
@@ -948,8 +1041,8 @@ def list_resource_limits(apiclient, **kwargs):
     """Lists resource limits"""
 
     cmd = listResourceLimits.listResourceLimitsCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listResourceLimits(cmd))
 
@@ -958,8 +1051,8 @@ def list_vpc_offerings(apiclient, **kwargs):
     """ Lists VPC offerings """
 
     cmd = listVPCOfferings.listVPCOfferingsCmd()
-    [setattr(cmd, k, v) for k, v in kwargs.items()]
-    if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+    [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+    if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
         cmd.listall=True
     return(apiclient.listVPCOfferings(cmd))
 
@@ -1053,6 +1146,11 @@ def get_free_vlan(apiclient, zoneid):
     if isinstance(networks, list) and len(networks) > 0:
         usedVlanIds = [int(nw.vlan)
                        for nw in networks if (nw.vlan and str(nw.vlan).lower() != "untagged")]
+
+    ipranges = list_vlan_ipranges(apiclient, zoneid=zoneid)
+    if isinstance(ipranges, list) and len(ipranges) > 0:
+        usedVlanIds += [int(iprange.vlan.split("/")[-1])
+                        for iprange in ipranges if (iprange.vlan and iprange.vlan.split("/")[-1].lower() != "untagged")]
 
     if not hasattr(physical_network, "vlan"):
         while True:
@@ -1986,7 +2084,7 @@ def verifyVCenterPortGroups(
                 dvPortGroups = response[1]
                 expectedDVPortGroupNames.extend(dvPortGroups)
 
-        vcenterPortGroups = list(itertools.chain(*(switchDict.values())))
+        vcenterPortGroups = list(itertools.chain(*(list(switchDict.values()))))
 
         for expectedDVPortGroupName in expectedDVPortGroupNames:
             assert expectedDVPortGroupName in vcenterPortGroups,\

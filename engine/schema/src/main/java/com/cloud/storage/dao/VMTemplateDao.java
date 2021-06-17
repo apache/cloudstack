@@ -36,7 +36,7 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     public VMTemplateVO findByTemplateName(String templateName);
 
-    // public void update(VMTemplateVO template);
+    public VMTemplateVO findValidByTemplateName(String templateName);
 
     public List<VMTemplateVO> listAllSystemVMTemplates();
 
@@ -75,6 +75,8 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
     List<Long> listPrivateTemplatesByHost(Long hostId);
 
     public Long countTemplatesForAccount(long accountId);
+
+    public List<VMTemplateVO> listUnRemovedTemplatesByStates(VirtualMachineTemplate.State ...states);
 
     List<VMTemplateVO> findTemplatesToSyncToS3();
 

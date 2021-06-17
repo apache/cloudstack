@@ -136,8 +136,13 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     private String purpose;
 
     @SerializedName(ApiConstants.VPC_ID)
-    @Param(description = "VPC the ip belongs to")
+    @Param(description = "VPC id the ip belongs to")
     private String vpcId;
+
+    @SerializedName(ApiConstants.VPC_NAME)
+    @Param(description = "VPC name the ip belongs to", since = "4.13.2")
+    private String vpcName;
+
     @SerializedName(ApiConstants.TAGS)
     @Param(description = "the list of resource tags associated with ip address", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
@@ -149,6 +154,10 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     @SerializedName(ApiConstants.FOR_DISPLAY)
     @Param(description = "is public ip for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
+
+    @SerializedName(ApiConstants.NETWORK_NAME)
+    @Param(description="the name of the Network where ip belongs to")
+    private String networkName;
 
     /*
         @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
@@ -273,6 +282,10 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
         this.vpcId = vpcId;
     }
 
+    public void setVpcName(String vpcName) {
+        this.vpcName = vpcName;
+    }
+
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
     }
@@ -287,5 +300,9 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
 
     public void setForDisplay(Boolean forDisplay) {
         this.forDisplay = forDisplay;
+    }
+
+    public void setNetworkName(String networkName) {
+        this.networkName = networkName;
     }
 }

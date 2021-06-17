@@ -63,7 +63,7 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
             upgradeScriptFileWriter.write(upgradeScriptData);
             upgradeScriptFileWriter.close();
         } catch (IOException e) {
-            logAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster ID: %s, unable to prepare upgrade script", kubernetesCluster.getUuid()), e);
+            logAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to prepare upgrade script", kubernetesCluster.getName()), e);
         }
     }
 
@@ -78,7 +78,7 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
                 index == 0 ? "true" : "false",
                 KubernetesVersionManagerImpl.compareSemanticVersions(upgradeVersion.getSemanticVersion(), "1.15.0") < 0 ? "true" : "false",
                 Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType()));
-        return SshHelper.sshExecute(publicIpAddress, nodeSshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+        return SshHelper.sshExecute(nodeAddress, nodeSshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
                 cmdStr,
                 10000, 10000, 10 * 60 * 1000);
     }
@@ -101,31 +101,31 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
                         String.format("sudo kubectl drain %s --ignore-daemonsets --delete-local-data", hostName),
                         10000, 10000, 60000);
             } catch (Exception e) {
-                logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster ID: %s, unable to drain Kubernetes node on VM ID: %s", kubernetesCluster.getUuid(), vm.getUuid()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, e);
+                logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to drain Kubernetes node on VM : %s", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, e);
             }
             if (!result.first()) {
-                logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster ID: %s, unable to drain Kubernetes node on VM ID: %s", kubernetesCluster.getUuid(), vm.getUuid()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
+                logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to drain Kubernetes node on VM : %s", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
             }
             if (System.currentTimeMillis() > upgradeTimeoutTime) {
-                logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster ID: %s, upgrade action timed out", kubernetesCluster.getUuid()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
+                logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, upgrade action timed out", kubernetesCluster.getName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
             }
             try {
                 result = runInstallScriptOnVM(vm, i);
             } catch (Exception e) {
-                logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster ID: %s, unable to upgrade Kubernetes node on VM ID: %s", kubernetesCluster.getUuid(), vm.getUuid()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, e);
+                logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to upgrade Kubernetes node on VM : %s", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, e);
             }
             if (!result.first()) {
-                logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster ID: %s, unable to upgrade Kubernetes node on VM ID: %s", kubernetesCluster.getUuid(), vm.getUuid()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
+                logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to upgrade Kubernetes node on VM : %s", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
             }
             if (System.currentTimeMillis() > upgradeTimeoutTime) {
-                logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster ID: %s, upgrade action timed out", kubernetesCluster.getUuid()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
+                logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, upgrade action timed out", kubernetesCluster.getName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
             }
             if (!KubernetesClusterUtil.uncordonKubernetesClusterNode(kubernetesCluster, publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, getManagementServerSshPublicKeyFile(), vm, upgradeTimeoutTime, 15000)) {
-                logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster ID: %s, unable to uncordon Kubernetes node on VM ID: %s", kubernetesCluster.getUuid(), vm.getUuid()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
+                logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to uncordon Kubernetes node on VM : %s", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
             }
-            if (i == 0) { // Wait for master to get in Ready state
+            if (i == 0) { // Wait for control node to get in Ready state
                 if (!KubernetesClusterUtil.isKubernetesClusterNodeReady(kubernetesCluster, publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, getManagementServerSshPublicKeyFile(), hostName, upgradeTimeoutTime, 15000)) {
-                    logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster ID: %s, unable to get master Kubernetes node on VM ID: %s in ready state", kubernetesCluster.getUuid(), vm.getUuid()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
+                    logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to get control Kubernetes node on VM : %s in ready state", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
                 }
             }
             if (LOGGER.isInfoEnabled()) {
@@ -138,18 +138,18 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
     public boolean upgradeCluster() throws CloudRuntimeException {
         init();
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Upgrading Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
+            LOGGER.info(String.format("Upgrading Kubernetes cluster : %s", kubernetesCluster.getName()));
         }
         upgradeTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterUpgradeTimeout.value() * 1000;
         Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
         publicIpAddress = publicIpSshPort.first();
         sshPort = publicIpSshPort.second();
         if (Strings.isNullOrEmpty(publicIpAddress)) {
-            logAndThrow(Level.ERROR, String.format("Upgrade failed for Kubernetes cluster ID: %s, unable to retrieve associated public IP", kubernetesCluster.getUuid()));
+            logAndThrow(Level.ERROR, String.format("Upgrade failed for Kubernetes cluster : %s, unable to retrieve associated public IP", kubernetesCluster.getName()));
         }
         clusterVMs = getKubernetesClusterVMs();
         if (CollectionUtils.isEmpty(clusterVMs)) {
-            logAndThrow(Level.ERROR, String.format("Upgrade failed for Kubernetes cluster ID: %s, unable to retrieve VMs for cluster", kubernetesCluster.getUuid()));
+            logAndThrow(Level.ERROR, String.format("Upgrade failed for Kubernetes cluster : %s, unable to retrieve VMs for cluster", kubernetesCluster.getName()));
         }
         retrieveUpgradeScriptFile();
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.UpgradeRequested);

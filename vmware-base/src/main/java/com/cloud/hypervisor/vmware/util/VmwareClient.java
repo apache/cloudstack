@@ -17,8 +17,11 @@
 package com.cloud.hypervisor.vmware.util;
 
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -29,9 +32,16 @@ import javax.net.ssl.SSLSession;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.handler.MessageContext;
+import javax.xml.ws.handler.Handler;
+import javax.xml.ws.handler.HandlerResolver;
+import javax.xml.ws.handler.PortInfo;
+
 
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
+import com.vmware.pbm.PbmPortType;
+import com.vmware.pbm.PbmService;
+import com.vmware.pbm.PbmServiceInstanceContent;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Element;
 
@@ -101,6 +111,7 @@ public class VmwareClient {
             HttpsURLConnection.setDefaultHostnameVerifier(hv);
 
             vimService = new VimService();
+            pbmService = new PbmService();
         } catch (Exception e) {
             s_logger.info("[ignored]"
                     + "failed to trust all certificates blindly: ", e);
@@ -120,8 +131,16 @@ public class VmwareClient {
     }
 
     private final ManagedObjectReference svcInstRef = new ManagedObjectReference();
+    private final ManagedObjectReference pbmSvcInstRef = new ManagedObjectReference();
+
     private static VimService vimService;
+    private static PbmService pbmService;
+    private PbmServiceInstanceContent pbmServiceContent;
     private VimPortType vimPort;
+    private PbmPortType pbmPort;
+    private static final String PBM_SERVICE_INSTANCE_TYPE = "PbmServiceInstance";
+    private static final String PBM_SERVICE_INSTANCE_VALUE = "ServiceInstance";
+
     private String serviceCookie;
     private final static String SVC_INST_NAME = "ServiceInstance";
     private int vCenterSessionTimeout = 1200000; // Timeout in milliseconds
@@ -176,8 +195,36 @@ public class VmwareClient {
         cookieValue = tokenizer.nextToken();
         String pathData = "$" + tokenizer.nextToken();
         serviceCookie = "$Version=\"1\"; " + cookieValue + "; " + pathData;
-
+        Map<String, List<String>> map = new HashMap<String, List<String>>();
+        map.put("Cookie", Collections.singletonList(serviceCookie));
+        ((BindingProvider)vimPort).getRequestContext().put(MessageContext.HTTP_REQUEST_HEADERS, map);
+        pbmConnect(url, cookieValue);
         isConnected = true;
+    }
+
+    private void pbmConnect(String url, String cookieValue) throws Exception {
+        URI uri = new URI(url);
+        String pbmurl = "https://" + uri.getHost() + "/pbm";
+        String[] tokens = cookieValue.split("=");
+        String extractedCookie = tokens[1];
+
+        HandlerResolver soapHandlerResolver = new HandlerResolver() {
+            @Override
+            public List<Handler> getHandlerChain(PortInfo portInfo) {
+                VcenterSessionHandler VcSessionHandler = new VcenterSessionHandler(extractedCookie);
+                List<Handler> handlerChain = new ArrayList<Handler>();
+                handlerChain.add((Handler)VcSessionHandler);
+                return handlerChain;
+            }
+        };
+        pbmService.setHandlerResolver(soapHandlerResolver);
+
+        pbmSvcInstRef.setType(PBM_SERVICE_INSTANCE_TYPE);
+        pbmSvcInstRef.setValue(PBM_SERVICE_INSTANCE_VALUE);
+        pbmPort = pbmService.getPbmPort();
+        Map<String, Object> pbmCtxt = ((BindingProvider)pbmPort).getRequestContext();
+        pbmCtxt.put(BindingProvider.SESSION_MAINTAIN_PROPERTY, true);
+        pbmCtxt.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, pbmurl);
     }
 
     /**
@@ -207,6 +254,24 @@ public class VmwareClient {
         try {
             return vimPort.retrieveServiceContent(svcInstRef);
         } catch (RuntimeFaultFaultMsg e) {
+        }
+        return null;
+    }
+
+    /**
+     * @return PBM service instance
+     */
+    public PbmPortType getPbmService() {
+        return pbmPort;
+    }
+
+    /**
+     * @return Service instance content
+     */
+    public PbmServiceInstanceContent getPbmServiceContent() {
+        try {
+            return pbmPort.pbmRetrieveServiceContent(pbmSvcInstRef);
+        } catch (com.vmware.pbm.RuntimeFaultFaultMsg e) {
         }
         return null;
     }

@@ -25,12 +25,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VolumeDao;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
@@ -39,11 +33,16 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 
 @Component
@@ -58,14 +57,16 @@ public class DataMotionServiceImpl implements DataMotionService {
     @Override
     public void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
         if (srcData.getDataStore() == null || destData.getDataStore() == null) {
-            throw new CloudRuntimeException("can't find data store");
+            String errMsg = "can't find data store";
+            invokeCallback(errMsg, callback);
+            return;
         }
 
         if (srcData.getDataStore().getDriver().canCopy(srcData, destData)) {
-            srcData.getDataStore().getDriver().copyAsync(srcData, destData, callback);
+            srcData.getDataStore().getDriver().copyAsync(srcData, destData, destHost, callback);
             return;
         } else if (destData.getDataStore().getDriver().canCopy(srcData, destData)) {
-            destData.getDataStore().getDriver().copyAsync(srcData, destData, callback);
+            destData.getDataStore().getDriver().copyAsync(srcData, destData, destHost, callback);
             return;
         }
 
@@ -74,8 +75,10 @@ public class DataMotionServiceImpl implements DataMotionService {
             // OfflineVmware volume migration
             // Cleanup volumes from target and reset the state of volume at source
             cleanUpVolumesForFailedMigrations(srcData, destData);
-            throw new CloudRuntimeException("Can't find strategy to move data. " + "Source: " + srcData.getType().name() + " '" + srcData.getUuid() + ", Destination: " +
-                    destData.getType().name() + " '" + destData.getUuid() + "'");
+            String errMsg = "Can't find strategy to move data. " + "Source: " + srcData.getType().name() + " '" + srcData.getUuid() + ", Destination: " +
+                    destData.getType().name() + " '" + destData.getUuid() + "'";
+            invokeCallback(errMsg, callback);
+            return;
         }
 
         strategy.copyAsync(srcData, destData, destHost, callback);
@@ -113,10 +116,22 @@ public class DataMotionServiceImpl implements DataMotionService {
                 volumeIds.add(volumeInfo.getUuid());
             }
 
-            throw new CloudRuntimeException("Can't find strategy to move data. " + "Source Host: " + srcHost.getName() + ", Destination Host: " + destHost.getName() +
-                    ", Volume UUIDs: " + StringUtils.join(volumeIds, ","));
+            String errMsg = "Can't find strategy to move data. " + "Source Host: " + srcHost.getName() + ", Destination Host: " + destHost.getName() +
+                    ", Volume UUIDs: " + StringUtils.join(volumeIds, ",");
+            invokeCallback(errMsg, callback);
+            return;
         }
 
         strategy.copyAsync(volumeMap, vmTo, srcHost, destHost, callback);
+    }
+
+    private void invokeCallback(String errMsg, AsyncCompletionCallback<CopyCommandResult> callback) {
+        CopyCmdAnswer copyCmdAnswer = new CopyCmdAnswer(errMsg);
+
+        CopyCommandResult result = new CopyCommandResult(null, copyCmdAnswer);
+
+        result.setResult(errMsg);
+
+        callback.complete(result);
     }
 }

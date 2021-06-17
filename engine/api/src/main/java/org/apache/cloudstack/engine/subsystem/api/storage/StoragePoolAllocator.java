@@ -29,6 +29,12 @@ import com.cloud.vm.VirtualMachineProfile;
  */
 public interface StoragePoolAllocator extends Adapter {
     /**
+     * Overloaded method calls allocateToPool with bypassStorageTypeCheck = false
+     * and returns a list of pools suitable.
+     **/
+    List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo);
+
+    /**
      * Determines which storage pools are suitable for the guest virtual machine
      * and returns a list of pools suitable.
      *
@@ -45,10 +51,14 @@ public interface StoragePoolAllocator extends Adapter {
      * @param ExcludeList
      *            avoid
      * @param int returnUpTo (use -1 to return all possible pools)
+     * @param boolean bypassStorageTypeCheck allows bypassing useLocalStorage check for provided DiskProfile when true
      * @return List<StoragePool> List of storage pools that are suitable for the
      *         VM
      **/
-    List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo);
+    List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck);
+
 
     static int RETURN_UPTO_ALL = -1;
+
+    List<StoragePool> reorderPools(List<StoragePool> pools, VirtualMachineProfile vmProfile, DeploymentPlan plan);
 }

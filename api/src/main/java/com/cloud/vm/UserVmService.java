@@ -218,7 +218,7 @@ public interface UserVmService {
         String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIp, Boolean displayVm, String keyboard,
         List<Long> affinityGroupIdList, Map<String, String> customParameter, String customId, Map<String, Map<Integer, String>> dhcpOptionMap,
         Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
-        Map<String, String> userVmOVFProperties) throws InsufficientCapacityException,
+        Map<String, String> userVmOVFProperties, boolean dynamicScalingEnabled) throws InsufficientCapacityException,
         ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
@@ -300,7 +300,7 @@ public interface UserVmService {
         HTTPMethod httpmethod, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard,
         List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap,
         Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
-        Map<String, String> userVmOVFProperties) throws InsufficientCapacityException,
+        Map<String, String> userVmOVFProperties, boolean dynamicScalingEnabled) throws InsufficientCapacityException,
         ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
@@ -379,7 +379,7 @@ public interface UserVmService {
         String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod, String userData,
         String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList,
         Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap, Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
-        Map<String, String> templateOvfPropertiesMap)
+        Map<String, String> templateOvfPropertiesMap, boolean dynamicScalingEnabled)
 
         throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
@@ -488,7 +488,11 @@ public interface UserVmService {
 
     VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool);
 
+    VirtualMachine vmStorageMigration(Long vmId, Map<String, String> volumeToPool);
+
     UserVm restoreVM(RestoreVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException;
+
+    UserVm restoreVirtualMachine(Account caller, long vmId, Long newTemplateId) throws InsufficientCapacityException, ResourceUnavailableException;
 
     UserVm upgradeVirtualMachine(ScaleVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
         VirtualMachineMigrationException;
@@ -517,4 +521,9 @@ public interface UserVmService {
                     final long accountId, final long userId, final ServiceOffering serviceOffering, final String sshPublicKey,
                     final String hostName, final HypervisorType hypervisorType, final Map<String, String> customParameters, final VirtualMachine.PowerState powerState) throws InsufficientCapacityException;
 
+    /**
+     * Unmanage a guest VM from CloudStack
+     * @return true if the VM is successfully unmanaged, false if not.
+     */
+    boolean unmanageUserVM(Long vmId);
 }

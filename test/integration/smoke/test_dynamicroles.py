@@ -45,6 +45,14 @@ class TestData(object):
                 "type": "User",
                 "description": "Fake Role created by Marvin test"
             },
+            "importrole": {
+                "name": "MarvinFake Import Role ",
+                "type": "User",
+                "description": "Fake Import User Role created by Marvin test",
+                "rules" : [{"rule":"list*", "permission":"allow","description":"Listing apis"},
+                           {"rule":"get*", "permission":"allow","description":"Get apis"},
+                           {"rule":"update*", "permission":"deny","description":"Update apis"}]
+            },
             "roleadmin": {
                 "name": "MarvinFake Admin Role ",
                 "type": "Admin",
@@ -201,6 +209,91 @@ class TestDynamicRoles(cloudstackTestCase):
             msg="Role type does not match the test data"
         )
 
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    def test_role_lifecycle_clone(self):
+        """
+            Tests create role from existing role
+        """
+        # Use self.role created in setUp()
+        role_to_be_cloned = {
+            "name": "MarvinFake Clone Role ",
+            "roleid": self.role.id,
+            "description": "Fake Role cloned by Marvin test"
+        }
+
+        try:
+            role_cloned = Role.create(
+                self.apiclient,
+                role_to_be_cloned
+            )
+            self.cleanup.append(role_cloned)
+        except CloudstackAPIException as e:
+            self.fail("Failed to create the role: %s" % e)
+
+        list_role_cloned= Role.list(self.apiclient, id=role_cloned.id)
+        self.assertEqual(
+            isinstance(list_role_cloned, list),
+            True,
+            "List Roles response was not a valid list"
+        )
+        self.assertEqual(
+            len(list_role_cloned),
+            1,
+            "List Roles response size was not 1"
+        )
+        self.assertEqual(
+            list_role_cloned[0].name,
+            role_to_be_cloned["name"],
+            msg="Role name does not match the test data"
+        )
+        self.assertEqual(
+            list_role_cloned[0].type,
+            self.testdata["role"]["type"],
+            msg="Role type does not match the test data"
+        )
+
+        list_rolepermissions = RolePermission.list(self.apiclient, roleid=self.role.id)
+        self.validate_permissions_list(list_rolepermissions, role_cloned.id)
+
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    def test_role_lifecycle_import(self):
+        """
+            Tests import role with the rules
+        """
+        # use importrole from testdata
+        self.testdata["importrole"]["name"] += self.getRandomString()
+        try:
+            role_imported = Role.importRole(
+                self.apiclient,
+                self.testdata["importrole"]
+            )
+            self.cleanup.append(role_imported)
+        except CloudstackAPIException as e:
+            self.fail("Failed to import the role: %s" % e)
+
+        list_role_imported = Role.list(self.apiclient, id=role_imported.id)
+        self.assertEqual(
+            isinstance(list_role_imported, list),
+            True,
+            "List Roles response was not a valid list"
+        )
+        self.assertEqual(
+            len(list_role_imported),
+            1,
+            "List Roles response size was not 1"
+        )
+        self.assertEqual(
+            list_role_imported[0].name,
+            self.testdata["importrole"]["name"],
+            msg="Role name does not match the test data"
+        )
+        self.assertEqual(
+            list_role_imported[0].type,
+            self.testdata["importrole"]["type"],
+            msg="Role type does not match the test data"
+        )
+
+        self.validate_permissions_dict(self.testdata["importrole"]["rules"], role_imported.id)
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
     def test_role_lifecycle_update(self):
@@ -360,44 +453,23 @@ class TestDynamicRoles(cloudstackTestCase):
             self.cleanup.append(permission)
             permissions.append(permission)
 
-
-        def validate_permissions_list(permissions):
-            list_rolepermissions = RolePermission.list(self.apiclient, roleid=self.role.id)
-            self.assertEqual(
-                len(list_rolepermissions),
-                len(permissions),
-                msg="List of role permissions do not match created list of permissions"
-            )
-
-            for idx, rolepermission in enumerate(list_rolepermissions):
-                self.assertEqual(
-                    rolepermission.rule,
-                    permissions[idx].rule,
-                    msg="Rule permission don't match with expected item at the index"
-                )
-                self.assertEqual(
-                    rolepermission.permission,
-                    permissions[idx].permission,
-                    msg="Rule permission don't match with expected item at the index"
-                )
-
         # Move last item to the top
         rule = permissions.pop(len(permissions)-1)
         permissions = [rule] + permissions
-        rule.update(self.apiclient, ruleorder=",".join(map(lambda x: x.id, permissions)))
-        validate_permissions_list(permissions)
+        rule.update(self.apiclient, ruleorder=",".join([x.id for x in permissions]))
+        self.validate_permissions_list(permissions, self.role.id)
 
         # Move to the bottom
         rule = permissions.pop(0)
         permissions = permissions + [rule]
-        rule.update(self.apiclient, ruleorder=",".join(map(lambda x: x.id, permissions)))
-        validate_permissions_list(permissions)
+        rule.update(self.apiclient, ruleorder=",".join([x.id for x in permissions]))
+        self.validate_permissions_list(permissions, self.role.id)
 
         # Random shuffles
         for _ in range(3):
             shuffle(permissions)
-            rule.update(self.apiclient, ruleorder=",".join(map(lambda x: x.id, permissions)))
-            validate_permissions_list(permissions)
+            rule.update(self.apiclient, ruleorder=",".join([x.id for x in permissions]))
+            self.validate_permissions_list(permissions, self.role.id)
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
     def test_rolepermission_lifecycle_update_permission(self):
@@ -469,7 +541,7 @@ class TestDynamicRoles(cloudstackTestCase):
 
         shuffle(permissions)
         try:
-            permission.update(self.apiclient, ruleorder=",".join(map(lambda x: x.id, permissions)))
+            permission.update(self.apiclient, ruleorder=",".join([x.id for x in permissions]))
             self.fail("Reordering should fail in case of concurrent updates by other user")
         except CloudstackAPIException: pass
 
@@ -494,9 +566,9 @@ class TestDynamicRoles(cloudstackTestCase):
             Checks available APIs based on api map
         """
         response = userApiClient.listApis(listApis.listApisCmd())
-        allowedApis = map(lambda x: x.name, response)
+        allowedApis = [x.name for x in response]
         for api in allowedApis:
-            for rule, perm in apiConfig.items():
+            for rule, perm in list(apiConfig.items()):
                 if re.match(rule.replace('*', '.*'), api):
                     if perm.lower() == 'allow':
                         break
@@ -540,7 +612,7 @@ class TestDynamicRoles(cloudstackTestCase):
             Test to check role, role permissions and account life cycles
         """
         apiConfig = self.testdata['apiConfig']
-        for api, perm in apiConfig.items():
+        for api, perm in list(apiConfig.items()):
             testdata = self.testdata['rolepermission']
             testdata['roleid'] = self.role.id
             testdata['rule'] = api
@@ -569,7 +641,7 @@ class TestDynamicRoles(cloudstackTestCase):
         apiConfig = self.testdata["apiConfig"]
         roleId = self.dbclient.execute("select id from roles where uuid='%s'" % self.role.id)[0][0]
         sortOrder = 1
-        for rule, perm in apiConfig.items():
+        for rule, perm in list(apiConfig.items()):
             self.dbclient.execute("insert into role_permissions (uuid, role_id, rule, permission, sort_order) values (UUID(), %d, '%s', '%s', %d)" % (roleId, rule, perm.upper(), sortOrder))
             sortOrder += 1
 
@@ -580,3 +652,43 @@ class TestDynamicRoles(cloudstackTestCase):
 
         # Perform actual API call for allow API
         self.checkApiCall(apiConfig, userApiClient)
+
+    def validate_permissions_list(self, permissions, roleid):
+        list_rolepermissions = RolePermission.list(self.apiclient, roleid=roleid)
+        self.assertEqual(
+            len(list_rolepermissions),
+            len(permissions),
+            msg="List of role permissions do not match created list of permissions"
+        )
+
+        for idx, rolepermission in enumerate(list_rolepermissions):
+            self.assertEqual(
+                rolepermission.rule,
+                permissions[idx].rule,
+                msg="Rule permission don't match with expected item at the index"
+            )
+            self.assertEqual(
+                rolepermission.permission,
+                permissions[idx].permission,
+                msg="Rule permission don't match with expected item at the index"
+            )
+
+    def validate_permissions_dict(self, permissions, roleid):
+        list_rolepermissions = RolePermission.list(self.apiclient, roleid=roleid)
+        self.assertEqual(
+            len(list_rolepermissions),
+            len(permissions),
+            msg="List of role permissions do not match created list of permissions"
+        )
+
+        for idx, rolepermission in enumerate(list_rolepermissions):
+            self.assertEqual(
+                rolepermission.rule,
+                permissions[idx]["rule"],
+                msg="Rule permission don't match with expected item at the index"
+            )
+            self.assertEqual(
+                rolepermission.permission,
+                permissions[idx]["permission"],
+                msg="Rule permission don't match with expected item at the index"
+            )

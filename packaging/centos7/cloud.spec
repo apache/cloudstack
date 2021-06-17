@@ -27,6 +27,7 @@ Summary:   CloudStack IaaS Platform
 %define _maventag %{_fullver}
 Release:   %{_rel}%{dist}
 
+%define __python python3
 %{!?python_sitearch: %define python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Version:   %{_ver}
@@ -47,6 +48,11 @@ BuildRequires: /usr/bin/mkisofs
 BuildRequires: mysql-connector-python
 BuildRequires: maven => 3.0.0
 BuildRequires: python-setuptools
+BuildRequires: python3
+BuildRequires: python3-pip
+BuildRequires: python3-setuptools
+BuildRequires: wget
+BuildRequires: nodejs
 
 %description
 CloudStack is a highly-scalable elastic, open source,
@@ -73,12 +79,12 @@ Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: /usr/bin/ssh-keygen
 Requires: genisoimage
-Requires: mysql-connector-python
 Requires: ipmitool
 Requires: %{name}-common = %{_ver}
 Requires: iptables-services
 Requires: qemu-img
-Requires: python-dns
+Requires: python3-pip
+Requires: python3-setuptools
 Group:     System Environment/Libraries
 %description management
 The CloudStack management server is the central point of coordination,
@@ -88,9 +94,8 @@ management, and intelligence in CloudStack.
 Summary: Apache CloudStack common files and scripts
 Requires: python
 Requires: python3
-Requires: python-argparse
-Requires: python-netaddr
 Requires: bsdtar
+Requires: python3-pip
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
@@ -110,7 +115,7 @@ Requires: net-tools
 Requires: iproute
 Requires: ipset
 Requires: perl
-Requires: libvirt-python
+Requires: python36-libvirt
 Requires: qemu-img
 Requires: qemu-kvm
 Provides: cloud-agent
@@ -137,6 +142,12 @@ Group: System Environment/Libraries
 %description usage
 The CloudStack usage calculation service
 
+%package ui
+Summary: CloudStack UI
+Group: System Environment/Libraries
+%description ui
+The CloudStack UI
+
 %package cli
 Summary: Apache CloudStack CLI
 Provides: python-marvin
@@ -146,6 +157,9 @@ Apache CloudStack command line interface
 
 %package marvin
 Summary: Apache CloudStack Marvin library
+Requires: python3
+Requires: python3-devel
+Requires: python3-pip
 Requires: python-pip
 Requires: gcc
 Requires: python-devel
@@ -195,6 +209,7 @@ if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then
 fi
 
 mvn -Psystemvm,developer $FLAGS clean package
+cd ui && npm install && npm run build && cd ..
 
 %install
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
@@ -220,8 +235,8 @@ cp -r scripts/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 install -D systemvm/dist/systemvm.iso ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms/systemvm.iso
 install python/lib/cloud_utils.py ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
 cp -r python/lib/cloudutils ${RPM_BUILD_ROOT}%{python_sitearch}/
-python -m py_compile ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
-python -m compileall ${RPM_BUILD_ROOT}%{python_sitearch}/cloudutils
+python3 -m py_compile ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
+python3 -m compileall ${RPM_BUILD_ROOT}%{python_sitearch}/cloudutils
 cp build/gitrev.txt ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 cp packaging/centos7/cloudstack-sccs ${RPM_BUILD_ROOT}/usr/bin
 
@@ -235,6 +250,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/run
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel
 
 # Setup Jetty
 ln -sf /etc/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/conf
@@ -254,6 +270,10 @@ cp -r client/target/utilities/scripts/db/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-
 
 cp -r client/target/cloud-client-ui-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
 cp -r client/target/classes/META-INF/webapp ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapp
+cp ui/dist/config.json ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/
+cp -r ui/dist/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapp/
+rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapp/config.json
+ln -sf /etc/%{name}/management/config.json ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapp/config.json
 mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cloud-client-ui-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib/cloudstack-%{_maventag}.jar
 cp client/target/lib/*jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib/
 
@@ -261,7 +281,7 @@ cp client/target/lib/*jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib/
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
-for name in db.properties server.properties log4j-cloud.xml commons-logging.properties environment.properties java.security.ciphers
+for name in db.properties server.properties log4j-cloud.xml environment.properties java.security.ciphers
 do
   cp client/target/conf/$name ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
 done
@@ -278,6 +298,20 @@ install -D packaging/systemd/cloudstack-management.default ${RPM_BUILD_ROOT}%{_s
 install -D server/target/conf/cloudstack-sudoers ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
 touch ${RPM_BUILD_ROOT}%{_localstatedir}/run/%{name}-management.pid
 #install -D server/target/conf/cloudstack-catalina.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-catalina
+
+# UI
+mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/ui
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/
+cp ui/dist/config.json ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/ui/
+cp -r ui/dist/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/
+rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/config.json
+ln -sf /etc/%{name}/ui/config.json ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/config.json
+
+# Package mysql-connector-python
+wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/ee/ff/48bde5c0f013094d729fe4b0316ba2a24774b3ff1c52d924a8a4cb04078a/six-1.15.0-py2.py3-none-any.whl
+wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/e9/93/4860cebd5ad3ff2664ad3c966490ccb46e3b88458b2095145bca11727ca4/setuptools-47.3.1-py3-none-any.whl
+wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/28/05/9867ef8eafd12265267bee138fa2c46ebf34a276ea4cbe184cba4c606e8b/protobuf-3.12.2-cp36-cp36m-manylinux1_x86_64.whl
+wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/d1/53/4cf90d2fe81b9cdb55dc180951bcec44ea8685665f1bdb1412501dc362dd/mysql_connector_python-8.0.20-cp36-cp36m-manylinux1_x86_64.whl
 
 chmod 440 ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
 chmod 770 ${RPM_BUILD_ROOT}%{_localstatedir}/%{name}/mnt
@@ -348,6 +382,8 @@ install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-agent
 install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-agent-%{version}/LICENSE
 install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-usage-%{version}/NOTICE
 install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-usage-%{version}/LICENSE
+install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-ui-%{version}/NOTICE
+install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-ui-%{version}/LICENSE
 install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
 install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/LICENSE
 install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-marvin-%{version}/NOTICE
@@ -386,6 +422,11 @@ then
 fi
 
 %post management
+# Install mysql-connector-python
+pip3 install %{_datadir}/%{name}-management/setup/wheel/six-1.15.0-py2.py3-none-any.whl %{_datadir}/%{name}-management/setup/wheel/setuptools-47.3.1-py3-none-any.whl %{_datadir}/%{name}-management/setup/wheel/protobuf-3.12.2-cp36-cp36m-manylinux1_x86_64.whl %{_datadir}/%{name}-management/setup/wheel/mysql_connector_python-8.0.20-cp36-cp36m-manylinux1_x86_64.whl
+
+pip3 install urllib3
+
 /usr/bin/systemctl on cloudstack-management > /dev/null 2>&1 || true
 
 grep -s -q "db.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
@@ -455,14 +496,14 @@ fi
 
 %post usage
 if [ -f "%{_sysconfdir}/%{name}/management/db.properties" ]; then
-    echo Replacing db.properties with management server db.properties
+    echo "Replacing usage server's db.properties with a link to the management server's db.properties"
     rm -f %{_sysconfdir}/%{name}/usage/db.properties
     ln -s %{_sysconfdir}/%{name}/management/db.properties %{_sysconfdir}/%{name}/usage/db.properties
     /usr/bin/systemctl enable cloudstack-usage > /dev/null 2>&1 || true
 fi
 
 if [ -f "%{_sysconfdir}/%{name}/management/key" ]; then
-    echo Replacing key with management server key
+    echo "Replacing usage server's key with a link to the management server's key"
     rm -f %{_sysconfdir}/%{name}/usage/key
     ln -s %{_sysconfdir}/%{name}/management/key %{_sysconfdir}/%{name}/usage/key
 fi
@@ -472,8 +513,11 @@ if [ ! -f "%{_sysconfdir}/%{name}/usage/key" ]; then
 fi
 
 %post marvin
-pip install --upgrade http://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-2.0.4.zip#md5=3df394d89300db95163f17c843ef49df
+pip install --upgrade https://files.pythonhosted.org/packages/ca/ea/1e2553b088bad2f9fa8120c2624f797b2d7450d3b61bb492d29c72e3d3c2/mysql_connector_python-8.0.20-cp27-cp27mu-manylinux1_x86_64.whl
 pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
+pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
+pip3 install --upgrade nose
+pip3 install --upgrade urllib3
 
 #No default permission as the permission setup is complex
 %files management
@@ -488,11 +532,11 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %config(noreplace) %{_sysconfdir}/security/limits.d/cloud
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/server.properties
+%config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/config.json
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-cloud.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/environment.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/java.security.ciphers
-%config(noreplace) %{_sysconfdir}/%{name}/management/commons-logging.properties
 %attr(0644,root,root) %{_unitdir}/%{name}-management.service
 %attr(0755,cloud,cloud) %{_localstatedir}/run/%{name}-management.pid
 %attr(0755,root,root) %{_bindir}/%{name}-setup-management
@@ -516,6 +560,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %{_defaultdocdir}/%{name}-management-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-management-%{version}/NOTICE
 #%attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-catalina
+%{_datadir}/%{name}-management/setup/wheel/*.whl
 
 %files agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
@@ -544,11 +589,17 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %attr(0755,root,root) /usr/bin/cloudstack-sccs
 %attr(0644, root, root) %{_datadir}/%{name}-common/vms/systemvm.iso
 %attr(0644,root,root) %{python_sitearch}/cloud_utils.py
-%attr(0644,root,root) %{python_sitearch}/cloud_utils.pyc
+%attr(0644,root,root) %{python_sitearch}/__pycache__/*
 %attr(0644,root,root) %{python_sitearch}/cloudutils/*
 %attr(0644, root, root) %{_datadir}/%{name}-common/lib/jasypt-1.9.3.jar
 %{_defaultdocdir}/%{name}-common-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-common-%{version}/NOTICE
+
+%files ui
+%config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/ui/config.json
+%attr(0644,root,root) %{_datadir}/%{name}-ui/*
+%{_defaultdocdir}/%{name}-ui-%{version}/LICENSE
+%{_defaultdocdir}/%{name}-ui-%{version}/NOTICE
 
 %files usage
 %attr(0644,root,root) %{_unitdir}/%{name}-usage.service
@@ -599,3 +650,4 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 
 * Fri Oct 5 2012 Hugo Trippaers <hugo@apache.org> 4.1.0
 - new style spec file
+

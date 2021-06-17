@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -61,6 +62,7 @@ import org.apache.cloudstack.poll.BackgroundPollManager;
 import org.apache.cloudstack.poll.BackgroundPollTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDispatcher;
@@ -84,7 +86,6 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.usage.dao.UsageBackupDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -125,8 +126,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private AccountService accountService;
     @Inject
     private AccountManager accountManager;
-    @Inject
-    private UsageBackupDao usageBackupDao;
     @Inject
     private VolumeDao volumeDao;
     @Inject
@@ -336,24 +335,22 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         boolean result = false;
-        VMInstanceVO vmInstance = null;
         try {
-            vmInstance = vmInstanceDao.acquireInLockTable(vm.getId());
-            vmInstance.setBackupOfferingId(null);
-            vmInstance.setBackupExternalId(null);
-            vmInstance.setBackupVolumes(null);
-            result = backupProvider.removeVMFromBackupOffering(vmInstance);
+            vm.setBackupOfferingId(null);
+            vm.setBackupExternalId(null);
+            vm.setBackupVolumes(null);
+            result = backupProvider.removeVMFromBackupOffering(vm);
             if (result && backupProvider.willDeleteBackupsOnOfferingRemoval()) {
                 final List<Backup> backups = backupDao.listByVmId(null, vm.getId());
                 for (final Backup backup : backups) {
                     backupDao.remove(backup.getId());
                 }
             }
-            if ((result || forced) && vmInstanceDao.update(vmInstance.getId(), vmInstance)) {
+            if ((result || forced) && vmInstanceDao.update(vm.getId(), vm)) {
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
                         "Backup-" + vm.getHostName() + "-" + vm.getUuid(), vm.getBackupOfferingId(), null, null,
                         Backup.class.getSimpleName(), vm.getUuid());
-                final BackupSchedule backupSchedule = backupScheduleDao.findByVM(vmInstance.getId());
+                final BackupSchedule backupSchedule = backupScheduleDao.findByVM(vm.getId());
                 if (backupSchedule != null) {
                     backupScheduleDao.remove(backupSchedule.getId());
                 }
@@ -361,10 +358,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             }
         } catch (final Exception e) {
             LOG.warn("Exception caught when trying to remove VM from the backup offering: ", e);
-        } finally {
-            if (vmInstance != null) {
-                vmInstanceDao.releaseFromLockTable(vmInstance.getId());
-            }
         }
         return result;
     }
@@ -674,6 +667,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (offering == null) {
             throw new CloudRuntimeException("VM backup offering ID " + vm.getBackupOfferingId() + " does not exist");
         }
+        List<Backup> backupsForVm = backupDao.listByVmId(vm.getDataCenterId(), vmId);
+        if (CollectionUtils.isNotEmpty(backupsForVm)) {
+            backupsForVm = backupsForVm.stream().filter(vmBackup -> vmBackup.getId() != backupId).collect(Collectors.toList());
+            if (backupsForVm.size() <= 0 && vm.getRemoved() != null) {
+                removeVMFromBackupOffering(vmId, true);
+            }
+        }
+
         final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
         boolean result = backupProvider.deleteBackup(backup);
         if (result) {
@@ -739,7 +740,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     public boolean isDisabled(final Long zoneId) {
-        return !BackupFrameworkEnabled.valueIn(zoneId);
+        return !(BackupFrameworkEnabled.value() && BackupFrameworkEnabled.valueIn(zoneId));
     }
 
     private void validateForZone(final Long zoneId) {
@@ -772,6 +773,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @Override
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        if (!BackupFrameworkEnabled.value()) {
+            return cmdList;
+        }
+
         // Offerings
         cmdList.add(ListBackupProvidersCmd.class);
         cmdList.add(ListBackupProviderOfferingsCmd.class);
@@ -1001,7 +1006,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         @Override
         protected void runInContext() {
-            final int SYNC_INTERVAL = BackupSyncPollingInterval.value().intValue();
             try {
                 if (LOG.isTraceEnabled()) {
                     LOG.trace("Backup sync background task is running...");
@@ -1022,31 +1026,23 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                         continue;
                     }
 
-                    // Sync backup usage metrics
                     final Map<VirtualMachine, Backup.Metric> metrics = backupProvider.getBackupMetrics(dataCenter.getId(), new ArrayList<>(vms));
-                    final GlobalLock syncBackupMetricsLock = GlobalLock.getInternLock("BackupSyncTask_metrics_zone_" + dataCenter.getId());
-                    if (syncBackupMetricsLock.lock(SYNC_INTERVAL)) {
-                        try {
-                            for (final VirtualMachine vm : metrics.keySet()) {
-                                final Backup.Metric metric = metrics.get(vm);
-                                if (metric != null) {
-                                    usageBackupDao.updateMetrics(vm, metric);
-                                }
+                    try {
+                        for (final VirtualMachine vm : metrics.keySet()) {
+                            final Backup.Metric metric = metrics.get(vm);
+                            if (metric != null) {
+                                // Sync out-of-band backups
+                                backupProvider.syncBackups(vm, metric);
+                                // Emit a usage event, update usage metric for the VM by the usage server
+                                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_USAGE_METRIC, vm.getAccountId(),
+                                        vm.getDataCenterId(), vm.getId(), "Backup-" + vm.getHostName() + "-" + vm.getUuid(),
+                                        vm.getBackupOfferingId(), null, metric.getBackupSize(), metric.getDataSize(),
+                                        Backup.class.getSimpleName(), vm.getUuid());
                             }
-                        } finally {
-                            syncBackupMetricsLock.unlock();
                         }
-                    }
-
-                    // Sync out-of-band backups
-                    for (final VirtualMachine vm : vms) {
-                        final GlobalLock syncBackupsLock = GlobalLock.getInternLock("BackupSyncTask_backup_vm_" + vm.getId());
-                        if (syncBackupsLock.lock(SYNC_INTERVAL)) {
-                            try {
-                                backupProvider.syncBackups(vm, metrics.get(vm));
-                            } finally {
-                                syncBackupsLock.unlock();
-                            }
+                    } catch (final Throwable e) {
+                        if (LOG.isTraceEnabled()) {
+                            LOG.trace("Failed to sync backup usage metrics and out-of-band backups");
                         }
                     }
                 }

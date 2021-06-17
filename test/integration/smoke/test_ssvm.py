@@ -470,27 +470,46 @@ class TestSSVMs(cloudstackTestCase):
         if self.hypervisor.lower() in ('vmware', 'hyperv'):
             # SSH into SSVMs is done via management server for Vmware and
             # Hyper-V
-            result = get_process_status(
-                self.apiclient.connection.mgtSvr,
-                22,
-                self.apiclient.connection.user,
-                self.apiclient.connection.passwd,
-                ssvm.privateip,
-                "systemctl is-active cloud",
-                hypervisor=self.hypervisor
-            )
+            retries = 3
+            while retries > -1:
+                result = get_process_status(
+                                self.apiclient.connection.mgtSvr,
+                                22,
+                                self.apiclient.connection.user,
+                                self.apiclient.connection.passwd,
+                                ssvm.privateip,
+                                "systemctl is-active cloud",
+                                hypervisor=self.hypervisor
+                            )
+                if ("deactivating" in result) or ("activating" in result):
+                    if retries >= 0:
+                        retries = retries - 1
+                        time.sleep(10)
+                        continue
+                else:
+                    return result
         else:
             try:
                 host.user, host.passwd = get_host_credentials(
                     self.config, host.ipaddress)
-                result = get_process_status(
-                    host.ipaddress,
-                    22,
-                    host.user,
-                    host.passwd,
-                    ssvm.linklocalip,
-                    "systemctl is-active cloud"
-                )
+                retries = 3
+                while retries > -1:
+                    result = get_process_status(
+                        host.ipaddress,
+                        22,
+                        host.user,
+                        host.passwd,
+                        ssvm.linklocalip,
+                        "systemctl is-active cloud"
+                    )
+                    print("result is %s" % result)
+                    if ("deactivating" in result) or ("activating" in result):
+                        if retries >= 0:
+                            retries = retries - 1
+                            time.sleep(10)
+                            continue
+                    else:
+                        return result
             except KeyError:
                 self.skipTest(
                     "Marvin configuration has no host\
@@ -874,6 +893,8 @@ class TestSSVMs(cloudstackTestCase):
         # Wait for the agent to be up
         self.waitForSystemVMAgent(ssvm_response.name)
 
+        # Wait until NFS stores mounted before running the script
+        time.sleep(90)
         # Call to verify cloud process is running
         self.test_03_ssvm_internals()
 
@@ -957,7 +978,122 @@ class TestSSVMs(cloudstackTestCase):
             "basic",
             "sg"],
         required_hardware="true")
-    def test_09_destroy_ssvm(self):
+    def test_09_reboot_ssvm_forced(self):
+        """Test force reboot SSVM
+        """
+
+        list_ssvm_response = list_ssvms(
+            self.apiclient,
+            systemvmtype='secondarystoragevm',
+            state='Running',
+            zoneid=self.zone.id
+        )
+
+        self.assertEqual(
+            isinstance(list_ssvm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+
+        ssvm_response = list_ssvm_response[0]
+
+        hosts = list_hosts(
+            self.apiclient,
+            id=ssvm_response.hostid
+        )
+        self.assertEqual(
+            isinstance(hosts, list),
+            True,
+            "Check list response returns a valid list"
+        )
+
+        self.debug("Force rebooting SSVM: %s" % ssvm_response.id)
+        cmd = rebootSystemVm.rebootSystemVmCmd()
+        cmd.id = ssvm_response.id
+        cmd.forced = True
+        self.apiclient.rebootSystemVm(cmd)
+
+        ssvm_response = self.checkForRunningSystemVM(ssvm_response)
+        self.debug("SSVM State: %s" % ssvm_response.state)
+        self.assertEqual(
+            'Running',
+            str(ssvm_response.state),
+            "Check whether SSVM is running or not"
+        )
+
+        # Wait for the agent to be up
+        self.waitForSystemVMAgent(ssvm_response.name)
+
+        # Wait until NFS stores mounted before running the script
+        time.sleep(90)
+        # Call to verify cloud process is running
+        self.test_03_ssvm_internals()
+
+    @attr(
+        tags=[
+            "advanced",
+            "advancedns",
+            "smoke",
+            "basic",
+            "sg"],
+        required_hardware="true")
+    def test_10_reboot_cpvm_forced(self):
+        """Test force reboot CPVM
+        """
+
+        list_cpvm_response = list_ssvms(
+            self.apiclient,
+            systemvmtype='consoleproxy',
+            state='Running',
+            zoneid=self.zone.id
+        )
+        self.assertEqual(
+            isinstance(list_cpvm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        cpvm_response = list_cpvm_response[0]
+
+        hosts = list_hosts(
+            self.apiclient,
+            id=cpvm_response.hostid
+        )
+        self.assertEqual(
+            isinstance(hosts, list),
+            True,
+            "Check list response returns a valid list"
+        )
+
+        self.debug("Force rebooting CPVM: %s" % cpvm_response.id)
+
+        cmd = rebootSystemVm.rebootSystemVmCmd()
+        cmd.id = cpvm_response.id
+        cmd.forced = True
+        self.apiclient.rebootSystemVm(cmd)
+
+        cpvm_response = self.checkForRunningSystemVM(cpvm_response)
+        self.debug("CPVM state: %s" % cpvm_response.state)
+        self.assertEqual(
+            'Running',
+            str(cpvm_response.state),
+            "Check whether CPVM is running or not"
+        )
+
+        # Wait for the agent to be up
+        self.waitForSystemVMAgent(cpvm_response.name)
+
+        # Call to verify cloud process is running
+        self.test_04_cpvm_internals()
+
+    @attr(
+        tags=[
+            "advanced",
+            "advancedns",
+            "smoke",
+            "basic",
+            "sg"],
+        required_hardware="true")
+    def test_11_destroy_ssvm(self):
         """Test destroy SSVM
         """
 
@@ -1029,7 +1165,7 @@ class TestSSVMs(cloudstackTestCase):
             "basic",
             "sg"],
         required_hardware="true")
-    def test_10_destroy_cpvm(self):
+    def test_12_destroy_cpvm(self):
         """Test destroy CPVM
         """
 
@@ -1100,7 +1236,7 @@ class TestSSVMs(cloudstackTestCase):
             "basic",
             "sg"],
         required_hardware="true")
-    def test_11_ss_nfs_version_on_ssvm(self):
+    def test_13_ss_nfs_version_on_ssvm(self):
         """Test NFS Version on Secondary Storage mounted properly on SSVM
         """
 

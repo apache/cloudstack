@@ -60,7 +60,6 @@ import com.cloud.network.Network;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.uservm.UserVm;
@@ -77,12 +76,21 @@ import com.google.common.base.Strings;
 
 public class KubernetesClusterStartWorker extends KubernetesClusterResourceModifierActionWorker {
 
+    private KubernetesSupportedVersion kubernetesClusterVersion;
+
     public KubernetesClusterStartWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
     }
 
-    private Pair<String, Map<Long, Network.IpAddresses>> getKubernetesMasterIpAddresses(final DataCenter zone, final Network network, final Account account) throws InsufficientAddressCapacityException {
-        String masterIp = null;
+    public KubernetesSupportedVersion getKubernetesClusterVersion() {
+        if (kubernetesClusterVersion == null) {
+            kubernetesClusterVersion = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
+        }
+        return kubernetesClusterVersion;
+    }
+
+    private Pair<String, Map<Long, Network.IpAddresses>> getKubernetesControlIpAddresses(final DataCenter zone, final Network network, final Account account) throws InsufficientAddressCapacityException {
+        String controlIp = null;
         Map<Long, Network.IpAddresses> requestedIps = null;
         if (Network.GuestType.Shared.equals(network.getGuestType())) {
             List<Long> vlanIds = new ArrayList<>();
@@ -92,37 +100,37 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             }
             PublicIp ip = ipAddressManager.getAvailablePublicIpAddressFromVlans(zone.getId(), null, account, Vlan.VlanType.DirectAttached, vlanIds,network.getId(), null, false);
             if (ip != null) {
-                masterIp = ip.getAddress().toString();
+                controlIp = ip.getAddress().toString();
             }
             requestedIps = new HashMap<>();
             Ip ipAddress = ip.getAddress();
             boolean isIp6 = ipAddress.isIp6();
             requestedIps.put(network.getId(), new Network.IpAddresses(ipAddress.isIp4() ? ip.getAddress().addr() : null, null));
         } else {
-            masterIp = ipAddressManager.acquireGuestIpAddress(networkDao.findById(kubernetesCluster.getNetworkId()), null);
+            controlIp = ipAddressManager.acquireGuestIpAddress(networkDao.findById(kubernetesCluster.getNetworkId()), null);
         }
-        return new Pair<>(masterIp, requestedIps);
+        return new Pair<>(controlIp, requestedIps);
     }
 
     private boolean isKubernetesVersionSupportsHA() {
         boolean haSupported = false;
-        final KubernetesSupportedVersion version = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
+        KubernetesSupportedVersion version = getKubernetesClusterVersion();
         if (version != null) {
             try {
                 if (KubernetesVersionManagerImpl.compareSemanticVersions(version.getSemanticVersion(), KubernetesClusterService.MIN_KUBERNETES_VERSION_HA_SUPPORT) >= 0) {
                     haSupported = true;
                 }
             } catch (IllegalArgumentException e) {
-                LOGGER.error(String.format("Unable to compare Kubernetes version for cluster version ID: %s with %s", version.getUuid(), KubernetesClusterService.MIN_KUBERNETES_VERSION_HA_SUPPORT), e);
+                LOGGER.error(String.format("Unable to compare Kubernetes version for cluster version : %s with %s", version.getName(), KubernetesClusterService.MIN_KUBERNETES_VERSION_HA_SUPPORT), e);
             }
         }
         return haSupported;
     }
 
-    private String getKubernetesMasterConfig(final String masterIp, final String serverIp,
-                                             final String hostName, final boolean haSupported,
-                                             final boolean ejectIso) throws IOException {
-        String k8sMasterConfig = readResourceFile("/conf/k8s-master.yml");
+    private String getKubernetesControlConfig(final String controlIp, final String serverIp,
+                                              final String hostName, final boolean haSupported,
+                                              final boolean ejectIso) throws IOException {
+        String k8sControlConfig = readResourceFile("/conf/k8s-control-node.yml");
         final String apiServerCert = "{{ k8s_master.apiserver.crt }}";
         final String apiServerKey = "{{ k8s_master.apiserver.key }}";
         final String caCert = "{{ k8s_master.ca.crt }}";
@@ -131,8 +139,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String clusterInitArgsKey = "{{ k8s_master.cluster.initargs }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
         final List<String> addresses = new ArrayList<>();
-        addresses.add(masterIp);
-        if (!serverIp.equals(masterIp)) {
+        addresses.add(controlIp);
+        if (!serverIp.equals(controlIp)) {
             addresses.add(serverIp);
         }
         final Certificate certificate = caManager.issueCertificate(null, Arrays.asList(hostName, "kubernetes",
@@ -141,9 +149,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String tlsClientCert = CertUtils.x509CertificateToPem(certificate.getClientCertificate());
         final String tlsPrivateKey = CertUtils.privateKeyToPem(certificate.getPrivateKey());
         final String tlsCaCert = CertUtils.x509CertificatesToPem(certificate.getCaCertificates());
-        k8sMasterConfig = k8sMasterConfig.replace(apiServerCert, tlsClientCert.replace("\n", "\n      "));
-        k8sMasterConfig = k8sMasterConfig.replace(apiServerKey, tlsPrivateKey.replace("\n", "\n      "));
-        k8sMasterConfig = k8sMasterConfig.replace(caCert, tlsCaCert.replace("\n", "\n      "));
+        k8sControlConfig = k8sControlConfig.replace(apiServerCert, tlsClientCert.replace("\n", "\n      "));
+        k8sControlConfig = k8sControlConfig.replace(apiServerKey, tlsPrivateKey.replace("\n", "\n      "));
+        k8sControlConfig = k8sControlConfig.replace(caCert, tlsCaCert.replace("\n", "\n      "));
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (!Strings.isNullOrEmpty(sshKeyPair)) {
@@ -152,8 +160,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 pubKey += "\n  - \"" + sshkp.getPublicKey() + "\"";
             }
         }
-        k8sMasterConfig = k8sMasterConfig.replace(sshPubKey, pubKey);
-        k8sMasterConfig = k8sMasterConfig.replace(clusterToken, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
+        k8sControlConfig = k8sControlConfig.replace(sshPubKey, pubKey);
+        k8sControlConfig = k8sControlConfig.replace(clusterToken, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
         String initArgs = "";
         if (haSupported) {
             initArgs = String.format("--control-plane-endpoint %s:%d --upload-certs --certificate-key %s ",
@@ -162,56 +170,56 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                     KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
         }
         initArgs += String.format("--apiserver-cert-extra-sans=%s", serverIp);
-        k8sMasterConfig = k8sMasterConfig.replace(clusterInitArgsKey, initArgs);
-        k8sMasterConfig = k8sMasterConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
-        return k8sMasterConfig;
+        initArgs += String.format(" --kubernetes-version=%s", getKubernetesClusterVersion().getSemanticVersion());
+        k8sControlConfig = k8sControlConfig.replace(clusterInitArgsKey, initArgs);
+        k8sControlConfig = k8sControlConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
+        return k8sControlConfig;
     }
 
-    private UserVm createKubernetesMaster(final Network network, String serverIp) throws ManagementServerException,
+    private UserVm createKubernetesControlNode(final Network network, String serverIp) throws ManagementServerException,
             ResourceUnavailableException, InsufficientCapacityException {
-        UserVm masterVm = null;
+        UserVm controlVm = null;
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
         ServiceOffering serviceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
-        VirtualMachineTemplate template = templateDao.findById(kubernetesCluster.getTemplateId());
         List<Long> networkIds = new ArrayList<Long>();
         networkIds.add(kubernetesCluster.getNetworkId());
-        Pair<String, Map<Long, Network.IpAddresses>> ipAddresses = getKubernetesMasterIpAddresses(zone, network, owner);
-        String masterIp = ipAddresses.first();
+        Pair<String, Map<Long, Network.IpAddresses>> ipAddresses = getKubernetesControlIpAddresses(zone, network, owner);
+        String controlIp = ipAddresses.first();
         Map<Long, Network.IpAddresses> requestedIps = ipAddresses.second();
         if (Network.GuestType.Shared.equals(network.getGuestType()) && Strings.isNullOrEmpty(serverIp)) {
-            serverIp = masterIp;
+            serverIp = controlIp;
         }
-        Network.IpAddresses addrs = new Network.IpAddresses(masterIp, null);
+        Network.IpAddresses addrs = new Network.IpAddresses(controlIp, null);
         long rootDiskSize = kubernetesCluster.getNodeRootDiskSize();
         Map<String, String> customParameterMap = new HashMap<String, String>();
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
         }
-        String hostName = kubernetesClusterNodeNamePrefix + "-master";
-        if (kubernetesCluster.getMasterNodeCount() > 1) {
+        String hostName = kubernetesClusterNodeNamePrefix + "-control";
+        if (kubernetesCluster.getControlNodeCount() > 1) {
             hostName += "-1";
         }
         hostName = getKubernetesClusterNodeAvailableName(hostName);
         boolean haSupported = isKubernetesVersionSupportsHA();
-        String k8sMasterConfig = null;
+        String k8sControlConfig = null;
         try {
-            k8sMasterConfig = getKubernetesMasterConfig(masterIp, serverIp, hostName, haSupported, Hypervisor.HypervisorType.VMware.equals(template.getHypervisorType()));
+            k8sControlConfig = getKubernetesControlConfig(controlIp, serverIp, hostName, haSupported, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()));
         } catch (IOException e) {
-            logAndThrow(Level.ERROR, "Failed to read Kubernetes master configuration file", e);
+            logAndThrow(Level.ERROR, "Failed to read Kubernetes control configuration file", e);
         }
-        String base64UserData = Base64.encodeBase64String(k8sMasterConfig.getBytes(StringUtils.getPreferredCharset()));
-        masterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner,
+        String base64UserData = Base64.encodeBase64String(k8sControlConfig.getBytes(StringUtils.getPreferredCharset()));
+        controlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
-                null, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null);
+                Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
+                requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null, true);
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Created master VM ID: %s, %s in the Kubernetes cluster ID: %s", masterVm.getUuid(), hostName, kubernetesCluster.getUuid()));
+            LOGGER.info(String.format("Created control VM ID: %s, %s in the Kubernetes cluster : %s", controlVm.getUuid(), hostName, kubernetesCluster.getName()));
         }
-        return masterVm;
+        return controlVm;
     }
 
-    private String getKubernetesAdditionalMasterConfig(final String joinIp, final boolean ejectIso) throws IOException {
-        String k8sMasterConfig = readResourceFile("/conf/k8s-master-add.yml");
+    private String getKubernetesAdditionalControlConfig(final String joinIp, final boolean ejectIso) throws IOException {
+        String k8sControlConfig = readResourceFile("/conf/k8s-control-node-add.yml");
         final String joinIpKey = "{{ k8s_master.join_ip }}";
         final String clusterTokenKey = "{{ k8s_master.cluster.token }}";
         final String sshPubKey = "{{ k8s.ssh.pub.key }}";
@@ -225,20 +233,19 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 pubKey += "\n  - \"" + sshkp.getPublicKey() + "\"";
             }
         }
-        k8sMasterConfig = k8sMasterConfig.replace(sshPubKey, pubKey);
-        k8sMasterConfig = k8sMasterConfig.replace(joinIpKey, joinIp);
-        k8sMasterConfig = k8sMasterConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
-        k8sMasterConfig = k8sMasterConfig.replace(clusterHACertificateKey, KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
-        k8sMasterConfig = k8sMasterConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
-        return k8sMasterConfig;
+        k8sControlConfig = k8sControlConfig.replace(sshPubKey, pubKey);
+        k8sControlConfig = k8sControlConfig.replace(joinIpKey, joinIp);
+        k8sControlConfig = k8sControlConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
+        k8sControlConfig = k8sControlConfig.replace(clusterHACertificateKey, KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
+        k8sControlConfig = k8sControlConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
+        return k8sControlConfig;
     }
 
-    private UserVm createKubernetesAdditionalMaster(final String joinIp, final int additionalMasterNodeInstance) throws ManagementServerException,
+    private UserVm createKubernetesAdditionalControlNode(final String joinIp, final int additionalControlNodeInstance) throws ManagementServerException,
             ResourceUnavailableException, InsufficientCapacityException {
-        UserVm additionalMasterVm = null;
+        UserVm additionalControlVm = null;
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
         ServiceOffering serviceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
-        VirtualMachineTemplate template = templateDao.findById(kubernetesCluster.getTemplateId());
         List<Long> networkIds = new ArrayList<Long>();
         networkIds.add(kubernetesCluster.getNetworkId());
         Network.IpAddresses addrs = new Network.IpAddresses(null, null);
@@ -247,67 +254,73 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
         }
-        String hostName = getKubernetesClusterNodeAvailableName(String.format("%s-master-%d", kubernetesClusterNodeNamePrefix, additionalMasterNodeInstance + 1));
-        String k8sMasterConfig = null;
+        String hostName = getKubernetesClusterNodeAvailableName(String.format("%s-control-%d", kubernetesClusterNodeNamePrefix, additionalControlNodeInstance + 1));
+        String k8sControlConfig = null;
         try {
-            k8sMasterConfig = getKubernetesAdditionalMasterConfig(joinIp, Hypervisor.HypervisorType.VMware.equals(template.getHypervisorType()));
+            k8sControlConfig = getKubernetesAdditionalControlConfig(joinIp, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()));
         } catch (IOException e) {
-            logAndThrow(Level.ERROR, "Failed to read Kubernetes master configuration file", e);
+            logAndThrow(Level.ERROR, "Failed to read Kubernetes control configuration file", e);
         }
-        String base64UserData = Base64.encodeBase64String(k8sMasterConfig.getBytes(StringUtils.getPreferredCharset()));
-        additionalMasterVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner,
+        String base64UserData = Base64.encodeBase64String(k8sControlConfig.getBytes(StringUtils.getPreferredCharset()));
+        additionalControlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
-                null, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                null, addrs, null, null, null, customParameterMap, null, null, null, null);
+                Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
+                null, addrs, null, null, null, customParameterMap, null, null, null, null, true);
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Created master VM ID: %s, %s in the Kubernetes cluster ID: %s", additionalMasterVm.getUuid(), hostName, kubernetesCluster.getUuid()));
+            LOGGER.info(String.format("Created control VM ID : %s, %s in the Kubernetes cluster : %s", additionalControlVm.getUuid(), hostName, kubernetesCluster.getName()));
         }
-        return additionalMasterVm;
+        return additionalControlVm;
     }
 
-    private UserVm provisionKubernetesClusterMasterVm(final Network network, final String publicIpAddress) throws
+    private UserVm provisionKubernetesClusterControlVm(final Network network, final String publicIpAddress) throws
             ManagementServerException, InsufficientCapacityException, ResourceUnavailableException {
-        UserVm k8sMasterVM = null;
-        k8sMasterVM = createKubernetesMaster(network, publicIpAddress);
-        addKubernetesClusterVm(kubernetesCluster.getId(), k8sMasterVM.getId());
-        startKubernetesVM(k8sMasterVM);
-        k8sMasterVM = userVmDao.findById(k8sMasterVM.getId());
-        if (k8sMasterVM == null) {
-            throw new ManagementServerException(String.format("Failed to provision master VM for Kubernetes cluster ID: %s" , kubernetesCluster.getUuid()));
+        UserVm k8sControlVM = null;
+        k8sControlVM = createKubernetesControlNode(network, publicIpAddress);
+        addKubernetesClusterVm(kubernetesCluster.getId(), k8sControlVM.getId());
+        if (kubernetesCluster.getNodeRootDiskSize() > 0) {
+            resizeNodeVolume(k8sControlVM);
+        }
+        startKubernetesVM(k8sControlVM);
+        k8sControlVM = userVmDao.findById(k8sControlVM.getId());
+        if (k8sControlVM == null) {
+            throw new ManagementServerException(String.format("Failed to provision control VM for Kubernetes cluster : %s" , kubernetesCluster.getName()));
         }
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Provisioned the master VM ID: %s in to the Kubernetes cluster ID: %s", k8sMasterVM.getUuid(), kubernetesCluster.getUuid()));
+            LOGGER.info(String.format("Provisioned the control VM : %s in to the Kubernetes cluster : %s", k8sControlVM.getDisplayName(), kubernetesCluster.getName()));
         }
-        return k8sMasterVM;
+        return k8sControlVM;
     }
 
-    private List<UserVm> provisionKubernetesClusterAdditionalMasterVms(final String publicIpAddress) throws
+    private List<UserVm> provisionKubernetesClusterAdditionalControlVms(final String publicIpAddress) throws
             InsufficientCapacityException, ManagementServerException, ResourceUnavailableException {
-        List<UserVm> additionalMasters = new ArrayList<>();
-        if (kubernetesCluster.getMasterNodeCount() > 1) {
-            for (int i = 1; i < kubernetesCluster.getMasterNodeCount(); i++) {
+        List<UserVm> additionalControlVms = new ArrayList<>();
+        if (kubernetesCluster.getControlNodeCount() > 1) {
+            for (int i = 1; i < kubernetesCluster.getControlNodeCount(); i++) {
                 UserVm vm = null;
-                vm = createKubernetesAdditionalMaster(publicIpAddress, i);
+                vm = createKubernetesAdditionalControlNode(publicIpAddress, i);
                 addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId());
+                if (kubernetesCluster.getNodeRootDiskSize() > 0) {
+                    resizeNodeVolume(vm);
+                }
                 startKubernetesVM(vm);
                 vm = userVmDao.findById(vm.getId());
                 if (vm == null) {
-                    throw new ManagementServerException(String.format("Failed to provision additional master VM for Kubernetes cluster ID: %s" , kubernetesCluster.getUuid()));
+                    throw new ManagementServerException(String.format("Failed to provision additional control VM for Kubernetes cluster : %s" , kubernetesCluster.getName()));
                 }
-                additionalMasters.add(vm);
+                additionalControlVms.add(vm);
                 if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(String.format("Provisioned additional master VM ID: %s in to the Kubernetes cluster ID: %s", vm.getUuid(), kubernetesCluster.getUuid()));
+                    LOGGER.info(String.format("Provisioned additional control VM : %s in to the Kubernetes cluster : %s", vm.getDisplayName(), kubernetesCluster.getName()));
                 }
             }
         }
-        return additionalMasters;
+        return additionalControlVms;
     }
 
     private Network startKubernetesClusterNetwork(final DeployDestination destination) throws ManagementServerException {
         final ReservationContext context = new ReservationContextImpl(null, null, null, owner);
         Network network = networkDao.findById(kubernetesCluster.getNetworkId());
         if (network == null) {
-            String msg  = String.format("Network for Kubernetes cluster ID: %s not found", kubernetesCluster.getUuid());
+            String msg  = String.format("Network for Kubernetes cluster : %s not found", kubernetesCluster.getName());
             LOGGER.warn(msg);
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
             throw new ManagementServerException(msg);
@@ -315,10 +328,10 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         try {
             networkMgr.startNetwork(network.getId(), destination, context);
             if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Network ID: %s is started for the  Kubernetes cluster ID: %s", network.getUuid(), kubernetesCluster.getUuid()));
+                LOGGER.info(String.format("Network : %s is started for the  Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
             }
         } catch (ConcurrentOperationException | ResourceUnavailableException |InsufficientCapacityException e) {
-            String msg = String.format("Failed to start Kubernetes cluster ID: %s as unable to start associated network ID: %s" , kubernetesCluster.getUuid(), network.getUuid());
+            String msg = String.format("Failed to start Kubernetes cluster : %s as unable to start associated network : %s" , kubernetesCluster.getName(), network.getName());
             LOGGER.error(msg, e);
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
             throw new ManagementServerException(msg, e);
@@ -335,10 +348,10 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 account.getId(), false, NetUtils.TCP_PROTO, true);
 
         Map<Long, List<String>> vmIdIpMap = new HashMap<>();
-        for (int i = 0; i < kubernetesCluster.getMasterNodeCount(); ++i) {
+        for (int i = 0; i < kubernetesCluster.getControlNodeCount(); ++i) {
             List<String> ips = new ArrayList<>();
-            Nic masterVmNic = networkModel.getNicInNetwork(clusterVMIds.get(i), kubernetesCluster.getNetworkId());
-            ips.add(masterVmNic.getIPv4Address());
+            Nic controlVmNic = networkModel.getNicInNetwork(clusterVMIds.get(i), kubernetesCluster.getNetworkId());
+            ips.add(controlVmNic.getIPv4Address());
             vmIdIpMap.put(clusterVMIds.get(i), ips);
         }
         lbService.assignToLoadBalancer(lb.getId(), null, vmIdIpMap);
@@ -348,7 +361,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
      * Setup network rules for Kubernetes cluster
      * Open up firewall port CLUSTER_API_PORT, secure port on which Kubernetes
      * API server is running. Also create load balancing rule to forward public
-     * IP traffic to master VMs' private IP.
+     * IP traffic to control VMs' private IP.
      * Open up  firewall ports NODES_DEFAULT_START_SSH_PORT to NODES_DEFAULT_START_SSH_PORT+n
      * for SSH access. Also create port-forwarding rule to forward public IP traffic to all
      * @param network
@@ -358,7 +371,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
     private void setupKubernetesClusterNetworkRules(Network network, List<UserVm> clusterVMs) throws ManagementServerException {
         if (!Network.GuestType.Isolated.equals(network.getGuestType())) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Network ID: %s for Kubernetes cluster ID: %s is not an isolated network, therefore, no need for network rules", network.getUuid(), kubernetesCluster.getUuid()));
+                LOGGER.debug(String.format("Network : %s for Kubernetes cluster : %s is not an isolated network, therefore, no need for network rules", network.getName(), kubernetesCluster.getName()));
             }
             return;
         }
@@ -368,7 +381,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         IpAddress publicIp = getSourceNatIp(network);
         if (publicIp == null) {
-            throw new ManagementServerException(String.format("No source NAT IP addresses found for network ID: %s, Kubernetes cluster ID: %s", network.getUuid(), kubernetesCluster.getUuid()));
+            throw new ManagementServerException(String.format("No source NAT IP addresses found for network : %s, Kubernetes cluster : %s",
+                network.getName(), kubernetesCluster.getName()));
         }
 
         try {
@@ -378,31 +392,31 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                         CLUSTER_API_PORT, publicIp.getAddress().addr(), kubernetesCluster.getUuid()));
             }
         } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
-            throw new ManagementServerException(String.format("Failed to provision firewall rules for API access for the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), e);
+            throw new ManagementServerException(String.format("Failed to provision firewall rules for API access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
         }
 
         try {
             int endPort = CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVMs.size() - 1;
             provisionFirewallRules(publicIp, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort);
             if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Provisioned firewall rule to open up port %d to %d on %s for Kubernetes cluster ID: %s", CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort, publicIp.getAddress().addr(), kubernetesCluster.getUuid()));
+                LOGGER.info(String.format("Provisioned firewall rule to open up port %d to %d on %s for Kubernetes cluster : %s", CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort, publicIp.getAddress().addr(), kubernetesCluster.getName()));
             }
         } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
-            throw new ManagementServerException(String.format("Failed to provision firewall rules for SSH access for the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), e);
+            throw new ManagementServerException(String.format("Failed to provision firewall rules for SSH access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
         }
 
-        // Load balancer rule fo API access for master node VMs
+        // Load balancer rule fo API access for control node VMs
         try {
             provisionLoadBalancerRule(publicIp, network, owner, clusterVMIds, CLUSTER_API_PORT);
         } catch (NetworkRuleConflictException | InsufficientAddressCapacityException e) {
-            throw new ManagementServerException(String.format("Failed to provision load balancer rule for API access for the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), e);
+            throw new ManagementServerException(String.format("Failed to provision load balancer rule for API access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
         }
 
         // Port forwarding rule fo SSH access on each node VM
         try {
             provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds, CLUSTER_NODES_DEFAULT_START_SSH_PORT);
         } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
-            throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), e);
+            throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
         }
     }
 
@@ -410,19 +424,19 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         List <UserVm> clusterVms = getKubernetesClusterVMs();
         for (final UserVm vm : clusterVms) {
             if (vm == null) {
-                logTransitStateAndThrow(Level.ERROR, String.format("Failed to start all VMs in Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                logTransitStateAndThrow(Level.ERROR, String.format("Failed to start all VMs in Kubernetes cluster : %s", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
             try {
                 startKubernetesVM(vm);
             } catch (ManagementServerException ex) {
-                LOGGER.warn(String.format("Failed to start VM ID: %s in Kubernetes cluster ID: %s due to ", vm.getUuid(), kubernetesCluster.getUuid()) + ex);
+                LOGGER.warn(String.format("Failed to start VM : %s in Kubernetes cluster : %s due to ", vm.getDisplayName(), kubernetesCluster.getName()) + ex);
                 // dont bail out here. proceed further to stop the reset of the VM's
             }
         }
         for (final UserVm userVm : clusterVms) {
             UserVm vm = userVmDao.findById(userVm.getId());
             if (vm == null || !vm.getState().equals(VirtualMachine.State.Running)) {
-                logTransitStateAndThrow(Level.ERROR, String.format("Failed to start all VMs in Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                logTransitStateAndThrow(Level.ERROR, String.format("Failed to start all VMs in Kubernetes cluster : %s", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
         }
     }
@@ -436,9 +450,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         String kubeConfig = KubernetesClusterUtil.getKubernetesClusterConfig(kubernetesCluster, publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, timeoutTime);
         if (!Strings.isNullOrEmpty(kubeConfig)) {
-            final String masterVMPrivateIpAddress = getMasterVmPrivateIp();
-            if (!Strings.isNullOrEmpty(masterVMPrivateIpAddress)) {
-                kubeConfig = kubeConfig.replace(String.format("server: https://%s:%d", masterVMPrivateIpAddress, CLUSTER_API_PORT),
+            final String controlVMPrivateIpAddress = getControlVmPrivateIp();
+            if (!Strings.isNullOrEmpty(controlVMPrivateIpAddress)) {
+                kubeConfig = kubeConfig.replace(String.format("server: https://%s:%d", controlVMPrivateIpAddress, CLUSTER_API_PORT),
                         String.format("server: https://%s:%d", publicIpAddress, CLUSTER_API_PORT));
             }
             kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), "kubeConfigData", Base64.encodeBase64String(kubeConfig.getBytes(StringUtils.getPreferredCharset())), false);
@@ -470,7 +484,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
     public boolean startKubernetesClusterOnCreate() {
         init();
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Starting Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
+            LOGGER.info(String.format("Starting Kubernetes cluster : %s", kubernetesCluster.getName()));
         }
         final long startTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterStartTimeout.value() * 1000;
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StartRequested);
@@ -484,53 +498,53 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         try {
             network = startKubernetesClusterNetwork(dest);
         } catch (ManagementServerException e) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s as its network cannot be started", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster : %s as its network cannot be started", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }
         Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
         publicIpAddress = publicIpSshPort.first();
         if (Strings.isNullOrEmpty(publicIpAddress) &&
-                (Network.GuestType.Isolated.equals(network.getGuestType()) || kubernetesCluster.getMasterNodeCount() > 1)) { // Shared network, single-master cluster won't have an IP yet
-            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s as no public IP found for the cluster" , kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
+                (Network.GuestType.Isolated.equals(network.getGuestType()) || kubernetesCluster.getControlNodeCount() > 1)) { // Shared network, single-control node cluster won't have an IP yet
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster : %s as no public IP found for the cluster" , kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
         }
         List<UserVm> clusterVMs = new ArrayList<>();
-        UserVm k8sMasterVM = null;
+        UserVm k8sControlVM = null;
         try {
-            k8sMasterVM = provisionKubernetesClusterMasterVm(network, publicIpAddress);
+            k8sControlVM = provisionKubernetesClusterControlVm(network, publicIpAddress);
         } catch (CloudRuntimeException | ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Provisioning the master VM failed in the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
+            logTransitStateAndThrow(Level.ERROR, String.format("Provisioning the control VM failed in the Kubernetes cluster : %s", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }
-        clusterVMs.add(k8sMasterVM);
+        clusterVMs.add(k8sControlVM);
         if (Strings.isNullOrEmpty(publicIpAddress)) {
-            publicIpSshPort = getKubernetesClusterServerIpSshPort(k8sMasterVM);
+            publicIpSshPort = getKubernetesClusterServerIpSshPort(k8sControlVM);
             publicIpAddress = publicIpSshPort.first();
             if (Strings.isNullOrEmpty(publicIpAddress)) {
-                logTransitStateAndThrow(Level.WARN, String.format("Failed to start Kubernetes cluster ID: %s as no public IP found for the cluster", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
+                logTransitStateAndThrow(Level.WARN, String.format("Failed to start Kubernetes cluster : %s as no public IP found for the cluster", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
             }
         }
         try {
-            List<UserVm> additionalMasterVMs = provisionKubernetesClusterAdditionalMasterVms(publicIpAddress);
-            clusterVMs.addAll(additionalMasterVMs);
+            List<UserVm> additionalControlVMs = provisionKubernetesClusterAdditionalControlVms(publicIpAddress);
+            clusterVMs.addAll(additionalControlVMs);
         }  catch (CloudRuntimeException | ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Provisioning additional master VM failed in the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
+            logTransitStateAndThrow(Level.ERROR, String.format("Provisioning additional control VM failed in the Kubernetes cluster : %s", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }
         try {
             List<UserVm> nodeVMs = provisionKubernetesClusterNodeVms(kubernetesCluster.getNodeCount(), publicIpAddress);
             clusterVMs.addAll(nodeVMs);
         }  catch (CloudRuntimeException | ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Provisioning node VM failed in the Kubernetes cluster ID: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
+            logTransitStateAndThrow(Level.ERROR, String.format("Provisioning node VM failed in the Kubernetes cluster : %s", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Kubernetes cluster ID: %s VMs successfully provisioned", kubernetesCluster.getUuid()));
+            LOGGER.info(String.format("Kubernetes cluster : %s VMs successfully provisioned", kubernetesCluster.getName()));
         }
         try {
             setupKubernetesClusterNetworkRules(network, clusterVMs);
         } catch (ManagementServerException e) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster ID: %s, unable to setup network rules", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s, unable to setup network rules", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }
         attachIsoKubernetesVMs(clusterVMs);
-        if (!KubernetesClusterUtil.isKubernetesClusterMasterVmRunning(kubernetesCluster, publicIpAddress, publicIpSshPort.second(), startTimeoutTime)) {
-            String msg = String.format("Failed to setup Kubernetes cluster ID: %s in usable state as unable to access master node VMs of the cluster", kubernetesCluster.getUuid());
-            if (kubernetesCluster.getMasterNodeCount() > 1 && Network.GuestType.Shared.equals(network.getGuestType())) {
+        if (!KubernetesClusterUtil.isKubernetesClusterControlVmRunning(kubernetesCluster, publicIpAddress, publicIpSshPort.second(), startTimeoutTime)) {
+            String msg = String.format("Failed to setup Kubernetes cluster : %s in usable state as unable to access control node VMs of the cluster", kubernetesCluster.getName());
+            if (kubernetesCluster.getControlNodeCount() > 1 && Network.GuestType.Shared.equals(network.getGuestType())) {
                 msg = String.format("%s. Make sure external load-balancer has port forwarding rules for SSH access on ports %d-%d and API access on port %d",
                         msg,
                         CLUSTER_NODES_DEFAULT_START_SSH_PORT,
@@ -541,7 +555,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         boolean k8sApiServerSetup = KubernetesClusterUtil.isKubernetesClusterServerRunning(kubernetesCluster, publicIpAddress, CLUSTER_API_PORT, startTimeoutTime, 15000);
         if (!k8sApiServerSetup) {
-            logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster ID: %s in usable state as unable to provision API endpoint for the cluster", kubernetesCluster.getUuid()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.CreateFailed, null);
+            logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s in usable state as unable to provision API endpoint for the cluster", kubernetesCluster.getName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.CreateFailed, null);
         }
         sshPort = publicIpSshPort.second();
         updateKubernetesClusterEntryEndpoint();
@@ -549,13 +563,13 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 CLUSTER_NODE_VM_USER, sshKeyFile, startTimeoutTime, 15000);
         detachIsoKubernetesVMs(clusterVMs);
         if (!readyNodesCountValid) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster ID: %s as it does not have desired number of nodes in ready state", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s as it does not have desired number of nodes in ready state", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
         }
         if (!isKubernetesClusterKubeConfigAvailable(startTimeoutTime)) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster ID: %s in usable state as unable to retrieve kube-config for the cluster", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s in usable state as unable to retrieve kube-config for the cluster", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
         if (!isKubernetesClusterDashboardServiceRunning(true, startTimeoutTime)) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster ID: %s in usable state as unable to get Dashboard service running for the cluster", kubernetesCluster.getUuid()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s in usable state as unable to get Dashboard service running for the cluster", kubernetesCluster.getName()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         return true;
@@ -564,7 +578,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
     public boolean startStoppedKubernetesCluster() throws CloudRuntimeException {
         init();
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Starting Kubernetes cluster ID: %s", kubernetesCluster.getUuid()));
+            LOGGER.info(String.format("Starting Kubernetes cluster : %s", kubernetesCluster.getName()));
         }
         final long startTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterStartTimeout.value() * 1000;
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StartRequested);
@@ -572,26 +586,26 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         try {
             InetAddress address = InetAddress.getByName(new URL(kubernetesCluster.getEndpoint()).getHost());
         } catch (MalformedURLException | UnknownHostException ex) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Kubernetes cluster ID: %s has invalid API endpoint. Can not verify if cluster is in ready state", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            logTransitStateAndThrow(Level.ERROR, String.format("Kubernetes cluster : %s has invalid API endpoint. Can not verify if cluster is in ready state", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
         Pair<String, Integer> sshIpPort =  getKubernetesClusterServerIpSshPort(null);
         publicIpAddress = sshIpPort.first();
         sshPort = sshIpPort.second();
         if (Strings.isNullOrEmpty(publicIpAddress)) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s as no public IP found for the cluster" , kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster : %s as no public IP found for the cluster" , kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
         if (!KubernetesClusterUtil.isKubernetesClusterServerRunning(kubernetesCluster, publicIpAddress, CLUSTER_API_PORT, startTimeoutTime, 15000)) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s in usable state", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster : %s in usable state", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
         if (!isKubernetesClusterKubeConfigAvailable(startTimeoutTime)) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s in usable state as unable to retrieve kube-config for the cluster", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster : %s in usable state as unable to retrieve kube-config for the cluster", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
         if (!isKubernetesClusterDashboardServiceRunning(false, startTimeoutTime)) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster ID: %s in usable state as unable to get Dashboard service running for the cluster", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster : %s in usable state as unable to get Dashboard service running for the cluster", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Kubernetes cluster ID: %s successfully started", kubernetesCluster.getUuid()));
+            LOGGER.info(String.format("Kubernetes cluster : %s successfully started", kubernetesCluster.getName()));
         }
         return true;
     }

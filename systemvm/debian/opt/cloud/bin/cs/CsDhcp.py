@@ -40,6 +40,7 @@ class CsDhcp(CsDataBag):
         self.cloud = CsFile(DHCP_HOSTS)
         self.dhcp_opts = CsFile(DHCP_OPTS)
         self.conf = CsFile(CLOUD_CONF)
+        self.dhcp_leases = CsFile(LEASES)
 
         self.cloud.repopulate()
         self.dhcp_opts.repopulate()
@@ -60,6 +61,9 @@ class CsDhcp(CsDataBag):
         if self.cloud.commit():
             restart_dnsmasq = True
 
+        if self.dhcp_leases.commit():
+            restart_dnsmasq = True
+
         self.dhcp_opts.commit()
 
         if restart_dnsmasq:
@@ -67,7 +71,7 @@ class CsDhcp(CsDataBag):
 
         self.write_hosts()
 
-        if not self.cl.is_redundant() or self.cl.is_master():
+        if not self.cl.is_redundant() or self.cl.is_primary():
             if restart_dnsmasq:
                 CsHelper.service("dnsmasq", "restart")
             else:
@@ -123,6 +127,9 @@ class CsDhcp(CsDataBag):
                 listen_address.append(gateway)
             else:
                 listen_address.append(ip)
+            # Add localized "data-server" records in /etc/hosts for VPC routers
+            if self.config.is_vpc():
+                self.add_host(gateway, "%s data-server" % CsHelper.get_hostname())
             idx += 1
 
         # Listen Address
@@ -158,7 +165,7 @@ class CsDhcp(CsDataBag):
         self.add_host("::1", "localhost ip6-localhost ip6-loopback")
         self.add_host("ff02::1", "ip6-allnodes")
         self.add_host("ff02::2", "ip6-allrouters")
-        if self.config.is_router():
+        if self.config.is_router() or self.config.is_dhcp():
             self.add_host(self.config.address().get_guest_ip(), "%s data-server" % CsHelper.get_hostname())
 
     def write_hosts(self):
@@ -186,16 +193,22 @@ class CsDhcp(CsDataBag):
                                             entry['ipv4_address'],
                                             entry['host_name'],
                                             lease))
+            self.dhcp_leases.search(entry['mac_address'], "0 %s %s %s *" % (entry['mac_address'],
+                                                                            entry['ipv4_address'],
+                                                                            entry['host_name']))
         else:
             tag = entry['ipv4_address'].replace(".", "_")
-            self.cloud.add("%s,set:%s,%s,%s,%sh" % (entry['mac_address'],
-                                                    tag,
-                                                    entry['ipv4_address'],
-                                                    entry['host_name'],
-                                                    lease))
+            self.cloud.add("%s,set:%s,%s,%s,%s" % (entry['mac_address'],
+                                                   tag,
+                                                   entry['ipv4_address'],
+                                                   entry['host_name'],
+                                                   lease))
             self.dhcp_opts.add("%s,%s" % (tag, 3))
             self.dhcp_opts.add("%s,%s" % (tag, 6))
             self.dhcp_opts.add("%s,%s" % (tag, 15))
+            self.dhcp_leases.search(entry['mac_address'], "0 %s %s %s *" % (entry['mac_address'],
+                                                                            entry['ipv4_address'],
+                                                                            entry['host_name']))
 
         i = IPAddress(entry['ipv4_address'])
         # Calculate the device

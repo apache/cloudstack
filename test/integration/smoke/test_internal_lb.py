@@ -16,49 +16,37 @@
 # under the License.
 """ Tests for configuring Internal Load Balancing Rules.
 """
-# Import Local Modules
-from marvin.codes import PASS, FAILED
-from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.utils import (cleanup_resources,
-                              get_process_status,
-                              get_host_credentials)
-from marvin.lib.base import (Domain,
-                             Account,
-                             Configurations,
-                             VPC,
-                             VpcOffering,
-                             ServiceOffering,
-                             NetworkOffering,
-                             Network,
-                             PublicIPAddress,
-                             NATRule,
-                             NetworkACL,
-                             LoadBalancerRule,
-                             ApplicationLoadBalancer,
-                             VirtualMachine,
-                             Template,
-                             FireWallRule,
-                             StaticNATRule,
-                             NetworkACLList
-                             )
+import logging
+import math
+import time
+from nose.plugins.attrib import attr
 
+# Import Local Modules
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.codes import FAILED
+from marvin.lib.base import (
+    Account,
+    Configurations,
+    VPC,
+    VpcOffering,
+    ServiceOffering,
+    NetworkOffering,
+    Network,
+    PublicIPAddress,
+    NATRule,
+    ApplicationLoadBalancer,
+    VirtualMachine,
+    NetworkACLList
+)
+from marvin.lib.common import (
+    get_zone,
+    get_domain,
+    get_test_template,
+    list_network_offerings)
 from marvin.sshClient import SshClient
 
 
-from marvin.lib.common import (get_zone,
-                               get_domain,
-                               get_test_template,
-                               list_network_offerings)
-
-from nose.plugins.attrib import attr
-
-import logging
-import time
-import math
-
-
 class Services:
-
     """Test VPC network services - Port Forwarding Rules Test Data Class.
     """
 
@@ -137,7 +125,7 @@ class Services:
                     "Dhcp": 'VpcVirtualRouter',
                     "Dns": 'VpcVirtualRouter',
                     "SourceNat": 'VpcVirtualRouter',
-                    "Lb" : ["InternalLbVm", "VpcVirtualRouter"],
+                    "Lb": ["InternalLbVm", "VpcVirtualRouter"],
                     "PortForwarding": 'VpcVirtualRouter',
                     "UserData": 'VpcVirtualRouter',
                     "StaticNat": 'VpcVirtualRouter',
@@ -158,7 +146,7 @@ class Services:
                     "Dhcp": 'VpcVirtualRouter',
                     "Dns": 'VpcVirtualRouter',
                     "SourceNat": 'VpcVirtualRouter',
-                    "Lb" : ["InternalLbVm", "VpcVirtualRouter"],
+                    "Lb": ["InternalLbVm", "VpcVirtualRouter"],
                     "PortForwarding": 'VpcVirtualRouter',
                     "UserData": 'VpcVirtualRouter',
                     "StaticNat": 'VpcVirtualRouter',
@@ -224,7 +212,6 @@ class Services:
 
 
 class TestInternalLb(cloudstackTestCase):
-
     """Test Internal LB
     """
 
@@ -242,14 +229,18 @@ class TestInternalLb(cloudstackTestCase):
 
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
-        cls.logger.debug("Creating compute offering: %s" %cls.services["compute_offering"]["name"])
+        cls._cleanup = []
+
+        cls.logger.debug("Creating compute offering: %s" % cls.services["compute_offering"]["name"])
         cls.compute_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["compute_offering"]
         )
+        cls._cleanup.append(cls.compute_offering)
 
         cls.account = Account.create(
             cls.apiclient, services=cls.services["account"])
+        cls._cleanup.append(cls.account)
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
@@ -266,7 +257,6 @@ class TestInternalLb(cloudstackTestCase):
                    %s" % (cls.account.name,
                           cls.account.id))
 
-        cls._cleanup = [cls.account, cls.compute_offering]
         return
 
     def setUp(self):
@@ -320,7 +310,7 @@ class TestInternalLb(cloudstackTestCase):
             self.assertIsNotNone(vpc, "VPC creation failed")
             self.logger.debug("Created VPC %s" % vpc.id)
 
-            self.cleanup.insert(0, vpc)
+            self.cleanup.append(vpc)
             return vpc
 
         except Exception as e:
@@ -350,7 +340,7 @@ class TestInternalLb(cloudstackTestCase):
             self.logger.debug(
                 "Created network %s in VPC %s" % (network.id, vpcid))
 
-            self.cleanup.insert(0, network)
+            self.cleanup.append(network)
             return network
 
         except Exception as e:
@@ -370,10 +360,10 @@ class TestInternalLb(cloudstackTestCase):
                                        )
             self.assertIsNotNone(
                 vm, "Failed to deploy vm in network: %s" % networkid)
-            self.assert_(vm.state == 'Running', "VM is not running")
+            self.assertTrue(vm.state == 'Running', "VM is not running")
             self.logger.debug("Deployed VM id: %s in VPC %s" % (vm.id, vpc.id))
 
-            self.cleanup.insert(0, vm)
+            self.cleanup.append(vm)
             return vm
 
         except Exception as e:
@@ -391,8 +381,8 @@ class TestInternalLb(cloudstackTestCase):
                                                    sourcenetworkid=networkid,
                                                    networkid=networkid
                                                    )
-
             self.assertIsNotNone(applb, "Failed to create loadbalancer")
+            self.cleanup.append(applb)
             self.logger.debug("Created LB %s in VPC" % applb.id)
 
             return applb
@@ -412,6 +402,7 @@ class TestInternalLb(cloudstackTestCase):
             vpcid=vpc.id
         )
         self.assertIsNotNone(public_ip, "Failed to acquire public IP")
+        self.cleanup.append(public_ip)
         self.logger.debug("Associated %s with network %s" % (
             public_ip.ipaddress.ipaddress,
             network.id
@@ -436,6 +427,7 @@ class TestInternalLb(cloudstackTestCase):
         )
         self.assertIsNotNone(
             nat_rule, "Failed to create NAT Rule for %s" % public_ip.ipaddress.ipaddress)
+        self.cleanup.append(nat_rule)
         self.logger.debug(
             "Adding NetworkACL rules to make NAT rule accessible")
 
@@ -494,7 +486,7 @@ class TestInternalLb(cloudstackTestCase):
         try:
             for x in range(0, max_requests):
                 cmd_test_http = "/usr/bin/wget -T2 -qO- http://" + \
-                    lb_address + "/ 2>/dev/null"
+                                lb_address + "/ 2>/dev/null"
                 # self.debug( "SSH into VM public address: %s and port: %s"
                 # %(.public_ip, vm.public_port))
                 results.append(ssh_client.execute(cmd_test_http)[0])
@@ -510,7 +502,7 @@ class TestInternalLb(cloudstackTestCase):
         """ Calculates and outputs a mean, variance and standard deviation from an input list of values """
         num_val = len(data)
         mean = sum(data) / num_val
-        sqrt = map(lambda x: math.pow(abs(x - mean), 2), data)
+        sqrt = [math.pow(abs(x - mean), 2) for x in data]
         variance = (sum(sqrt) / num_val - 1)
         stddev = math.sqrt(variance)
         return (mean, variance, stddev)
@@ -555,11 +547,11 @@ class TestInternalLb(cloudstackTestCase):
         vpc_offering = VpcOffering.create(
             self.apiclient,
             self.services["vpc_offering"])
+        self.cleanup.append(vpc_offering)
 
         self.logger.debug("Enabling the VPC offering created")
         vpc_offering.update(self.apiclient, state='Enabled')
 
-        self.cleanup.insert(0, vpc_offering)
         self.execute_internallb_roundrobin_tests(vpc_offering)
 
     @attr(tags=["smoke", "advanced"], required_hardware="true")
@@ -573,11 +565,11 @@ class TestInternalLb(cloudstackTestCase):
         redundant_vpc_offering = VpcOffering.create(
             self.apiclient,
             self.services["redundant_vpc_offering"])
+        self.cleanup.append(redundant_vpc_offering)
 
         self.logger.debug("Enabling the Redundant VPC offering created")
         redundant_vpc_offering.update(self.apiclient, state='Enabled')
 
-        self.cleanup.insert(0, redundant_vpc_offering)
         self.execute_internallb_roundrobin_tests(redundant_vpc_offering)
 
     def execute_internallb_roundrobin_tests(self, vpc_offering):
@@ -600,9 +592,9 @@ class TestInternalLb(cloudstackTestCase):
 
         # Create network tiers
         network_guestnet = self.create_network_tier(
-            "guestnet_test01", vpc.id, "10.1.1.1",  network_offering_guestnet)
+            "guestnet_test01", vpc.id, "10.1.1.1", network_offering_guestnet)
         network_internal_lb = self.create_network_tier(
-            "intlb_test01", vpc.id, "10.1.2.1",  network_offering_intlb)
+            "intlb_test01", vpc.id, "10.1.2.1", network_offering_intlb)
 
         # Create 1 lb client vm in guestnet network tier
         client_vm = self.deployvm_in_network(vpc, network_guestnet.id)
@@ -632,7 +624,7 @@ class TestInternalLb(cloudstackTestCase):
             self.setup_http_daemon(vm)
 
         # Create a internal loadbalancer in the internal lb network tier
-        applb = self.create_internal_loadbalancer( private_http_port, public_lb_port, algorithm, network_internal_lb.id)
+        applb = self.create_internal_loadbalancer(private_http_port, public_lb_port, algorithm, network_internal_lb.id)
         # wait for the loadbalancer to boot and be configured
         time.sleep(10)
         # Assign the 2 VMs to the Internal Load Balancer
@@ -656,10 +648,6 @@ class TestInternalLb(cloudstackTestCase):
         # Remove the virtual machines from the Internal LoadBalancer
         self.logger.debug("Remove virtual machines from LB: %s" % applb.id)
         applb.remove(self.apiclient, vms=app_vms)
-
-        # Remove the Load Balancer
-        self.logger.debug("Deleting LB: %s" % applb.id)
-        applb.delete(self.apiclient)
 
     def get_lb_stats_settings(self):
         self.logger.debug("Retrieving haproxy stats settings")
@@ -688,10 +676,10 @@ class TestInternalLb(cloudstackTestCase):
         word_to_verify = "uptime"
 
         url = "http://" + stats_ip + ":" + \
-            settings["stats_port"] + settings["stats_uri"]
+              settings["stats_port"] + settings["stats_uri"]
         get_contents = "/usr/bin/wget -T3 -qO- --user=" + \
-            settings["username"] + " --password=" + \
-            settings["password"] + " " + url
+                       settings["username"] + " --password=" + \
+                       settings["password"] + " " + url
         try:
             self.logger.debug(
                 "Trying to connect to the haproxy stats url %s" % url)
@@ -724,6 +712,7 @@ class TestInternalLb(cloudstackTestCase):
         vpc_offering = VpcOffering.create(
             self.apiclient,
             self.services["vpc_offering"])
+        self.cleanup.append(vpc_offering)
 
         self.logger.debug("Enabling the VPC offering created")
         vpc_offering.update(self.apiclient, state='Enabled')
@@ -745,6 +734,7 @@ class TestInternalLb(cloudstackTestCase):
         redundant_vpc_offering = VpcOffering.create(
             self.apiclient,
             self.services["redundant_vpc_offering"])
+        self.cleanup.append(redundant_vpc_offering)
 
         self.logger.debug("Enabling the Redundant VPC offering created")
         redundant_vpc_offering.update(self.apiclient, state='Enabled')
@@ -776,7 +766,7 @@ class TestInternalLb(cloudstackTestCase):
 
         # Create network tier with internal lb service enabled
         network_internal_lb = self.create_network_tier(
-            "intlb_test02", vpc.id, network_gw,  network_offering_intlb)
+            "intlb_test02", vpc.id, network_gw, network_offering_intlb)
 
         # Create 1 lb vm in internal lb network tier
         vm = self.deployvm_in_network(vpc, network_internal_lb.id)
@@ -808,15 +798,7 @@ class TestInternalLb(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cls.logger.debug("Cleaning up class resources")
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Cleanup failed with %s" % e)
+        super(TestInternalLb, cls).tearDownClass()
 
     def tearDown(self):
-        try:
-            self.logger.debug("Cleaning up test resources")
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Cleanup failed with %s" % e)
+        super(TestInternalLb, self).tearDown()

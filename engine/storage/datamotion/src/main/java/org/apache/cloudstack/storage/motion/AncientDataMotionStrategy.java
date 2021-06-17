@@ -348,44 +348,55 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             // directly to s3
             ImageStoreEntity imageStore = (ImageStoreEntity)dataStoreMgr.getImageStoreWithFreeCapacity(destScope.getScopeId());
             if (imageStore == null || !imageStore.getProtocol().equalsIgnoreCase("nfs") && !imageStore.getProtocol().equalsIgnoreCase("cifs")) {
-                s_logger.debug("can't find a nfs (or cifs) image store to satisfy the need for a staging store");
-                return null;
+                String errMsg = "can't find a nfs (or cifs) image store to satisfy the need for a staging store";
+                Answer answer = new Answer(null, false, errMsg);
+                return answer;
             }
 
             DataObject objOnImageStore = imageStore.create(srcData);
             objOnImageStore.processEvent(Event.CreateOnlyRequested);
 
-            Answer answer = copyObject(srcData, objOnImageStore);
-            if (answer == null || !answer.getResult()) {
-                if (answer != null) {
-                    s_logger.debug("copy to image store failed: " + answer.getDetails());
+            Answer answer = null;
+            try {
+                answer = copyObject(srcData, objOnImageStore);
+
+                if (answer == null || !answer.getResult()) {
+                    if (answer != null) {
+                        s_logger.debug("copy to image store failed: " + answer.getDetails());
+                    }
+                    objOnImageStore.processEvent(Event.OperationFailed);
+                    imageStore.delete(objOnImageStore);
+                    return answer;
                 }
-                objOnImageStore.processEvent(Event.OperationFailed);
-                imageStore.delete(objOnImageStore);
-                return answer;
-            }
 
-            objOnImageStore.processEvent(Event.OperationSuccessed, answer);
+                objOnImageStore.processEvent(Event.OperationSuccessed, answer);
 
-            objOnImageStore.processEvent(Event.CopyingRequested);
+                objOnImageStore.processEvent(Event.CopyingRequested);
 
-            CopyCommand cmd = new CopyCommand(objOnImageStore.getTO(), addFullCloneFlagOnVMwareDest(destData.getTO()), _copyvolumewait, VirtualMachineManager.ExecuteInSequence.value());
-            EndPoint ep = selector.select(objOnImageStore, destData);
-            if (ep == null) {
-                String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-                s_logger.error(errMsg);
-                answer = new Answer(cmd, false, errMsg);
-            } else {
-                answer = ep.sendMessage(cmd);
-            }
-
-            if (answer == null || !answer.getResult()) {
-                if (answer != null) {
-                    s_logger.debug("copy to primary store failed: " + answer.getDetails());
+                CopyCommand cmd = new CopyCommand(objOnImageStore.getTO(), addFullCloneFlagOnVMwareDest(destData.getTO()), _copyvolumewait, VirtualMachineManager.ExecuteInSequence.value());
+                EndPoint ep = selector.select(objOnImageStore, destData);
+                if (ep == null) {
+                    String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+                    s_logger.error(errMsg);
+                    answer = new Answer(cmd, false, errMsg);
+                } else {
+                    answer = ep.sendMessage(cmd);
                 }
-                objOnImageStore.processEvent(Event.OperationFailed);
-                imageStore.delete(objOnImageStore);
-                return answer;
+
+                if (answer == null || !answer.getResult()) {
+                    if (answer != null) {
+                        s_logger.debug("copy to primary store failed: " + answer.getDetails());
+                    }
+                    objOnImageStore.processEvent(Event.OperationFailed);
+                    imageStore.delete(objOnImageStore);
+                    return answer;
+                }
+            } catch (Exception e) {
+                if (imageStore.exists(objOnImageStore)) {
+                    objOnImageStore.processEvent(Event.OperationFailed);
+                    imageStore.delete(objOnImageStore);
+                }
+                throw e;
             }
 
             objOnImageStore.processEvent(Event.OperationSuccessed);

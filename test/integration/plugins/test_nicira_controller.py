@@ -127,13 +127,13 @@ class TestNiciraContoller(cloudstackTestCase):
             'password': 'admin'
         }
 
-        cls.nicira_master_controller = cls.determine_master_controller(
+        cls.nicira_primary_controller = cls.determine_primary_controller(
             cls.nicira_hosts,
             cls.nicira_credentials
         )
 
         cls.transport_zone_uuid = cls.get_transport_zone_from_controller(
-            cls.nicira_master_controller,
+            cls.nicira_primary_controller,
             cls.nicira_credentials
         )
 
@@ -213,7 +213,7 @@ class TestNiciraContoller(cloudstackTestCase):
 
 
     @classmethod
-    def determine_master_controller(cls, hosts, credentials):
+    def determine_primary_controller(cls, hosts, credentials):
         for host in hosts:
             r1 = requests.post("https://%s/ws.v1/login" % host, credentials, verify=False)
             r2 = requests.get("https://%s/ws.v1/control-cluster/status" % host, verify=False, cookies=r1.cookies)
@@ -260,12 +260,12 @@ class TestNiciraContoller(cloudstackTestCase):
         return PhysicalNetwork.list(cls.api_client, name=nicira_physical_network_name)[0].id
 
 
-    def determine_slave_conroller(self, hosts, master_controller):
-        slaves = [ s for s in hosts if s != master_controller ]
-        if len(slaves) > 0:
-            return slaves[0]
+    def determine_secondary_conroller(self, hosts, primary_controller):
+        secondary = [ s for s in hosts if s != primary_controller ]
+        if len(secondary) > 0:
+            return secondary[0]
         else:
-            raise Exception("None of the supplied hosts (%s) is a Nicira slave" % hosts)
+            raise Exception("None of the supplied hosts (%s) is a Nicira secondary" % hosts)
 
 
     def add_nicira_device(self, hostname, l2gatewayserviceuuid=None):
@@ -404,29 +404,29 @@ class TestNiciraContoller(cloudstackTestCase):
         )
 
 
-    def get_master_router(self, routers):
-        master = filter(lambda r: r.redundantstate == 'MASTER', routers)
-        self.logger.debug("Found %s master router(s): %s" % (master.size(), master))
-        return master[0]
+    def get_primary_router(self, routers):
+        primary = [r for r in routers if r.redundantstate == 'PRIMARY']
+        self.logger.debug("Found %s primary router(s): %s" % (primary.size(), primary))
+        return primary[0]
 
 
     def distribute_vm_and_routers_by_hosts(self, virtual_machine, routers):
         if len(routers) > 1:
             router = self.get_router(routers)
-            self.logger.debug("Master Router VM is %s" % router)
+            self.logger.debug("Primary Router VM is %s" % router)
         else:
             router = routers[0]
 
         if router.hostid == virtual_machine.hostid:
-            self.logger.debug("Master Router VM is on the same host as VM")
+            self.logger.debug("Primary Router VM is on the same host as VM")
             host = findSuitableHostForMigration(self.api_client, router.id)
             if host is not None:
                 migrate_router(self.api_client, router.id, host.id)
-                self.logger.debug("Migrated Master Router VM to host %s" % host.name)
+                self.logger.debug("Migrated Primary Router VM to host %s" % host.name)
             else:
-                self.fail('No suitable host to migrate Master Router VM to')
+                self.fail('No suitable host to migrate Primary Router VM to')
         else:
-            self.logger.debug("Master Router VM is not on the same host as VM: %s, %s" % (router.hostid, virtual_machine.hostid))
+            self.logger.debug("Primary Router VM is not on the same host as VM: %s, %s" % (router.hostid, virtual_machine.hostid))
 
 
     def acquire_publicip(self, network):
@@ -459,7 +459,7 @@ class TestNiciraContoller(cloudstackTestCase):
 
     @attr(tags = ["advanced", "smoke", "nicira"], required_hardware="true")
     def test_01_nicira_controller(self):
-        self.add_nicira_device(self.nicira_master_controller)
+        self.add_nicira_device(self.nicira_primary_controller)
 
         network         = self.create_guest_isolated_network()
         virtual_machine = self.create_virtual_machine(network)
@@ -478,19 +478,19 @@ class TestNiciraContoller(cloudstackTestCase):
     @attr(tags = ["advanced", "smoke", "nicira"], required_hardware="true")
     def test_02_nicira_controller_redirect(self):
         """
-            Nicira clusters will redirect clients (in this case ACS) to the master node.
+            Nicira clusters will redirect clients (in this case ACS) to the primary node.
             This test assumes that a Nicira cluster is present and configured properly, and
             that it has at least two controller nodes. The test will check that ASC follows
             redirects by:
-                - adding a Nicira Nvp device that points to one of the cluster's slave controllers,
+                - adding a Nicira Nvp device that points to one of the cluster's secondary controllers,
                 - create a VM in a Nicira backed network
-            If all is well, no matter what controller is specified (slaves or master), the vm (and respective router VM)
+            If all is well, no matter what controller is specified (secondary or primary), the vm (and respective router VM)
             should be created without issues.
         """
-        nicira_slave = self.determine_slave_conroller(self.nicira_hosts, self.nicira_master_controller)
-        self.logger.debug("Nicira slave controller is: %s " % nicira_slave)
+        nicira_secondary = self.determine_secondary_conroller(self.nicira_hosts, self.nicira_primary_controller)
+        self.logger.debug("Nicira secondary controller is: %s " % nicira_secondary)
 
-        self.add_nicira_device(nicira_slave)
+        self.add_nicira_device(nicira_secondary)
 
         network         = self.create_guest_isolated_network()
         virtual_machine = self.create_virtual_machine(network)
@@ -508,7 +508,7 @@ class TestNiciraContoller(cloudstackTestCase):
 
     @attr(tags = ["advanced", "smoke", "nicira"], required_hardware="true")
     def test_03_nicira_tunnel_guest_network(self):
-        self.add_nicira_device(self.nicira_master_controller)
+        self.add_nicira_device(self.nicira_primary_controller)
         network         = self.create_guest_isolated_network()
         virtual_machine = self.create_virtual_machine(network)
         public_ip       = self.acquire_publicip(network)
@@ -548,7 +548,7 @@ class TestNiciraContoller(cloudstackTestCase):
             CASE 1) Numerical VLAN_ID provided in network creation
         """
         self.debug("Starting test case 1 for Shared Networks")
-        self.add_nicira_device(self.nicira_master_controller, self.l2gatewayserviceuuid)
+        self.add_nicira_device(self.nicira_primary_controller, self.l2gatewayserviceuuid)
         network = self.create_guest_shared_network_numerical_vlanid()
         virtual_machine = self.create_virtual_machine_shared_networks(network)
 
@@ -569,7 +569,7 @@ class TestNiciraContoller(cloudstackTestCase):
             CASE 2) Logical Router's UUID as VLAN_ID provided in network creation
         """
         self.debug("Starting test case 2 for Shared Networks")
-        self.add_nicira_device(self.nicira_master_controller, self.l2gatewayserviceuuid)
+        self.add_nicira_device(self.nicira_primary_controller, self.l2gatewayserviceuuid)
         network = self.create_guest_shared_network_uuid_vlanid()
         virtual_machine = self.create_virtual_machine_shared_networks(network)
 

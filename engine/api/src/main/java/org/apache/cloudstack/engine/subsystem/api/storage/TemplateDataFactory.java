@@ -23,11 +23,13 @@ import java.util.List;
 import com.cloud.storage.DataStoreRole;
 
 public interface TemplateDataFactory {
+    TemplateInfo getTemplate(long templateId);
+
     TemplateInfo getTemplate(long templateId, DataStore store);
 
     TemplateInfo getReadyTemplateOnImageStore(long templateId, Long zoneId);
 
-    TemplateInfo getTemplate(DataObject obj, DataStore store);
+    TemplateInfo getTemplate(DataObject obj, DataStore store, String configuration);
 
     TemplateInfo getTemplate(long templateId, DataStoreRole storeRole);
 
@@ -39,5 +41,9 @@ public interface TemplateDataFactory {
 
     TemplateInfo getReadyBypassedTemplateOnPrimaryStore(long templateId, Long poolId, Long hostId);
 
+    TemplateInfo getReadyBypassedTemplateOnManagedStorage(long templateId, TemplateInfo templateOnPrimary, Long poolId, Long hostId);
+
     boolean isTemplateMarkedForDirectDownload(long templateId);
+
+    TemplateInfo getTemplateOnPrimaryStorage(long templateId, DataStore store, String configuration);
 }

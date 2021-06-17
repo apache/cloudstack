@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -24,7 +24,7 @@
 """CloudStack Python utility library"""
 
 import sys, os, subprocess, errno, re, time, glob
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import xml.dom.minidom
 import logging
 import socket
@@ -65,14 +65,14 @@ IPV6 = 6
 if os.path.exists("/etc/fedora-release"): distro = Fedora
 elif os.path.exists("/etc/centos-release"): distro = CentOS
 elif os.path.exists("/etc/redhat-release"):
-    version = file("/etc/redhat-release").readline()
+    version = open("/etc/redhat-release").readline()
     if version.find("Red Hat Enterprise Linux Server release 6") != -1:
         distro = RHEL6
     elif version.find("CentOS") != -1:
         distro = CentOS
     else:
         distro = CentOS
-elif os.path.exists("/etc/legal") and "Ubuntu" in file("/etc/legal").read(-1): distro = Ubuntu
+elif os.path.exists("/etc/legal") and "Ubuntu" in open("/etc/legal").read(-1): distro = Ubuntu
 else: distro = Unknown
 logFileName=None
 # ==================  LIBRARY UTILITY CODE=============
@@ -80,7 +80,7 @@ def setLogFile(logFile):
 	global logFileName
 	logFileName=logFile
 def read_properties(propfile):
-	if not hasattr(propfile,"read"): propfile = file(propfile)
+	if not hasattr(propfile,"read"): propfile = open(propfile)
 	properties = propfile.read().splitlines()
 	properties = [ s.strip() for s in properties ]
 	properties = [ s for s in properties if
@@ -211,7 +211,6 @@ augtool = Command("augtool")
 ifconfig = Command("ifconfig")
 ifdown = Command("ifdown")
 ifup = Command("ifup")
-brctl = Command("brctl")
 uuidgen = Command("uuidgen")
 
 
@@ -225,7 +224,7 @@ def is_service_running(servicename):
 		else:
 			# retcode 0, service running
 			return True
-	except CalledProcessError,e:
+	except CalledProcessError as e:
 		# retcode nonzero, service not running
 		return False
 
@@ -261,7 +260,7 @@ def enable_service(servicename,forcestart=False):
 
 
 def replace_line(f,startswith,stanza,always_add=False):
-	lines = [ s.strip() for s in file(f).readlines() ]
+	lines = [ s.strip() for s in open(f).readlines() ]
 	newlines = []
 	replaced = False
 	for line in lines:
@@ -271,7 +270,7 @@ def replace_line(f,startswith,stanza,always_add=False):
 		else: newlines.append(line)
 	if not replaced and always_add: newlines.append(stanza)
 	newlines = [ s + '\n' for s in newlines ]
-	file(f,"w").writelines(newlines)
+	open(f,"w").writelines(newlines)
 
 def replace_or_add_line(f,startswith,stanza):
 	return replace_line(f,startswith,stanza,always_add=True)
@@ -301,11 +300,11 @@ def check_kvm():
 			return True
 		except CalledProcessError:
 			raise CheckFailed("KVM is not correctly installed on this system, or support for it is not enabled in the BIOS")
-		except OSError,e:
-			if e.errno is errno.ENOENT: raise CheckFailed("KVM is not correctly installed on this system, or support for it is not enabled in the BIOS")
+		except OSError as e:
+			if e.errno == errno.ENOENT: raise CheckFailed("KVM is not correctly installed on this system, or support for it is not enabled in the BIOS")
 			raise
 		return True
-	raise AssertionError, "check_kvm() should have never reached this part"
+	raise AssertionError("check_kvm() should have never reached this part")
 
 def check_cgroups():
 	return glob.glob("/*/cpu.shares")
@@ -316,14 +315,14 @@ def check_selinux():
 	enforcing = False
 	config_enforcing = False
 	try:
-		output = getenforce().stdout.strip()
+		output = getenforce().stdout.decode('utf-8').strip()
 		if "nforcing" in output:
 			enforcing = True
-		if any ( [ s.startswith("SELINUX=enforcing") for s in file("/etc/selinux/config").readlines() ] ):
+		if any ( [ s.startswith("SELINUX=enforcing") for s in open("/etc/selinux/config").readlines() ] ):
 			config_enforcing = True
 		else:
 			config_enforcing = False
-	except (IOError,OSError),e:
+	except (IOError,OSError) as e:
 		if e.errno == 2: pass
 		else: raise CheckFailed("An unknown error (%s) took place while checking for SELinux"%str(e))
 	if enforcing:
@@ -334,8 +333,8 @@ def check_selinux():
 We strongly suggest you doing the option 1 that makes sure SELinux goes into permissive after system reboot.\n''')
 
 	if config_enforcing:
-		print "WARNING: We detected that your SELinux is not configured in permissive. to make sure cloudstack won't block by \
-SELinux after system reboot, we strongly suggest you setting it in permissive in /etc/selinux/config, then reboot the machine."
+		print("WARNING: We detected that your SELinux is not configured in permissive. to make sure cloudstack won't block by \
+SELinux after system reboot, we strongly suggest you setting it in permissive in /etc/selinux/config, then reboot the machine.")
 
 
 def preflight_checks(do_check_kvm=True):
@@ -399,7 +398,7 @@ class SetupNetworking(ConfigTask):
 	def __init__(self,brname, pubNic, prvNic):
 		ConfigTask.__init__(self)
 		self.brname = brname
-  	        self.pubNic = pubNic
+		self.pubNic = pubNic
 		self.prvNic = prvNic
 		self.runtime_state_changed = False
 		self.was_nm_service_running = None
@@ -431,8 +430,8 @@ class SetupNetworking(ConfigTask):
 				if not alreadysetup:
 					alreadysetup = augtool.match("/files/etc/network/interfaces/iface",self.brname).stdout.strip()
 			return alreadysetup
-		except OSError,e:
-			if e.errno is 2: raise TaskFailed("augtool has not been properly installed on this system")
+		except OSError as e:
+			if e.errno == 2: raise TaskFailed("augtool has not been properly installed on this system")
 			raise
 
 	def restore_state(self):
@@ -441,8 +440,8 @@ class SetupNetworking(ConfigTask):
 		try:
 			o = ifconfig(self.brname)
 			bridge_exists = True
-		except CalledProcessError,e:
-			print e.stdout + e.stderr
+		except CalledProcessError as e:
+			print(e.stdout + e.stderr)
 			bridge_exists = False
 			
 		if bridge_exists:
@@ -454,7 +453,7 @@ class SetupNetworking(ConfigTask):
 			except CalledProcessError: pass
 			try: ifconfig(self.brname,"down")
 			except CalledProcessError: pass
-			try: brctl("delbr",self.brname)
+			try: ip("link del",self.brname)
 			except CalledProcessError: pass
 			try: ifdown("--force",self.brname)
 			except CalledProcessError: pass
@@ -471,7 +470,7 @@ class SetupNetworking(ConfigTask):
 			stop_service(self.netservice,force=True)
 			time.sleep(1)
 			try: start_service(self.netservice,force=True)
-			except CalledProcessError,e:
+			except CalledProcessError as e:
 				if e.returncode == 1: pass
 				else: raise
 			time.sleep(1)
@@ -543,17 +542,17 @@ class SetupNetworking(ConfigTask):
 		yield "Creating Cloud bridging device and making device %s member of this bridge"%dev
 
 		if distro in (Fedora, CentOS, RHEL6):
-			ifcfgtext = file(pathtoconfigfile).read()
+			ifcfgtext = open(pathtoconfigfile).read()
 			newf = "/etc/sysconfig/network-scripts/ifcfg-%s"%self.brname
 			#def restore():
 				#try: os.unlink(newf)
 				#except OSError,e:
 					#if errno == 2: pass
 					#raise
-				#try: file(pathtoconfigfile,"w").write(ifcfgtext)
+				#try: open(pathtoconfigfile,"w").write(ifcfgtext)
 				#except OSError,e: raise
 
-			f = file(newf,"w") ; f.write(ifcfgtext) ; f.flush() ; f.close()
+			f = open(newf,"w") ; f.write(ifcfgtext) ; f.flush() ; f.close()
 			innewconfigfile = "/files" + newf
 
 			script = """set %s/DEVICE %s
@@ -580,18 +579,18 @@ save"""%(innewconfigfile,self.brname,innewconfigfile,self.brname,innewconfigfile
 			try:
 				returned = augtool < script
 				if "Saved 2 file" not in returned.stdout:
-					print returned.stdout + returned.stderr
+					print(returned.stdout + returned.stderr)
 					#restore()
 					raise TaskFailed("Network reconfiguration failed.")
 				else:
 					yield "Network reconfiguration complete"
-			except CalledProcessError,e:
+			except CalledProcessError as e:
 				#restore()
-				print e.stdout + e.stderr
+				print(e.stdout + e.stderr)
 				raise TaskFailed("Network reconfiguration failed")
 		else: # Not fedora
-			backup = file("/etc/network/interfaces").read(-1)
-			#restore = lambda: file("/etc/network/interfaces","w").write(backup)
+			backup = open("/etc/network/interfaces").read(-1)
+			#restore = lambda: open("/etc/network/interfaces","w").write(backup)
 
 			script = """set %s %s
 set %s %s
@@ -607,15 +606,15 @@ save"""%(automatic,self.brname,inconfigfile,self.brname,inconfigfile,dev)
 					raise TaskFailed("Network reconfiguration failed.")
 				else:
 					yield "Network reconfiguration complete"
-			except CalledProcessError,e:
+			except CalledProcessError as e:
 				#restore()
-				print e.stdout + e.stderr
+				print(e.stdout + e.stderr)
 				raise TaskFailed("Network reconfiguration failed")
 		
 		yield "We are going to restart network services now, to make the network changes take effect.  Hit ENTER when you are ready."
 		if self.isAutoMode(): pass
-        	else:
-		    raw_input()
+		else:
+		    input()
 		
 		# if we reach here, then if something goes wrong we should attempt to revert the runinng state
 		# if not, then no point
@@ -625,15 +624,15 @@ save"""%(automatic,self.brname,inconfigfile,self.brname,inconfigfile,dev)
 		if distro is Ubuntu: ifup(self.brname,stdout=None,stderr=None)
 		stop_service(self.netservice)
 		try: enable_service(self.netservice,forcestart=True)
-		except CalledProcessError,e:
+		except CalledProcessError as e:
 			if e.returncode == 1: pass
 			else: raise
 		
 		yield "Verifying that the bridge is up"
 		try:
 			o = ifconfig(self.brname)
-		except CalledProcessError,e:
-			print e.stdout + e.stderr
+		except CalledProcessError as e:
+			print(e.stdout + e.stderr)
 			raise TaskFailed("The bridge could not be set up properly")
 		
 		yield "Networking restart done"
@@ -645,13 +644,13 @@ class SetupCgConfig(ConfigTask):
 	def done(self):
 		
 		try:
-			return "group virt" in file("/etc/cgconfig.conf","r").read(-1)
-		except IOError,e:
-			if e.errno is 2: raise TaskFailed("cgconfig has not been properly installed on this system")
+			return "group virt" in open("/etc/cgconfig.conf","r").read(-1)
+		except IOError as e:
+			if e.errno == 2: raise TaskFailed("cgconfig has not been properly installed on this system")
 			raise
 		
 	def execute(self):
-		cgconfig = file("/etc/cgconfig.conf","r").read(-1)
+		cgconfig = open("/etc/cgconfig.conf","r").read(-1)
 		cgconfig = cgconfig + """
 group virt {
 	cpu {
@@ -659,7 +658,7 @@ group virt {
 	}
 }
 """
-		file("/etc/cgconfig.conf","w").write(cgconfig)
+		open("/etc/cgconfig.conf","w").write(cgconfig)
 		
 		stop_service("cgconfig")
 		enable_service("cgconfig",forcestart=True)
@@ -671,15 +670,15 @@ class SetupCgRules(ConfigTask):
 	
 	def done(self):
 		try:
-			return self.cfgline in file("/etc/cgrules.conf","r").read(-1)
-		except IOError,e:
-			if e.errno is 2: raise TaskFailed("cgrulesd has not been properly installed on this system")
+			return self.cfgline in open("/etc/cgrules.conf","r").read(-1)
+		except IOError as e:
+			if e.errno == 2: raise TaskFailed("cgrulesd has not been properly installed on this system")
 			raise
 	
 	def execute(self):
-		cgrules = file("/etc/cgrules.conf","r").read(-1)
+		cgrules = open("/etc/cgrules.conf","r").read(-1)
 		cgrules = cgrules + "\n" + self.cfgline + "\n"
-		file("/etc/cgrules.conf","w").write(cgrules)
+		open("/etc/cgrules.conf","w").write(cgrules)
 		
 		stop_service("cgred")
 		enable_service("cgred")
@@ -692,15 +691,15 @@ class SetupSecurityDriver(ConfigTask):
 	
 	def done(self):
 		try:
-			return self.cfgline in file(self.filename,"r").read(-1)
-		except IOError,e:
-			if e.errno is 2: raise TaskFailed("qemu has not been properly installed on this system")
+			return self.cfgline in open(self.filename,"r").read(-1)
+		except IOError as e:
+			if e.errno == 2: raise TaskFailed("qemu has not been properly installed on this system")
 			raise
 	
 	def execute(self):
-		libvirtqemu = file(self.filename,"r").read(-1)
+		libvirtqemu = open(self.filename,"r").read(-1)
 		libvirtqemu = libvirtqemu + "\n" + self.cfgline + "\n"
-		file("/etc/libvirt/qemu.conf","w").write(libvirtqemu)
+		open("/etc/libvirt/qemu.conf","w").write(libvirtqemu)
 
 
 class SetupLibvirt(ConfigTask):
@@ -710,19 +709,19 @@ class SetupLibvirt(ConfigTask):
 		try:
 			if distro in (Fedora,CentOS, RHEL6): 	 libvirtfile = "/etc/sysconfig/libvirtd"
 			elif distro is Ubuntu:	 libvirtfile = "/etc/default/libvirt-bin"
-			else: raise AssertionError, "We should not reach this"
-			return self.cfgline in file(libvirtfile,"r").read(-1)
-		except IOError,e:
-			if e.errno is 2: raise TaskFailed("libvirt has not been properly installed on this system")
+			else: raise AssertionError("We should not reach this")
+			return self.cfgline in open(libvirtfile,"r").read(-1)
+		except IOError as e:
+			if e.errno == 2: raise TaskFailed("libvirt has not been properly installed on this system")
 			raise
 	
 	def execute(self):
 		if distro in (Fedora,CentOS, RHEL6): 	 libvirtfile = "/etc/sysconfig/libvirtd"
 		elif distro is Ubuntu:	 libvirtfile = "/etc/default/libvirt-bin"
-		else: raise AssertionError, "We should not reach this"
-		libvirtbin = file(libvirtfile,"r").read(-1)
+		else: raise AssertionError("We should not reach this")
+		libvirtbin = open(libvirtfile,"r").read(-1)
 		libvirtbin = libvirtbin + "\n" + self.cfgline + "\n"
-		file(libvirtfile,"w").write(libvirtbin)
+		open(libvirtfile,"w").write(libvirtbin)
 		
 		if distro in (CentOS, Fedora, RHEL6):	svc = "libvirtd"
 		else:					svc = "libvirt-bin"
@@ -740,10 +739,10 @@ class SetupLiveMigration(ConfigTask):
 	
 	def done(self):
 		try:
-			lines = [ s.strip() for s in file("/etc/libvirt/libvirtd.conf").readlines() ]
+			lines = [ s.strip() for s in open("/etc/libvirt/libvirtd.conf").readlines() ]
 			if all( [ stanza in lines for stanza in self.stanzas ] ): return True
-		except IOError,e:
-			if e.errno is 2: raise TaskFailed("libvirt has not been properly installed on this system")
+		except IOError as e:
+			if e.errno == 2: raise TaskFailed("libvirt has not been properly installed on this system")
 			raise
 	
 	def execute(self):
@@ -807,7 +806,7 @@ class SetupFirewall(ConfigTask):
 		ports = "22 1798 16509 16514".split()
 		if distro in (Fedora , CentOS, RHEL6):
 			for p in ports: iptables("-I","INPUT","1","-p","tcp","--dport",p,'-j','ACCEPT')
-			o = service.iptables.save() ; print o.stdout + o.stderr
+			o = service.iptables.save() ; print(o.stdout + o.stderr)
 		else:
 			for p in ports: ufw.allow(p)
 
@@ -894,7 +893,7 @@ def remove_backup(targetdir):
 	check_call( ["rm","-rf",targetdir] )
 
 def list_zonespods(host):
-	text = urllib2.urlopen('http://%s:8096/client/api?command=listPods'%host).read(-1)
+	text = urllib.request.urlopen('http://%s:8096/client/api?command=listPods'%host).read(-1)
 	dom = xml.dom.minidom.parseString(text) 
 	x = [ (zonename,podname)
 		for pod in dom.childNodes[0].childNodes  
@@ -908,13 +907,13 @@ def prompt_for_hostpods(zonespods):
 	Returns (zone,pod) or None if the user made the default selection."""
 	while True:
 		stderr("Type the number of the zone and pod combination this host belongs to (hit ENTER to skip this step)")
-		print "  N) ZONE, POD" 
-		print "================"
+		print("  N) ZONE, POD") 
+		print("================")
 		for n,(z,p) in enumerate(zonespods):
-			print "%3d) %s, %s"%(n,z,p)
-		print "================"
-		print "> ",
-		zoneandpod = raw_input().strip()
+			print("%3d) %s, %s"%(n,z,p))
+		print("================")
+		print("> ", end=' ')
+		zoneandpod = input().strip()
 		
 		if not zoneandpod:
 			# we go with default, do not touch anything, just break
@@ -923,8 +922,8 @@ def prompt_for_hostpods(zonespods):
 		try:
 			# if parsing fails as an int, just vomit and retry
 			zoneandpod = int(zoneandpod)
-			if zoneandpod >= len(zonespods) or zoneandpod < 0: raise ValueError, "%s out of bounds"%zoneandpod
-		except ValueError,e:
+			if zoneandpod >= len(zonespods) or zoneandpod < 0: raise ValueError("%s out of bounds"%zoneandpod)
+		except ValueError as e:
 			stderr(str(e))
 			continue # re-ask
 		
@@ -941,13 +940,13 @@ def device_exist(devName):
 		else:
 			alreadysetup = augtool.match("/files/etc/network/interfaces/iface",devName).stdout.strip()
 		return alreadysetup
-	except OSError,e:
+	except OSError as e:
 		return False		
 	
 def setup_agent_config(configfile, host, zone, pod, cluster, guid, pubNic, prvNic):
 	stderr("Examining Agent configuration")
 	fn = configfile
-	text = file(fn).read(-1)
+	text = open(fn).read(-1)
 	lines = [ s.strip() for s in text.splitlines() ]
 	confopts = dict([ m.split("=",1) for m in lines if "=" in m and not m.startswith("#") ])
 	confposes = dict([ (m.split("=",1)[0],n) for n,m in enumerate(lines) if "=" in m and not m.startswith("#") ])
@@ -963,8 +962,8 @@ def setup_agent_config(configfile, host, zone, pod, cluster, guid, pubNic, prvNi
 		try: host = confopts["host"]
 		except KeyError: host = "localhost"
 		stderr("Please enter the host name of the management server that this agent will connect to: (just hit ENTER to go with %s)",host)
-		print "> ",
-		newhost = raw_input().strip()
+		print("> ", end=' ')
+		newhost = input().strip()
 		if newhost: host = newhost
 
 	confopts["host"] = host
@@ -982,54 +981,7 @@ def setup_agent_config(configfile, host, zone, pod, cluster, guid, pubNic, prvNi
 	stderr("Querying %s for zones and pods",host)
 	
 	try:
-	    if zone == None or pod == None:
-			x = list_zonespods(confopts['host'])
-			zoneandpod = prompt_for_hostpods(x)
-			if zoneandpod:
-				confopts["zone"],confopts["pod"] = zoneandpod
-				stderr("You selected zone %s pod %s",confopts["zone"],confopts["pod"])
-			else:
-				stderr("Skipped -- using the previous zone %s pod %s",confopts["zone"],confopts["pod"])
-	    else:
-			confopts["zone"] = zone
-			confopts["pod"] = pod
-			confopts["cluster"] = cluster
-	except (urllib2.URLError,urllib2.HTTPError),e:
-		stderr("Query failed: %s.  Defaulting to zone %s pod %s",str(e),confopts["zone"],confopts["pod"])
-
-	for opt,val in confopts.items():
-		line = "=".join([opt,val])
-		if opt not in confposes: lines.append(line)
-		else: lines[confposes[opt]] = line
-	
-	text = "\n".join(lines)
-	file(fn,"w").write(text)
-
-def setup_consoleproxy_config(configfile, host, zone, pod):
-	stderr("Examining Console Proxy configuration")
-	fn = configfile
-	text = file(fn).read(-1)
-	lines = [ s.strip() for s in text.splitlines() ]
-	confopts = dict([ m.split("=",1) for m in lines if "=" in m and not m.startswith("#") ])
-	confposes = dict([ (m.split("=",1)[0],n) for n,m in enumerate(lines) if "=" in m and not m.startswith("#") ])
-
-	if not "guid" in confopts:
-		stderr("Generating GUID for this Console Proxy")
-		confopts['guid'] = uuidgen().stdout.strip()
-
-        if host == None:
-		try: host = confopts["host"]
-		except KeyError: host = "localhost"
-		stderr("Please enter the host name of the management server that this console-proxy will connect to: (just hit ENTER to go with %s)",host)
-		print "> ",
-		newhost = raw_input().strip()
-		if newhost: host = newhost
-	confopts["host"] = host
-
-	stderr("Querying %s for zones and pods",host)
-	
-	try:
-                if zone == None or pod == None:
+		if zone == None or pod == None:
 			x = list_zonespods(confopts['host'])
 			zoneandpod = prompt_for_hostpods(x)
 			if zoneandpod:
@@ -1040,16 +992,63 @@ def setup_consoleproxy_config(configfile, host, zone, pod):
 		else:
 			confopts["zone"] = zone
 			confopts["pod"] = pod
-	except (urllib2.URLError,urllib2.HTTPError),e:
+			confopts["cluster"] = cluster
+	except (urllib.error.URLError,urllib.error.HTTPError) as e:
 		stderr("Query failed: %s.  Defaulting to zone %s pod %s",str(e),confopts["zone"],confopts["pod"])
 
-	for opt,val in confopts.items():
+	for opt,val in list(confopts.items()):
 		line = "=".join([opt,val])
 		if opt not in confposes: lines.append(line)
 		else: lines[confposes[opt]] = line
 	
 	text = "\n".join(lines)
-	file(fn,"w").write(text)
+	open(fn,"w").write(text)
+
+def setup_consoleproxy_config(configfile, host, zone, pod):
+	stderr("Examining Console Proxy configuration")
+	fn = configfile
+	text = open(fn).read(-1)
+	lines = [ s.strip() for s in text.splitlines() ]
+	confopts = dict([ m.split("=",1) for m in lines if "=" in m and not m.startswith("#") ])
+	confposes = dict([ (m.split("=",1)[0],n) for n,m in enumerate(lines) if "=" in m and not m.startswith("#") ])
+
+	if not "guid" in confopts:
+		stderr("Generating GUID for this Console Proxy")
+		confopts['guid'] = uuidgen().stdout.strip()
+
+	if host == None:
+		try: host = confopts["host"]
+		except KeyError: host = "localhost"
+		stderr("Please enter the host name of the management server that this console-proxy will connect to: (just hit ENTER to go with %s)",host)
+		print("> ", end=' ')
+		newhost = input().strip()
+		if newhost: host = newhost
+	confopts["host"] = host
+
+	stderr("Querying %s for zones and pods",host)
+	
+	try:
+		if zone == None or pod == None:
+			x = list_zonespods(confopts['host'])
+			zoneandpod = prompt_for_hostpods(x)
+			if zoneandpod:
+				confopts["zone"],confopts["pod"] = zoneandpod
+				stderr("You selected zone %s pod %s",confopts["zone"],confopts["pod"])
+			else:
+				stderr("Skipped -- using the previous zone %s pod %s",confopts["zone"],confopts["pod"])
+		else:
+			confopts["zone"] = zone
+			confopts["pod"] = pod
+	except (urllib.error.URLError,urllib.error.HTTPError) as e:
+		stderr("Query failed: %s.  Defaulting to zone %s pod %s",str(e),confopts["zone"],confopts["pod"])
+
+	for opt,val in list(confopts.items()):
+		line = "=".join([opt,val])
+		if opt not in confposes: lines.append(line)
+		else: lines[confposes[opt]] = line
+	
+	text = "\n".join(lines)
+	open(fn,"w").write(text)
 
 # =========================== DATABASE MIGRATION SUPPORT CODE ===================
 
@@ -1086,13 +1085,13 @@ class Migrator:
 			if not new:
 				try: idx= [ i for i,s in enumerate(self.evolvers)
 					if s.from_level == INITIAL_LEVEL ][0] # initial evolver
-				except IndexError,e:
-					raise IndexError, "no initial evolver (from_level is None) could be found"
+				except IndexError as e:
+					raise IndexError("no initial evolver (from_level is None) could be found")
 			else:
 				try: idx= [ i for i,s in enumerate(self.evolvers)
 					if new[-1].to_level == s.from_level ][0]
-				except IndexError,e:
-					raise IndexError, "no evolver could be found to evolve from level %s"%new[-1].to_level
+				except IndexError as e:
+					raise IndexError("no evolver could be found to evolve from level %s"%new[-1].to_level)
 			new.append(self.evolvers.pop(idx))
 		self.evolvers = new
 	
@@ -1101,11 +1100,11 @@ class Migrator:
 		
 	def get_evolver_by_starting_level(self,level):
 		try: return [ s for s in self.evolvers if s.from_level == level][0]
-		except IndexError: raise NoMigrator, "No evolver knows how to evolve the database from schema level %r"%level
+		except IndexError: raise NoMigrator("No evolver knows how to evolve the database from schema level %r"%level)
 	
 	def get_evolver_by_ending_level(self,level):
 		try: return [ s for s in self.evolvers if s.to_level == level][0]
-		except IndexError: raise NoMigrator, "No evolver knows how to evolve the database to schema level %r"%level
+		except IndexError: raise NoMigrator("No evolver knows how to evolve the database to schema level %r"%level)
 	
 	def run(self, context, dryrun = False, starting_level = None, ending_level = None):
 		"""Runs each one of the steps in sequence, passing the migration context to each. At the end of the process, context.commit() is called to save the changes, or context.rollback() is called if dryrun = True.
@@ -1124,8 +1123,8 @@ class Migrator:
 		evolution_path = evolution_path[idx:]
 		try: idx = evolution_path.index(self.get_evolver_by_ending_level(ending_level))
 		except ValueError:
-			raise NoEvolutionPath, "No evolution path from schema level %r to schema level %r" % \
-				(starting_level,ending_level)
+			raise NoEvolutionPath("No evolution path from schema level %r to schema level %r" % \
+				(starting_level,ending_level))
 		evolution_path = evolution_path[:idx+1]
 		
 		logging.info("Starting migration on %s"%context)
@@ -1162,7 +1161,7 @@ class MigrationStep:
 	You develop your own steps, and then pass a list of those steps to the
 	Migrator instance that will run them in order.
 	
-	When the migrator runs, it will take the list of steps you gave him,
+	When the migrator runs, it will take the list of steps you gave,
 	and, for each step:
 	
 	a) instantiate it, passing the context you gave to the migrator
@@ -1201,5 +1200,4 @@ class MigrationContext:
 	def rollback(self):raise NotImplementedError
 	def get_schema_level(self):raise NotImplementedError
 	def set_schema_level(self,l):raise NotImplementedError
-
 

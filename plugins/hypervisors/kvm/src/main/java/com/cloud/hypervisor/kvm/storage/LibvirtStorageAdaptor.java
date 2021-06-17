@@ -24,6 +24,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
@@ -42,12 +46,6 @@ import com.ceph.rbd.RbdException;
 import com.ceph.rbd.RbdImage;
 import com.ceph.rbd.jna.RbdImageInfo;
 import com.ceph.rbd.jna.RbdSnapInfo;
-
-import org.apache.cloudstack.utils.qemu.QemuImg;
-import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
-import org.apache.cloudstack.utils.qemu.QemuImgException;
-import org.apache.cloudstack.utils.qemu.QemuImgFile;
-
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtSecretDef;
@@ -64,6 +62,8 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class LibvirtStorageAdaptor implements StorageAdaptor {
     private static final Logger s_logger = Logger.getLogger(LibvirtStorageAdaptor.class);
@@ -158,20 +158,20 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, KVMStoragePool destPool, boolean isIso) {
+    public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format, int timeout) {
         File sourceFile = new File(templateFilePath);
         if (!sourceFile.exists()) {
             throw new CloudRuntimeException("Direct download template file " + sourceFile + " does not exist on this host");
         }
         String templateUuid = UUID.randomUUID().toString();
-        if (isIso) {
+        if (Storage.ImageFormat.ISO.equals(format)) {
             templateUuid += ".iso";
         }
         String destinationFile = destPool.getLocalPath() + File.separator + templateUuid;
 
         if (destPool.getType() == StoragePoolType.NetworkFilesystem || destPool.getType() == StoragePoolType.Filesystem
             || destPool.getType() == StoragePoolType.SharedMountPoint) {
-            if (!isIso && isTemplateExtractable(templateFilePath)) {
+            if (!Storage.ImageFormat.ISO.equals(format) && isTemplateExtractable(templateFilePath)) {
                 extractDownloadedTemplate(templateFilePath, destPool, destinationFile);
             } else {
                 Script.runSimpleBashScript("mv " + templateFilePath + " " + destinationFile);
@@ -449,11 +449,13 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 type = StoragePoolType.CLVM;
             } else if (spd.getPoolType() == LibvirtStoragePoolDef.PoolType.GLUSTERFS) {
                 type = StoragePoolType.Gluster;
+            } else if (spd.getPoolType() == LibvirtStoragePoolDef.PoolType.POWERFLEX) {
+                type = StoragePoolType.PowerFlex;
             }
 
             LibvirtStoragePool pool = new LibvirtStoragePool(uuid, storage.getName(), type, this, storage);
 
-            if (pool.getType() != StoragePoolType.RBD)
+            if (pool.getType() != StoragePoolType.RBD && pool.getType() != StoragePoolType.PowerFlex)
                 pool.setLocalPath(spd.getTargetPath());
             else
                 pool.setLocalPath("");
@@ -493,9 +495,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             pool.setAvailable(storage.getInfo().available);
 
             s_logger.debug("Succesfully refreshed pool " + uuid +
-                           " Capacity: " + storage.getInfo().capacity +
-                           " Used: " + storage.getInfo().allocation +
-                           " Available: " + storage.getInfo().available);
+                           " Capacity: " + toHumanReadableSize(storage.getInfo().capacity) +
+                           " Used: " + toHumanReadableSize(storage.getInfo().allocation) +
+                           " Available: " + toHumanReadableSize(storage.getInfo().available));
 
             return pool;
         } catch (LibvirtException e) {
@@ -543,7 +545,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             s_logger.debug("Failed to get physical disk:", e);
             throw new CloudRuntimeException(e.toString());
         }
-
     }
 
     @Override
@@ -730,7 +731,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
 
         s_logger.info("Attempting to create volume " + name + " (" + pool.getType().toString() + ") in pool "
-                + pool.getUuid() + " with size " + size);
+                + pool.getUuid() + " with size " + toHumanReadableSize(size));
 
         switch (pool.getType()) {
             case RBD:
@@ -807,9 +808,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         try{
             qemu.create(destFile, options);
             Map<String, String> info = qemu.info(destFile);
-            virtualSize = Long.parseLong(info.get(new String("virtual_size")));
+            virtualSize = Long.parseLong(info.get(QemuImg.VIRTUAL_SIZE));
             actualSize = new File(destFile.getFileName()).length();
-        } catch (QemuImgException e) {
+        } catch (QemuImgException | LibvirtException e) {
             s_logger.error("Failed to create " + volPath +
                     " due to a failed executing of qemu-img: " + e.getMessage());
         }
@@ -962,7 +963,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             String name, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, KVMStoragePool destPool, int timeout) {
 
         s_logger.info("Creating volume " + name + " from template " + template.getName() + " in pool " + destPool.getUuid() +
-                " (" + destPool.getType().toString() + ") with size " + size);
+                " (" + destPool.getType().toString() + ") with size " + toHumanReadableSize(size));
 
         KVMPhysicalDisk disk = null;
 
@@ -1014,12 +1015,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     Map<String, String> options = new HashMap<String, String>();
                     qemu.convert(sourceFile, destFile, options, null);
                 }
-            } catch (QemuImgException e) {
+            } catch (QemuImgException | LibvirtException e) {
                 s_logger.error("Failed to create " + disk.getPath() +
                         " due to a failed executing of qemu-img: " + e.getMessage());
             }
         }
-
 
         return disk;
     }
@@ -1066,7 +1066,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             srcFile = new QemuImgFile(template.getPath(), template.getFormat());
             try{
                 qemu.convert(srcFile, destFile);
-            } catch (QemuImgException e) {
+            } catch (QemuImgException | LibvirtException e) {
                 s_logger.error("Failed to create " + disk.getPath() +
                         " due to a failed executing of qemu-img: " + e.getMessage());
             }
@@ -1099,7 +1099,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     if (srcImage.isOldFormat()) {
                         /* The source image is RBD format 1, we have to do a regular copy */
                         s_logger.debug("The source image " + srcPool.getSourceDir() + "/" + template.getName() +
-                                " is RBD format 1. We have to perform a regular copy (" + disk.getVirtualSize() + " bytes)");
+                                " is RBD format 1. We have to perform a regular copy (" + toHumanReadableSize(disk.getVirtualSize()) + " bytes)");
 
                         rbd.create(disk.getName(), disk.getVirtualSize(), rbdFeatures, rbdOrder);
                         RbdImage destImage = rbd.open(disk.getName());
@@ -1145,7 +1145,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                             RbdImage diskImage = rbd.open(disk.getName());
                             diskImage.resize(disk.getVirtualSize());
                             rbd.close(diskImage);
-                            s_logger.debug("Resized " + disk.getName() + " to " + disk.getVirtualSize());
+                            s_logger.debug("Resized " + disk.getName() + " to " + toHumanReadableSize(disk.getVirtualSize()));
                         }
 
                     }
@@ -1251,7 +1251,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         String sourcePath = disk.getPath();
 
         KVMPhysicalDisk newDisk;
-        s_logger.debug("copyPhysicalDisk: disk size:" + disk.getSize() + ", virtualsize:" + disk.getVirtualSize()+" format:"+disk.getFormat());
+        s_logger.debug("copyPhysicalDisk: disk size:" + toHumanReadableSize(disk.getSize()) + ", virtualsize:" + toHumanReadableSize(disk.getVirtualSize())+" format:"+disk.getFormat());
         if (destPool.getType() != StoragePoolType.RBD) {
             if (disk.getFormat() == PhysicalDiskFormat.TAR) {
                 newDisk = destPool.createPhysicalDisk(name, PhysicalDiskFormat.DIR, Storage.ProvisioningType.THIN, disk.getVirtualSize());
@@ -1285,7 +1285,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 srcFile = new QemuImgFile(sourcePath, sourceFormat);
                 try {
                     Map<String, String> info = qemu.info(srcFile);
-                    String backingFile = info.get(new String("backing_file"));
+                    String backingFile = info.get(QemuImg.BACKING_FILE);
                     // qcow2 templates can just be copied into place
                     if (sourceFormat.equals(destFormat) && backingFile == null && sourcePath.endsWith(".qcow2")) {
                         String result = Script.runSimpleBashScript("cp -f " + sourcePath + " " + destPath, timeout);
@@ -1297,15 +1297,15 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                         try {
                             qemu.convert(srcFile, destFile);
                             Map<String, String> destInfo = qemu.info(destFile);
-                            Long virtualSize = Long.parseLong(destInfo.get(new String("virtual_size")));
+                            Long virtualSize = Long.parseLong(destInfo.get(QemuImg.VIRTUAL_SIZE));
                             newDisk.setVirtualSize(virtualSize);
                             newDisk.setSize(virtualSize);
-                        } catch (QemuImgException e) {
+                        } catch (QemuImgException | LibvirtException e) {
                             s_logger.error("Failed to convert " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage());
                             newDisk = null;
                         }
                     }
-                } catch (QemuImgException e) {
+                } catch (QemuImgException | LibvirtException e) {
                     s_logger.error("Failed to fetch the information of file " + srcFile.getFileName() + " the error was: " + e.getMessage());
                     newDisk = null;
                 }
@@ -1345,11 +1345,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 RbdImageInfo rbdInfo = image.stat();
                 newDisk.setSize(rbdInfo.size);
                 newDisk.setVirtualSize(rbdInfo.size);
-                s_logger.debug("After copy the resulting RBD image " + rbdDestPath + " is " + rbdInfo.size + " bytes long");
+                s_logger.debug("After copy the resulting RBD image " + rbdDestPath + " is " + toHumanReadableSize(rbdInfo.size) + " bytes long");
                 rbd.close(image);
 
                 r.ioCtxDestroy(io);
-            } catch (QemuImgException e) {
+            } catch (QemuImgException | LibvirtException e) {
                 s_logger.error("Failed to convert from " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage());
                 newDisk = null;
             } catch (RadosException e) {
@@ -1373,7 +1373,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
             try {
                 qemu.convert(srcFile, destFile);
-            } catch (QemuImgException e) {
+            } catch (QemuImgException | LibvirtException e) {
                 s_logger.error("Failed to convert " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage());
                 newDisk = null;
             }
@@ -1410,7 +1410,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     QemuImgFile srcFile = new QemuImgFile(snapshot.getPath(), snapshot.getFormat());
                     qemu.convert(srcFile, destFile, snapshotName);
                 }
-            } catch (QemuImgException e) {
+            } catch (QemuImgException | LibvirtException e) {
                 s_logger.error("Failed to create " + destPath +
                         " due to a failed executing of qemu-img: " + e.getMessage());
             }

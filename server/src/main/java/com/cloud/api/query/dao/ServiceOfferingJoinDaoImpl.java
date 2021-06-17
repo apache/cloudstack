@@ -17,7 +17,11 @@
 package com.cloud.api.query.dao;
 
 import java.util.List;
+import java.util.Map;
 
+import com.cloud.dc.VsphereStoragePolicyVO;
+import com.cloud.dc.dao.VsphereStoragePolicyDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -30,11 +34,23 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+import javax.inject.Inject;
+
 @Component
 public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJoinVO, Long> implements ServiceOfferingJoinDao {
     public static final Logger s_logger = Logger.getLogger(ServiceOfferingJoinDaoImpl.class);
 
+    @Inject
+    VsphereStoragePolicyDao _vsphereStoragePolicyDao;
+
     private SearchBuilder<ServiceOfferingJoinVO> sofIdSearch;
+
+    /**
+     * Constant used to convert GB into Bytes (or the other way around).
+     * GB   *  MB  *  KB  = Bytes //
+     * 1024 * 1024 * 1024 = 1073741824
+     */
+    private static final long GB_TO_BYTES = 1073741824;
 
     protected ServiceOfferingJoinDaoImpl() {
 
@@ -99,10 +115,24 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setIopsWriteRate(offering.getIopsWriteRate());
         offeringResponse.setIopsWriteRateMax(offering.getIopsWriteRateMax());
         offeringResponse.setIopsWriteRateMaxLength(offering.getIopsWriteRateMaxLength());
-        offeringResponse.setDetails(ApiDBUtils.getResourceDetails(offering.getId(), ResourceObjectType.ServiceOffering));
+        Map<String, String> offeringDetails = ApiDBUtils.getResourceDetails(offering.getId(), ResourceObjectType.ServiceOffering);
+        offeringResponse.setDetails(offeringDetails);
         offeringResponse.setObjectName("serviceoffering");
         offeringResponse.setIscutomized(offering.isDynamic());
         offeringResponse.setCacheMode(offering.getCacheMode());
+        offeringResponse.setDynamicScalingEnabled(offering.isDynamicScalingEnabled());
+
+        if (offeringDetails != null && !offeringDetails.isEmpty()) {
+            String vsphereStoragePolicyId = offeringDetails.get(ApiConstants.STORAGE_POLICY);
+            if (vsphereStoragePolicyId != null) {
+                VsphereStoragePolicyVO vsphereStoragePolicyVO = _vsphereStoragePolicyDao.findById(Long.parseLong(vsphereStoragePolicyId));
+                if (vsphereStoragePolicyVO != null)
+                    offeringResponse.setVsphereStoragePolicy(vsphereStoragePolicyVO.getName());
+            }
+        }
+
+        long rootDiskSizeInGb = (long) offering.getRootDiskSize() / GB_TO_BYTES;
+        offeringResponse.setRootDiskSize(rootDiskSizeInGb);
 
         return offeringResponse;
     }

@@ -196,6 +196,18 @@ public class ServiceOfferingResponse extends BaseResponse {
     @Param(description = "the cache mode to use for this disk offering. none, writeback or writethrough", since = "4.14")
     private String cacheMode;
 
+    @SerializedName("vspherestoragepolicy")
+    @Param(description = "the vsphere storage policy tagged to the service offering in case of VMware", since = "4.15")
+    private String vsphereStoragePolicy;
+
+    @SerializedName(ApiConstants.ROOT_DISK_SIZE)
+    @Param(description = "Root disk size in GB", since = "4.15")
+    private Long rootDiskSize;
+
+    @SerializedName(ApiConstants.DYNAMIC_SCALING_ENABLED)
+    @Param(description = "true if virtual machine needs to be dynamically scalable of cpu or memory", since = "4.16")
+    private Boolean dynamicScalingEnabled;
+
     public ServiceOfferingResponse() {
     }
 
@@ -449,10 +461,29 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     public void setIscutomized(boolean iscutomized) {
         this.isCustomized = iscutomized;
-
     }
 
     public void setCacheMode(String cacheMode) {
         this.cacheMode = cacheMode;
+    }
+
+    public String getVsphereStoragePolicy() {
+        return vsphereStoragePolicy;
+    }
+
+    public void setVsphereStoragePolicy(String vsphereStoragePolicy) {
+        this.vsphereStoragePolicy = vsphereStoragePolicy;
+    }
+
+    public void setRootDiskSize(Long rootDiskSize) {
+        this.rootDiskSize = rootDiskSize;
+    }
+
+    public Boolean getDynamicScalingEnabled() {
+        return dynamicScalingEnabled;
+    }
+
+    public void setDynamicScalingEnabled(Boolean dynamicScalingEnabled) {
+        this.dynamicScalingEnabled = dynamicScalingEnabled;
     }
 }

@@ -53,12 +53,26 @@ public class RebootVMCmd extends BaseAsyncCmd implements UserCmd {
             required=true, description="The ID of the virtual machine")
     private Long id;
 
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force reboot the VM (VM is Stopped and then Started)", since = "4.16.0")
+    private Boolean forced;
+
+    @Parameter(name = ApiConstants.BOOT_INTO_SETUP, type = CommandType.BOOLEAN, required = false, description = "Boot into hardware setup menu or not", since = "4.15.0.0")
+    private Boolean bootIntoSetup;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getId() {
         return id;
+    }
+
+    public boolean isForced() {
+        return (forced != null) ? forced : false;
+    }
+
+    public Boolean getBootIntoSetup() {
+        return bootIntoSetup;
     }
 
     /////////////////////////////////////////////////////

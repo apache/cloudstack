@@ -119,7 +119,7 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
     long getNetworkId();
     long getDomainId();
     long getAccountId();
-    long getMasterNodeCount();
+    long getControlNodeCount();
     long getNodeCount();
     long getTotalNodeCount();
     String getKeyPair();

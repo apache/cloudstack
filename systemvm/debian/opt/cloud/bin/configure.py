@@ -556,10 +556,18 @@ class CsSite2SiteVpn(CsDataBag):
         vpnsecretsfile = "%s/ipsec.vpn-%s.secrets" % (self.VPNCONFDIR, rightpeer)
         ikepolicy = obj['ike_policy'].replace(';', '-')
         esppolicy = obj['esp_policy'].replace(';', '-')
+        splitconnections = obj['split_connections'] if 'split_connections' in obj else False
+        ikeversion = obj['ike_version'] if 'ike_version' in obj and obj['ike_version'].lower() in ('ike', 'ikev1', 'ikev2') else 'ike'
+
+        peerlistarr = peerlist.split(',')
+        if splitconnections:
+            logging.debug('Splitting rightsubnets %s' % peerlistarr)
+            peerlist = peerlistarr[0]
 
         if rightpeer in self.confips:
             self.confips.remove(rightpeer)
         file = CsFile(vpnconffile)
+        file.repopulate()  # This avoids issues when switching off split_connections or removing subnets with split_connections == true
         file.add("#conn for vpn-%s" % rightpeer, 0)
         file.search("conn ", "conn vpn-%s" % rightpeer)
         file.addeq(" left=%s" % leftpeer)
@@ -568,7 +576,7 @@ class CsSite2SiteVpn(CsDataBag):
         file.addeq(" rightsubnet=%s" % peerlist)
         file.addeq(" type=tunnel")
         file.addeq(" authby=secret")
-        file.addeq(" keyexchange=ike")
+        file.addeq(" keyexchange=%s" % ikeversion)
         file.addeq(" ike=%s" % ikepolicy)
         file.addeq(" ikelifetime=%s" % self.convert_sec_to_h(obj['ike_lifetime']))
         file.addeq(" esp=%s" % esppolicy)
@@ -582,6 +590,14 @@ class CsSite2SiteVpn(CsDataBag):
             file.addeq(" dpddelay=30")
             file.addeq(" dpdtimeout=120")
             file.addeq(" dpdaction=restart")
+        if splitconnections and peerlistarr.count > 1:
+            logging.debug('Splitting connections for rightsubnets %s' % peerlistarr)
+            for peeridx in range(1, len(peerlistarr)):
+                logging.debug('Adding split connection -%d for subnet %s' % (peeridx + 1, peerlistarr[peeridx]))
+                file.append('')
+                file.search('conn vpn-.*-%d' % (peeridx + 1), "conn vpn-%s-%d" % (rightpeer, peeridx + 1))
+                file.append(' also=vpn-%s' % rightpeer)
+                file.append(' rightsubnet=%s' % peerlistarr[peeridx])
         secret = CsFile(vpnsecretsfile)
         secret.search("%s " % leftpeer, "%s %s : PSK \"%s\"" % (leftpeer, rightpeer, obj['ipsec_psk']))
         if secret.is_changed() or file.is_changed():
@@ -595,14 +611,25 @@ class CsSite2SiteVpn(CsDataBag):
         os.chmod(vpnsecretsfile, 0400)
 
         for i in xrange(3):
-            result = CsHelper.execute('ipsec status vpn-%s | grep "%s"' % (rightpeer, peerlist.split(",", 1)[0]))
-            if len(result) > 0:
+            done = True
+            for peeridx in range(0, len(peerlistarr)):
+                # Check for the proper connection and subnet
+                conn = rightpeer if not splitconnections else rightpeer if peeridx == 0 else '%s-%d' % (rightpeer, peeridx + 1)
+                result = CsHelper.execute('ipsec status vpn-%s | grep "%s"' % (conn, peerlistarr[peeridx]))
+                # If any of the peers hasn't yet finished, continue the outer loop
+                if len(result) == 0:
+                    done = False
+            if done:
                 break
             time.sleep(1)
 
         # With 'auto=route', connections are established on an attempt to
         # communicate over the S2S VPN. This uses ping to initialize the connection.
-        CsHelper.execute("timeout 5 ping -c 3 %s" % (peerlist.split("/", 1)[0].replace(".0", ".1")))
+        for peer in peerlistarr:
+            octets = peer.split('/', 1)[0].split('.')
+            octets[3] = str((int(octets[3]) + 1))
+            ipinsubnet = '.'.join(octets)
+            CsHelper.execute("timeout 5 ping -c 3 %s" % ipinsubnet)
 
     def convert_sec_to_h(self, val):
         hrs = int(val) / 3600
@@ -755,7 +782,7 @@ class CsRemoteAccessVpn(CsDataBag):
 
         self.fw.append(["", "", "-A INPUT -i ppp+ -m udp -p udp --dport 53 -j ACCEPT"])
         self.fw.append(["", "", "-A INPUT -i ppp+ -m tcp -p tcp --dport 53 -j ACCEPT"])
-        self.fw.append(["nat", "", "-I PREROUTING -i ppp+ -m tcp --dport 53 -j DNAT --to-destination %s" % local_ip])
+        self.fw.append(["nat", "", "-I PREROUTING -i ppp+ -p tcp -m tcp --dport 53 -j DNAT --to-destination %s" % local_ip])
 
         if self.config.is_vpc():
             return
@@ -816,6 +843,13 @@ class CsForwardingRules(CsDataBag):
             if interface.ip_in_subnet(ipa):
                 return interface.get_gateway()
         return None
+
+    def getPrivateGatewayNetworks(self):
+        interfaces = []
+        for interface in self.config.address().get_interfaces():
+            if interface.is_private_gateway():
+                interfaces.append(interface)
+        return interfaces
 
     def portsToString(self, ports, delimiter):
         ports_parts = ports.split(":", 2)
@@ -918,15 +952,6 @@ class CsForwardingRules(CsDataBag):
         if not rule["internal_ports"] == "any":
             fw_prerout_rule += ":" + self.portsToString(rule["internal_ports"], "-")
 
-        fw_postrout_rule = "-A POSTROUTING -d %s/32 " % rule["public_ip"]
-        if not rule["protocol"] == "any":
-            fw_postrout_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
-        if not rule["public_ports"] == "any":
-            fw_postrout_rule += " --dport %s" % self.portsToString(rule["public_ports"], ":")
-        fw_postrout_rule += " -j SNAT --to-source %s" % rule["internal_ip"]
-        if not rule["internal_ports"] == "any":
-            fw_postrout_rule += ":" + self.portsToString(rule["internal_ports"], "-")
-
         fw_output_rule = "-A OUTPUT -d %s/32" % rule["public_ip"]
         if not rule["protocol"] == "any":
             fw_output_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
@@ -948,7 +973,6 @@ class CsForwardingRules(CsDataBag):
             )
 
         self.fw.append(["nat", "", fw_prerout_rule])
-        self.fw.append(["nat", "", fw_postrout_rule])
         self.fw.append(["nat", "", fw_postrout_rule2])
         self.fw.append(["nat", "", fw_output_rule])
 
@@ -958,12 +982,21 @@ class CsForwardingRules(CsDataBag):
         if device is None:
             raise Exception("Ip address %s has no device in the ips databag" % rule["public_ip"])
 
+        chain_name = "PREROUTING-%s-def" % device
         self.fw.append(["mangle", "front",
-                        "-A PREROUTING -d %s/32 -m state --state NEW -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" %
-                        rule["public_ip"]])
-        self.fw.append(["mangle", "front",
-                        "-A PREROUTING -d %s/32 -m state --state NEW -j MARK --set-xmark %s/0xffffffff" %
-                        (rule["public_ip"], hex(100 + int(device[len("eth"):])))])
+                        "-A PREROUTING -s %s/32 -m state --state NEW -j %s" %
+                        (rule["internal_ip"], chain_name)])
+        self.fw.append(["mangle", "",
+                        "-A %s -j MARK --set-xmark %s/0xffffffff" %
+                        (chain_name, hex(100 + int(device[len("eth"):])))])
+        self.fw.append(["mangle", "",
+                        "-A %s -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" %
+                        chain_name])
+        private_gateways = self.getPrivateGatewayNetworks()
+        for private_gw in private_gateways:
+            self.fw.append(["mangle", "front", "-A %s -d %s -j RETURN" %
+                            (chain_name, private_gw.get_network())])
+
         self.fw.append(["nat", "front",
                         "-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
         self.fw.append(["nat", "front",
@@ -1029,10 +1062,6 @@ def main(argv):
     # The "GLOBAL" Configuration object
     config = CsConfig()
 
-    logging.basicConfig(filename=config.get_logger(),
-                        level=config.get_level(),
-                        format=config.get_format())
-
     # Load stored ip addresses from disk to CsConfig()
     config.set_address()
 
@@ -1041,6 +1070,7 @@ def main(argv):
     config.address().process()
 
     databag_map = OrderedDict([("guest_network",     {"process_iptables": True,  "executor": []}),
+                               ("ip_aliases",        {"process_iptables": True,  "executor": []}),
                                ("vm_password",       {"process_iptables": False, "executor": [CsPassword("vmpassword", config)]}),
                                ("vm_metadata",       {"process_iptables": False, "executor": [CsVmMetadata('vmdata', config)]}),
                                ("network_acl",       {"process_iptables": True,  "executor": []}),

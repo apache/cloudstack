@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -24,7 +24,7 @@ import glob
 from random import choice
 import string
 from optparse import OptionParser
-import commands
+import subprocess
 import shutil
 import socket
 
@@ -49,7 +49,7 @@ def runCmd(cmds):
     stdout, stderr = process.communicate()
     if process.returncode != 0:
         raise Exception(stderr)
-    return stdout
+    return stdout.decode('utf-8')
 
 class DBDeployer(object):
     parser = None
@@ -115,7 +115,7 @@ class DBDeployer(object):
         sys.stdout.flush()
 
     def putDbProperty(self, key, value):
-        if self.dbDotProperties.has_key(key):
+        if key in self.dbDotProperties:
             (oldValue, index) = self.dbDotProperties[key]
             self.dbDotProperties[key] = (value, index)
         else:
@@ -123,7 +123,7 @@ class DBDeployer(object):
             self.dbDotPropertiesIndex += 1
 
     def getDbProperty(self, key):
-        if not self.dbDotProperties.has_key(key):
+        if key not in self.dbDotProperties:
             return None
         (value, index) = self.dbDotProperties[key]
         return value
@@ -145,14 +145,14 @@ class DBDeployer(object):
           mysqlPath = "mysql"
         try:
             mysqlCmds = [mysqlPath, '--user=%s'%kwargs['user'], '--host=%s'%kwargs['host'], '--port=%s'%kwargs['port']]
-            if kwargs.has_key('passwd'):
-                mysqlCmds.append('--password=%s'%kwargs['passwd'])
-            file(self.tmpMysqlFile, 'w').write(text)
+            if 'passwd' in kwargs:
+                mysqlCmds.append('--password=\'%s\''%kwargs['passwd'])
+            open(self.tmpMysqlFile, 'w').write(text)
             mysqlCmds.append('<')
             mysqlCmds.append(self.tmpMysqlFile)
             runCmd(mysqlCmds)
 
-        except Exception, e:
+        except Exception as e:
             err = '''Encountering an error when executing mysql script
 ----------------------------------------------------------------------
 table:
@@ -179,7 +179,7 @@ Sql parameters:
 ***************************************************************
 Please run:
 
-    cloud-setup-database -h
+    cloudstack-setup-databases -h
 
 for full help
 ''' % msg
@@ -222,7 +222,7 @@ for full help
         for f in ["create-database","create-schema", "create-database-premium","create-schema-premium"]:
             p = os.path.join(self.dbFilesPath,"%s.sql"%f)
             if not os.path.exists(p): continue
-            text = file(p).read()
+            text = open(p).read()
             for t, r in replacements: text = text.replace(t,r)
             self.info("Applying %s"%p)
             self.runMysql(text, p, True)
@@ -235,32 +235,32 @@ for full help
             try:
                 output = runCmd(['build-classpath'] + systemjars)
                 systemcp = output.strip()
-            except Exception, e:
+            except Exception as e:
                 systemcp = r"@SYSTEMCLASSPATH@"
             mscp = r"@MSCLASSPATH@"
             depscp = r"@DEPSCLASSPATH@"
             classpath = os.path.pathsep.join([pcp,systemcp,depscp,mscp,conf])
             try:
                 runCmd(["java","-cp",classpath,"com.cloud.test.DatabaseConfig", self.serversetup])
-            except Exception, e:
+            except Exception as e:
                 self.errorAndExit("Apply %s failed"%self.serversetup)
         else:
             p = os.path.join(self.dbFilesPath, 'server-setup.sql')
-            text = file(p).read()
+            text = open(p).read()
             self.info("Applying %s"%p)
             self.runMysql(text, p, True)
             self.info(None, True)
 
         for f in ["templates"]:
             p = os.path.join(self.dbFilesPath,"%s.sql"%f)
-            text = file(p).read()
+            text = open(p).read()
             self.info("Applying %s"%p)
             self.runMysql(text, p, True)
             self.info(None, True)
 
         p = os.path.join(self.dbFilesPath,"schema-level.sql")
         if os.path.isfile(p):
-            text = file(p).read()
+            text = open(p).read()
             self.info("Applying %s"%p)
             self.runMysql(text, p, True)
             self.info(None, True)
@@ -268,7 +268,7 @@ for full help
     def prepareDBFiles(self):
         def prepareDBDotProperties():
             dbpPath = os.path.join(self.dbConfPath, 'db.properties')
-            dbproperties = file(dbpPath).read().splitlines()
+            dbproperties = open(dbpPath).read().splitlines()
             newdbp = []
             emptyLine = 0
             for line in dbproperties:
@@ -289,7 +289,7 @@ for full help
                         if key == "db.usage.password": value = self.password
                         if key == "db.usage.host": value = self.host
                         if key == "db.usage.port": value = self.port
-                except Exception, e:
+                except Exception as e:
                     err = '''Wrong format in %s (%s):
 Besides comments beginning "#" and empty line, all key-value pairs must be in formula of
                     key=value
@@ -306,7 +306,7 @@ for example:
     def finalize(self):
         def finalizeDbProperties():
             entries = []
-            for key in self.dbDotProperties.keys():
+            for key in list(self.dbDotProperties.keys()):
                 (value, index) = self.dbDotProperties[key]
                 if key.startswith("#"):
                     entries.insert(index, key)
@@ -314,7 +314,7 @@ for example:
                     entries.insert(index, '')
                 else:
                     entries.insert(index, "%s=%s"%(key, value))
-            file(os.path.join(self.dbConfPath, 'db.properties'), 'w').write('\n'.join(entries))
+            open(os.path.join(self.dbConfPath, 'db.properties'), 'w').write('\n'.join(entries))
 
         self.info("Finalizing setup ...", None)
         finalizeDbProperties()
@@ -326,7 +326,7 @@ for example:
             try:
                 ip = socket.gethostbyname(socket.gethostname())
                 return ip
-            except Exception, e:
+            except Exception as e:
                 return "127.0.0.1"
 
         if not self.ip:
@@ -363,7 +363,7 @@ for example:
             self.info("Checking local machine hostname ...", None)
             try:
                 output= socket.getfqdn()
-            except Exception, e:
+            except Exception as e:
                 err = "The host name of this computer does not resolve to an IP address.\nPlease use your operating system's network setup tools to fix this ('hostname --fqdn' %s).\n"%e.__str__()
                 self.errorAndExit(err)
             self.info(None, True)
@@ -372,10 +372,10 @@ for example:
             self.info("Checking SELinux setup ...", None)
             try:
                 check_selinux()
-            except CheckFailed, e:
+            except CheckFailed as e:
                 self.info("checkSelinux failed with error continuing...", None)
                 self.errorAndContinue(e.__str__())
-            except OSError, e:
+            except OSError as e:
                 if e.errno == 2: pass
                 else:
                     self.info("checkSelinux failed with error continuing...", None)
@@ -388,12 +388,12 @@ for example:
 
     def processEncryptionStuff(self):
         def encrypt(input):
-            cmd = ['java','-Djava.security.egd=file:/dev/urandom','-classpath','"' + self.encryptionJarPath + '"','org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI', 'encrypt.sh', 'input=%s'%input, 'password=%s'%self.mgmtsecretkey,'verbose=false']
-            return runCmd(cmd).strip('\r\n')
+            cmd = ['java','-Djava.security.egd=file:/dev/urandom','-classpath','"' + self.encryptionJarPath + '"','org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI', 'encrypt.sh', 'input=\'%s\''%input, 'password=\'%s\''%self.mgmtsecretkey,'verbose=false']
+            return str(runCmd(cmd)).strip('\r\n')
 
         def saveMgmtServerSecretKey():
             if self.encryptiontype == 'file':
-                file(self.encryptionKeyFile, 'w').write(self.mgmtsecretkey)
+                open(self.encryptionKeyFile, 'w').write(self.mgmtsecretkey)
 
         def formatEncryptResult(value):
             return 'ENC(%s)'%value
@@ -595,9 +595,9 @@ for example:
         finally:
             self.postRun()
 
-        print ''
-        print "CloudStack has successfully initialized database, you can check your database configuration in %s"%os.path.join(self.dbConfPath, 'db.properties')
-        print ''
+        print('')
+        print("CloudStack has successfully initialized database, you can check your database configuration in %s"%os.path.join(self.dbConfPath, 'db.properties'))
+        print('')
 
 if __name__ == "__main__":
    o = DBDeployer()

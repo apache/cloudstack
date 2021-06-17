@@ -173,7 +173,7 @@ class CsRedundant(object):
         force_keepalived_restart = False
         proc = CsProcess(['/etc/conntrackd/conntrackd.conf'])
 
-        if not proc.find() and not is_equals:
+        if not proc.find() or not is_equals:
             CsHelper.copy(conntrackd_template_conf, self.CONNTRACKD_CONF)
             CsHelper.service("conntrackd", "restart")
             force_keepalived_restart = True
@@ -199,20 +199,20 @@ class CsRedundant(object):
         if keepalived_conf.is_changed() or force_keepalived_restart:
             keepalived_conf.commit()
             os.chmod(self.KEEPALIVED_CONF, 0o644)
-            if force_keepalived_restart or not self.cl.is_master():
+            if force_keepalived_restart or not self.cl.is_primary():
                 CsHelper.service("keepalived", "restart")
             else:
                 CsHelper.service("keepalived", "reload")
 
     def release_lock(self):
         try:
-            os.remove("/tmp/master_lock")
+            os.remove("/tmp/primary_lock")
         except OSError:
             pass
 
     def set_lock(self):
         """
-        Make sure that master state changes happen sequentially
+        Make sure that primary state changes happen sequentially
         """
         iterations = 10
         time_between = 1
@@ -220,13 +220,13 @@ class CsRedundant(object):
         for iter in range(0, iterations):
             try:
                 s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                s.bind('/tmp/master_lock')
+                s.bind('/tmp/primary_lock')
                 return s
             except socket.error, e:
                 error_code = e.args[0]
                 error_string = e.args[1]
                 print "Process already running (%d:%s). Exiting" % (error_code, error_string)
-                logging.info("Master is already running, waiting")
+                logging.info("Primary is already running, waiting")
                 sleep(time_between)
 
     def set_fault(self):
@@ -290,7 +290,7 @@ class CsRedundant(object):
 
         CsHelper.service("dnsmasq", "stop")
 
-        self.cl.set_master_state(False)
+        self.cl.set_primary_state(False)
         self.cl.save()
         self.release_lock()
 
@@ -298,14 +298,14 @@ class CsRedundant(object):
         CsHelper.reconfigure_interfaces(self.cl, interfaces)
         logging.info("Router switched to backup mode")
 
-    def set_master(self):
-        """ Set the current router to master """
+    def set_primary(self):
+        """ Set the current router to primary """
         if not self.cl.is_redundant():
-            logging.error("Set master called on non-redundant router")
+            logging.error("Set primary called on non-redundant router")
             return
 
         self.set_lock()
-        logging.debug("Setting router to master")
+        logging.debug("Setting router to primary")
 
         dev = ''
         interfaces = [interface for interface in self.address.get_interfaces() if interface.is_public()]
@@ -348,7 +348,7 @@ class CsRedundant(object):
                 CsPasswdSvc(interface.get_gateway() + "," + interface.get_ip()).restart()
 
         CsHelper.service("dnsmasq", "restart")
-        self.cl.set_master_state(True)
+        self.cl.set_primary_state(True)
         self.cl.save()
         self.release_lock()
 
@@ -362,7 +362,7 @@ class CsRedundant(object):
             public_devices.sort()
 
             # Ensure the default route is added, or outgoing traffic from VMs with static NAT on
-            # the subsequent interfaces will go from he wrong IP
+            # the subsequent interfaces will go from the wrong IP
             route = CsRoute()
             dev = ''
             for interface in interfaces:
@@ -381,7 +381,7 @@ class CsRedundant(object):
                     if interface.get_device() == device:
                         CsHelper.execute("arping -I %s -U %s -c 1" % (device, interface.get_ip()))
 
-        logging.info("Router switched to master mode")
+        logging.info("Router switched to primary mode")
 
     def _collect_ignore_ips(self):
         """

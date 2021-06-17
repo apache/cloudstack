@@ -20,32 +20,6 @@ package org.apache.cloudstack.direct.download;
 
 import static com.cloud.storage.Storage.ImageFormat;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.event.ActionEventUtils;
-import com.cloud.event.EventTypes;
-import com.cloud.event.EventVO;
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.OperationTimedoutException;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ScopeType;
-import com.cloud.storage.Storage;
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.exception.CloudRuntimeException;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.cert.Certificate;
@@ -79,6 +53,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -86,12 +63,39 @@ import org.apache.cloudstack.poll.BackgroundPollManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.security.CertificateHelper;
 
 import sun.security.x509.X509CertImpl;
@@ -126,6 +130,10 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     private DataCenterDao dataCenterDao;
     @Inject
     private ConfigurationDao configDao;
+    @Inject
+    private TemplateDataFactory tmplFactory;
+    @Inject
+    private VolumeService volService;
 
     protected ScheduledExecutorService executorService;
 
@@ -259,17 +267,24 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         DownloadProtocol protocol = getProtocolFromUrl(url);
         DirectDownloadCommand cmd = getDirectDownloadCommandFromProtocol(protocol, url, templateId, to, checksum, headers);
         cmd.setTemplateSize(template.getSize());
-        cmd.setIso(template.getFormat() == ImageFormat.ISO);
+        cmd.setFormat(template.getFormat());
+
+        if (tmplFactory.getTemplate(templateId, store) != null) {
+            cmd.setDestData((TemplateObjectTO) tmplFactory.getTemplate(templateId, store).getTO());
+        }
+
+        int cmdTimeOut = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
+        cmd.setWait(cmdTimeOut);
 
         Answer answer = sendDirectDownloadCommand(cmd, template, poolId, host);
 
-        VMTemplateStoragePoolVO sPoolRef = vmTemplatePoolDao.findByPoolTemplate(poolId, templateId);
+        VMTemplateStoragePoolVO sPoolRef = vmTemplatePoolDao.findByPoolTemplate(poolId, templateId, null);
         if (sPoolRef == null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Not found (templateId:" + templateId + " poolId: " + poolId + ") in template_spool_ref, persisting it");
             }
             DirectDownloadAnswer ans = (DirectDownloadAnswer) answer;
-            sPoolRef = new VMTemplateStoragePoolVO(poolId, templateId);
+            sPoolRef = new VMTemplateStoragePoolVO(poolId, templateId, null);
             sPoolRef.setDownloadPercent(100);
             sPoolRef.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
             sPoolRef.setState(ObjectInDataStoreStateMachine.State.Ready);
@@ -277,6 +292,16 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
             sPoolRef.setLocalDownloadPath(ans.getInstallPath());
             sPoolRef.setInstallPath(ans.getInstallPath());
             vmTemplatePoolDao.persist(sPoolRef);
+        } else {
+            // For managed storage, update after template downloaded and copied to the disk
+            DirectDownloadAnswer ans = (DirectDownloadAnswer) answer;
+            sPoolRef.setDownloadPercent(100);
+            sPoolRef.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+            sPoolRef.setState(ObjectInDataStoreStateMachine.State.Ready);
+            sPoolRef.setTemplateSize(ans.getTemplateSize());
+            sPoolRef.setLocalDownloadPath(ans.getInstallPath());
+            sPoolRef.setInstallPath(ans.getInstallPath());
+            vmTemplatePoolDao.update(sPoolRef.getId(), sPoolRef);
         }
     }
 
@@ -294,20 +319,39 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         int retry = 3;
 
         StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(poolId);
+        // TODO: Move the host retry attempts to upper layer
         Long[] hostsToRetry = getHostsToRetryOn(host, storagePoolVO);
         int hostIndex = 0;
         Answer answer = null;
         Long hostToSendDownloadCmd = hostsToRetry[hostIndex];
         boolean continueRetrying = true;
         while (!downloaded && retry > 0 && continueRetrying) {
-            s_logger.debug("Sending Direct download command to host " + hostToSendDownloadCmd);
-            answer = agentManager.easySend(hostToSendDownloadCmd, cmd);
-            if (answer != null) {
-                DirectDownloadAnswer ans = (DirectDownloadAnswer)answer;
-                downloaded = answer.getResult();
-                continueRetrying = ans.isRetryOnOtherHosts();
+            PrimaryDataStore primaryDataStore = null;
+            TemplateInfo templateOnPrimary = null;
+
+            try {
+                if (hostToSendDownloadCmd != host.getId() && storagePoolVO.isManaged()) {
+                    primaryDataStore = (PrimaryDataStore) dataStoreManager.getPrimaryDataStore(poolId);
+                    templateOnPrimary = primaryDataStore.getTemplate(template.getId(), null);
+                    if (templateOnPrimary != null) {
+                        volService.grantAccess(templateOnPrimary, host, primaryDataStore);
+                    }
+                }
+
+                s_logger.debug("Sending Direct download command to host " + hostToSendDownloadCmd);
+                answer = agentManager.easySend(hostToSendDownloadCmd, cmd);
+                if (answer != null) {
+                    DirectDownloadAnswer ans = (DirectDownloadAnswer)answer;
+                    downloaded = answer.getResult();
+                    continueRetrying = ans.isRetryOnOtherHosts();
+                }
+                hostToSendDownloadCmd = hostsToRetry[(hostIndex + 1) % hostsToRetry.length];
+            } finally {
+                if (templateOnPrimary != null) {
+                    volService.revokeAccess(templateOnPrimary, host, primaryDataStore);
+                }
             }
-            hostToSendDownloadCmd = hostsToRetry[(hostIndex + 1) % hostsToRetry.length];
+
             retry --;
         }
         if (!downloaded) {
@@ -486,6 +530,39 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         }
 
         return true;
+    }
+
+    @Override
+    public boolean syncCertificatesToHost(long hostId, long zoneId) {
+        List<DirectDownloadCertificateVO> zoneCertificates = directDownloadCertificateDao.listByZone(zoneId);
+        if (CollectionUtils.isEmpty(zoneCertificates)) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("No certificates to sync on host: " + hostId);
+            }
+            return true;
+        }
+
+        boolean syncCertificatesResult = true;
+        int certificatesSyncCount = 0;
+        s_logger.debug("Syncing certificates on host: " + hostId);
+        for (DirectDownloadCertificateVO certificateVO : zoneCertificates) {
+            DirectDownloadCertificateHostMapVO mapping = directDownloadCertificateHostMapDao.findByCertificateAndHost(certificateVO.getId(), hostId);
+            if (mapping == null) {
+                s_logger.debug("Syncing certificate " + certificateVO.getId() + " (" + certificateVO.getAlias() + ") on host: " + hostId + ", uploading it");
+                if (!uploadCertificate(certificateVO.getId(), hostId)) {
+                    String msg = "Could not sync certificate " + certificateVO.getId() + " (" + certificateVO.getAlias() + ") on host: " + hostId + ", upload failed";
+                    s_logger.error(msg);
+                    syncCertificatesResult = false;
+                } else {
+                    certificatesSyncCount++;
+                }
+            } else {
+                s_logger.debug("Certificate " + certificateVO.getId() + " (" + certificateVO.getAlias() + ") already synced on host: " + hostId);
+            }
+        }
+
+        s_logger.debug("Synced " + certificatesSyncCount + " out of " + zoneCertificates.size() + " certificates on host: " + hostId);
+        return syncCertificatesResult;
     }
 
     @Override

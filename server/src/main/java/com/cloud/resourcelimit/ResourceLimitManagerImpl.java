@@ -107,6 +107,8 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 @Component
 public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ResourceLimitManagerImpl.class);
@@ -427,8 +429,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 long domainResourceLimit = findCorrectResourceLimitForDomain(domain, type);
                 long currentDomainResourceCount = _resourceCountDao.getResourceCount(domainId, ResourceOwnerType.Domain, type);
                 long requestedDomainResourceCount = currentDomainResourceCount + numResources;
-                String messageSuffix = " domain resource limits of Type '" + type + "'" + " for Domain Id = " + domainId + " is exceeded: Domain Resource Limit = " + domainResourceLimit
-                        + ", Current Domain Resource Amount = " + currentDomainResourceCount + ", Requested Resource Amount = " + numResources + ".";
+                String messageSuffix = " domain resource limits of Type '" + type + "'" + " for Domain Id = " + domainId + " is exceeded: Domain Resource Limit = " + toHumanReadableSize(domainResourceLimit)
+                        + ", Current Domain Resource Amount = " + toHumanReadableSize(currentDomainResourceCount) + ", Requested Resource Amount = " + toHumanReadableSize(numResources) + ".";
 
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Checking if" + messageSuffix);
@@ -450,9 +452,20 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         long accountResourceLimit = findCorrectResourceLimitForAccount(account, type);
         long currentResourceCount = _resourceCountDao.getResourceCount(account.getId(), ResourceOwnerType.Account, type);
         long requestedResourceCount = currentResourceCount + numResources;
+
+        String convertedAccountResourceLimit = String.valueOf(accountResourceLimit);
+        String convertedCurrentResourceCount = String.valueOf(currentResourceCount);
+        String convertedNumResources = String.valueOf(numResources);
+
+        if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
+            convertedAccountResourceLimit = toHumanReadableSize(accountResourceLimit);
+            convertedCurrentResourceCount = toHumanReadableSize(currentResourceCount);
+            convertedNumResources = toHumanReadableSize(numResources);
+        }
+
         String messageSuffix = " amount of resources of Type = '" + type + "' for " + (project == null ? "Account Name = " + account.getAccountName() : "Project Name = " + project.getName())
-                + " in Domain Id = " + account.getDomainId() + " is exceeded: Account Resource Limit = " + accountResourceLimit + ", Current Account Resource Amount = " + currentResourceCount
-                + ", Requested Resource Amount = " + numResources + ".";
+                + " in Domain Id = " + account.getDomainId() + " is exceeded: Account Resource Limit = " + convertedAccountResourceLimit + ", Current Account Resource Amount = " + convertedCurrentResourceCount
+                + ", Requested Resource Amount = " + convertedNumResources + ".";
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Checking if" + messageSuffix);
@@ -701,8 +714,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             }
 
             if ((caller.getAccountId() == accountId.longValue()) && (_accountMgr.isDomainAdmin(caller.getId()) || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)) {
-                // If the admin is trying to update his own account, disallow.
-                throw new PermissionDeniedException("Unable to update resource limit for his own account " + accountId + ", permission denied");
+                // If the admin is trying to update their own account, disallow.
+                throw new PermissionDeniedException("Unable to update resource limit for their own account " + accountId + ", permission denied");
             }
 
             if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
@@ -807,7 +820,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     @DB
     protected boolean updateResourceCountForAccount(final long accountId, final ResourceType type, final boolean increment, final long delta) {
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Updating resource Type = " + type + " count for Account = " + accountId + " Operation = " + (increment ? "increasing" : "decreasing") + " Amount = " + delta);
+            String convertedDelta = String.valueOf(delta);
+            if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
+                convertedDelta = toHumanReadableSize(delta);
+            }
+            s_logger.debug("Updating resource Type = " + type + " count for Account = " + accountId + " Operation = " + (increment ? "increasing" : "decreasing") + " Amount = " + convertedDelta);
         }
         try {
             return Transaction.execute(new TransactionCallback<Boolean>() {

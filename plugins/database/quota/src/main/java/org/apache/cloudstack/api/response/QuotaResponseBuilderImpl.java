@@ -69,6 +69,8 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 
 @Component
 public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
@@ -117,7 +119,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     @Override
-    public List<QuotaSummaryResponse> createQuotaSummaryResponse(final String accountName, final Long domainId) {
+    public Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(final String accountName, final Long domainId) {
         List<QuotaSummaryResponse> result = new ArrayList<QuotaSummaryResponse>();
 
         if (accountName != null && domainId != null) {
@@ -126,20 +128,30 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             result.add(qr);
         }
 
-        return result;
+        return new Pair<>(result, result.size());
     }
 
     @Override
-    public List<QuotaSummaryResponse> createQuotaSummaryResponse(Boolean listAll) {
-        List<QuotaSummaryResponse> result = new ArrayList<QuotaSummaryResponse>();
+    public Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(Boolean listAll) {
+        return createQuotaSummaryResponse(listAll, null, null, null);
+    }
 
+    @Override
+    public Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(Boolean listAll, final String keyword, final Long startIndex, final Long pageSize) {
+        List<QuotaSummaryResponse> result = new ArrayList<QuotaSummaryResponse>();
+        Integer count = 0;
         if (listAll) {
-            for (final AccountVO account : _accountDao.listAll()) {
+            Filter filter = new Filter(AccountVO.class, "accountName", true, startIndex, pageSize);
+            Pair<List<AccountVO>, Integer> data = _accountDao.findAccountsLike(keyword, filter);
+            count = data.second();
+            for (final AccountVO account : data.first()) {
                 QuotaSummaryResponse qr = getQuotaSummaryResponse(account);
                 result.add(qr);
             }
         } else {
-            for (final QuotaAccountVO quotaAccount : _quotaAccountDao.listAllQuotaAccount()) {
+            Pair<List<QuotaAccountVO>, Integer> data = _quotaAccountDao.listAllQuotaAccount(startIndex, pageSize);
+            count = data.second();
+            for (final QuotaAccountVO quotaAccount : data.first()) {
                 AccountVO account = _accountDao.findById(quotaAccount.getId());
                 if (account == null) {
                     continue;
@@ -148,7 +160,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
                 result.add(qr);
             }
         }
-        return result;
+        return new Pair<>(result, count);
     }
 
     private QuotaSummaryResponse getQuotaSummaryResponse(final Account account) {
@@ -160,9 +172,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             BigDecimal curBalance = _quotaBalanceDao.lastQuotaBalance(account.getAccountId(), account.getDomainId(), period[1].getTime());
             BigDecimal quotaUsage = _quotaUsageDao.findTotalQuotaUsage(account.getAccountId(), account.getDomainId(), null, period[0].getTime(), period[1].getTime());
 
-            qr.setAccountId(account.getAccountId());
+            qr.setAccountId(account.getUuid());
             qr.setAccountName(account.getAccountName());
-            qr.setDomainId(account.getDomainId());
+            qr.setDomainId(domain.getUuid());
             qr.setDomainName(domain.getName());
             qr.setBalance(curBalance);
             qr.setQuotaUsage(quotaUsage);
@@ -341,8 +353,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     @Override
-    public List<QuotaTariffVO> listQuotaTariffPlans(final QuotaTariffListCmd cmd) {
-        List<QuotaTariffVO> result = new ArrayList<QuotaTariffVO>();
+    public Pair<List<QuotaTariffVO>, Integer> listQuotaTariffPlans(final QuotaTariffListCmd cmd) {
+        Pair<List<QuotaTariffVO>, Integer> result;
         Date effectiveDate = cmd.getEffectiveDate() == null ? new Date() : cmd.getEffectiveDate();
         Date adjustedEffectiveDate = _quotaService.computeAdjustedTime(effectiveDate);
         if (s_logger.isDebugEnabled()) {
@@ -351,10 +363,14 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         if (cmd.getUsageType() != null) {
             QuotaTariffVO tariffPlan = _quotaTariffDao.findTariffPlanByUsageType(cmd.getUsageType(), adjustedEffectiveDate);
             if (tariffPlan != null) {
-                result.add(tariffPlan);
+                List<QuotaTariffVO> list = new ArrayList<>();
+                list.add(tariffPlan);
+                result = new Pair<>(list, list.size());
+            } else {
+                result = new Pair<>(new ArrayList<>(), 0);
             }
         } else {
-            result = _quotaTariffDao.listAllTariffPlans(adjustedEffectiveDate);
+            result = _quotaTariffDao.listAllTariffPlans(adjustedEffectiveDate, cmd.getStartIndex(), cmd.getPageSizeVal());
         }
         return result;
     }

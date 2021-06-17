@@ -39,6 +39,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.dao.VsphereStoragePolicyDao;
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -207,6 +209,7 @@ import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.Volume;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -240,6 +243,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicIpAlias;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
@@ -386,6 +390,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     IndirectAgentLB _indirectAgentLB;
     @Inject
     private VMTemplateZoneDao templateZoneDao;
+    @Inject
+    VsphereStoragePolicyDao vsphereStoragePolicyDao;
+
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject
@@ -409,6 +416,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             "Maximum IOPS read burst duration (seconds). If '0' (zero) then does not check for maximum burst length.", true, ConfigKey.Scope.Global, null);
     public final static ConfigKey<Long> IOPS_MAX_WRITE_LENGTH = new ConfigKey<Long>(Long.class, "vm.disk.iops.maximum.write.length", "Advanced", "0",
             "Maximum IOPS write burst duration (seconds). If '0' (zero) then does not check for maximum burst length.", true, ConfigKey.Scope.Global, null);
+    public static final ConfigKey<Boolean> ADD_HOST_ON_SERVICE_RESTART_KVM = new ConfigKey<Boolean>(Boolean.class, "add.host.on.service.restart.kvm", "Advanced", "true",
+            "Indicates whether the host will be added back to cloudstack after restarting agent service on host. If false it wont be added back even after service restart",
+            true, ConfigKey.Scope.Global, null);
+    public static final ConfigKey<Boolean> SET_HOST_DOWN_TO_MAINTENANCE = new ConfigKey<Boolean>(Boolean.class, "set.host.down.to.maintenance", "Advanced", "false",
+                        "Indicates whether the host in down state can be put into maintenance state so thats its not enabled after it comes back.",
+                        true, ConfigKey.Scope.Zone, null);
 
     private static final String IOPS_READ_RATE = "IOPS Read";
     private static final String IOPS_WRITE_RATE = "IOPS Write";
@@ -419,6 +432,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private static final String DefaultVlanForPodIpRange = Vlan.UNTAGGED.toString();
 
     private static final Set<Provider> VPC_ONLY_PROVIDERS = Sets.newHashSet(Provider.VPCVirtualRouter, Provider.JuniperContrailVpcRouter, Provider.InternalLbVm);
+
+    private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -459,6 +474,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("externaldhcp.vmip.max.retry");
         configValuesForValidation.add("externaldhcp.vmipFetch.threadPool.max");
         configValuesForValidation.add("remote.access.vpn.psk.length");
+        configValuesForValidation.add(StorageManager.STORAGE_POOL_DISK_WAIT.key());
+        configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.key());
+        configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_MAX_CONNECTIONS.key());
     }
 
     private void weightBasedParametersForValidation() {
@@ -593,6 +611,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
 
                 _storagePoolDetailsDao.addDetail(resourceId, name, value, true);
+                if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                    List<StoragePoolVO> childDataStores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(resourceId);
+                    for (StoragePoolVO childDataStore: childDataStores) {
+                        _storagePoolDetailsDao.addDetail(childDataStore.getId(), name, value, true);
+                    }
+                }
 
                 break;
 
@@ -1000,7 +1024,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     if (route != null) {
                         final String routeToVerify = route.trim();
                         if (!NetUtils.isValidIp4Cidr(routeToVerify)) {
-                            throw new InvalidParameterValueException("Invalid value for blacklisted route: " + route + ". Valid format is list"
+                            throw new InvalidParameterValueException("Invalid value for route: " + route + " in deny list. Valid format is list"
                                     + " of cidrs separated by coma. Example: 10.1.1.0/24,192.168.0.0/24");
                         }
                     }
@@ -1708,7 +1732,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         //check if there are any secondary stores attached to the zone
-        if(!_imageStoreDao.findByScope(new ZoneScope(zoneId)).isEmpty()) {
+        if(!_imageStoreDao.findByZone(new ZoneScope(zoneId), null).isEmpty()) {
             throw new CloudRuntimeException(errorMsg + "there are Secondary storages in this zone");
         }
 
@@ -2319,12 +2343,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 throw new InvalidParameterValueException("For creating a custom compute offering cpu and memory all should be null");
             }
             // if any of them is null, then all of them shoull be null
-            if (maxCPU == null || minCPU == null || maxMemory == null || minMemory == null) {
-                if (maxCPU != null || minCPU != null || maxMemory != null || minMemory != null) {
-                    throw new InvalidParameterValueException("For creating a custom compute offering min/max cpu and min/max memory should all be specified");
+            if (maxCPU == null || minCPU == null || maxMemory == null || minMemory == null || cpuSpeed == null) {
+                if (maxCPU != null || minCPU != null || maxMemory != null || minMemory != null || cpuSpeed != null) {
+                    throw new InvalidParameterValueException("For creating a custom compute offering min/max cpu and min/max memory/cpu speed should all be null or all specified");
                 }
             } else {
-                if (cpuSpeed != null && (cpuSpeed.intValue() < 0 || cpuSpeed.longValue() > Integer.MAX_VALUE)) {
+                if (cpuSpeed.intValue() < 0 || cpuSpeed.longValue() > Integer.MAX_VALUE) {
                     throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu speed value between 1 and " + Integer.MAX_VALUE);
                 }
                 if ((maxCPU <= 0 || maxCPU.longValue() > Integer.MAX_VALUE) || (minCPU <= 0 || minCPU.longValue() > Integer.MAX_VALUE )  ) {
@@ -2340,14 +2364,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 details.put(ApiConstants.MAX_CPU_NUMBER, maxCPU.toString());
             }
         } else {
-            if (cpuNumber != null && (cpuNumber.intValue() <= 0 || cpuNumber.longValue() > Integer.MAX_VALUE)) {
-                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu number value between 1 and " + Integer.MAX_VALUE);
+            Integer maxCPUCores = VirtualMachineManager.VmServiceOfferingMaxCPUCores.value() == 0 ? Integer.MAX_VALUE: VirtualMachineManager.VmServiceOfferingMaxCPUCores.value();
+            Integer maxRAMSize = VirtualMachineManager.VmServiceOfferingMaxRAMSize.value() == 0 ? Integer.MAX_VALUE: VirtualMachineManager.VmServiceOfferingMaxRAMSize.value();
+            if (cpuNumber != null && (cpuNumber.intValue() <= 0 || cpuNumber.longValue() > maxCPUCores)) {
+                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu number value between 1 and " + maxCPUCores);
             }
-            if (cpuSpeed != null && (cpuSpeed.intValue() < 0 || cpuSpeed.longValue() > Integer.MAX_VALUE)) {
+            if (cpuSpeed == null || (cpuSpeed.intValue() < 0 || cpuSpeed.longValue() > Integer.MAX_VALUE)) {
                 throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the cpu speed value between 0 and " + Integer.MAX_VALUE);
             }
-            if (memory != null && (memory.intValue() < 32 || memory.longValue() > Integer.MAX_VALUE)) {
-                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the memory value between 32 and " + Integer.MAX_VALUE + " MB");
+            if (memory != null && (memory.intValue() < 32 || memory.longValue() > maxRAMSize)) {
+                throw new InvalidParameterValueException("Failed to create service offering " + offeringName + ": specify the memory value between 32 and " + maxRAMSize + " MB");
             }
         }
 
@@ -2444,25 +2470,32 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        final Long storagePolicyId = cmd.getStoragePolicy();
+        if (storagePolicyId != null) {
+            if (vsphereStoragePolicyDao.findById(storagePolicyId) == null) {
+                throw new InvalidParameterValueException("Please specify a valid vSphere storage policy id");
+            }
+        }
+
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
                 cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainIds(), cmd.getZoneIds(), cmd.getHostTag(),
-                cmd.getNetworkRate(), cmd.getDeploymentPlanner(), details, isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
+                cmd.getNetworkRate(), cmd.getDeploymentPlanner(), details, cmd.getRootDiskSize(), isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
                 cmd.getBytesReadRate(), cmd.getBytesReadRateMax(), cmd.getBytesReadRateMaxLength(),
                 cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
-                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode());
+                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled());
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
             final String name, final Integer cpu, final Integer ramSize, final Integer speed, final String displayText, final String provisioningType, final boolean localStorageRequired,
             final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm, String tags, final List<Long> domainIds, List<Long> zoneIds, final String hostTag,
-            final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, final Boolean isCustomizedIops, Long minIops, Long maxIops,
+            final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, Long rootDiskSizeInGiB, final Boolean isCustomizedIops, Long minIops, Long maxIops,
             Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
             Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
             Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
             Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-            final Integer hypervisorSnapshotReserve, String cacheMode) {
+            final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID, final boolean dynamicScalingEnabled) {
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
 
@@ -2494,7 +2527,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA,
                 limitResourceUse, volatileVm, displayText, typedProvisioningType, localStorageRequired, false, tags, isSystem, vmType,
-                hostTag, deploymentPlanner);
+                hostTag, deploymentPlanner, dynamicScalingEnabled);
 
         if (Boolean.TRUE.equals(isCustomizedIops) || isCustomizedIops == null) {
                 minIops = null;
@@ -2518,47 +2551,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        if (rootDiskSizeInGiB != null && rootDiskSizeInGiB <= 0L) {
+            throw new InvalidParameterValueException(String.format("The Root disk size is of %s GB but it must be greater than 0.", rootDiskSizeInGiB));
+        } else if (rootDiskSizeInGiB != null) {
+            long rootDiskSizeInBytes = rootDiskSizeInGiB * GiB_TO_BYTES;
+            offering.setDiskSize(rootDiskSizeInBytes);
+        }
 
         offering.setCustomizedIops(isCustomizedIops);
         offering.setMinIops(minIops);
         offering.setMaxIops(maxIops);
 
-        if (bytesReadRate != null && bytesReadRate > 0) {
-            offering.setBytesReadRate(bytesReadRate);
-        }
-        if (bytesReadRateMax != null && bytesReadRateMax > 0) {
-            offering.setBytesReadRateMax(bytesReadRateMax);
-        }
-        if (bytesReadRateMaxLength != null && bytesReadRateMaxLength > 0) {
-            offering.setBytesReadRateMaxLength(bytesReadRateMaxLength);
-        }
-        if (bytesWriteRate != null && bytesWriteRate > 0) {
-            offering.setBytesWriteRate(bytesWriteRate);
-        }
-        if (bytesWriteRateMax != null && bytesWriteRateMax > 0) {
-            offering.setBytesWriteRateMax(bytesWriteRateMax);
-        }
-        if (bytesWriteRateMaxLength != null && bytesWriteRateMaxLength > 0) {
-            offering.setBytesWriteRateMaxLength(bytesWriteRateMaxLength);
-        }
-        if (iopsReadRate != null && iopsReadRate > 0) {
-            offering.setIopsReadRate(iopsReadRate);
-        }
-        if (iopsReadRateMax != null && iopsReadRateMax > 0) {
-            offering.setIopsReadRateMax(iopsReadRateMax);
-        }
-        if (iopsReadRateMaxLength != null && iopsReadRateMaxLength > 0) {
-            offering.setIopsReadRateMaxLength(iopsReadRateMaxLength);
-        }
-        if (iopsWriteRate != null && iopsWriteRate > 0) {
-            offering.setIopsWriteRate(iopsWriteRate);
-        }
-        if (iopsWriteRateMax != null && iopsWriteRateMax > 0) {
-            offering.setIopsWriteRateMax(iopsWriteRateMax);
-        }
-        if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength > 0) {
-            offering.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
-        }
+        setBytesRate(offering, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength);
+        setIopsRate(offering, iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength);
+
         if(cacheMode != null) {
             offering.setCacheMode(DiskOffering.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
         }
@@ -2598,8 +2604,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         continue;
                     }
                 }
+                if (detailEntry.getKey().equalsIgnoreCase(Volume.BANDWIDTH_LIMIT_IN_MBPS) || detailEntry.getKey().equalsIgnoreCase(Volume.IOPS_LIMIT)) {
+                    // Add in disk offering details
+                    continue;
+                }
                 detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntryValue, true));
             }
+        }
+
+        if (storagePolicyID != null) {
+            detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), ApiConstants.STORAGE_POLICY, String.valueOf(storagePolicyID), false));
         }
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
@@ -2617,10 +2631,67 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
                 _serviceOfferingDetailsDao.saveDetails(detailsVO);
             }
+
+            if (details != null && !details.isEmpty()) {
+                List<DiskOfferingDetailVO> diskDetailsVO = new ArrayList<DiskOfferingDetailVO>();
+                // Support disk offering details for below parameters
+                if (details.containsKey(Volume.BANDWIDTH_LIMIT_IN_MBPS)) {
+                    diskDetailsVO.add(new DiskOfferingDetailVO(offering.getId(), Volume.BANDWIDTH_LIMIT_IN_MBPS, details.get(Volume.BANDWIDTH_LIMIT_IN_MBPS), false));
+                }
+                if (details.containsKey(Volume.IOPS_LIMIT)) {
+                    diskDetailsVO.add(new DiskOfferingDetailVO(offering.getId(), Volume.IOPS_LIMIT, details.get(Volume.IOPS_LIMIT), false));
+                }
+                if (!diskDetailsVO.isEmpty()) {
+                    diskOfferingDetailsDao.saveDetails(diskDetailsVO);
+                }
+            }
+
             CallContext.current().setEventDetails("Service offering id=" + offering.getId());
             return offering;
         } else {
             return null;
+        }
+    }
+
+    private void setIopsRate(DiskOffering offering, Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength, Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength) {
+        if (iopsReadRate != null && iopsReadRate > 0) {
+            offering.setIopsReadRate(iopsReadRate);
+        }
+        if (iopsReadRateMax != null && iopsReadRateMax > 0) {
+            offering.setIopsReadRateMax(iopsReadRateMax);
+        }
+        if (iopsReadRateMaxLength != null && iopsReadRateMaxLength > 0) {
+            offering.setIopsReadRateMaxLength(iopsReadRateMaxLength);
+        }
+        if (iopsWriteRate != null && iopsWriteRate > 0) {
+            offering.setIopsWriteRate(iopsWriteRate);
+        }
+        if (iopsWriteRateMax != null && iopsWriteRateMax > 0) {
+            offering.setIopsWriteRateMax(iopsWriteRateMax);
+        }
+        if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength > 0) {
+            offering.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
+        }
+    }
+
+    private void setBytesRate(DiskOffering offering, Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength, Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength) {
+        if (bytesReadRate != null && bytesReadRate > 0) {
+            offering.setBytesReadRate(bytesReadRate);
+        }
+        if (bytesReadRateMax != null && bytesReadRateMax > 0) {
+            offering.setBytesReadRateMax(bytesReadRateMax);
+        }
+        if (bytesReadRateMaxLength != null && bytesReadRateMaxLength > 0) {
+            offering.setBytesReadRateMaxLength(bytesReadRateMaxLength);
+        }
+        if (bytesWriteRate != null && bytesWriteRate > 0) {
+            offering.setBytesWriteRate(bytesWriteRate);
+        }
+        if (bytesWriteRateMax != null && bytesWriteRateMax > 0) {
+            offering.setBytesWriteRateMax(bytesWriteRateMax);
+        }
+        if (bytesWriteRateMaxLength != null && bytesWriteRateMaxLength > 0) {
+            offering.setBytesWriteRateMaxLength(bytesWriteRateMaxLength);
         }
     }
 
@@ -2820,7 +2891,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                 Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
                                                 Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
                                                 Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-                                                final Integer hypervisorSnapshotReserve, String cacheMode) {
+                                                final Integer hypervisorSnapshotReserve, String cacheMode, final Map<String, String> details, final Long storagePolicyID) {
         long diskSize = 0;// special case for custom disk offerings
         if (numGibibytes != null && numGibibytes <= 0) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
@@ -2890,42 +2961,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         newDiskOffering.setUseLocalStorage(localStorageRequired);
         newDiskOffering.setDisplayOffering(isDisplayOfferingEnabled);
 
-        if (bytesReadRate != null && bytesReadRate > 0) {
-            newDiskOffering.setBytesReadRate(bytesReadRate);
-        }
-        if (bytesReadRateMax != null && bytesReadRateMax > 0) {
-            newDiskOffering.setBytesReadRateMax(bytesReadRateMax);
-        }
-        if (bytesReadRateMaxLength != null && bytesReadRateMaxLength > 0) {
-            newDiskOffering.setBytesReadRateMaxLength(bytesReadRateMaxLength);
-        }
-        if (bytesWriteRate != null && bytesWriteRate > 0) {
-            newDiskOffering.setBytesWriteRate(bytesWriteRate);
-        }
-        if (bytesWriteRateMax != null && bytesWriteRateMax > 0) {
-            newDiskOffering.setBytesWriteRateMax(bytesWriteRateMax);
-        }
-        if (bytesWriteRateMaxLength != null && bytesWriteRateMaxLength > 0) {
-            newDiskOffering.setBytesWriteRateMaxLength(bytesWriteRateMaxLength);
-        }
-        if (iopsReadRate != null && iopsReadRate > 0) {
-            newDiskOffering.setIopsReadRate(iopsReadRate);
-        }
-        if (iopsReadRateMax != null && iopsReadRateMax > 0) {
-            newDiskOffering.setIopsReadRateMax(iopsReadRateMax);
-        }
-        if (iopsReadRateMaxLength != null && iopsReadRateMaxLength > 0) {
-            newDiskOffering.setIopsReadRateMaxLength(iopsReadRateMaxLength);
-        }
-        if (iopsWriteRate != null && iopsWriteRate > 0) {
-            newDiskOffering.setIopsWriteRate(iopsWriteRate);
-        }
-        if (iopsWriteRateMax != null && iopsWriteRateMax > 0) {
-            newDiskOffering.setIopsWriteRateMax(iopsWriteRateMax);
-        }
-        if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength > 0) {
-            newDiskOffering.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
-        }
+        setBytesRate(newDiskOffering, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength);
+        setIopsRate(newDiskOffering, iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength);
+
         if (cacheMode != null) {
             newDiskOffering.setCacheMode(DiskOffering.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
         }
@@ -2948,6 +2986,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     detailsVO.add(new DiskOfferingDetailVO(offering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
                 }
             }
+            if (details != null && !details.isEmpty()) {
+                // Support disk offering details for below parameters
+                if (details.containsKey(Volume.BANDWIDTH_LIMIT_IN_MBPS)) {
+                    detailsVO.add(new DiskOfferingDetailVO(offering.getId(), Volume.BANDWIDTH_LIMIT_IN_MBPS, details.get(Volume.BANDWIDTH_LIMIT_IN_MBPS), false));
+                }
+                if (details.containsKey(Volume.IOPS_LIMIT)) {
+                    detailsVO.add(new DiskOfferingDetailVO(offering.getId(), Volume.IOPS_LIMIT, details.get(Volume.IOPS_LIMIT), false));
+                }
+            }
+            if (storagePolicyID != null) {
+                detailsVO.add(new DiskOfferingDetailVO(offering.getId(), ApiConstants.STORAGE_POLICY, String.valueOf(storagePolicyID), false));
+            }
             if (!detailsVO.isEmpty()) {
                 diskOfferingDetailsDao.saveDetails(detailsVO);
             }
@@ -2969,6 +3019,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String tags = cmd.getTags();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
+        final Map<String, String> details = cmd.getDetails();
+        final Long storagePolicyId = cmd.getStoragePolicy();
 
         // check if valid domain
         if (CollectionUtils.isNotEmpty(domainIds)) {
@@ -3008,6 +3060,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        if (storagePolicyId != null) {
+            if (vsphereStoragePolicyDao.findById(storagePolicyId) == null) {
+                throw new InvalidParameterValueException("Please specify a valid vSphere storage policy id");
+            }
+        }
+
         final Boolean isCustomizedIops = cmd.isCustomizedIops();
         final Long minIops = cmd.getMinIops();
         final Long maxIops = cmd.getMaxIops();
@@ -3038,7 +3096,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops,
                 maxIops, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength,
                 iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength,
-                hypervisorSnapshotReserve, cacheMode);
+                hypervisorSnapshotReserve, cacheMode, details, storagePolicyId);
     }
 
     /**
@@ -3102,6 +3160,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Boolean displayDiskOffering = cmd.getDisplayOffering();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
+        final String tags = cmd.getTags();
+
+        Long bytesReadRate = cmd.getBytesReadRate();
+        Long bytesReadRateMax = cmd.getBytesReadRateMax();
+        Long bytesReadRateMaxLength = cmd.getBytesReadRateMaxLength();
+        Long bytesWriteRate = cmd.getBytesWriteRate();
+        Long bytesWriteRateMax = cmd.getBytesWriteRateMax();
+        Long bytesWriteRateMaxLength = cmd.getBytesWriteRateMaxLength();
+        Long iopsReadRate = cmd.getIopsReadRate();
+        Long iopsReadRateMax = cmd.getIopsReadRateMax();
+        Long iopsReadRateMaxLength = cmd.getIopsReadRateMaxLength();
+        Long iopsWriteRate = cmd.getIopsWriteRate();
+        Long iopsWriteRateMax = cmd.getIopsWriteRateMax();
+        Long iopsWriteRateMaxLength = cmd.getIopsWriteRateMaxLength();
+        String cacheMode = cmd.getCacheMode();
 
         // Check if diskOffering exists
         final DiskOffering diskOfferingHandle = _entityMgr.findById(DiskOffering.class, diskOfferingId);
@@ -3183,7 +3256,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to update disk offering: %s by id user: %s because it is not root-admin or domain-admin", diskOfferingHandle.getUuid(), user.getUuid()));
         }
 
-        final boolean updateNeeded = name != null || displayText != null || sortKey != null || displayDiskOffering != null;
+        boolean updateNeeded = shouldUpdateDiskOffering(name, displayText, sortKey, displayDiskOffering, tags, cacheMode) ||
+                shouldUpdateIopsRateParameters(iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength) ||
+                shouldUpdateBytesRateParameters(bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength);
+
         final boolean detailsUpdateNeeded = !filteredDomainIds.equals(existingDomainIds) || !filteredZoneIds.equals(existingZoneIds);
         if (!updateNeeded && !detailsUpdateNeeded) {
             return _diskOfferingDao.findById(diskOfferingId);
@@ -3207,30 +3283,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             diskOffering.setDisplayOffering(displayDiskOffering);
         }
 
-        // Note: tag editing commented out for now;keeping the code intact,
-        // might need to re-enable in next releases
-        // if (tags != null)
-        // {
-        // if (tags.trim().isEmpty() && diskOfferingHandle.getTags() == null)
-        // {
-        // //no new tags; no existing tags
-        // diskOffering.setTagsArray(csvTagsToList(null));
-        // }
-        // else if (!tags.trim().isEmpty() && diskOfferingHandle.getTags() !=
-        // null)
-        // {
-        // //new tags + existing tags
-        // List<String> oldTags = csvTagsToList(diskOfferingHandle.getTags());
-        // List<String> newTags = csvTagsToList(tags);
-        // oldTags.addAll(newTags);
-        // diskOffering.setTagsArray(oldTags);
-        // }
-        // else if(!tags.trim().isEmpty())
-        // {
-        // //new tags; NO existing tags
-        // diskOffering.setTagsArray(csvTagsToList(tags));
-        // }
-        // }
+        updateDiskOfferingTagsIfIsNotNull(tags, diskOffering);
+
+        validateMaxRateEqualsOrGreater(iopsReadRate, iopsReadRateMax, IOPS_READ_RATE);
+        validateMaxRateEqualsOrGreater(iopsWriteRate, iopsWriteRateMax, IOPS_WRITE_RATE);
+        validateMaxRateEqualsOrGreater(bytesReadRate, bytesReadRateMax, BYTES_READ_RATE);
+        validateMaxRateEqualsOrGreater(bytesWriteRate, bytesWriteRateMax, BYTES_WRITE_RATE);
+        validateMaximumIopsAndBytesLength(iopsReadRateMaxLength, iopsWriteRateMaxLength, bytesReadRateMaxLength, bytesWriteRateMaxLength);
+
+        setBytesRate(diskOffering, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength);
+        setIopsRate(diskOffering, iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength);
+
+        if (cacheMode != null) {
+            validateCacheMode(cacheMode);
+            diskOffering.setCacheMode(DiskOffering.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
+        }
 
         if (updateNeeded && !_diskOfferingDao.update(diskOfferingId, diskOffering)) {
             return null;
@@ -3265,6 +3332,40 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         CallContext.current().setEventDetails("Disk offering id=" + diskOffering.getId());
         return _diskOfferingDao.findById(diskOfferingId);
+    }
+
+    /**
+     * Check the tags parameters to the diskOffering
+     * <ul>
+     *     <li>If tags is null, do nothing and return.</li>
+     *     <li>If tags is not null, set tag to the diskOffering.</li>
+     *     <li>If tags is an blank string, set null on diskOffering tag.</li>
+     * </ul>
+     */
+    protected void updateDiskOfferingTagsIfIsNotNull(String tags, DiskOfferingVO diskOffering) {
+        if (tags == null) { return; }
+        if (StringUtils.isNotBlank(tags)) {
+            diskOffering.setTags(tags);
+        } else {
+            diskOffering.setTags(null);
+        }
+    }
+
+    /**
+     * Check if it needs to update any parameter when updateDiskoffering is called
+     * Verify if name or displayText are not blank, tags is not null, sortkey and displayDiskOffering is not null
+     */
+    protected boolean shouldUpdateDiskOffering(String name, String displayText, Integer sortKey, Boolean displayDiskOffering, String tags, String cacheMode) {
+        return StringUtils.isNotBlank(name) || StringUtils.isNotBlank(displayText) || tags != null || sortKey != null || displayDiskOffering != null || StringUtils.isNotBlank(cacheMode);
+    }
+
+    protected boolean shouldUpdateBytesRateParameters(Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength, Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength) {
+        return bytesReadRate != null || bytesReadRateMax != null || bytesReadRateMaxLength != null || bytesWriteRate != null ||
+                bytesWriteRateMax != null || bytesWriteRateMaxLength != null;
+    }
+
+    protected boolean shouldUpdateIopsRateParameters(Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength, Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength) {
+        return iopsReadRate != null || iopsReadRateMax != null || iopsReadRateMaxLength != null || iopsWriteRate != null || iopsWriteRateMax != null || iopsWriteRateMaxLength != null;
     }
 
     @Override
@@ -3412,10 +3513,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final boolean ipv4 = startIP != null;
-        final boolean ipv6 = startIPv6 != null;
+        final boolean ipv6 = ip6Cidr != null;
 
         if (!ipv4 && !ipv6) {
-            throw new InvalidParameterValueException("StartIP or StartIPv6 is missing in the parameters!");
+            throw new InvalidParameterValueException("StartIP or IPv6 CIDR is missing in the parameters!");
         }
 
         if (ipv4) {
@@ -3667,7 +3768,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (newVlanGateway == null && newVlanNetmask == null) {
             newVlanGateway = vlanGateway;
             newVlanNetmask = vlanNetmask;
-            // this means he is trying to add to the existing subnet.
+            // this means we are trying to add to the existing subnet.
             if (NetUtils.sameSubnet(newStartIP, newVlanGateway, newVlanNetmask)) {
                 if (NetUtils.sameSubnet(newEndIP, newVlanGateway, newVlanNetmask)) {
                     return NetUtils.SupersetOrSubset.sameSubnet;
@@ -3742,7 +3843,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 // this implies the user is trying to add a new subnet
                 // which is not a superset or subset of this subnet.
             } else if (val == NetUtils.SupersetOrSubset.isSubset) {
-                // this means he is trying to add to the same subnet.
+                // this means we are trying to add to the same subnet.
                 throw new InvalidParameterValueException("The subnet you are trying to add is a subset of the existing subnet having gateway " + vlanGateway
                         + " and netmask " + vlanNetmask);
             } else if (val == NetUtils.SupersetOrSubset.sameSubnet) {
@@ -3781,7 +3882,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             ipv4 = true;
         }
 
-        if (startIPv6 != null) {
+        if (vlanIp6Cidr != null) {
             ipv6 = true;
         }
 
@@ -4055,8 +4156,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     // range
                     final List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlan.getId());
                     for (final IPAddressVO ip : ips) {
+                        final boolean usageHidden = _ipAddrMgr.isUsageHidden(ip);
                         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, vlanOwner.getId(), ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(),
-                                ip.isSourceNat(), vlan.getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                                ip.isSourceNat(), vlan.getVlanType().toString(), ip.getSystem(), usageHidden, ip.getClass().getName(), ip.getUuid());
                     }
                     // increment resource count for dedicated public ip's
                     _resourceLimitMgr.incrementResourceCount(vlanOwner.getId(), ResourceType.public_ip, new Long(ips.size()));
@@ -4136,8 +4238,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         s_logger.warn("Some ip addresses failed to be released as a part of vlan " + vlanDbId + " removal");
                     } else {
                         resourceCountToBeDecrement++;
+                        final boolean usageHidden = _ipAddrMgr.isUsageHidden(ip);
                         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE, acctVln.get(0).getAccountId(), ip.getDataCenterId(), ip.getId(),
-                                ip.getAddress().toString(), ip.isSourceNat(), vlanRange.getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                                ip.getAddress().toString(), ip.isSourceNat(), vlanRange.getVlanType().toString(), ip.getSystem(), usageHidden, ip.getClass().getName(), ip.getUuid());
                     }
                 }
             } finally {
@@ -4279,8 +4382,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
            // generate usage event for dedication of every ip address in the range
             for (final IPAddressVO ip : ips) {
+                final boolean usageHidden = _ipAddrMgr.isUsageHidden(ip);
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, vlanOwner.getId(), ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(),
-                        vlan.getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                        vlan.getVlanType().toString(), ip.getSystem(), usageHidden, ip.getClass().getName(), ip.getUuid());
             }
         } else if (domain != null && !forSystemVms) {
             // Create an DomainVlanMapVO entry
@@ -4373,8 +4477,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // generate usage events to remove dedication for every ip in the range that has been disassociated
             for (final IPAddressVO ip : ips) {
                 if (!ipsInUse.contains(ip)) {
+                    final boolean usageHidden = _ipAddrMgr.isUsageHidden(ip);
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE, acctVln.get(0).getAccountId(), ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(),
-                            ip.isSourceNat(), vlan.getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
+                            ip.isSourceNat(), vlan.getVlanType().toString(), ip.getSystem(), usageHidden, ip.getClass().getName(), ip.getUuid());
                 }
             }
             // decrement resource count for dedicated public ip's
@@ -4687,7 +4792,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String servicePackageuuid = cmd.getServicePackageId();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
-
+        final boolean enable = cmd.getEnable();
         // check if valid domain
         if (CollectionUtils.isNotEmpty(domainIds)) {
             for (final Long domainId: domainIds) {
@@ -4960,8 +5065,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             forVpc = false;
         }
 
-        final NetworkOffering offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, domainIds, zoneIds);
+        final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, domainIds, zoneIds, enable);
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         return offering;
     }
@@ -5099,7 +5204,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final Long serviceOfferingId,
             final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
             final Map<Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive, Boolean forVpc,
-            final List<Long> domainIds, final List<Long> zoneIds) {
+            final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering) {
 
         String servicePackageUuid;
         String spDescription = null;
@@ -5267,6 +5372,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (serviceOfferingId != null) {
             offeringFinal.setServiceOfferingId(serviceOfferingId);
+        }
+
+        if (enableOffering) {
+            offeringFinal.setState(NetworkOffering.State.Enabled);
         }
 
         //Set Service package id
@@ -6378,6 +6487,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {SystemVMUseLocalStorage, IOPS_MAX_READ_LENGTH, IOPS_MAX_WRITE_LENGTH, BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH};
+        return new ConfigKey<?>[] {SystemVMUseLocalStorage, IOPS_MAX_READ_LENGTH, IOPS_MAX_WRITE_LENGTH,
+                BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE};
     }
 }

@@ -115,8 +115,8 @@ class CSTestClient(object):
                 self.__hypervisor = XEN_SERVER
             return SUCCESS
         except Exception as e:
-            print "\n Exception Occurred Under __setHypervisorInfo " \
-                  "%s" % GetDetailExceptionInfo(e)
+            print("\n Exception Occurred Under __setHypervisorInfo " \
+                  "%s" % GetDetailExceptionInfo(e))
             return FAILED
 
     def __createApiClient(self):
@@ -299,9 +299,9 @@ class CSTestClient(object):
     def isAdminContext(self):
         """
         @Name : isAdminContext
-        @Desc:A user is a regular user if he fails to listDomains;
-        if he is a domain-admin, he can list only domains that are non-ROOT;
-        if he is an admin, he can list the ROOT domain successfully
+        @Desc:A user is a regular user if listDomains fails;
+        if user is a domain-admin, then user can list only domains that are non-ROOT;
+        if user is an admin, then user can list the ROOT domain successfully
         """
         try:
             listdom = listDomains.listDomainsCmd()

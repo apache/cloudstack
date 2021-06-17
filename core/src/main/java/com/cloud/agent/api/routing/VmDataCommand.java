@@ -72,5 +72,4 @@ public class VmDataCommand extends NetworkElementCommand {
     public void addVmData(String folder, String file, String contents) {
         vmData.add(new String[] {folder, file, contents});
     }
-
 }

@@ -20,13 +20,9 @@
 from marvin.codes import PASS, FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import (validateList,
-                              cleanup_resources,
-                              get_process_status,
                               wait_until)
 
-from marvin.lib.base import (Domain,
-                             Account,
-                             Configurations,
+from marvin.lib.base import (Account,
                              VPC,
                              VpcOffering,
                              ServiceOffering,
@@ -34,14 +30,8 @@ from marvin.lib.base import (Domain,
                              Network,
                              PublicIPAddress,
                              NATRule,
-                             NetworkACL,
                              NetworkACLList,
-                             LoadBalancerRule,
-                             ApplicationLoadBalancer,
                              VirtualMachine,
-                             Template,
-                             FireWallRule,
-                             StaticNATRule,
                              Vpn,
                              VpnCustomerGateway,
                              VpnUser
@@ -52,8 +42,7 @@ from marvin.sshClient import SshClient
 
 from marvin.lib.common import (get_zone,
                                get_domain,
-                               get_test_template,
-                               list_network_offerings)
+                               get_test_template)
 
 from nose.plugins.attrib import attr
 
@@ -236,12 +225,16 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
 
+        cls._cleanup = []
+
         cls.compute_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["compute_offering"]
         )
+        cls._cleanup.append(cls.compute_offering)
         cls.account = Account.create(
             cls.apiclient, services=cls.services["account"])
+        cls._cleanup.append(cls.account)
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
@@ -253,7 +246,6 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
                    %s" % (cls.account.name,
                           cls.account.id))
 
-        cls.cleanup = [cls.account, cls.compute_offering]
         return
 
     @attr(tags=["advanced"], required_hardware="true")
@@ -266,12 +258,12 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
         self.logger.debug("Retrieving default VPC offering")
         networkOffering = NetworkOffering.list(
             self.apiclient, name="DefaultIsolatedNetworkOfferingForVpcNetworks")
-        self.assert_(networkOffering is not None and len(
+        self.assertTrue(networkOffering is not None and len(
             networkOffering) > 0, "No VPC based network offering")
 
         # 1) Create VPC
         vpcOffering = VpcOffering.list(self.apiclient, name="Default VPC offering")
-        self.assert_(vpcOffering is not None and len(
+        self.assertTrue(vpcOffering is not None and len(
             vpcOffering) > 0, "No VPC offerings found")
 
         vpc = None
@@ -285,10 +277,11 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
                 account=self.account.name,
                 domainid=self.domain.id
             )
+            self.cleanup.append(vpc)
         except Exception as e:
             self.fail(e)
         finally:
-            self.assert_(vpc is not None, "VPC creation failed")
+            self.assertTrue(vpc is not None, "VPC creation failed")
             self.logger.debug("VPC %s created" % (vpc.id))
 
         try:
@@ -306,6 +299,7 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
             self.fail(e)
         finally:
             self.assertIsNotNone(ntwk, "Network failed to create")
+            self.cleanup.append(ntwk)
             self.logger.debug(
                 "Network %s created in VPC %s" % (ntwk.id, vpc.id))
 
@@ -320,8 +314,9 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
                                        networkids=ntwk.id,
                                        hypervisor=self.hypervisor
                                        )
-            self.assert_(vm is not None, "VM failed to deploy")
-            self.assert_(vm.state == 'Running', "VM is not running")
+            self.assertTrue(vm is not None, "VM failed to deploy")
+            self.cleanup.append(vm)
+            self.assertTrue(vm.state == 'Running', "VM is not running")
             self.debug("VM %s deployed in VPC %s" % (vm.id, vpc.id))
         except Exception as e:
             self.fail(e)
@@ -387,12 +382,15 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
+        super(TestVpcRemoteAccessVpn, cls).tearDownClass()
 
-        try:
-            cls.logger.debug("Cleaning up resources")
-            cleanup_resources(cls.apiclient, cls.cleanup)
-        except Exception, e:
-            raise Exception("Cleanup failed with %s" % e)
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        self.cleanup = []
+
+    def tearDown(self):
+        super(TestVpcRemoteAccessVpn, self).tearDown()
 
 
 class TestVpcSite2SiteVpn(cloudstackTestCase):
@@ -411,13 +409,17 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
 
+        cls._cleanup = []
+
         cls.compute_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["compute_offering"]
         )
+        cls._cleanup.append(cls.compute_offering)
 
         cls.account = Account.create(
             cls.apiclient, services=cls.services["account"])
+        cls._cleanup.append(cls.account)
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
@@ -428,9 +430,12 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         cls.logger.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,
                           cls.account.id))
-
-        cls.cleanup = [cls.account, cls.compute_offering]
         return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        self.cleanup = []
 
     def _get_ssh_client(self, virtual_machine, services, retries):
         """ Setup ssh client connection and return connection
@@ -523,12 +528,12 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         # 0) Get the default network offering for VPC
         networkOffering = NetworkOffering.list(
             self.apiclient, name="DefaultIsolatedNetworkOfferingForVpcNetworks")
-        self.assert_(networkOffering is not None and len(
+        self.assertTrue(networkOffering is not None and len(
             networkOffering) > 0, "No VPC based network offering")
 
         # Create and Enable VPC offering
         vpc_offering = self._create_vpc_offering('vpc_offering')
-        self.assert_(vpc_offering is not None, "Failed to create VPC Offering")
+        self.assertTrue(vpc_offering is not None, "Failed to create VPC Offering")
         vpc_offering.update(self.apiclient, state='Enabled')
 
         vpc1 = None
@@ -546,8 +551,8 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         except Exception as e:
             self.fail(e)
         finally:
-            self.assert_(vpc1 is not None, "VPC1 creation failed")
-
+            self.assertTrue(vpc1 is not None, "VPC1 creation failed")
+        self.cleanup.append(vpc1)
         self.logger.debug("VPC1 %s created" % vpc1.id)
 
         vpc2 = None
@@ -565,8 +570,8 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         except Exception as e:
             self.fail(e)
         finally:
-            self.assert_(vpc2 is not None, "VPC2 creation failed")
-
+            self.assertTrue(vpc2 is not None, "VPC2 creation failed")
+        self.cleanup.append(vpc2)
         self.logger.debug("VPC2 %s created" % vpc2.id)
 
         default_acl = NetworkACLList.list(
@@ -589,7 +594,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
             self.fail(e)
         finally:
             self.assertIsNotNone(ntwk1, "Network failed to create")
-
+        self.cleanup.append(ntwk1)
         self.logger.debug("Network %s created in VPC %s" % (ntwk1.id, vpc1.id))
 
         ntwk2 = None
@@ -609,7 +614,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
             self.fail(e)
         finally:
             self.assertIsNotNone(ntwk2, "Network failed to create")
-
+        self.cleanup.append(ntwk2)
         self.logger.debug("Network %s created in VPC %s" % (ntwk2.id, vpc2.id))
 
         vm1 = None
@@ -627,9 +632,9 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         except Exception as e:
             self.fail(e)
         finally:
-            self.assert_(vm1 is not None, "VM failed to deploy")
-            self.assert_(vm1.state == 'Running', "VM is not running")
-
+            self.assertTrue(vm1 is not None, "VM failed to deploy")
+            self.assertTrue(vm1.state == 'Running', "VM is not running")
+        self.cleanup.append(vm1)
         self.logger.debug("VM %s deployed in VPC %s" % (vm1.id, vpc1.id))
 
         vm2 = None
@@ -647,19 +652,19 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         except Exception as e:
             self.fail(e)
         finally:
-            self.assert_(vm2 is not None, "VM failed to deploy")
-            self.assert_(vm2.state == 'Running', "VM is not running")
-
+            self.assertTrue(vm2 is not None, "VM failed to deploy")
+            self.assertTrue(vm2.state == 'Running', "VM is not running")
+        self.cleanup.append(vm2)
         self.debug("VM %s deployed in VPC %s" % (vm2.id, vpc2.id))
 
         # 4) Enable Site-to-Site VPN for VPC
         vpn1_response = Vpn.createVpnGateway(self.apiclient, vpc1.id)
-        self.assert_(
+        self.assertTrue(
             vpn1_response is not None, "Failed to enable VPN Gateway 1")
         self.logger.debug("VPN gateway for VPC %s enabled" % vpc1.id)
 
         vpn2_response = Vpn.createVpnGateway(self.apiclient, vpc2.id)
-        self.assert_(
+        self.assertTrue(
             vpn2_response is not None, "Failed to enable VPN Gateway 2")
         self.logger.debug("VPN gateway for VPC %s enabled" % vpc2.id)
 
@@ -730,7 +735,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         except Exception as e:
             self.fail(e)
         finally:
-            self.assert_(
+            self.assertTrue(
                 vm2.public_ip is not None, "Failed to aqcuire public ip for vm2")
 
         natrule = None
@@ -741,7 +746,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         except Exception as e:
             self.fail(e)
         finally:
-            self.assert_(
+            self.assertTrue(
                 natrule is not None, "Failed to create portforward for vm2")
             time.sleep(20)
 
@@ -752,16 +757,16 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
             # run ping test
             packet_loss = ssh_client.execute("/bin/ping -c 3 -t 10 " + vm1.nic[0].ipaddress + " | grep packet | sed 's/.*received, //g' | sed 's/[% ]*packet.*//g'")[0]
             # during startup, some packets may not reply due to link/ipsec-route setup
-            self.assert_(int(packet_loss) < 50, "Ping did not succeed")
+            self.assertTrue(int(packet_loss) < 50, "Ping did not succeed")
         else:
             self.fail("Failed to setup ssh connection to %s" % vm2.public_ip)
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls.cleanup)
-        except Exception, e:
-            raise Exception("Cleanup failed with %s" % e)
+        super(TestVpcSite2SiteVpn, cls).tearDownClass()
+
+    def tearDown(self):
+        super(TestVpcSite2SiteVpn, self).tearDown()
 
 
 class TestRVPCSite2SiteVpn(cloudstackTestCase):
@@ -779,14 +784,17 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
 
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
+        cls._cleanup = []
 
         cls.compute_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["compute_offering"]
         )
+        cls._cleanup.append(cls.compute_offering)
 
         cls.account = Account.create(
             cls.apiclient, services=cls.services["account"])
+        cls._cleanup.append(cls.account)
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
@@ -797,8 +805,6 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         cls.logger.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,
                           cls.account.id))
-
-        cls.cleanup = [cls.account, cls.compute_offering]
         return
 
     def _validate_vpc_offering(self, vpc_offering):
@@ -893,15 +899,14 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         # 0) Get the default network offering for VPC
         networkOffering = NetworkOffering.list(
             self.apiclient, name="DefaultIsolatedNetworkOfferingForVpcNetworks")
-        self.assert_(networkOffering is not None and len(
+        self.assertTrue(networkOffering is not None and len(
             networkOffering) > 0, "No VPC based network offering")
 
         # Create and enable redundant VPC offering
         redundant_vpc_offering = self._create_vpc_offering(
             'redundant_vpc_offering')
-        self.assert_(redundant_vpc_offering is not None,
+        self.assertTrue(redundant_vpc_offering is not None,
                      "Failed to create redundant VPC Offering")
-
         redundant_vpc_offering.update(self.apiclient, state='Enabled')
 
         # Create VPC 1
@@ -919,8 +924,8 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         except Exception as e:
             self.fail(e)
         finally:
-            self.assert_(vpc1 is not None, "VPC1 creation failed")
-
+            self.assertTrue(vpc1 is not None, "VPC1 creation failed")
+        self.cleanup.append(vpc1)
         self.logger.debug("VPC1 %s created" % vpc1.id)
 
         # Create VPC 2
@@ -938,8 +943,8 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         except Exception as e:
             self.fail(e)
         finally:
-            self.assert_(vpc2 is not None, "VPC2 creation failed")
-
+            self.assertTrue(vpc2 is not None, "VPC2 creation failed")
+        self.cleanup.append(vpc2)
         self.logger.debug("VPC2 %s created" % vpc2.id)
 
         default_acl = NetworkACLList.list(
@@ -962,7 +967,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
             self.fail(e)
         finally:
             self.assertIsNotNone(ntwk1, "Network failed to create")
-
+        self.cleanup.append(ntwk1)
         self.logger.debug("Network %s created in VPC %s" % (ntwk1.id, vpc1.id))
 
         # Create network in VPC 2
@@ -982,7 +987,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
             self.fail(e)
         finally:
             self.assertIsNotNone(ntwk2, "Network failed to create")
-
+        self.cleanup.append(ntwk2)
         self.logger.debug("Network %s created in VPC %s" % (ntwk2.id, vpc2.id))
 
         # Deploy a vm in network 2
@@ -1000,9 +1005,9 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         except Exception as e:
             self.fail(e)
         finally:
-            self.assert_(vm1 is not None, "VM failed to deploy")
-            self.assert_(vm1.state == 'Running', "VM is not running")
-
+            self.assertTrue(vm1 is not None, "VM failed to deploy")
+            self.assertTrue(vm1.state == 'Running', "VM is not running")
+        self.cleanup.append(vm1)
         self.logger.debug("VM %s deployed in VPC %s" % (vm1.id, vpc1.id))
 
         # Deploy a vm in network 2
@@ -1020,19 +1025,19 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         except Exception as e:
             self.fail(e)
         finally:
-            self.assert_(vm2 is not None, "VM failed to deploy")
-            self.assert_(vm2.state == 'Running', "VM is not running")
-
+            self.assertTrue(vm2 is not None, "VM failed to deploy")
+            self.assertTrue(vm2.state == 'Running', "VM is not running")
+        self.cleanup.append(vm2)
         self.debug("VM %s deployed in VPC %s" % (vm2.id, vpc2.id))
 
         # 4) Enable Site-to-Site VPN for VPC
         vpn1_response = Vpn.createVpnGateway(self.apiclient, vpc1.id)
-        self.assert_(
+        self.assertTrue(
             vpn1_response is not None, "Failed to enable VPN Gateway 1")
         self.logger.debug("VPN gateway for VPC %s enabled" % vpc1.id)
 
         vpn2_response = Vpn.createVpnGateway(self.apiclient, vpc2.id)
-        self.assert_(
+        self.assertTrue(
             vpn2_response is not None, "Failed to enable VPN Gateway 2")
         self.logger.debug("VPN gateway for VPC %s enabled" % vpc2.id)
 
@@ -1103,7 +1108,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         except Exception as e:
             self.fail(e)
         finally:
-            self.assert_(
+            self.assertTrue(
                 vm2.public_ip is not None, "Failed to aqcuire public ip for vm2")
 
         # Create port forward to be able to ssh into vm2
@@ -1114,7 +1119,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         except Exception as e:
             self.fail(e)
         finally:
-            self.assert_(
+            self.assertTrue(
                 natrule is not None, "Failed to create portforward for vm2")
             time.sleep(20)
 
@@ -1124,17 +1129,21 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         if ssh_client:
             # run ping test
             packet_loss = ssh_client.execute("/bin/ping -c 3 -t 10 " + vm1.nic[0].ipaddress + " | grep packet | sed 's/.*received, //g' | sed 's/[% ]*packet.*//g'")[0]
-            self.assert_(int(packet_loss) < 50, "Ping did not succeed")
+            self.assertTrue(int(packet_loss) < 50, "Ping did not succeed")
         else:
             self.fail("Failed to setup ssh connection to %s" % vm2.public_ip)
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls.cleanup)
-        except Exception, e:
-            raise Exception("Cleanup failed with %s" % e)
+        super(TestRVPCSite2SiteVpn, cls).tearDownClass()
 
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        self.cleanup = []
+
+    def tearDown(self):
+        super(TestRVPCSite2SiteVpn, self).tearDown()
 
 class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
 
@@ -1152,13 +1161,17 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
 
+        cls._cleanup = []
+
         cls.compute_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["compute_offering"]
         )
+        cls._cleanup.append(cls.compute_offering)
 
         cls.account = Account.create(
             cls.apiclient, services=cls.services["account"])
+        cls._cleanup.append(cls.account)
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
@@ -1169,9 +1182,12 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         cls.logger.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,
                           cls.account.id))
-
-        cls.cleanup = [cls.account, cls.compute_offering]
         return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        self.cleanup = []
 
     def _get_ssh_client(self, virtual_machine, services, retries):
         """ Setup ssh client connection and return connection
@@ -1264,12 +1280,12 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         # 0) Get the default network offering for VPC
         networkOffering = NetworkOffering.list(
             self.apiclient, name="DefaultIsolatedNetworkOfferingForVpcNetworks")
-        self.assert_(networkOffering is not None and len(
+        self.assertTrue(networkOffering is not None and len(
             networkOffering) > 0, "No VPC based network offering")
 
         # Create and Enable VPC offering
         vpc_offering = self._create_vpc_offering('vpc_offering')
-        self.assert_(vpc_offering is not None, "Failed to create VPC Offering")
+        self.assertTrue(vpc_offering is not None, "Failed to create VPC Offering")
         vpc_offering.update(self.apiclient, state='Enabled')
 
         vpc1 = None
@@ -1287,8 +1303,8 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         except Exception as e:
             self.fail(e)
         finally:
-            self.assert_(vpc1 is not None, "VPC1 creation failed")
-
+            self.assertTrue(vpc1 is not None, "VPC1 creation failed")
+        self.cleanup.append(vpc1)
         self.logger.debug("VPC1 %s created" % vpc1.id)
 
         vpc2 = None
@@ -1306,8 +1322,8 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         except Exception as e:
             self.fail(e)
         finally:
-            self.assert_(vpc2 is not None, "VPC2 creation failed")
-
+            self.assertTrue(vpc2 is not None, "VPC2 creation failed")
+        self.cleanup.append(vpc2)
         self.logger.debug("VPC2 %s created" % vpc2.id)
 
         default_acl = NetworkACLList.list(
@@ -1330,7 +1346,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
             self.fail(e)
         finally:
             self.assertIsNotNone(ntwk1, "Network failed to create")
-
+        self.cleanup.append(ntwk1)
         self.logger.debug("Network %s created in VPC %s" % (ntwk1.id, vpc1.id))
 
         ntwk2 = None
@@ -1350,7 +1366,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
             self.fail(e)
         finally:
             self.assertIsNotNone(ntwk2, "Network failed to create")
-
+        self.cleanup.append(ntwk2)
         self.logger.debug("Network %s created in VPC %s" % (ntwk2.id, vpc2.id))
 
         vm1 = None
@@ -1368,9 +1384,9 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         except Exception as e:
             self.fail(e)
         finally:
-            self.assert_(vm1 is not None, "VM failed to deploy")
-            self.assert_(vm1.state == 'Running', "VM is not running")
-
+            self.assertTrue(vm1 is not None, "VM failed to deploy")
+            self.assertTrue(vm1.state == 'Running', "VM is not running")
+        self.cleanup.append(vm1)
         self.logger.debug("VM %s deployed in VPC %s" % (vm1.id, vpc1.id))
 
         vm2 = None
@@ -1388,9 +1404,9 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         except Exception as e:
             self.fail(e)
         finally:
-            self.assert_(vm2 is not None, "VM failed to deploy")
-            self.assert_(vm2.state == 'Running', "VM is not running")
-
+            self.assertTrue(vm2 is not None, "VM failed to deploy")
+            self.assertTrue(vm2.state == 'Running', "VM is not running")
+        self.cleanup.append(vm2)
         self.debug("VM %s deployed in VPC %s" % (vm2.id, vpc2.id))
 
         # default config
@@ -1430,12 +1446,12 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
 
         # 4) Enable Site-to-Site VPN for VPC
         vpn1_response = Vpn.createVpnGateway(self.apiclient, vpc1.id)
-        self.assert_(
+        self.assertTrue(
             vpn1_response is not None, "Failed to enable VPN Gateway 1")
         self.logger.debug("VPN gateway for VPC %s enabled" % vpc1.id)
 
         vpn2_response = Vpn.createVpnGateway(self.apiclient, vpc2.id)
-        self.assert_(
+        self.assertTrue(
             vpn2_response is not None, "Failed to enable VPN Gateway 2")
         self.logger.debug("VPN gateway for VPC %s enabled" % vpc2.id)
 
@@ -1472,7 +1488,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         except Exception as e:
             self.fail(e)
         finally:
-            self.assert_(
+            self.assertTrue(
                 vm2.public_ip is not None, "Failed to aqcuire public ip for vm2")
 
         natrule = None
@@ -1483,7 +1499,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         except Exception as e:
             self.fail(e)
         finally:
-            self.assert_(
+            self.assertTrue(
                 natrule is not None, "Failed to create portforward for vm2")
             time.sleep(20)
 
@@ -1543,7 +1559,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
             # run ping test
             packet_loss = ssh_client.execute("/bin/ping -c 3 -t 10 " + vm1.nic[0].ipaddress + " | grep packet | sed 's/.*received, //g' | sed 's/[% ]*packet.*//g'")[0]
             self.logger.debug("Packet loss %s" % packet_loss)
-            self.assert_(int(packet_loss) < 50, "Ping did not succeed")
+            self.assertTrue(int(packet_loss) < 50, "Ping did not succeed")
 
             # Cleanup
             Vpn.deleteVpnConnection(self.apiclient, vpnconn1_response['id'])
@@ -1567,10 +1583,6 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
             out['esplifetime'] = c['esp_life']
         return out
 
-
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls.cleanup)
-        except Exception, e:
-            raise Exception("Cleanup failed with %s" % e)
+        super(TestVPCSite2SiteVPNMultipleOptions, cls).tearDownClass()

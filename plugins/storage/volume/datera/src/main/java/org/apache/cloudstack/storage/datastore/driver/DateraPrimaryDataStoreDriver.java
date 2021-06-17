@@ -17,6 +17,37 @@
 
 package org.apache.cloudstack.storage.datastore.driver;
 
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.CreateObjectAnswer;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.util.DateraObject;
+import org.apache.cloudstack.storage.datastore.util.DateraUtil;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -44,40 +75,14 @@ import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Ints;
-import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.command.CreateObjectAnswer;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.datastore.util.DateraObject;
-import org.apache.cloudstack.storage.datastore.util.DateraUtil;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final Logger s_logger = Logger.getLogger(DateraPrimaryDataStoreDriver.class);
@@ -616,7 +621,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 usedSpaceBytes += templatePoolRef.getTemplateSize();
             }
         }
-        s_logger.debug("usedSpaceBytes: " + String.valueOf(usedSpaceBytes));
+        s_logger.debug("usedSpaceBytes: " + toHumanReadableSize(usedSpaceBytes));
 
         return usedSpaceBytes;
     }
@@ -657,7 +662,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 hypervisorSnapshotReserve = Math.max(hypervisorSnapshotReserve, s_lowestHypervisorSnapshotReserve);
                 volumeSize += volumeSize * (hypervisorSnapshotReserve / 100f);
             }
-            s_logger.debug("Volume size:" + String.valueOf(volumeSize));
+            s_logger.debug("Volume size: " + toHumanReadableSize(volumeSize));
             break;
 
         case TEMPLATE:
@@ -670,7 +675,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             } else {
                 volumeSize = (long) (templateSize + templateSize * (s_lowestHypervisorSnapshotReserve / 100f));
             }
-            s_logger.debug("Template volume size:" + String.valueOf(volumeSize));
+            s_logger.debug("Template volume size:" + toHumanReadableSize(volumeSize));
 
             break;
         }
@@ -953,7 +958,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         } else if (dataType == DataObjectType.TEMPLATE) {
             s_logger.debug("Clone volume from a template");
 
-            VMTemplateStoragePoolVO templatePoolRef = tmpltPoolDao.findByPoolTemplate(storagePoolId, dataObjectId);
+            VMTemplateStoragePoolVO templatePoolRef = tmpltPoolDao.findByPoolTemplate(storagePoolId, dataObjectId, null);
 
             if (templatePoolRef != null) {
                 baseAppInstanceName = templatePoolRef.getLocalDownloadPath();
@@ -1091,7 +1096,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             long templateSizeBytes = getDataObjectSizeIncludingHypervisorSnapshotReserve(templateInfo,
                     storagePoolDao.findById(storagePoolId));
 
-            s_logger.debug("cached VM template sizeBytes: " + String.valueOf(templateSizeBytes));
+            s_logger.debug("cached VM template sizeBytes: " + toHumanReadableSize(templateSizeBytes));
 
             int templateSizeGib = DateraUtil.bytesToGib(templateSizeBytes);
 
@@ -1112,7 +1117,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             iqn = appInstance.getIqn();
 
             VMTemplateStoragePoolVO templatePoolRef = tmpltPoolDao.findByPoolTemplate(storagePoolId,
-                    templateInfo.getId());
+                    templateInfo.getId(), null);
 
             templatePoolRef.setInstallPath(DateraUtil.generateIqnPath(iqn));
             templatePoolRef.setLocalDownloadPath(appInstance.getName());
@@ -1249,6 +1254,12 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void copyAsync(DataObject srcData, DataObject destData,
             AsyncCompletionCallback<CopyCommandResult> callback) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void copyAsync(DataObject srcData, DataObject destData,
+            Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
         throw new UnsupportedOperationException();
     }
 
@@ -1503,7 +1514,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             DateraUtil.deleteAppInstance(conn, appInstanceName);
 
             VMTemplateStoragePoolVO templatePoolRef = tmpltPoolDao.findByPoolTemplate(storagePoolId,
-                    templateInfo.getId());
+                    templateInfo.getId(), null);
 
             tmpltPoolDao.remove(templatePoolRef.getId());
 
@@ -1823,6 +1834,30 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void handleQualityOfServiceForVolumeMigration(VolumeInfo volumeInfo,
             QualityOfServiceState qualityOfServiceState) {
+    }
 
+    @Override
+    public boolean canProvideStorageStats() {
+        return false;
+    }
+
+    @Override
+    public Pair<Long, Long> getStorageStats(StoragePool storagePool) {
+        return null;
+    }
+
+    @Override
+    public boolean canProvideVolumeStats() {
+        return false;
+    }
+
+    @Override
+    public Pair<Long, Long> getVolumeStats(StoragePool storagePool, String volumeId) {
+        return null;
+    }
+
+    @Override
+    public boolean canHostAccessStoragePool(Host host, StoragePool pool) {
+        return true;
     }
 }

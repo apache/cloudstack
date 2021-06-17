@@ -48,6 +48,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.host.Host;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ResizeVolumePayload;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -59,6 +60,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -259,7 +261,11 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
     @Override
     public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
         throw new UnsupportedOperationException();
+    }
 
+    @Override
+    public void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -409,4 +415,28 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
         return mapCapabilities;
     }
 
+    @Override
+    public boolean canProvideStorageStats() {
+        return false;
+    }
+
+    @Override
+    public Pair<Long, Long> getStorageStats(StoragePool storagePool) {
+        return null;
+    }
+
+    @Override
+    public boolean canProvideVolumeStats() {
+        return false;
+    }
+
+    @Override
+    public Pair<Long, Long> getVolumeStats(StoragePool storagePool, String volumeId) {
+        return null;
+    }
+
+    @Override
+    public boolean canHostAccessStoragePool(Host host, StoragePool pool) {
+        return true;
+    }
 }

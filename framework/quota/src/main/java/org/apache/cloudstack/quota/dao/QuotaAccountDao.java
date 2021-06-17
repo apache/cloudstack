@@ -20,11 +20,14 @@ import java.util.List;
 
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
 public interface QuotaAccountDao extends GenericDao<QuotaAccountVO, Long> {
 
     List<QuotaAccountVO> listAllQuotaAccount();
+
+    Pair<List<QuotaAccountVO>,Integer> listAllQuotaAccount(Long startIndex, Long pageSize);
 
     QuotaAccountVO findByIdQuotaAccount(Long id);
 

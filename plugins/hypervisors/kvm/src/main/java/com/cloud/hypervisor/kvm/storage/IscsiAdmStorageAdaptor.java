@@ -35,6 +35,7 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import org.libvirt.LibvirtException;
 
 @StorageAdaptorInfo(storagePoolType=StoragePoolType.Iscsi)
 public class IscsiAdmStorageAdaptor implements StorageAdaptor {
@@ -330,6 +331,12 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
 
     @Override
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
+        String poolType = volumeToDisconnect.get(DiskTO.PROTOCOL_TYPE);
+        // Unsupported pool types
+        if (poolType != null && poolType.equalsIgnoreCase(StoragePoolType.PowerFlex.toString())) {
+            return false;
+        }
+
         String host = volumeToDisconnect.get(DiskTO.STORAGE_HOST);
         String port = volumeToDisconnect.get(DiskTO.STORAGE_PORT);
         String path = volumeToDisconnect.get(DiskTO.IQN);
@@ -414,7 +421,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
 
         try {
             q.convert(srcFile, destFile);
-        } catch (QemuImgException ex) {
+        } catch (QemuImgException | LibvirtException ex) {
             String msg = "Failed to copy data from " + srcDisk.getPath() + " to " +
                     destDisk.getPath() + ". The error was the following: " + ex.getMessage();
 
@@ -447,7 +454,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, KVMStoragePool destPool, boolean isIso) {
+    public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format, int timeout) {
         return null;
     }
 }

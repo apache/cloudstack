@@ -16,7 +16,8 @@
 # under the License.
 
 # Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.base import (VmSnapshot,
                              Snapshot,
                              DiskOffering,
@@ -138,7 +139,7 @@ class TestSnapshots(cloudstackTestCase):
         if len(expected_vals) != len(actual_vals):
             return False
 
-        keys = expected_vals.keys()
+        keys = list(expected_vals.keys())
         for i in range(0, len(expected_vals)):
             exp_val = expected_vals[keys[i]]
             act_val = actual_vals[keys[i]]
@@ -188,13 +189,13 @@ class TestSnapshots(cloudstackTestCase):
                                    listall=self.services["listall"]
                                    )
         status = validateList(volumes_list)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Root volume did not get created while deploying a VM"
                           )
         # Verifying list size to be 1
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(volumes_list),
                           "More than 1 root volume created for deployed VM"
@@ -218,13 +219,13 @@ class TestSnapshots(cloudstackTestCase):
                                              listall=self.services["listall"]
                                              )
         status = validateList(list_vol_snaps_after)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Volume snapshot creation failed"
                           )
         # Verifying that list size is pagesize + 1
-        self.assertEquals(
+        self.assertEqual(
                           self.services["pagesize"] + 1,
                           len(list_vol_snaps_after),
                           "Failed to create pagesize + 1 number of Volume snapshots"
@@ -237,13 +238,13 @@ class TestSnapshots(cloudstackTestCase):
                                              pagesize=self.services["pagesize"]
                                              )
         status = validateList(list_vol_snaps_page1)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Failed to list volume snapshots in page 1"
                           )
         # Verifying the list size to be equal to pagesize
-        self.assertEquals(
+        self.assertEqual(
                           self.services["pagesize"],
                           len(list_vol_snaps_page1),
                           "Size of volume snapshots in page 1 is not matching"
@@ -256,13 +257,13 @@ class TestSnapshots(cloudstackTestCase):
                                              pagesize=self.services["pagesize"]
                                              )
         status = validateList(list_vol_snaps_page2)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Failed to list volume snapshots in page 2"
                           )
         # Verifying the list size to be equal to pagesize
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_vol_snaps_page2),
                           "Size of volume snapshots in page 2 is not matching"
@@ -319,13 +320,13 @@ class TestSnapshots(cloudstackTestCase):
                                    listall=self.services["listall"]
                                    )
         status = validateList(volumes_list)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Root volume did not get created while deploying a VM"
                           )
         # Verifying list size to be 1
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(volumes_list),
                           "More than 1 root volume created for deployed VM"
@@ -347,13 +348,13 @@ class TestSnapshots(cloudstackTestCase):
                                              listall=self.services["listall"]
                                              )
         status = validateList(list_vol_snaps_after)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Volume snapshot creation failed"
                           )
         # Verifying that list size is 1
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_vol_snaps_after),
                           "Failed to create Volume snapshot"
@@ -365,13 +366,13 @@ class TestSnapshots(cloudstackTestCase):
                                           id=snapshot_created.id
                                           )
         status = validateList(list_vol_snapshot)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Failed to list Volume snapshot by Id"
                           )
         # Verifying that list size is 1
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_vol_snapshot),
                           "Size of the list volume snapshot by Id is not matching"
@@ -454,13 +455,13 @@ class TestSnapshots(cloudstackTestCase):
                                               listall=self.services["listall"]
                                               )
         status = validateList(list_vm_snaps_after)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "VM snapshot creation failed"
                           )
         # Verifying that list size is pagesize + 1
-        self.assertEquals(
+        self.assertEqual(
                           self.services["pagesize"] + 1,
                           len(list_vm_snaps_after),
                           "Failed to create pagesize + 1 number of VM snapshots"
@@ -473,13 +474,13 @@ class TestSnapshots(cloudstackTestCase):
                                               pagesize=self.services["pagesize"]
                                               )
         status = validateList(list_vm_snaps_page1)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Failed to list vm snapshots in page 1"
                           )
         # Verifying the list size to be equal to pagesize
-        self.assertEquals(
+        self.assertEqual(
                           self.services["pagesize"],
                           len(list_vm_snaps_page1),
                           "Size of vm snapshots in page 1 is not matching"
@@ -492,13 +493,13 @@ class TestSnapshots(cloudstackTestCase):
                                               pagesize=self.services["pagesize"]
                                               )
         status = validateList(list_vm_snaps_page2)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Failed to list vm snapshots in page 2"
                           )
         # Verifying the list size to be equal to pagesize
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_vm_snaps_page2),
                           "Size of vm snapshots in page 2 is not matching"
@@ -526,13 +527,13 @@ class TestSnapshots(cloudstackTestCase):
                                          listall=self.services["listall"],
                                          )
         status = validateList(list_vm_snaps)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "All VM snapshots deleted"
                           )
         # Verifying that list size is equal to page size
-        self.assertEquals(
+        self.assertEqual(
                           self.services["pagesize"],
                           len(list_vm_snaps),
                           "VM Snapshots count is not matching"
@@ -586,13 +587,13 @@ class TestSnapshots(cloudstackTestCase):
                                               listall=self.services["listall"]
                                               )
         status = validateList(list_vm_snaps_after)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "VM snapshot creation failed"
                           )
         # Verifying that list size is 1
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_vm_snaps_after),
                           "Failed to create VM snapshot"
@@ -604,13 +605,13 @@ class TestSnapshots(cloudstackTestCase):
                                            vmsnapshotid=snapshot_created.id
                                           )
         status = validateList(list_vm_snapshot)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Failed to list VM snapshot by Id"
                           )
         # Verifying that list size is 1
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_vm_snapshot),
                           "Size of the list vm snapshot by Id is not matching"

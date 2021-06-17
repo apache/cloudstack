@@ -1471,6 +1471,24 @@ public class NetUtils {
         return URI.create("pvlan://" + primaryVlan + "-i" + isolatedPvlan);
     }
 
+    public static URI generateUriForPvlan(final String primaryVlan, final String isolatedPvlan, final String isolatedPvlanType) {
+        // Defaulting to isolated for backward compatibility
+        if (isolatedPvlan.length() < 1) {
+            return generateUriForPvlan(primaryVlan, isolatedPvlan);
+        }
+        char type = isolatedPvlanType.charAt(0);
+        switch(type) {
+            case 'c':
+            case 'C':
+                return URI.create("pvlan://" + primaryVlan + "-c" + isolatedPvlan);
+            case 'p':
+            case 'P':
+                return URI.create("pvlan://" + primaryVlan + "-p" + primaryVlan);
+            default :
+                return generateUriForPvlan(primaryVlan, isolatedPvlan);
+        }
+    }
+
     public static String getPrimaryPvlanFromUri(final URI uri) {
         final String[] vlans = uri.getHost().split("-");
         if (vlans.length < 1) {
@@ -1487,6 +1505,31 @@ public class NetUtils {
         for (final String vlan : vlans) {
             if (vlan.startsWith("i")) {
                 return vlan.replace("i", " ").trim();
+            }
+            if (vlan.startsWith("p")) {
+                return vlan.replace("p", " ").trim();
+            }
+            if (vlan.startsWith("c")) {
+                return vlan.replace("c", " ").trim();
+            }
+        }
+        return null;
+    }
+
+    public static String getPvlanTypeFromUri(final URI uri) {
+        final String[] vlans = uri.getHost().split("-");
+        if (vlans.length < 2) {
+            return null;
+        }
+        for (final String vlan : vlans) {
+            if (vlan.startsWith("i")) {
+                return "I";
+            }
+            if (vlan.startsWith("p")) {
+                return "P";
+            }
+            if (vlan.startsWith("c")) {
+                return "C";
             }
         }
         return null;

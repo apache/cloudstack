@@ -27,8 +27,8 @@
                       http://www.springframework.org/schema/context/spring-context.xsd"
                       >
 
-    <bean id="xenserverSnapshotStrategy"
-        class="org.apache.cloudstack.storage.snapshot.XenserverSnapshotStrategy" />
+    <bean id="defaultSnapshotStrategy"
+        class="org.apache.cloudstack.storage.snapshot.DefaultSnapshotStrategy" />
 
     <bean id="storageSystemSnapshotStrategy"
         class="org.apache.cloudstack.storage.snapshot.StorageSystemSnapshotStrategy" />
@@ -36,7 +36,13 @@
     <bean id="cephSnapshotStrategy"
         class="org.apache.cloudstack.storage.snapshot.CephSnapshotStrategy" />
 
+    <bean id="scaleioSnapshotStrategy"
+          class="org.apache.cloudstack.storage.snapshot.ScaleIOSnapshotStrategy" />
+
     <bean id="DefaultVMSnapshotStrategy"
         class="org.apache.cloudstack.storage.vmsnapshot.DefaultVMSnapshotStrategy" />
+
+    <bean id="ScaleIOVMSnapshotStrategy"
+          class="org.apache.cloudstack.storage.vmsnapshot.ScaleIOVMSnapshotStrategy" />
 
 </beans>

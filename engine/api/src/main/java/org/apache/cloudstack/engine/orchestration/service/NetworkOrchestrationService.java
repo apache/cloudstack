@@ -129,7 +129,7 @@ public interface NetworkOrchestrationService {
 
     void cleanupNics(VirtualMachineProfile vm);
 
-    void expungeNics(VirtualMachineProfile vm);
+    void removeNics(VirtualMachineProfile vm);
 
     List<NicProfile> getNicProfiles(VirtualMachine vm);
 
@@ -182,7 +182,7 @@ public interface NetworkOrchestrationService {
 
     Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, boolean bypassVlanOverlapCheck, String networkDomain, Account owner,
                                Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr,
-                               Boolean displayNetworkEnabled, String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
+                               Boolean displayNetworkEnabled, String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId, String routerIp, String routerIpv6) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     UserDataServiceProvider getPasswordResetProvider(Network network);
 
@@ -294,6 +294,16 @@ public interface NetworkOrchestrationService {
 
     void finalizeUpdateInSequence(Network network, boolean success);
 
+    /**
+     * Adds hypervisor hostname to a file - hypervisor-host-name if the userdata
+     * service provider is ConfigDrive or VirtualRouter
+     * @param vm holds the details of the Virtual Machine
+     * @param dest holds information of the destination
+     * @param migrationSuccessful
+     * @throws ResourceUnavailableException in case Datastore or agent to which a command is to be sent is unavailable
+     */
+    void setHypervisorHostname(VirtualMachineProfile vm, DeployDestination dest, boolean migrationSuccessful) throws ResourceUnavailableException;
+
     List<NetworkGuru> getNetworkGurus();
 
     /**
@@ -317,5 +327,7 @@ public interface NetworkOrchestrationService {
      */
     void cleanupNicDhcpDnsEntry(Network network, VirtualMachineProfile vmProfile, NicProfile nicProfile);
 
-    Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException;
+    Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses, boolean forced) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException;
+
+    void unmanageNics(VirtualMachineProfile vm);
 }

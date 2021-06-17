@@ -1289,10 +1289,11 @@ public class LibvirtComputingResourceTest {
         final boolean isWindows = false;
         final VirtualMachineTO vmTO = Mockito.mock(VirtualMachineTO.class);
         final boolean executeInSequence = false;
-
+        DiskTO[] diskTOS = new DiskTO[]{};
         final MigrateCommand command = new MigrateCommand(vmName, destIp, isWindows, vmTO, executeInSequence );
 
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        when(vmTO.getDisks()).thenReturn(diskTOS);
         try {
             when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
             when(libvirtUtilitiesHelper.retrieveQemuConnection("qemu+tcp://" + command.getDestinationIp() + "/system")).thenReturn(dconn);
@@ -3363,7 +3364,7 @@ public class LibvirtComputingResourceTest {
 
             when(libvirtComputingResource.getAllVifDrivers()).thenReturn(drivers);
 
-            doNothing().when(vifDriver).unplug(intDef);
+            doNothing().when(vifDriver).unplug(intDef, true);
 
         } catch (final LibvirtException e) {
             fail(e.getMessage());
@@ -4336,7 +4337,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testPvlanSetupCommandDhcpAdd() {
         final String op = "add";
-        final URI uri = URI.create("http://localhost");
+        final URI uri = URI.create("pvlan://200-p200");
         final String networkTag = "/105";
         final String dhcpName = "dhcp";
         final String dhcpMac = "00:00:00:00";
@@ -4344,46 +4345,24 @@ public class LibvirtComputingResourceTest {
 
         final PvlanSetupCommand command = PvlanSetupCommand.createDhcpSetup(op, uri, networkTag, dhcpName, dhcpMac, dhcpIp);
 
-        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
-        final Connect conn = Mockito.mock(Connect.class);
-
         final String guestBridgeName = "br0";
         when(libvirtComputingResource.getGuestBridgeName()).thenReturn(guestBridgeName);
-
         when(libvirtComputingResource.getTimeout()).thenReturn(Duration.ZERO);
+
         final String ovsPvlanDhcpHostPath = "/pvlan";
         when(libvirtComputingResource.getOvsPvlanDhcpHostPath()).thenReturn(ovsPvlanDhcpHostPath);
-        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
-
-        final List<InterfaceDef> ifaces = new ArrayList<InterfaceDef>();
-        final InterfaceDef nic = Mockito.mock(InterfaceDef.class);
-        ifaces.add(nic);
-
-        try {
-            when(libvirtUtilitiesHelper.getConnectionByVmName(dhcpName)).thenReturn(conn);
-            when(libvirtComputingResource.getInterfaces(conn, dhcpName)).thenReturn(ifaces);
-        } catch (final LibvirtException e) {
-            fail(e.getMessage());
-        }
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertFalse(answer.getResult());
-
-        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
-        try {
-            verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(dhcpName);
-        } catch (final LibvirtException e) {
-            fail(e.getMessage());
-        }
     }
 
     @Test
     public void testPvlanSetupCommandVm() {
         final String op = "add";
-        final URI uri = URI.create("http://localhost");
+        final URI uri = URI.create("pvlan://200-p200");
         final String networkTag = "/105";
         final String vmMac = "00:00:00:00";
 
@@ -4403,52 +4382,10 @@ public class LibvirtComputingResourceTest {
         assertFalse(answer.getResult());
     }
 
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testPvlanSetupCommandDhcpException() {
-        final String op = "add";
-        final URI uri = URI.create("http://localhost");
-        final String networkTag = "/105";
-        final String dhcpName = "dhcp";
-        final String dhcpMac = "00:00:00:00";
-        final String dhcpIp = "127.0.0.1";
-
-        final PvlanSetupCommand command = PvlanSetupCommand.createDhcpSetup(op, uri, networkTag, dhcpName, dhcpMac, dhcpIp);
-
-        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
-
-        final String guestBridgeName = "br0";
-        when(libvirtComputingResource.getGuestBridgeName()).thenReturn(guestBridgeName);
-
-        when(libvirtComputingResource.getTimeout()).thenReturn(Duration.ZERO);
-        final String ovsPvlanDhcpHostPath = "/pvlan";
-        when(libvirtComputingResource.getOvsPvlanDhcpHostPath()).thenReturn(ovsPvlanDhcpHostPath);
-        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
-
-        try {
-            when(libvirtUtilitiesHelper.getConnectionByVmName(dhcpName)).thenThrow(LibvirtException.class);
-        } catch (final LibvirtException e) {
-            fail(e.getMessage());
-        }
-
-        final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
-        assertNotNull(wrapper);
-
-        final Answer answer = wrapper.execute(command, libvirtComputingResource);
-        assertFalse(answer.getResult());
-
-        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
-        try {
-            verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(dhcpName);
-        } catch (final LibvirtException e) {
-            fail(e.getMessage());
-        }
-    }
-
     @Test
     public void testPvlanSetupCommandDhcpDelete() {
         final String op = "delete";
-        final URI uri = URI.create("http://localhost");
+        final URI uri = URI.create("pvlan://200-p200");
         final String networkTag = "/105";
         final String dhcpName = "dhcp";
         final String dhcpMac = "00:00:00:00";
@@ -4456,15 +4393,12 @@ public class LibvirtComputingResourceTest {
 
         final PvlanSetupCommand command = PvlanSetupCommand.createDhcpSetup(op, uri, networkTag, dhcpName, dhcpMac, dhcpIp);
 
-        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
-
         final String guestBridgeName = "br0";
         when(libvirtComputingResource.getGuestBridgeName()).thenReturn(guestBridgeName);
-
         when(libvirtComputingResource.getTimeout()).thenReturn(Duration.ZERO);
+
         final String ovsPvlanDhcpHostPath = "/pvlan";
         when(libvirtComputingResource.getOvsPvlanDhcpHostPath()).thenReturn(ovsPvlanDhcpHostPath);
-        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);

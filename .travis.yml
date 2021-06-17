@@ -25,12 +25,16 @@ jdk:
   - openjdk11
 
 python:
-  - "2.7"
+  - "3.9"
+
+node_js:
+  - 12
 
 cache:
   directories:
     - $HOME/.m2
   timeout: 500
+  npm: false
 
 notifications:
   email: false
@@ -160,6 +164,7 @@ env:
 
     - TESTS="component/test_project_usage
              component/test_protocol_number_security_group
+             component/test_public_ip
              component/test_resource_limits"
 
     - TESTS="component/test_regions_accounts

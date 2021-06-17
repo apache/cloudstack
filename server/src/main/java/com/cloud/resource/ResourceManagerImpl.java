@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.resource;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.SET_HOST_DOWN_TO_MAINTENANCE;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -30,9 +32,22 @@ import java.util.Random;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.deploy.DeploymentPlanningManager;
+import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.vm.UserVmManager;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
+import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
@@ -202,6 +217,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Inject
     private CapacityDao _capacityDao;
     @Inject
+    private DiskOfferingDao diskOfferingDao;
+    @Inject
+    private ServiceOfferingDao serviceOfferingDao;
+    @Inject
     private HostDao _hostDao;
     @Inject
     private HostDetailsDao _hostDetailsDao;
@@ -222,6 +241,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Inject
     private IPAddressDao _publicIPAddressDao;
     @Inject
+    private DeploymentPlanningManager deploymentManager;
+    @Inject
     private VirtualMachineManager _vmMgr;
     @Inject
     private VMInstanceDao _vmDao;
@@ -235,6 +256,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private DedicatedResourceDao _dedicatedDao;
     @Inject
     private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+    @Inject
+    private UserVmManager userVmManager;
 
     private List<? extends Discoverer> _discoverers;
 
@@ -929,7 +952,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
 
                 // delete the op_host_capacity entry
-                final Object[] capacityTypes = {Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY};
+                final Object[] capacityTypes = {Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY, Capacity.CAPACITY_TYPE_CPU_CORE};
                 final SearchCriteria<CapacityVO> hostCapacitySC = _capacityDao.createSearchCriteria();
                 hostCapacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
                 hostCapacitySC.addAnd("capacityType", SearchCriteria.Op.IN, capacityTypes);
@@ -1026,11 +1049,25 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     @DB
-    public Cluster updateCluster(final Cluster clusterToUpdate, final String clusterType, final String hypervisor, final String allocationState, final String managedstate) {
+    public Cluster updateCluster(UpdateClusterCmd cmd) {
+        ClusterVO cluster = (ClusterVO) getCluster(cmd.getId());
+        String clusterType = cmd.getClusterType();
+        String hypervisor = cmd.getHypervisor();
+        String allocationState = cmd.getAllocationState();
+        String managedstate = cmd.getManagedstate();
+        String name = cmd.getClusterName();
 
-        final ClusterVO cluster = (ClusterVO)clusterToUpdate;
         // Verify cluster information and update the cluster if needed
         boolean doUpdate = false;
+
+        if (org.apache.commons.lang.StringUtils.isNotBlank(name)) {
+            if(cluster.getHypervisorType() == HypervisorType.VMware) {
+                throw new InvalidParameterValueException("Renaming VMware cluster is not supported as it could cause problems if the updated  cluster name is not mapped on VCenter.");
+            }
+            s_logger.debug("Updating Cluster name to: " + name);
+            cluster.setName(name);
+            doUpdate = true;
+        }
 
         if (hypervisor != null && !hypervisor.isEmpty()) {
             final Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.getType(hypervisor);
@@ -1211,6 +1248,19 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return _hostDao.updateResourceState(currentState, event, nextState, host);
     }
 
+    private void handleVmForLastHostOrWithVGpu(final HostVO host, final VMInstanceVO vm) {
+        // Migration is not supported for VGPU Vms so stop them.
+        // for the last host in this cluster, destroy SSVM/CPVM and stop all other VMs
+        if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())
+                || VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
+            s_logger.error(String.format("Maintenance: VM is of type %s. Destroying VM %s (ID: %s) immediately instead of migration.", vm.getType().toString(), vm.getInstanceName(), vm.getUuid()));
+            _haMgr.scheduleDestroy(vm, host.getId());
+            return;
+        }
+        s_logger.error(String.format("Maintenance: No hosts available for migrations. Scheduling shutdown for VM %s instead of migration.", vm.getUuid()));
+        _haMgr.scheduleStop(vm, host.getId(), WorkType.ForceStop);
+    }
+
     private boolean doMaintain(final long hostId) {
         final HostVO host = _hostDao.findById(hostId);
         s_logger.info("Maintenance: attempting maintenance of host " + host.getUuid());
@@ -1248,13 +1298,23 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             for (final VMInstanceVO vm : vms) {
                 if (hosts == null || hosts.isEmpty() || !answer.getMigrate()
                         || _serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.vgpuType.toString()) != null) {
-                    // Migration is not supported for VGPU Vms so stop them.
-                    // for the last host in this cluster, stop all the VMs
-                    s_logger.error("Maintenance: No hosts available for migrations. Scheduling shutdown instead of migrations.");
-                    _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
+                    handleVmForLastHostOrWithVGpu(host, vm);
                 } else if (HypervisorType.LXC.equals(host.getHypervisorType()) && VirtualMachine.Type.User.equals(vm.getType())){
                     //Migration is not supported for LXC Vms. Schedule restart instead.
                     _haMgr.scheduleRestart(vm, false);
+                } else if (userVmManager.isVMUsingLocalStorage(vm)) {
+                    if (isMaintenanceLocalStrategyForceStop()) {
+                        _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
+                    } else if (isMaintenanceLocalStrategyMigrate()) {
+                        migrateAwayVmWithVolumes(host, vm);
+                    } else if (!isMaintenanceLocalStrategyDefault()){
+                        String logMessage = String.format(
+                                "Unsupported host.maintenance.local.storage.strategy: %s. Please set a strategy according to the global settings description: "
+                                        + "'Error', 'Migration', or 'ForceStop'.",
+                                HOST_MAINTENANCE_LOCAL_STRATEGY.value().toString());
+                        s_logger.error(logMessage);
+                        throw new CloudRuntimeException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
+                    }
                 } else {
                     s_logger.info("Maintenance: scheduling migration of VM " + vm.getUuid() + " from host " + host.getUuid());
                     _haMgr.scheduleMigration(vm);
@@ -1262,6 +1322,32 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
         return true;
+    }
+
+    /**
+     * Looks for Hosts able to allocate the VM and migrates the VM with its volume.
+     */
+    private void migrateAwayVmWithVolumes(HostVO host, VMInstanceVO vm) {
+        final DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null, null);
+        ServiceOfferingVO offeringVO = serviceOfferingDao.findById(vm.getServiceOfferingId());
+        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, offeringVO, null, null);
+        plan.setMigrationPlan(true);
+        DeployDestination dest = null;
+        try {
+            dest = deploymentManager.planDeployment(profile, plan, new DeploymentPlanner.ExcludeList(), null);
+        } catch (InsufficientServerCapacityException e) {
+            throw new CloudRuntimeException(String.format("Maintenance failed, could not find deployment destination for VM [id=%s, name=%s].", vm.getId(), vm.getInstanceName()),
+                    e);
+        }
+        Host destHost = dest.getHost();
+
+        try {
+            _vmMgr.migrateWithStorage(vm.getUuid(), host.getId(), destHost.getId(), null);
+        } catch (ResourceUnavailableException e) {
+            throw new CloudRuntimeException(
+                    String.format("Maintenance failed, could not migrate VM [id=%s, name=%s] with local storage from host [id=%s, name=%s] to host [id=%s, name=%s].", vm.getId(),
+                            vm.getInstanceName(), host.getId(), host.getName(), destHost.getId(), destHost.getName()), e);
+        }
     }
 
     @Override
@@ -1287,15 +1373,30 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new CloudRuntimeException("Host is already in state " + host.getResourceState() + ". Cannot recall for maintenance until resolved.");
         }
 
+        if (SET_HOST_DOWN_TO_MAINTENANCE.valueIn(host.getDataCenterId()) && (host.getStatus() == Status.Down)) {
+            if (host.getResourceState() == ResourceState.Enabled) {
+                _hostDao.updateResourceState(ResourceState.Enabled, ResourceState.Event.AdminAskMaintenance, ResourceState.PrepareForMaintenance, host);
+                _hostDao.updateResourceState(ResourceState.PrepareForMaintenance, ResourceState.Event.InternalEnterMaintenance, ResourceState.Maintenance, host);
+                return _hostDao.findById(hostId);
+            } else if (host.getResourceState() == ResourceState.ErrorInMaintenance) {
+                _hostDao.updateResourceState(ResourceState.ErrorInMaintenance, ResourceState.Event.InternalEnterMaintenance, ResourceState.Maintenance, host);
+                return _hostDao.findById(hostId);
+            }
+        }
+
         if (_hostDao.countBy(host.getClusterId(), ResourceState.PrepareForMaintenance, ResourceState.ErrorInPrepareForMaintenance) > 0) {
             throw new CloudRuntimeException("There are other servers attempting migrations for maintenance. " +
                     "Found hosts in PrepareForMaintenance OR ErrorInPrepareForMaintenance STATUS in cluster " + host.getClusterId());
         }
 
         if (_storageMgr.isLocalStorageActiveOnHost(host.getId())) {
-            throw new CloudRuntimeException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
+            if(!isMaintenanceLocalStrategyMigrate() && !isMaintenanceLocalStrategyForceStop()) {
+                throw new CloudRuntimeException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
+            }
         }
+
         List<VMInstanceVO> migratingInVMs = _vmDao.findByHostInStates(hostId, State.Migrating);
+
         if (migratingInVMs.size() > 0) {
             throw new CloudRuntimeException("Host contains incoming VMs migrating. Please wait for them to complete before putting to maintenance.");
         }
@@ -1319,6 +1420,31 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         } catch (final AgentUnavailableException e) {
             throw new CloudRuntimeException("Unable to prepare for maintenance host " + hostId);
         }
+    }
+
+    protected boolean isMaintenanceLocalStrategyMigrate() {
+        if(org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value())) {
+            return false;
+        }
+        return HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(WorkType.Migration.toString().toLowerCase());
+    }
+
+    protected boolean isMaintenanceLocalStrategyForceStop() {
+        if(org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value())) {
+            return false;
+        }
+        return HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(WorkType.ForceStop.toString().toLowerCase());
+    }
+
+    /**
+     * Returns true if the host.maintenance.local.storage.strategy is the Default: "Error", blank, empty, or null.
+     */
+    protected boolean isMaintenanceLocalStrategyDefault() {
+        if (org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value().toString())
+                || HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(State.Error.toString().toLowerCase())) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -1388,7 +1514,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      * on a host. We need to track the various VM states on each run and accordingly transit to the
      * appropriate state.
      *
-     * We change states as follws -
+     * We change states as follows -
      * 1. If there are no VMs in running, migrating, starting, stopping, error, unknown states we can move
      *    to maintenance state. Note that there cannot be incoming migrations as the API Call prepare for
      *    maintenance checks incoming migrations before starting.
@@ -1476,8 +1602,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
-        final Long hostId = cmd.getId();
-        final Long guestOSCategoryId = cmd.getOsCategoryId();
+        Long hostId = cmd.getId();
+        String name = cmd.getName();
+        Long guestOSCategoryId = cmd.getOsCategoryId();
 
         // Verify that the host exists
         final HostVO host = _hostDao.findById(hostId);
@@ -1492,6 +1619,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
 
             resourceStateTransitTo(host, resourceEvent, _nodeId);
+        }
+
+        if (org.apache.commons.lang.StringUtils.isNotBlank(name)) {
+            s_logger.debug("Updating Host name to: " + name);
+            host.setName(name);
+            _hostDao.update(host.getId(), host);
         }
 
         if (guestOSCategoryId != null) {
@@ -2325,34 +2458,32 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             s_logger.debug("Deleting Host: " + host.getId() + " Guid:" + host.getGuid());
         }
 
-        if (forceDestroyStorage) {
+        final StoragePoolVO storagePool = _storageMgr.findLocalStorageOnHost(host.getId());
+        if (forceDestroyStorage && storagePool != null) {
             // put local storage into mainenance mode, will set all the VMs on
             // this local storage into stopped state
-            final StoragePoolVO storagePool = _storageMgr.findLocalStorageOnHost(host.getId());
-            if (storagePool != null) {
-                if (storagePool.getStatus() == StoragePoolStatus.Up || storagePool.getStatus() == StoragePoolStatus.ErrorInMaintenance) {
-                    try {
-                        final StoragePool pool = _storageSvr.preparePrimaryStorageForMaintenance(storagePool.getId());
-                        if (pool == null) {
-                            s_logger.debug("Failed to set primary storage into maintenance mode");
+            if (storagePool.getStatus() == StoragePoolStatus.Up || storagePool.getStatus() == StoragePoolStatus.ErrorInMaintenance) {
+                try {
+                    final StoragePool pool = _storageSvr.preparePrimaryStorageForMaintenance(storagePool.getId());
+                    if (pool == null) {
+                        s_logger.debug("Failed to set primary storage into maintenance mode");
 
-                            throw new UnableDeleteHostException("Failed to set primary storage into maintenance mode");
-                        }
-                    } catch (final Exception e) {
-                        s_logger.debug("Failed to set primary storage into maintenance mode, due to: " + e.toString());
-                        throw new UnableDeleteHostException("Failed to set primary storage into maintenance mode, due to: " + e.toString());
+                        throw new UnableDeleteHostException("Failed to set primary storage into maintenance mode");
                     }
+                } catch (final Exception e) {
+                    s_logger.debug("Failed to set primary storage into maintenance mode, due to: " + e.toString());
+                    throw new UnableDeleteHostException("Failed to set primary storage into maintenance mode, due to: " + e.toString());
                 }
+            }
 
-                final List<VMInstanceVO> vmsOnLocalStorage = _storageMgr.listByStoragePool(storagePool.getId());
-                for (final VMInstanceVO vm : vmsOnLocalStorage) {
-                    try {
-                        _vmMgr.destroy(vm.getUuid(), false);
-                    } catch (final Exception e) {
-                        final String errorMsg = "There was an error Destory the vm: " + vm + " as a part of hostDelete id=" + host.getId();
-                        s_logger.debug(errorMsg, e);
-                        throw new UnableDeleteHostException(errorMsg + "," + e.getMessage());
-                    }
+            final List<VMInstanceVO> vmsOnLocalStorage = _storageMgr.listByStoragePool(storagePool.getId());
+            for (final VMInstanceVO vm : vmsOnLocalStorage) {
+                try {
+                    _vmMgr.destroy(vm.getUuid(), false);
+                } catch (final Exception e) {
+                    final String errorMsg = "There was an error Destory the vm: " + vm + " as a part of hostDelete id=" + host.getId();
+                    s_logger.debug(errorMsg, e);
+                    throw new UnableDeleteHostException(errorMsg + "," + e.getMessage());
                 }
             }
         } else {
@@ -2362,17 +2493,22 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 if (isForced) {
                     // Stop HA disabled vms and HA enabled vms in Stopping state
                     // Restart HA enabled vms
+                    try {
+                        resourceStateTransitTo(host, ResourceState.Event.DeleteHost, host.getId());
+                    } catch (final NoTransitionException e) {
+                        s_logger.debug("Cannot transmit host " + host.getId() + " to Disabled state", e);
+                    }
                     for (final VMInstanceVO vm : vms) {
-                        if (!vm.isHaEnabled() || vm.getState() == State.Stopping) {
+                        if ((! HighAvailabilityManager.ForceHA.value() && !vm.isHaEnabled()) || vm.getState() == State.Stopping) {
                             s_logger.debug("Stopping vm: " + vm + " as a part of deleteHost id=" + host.getId());
                             try {
-                                _vmMgr.advanceStop(vm.getUuid(), false);
+                                _haMgr.scheduleStop(vm, host.getId(), WorkType.Stop);
                             } catch (final Exception e) {
                                 final String errorMsg = "There was an error stopping the vm: " + vm + " as a part of hostDelete id=" + host.getId();
                                 s_logger.debug(errorMsg, e);
                                 throw new UnableDeleteHostException(errorMsg + "," + e.getMessage());
                             }
-                        } else if (vm.isHaEnabled() && (vm.getState() == State.Running || vm.getState() == State.Starting)) {
+                        } else if ((HighAvailabilityManager.ForceHA.value() || vm.isHaEnabled()) && (vm.getState() == State.Running || vm.getState() == State.Starting)) {
                             s_logger.debug("Scheduling restart for vm: " + vm + " " + vm.getState() + " on the host id=" + host.getId());
                             _haMgr.scheduleRestart(vm, false);
                         }
@@ -2994,12 +3130,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public HostVO findOneRandomRunningHostByHypervisor(HypervisorType type) {
+    public HostVO findOneRandomRunningHostByHypervisor(final HypervisorType type, final Long dcId) {
         final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         sc.and(sc.entity().getHypervisorType(), Op.EQ, type);
         sc.and(sc.entity().getType(),Op.EQ, Type.Routing);
         sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
         sc.and(sc.entity().getResourceState(), Op.EQ, ResourceState.Enabled);
+        if (dcId != null) {
+            sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        }
         sc.and(sc.entity().getRemoved(), Op.NULL);
         List<HostVO> hosts = sc.list();
         if (CollectionUtils.isEmpty(hosts)) {
@@ -3055,6 +3194,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[0];
+        return new ConfigKey<?>[] {KvmSshToAgentEnabled, HOST_MAINTENANCE_LOCAL_STRATEGY};
     }
 }

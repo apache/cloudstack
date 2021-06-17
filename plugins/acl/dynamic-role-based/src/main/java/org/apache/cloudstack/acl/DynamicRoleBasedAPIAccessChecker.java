@@ -25,10 +25,12 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.exception.UnavailableCommandException;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.log4j.Logger;
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.UnavailableCommandException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
@@ -44,7 +46,9 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     private RoleService roleService;
 
     private List<PluggableService> services;
-    private Map<RoleType, Set<String>> annotationRoleBasedApisMap = new HashMap<>();
+    private Map<RoleType, Set<String>> annotationRoleBasedApisMap = new HashMap<RoleType, Set<String>>();
+
+    private static final Logger logger = Logger.getLogger(DynamicRoleBasedAPIAccessChecker.class.getName());
 
     protected DynamicRoleBasedAPIAccessChecker() {
         super();
@@ -54,7 +58,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     }
 
     private void denyApiAccess(final String commandName) throws PermissionDeniedException {
-        throw new PermissionDeniedException("The API " + commandName + " is blacklisted for the account's role.");
+        throw new PermissionDeniedException("The API " + commandName + " is denied for the account's role.");
     }
 
     public boolean isDisabled() {
@@ -84,7 +88,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         // Check against current list of permissions
         for (final RolePermission permission : roleService.findAllPermissionsBy(accountRole.getId())) {
             if (permission.getRule().matches(commandName)) {
-                if (RolePermission.Permission.ALLOW.equals(permission.getPermission())) {
+                if (Permission.ALLOW.equals(permission.getPermission())) {
                     return true;
                 } else {
                     denyApiAccess(commandName);

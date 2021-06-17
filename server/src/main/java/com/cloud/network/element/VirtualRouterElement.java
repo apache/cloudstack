@@ -31,7 +31,10 @@ import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.NicDao;
 import com.google.gson.Gson;
 
 import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
@@ -117,7 +120,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, UserDataServiceProvider, SourceNatServiceProvider,
 StaticNatServiceProvider, FirewallServiceProvider, LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer,
-NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServiceProvider {
+NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServiceProvider{
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
     public static final AutoScaleCounterType AutoScaleCounterCpu = new AutoScaleCounterType("cpu");
     public static final AutoScaleCounterType AutoScaleCounterMemory = new AutoScaleCounterType("memory");
@@ -163,6 +166,10 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     DataCenterDao _dcDao;
     @Inject
     NetworkModel _networkModel;
+    @Inject
+    NicDao _nicDao;
+    @Inject
+    VMTemplateDao _templateDao;
 
     @Inject
     NetworkTopologyContext networkTopologyContext;
@@ -610,7 +617,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         }
         NetworkDetailVO updateInSequence=_networkDetailsDao.findDetail(network.getId(), Network.updatingInSequence);
         if(network.isRedundant() && updateInSequence!=null && "true".equalsIgnoreCase(updateInSequence.getValue())){
-            List<DomainRouterVO> masterRouters=new ArrayList<DomainRouterVO>();
+            List<DomainRouterVO> primaryRouters=new ArrayList<DomainRouterVO>();
             int noOfrouters=routers.size();
             while (noOfrouters>0){
                 DomainRouterVO router = routers.get(0);
@@ -625,16 +632,16 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
                     continue;
                 }
                 if(router.getRedundantState()!=VirtualRouter.RedundantState.BACKUP) {
-                    masterRouters.add(router);
+                    primaryRouters.add(router);
                     routers.remove(router);
                 }
                 noOfrouters--;
             }
-            if(routers.size()==0 && masterRouters.size()==0){
+            if(routers.size()==0 && primaryRouters.size()==0){
                 return null;
             }
-            if(routers.size()==0 && masterRouters.size()!=0){
-                routers=masterRouters;
+            if(routers.size()==0 && primaryRouters.size()!=0){
+                routers=primaryRouters;
             }
             routers=routers.subList(0,1);
             routers.get(0).setUpdateState(VirtualRouter.UpdateState.UPDATE_IN_PROGRESS);
@@ -763,6 +770,33 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             result = result && networkTopology.saveSSHPublicKeyToRouter(network, nic, uservm, domainRouterVO, sshPublicKey);
         }
         return result;
+    }
+
+    @Override
+    public boolean saveHypervisorHostname(NicProfile nicProfile, Network network, VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException {
+        if (_networkModel.getUserDataUpdateProvider(network).getProvider().equals(Provider.VirtualRouter) && vm.getVirtualMachine().getType() == VirtualMachine.Type.User) {
+            VirtualMachine uvm = vm.getVirtualMachine();
+            UserVmVO destVm = _userVmDao.findById(uvm.getId());
+            VirtualMachineProfile profile = null;
+
+            if (destVm != null) {
+                destVm.setHostId(dest.getHost().getId());
+                _userVmDao.update(uvm.getId(), destVm);
+                profile = new VirtualMachineProfileImpl(destVm);
+                profile.setDisks(vm.getDisks());
+                profile.setNics(vm.getNics());
+                profile.setVmData(vm.getVmData());
+            } else {
+                profile = vm;
+            }
+
+            updateUserVmData(nicProfile, network, profile);
+            if (destVm != null) {
+                destVm.setHostId(uvm.getHostId());
+                _userVmDao.update(uvm.getId(), destVm);
+            }
+        }
+        return true;
     }
 
     @Override
@@ -1066,6 +1100,8 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             }
 
             final VirtualMachineProfile uservm = vm;
+            List<java.lang.String[]> vmData = uservm.getVmData();
+            uservm.setVmData(vmData);
 
             final List<DomainRouterVO> routers = getRouters(network, dest);
 
@@ -1204,6 +1240,19 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         return true;
     }
 
+    private void updateUserVmData(final NicProfile nic, final Network network, final VirtualMachineProfile vm) throws ResourceUnavailableException {
+        if (_networkModel.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Service.UserData)) {
+            boolean result = saveUserData(network, nic, vm);
+            if (!result) {
+                s_logger.warn("Failed to update userdata for vm " + vm + " and nic " + nic);
+            } else {
+                s_logger.debug("Successfully saved user data to router");
+            }
+        } else {
+            s_logger.debug("Not applying userdata for nic id=" + nic.getId() + " in vm id=" + vm.getId() + " because it is not supported in network id=" + network.getId());
+        }
+    }
+
     @Override
     public boolean prepareMigration(final NicProfile nic, final Network network, final VirtualMachineProfile vm, final DeployDestination dest, final ReservationContext context) {
         if (nic.getBroadcastType() != Networks.BroadcastDomainType.Pvlan) {
@@ -1223,8 +1272,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
-            final UserVmVO userVm = (UserVmVO) vm.getVirtualMachine();
-            _userVmMgr.setupVmForPvlan(false, userVm.getHostId(), nic);
+            _userVmMgr.setupVmForPvlan(false, vm.getVirtualMachine().getHostId(), nic);
         }
         return true;
     }
@@ -1248,8 +1296,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
-            final UserVmVO userVm = (UserVmVO) vm.getVirtualMachine();
-            _userVmMgr.setupVmForPvlan(true, userVm.getHostId(), nic);
+            _userVmMgr.setupVmForPvlan(true, vm.getVirtualMachine().getHostId(), nic);
         }
     }
 
@@ -1272,8 +1319,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             }
         } else if (vm.getType() == VirtualMachine.Type.User) {
             assert vm instanceof UserVmVO;
-            final UserVmVO userVm = (UserVmVO) vm.getVirtualMachine();
-            _userVmMgr.setupVmForPvlan(true, userVm.getHostId(), nic);
+            _userVmMgr.setupVmForPvlan(true, vm.getVirtualMachine().getHostId(), nic);
         }
     }
 
@@ -1354,5 +1400,4 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             _routerDao.persist(router);
         }
     }
-
 }

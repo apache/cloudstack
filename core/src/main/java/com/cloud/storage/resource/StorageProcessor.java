@@ -21,6 +21,7 @@ package com.cloud.storage.resource;
 
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
@@ -29,10 +30,14 @@ import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
+import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
 
 import com.cloud.agent.api.Answer;
 
 public interface StorageProcessor {
+
+    String REQUEST_TEMPLATE_RELOAD = "request template reload";
+
     public Answer copyTemplateToPrimaryStorage(CopyCommand cmd);
 
     public Answer cloneVolumeFromBaseTemplate(CopyCommand cmd);
@@ -76,4 +81,8 @@ public interface StorageProcessor {
     public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd);
 
     Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd);
+
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd);
+
+    public Answer syncVolumePath(SyncVolumePathCommand cmd);
 }

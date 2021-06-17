@@ -209,7 +209,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private Long memoryKBs;
 
     @SerializedName("memoryintfreekbs")
-    @Param(description = "the internal memory thats free in vm")
+    @Param(description = "the internal memory that's free in vm or zero if it can not be calculated")
     private Long memoryIntFreeKBs;
 
     @SerializedName("memorytargetkbs")
@@ -270,9 +270,9 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "Vm details in key/value pairs.", since = "4.2.1")
     private Map details;
 
-    @SerializedName("readonlyuidetails")
-    @Param(description = "List of UI read-only Vm details as comma separated string.", since = "4.13.0")
-    private String readOnlyUIDetails;
+    @SerializedName("readonlydetails")
+    @Param(description = "List of read-only Vm details as comma separated string.", since = "4.16.0")
+    private String readOnlyDetails;
 
     @SerializedName(ApiConstants.SSH_KEYPAIR)
     @Param(description = "ssh key-pair")
@@ -298,6 +298,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "OS type id of the vm", since = "4.4")
     private String osTypeId;
 
+    @SerializedName(ApiConstants.OS_DISPLAY_NAME)
+    @Param(description = "OS name of the vm", since = "4.13.2")
+    private String osDisplayName;
+
     @SerializedName(ApiConstants.BOOT_MODE)
     @Param(description = "Guest vm Boot Mode")
     private String bootMode;
@@ -305,6 +309,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName(ApiConstants.BOOT_TYPE)
     @Param(description = "Guest vm Boot Type")
     private String bootType;
+
+    @SerializedName(ApiConstants.POOL_TYPE)
+    @Param(description = "the pool type of the virtual machine", since = "4.16")
+    private String poolType;
 
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
@@ -846,12 +854,16 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.details = details;
     }
 
-    public void setReadOnlyUIDetails(String readOnlyUIDetails) {
-        this.readOnlyUIDetails = readOnlyUIDetails;
+    public void setReadOnlyDetails(String readOnlyDetails) {
+        this.readOnlyDetails = readOnlyDetails;
     }
 
     public void setOsTypeId(String osTypeId) {
         this.osTypeId = osTypeId;
+    }
+
+    public void setOsDisplayName(String osDisplayName) {
+        this.osDisplayName = osDisplayName;
     }
 
     public Set<Long> getTagIds() {
@@ -866,8 +878,8 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         return details;
     }
 
-    public String getReadOnlyUIDetails() {
-        return readOnlyUIDetails;
+    public String getReadOnlyDetails() {
+        return readOnlyDetails;
     }
 
     public Boolean getDynamicallyScalable() {
@@ -882,6 +894,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         return osTypeId;
     }
 
+    public String getOsDisplayName() {
+        return osDisplayName;
+    }
+
     public String getBootType() { return bootType; }
 
     public void setBootType(String bootType) { this.bootType = bootType; }
@@ -890,4 +906,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setBootMode(String bootMode) { this.bootMode = bootMode; }
 
+    public String getPoolType() { return poolType; }
+
+    public void setPoolType(String poolType) { this.poolType = poolType; }
 }

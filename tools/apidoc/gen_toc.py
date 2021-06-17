@@ -95,6 +95,7 @@ known_categories = {
     'StorageMaintenance': 'Storage Pool',
     'StoragePool': 'Storage Pool',
     'StorageProvider': 'Storage Pool',
+    'syncStoragePool': 'Storage Pool',
     'SecurityGroup': 'Security Group',
     'SSH': 'SSH',
     'register': 'Registration',
@@ -155,6 +156,7 @@ known_categories = {
     'createSecondaryStagingStore': 'Image Store',
     'deleteSecondaryStagingStore': 'Image Store',
     'listSecondaryStagingStores': 'Image Store',
+    'updateImageStore': 'Image Store',
     'InternalLoadBalancer': 'Internal LB',
 	'DeploymentPlanners': 'Configuration',
 	'ObjectStore': 'Image Store',
@@ -195,8 +197,10 @@ known_categories = {
     'KubernetesSupportedVersion': 'Kubernetes Service',
     'KubernetesCluster': 'Kubernetes Service',
     'UnmanagedInstance': 'Virtual Machine',
-    'Rolling': 'Rolling Maintenance'
-    }
+    'Rolling': 'Rolling Maintenance',
+    'importVsphereStoragePolicies' : 'vSphere storage policies',
+    'listVsphereStoragePolicies' : 'vSphere storage policies'
+}
 
 
 categories = {}
@@ -245,10 +249,10 @@ for f in sys.argv:
 
 def xml_for(command):
     name = command['name']
-    async = command['async'] and ' (A)' or ''
+    isAsync = command['async'] and ' (A)' or ''
     dirname = command['dirname']
     return '''<xsl:if test="name=\'%(name)s\'">
-<li><a href="%(dirname)s/%(name)s.html"><xsl:value-of select="name"/>%(async)s</a></li>
+<li><a href="%(dirname)s/%(name)s.html"><xsl:value-of select="name"/>%(isAsync)s</a></li>
 </xsl:if>
 ''' % locals()
 

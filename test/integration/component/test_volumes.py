@@ -1191,7 +1191,7 @@ class TestVolumes(cloudstackTestCase):
         2. Create a user within this domain
         3. As user in step 2. create a volume with standard disk offering
         4. Ensure the volume is created in the domain and available to the
-           user in his listVolumes call
+           user in their listVolumes call
         """
         dom = Domain.create(
             self.apiclient,
@@ -1231,7 +1231,7 @@ class TestVolumes(cloudstackTestCase):
             zoneid=self.zone.id,
             account=domuser.name,
             domainid=dom.id,
-            diskofferingid=filter(lambda x: not x.iscustomized, diskoffering)[0].id
+            diskofferingid=[x for x in diskoffering if not x.iscustomized][0].id
         )
         self.assertTrue(
             vol is not None, "volume creation fails in domain %s as user %s" %
@@ -1454,11 +1454,7 @@ class TestMigrateVolume(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestMigrateVolume,cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1470,8 +1466,7 @@ class TestMigrateVolume(cloudstackTestCase):
         return
 
     def tearDown(self):
-        cleanup_resources(self.apiclient, self.cleanup)
-        return
+        super(TestMigrateVolume,self).tearDown()
 
     @attr(tags=["advanced", "sg", "advancedsg"], required_hardware='true')
     def test_01_migrateVolume(self):

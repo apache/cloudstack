@@ -35,6 +35,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.alert.AlertManager;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -100,6 +101,8 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
     ManagementServer server;
     @Inject
     DataStoreProviderManager providerMgr;
+    @Inject
+    StorageManager storageManager;
 
     @Override
     public boolean maintain(DataStore store) {
@@ -117,9 +120,11 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 spes = primaryDataStoreDao.listBy(pool.getDataCenterId(), pool.getPodId(), pool.getClusterId(), ScopeType.CLUSTER);
             }
             for (StoragePoolVO sp : spes) {
-                if (sp.getStatus() == StoragePoolStatus.PrepareForMaintenance) {
-                    throw new CloudRuntimeException("Only one storage pool in a cluster can be in PrepareForMaintenance mode, " + sp.getId() +
-                        " is already in  PrepareForMaintenance mode ");
+                if (sp.getParent() != pool.getParent() && sp.getId() != pool.getParent()) { // If Datastore cluster is tried to prepare for maintenance then child storage pools are also kept in PrepareForMaintenance mode
+                    if (sp.getStatus() == StoragePoolStatus.PrepareForMaintenance) {
+                        throw new CloudRuntimeException("Only one storage pool in a cluster can be in PrepareForMaintenance mode, " + sp.getId() +
+                                " is already in  PrepareForMaintenance mode ");
+                    }
                 }
             }
             StoragePool storagePool = (StoragePool)store;
@@ -159,6 +164,10 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 } else {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("ModifyStoragePool false succeeded");
+                    }
+                    if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                        s_logger.debug(String.format("Started synchronising datastore cluster storage pool %s with vCenter", pool.getUuid()));
+                        storageManager.syncDatastoreClusterStoragePool(pool.getId(), ((ModifyStoragePoolAnswer) answer).getDatastoreClusterChildren(), host.getId());
                     }
                 }
             }
@@ -319,7 +328,11 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 }
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("ModifyStoragePool add secceeded");
+                    s_logger.debug("ModifyStoragePool add succeeded");
+                }
+                if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                    s_logger.debug(String.format("Started synchronising datastore cluster storage pool %s with vCenter", pool.getUuid()));
+                    storageManager.syncDatastoreClusterStoragePool(pool.getId(), ((ModifyStoragePoolAnswer) answer).getDatastoreClusterChildren(), host.getId());
                 }
             }
         }

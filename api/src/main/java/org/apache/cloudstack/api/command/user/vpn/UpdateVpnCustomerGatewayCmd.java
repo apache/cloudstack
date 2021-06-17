@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -54,7 +55,7 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, required = true, description = "public ip address id of the customer gateway")
     private String gatewayIp;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.STRING, required = true, description = "guest cidr of the customer gateway")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.STRING, required = true, description = "guest cidr of the customer gateway. Multiple entries must be separated by a single comma character (,).")
     private String guestCidrList;
 
     @Parameter(name = ApiConstants.IPSEC_PSK, type = CommandType.STRING, required = true, description = "IPsec Preshared-Key of the customer gateway. Cannot contain newline or double quotes.")
@@ -93,6 +94,14 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
                description = "the domain ID associated with the gateway. If used with the account parameter returns the "
                    + "gateway associated with the account for the specified domain.")
     private Long domainId;
+
+    @Parameter(name = ApiConstants.SPLIT_CONNECTIONS, type = CommandType.BOOLEAN, required = false, description = "For IKEv2, whether to split multiple right subnet cidrs into multiple connection statements.",
+            since = "4.15.1")
+    private Boolean splitConnections;
+
+    @Parameter(name = ApiConstants.IKE_VERSION, type = CommandType.STRING, required = false, description = "Which IKE Version to use, one of ike (autoselect), ikev1, or ikev2." +
+            "Connections marked with 'ike' will use 'ikev2' when initiating, but accept any protocol version when responding. Defaults to ike", validations = {ApiArgValidator.NotNullOrEmpty}, since = "4.15.1")
+    private String ikeVersion;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -139,6 +148,14 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     }
 
     public Boolean getEncap() { return encap; }
+
+    public boolean getSplitConnections() {
+        return null == splitConnections ? false : splitConnections;
+    }
+
+    public String getIkeVersion() {
+        return ikeVersion;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

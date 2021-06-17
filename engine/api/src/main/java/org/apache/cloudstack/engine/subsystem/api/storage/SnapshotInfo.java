@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import java.util.List;
+
 import com.cloud.storage.Snapshot;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -25,6 +27,8 @@ public interface SnapshotInfo extends DataObject, Snapshot {
     String getPath();
 
     SnapshotInfo getChild();
+
+    List<SnapshotInfo> getChildren();
 
     VolumeInfo getBaseVolume();
 

@@ -19,6 +19,8 @@ package com.cloud.consoleproxy;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.ConsoleProxyVO;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
 
     public static final int DEFAULT_PROXY_CAPACITY = 50;
@@ -31,8 +33,16 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     public static final int DEFAULT_PROXY_URL_PORT = 80;
     public static final int DEFAULT_PROXY_SESSION_TIMEOUT = 300000;        // 5 minutes
 
+    public static final int DEFAULT_NOVNC_PORT = 8080;
+
     public static final String ALERT_SUBJECT = "proxy-alert";
     public static final String CERTIFICATE_NAME = "CPVMCertificate";
+
+    public static final ConfigKey<Boolean> NoVncConsoleDefault = new ConfigKey<Boolean>("Advanced", Boolean.class, "novnc.console.default", "true",
+        "If true, noVNC console will be default console for virtual machines", true);
+
+    public static final ConfigKey<Boolean> NoVncConsoleSourceIpCheckEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "novnc.console.sourceip.check.enabled", "false",
+        "If true, The source IP to access novnc console must be same as the IP in request to management server for console URL. Needs to reconnect CPVM to management server when this changes (via restart CPVM, or management server, or cloud service in CPVM)", false);
 
     public void setManagementState(ConsoleProxyManagementState state);
 

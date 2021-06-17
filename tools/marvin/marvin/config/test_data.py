@@ -306,13 +306,21 @@ test_data = {
             "StaticNat": "VirtualRouter"
         }
     },
+    "nw_off_L2_persistent": {
+        "name": 'Test L2 Network Offering persistent',
+        "displaytext": 'Test L2 Network Offering persistent',
+        "guestiptype": 'L2',
+        "traffictype": 'GUEST',
+        "ispersistent": 'True',
+        "specifyVlan": 'True'
+    },
     "network_offering_vlan": {
         "name": 'Test Network offering',
         "displaytext": 'Test Network offering',
         "guestiptype": 'Isolated',
         "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding',
         "traffictype": 'GUEST',
-        "specifyvlan": 'False',
+        "specifyVlan": 'False',
         "availability": 'Optional',
         "serviceProviderList": {
             "Dhcp": 'VirtualRouter',
@@ -337,6 +345,10 @@ test_data = {
     "isolated_network": {
         "name": "Isolated Network",
         "displaytext": "Isolated Network"
+    },
+    "l2_network": {
+        "name": "L2 Network",
+        "displaytext": "L2 Network"
     },
     "netscaler_VPX": {
         "ipaddress": "10.223.240.174",
@@ -928,6 +940,16 @@ test_data = {
         "ostype": "CentOS 5.6 (64-bit)",
         "mode": 'HTTP_DOWNLOAD',
     },
+    "iso3": {
+        "displaytext": "Test ISO 3",
+        "name": "ISO 3",
+        "url": "http://people.apache.org/~tsp/dummy.iso",
+        "isextractable": True,
+        "isfeatured": True,
+        "ispublic": True,
+        "ostype": "Windows Server 2012 (64-bit)",
+        "mode": 'HTTP_DOWNLOAD',
+    },
     "isfeatured": True,
     "ispublic": True,
     "isextractable": True,
@@ -986,7 +1008,60 @@ test_data = {
             "ispublic": "True"
         }
     },
-
+    "test_ovf_templates": [
+        {
+            "name": "test-ovf",
+            "displaytext": "test-ovf",
+            "format": "ova",
+            "hypervisor": "vmware",
+            "ostype": "Other Linux (64-bit)",
+            "url": "http://172.17.0.1/machina-2dd-iso.ova",
+            "deployasis": "True",
+            "requireshvm": "True",
+            "ispublic": "True"
+        }
+    ],
+    "virtual_machine_vapps": {
+        "test-ovf": {
+            "name": "testvm-vapps",
+            "displayname": "Test VM vApps",
+            "properties": [
+                {
+                    "key": "used.by.admin",
+                    "value": "marvin"
+                },
+                {
+                    "key": "use.type",
+                    "value": "test"
+                },
+                {
+                    "key": "usefull.property",
+                    "value": "True"
+                }
+            ],
+            "nicnetworklist": [
+                {
+                    "network": "l2",
+                    "nic": [15, 18]
+                },
+                {
+                    "network": "l2",
+                    "nic": [16]
+                },
+                {
+                    "network": "l2",
+                    "nic": [17]
+                }
+            ]
+        }
+    },
+    "custom_service_offering": {
+        "name": "Custom Service Offering for vApps",
+        "displaytext": "Custom Service Offering for vApps",
+        "cpunumber": "",
+        "cpuspeed": "",
+        "memory": ""
+    },
     "coreos_volume": {
         "diskname": "Volume_core",
         "urlvmware":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova",
@@ -1847,119 +1922,187 @@ test_data = {
         },
     },
     "configurableData":
-        {
-            "portableIpRange": {
-                "gateway": "10.223.59.1",
-                "netmask": "255.255.255.0",
-                "startip": "10.223.59.200",
-                "endip": "10.223.59.240",
-                "vlan": "1000"
-            },
-            "netscaler": {
-                "ipaddress": "",
-                "username": "",
-                "password": "",
-                "networkdevicetype": "",
-                "publicinterface": "",
-                "privateinterface": "",
-                "numretries": "",
-                "lbdevicededicated": "False",
-                "lbdevicecapacity": 2,
-                "port": 22
-            },
-            "iscsi": {
-                "url": "",
-                "name": "Primary iSCSI"
-            },
-            "host": {
-                "publicport": 22,
-                "username": "root",
-                "password": "password",
-            },
-            "ldap_account": {
-                "email": "",
-                "firstname": "",
-                "lastname": "",
-                "username": "",
-                "password": "",
-            },
-            "link_ldap_details": {
-                "domain_name": "",
-                "accounttype": "",
-                "name": "",
-                "type": "",
-                "admin": "",
-                "linkLdapUsername": "",
-                "linkLdapPassword": "",
-                "linkLdapNestedUser": "",
-                "linkLdapNestedPassword": ""
+    {
+        "portableIpRange": {
+            "gateway": "10.223.59.1",
+            "netmask": "255.255.255.0",
+            "startip": "10.223.59.200",
+            "endip": "10.223.59.240",
+            "vlan": "1000"
+        },
+        "netscaler": {
+            "ipaddress": "",
+            "username": "",
+            "password": "",
+            "networkdevicetype": "",
+            "publicinterface": "",
+            "privateinterface": "",
+            "numretries": "",
+            "lbdevicededicated": "False",
+            "lbdevicecapacity": 2,
+            "port": 22
+        },
+        "iscsi": {
+            "url": "",
+            "name": "Primary iSCSI"
+        },
+        "host": {
+            "publicport": 22,
+            "username": "root",
+            "password": "password",
+        },
+        "ldap_account": {
+            "email": "",
+            "firstname": "",
+            "lastname": "",
+            "username": "",
+            "password": "",
+        },
+        "link_ldap_details": {
+            "domain_name": "",
+            "accounttype": "",
+            "name": "",
+            "type": "",
+            "admin": "",
+            "linkLdapUsername": "",
+            "linkLdapPassword": "",
+            "linkLdapNestedUser": "",
+            "linkLdapNestedPassword": ""
 
-            },
-            "ldap_configuration": {
-                "basedn": "",
-                "emailAttribute": "",
-                "userObject": "",
-                "usernameAttribute": "",
-                "hostname": "",
-                "port": "",
-                "ldapUsername": "",
-                "ldapPassword": ""
-            },
-            "systemVmDelay": 120,
-            "setUsageConfigurationThroughTestCase": True,
-            "vmware_cluster": {
-                "hypervisor": 'VMware',
-                "clustertype": 'ExternalManaged',
-                "username": '',
-                "password": '',
-                "url": '',
-                "clustername": 'VMWare Cluster with Space in DC name',
-            },
-            "upload_volume": {
-                "diskname": "UploadVol",
-                "format": "VHD",
-                "url": "http://download.cloudstack.org/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
-                "checksum": "",
-            },
-            "bootableIso":
-                {
-                    "displaytext": "Test Bootable ISO",
-                    "name": "testISO",
-                    "bootable": True,
-                    "ispublic": False,
-                    "url": "http://dl.openvm.eu/cloudstack/iso/TinyCore-8.0.iso",
-                    "ostype": 'Other Linux (64-bit)',
-                    "mode": 'HTTP_DOWNLOAD'
-                },
-            "setHostConfigurationForIngressRule": False,
-            "restartManagementServerThroughTestCase": False,
-            "vmxnet3template": {
-                "displaytext": "VMXNET3 Template",
-                "name": "VMXNET3 template",
-                "ostype": "CentOS 5.6 (64-bit)",
-                "isfeatured": True,
+        },
+        "ldap_configuration": {
+            "basedn": "",
+            "emailAttribute": "",
+            "userObject": "",
+            "usernameAttribute": "",
+            "hostname": "",
+            "port": "",
+            "ldapUsername": "",
+            "ldapPassword": ""
+        },
+        "systemVmDelay": 120,
+        "setUsageConfigurationThroughTestCase": True,
+        "vmware_cluster": {
+            "hypervisor": 'VMware',
+            "clustertype": 'ExternalManaged',
+            "username": '',
+            "password": '',
+            "url": '',
+            "clustername": 'VMWare Cluster with Space in DC name',
+        },
+        "upload_volume": {
+            "diskname": "UploadVol",
+            "format": "VHD",
+            "url": "http://download.cloudstack.org/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
+            "checksum": "",
+        },
+        "bootableIso":
+            {
+                "displaytext": "Test Bootable ISO",
+                "name": "testISO",
+                "bootable": True,
                 "ispublic": False,
-                "isextractable": True,
-                "mode": "HTTP_DOWNLOAD",
-                "templatefilter": "self",
-                "url": "http://people.apache.org/~sanjeev/systemvm64template-2014-09-30-4.3-vmware.ova",
-                "hypervisor": "vmware",
-                "format": "OVA",
-                "nicadapter": "vmxnet3",
-                "kvm": {
-                    "url": ""
-                },
-                "vmware": {
-                    "url": ""
-                },
-                "xenserver": {
-                    "url": ""
-                },
-                "hyperv": {
-                    "url": ""
-                },
-                "ostype": 'CentOS 5.3 (64-bit)',
+                "url": "http://dl.openvm.eu/cloudstack/iso/TinyCore-8.0.iso",
+                "ostype": 'Other Linux (64-bit)',
                 "mode": 'HTTP_DOWNLOAD'
-            }
+            },
+        "setHostConfigurationForIngressRule": False,
+        "restartManagementServerThroughTestCase": False,
+        "vmxnet3template": {
+            "displaytext": "VMXNET3 Template",
+            "name": "VMXNET3 template",
+            "ostype": "CentOS 5.6 (64-bit)",
+            "isfeatured": True,
+            "ispublic": False,
+            "isextractable": True,
+            "mode": "HTTP_DOWNLOAD",
+            "templatefilter": "self",
+            "url": "http://people.apache.org/~sanjeev/systemvm64template-2014-09-30-4.3-vmware.ova",
+            "hypervisor": "vmware",
+            "format": "OVA",
+            "nicadapter": "vmxnet3",
+            "kvm": {
+                "url": ""
+            },
+            "vmware": {
+                "url": ""
+            },
+            "xenserver": {
+                "url": ""
+            },
+            "hyperv": {
+                "url": ""
+            },
+            "ostype": 'CentOS 5.3 (64-bit)',
+            "mode": 'HTTP_DOWNLOAD'
         }
+    },
+    "cks_kubernetes_versions": {
+        "1.14.9": {
+            "semanticversion": "1.14.9",
+            "url": "http://download.cloudstack.org/cks/setup-1.14.9.iso",
+            "mincpunumber": 2,
+            "minmemory": 2048
+        },
+        "1.15.0": {
+            "semanticversion": "1.15.0",
+            "url": "http://download.cloudstack.org/cks/setup-1.15.0.iso",
+            "mincpunumber": 2,
+            "minmemory": 2048
+        },
+        "1.16.0": {
+            "semanticversion": "1.16.0",
+            "url": "http://download.cloudstack.org/cks/setup-1.16.0.iso",
+            "mincpunumber": 2,
+            "minmemory": 2048
+        },
+        "1.16.3": {
+            "semanticversion": "1.16.3",
+            "url": "http://download.cloudstack.org/cks/setup-1.16.3.iso",
+            "mincpunumber": 2,
+            "minmemory": 2048
+        }
+    },
+    "cks_templates": {
+        "kvm": {
+            "name": "Kubernetes-Service-Template-kvm",
+            "displaytext": "Kubernetes-Service-Template kvm",
+            "format": "qcow2",
+            "hypervisor": "kvm",
+            "ostype": "CoreOS",
+            "url": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-kvm.qcow2.bz2",
+            "requireshvm": "True",
+            "ispublic": "True",
+            "isextractable": "True"
+        },
+        "xenserver": {
+            "name": "Kubernetes-Service-Template-xen",
+            "displaytext": "Kubernetes-Service-Template xen",
+            "format": "vhd",
+            "hypervisor": "xenserver",
+            "ostype": "CoreOS",
+            "url": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-xen.vhd.bz2",
+            "requireshvm": "True",
+            "ispublic": "True",
+            "isextractable": "True"
+        },
+        "vmware": {
+            "name": "Kubernetes-Service-Template-vmware",
+            "displaytext": "Kubernetes-Service-Template vmware",
+            "format": "ova",
+            "hypervisor": "vmware",
+            "ostype": "CoreOS",
+            "url": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova",
+            "requireshvm": "True",
+            "ispublic": "True",
+            "details": [{"keyboard":"us","nicAdapter":"Vmxnet3","rootDiskController":"pvscsi"}]
+        }
+    },
+    "cks_service_offering": {
+        "name": "CKS-Instance",
+        "displaytext": "CKS Instance",
+        "cpunumber": 2,
+        "cpuspeed": 1000,
+        "memory": 2048
+    }
 }

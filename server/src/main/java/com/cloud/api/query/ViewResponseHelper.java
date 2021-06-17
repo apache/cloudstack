@@ -26,9 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.configuration.Resource;
-import com.cloud.domain.Domain;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -59,6 +57,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.AccountJoinVO;
@@ -84,8 +83,10 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
-import com.cloud.storage.StoragePoolTagVO;
+import com.cloud.configuration.Resource;
+import com.cloud.domain.Domain;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.VolumeStats;
 import com.cloud.user.Account;
 
@@ -216,7 +217,12 @@ public class ViewResponseHelper {
             // update user list
             Account caller = CallContext.current().getCallingAccount();
             if (ApiDBUtils.isAdmin(caller)) {
-                List<UserAccountJoinVO> users = ApiDBUtils.findUserViewByAccountId(proj.getAccountId());
+                List<UserAccountJoinVO> users = null;
+                if (proj.getUserUuid() != null) {
+                    users = Collections.singletonList(ApiDBUtils.findUserAccountById(proj.getUserId()));
+                } else {
+                    users = ApiDBUtils.findUserViewByAccountId(proj.getAccountId());
+                }
                 resp.setUsers(ViewResponseHelper.createUserResponse(users.toArray(new UserAccountJoinVO[users.size()])));
             }
             responseList.add(resp);
@@ -268,7 +274,7 @@ public class ViewResponseHelper {
 
     public static List<VolumeResponse> createVolumeResponse(ResponseView view, VolumeJoinVO... volumes) {
         Hashtable<Long, VolumeResponse> vrDataList = new Hashtable<Long, VolumeResponse>();
-        DecimalFormat df = new DecimalFormat("0.00");
+        DecimalFormat df = new DecimalFormat("0.0%");
         for (VolumeJoinVO vr : volumes) {
             VolumeResponse vrData = vrDataList.get(vr.getId());
             if (vrData == null) {
@@ -282,19 +288,17 @@ public class ViewResponseHelper {
             vrDataList.put(vr.getId(), vrData);
 
             VolumeStats vs = null;
-            if (vr.getFormat() == ImageFormat.QCOW2) {
-                vs = ApiDBUtils.getVolumeStatistics(vrData.getId());
-            }
-            else if (vr.getFormat() == ImageFormat.VHD){
-                vs = ApiDBUtils.getVolumeStatistics(vrData.getPath());
-            }
-            else if (vr.getFormat() == ImageFormat.OVA){
+            if (vr.getFormat() == ImageFormat.VHD || vr.getFormat() == ImageFormat.QCOW2 || vr.getFormat() == ImageFormat.RAW) {
+                if (vrData.getPath() != null) {
+                    vs = ApiDBUtils.getVolumeStatistics(vrData.getPath());
+                }
+            } else if (vr.getFormat() == ImageFormat.OVA) {
                 if (vrData.getChainInfo() != null) {
                     vs = ApiDBUtils.getVolumeStatistics(vrData.getChainInfo());
                 }
             }
 
-            if (vs != null){
+            if (vs != null) {
                 long vsz = vs.getVirtualSize();
                 long psz = vs.getPhysicalSize() ;
                 double util = (double)psz/vsz;
@@ -578,17 +582,17 @@ public class ViewResponseHelper {
         return respList;
     }
 
-    public static List<TemplateResponse> createTemplateResponse(ResponseView view, TemplateJoinVO... templates) {
+    public static List<TemplateResponse> createTemplateResponse(EnumSet<ApiConstants.DomainDetails> detailsView, ResponseView view, TemplateJoinVO... templates) {
         LinkedHashMap<String, TemplateResponse> vrDataList = new LinkedHashMap<String, TemplateResponse>();
         for (TemplateJoinVO vr : templates) {
             TemplateResponse vrData = vrDataList.get(vr.getTempZonePair());
             if (vrData == null) {
                 // first time encountering this volume
-                vrData = ApiDBUtils.newTemplateResponse(view, vr);
+                vrData = ApiDBUtils.newTemplateResponse(detailsView, view, vr);
             }
             else{
                 // update tags
-                vrData = ApiDBUtils.fillTemplateDetails(view, vrData, vr);
+                vrData = ApiDBUtils.fillTemplateDetails(detailsView, view, vrData, vr);
             }
             vrDataList.put(vr.getTempZonePair(), vrData);
         }
@@ -604,7 +608,7 @@ public class ViewResponseHelper {
                 vrData = ApiDBUtils.newTemplateUpdateResponse(vr);
             } else {
                 // update tags
-                vrData = ApiDBUtils.fillTemplateDetails(view, vrData, vr);
+                vrData = ApiDBUtils.fillTemplateDetails(EnumSet.of(DomainDetails.all), view, vrData, vr);
             }
             vrDataList.put(vr.getId(), vrData);
         }
@@ -620,7 +624,7 @@ public class ViewResponseHelper {
                 vrData = ApiDBUtils.newIsoResponse(vr);
             } else {
                 // update tags
-                vrData = ApiDBUtils.fillTemplateDetails(view, vrData, vr);
+                vrData = ApiDBUtils.fillTemplateDetails(EnumSet.of(DomainDetails.all), view, vrData, vr);
             }
             vrDataList.put(vr.getTempZonePair(), vrData);
         }

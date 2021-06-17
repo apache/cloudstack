@@ -1,0 +1,248 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+@logo-width: 256px;
+@logo-height: 64px;
+@banner-width: 450px;
+@banner-height: 110px;
+@error-width: 256px;
+@error-height: 256px;
+
+@logo-background-color: #ffffff;
+@navigation-background-color: #ffffff;
+@project-nav-background-color: #001529;
+@project-nav-text-color: rgba(255, 255, 255, 0.65);
+@navigation-text-color:  rgba(0, 0, 0, 0.65);
+@primary-color: #1890ff;
+@link-color: @primary-color;
+@link-hover-color: #40a9ff;
+@processing-color: @primary-color;
+@success-color: #52c41a;
+@warning-color: #faad14;
+@error-color: #f5222d;
+@font-size-base: 14px;
+@heading-color: rgba(0, 0, 0, 0.85);
+@text-color: rgba(0, 0, 0, 0.65);
+@text-color-secondary: rgba(0, 0, 0, 0.45);
+@disabled-color: rgba(0, 0, 0, 0.25);
+@border-color-base: #d9d9d9;
+@border-radius-base: 4px;
+@box-shadow-base: 0 2px 8px rgba(0, 0, 0, 0.15);
+@loading-color: @primary-color;
+
+.ant-layout-sider-children .logo-image {
+  width: @logo-width;
+  height: @logo-height;
+}
+
+.user-layout {
+  &-logo {
+    width: @banner-width;
+    height: @banner-height;
+  }
+}
+
+.exception {
+  .img {
+    img {
+      width: @error-width;
+      height: @error-height;
+    }
+  }
+}
+
+a {
+  color: @link-color;
+  background-color: transparent;
+
+  &:hover {
+    color: @link-hover-color;
+  }
+}
+
+.ant-message-info .anticon,
+.ant-message-loading .anticon {
+  color: @loading-color;
+}
+
+#nprogress {
+  .bar {
+    background-color: @loading-color;
+  }
+}
+
+.sider.light .logo {
+  background-color: @logo-background-color;
+  box-shadow: 1px 1px 0px 0px #e8e8e8;
+}
+
+.sider.light {
+  background: @navigation-background-color;
+
+  .ant-menu-submenu > .ant-menu {
+    background: @navigation-background-color;
+  }
+}
+
+.sider.light .ant-menu-light {
+  background: @navigation-background-color;
+}
+
+.ant-menu-submenu-popup.ant-menu-light,
+.ant-menu-light > .ant-menu {
+  background: @navigation-background-color;
+}
+
+.ant-menu-item > a
+{
+  color: @navigation-text-color;
+}
+
+.ant-menu-item-selected > a, .ant-menu-item-selected > a:hover {
+  color: @primary-color;
+}
+
+.ant-menu-vertical .ant-menu-item,
+.ant-menu-vertical-left .ant-menu-item,
+.ant-menu-vertical-right .ant-menu-item,
+.ant-menu-inline .ant-menu-item,
+.ant-menu-vertical .ant-menu-submenu-title,
+.ant-menu-vertical-left .ant-menu-submenu-title,
+.ant-menu-vertical-right .ant-menu-submenu-title,
+.ant-menu-inline .ant-menu-submenu-title {
+  color: @navigation-text-color;
+}
+
+.ant-menu-submenu-vertical ant-menu-submenu-selected,
+.ant-menu-vertical .ant-menu-submenu-selected,
+.ant-menu-vertical-left .ant-menu-submenu-selected,
+.ant-menu-vertical-right .ant-menu-submenu-selected {
+  color: @primary-color;
+
+  .ant-menu-submenu-title {
+    color: @primary-color;
+  }
+}
+
+.kubernet-icon path {
+  color: @navigation-text-color;
+}
+
+.ant-menu-item:hover,
+.ant-menu-item-active,
+.ant-menu:not(.ant-menu-inline) .ant-menu-submenu-open,
+.ant-menu-submenu-active,
+.ant-menu-submenu-title:hover
+{
+  color: @primary-color;
+
+  .custom-icon path {
+    color: @primary-color;
+  }
+}
+
+.ant-menu-submenu-vertical > .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
+.ant-menu-submenu-vertical-left > .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
+.ant-menu-submenu-vertical-right > .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
+.ant-menu-submenu-inline > .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
+.ant-menu-submenu-vertical > .ant-menu-submenu-title .ant-menu-submenu-arrow::after,
+.ant-menu-submenu-vertical-left > .ant-menu-submenu-title .ant-menu-submenu-arrow::after,
+.ant-menu-submenu-vertical-right > .ant-menu-submenu-title .ant-menu-submenu-arrow::after,
+.ant-menu-submenu-inline > .ant-menu-submenu-title .ant-menu-submenu-arrow::after {
+  background-color: @navigation-text-color;
+}
+
+.sider.dark {
+  .ant-menu-vertical .ant-menu-item,
+  .ant-menu-vertical-left .ant-menu-item,
+  .ant-menu-vertical-right .ant-menu-item,
+  .ant-menu-inline .ant-menu-item,
+  .ant-menu-vertical .ant-menu-submenu-title,
+  .ant-menu-vertical-left .ant-menu-submenu-title,
+  .ant-menu-vertical-right .ant-menu-submenu-title,
+  .ant-menu-inline .ant-menu-submenu-title {
+    color: @project-nav-text-color;
+  }
+
+  .ant-menu-submenu-vertical > .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
+  .ant-menu-submenu-vertical-left > .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
+  .ant-menu-submenu-vertical-right > .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
+  .ant-menu-submenu-inline > .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
+  .ant-menu-submenu-vertical > .ant-menu-submenu-title .ant-menu-submenu-arrow::after,
+  .ant-menu-submenu-vertical-left > .ant-menu-submenu-title .ant-menu-submenu-arrow::after,
+  .ant-menu-submenu-vertical-right > .ant-menu-submenu-title .ant-menu-submenu-arrow::after,
+  .ant-menu-submenu-inline > .ant-menu-submenu-title .ant-menu-submenu-arrow::after
+  {
+    background-color: @project-nav-text-color;
+  }
+
+  .ant-menu-submenu-active .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
+  .ant-menu-submenu-active .ant-menu-submenu-title .ant-menu-submenu-arrow::after
+  {
+    background-color: @primary-color;
+  }
+
+  .ant-menu-dark .ant-menu-item:hover > a,
+  .ant-menu-dark .ant-menu-submenu-title:hover > a,
+  .ant-menu-dark .ant-menu-submenu-title:hover,
+  .ant-menu-dark .ant-menu-item:hover,
+  .ant-menu-dark .ant-menu-submenu-title:hover
+  {
+    color: @primary-color;
+
+    .custom-icon path {
+      color: @primary-color;
+    }
+  }
+
+  .ant-menu-submenu-selected {
+    .ant-menu-submenu-title {
+      color: @primary-color;
+    }
+  }
+}
+
+.ant-menu-dark,
+.ant-menu-dark .ant-menu-sub,
+.ant-menu-dark .ant-menu-inline.ant-menu-sub{
+  background-color: @project-nav-background-color;
+}
+
+.ant-menu-dark .ant-menu-item,
+.ant-menu-dark .ant-menu-item-group-title,
+.ant-menu-dark .ant-menu-item > a {
+  color: @project-nav-text-color;
+}
+
+.ant-menu-dark .ant-menu-item:hover > a,
+.ant-menu-dark .ant-menu-submenu-title:hover > a,
+.ant-menu-dark .ant-menu-submenu-title:hover,
+.ant-menu-dark .ant-menu-item:hover,
+.ant-menu-dark .ant-menu-submenu-title:hover
+{
+  color: @primary-color;
+
+  .custom-icon path {
+    color: @primary-color;
+  }
+}
+
+@media only screen and (max-width: 576px) {
+  .ant-pagination-options {
+    display: inline-block;
+  }
+} 

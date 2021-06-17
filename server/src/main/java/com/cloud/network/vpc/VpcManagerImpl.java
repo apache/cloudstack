@@ -369,7 +369,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Long serviceOfferingId = cmd.getServiceOfferingId();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
-
+        final boolean enable = cmd.getEnable();
         // check if valid domain
         if (CollectionUtils.isNotEmpty(cmd.getDomainIds())) {
             for (final Long domainId: cmd.getDomainIds()) {
@@ -389,13 +389,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         return createVpcOffering(vpcOfferingName, displayText, supportedServices,
                 serviceProviderList, serviceCapabilitystList, serviceOfferingId,
-                domainIds, zoneIds);
+                domainIds, zoneIds, (enable ? State.Enabled : State.Disabled));
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_CREATE, eventDescription = "creating vpc offering", create = true)
     public VpcOffering createVpcOffering(final String name, final String displayText, final List<String> supportedServices, final Map<String, List<String>> serviceProviders,
-            final Map serviceCapabilitystList, final Long serviceOfferingId, List<Long> domainIds, List<Long> zoneIds) {
+            final Map serviceCapabilitystList, final Long serviceOfferingId, List<Long> domainIds, List<Long> zoneIds, State state) {
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
@@ -475,7 +475,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean supportsDistributedRouter = isVpcOfferingSupportsDistributedRouter(serviceCapabilitystList);
         final boolean offersRegionLevelVPC = isVpcOfferingForRegionLevelVpc(serviceCapabilitystList);
         final boolean redundantRouter = isVpcOfferingRedundantRouter(serviceCapabilitystList);
-        final VpcOffering offering = createVpcOffering(name, displayText, svcProviderMap, false, null, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC,
+        final VpcOfferingVO offering = createVpcOffering(name, displayText, svcProviderMap, false, state, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC,
                 redundantRouter);
 
         if (offering != null) {
@@ -498,13 +498,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     @DB
-    protected VpcOffering createVpcOffering(final String name, final String displayText, final Map<Network.Service, Set<Network.Provider>> svcProviderMap,
+    protected VpcOfferingVO createVpcOffering(final String name, final String displayText, final Map<Network.Service, Set<Network.Provider>> svcProviderMap,
             final boolean isDefault, final State state, final Long serviceOfferingId, final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC,
             final boolean redundantRouter) {
 
-        return Transaction.execute(new TransactionCallback<VpcOffering>() {
+        return Transaction.execute(new TransactionCallback<VpcOfferingVO>() {
             @Override
-            public VpcOffering doInTransaction(final TransactionStatus status) {
+            public VpcOfferingVO doInTransaction(final TransactionStatus status) {
                 // create vpc offering object
                 VpcOfferingVO offering = new VpcOfferingVO(name, displayText, isDefault, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC, redundantRouter);
 
@@ -1755,6 +1755,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 return true;
             }
 
+            restartVPCNetworks(vpcId, callerAccount, user, cleanUp);
+
             s_logger.debug("Starting VPC " + vpc + " as a part of VPC restart process without cleanup");
             if (!startVpc(vpcId, false)) {
                 s_logger.warn("Failed to start vpc as a part of VPC " + vpc + " restart process");
@@ -1768,6 +1770,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             final VpcVO vo = _vpcDao.findById(vpcId);
             vo.setRestartRequired(restartRequired);
             _vpcDao.update(vpc.getId(), vo);
+        }
+    }
+
+    private void restartVPCNetworks(long vpcId, Account callerAccount, User callerUser, boolean cleanUp) throws InsufficientCapacityException, ResourceUnavailableException {
+        List<? extends Network> networks = _ntwkModel.listNetworksByVpc(vpcId);
+        for (Network network: networks) {
+            if (network.isRestartRequired()) {
+                _ntwkMgr.restartNetwork(network.getId(), callerAccount, callerUser, cleanUp);
+            }
         }
     }
 
@@ -2024,13 +2035,23 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
 
-            // 2) Delete private gateway from the DB
+            // 2) Clean up any remaining routes
+            cleanUpRoutesByGatewayId(gatewayId);
+
+            // 3) Delete private gateway from the DB
             return deletePrivateGatewayFromTheDB(gateway);
 
         } finally {
             if (gatewayVO != null) {
                 _vpcGatewayDao.releaseFromLockTable(gatewayId);
             }
+        }
+    }
+
+    private void cleanUpRoutesByGatewayId(long gatewayId){
+        List<StaticRouteVO> routes = _staticRouteDao.listByGatewayId(gatewayId);
+        for (StaticRouteVO route: routes){
+            _staticRouteDao.remove(route.getId());
         }
     }
 
@@ -2272,9 +2293,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw new InvalidParameterValueException("CIDR should be outside of link local cidr " + NetUtils.getLinkLocalCIDR());
         }
 
-        // 3) Verify against blacklisted routes
-        if (isCidrBlacklisted(cidr, vpc.getZoneId())) {
-            throw new InvalidParameterValueException("The static gateway cidr overlaps with one of the blacklisted routes of the zone the VPC belongs to");
+        // 3) Verify against denied routes
+        if (isCidrDenylisted(cidr, vpc.getZoneId())) {
+            throw new InvalidParameterValueException("The static gateway cidr overlaps with one of the denied routes of the zone the VPC belongs to");
         }
 
         return Transaction.execute(new TransactionCallbackWithException<StaticRouteVO, NetworkRuleConflictException>() {
@@ -2296,14 +2317,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         });
     }
 
-    protected boolean isCidrBlacklisted(final String cidr, final long zoneId) {
+    protected boolean isCidrDenylisted(final String cidr, final long zoneId) {
         final String routesStr = NetworkOrchestrationService.GuestDomainSuffix.valueIn(zoneId);
         if (routesStr != null && !routesStr.isEmpty()) {
-            final String[] cidrBlackList = routesStr.split(",");
+            final String[] cidrDenyList = routesStr.split(",");
 
-            if (cidrBlackList != null && cidrBlackList.length > 0) {
-                for (final String blackListedRoute : cidrBlackList) {
-                    if (NetUtils.isNetworksOverlap(blackListedRoute, cidr)) {
+            if (cidrDenyList != null && cidrDenyList.length > 0) {
+                for (final String denyListedRoute : cidrDenyList) {
+                    if (NetUtils.isNetworksOverlap(denyListedRoute, cidr)) {
                         return true;
                     }
                 }
@@ -2326,6 +2347,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final List<Long> permittedAccounts = new ArrayList<Long>();
         final Map<String, String> tags = cmd.getTags();
         final Long projectId = cmd.getProjectId();
+        final String state = cmd.getState();
 
         final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive,
                 null);
@@ -2341,6 +2363,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
         sb.and("vpcGatewayId", sb.entity().getVpcGatewayId(), SearchCriteria.Op.EQ);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
 
         if (tags != null && !tags.isEmpty()) {
             final SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
@@ -2366,6 +2389,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         if (gatewayId != null) {
             sc.addAnd("vpcGatewayId", Op.EQ, gatewayId);
+        }
+
+        if (state != null) {
+            sc.addAnd("state", Op.EQ, state);
         }
 
         if (tags != null && !tags.isEmpty()) {
@@ -2569,7 +2596,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // 2) Create network
         final Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, false, networkDomain, owner, domainId, pNtwk, zoneId, aclType,
-                                                                 subdomainAccess, vpcId, null, null, isDisplayNetworkEnabled, null, null, externalId);
+                                                                 subdomainAccess, vpcId, null, null, isDisplayNetworkEnabled, null, null, externalId, null, null);
 
         if (guestNetwork != null) {
             guestNetwork.setNetworkACLId(aclId);
