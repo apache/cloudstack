@@ -48,6 +48,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -1079,6 +1080,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (cluster.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
             throw new InvalidParameterValueException(String.format("VM ingestion is currently not supported for hypervisor: %s", cluster.getHypervisorType().toString()));
         }
+        String keyword = cmd.getKeyword();
+        if (StringUtils.isNotEmpty(keyword)) {
+            keyword = keyword.toLowerCase();
+        }
         List<HostVO> hosts = resourceManager.listHostsInClusterByStatus(clusterId, Status.Up);
         List<String> additionalNameFilters = getAdditionalNameFilters(cluster);
         List<UnmanagedInstanceResponse> responses = new ArrayList<>();
@@ -1098,11 +1103,15 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 continue;
             }
             GetUnmanagedInstancesAnswer unmanagedInstancesAnswer = (GetUnmanagedInstancesAnswer) answer;
-            HashMap<String, UnmanagedInstanceTO> unmanagedInstances = new HashMap<>();
-            unmanagedInstances.putAll(unmanagedInstancesAnswer.getUnmanagedInstances());
+            HashMap<String, UnmanagedInstanceTO> unmanagedInstances = new HashMap<>(unmanagedInstancesAnswer.getUnmanagedInstances());
             Set<String> keys = unmanagedInstances.keySet();
             for (String key : keys) {
-                responses.add(createUnmanagedInstanceResponse(unmanagedInstances.get(key), cluster, host));
+                UnmanagedInstanceTO instance = unmanagedInstances.get(key);
+                if (StringUtils.isNotEmpty(keyword) &&
+                        !instance.getName().toLowerCase().contains(keyword)) {
+                    continue;
+                }
+                responses.add(createUnmanagedInstanceResponse(instance, cluster, host));
             }
         }
         ListResponse<UnmanagedInstanceResponse> listResponses = new ListResponse<>();
