@@ -268,6 +268,7 @@
 "label.action.template.share": "Update Template Sharing",
 "label.action.unmanage.cluster": "Unmanage Cluster",
 "label.action.unmanage.cluster.processing": "Unmanaging Cluster....",
+"label.action.unmanage.virtualmachine": "Unmanage VM",
 "label.action.unmanage.instance": "Unmanage Instance",
 "label.action.unmanage.instances": "Unmanage Instances",
 "label.action.update.offering.access": "Update Offering Access",

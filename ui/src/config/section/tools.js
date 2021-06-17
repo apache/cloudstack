@@ -25,7 +25,7 @@ export default {
       name: 'manageinstances',
       title: 'label.action.import.export.instances',
       icon: 'interaction',
-      docHelp: 'adminguide/virtual_machines.html#importing-virtual-machines',
+      docHelp: 'adminguide/virtual_machines.html#importing-and-unmanaging-virtual-machine',
       resourceType: 'UserVm',
       permission: ['listInfrastructure'],
       component: () => import('@/views/tools/ManageInstances.vue')
