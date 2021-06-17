@@ -42,7 +42,7 @@ public class CreateRoleCmd extends RoleCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true,
-            description = "creates a role with this unique name", validations = {ApiArgValidator.NotNullOrEmpty})
+            description = "Creates a role with this unique name", validations = {ApiArgValidator.NotNullOrEmpty})
     private String roleName;
 
     @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class,

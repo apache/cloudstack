@@ -39,15 +39,13 @@
       </template>
       <template slot="actions" slot-scope="record">
         <div class="actions">
-          <a-popover placement="bottom">
-            <template slot="content">{{ $t('label.remove.ip.range') }}</template>
-            <a-button
-              :disabled="!('deleteManagementNetworkIpRange' in $store.getters.apis)"
-              icon="delete"
-              shape="circle"
-              type="danger"
-              @click="handleDeleteIpRange(record)"></a-button>
-          </a-popover>
+          <tooltip-button
+            tooltipPlacement="bottom"
+            :tooltip="$t('label.remove.ip.range')"
+            :disabled="!('deleteManagementNetworkIpRange' in $store.getters.apis)"
+            icon="delete"
+            type="danger"
+            @click="handleDeleteIpRange(record)" />
         </div>
       </template>
     </a-table>
@@ -81,6 +79,7 @@
       >
         <a-form-item :label="$t('label.podid')" class="form__item">
           <a-select
+            autoFocus
             v-decorator="['pod', {
               rules: [{ required: true, message: `${$t('label.required')}` }]
             }]"
@@ -124,9 +123,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'IpRangesTabManagement',
+  components: {
+    TooltipButton
+  },
   props: {
     resource: {
       type: Object,
@@ -191,7 +194,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {

@@ -74,11 +74,6 @@ export default {
       actionZoneLoading: false
     }
   },
-  watch: {
-    resource (newItem, oldItem) {
-      this.fetchData()
-    }
-  },
   created () {
     const promises = []
     promises.push(this.fetchActionZoneData())
@@ -113,7 +108,6 @@ export default {
       })
     },
     handleRefresh () {
-      this.fetchData()
     },
     refreshParent () {
       this.$emit('refresh-data')

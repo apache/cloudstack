@@ -94,9 +94,6 @@ public class ImportRoleCmd extends RoleCmd {
             if (Strings.isNullOrEmpty(rule)) {
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Empty rule provided in rules param");
             }
-            if (!rule.contains("*") && !_apiServer.isValidApiName(rule)) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid api name: " + rule + " provided in rules param");
-            }
             ruleDetails.put(ApiConstants.RULE, new Rule(rule));
 
             String permission = detail.get(ApiConstants.PERMISSION);

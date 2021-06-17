@@ -45,7 +45,8 @@
                 }
               }]
             }]"
-            :placeholder="apiParams.size.description"/>
+            :placeholder="apiParams.size.description"
+            autoFocus />
         </a-form-item>
         <a-form-item>
           <span slot="label">
@@ -109,8 +110,6 @@ export default {
   },
   created () {
     this.originalSize = !this.isObjectEmpty(this.resource) ? this.resource.size : 1
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

@@ -208,7 +208,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
             OutOfBandManagement.PowerState newPowerState = OutOfBandManagement.PowerState.getStateMachine().getNextState(currentPowerState, event);
             boolean result = OutOfBandManagement.PowerState.getStateMachine().transitTo(outOfBandManagementHost, event, null, outOfBandManagementDao);
             if (result) {
-                final String message = String.format("Transitioned out-of-band management power state from %s to %s due to event: %s for %d", currentPowerState, newPowerState, event, host);
+                final String message = String.format("Transitioned out-of-band management power state from %s to %s due to event: %s for %s", currentPowerState, newPowerState, event, host);
                 LOG.debug(message);
                 if (newPowerState == OutOfBandManagement.PowerState.Unknown) {
                     ActionEventUtils.onActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(), Domain.ROOT_DOMAIN,
@@ -536,7 +536,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ActionTimeout, SyncThreadPoolSize};
+        return new ConfigKey<?>[] {ActionTimeout, SyncThreadPoolSize, OutOfBandManagementBackgroundTaskExecutionInterval};
     }
 
     public List<OutOfBandManagementDriver> getOutOfBandManagementDrivers() {
@@ -580,7 +580,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
 
         @Override
         public Long getDelay() {
-            return null;
+            return OutOfBandManagementBackgroundTaskExecutionInterval.value() * 1000L;
         }
 
     }

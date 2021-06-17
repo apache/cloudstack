@@ -48,6 +48,9 @@ BuildRequires: /usr/bin/mkisofs
 BuildRequires: mysql-connector-python
 BuildRequires: maven => 3.0.0
 BuildRequires: python-setuptools
+BuildRequires: python3
+BuildRequires: python3-pip
+BuildRequires: python3-setuptools
 BuildRequires: wget
 BuildRequires: nodejs
 
@@ -153,6 +156,9 @@ Apache CloudStack command line interface
 
 %package marvin
 Summary: Apache CloudStack Marvin library
+Requires: python3
+Requires: python3-devel
+Requires: python3-pip
 Requires: python-pip
 Requires: gcc
 Requires: python-devel
@@ -418,6 +424,8 @@ fi
 # Install mysql-connector-python
 pip3 install %{_datadir}/%{name}-management/setup/wheel/six-1.15.0-py2.py3-none-any.whl %{_datadir}/%{name}-management/setup/wheel/setuptools-47.3.1-py3-none-any.whl %{_datadir}/%{name}-management/setup/wheel/protobuf-3.12.2-cp36-cp36m-manylinux1_x86_64.whl %{_datadir}/%{name}-management/setup/wheel/mysql_connector_python-8.0.20-cp36-cp36m-manylinux1_x86_64.whl
 
+pip3 install urllib3
+
 /usr/bin/systemctl on cloudstack-management > /dev/null 2>&1 || true
 
 grep -s -q "db.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
@@ -506,6 +514,9 @@ fi
 %post marvin
 pip install --upgrade https://files.pythonhosted.org/packages/ca/ea/1e2553b088bad2f9fa8120c2624f797b2d7450d3b61bb492d29c72e3d3c2/mysql_connector_python-8.0.20-cp27-cp27mu-manylinux1_x86_64.whl
 pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
+pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
+pip3 install --upgrade nose
+pip3 install --upgrade urllib3
 
 #No default permission as the permission setup is complex
 %files management

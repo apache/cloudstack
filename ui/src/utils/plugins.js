@@ -167,3 +167,21 @@ export const toLocaleDatePlugin = {
     }
   }
 }
+
+export const configUtilPlugin = {
+  install (Vue) {
+    Vue.prototype.$applyDocHelpMappings = function (docHelp) {
+      var docHelpMappings = this.$config.docHelpMappings
+      if (docHelp && docHelpMappings &&
+        docHelpMappings.constructor === Object && Object.keys(docHelpMappings).length > 0) {
+        for (var key in docHelpMappings) {
+          if (docHelp.includes(key) && docHelp !== docHelpMappings[key]) {
+            docHelp = docHelp.replace(key, docHelpMappings[key])
+            break
+          }
+        }
+      }
+      return docHelp
+    }
+  }
+}

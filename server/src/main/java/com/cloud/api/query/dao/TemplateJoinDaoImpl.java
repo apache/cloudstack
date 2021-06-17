@@ -30,6 +30,7 @@ import com.cloud.deployasis.DeployAsIsConstants;
 import com.cloud.deployasis.TemplateDeployAsIsDetailVO;
 import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -161,10 +162,13 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         HashMap<String, String> downloadDetailInImageStores = null;
         for (TemplateDataStoreVO templateInStore : templatesInStore) {
             downloadDetailInImageStores = new HashMap<>();
-            downloadDetailInImageStores.put("datastore", dataStoreDao.findById(templateInStore.getDataStoreId()).getName());
-            downloadDetailInImageStores.put("downloadPercent", Integer.toString(templateInStore.getDownloadPercent()));
-            downloadDetailInImageStores.put("downloadState", (templateInStore.getDownloadState() != null ? templateInStore.getDownloadState().toString() : ""));
-            downloadProgressDetails.add(downloadDetailInImageStores);
+            ImageStoreVO datastore = dataStoreDao.findById(templateInStore.getDataStoreId());
+            if (datastore != null) {
+                downloadDetailInImageStores.put("datastore", datastore.getName());
+                downloadDetailInImageStores.put("downloadPercent", Integer.toString(templateInStore.getDownloadPercent()));
+                downloadDetailInImageStores.put("downloadState", (templateInStore.getDownloadState() != null ? templateInStore.getDownloadState().toString() : ""));
+                downloadProgressDetails.add(downloadDetailInImageStores);
+            }
         }
 
         TemplateResponse templateResponse = new TemplateResponse();
@@ -522,6 +526,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         sc.setParameters("store_id", storeId);
         sc.setParameters("type", TemplateType.USER);
         sc.setParameters("templateState", VirtualMachineTemplate.State.Active);
+        sc.setParameters("public", Boolean.FALSE);
         return searchIncludingRemoved(sc, null, null, false);
     }
 

@@ -67,18 +67,17 @@
               {{ $t('label.delete.ciscoasa1000v') }}
             </span>
           </template>
-          <a-button
+          <tooltip-button
             v-if="resource.name==='Ovs'"
-            type="default"
-            shape="circle"
+            :tooltip="$t('label.configure')"
             icon="setting"
             size="small"
             :loading="actionLoading"
             @click="onConfigureOvs(record)"/>
-          <a-button
+          <tooltip-button
             v-else
+            :tooltip="$t('label.delete')"
             type="danger"
-            shape="circle"
             icon="close"
             size="small"
             :loading="actionLoading"
@@ -117,10 +116,11 @@
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'ProviderListView',
-  components: { Status },
+  components: { Status, TooltipButton },
   props: {
     title: {
       type: String,

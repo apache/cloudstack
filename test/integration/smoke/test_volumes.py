@@ -17,7 +17,8 @@
 """ BVT tests for Volumes
 """
 #Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 #from marvin.cloudstackException import *
 from marvin.cloudstackAPI import (deleteVolume,
                                   extractVolume,
@@ -44,7 +45,7 @@ from marvin.codes import SUCCESS, FAILED, XEN_SERVER
 from nose.plugins.attrib import attr
 #Import System modules
 import os
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import time
 import tempfile
 
@@ -143,7 +144,7 @@ class TestCreateVolume(cloudstackTestCase):
         # 2. Verify the size of volume with actual size allocated
 
         self.volumes = []
-        for k, v in self.services["volume_offerings"].items():
+        for k, v in list(self.services["volume_offerings"].items()):
             volume = Volume.create(
                                    self.apiClient,
                                    v,
@@ -308,7 +309,8 @@ class TestVolumes(cloudstackTestCase):
             cls.apiclient,
             cls.zone.id,
             cls.services["ostype"],
-            cls.hypervisor
+            cls.hypervisor,
+            deploy_as_is=cls.hypervisor.lower() == "vmware"
         )
         if cls.template == FAILED:
             assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
@@ -548,9 +550,9 @@ class TestVolumes(cloudstackTestCase):
 
         #Attempt to download the volume and save contents locally
         try:
-            formatted_url = urllib.unquote_plus(extract_vol.url)
+            formatted_url = urllib.parse.unquote_plus(extract_vol.url)
             self.debug("Attempting to download volume at url %s" % formatted_url)
-            response = urllib.urlopen(formatted_url)
+            response = urllib.request.urlopen(formatted_url)
             self.debug("response from volume url %s" % response.getcode())
             fd, path = tempfile.mkstemp()
             self.debug("Saving volume %s to path %s" %(self.volume.id, path))

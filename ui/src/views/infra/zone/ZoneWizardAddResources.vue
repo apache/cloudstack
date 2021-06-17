@@ -17,9 +17,15 @@
 
 <template>
   <div style="width: auto;">
-    <a-steps progressDot :current="currentStep" size="small" style="margin-left: 0; margin-top: 16px;">
+    <a-steps
+      ref="resourceStep"
+      progressDot
+      :current="currentStep"
+      size="small"
+      style="margin-left: 0; margin-top: 16px;">
       <a-step
-        v-for="step in steps"
+        v-for="(step, index) in steps"
+        :ref="`resourceStep${index}`"
         :key="step.title"
         :title="$t(step.title)"></a-step>
     </a-steps>
@@ -97,13 +103,15 @@
   </div>
 </template>
 <script>
-import StaticInputsForm from '@views/infra/zone/StaticInputsForm'
 import { api } from '@/api'
+import { mixinDevice } from '@/utils/mixin.js'
+import StaticInputsForm from '@views/infra/zone/StaticInputsForm'
 
 export default {
   components: {
     StaticInputsForm
   },
+  mixins: [mixinDevice],
   props: {
     prefillContent: {
       type: Object,
@@ -351,7 +359,7 @@ export default {
           }
         },
         {
-          title: 'label.SR.name',
+          title: 'label.sr.name',
           key: 'primaryStorageSRLabel',
           placeHolder: 'message.error.sr.namelabel',
           required: true,
@@ -687,14 +695,16 @@ export default {
       primaryStorageScopes: [],
       primaryStorageProtocols: [],
       storageProviders: [],
-      currentStep: 0,
+      currentStep: null,
       options: ['primaryStorageScope', 'primaryStorageProtocol', 'provider']
     }
   },
-  mounted () {
+  created () {
+    this.currentStep = this.prefillContent.resourceStep ? this.prefillContent.resourceStep : 0
     if (this.stepChild && this.stepChild !== '') {
       this.currentStep = this.steps.findIndex(item => item.fromKey === this.stepChild)
     }
+    this.scrollToStepActive()
     if (this.prefillContent.hypervisor.value === 'BareMetal') {
       this.$emit('nextPressed')
     } else {
@@ -719,14 +729,35 @@ export default {
         this.$emit('nextPressed')
       } else {
         this.currentStep++
+        this.$emit('fieldsChanged', { resourceStep: this.currentStep })
       }
+
+      this.scrollToStepActive()
     },
     handleBack (e) {
       if (this.currentStep === 0) {
         this.$emit('backPressed')
       } else {
         this.currentStep--
+        this.$emit('fieldsChanged', { resourceStep: this.currentStep })
       }
+
+      this.scrollToStepActive()
+    },
+    scrollToStepActive () {
+      if (!this.isMobile()) {
+        return
+      }
+      this.$nextTick(() => {
+        if (!this.$refs.resourceStep) {
+          return
+        }
+        if (this.currentStep === 0) {
+          this.$refs.resourceStep.$el.scrollLeft = 0
+          return
+        }
+        this.$refs.resourceStep.$el.scrollLeft = this.$refs['resourceStep' + (this.currentStep - 1)][0].$el.offsetLeft
+      })
     },
     fieldsChanged (changed) {
       this.$emit('fieldsChanged', changed)

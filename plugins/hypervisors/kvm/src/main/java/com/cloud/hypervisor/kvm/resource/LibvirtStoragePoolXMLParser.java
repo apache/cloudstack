@@ -55,7 +55,7 @@ public class LibvirtStoragePoolXMLParser {
             String host = getAttrValue("host", "name", source);
             String format = getAttrValue("format", "type", source);
 
-            if (type.equalsIgnoreCase("rbd")) {
+            if (type.equalsIgnoreCase("rbd") || type.equalsIgnoreCase("powerflex")) {
                 int port = 0;
                 String xmlPort = getAttrValue("host", "port", source);
                 if (StringUtils.isNotBlank(xmlPort)) {

@@ -211,4 +211,4 @@ if __name__ == "__main__":
     with contextlib.closing(SshClient("127.0.0.1", 22, "root",
                                       "asdf!@34")) as ssh:
         ret = ssh.runCommand("ls -l")
-        print ret
+        print(ret)

@@ -375,6 +375,35 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
+    public boolean canBeDeletedFromDataStore() {
+        Status downloadStatus = Status.UNKNOWN;
+        int downloadPercent = -1;
+        if (getDataStore().getRole() == DataStoreRole.Primary) {
+            VMTemplateStoragePoolVO templatePoolRef = templatePoolDao.findByPoolTemplate(getDataStore().getId(), getId(), null);
+            if (templatePoolRef != null) {
+                downloadStatus = templatePoolRef.getDownloadState();
+                downloadPercent = templatePoolRef.getDownloadPercent();
+            }
+        } else if (dataStore.getRole() == DataStoreRole.Image || dataStore.getRole() == DataStoreRole.ImageCache) {
+            TemplateDataStoreVO templateStoreRef = templateStoreDao.findByStoreTemplate(dataStore.getId(), getId());
+            if (templateStoreRef != null) {
+                downloadStatus = templateStoreRef.getDownloadState();
+                downloadPercent = templateStoreRef.getDownloadPercent();
+                templateStoreRef.getState();
+            }
+        }
+
+        // Marking downloaded templates for deletion, but might skip any deletion handled for failed templates.
+        // Only templates not downloaded and in error state (with no install path) cannot be deleted from the datastore, so doesn't impact last behavior for templates with other states
+        if (downloadStatus == null  || downloadStatus == Status.NOT_DOWNLOADED || (downloadStatus == Status.DOWNLOAD_ERROR && downloadPercent == 0)) {
+            s_logger.debug("Template: " + getId() + " cannot be deleted from the store: " + getDataStore().getId());
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
     public boolean isDeployAsIs() {
         if (this.imageVO == null) {
             return false;

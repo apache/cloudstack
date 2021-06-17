@@ -50,8 +50,8 @@ public class Ovm3Configuration {
     private Boolean agentOvsAgentSsl = false;
     private String agentSshKeyFile = "id_rsa.cloud";
     private String agentOwnedByUuid = "d1a749d4295041fb99854f52ea4dea97";
-    private Boolean agentIsMaster = false;
-    private Boolean agentHasMaster = false;
+    private Boolean agentIsPrimary = false;
+    private Boolean agentHasPrimary = false;
     private Boolean agentInOvm3Pool = false;
     private Boolean agentInOvm3Cluster = false;
     private String ovm3PoolVip = "";
@@ -266,20 +266,20 @@ public class Ovm3Configuration {
         this.agentOwnedByUuid = agentOwnedByUuid;
     }
 
-    public Boolean getAgentIsMaster() {
-        return agentIsMaster;
+    public Boolean getAgentIsPrimary() {
+        return agentIsPrimary;
     }
 
-    public void setAgentIsMaster(Boolean agentIsMaster) {
-        this.agentIsMaster = agentIsMaster;
+    public void setAgentIsPrimary(Boolean agentIsPrimary) {
+        this.agentIsPrimary = agentIsPrimary;
     }
 
-    public Boolean getAgentHasMaster() {
-        return agentHasMaster;
+    public Boolean getAgentHasPrimary() {
+        return agentHasPrimary;
     }
 
-    public void setAgentHasMaster(Boolean agentHasMaster) {
-        this.agentHasMaster = agentHasMaster;
+    public void setAgentHasPrimary(Boolean agentHasPrimary) {
+        this.agentHasPrimary = agentHasPrimary;
     }
 
     public Boolean getAgentInOvm3Pool() {

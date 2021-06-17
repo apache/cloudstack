@@ -785,7 +785,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                                               issystem = "true"
                                               )
         status = validateList(vr_sys_off_res)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Listing of VR system offering failed"
@@ -815,17 +815,17 @@ class TestNOVirtualRouter(cloudstackTestCase):
                                                id=self.network_offering.id
                                                )
         status = validateList(network_off_res)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Listing of network offerings failed"
         )
-        self.assertEquals(
+        self.assertEqual(
                           len(network_off_res),
                           1,
                           "More than one network offerings are created"
         )
-        self.assertEquals(
+        self.assertEqual(
                           network_off_res[0].serviceofferingid,
                           vr_sys_off.id,
                           "FAIL: Network offering has been created with default system offering"

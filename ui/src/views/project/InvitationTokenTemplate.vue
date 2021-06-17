@@ -28,6 +28,7 @@
               rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
             }]"
             :placeholder="apiParams.projectid.description"
+            autoFocus
           />
         </a-form-item>
         <a-form-item :label="$t('label.token')">

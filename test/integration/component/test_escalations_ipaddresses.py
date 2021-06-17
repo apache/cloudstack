@@ -16,7 +16,8 @@
 # under the License.
 
 # Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.base import (PublicIPAddress,
                              NetworkOffering,
                              Autoscale,
@@ -139,7 +140,7 @@ class TestIpAddresses(cloudstackTestCase):
         if len(expected_vals) != len(actual_vals):
             return False
 
-        keys = expected_vals.keys()
+        keys = list(expected_vals.keys())
         for i in range(0, len(expected_vals)):
             exp_val = expected_vals[keys[i]]
             act_val = actual_vals[keys[i]]
@@ -195,7 +196,7 @@ class TestIpAddresses(cloudstackTestCase):
             zoneid=self.zone.id
         )
         status = validateList(network_offerings_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Isolated Network Offerings with sourceNat enabled are not found"
@@ -223,12 +224,12 @@ class TestIpAddresses(cloudstackTestCase):
             type="Isolated"
         )
         status = validateList(networks_list_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Network Creation Failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(networks_list_after),
             "Network creation failed"
@@ -260,7 +261,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "IP Addresses Association Failed"
@@ -279,13 +280,13 @@ class TestIpAddresses(cloudstackTestCase):
             pagesize=self.services["pagesize"]
         )
         status = validateList(list_ipaddress_page1)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to list IP Addresses in page1"
         )
         # Verifying that list size is equals to pagesize
-        self.assertEquals(
+        self.assertEqual(
             self.services["pagesize"],
             len(list_ipaddress_page1),
             "Failed to list pagesize number of IP Addresses in page1"
@@ -298,13 +299,13 @@ class TestIpAddresses(cloudstackTestCase):
             pagesize=self.services["pagesize"]
         )
         status = validateList(list_ipaddress_page2)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to list IP Addresses in page2"
         )
         # Verifying that List size is equal to 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_ipaddress_page2),
             "Failed to list IP Addresses in page2"
@@ -363,7 +364,7 @@ class TestIpAddresses(cloudstackTestCase):
             zoneid=self.zone.id
         )
         status = validateList(network_offerings_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Isolated Network Offerings with sourceNat enabled are not found"
@@ -391,12 +392,12 @@ class TestIpAddresses(cloudstackTestCase):
             type="Isolated"
         )
         status = validateList(networks_list_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Network Creation Failed"
         )
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(networks_list_after),
             "Network creation failed"
@@ -408,12 +409,12 @@ class TestIpAddresses(cloudstackTestCase):
             id=network.id
         )
         status = validateList(network_list_byid)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to list Network by Id"
         )
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(network_list_byid),
             "Failed to list Network by Id"
@@ -443,7 +444,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "IP Addresses Association Failed"
@@ -460,13 +461,13 @@ class TestIpAddresses(cloudstackTestCase):
             id=associated_ipaddress.ipaddress.id
         )
         status = validateList(list_ipaddress_byid)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to list IP Addresses by ID"
         )
         # Verifying that list size is equals to 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_ipaddress_byid),
             "Failed to list IP Addresses by ID"
@@ -545,13 +546,13 @@ class TestIpAddresses(cloudstackTestCase):
         # Listing the vpc for a user after creating a vpc
         list_vpc_after = VPC.list(self.userapiclient)
         status = validateList(list_vpc_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "list VPC not as expected"
         )
         # Verifying the list vpc size is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vpc_after),
             "list VPC not equal as expected"
@@ -562,12 +563,12 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_before)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to List VPC IP Address"
         )
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_ipaddresses_before),
             "Failed to List VPC IP Address"
@@ -588,7 +589,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "IP Addresses Association Failed"
@@ -608,13 +609,13 @@ class TestIpAddresses(cloudstackTestCase):
             id=associated_ipaddress.ipaddress.id
         )
         status = validateList(list_ipaddress_byid)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to list IP Addresses by ID"
         )
         # Verifying that list size is equals to 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_ipaddress_byid),
             "Failed to list IP Addresses by ID"
@@ -698,7 +699,7 @@ class TestIpAddresses(cloudstackTestCase):
             zoneid=self.zone.id
         )
         status = validateList(network_offerings_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Isolated Network Offerings with sourceNat, Lb enabled are\
@@ -744,7 +745,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "IP Addresses Association Failed"
@@ -807,7 +808,7 @@ class TestIpAddresses(cloudstackTestCase):
             publicipid=associated_ipaddress.ipaddress.id
         )
         status = validateList(list_lbrules_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Load Balancer Rule creation Failed"
@@ -879,13 +880,13 @@ class TestIpAddresses(cloudstackTestCase):
         # Listing the vpc for a user after creating a vpc
         list_vpc_after = VPC.list(self.userapiclient)
         status = validateList(list_vpc_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "list VPC not as expected"
         )
         # Verifying the list vpc size is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vpc_after),
             "list VPC not equal as expected"
@@ -899,7 +900,7 @@ class TestIpAddresses(cloudstackTestCase):
             state="Enabled"
         )
         status = validateList(network_offering_vpc_true_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Default network offering not present for vpc = true with Lb")
@@ -925,13 +926,13 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_before)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "list IP Addresses not as expected"
         )
         # Verifying the list vpc size is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_ipaddresses_before),
             "list IP Addresses not equal as expected"
@@ -952,7 +953,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "IP Addresses Association Failed"
@@ -1016,7 +1017,7 @@ class TestIpAddresses(cloudstackTestCase):
             publicipid=associated_ipaddress.ipaddress.id,
         )
         status = validateList(list_lbrules_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Load Balancer Rule creation Failed"
@@ -1082,7 +1083,7 @@ class TestIpAddresses(cloudstackTestCase):
             zoneid=self.zone.id
         )
         status = validateList(network_offerings_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Isolated Network Offerings with sourceNat,\
@@ -1109,13 +1110,13 @@ class TestIpAddresses(cloudstackTestCase):
             type="Isolated"
         )
         status = validateList(list_networks_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Network Creation Failed"
         )
         # Verifying network list count is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_networks_after),
             "Network Creation Failed"
@@ -1146,7 +1147,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "IP Addresses Association Failed"
@@ -1186,7 +1187,7 @@ class TestIpAddresses(cloudstackTestCase):
             publicipid=associated_ipaddress.ipaddress.id
         )
         status = validateList(list_lbrules_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Load Balancer Rule creation Failed"
@@ -1291,7 +1292,7 @@ class TestIpAddresses(cloudstackTestCase):
             zoneid=self.zone.id
         )
         status = validateList(network_offerings_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Isolated Network Offerings with sourceNat,\
@@ -1336,7 +1337,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "IP Addresses Association Failed"
@@ -1372,7 +1373,7 @@ class TestIpAddresses(cloudstackTestCase):
             networkid=network.id
         )
         status = validateList(list_vms_running)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM Created is not in Running state"
@@ -1383,7 +1384,7 @@ class TestIpAddresses(cloudstackTestCase):
             len(list_vms_running),
             "VM Created is not in Running state"
         )
-        self.assertEquals(
+        self.assertEqual(
             vm_created.id,
             list_vms_running[0].id,
             "VM Created is not in Running state"
@@ -1432,7 +1433,7 @@ class TestIpAddresses(cloudstackTestCase):
             publicipid=associated_ipaddress.ipaddress.id
         )
         status = validateList(list_lbrules_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Load Balancer Rule creation Failed"
@@ -1463,7 +1464,7 @@ class TestIpAddresses(cloudstackTestCase):
                 applied="false"
             )
         status = validateList(list_lbruleinstance_applied_false)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "No Instances are available to assign to Load Balancer Rule"
@@ -1475,7 +1476,7 @@ class TestIpAddresses(cloudstackTestCase):
             "No Instances are available to assign to Load Balancer Rule"
         )
         # Verifying that Instance created above is listed
-        self.assertEquals(
+        self.assertEqual(
             vm_created.id,
             list_lbruleinstance_applied_false[0].id,
             "Failed to list Instance available to asign a Load Balancer Rule"
@@ -1494,7 +1495,7 @@ class TestIpAddresses(cloudstackTestCase):
                 applied="true"
             )
         status = validateList(list_lbruleinstance_applied_false)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "No Instances are available to assign to Load Balancer Rule"
@@ -1506,7 +1507,7 @@ class TestIpAddresses(cloudstackTestCase):
             "No Instances are available to assign to Load Balancer Rule"
         )
         # Verifying Instances is assigned to the Load Balancer Rule
-        self.assertEquals(
+        self.assertEqual(
             vm_created.id,
             list_lbruleinstance_applied_true[0].id,
             "Failed to assign Load Balancer Rule to given Instance"
@@ -1550,7 +1551,7 @@ class TestIpAddresses(cloudstackTestCase):
                 applied="false"
             )
         status = validateList(list_lbruleinstance_applied_false)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "No Instances are available to assign to Load Balancer Rule"
@@ -1562,7 +1563,7 @@ class TestIpAddresses(cloudstackTestCase):
             "No Instances are available to assign to Load Balancer Rule"
         )
         # Verifying that Instance created above is listed
-        self.assertEquals(
+        self.assertEqual(
             vm_created.id,
             list_lbruleinstance_applied_false[0].id,
             "Failed to list Instance available to asign a Load Balancer Rule"
@@ -1615,7 +1616,7 @@ class TestIpAddresses(cloudstackTestCase):
             zoneid=self.zone.id
         )
         status = validateList(network_offerings_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Isolated Network Offerings with sourceNat,\
@@ -1642,13 +1643,13 @@ class TestIpAddresses(cloudstackTestCase):
             type="Isolated"
         )
         status = validateList(list_networks_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Network Creation Failed"
         )
         # Verifying network list count is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_networks_after),
             "Network Creation Failed"
@@ -1679,7 +1680,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "IP Addresses Association Failed"
@@ -1719,7 +1720,7 @@ class TestIpAddresses(cloudstackTestCase):
             publicipid=associated_ipaddress.ipaddress.id
         )
         status = validateList(list_lbrules_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Load Balancer Rule creation Failed"
@@ -1737,7 +1738,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         # Verifying no Sticky Policies are listed
-        self.assertEquals(
+        self.assertEqual(
             0,
             len(list_lbstickypolicy_before[0].stickinesspolicy),
             "Sticky Policy listed for newly created Load Balancer Rule"
@@ -1785,7 +1786,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_lbstickypolicy_after[0].stickinesspolicy)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Load Balancer Sticky Policy creation Failed"
@@ -1809,7 +1810,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         # Verifying no Sticky Policies are listed
-        self.assertEquals(
+        self.assertEqual(
             0,
             len(list_lbstickypolicy_after[0].stickinesspolicy),
             "Sticky Policy listed for newly created Load Balancer Rule"
@@ -1860,7 +1861,7 @@ class TestIpAddresses(cloudstackTestCase):
             zoneid=self.zone.id
         )
         status = validateList(network_offerings_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Isolated Network Offerings with sourceNat,\
@@ -1905,7 +1906,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "IP Addresses Association Failed"
@@ -1938,7 +1939,7 @@ class TestIpAddresses(cloudstackTestCase):
             networkid=network.id
         )
         status = validateList(list_vms_running)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "VM Created is not in Running state"
@@ -1949,7 +1950,7 @@ class TestIpAddresses(cloudstackTestCase):
             len(list_ipaddresses_after),
             "VM Created is not in Running state"
         )
-        self.assertEquals(
+        self.assertEqual(
             vm_created.id,
             list_vms_running[0].id,
             "VM Created is not in Running state"
@@ -2018,7 +2019,7 @@ class TestIpAddresses(cloudstackTestCase):
             ipaddressid=associated_ipaddress.ipaddress.id
         )
         status = validateList(list_prtfwdrule_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to create Port Forwarding Rule"
@@ -2093,13 +2094,13 @@ class TestIpAddresses(cloudstackTestCase):
         # Listing the vpc for a user after creating a vpc
         list_vpc_after = VPC.list(self.userapiclient)
         status = validateList(list_vpc_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "list VPC not as expected"
         )
         # Verifying the list vpc size is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vpc_after),
             "list VPC not equal as expected"
@@ -2113,7 +2114,7 @@ class TestIpAddresses(cloudstackTestCase):
             state="Enabled"
         )
         status = validateList(network_offering_vpc_true_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Default network offering not present for\
@@ -2138,13 +2139,13 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_before)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "list IP Addresses not as expected"
         )
         # Verifying the list vpc size is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_ipaddresses_before),
             "list IP Addresses not equal as expected"
@@ -2165,7 +2166,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "IP Addresses Association Failed"
@@ -2244,7 +2245,7 @@ class TestIpAddresses(cloudstackTestCase):
             ipaddressid=associated_ipaddress.ipaddress.id
         )
         status = validateList(list_prtfwdrule_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to create Port Forwarding Rule"
@@ -2311,7 +2312,7 @@ class TestIpAddresses(cloudstackTestCase):
             zoneid=self.zone.id
         )
         status = validateList(network_offerings_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Isolated Network Offerings with sourceNat,\
@@ -2357,7 +2358,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "IP Addresses Association Failed"
@@ -2424,7 +2425,7 @@ class TestIpAddresses(cloudstackTestCase):
             ipaddressid=associated_ipaddress.ipaddress.id
         )
         status = validateList(list_firewalls_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to create Firewall Rule"
@@ -2492,7 +2493,7 @@ class TestIpAddresses(cloudstackTestCase):
             zoneid=self.zone.id
         )
         status = validateList(network_offerings_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Isolated Network Offerings with sourceNat,\
@@ -2538,7 +2539,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "IP Addresses Association Failed"
@@ -2602,7 +2603,7 @@ class TestIpAddresses(cloudstackTestCase):
             ipaddressid=associated_ipaddress.ipaddress.id
         )
         status = validateList(list_vpns_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to create Remote Access VPN"
@@ -2668,7 +2669,7 @@ class TestIpAddresses(cloudstackTestCase):
             zoneid=self.zone.id
         )
         status = validateList(network_offerings_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Isolated Network Offerings with sourceNat,\
@@ -2714,7 +2715,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "IP Addresses Association Failed"
@@ -2768,7 +2769,7 @@ class TestIpAddresses(cloudstackTestCase):
             ipaddressid=associated_ipaddress.ipaddress.id
         )
         status = validateList(list_vpns_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to create Remote Access VPN"
@@ -2811,7 +2812,7 @@ class TestIpAddresses(cloudstackTestCase):
             domainid=self.domain.id
         )
         status = validateList(list_vpnusers_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to list VPN user after creation"
@@ -2877,7 +2878,7 @@ class TestIpAddresses(cloudstackTestCase):
             zoneid=self.zone.id
         )
         status = validateList(network_offerings_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Isolated Network Offerings with sourceNat,\
@@ -2933,7 +2934,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "IP Addresses Association Failed"
@@ -2970,7 +2971,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddress)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to List IP Address"
@@ -2981,7 +2982,7 @@ class TestIpAddresses(cloudstackTestCase):
             len(list_ipaddress),
             "Failed to List IP Address"
         )
-        self.assertEquals(
+        self.assertEqual(
             True,
             list_ipaddress[0].isstaticnat,
             "Failed to Enable Static Nat"
@@ -2998,7 +2999,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddress)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to List IP Address"
@@ -3009,7 +3010,7 @@ class TestIpAddresses(cloudstackTestCase):
             len(list_ipaddress),
             "Failed to List IP Address"
         )
-        self.assertEquals(
+        self.assertEqual(
             False,
             list_ipaddress[0].isstaticnat,
             "Failed to Disable Static Nat"
@@ -3057,13 +3058,13 @@ class TestIpAddresses(cloudstackTestCase):
         # Listing the vpc for a user after creating a vpc
         list_vpc_after = VPC.list(self.userapiclient)
         status = validateList(list_vpc_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "list VPC not as expected"
         )
         # Verifying the list vpc size is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_vpc_after),
             "list VPC not equal as expected"
@@ -3077,7 +3078,7 @@ class TestIpAddresses(cloudstackTestCase):
             state="Enabled"
         )
         status = validateList(network_offering_vpc_true_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Default network offering not present\
@@ -3102,13 +3103,13 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_before)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "list IP Addresses not as expected"
         )
         # Verifying the list vpc size is increased by 1
-        self.assertEquals(
+        self.assertEqual(
             1,
             len(list_ipaddresses_before),
             "list IP Addresses not equal as expected"
@@ -3129,7 +3130,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "IP Addresses Association Failed"
@@ -3169,7 +3170,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddress)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to List IP Address"
@@ -3180,7 +3181,7 @@ class TestIpAddresses(cloudstackTestCase):
             len(list_ipaddress),
             "Failed to List IP Address"
         )
-        self.assertEquals(
+        self.assertEqual(
             True,
             list_ipaddress[0].isstaticnat,
             "Failed to Enable Static Nat"
@@ -3197,7 +3198,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddress)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to List IP Address"
@@ -3208,7 +3209,7 @@ class TestIpAddresses(cloudstackTestCase):
             len(list_ipaddress),
             "Failed to List IP Address"
         )
-        self.assertEquals(
+        self.assertEqual(
             False,
             list_ipaddress[0].isstaticnat,
             "Failed to Disable Static Nat"
@@ -3259,7 +3260,7 @@ class TestIpAddresses(cloudstackTestCase):
             zoneid=self.zone.id
         )
         status = validateList(network_offerings_list)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Isolated Network Offerings with sourceNat,\
@@ -3315,7 +3316,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddresses_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "IP Addresses Association Failed"
@@ -3352,7 +3353,7 @@ class TestIpAddresses(cloudstackTestCase):
             listall=self.services["listall"]
         )
         status = validateList(list_ipaddress)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to List IP Address"
@@ -3363,7 +3364,7 @@ class TestIpAddresses(cloudstackTestCase):
             len(list_ipaddress),
             "Failed to List IP Address"
         )
-        self.assertEquals(
+        self.assertEqual(
             True,
             list_ipaddress[0].isstaticnat,
             "Failed to Enable Static Nat"
@@ -3399,7 +3400,7 @@ class TestIpAddresses(cloudstackTestCase):
             ipaddressid=associated_ipaddress2.ipaddress.id
         )
         status = validateList(list_ipfwdrule_after)
-        self.assertEquals(
+        self.assertEqual(
             PASS,
             status[0],
             "Failed to List IP Forwarding Rule after Creation"
@@ -3507,7 +3508,7 @@ class TestIpAddresses(cloudstackTestCase):
                 supportedservices="SourceNat,Lb",
                 zoneid=self.zone.id
             )
-            self.assertEquals(
+            self.assertEqual(
                 len(list_nwoff_before) + 1,
                 len(list_nwoff_after),
                 "Failed to create Network Offering"
@@ -3546,7 +3547,7 @@ class TestIpAddresses(cloudstackTestCase):
                 listall=self.services["listall"]
             )
             status = validateList(list_ipaddresses_before)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "IP Addresses Association Failed while launching a VM"
@@ -3573,7 +3574,7 @@ class TestIpAddresses(cloudstackTestCase):
                 listall=self.services["listall"]
             )
             status = validateList(list_ipaddresses_after)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "IP Addresses Association Failed"
@@ -3589,7 +3590,7 @@ class TestIpAddresses(cloudstackTestCase):
                 self.userapiclient,
             )
             status = validateList(list_counters)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Failed to list counters"
@@ -3635,7 +3636,7 @@ class TestIpAddresses(cloudstackTestCase):
                 domainid=self.domain.id
             )
             status = validateList(list_conditions_after)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Failed to list Conditions after creation"
@@ -3663,7 +3664,7 @@ class TestIpAddresses(cloudstackTestCase):
                 "Failed to create Autoscale VM Policy"
             )
             # Verifying autoscalepolicy is created using condition1
-            self.assertEquals(
+            self.assertEqual(
                 condition_created1.id,
                 autoscalepolicy_created.conditions[0].id,
                 "Autoscale Policy not created by given condition"
@@ -3674,12 +3675,12 @@ class TestIpAddresses(cloudstackTestCase):
                 listall=self.services["listall"]
             )
             status = validateList(list_autoscalepolicies_after)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Failed to list Autoscale Policy after creation"
             )
-            self.assertEquals(
+            self.assertEqual(
                 1,
                 len(list_autoscalepolicies_after),
                 "Autoscale Policies count is not matching"
@@ -3697,7 +3698,7 @@ class TestIpAddresses(cloudstackTestCase):
                 "Failed to update Autoscale Policy"
             )
             # Verifying the Autoscale Policy is updated
-            self.assertEquals(
+            self.assertEqual(
                 condition_created2.id,
                 autoscalepolicy_updated.conditions[0].id,
                 "Autoscale Policy not updated to given condition"
@@ -3787,7 +3788,7 @@ class TestIpAddresses(cloudstackTestCase):
                 supportedservices="SourceNat,Lb",
                 zoneid=self.zone.id
             )
-            self.assertEquals(
+            self.assertEqual(
                 len(list_nwoff_before) + 1,
                 len(list_nwoff_after),
                 "Failed to create Network Offering"
@@ -3826,7 +3827,7 @@ class TestIpAddresses(cloudstackTestCase):
                 listall=self.services["listall"]
             )
             status = validateList(list_ipaddresses_before)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "IP Addresses Association Failed while launching a VM"
@@ -3853,7 +3854,7 @@ class TestIpAddresses(cloudstackTestCase):
                 listall=self.services["listall"]
             )
             status = validateList(list_ipaddresses_after)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "IP Addresses Association Failed"
@@ -3871,7 +3872,7 @@ class TestIpAddresses(cloudstackTestCase):
                 issystem='false'
             )
             status = validateList(list_service_offerings)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Failed to list Service Offerings"
@@ -3884,7 +3885,7 @@ class TestIpAddresses(cloudstackTestCase):
                 domainid=self.domain.id
             )
             status = validateList(list_users)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Failed to list Users"
@@ -3897,7 +3898,7 @@ class TestIpAddresses(cloudstackTestCase):
                 zoneid=self.zone.id
             )
             status = validateList(list_templates_featured)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Failed to list Featured Templates"
@@ -3955,13 +3956,13 @@ class TestIpAddresses(cloudstackTestCase):
                 listall=self.services["listall"]
             )
             status = validateList(list_autoscalevm_profiles_after)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Failed to list Autoscale VM Profile after creation"
             )
             # Verifying only 1 autoscale vm profile is created
-            self.assertEquals(
+            self.assertEqual(
                 1,
                 len(list_autoscalevm_profiles_after),
                 "Count of Autoscale VM profiles listed is not matching"
@@ -3973,7 +3974,7 @@ class TestIpAddresses(cloudstackTestCase):
                 id=autoscalevm_profile.id
             )
             status = validateList(list_autoscalvmprofile)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Failed to list Autoscale VM Profile by Id after creation"
@@ -4025,7 +4026,7 @@ class TestIpAddresses(cloudstackTestCase):
             )
             # Verifyign that Destroy VM Graceperiod is updated in autoscale VM
             # Profile
-            self.assertEquals(
+            self.assertEqual(
                 200,
                 autoscalevm_profile_updated.destroyvmgraceperiod,
                 "Failed to update destroy vm grace period"
@@ -4114,7 +4115,7 @@ class TestIpAddresses(cloudstackTestCase):
                 supportedservices="SourceNat,Lb",
                 zoneid=self.zone.id
             )
-            self.assertEquals(
+            self.assertEqual(
                 len(list_nwoff_before) + 1,
                 len(list_nwoff_after),
                 "Failed to create Network Offering"
@@ -4153,7 +4154,7 @@ class TestIpAddresses(cloudstackTestCase):
                 listall=self.services["listall"]
             )
             status = validateList(list_ipaddresses_before)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "IP Addresses Association Failed while launching a VM"
@@ -4180,7 +4181,7 @@ class TestIpAddresses(cloudstackTestCase):
                 listall=self.services["listall"]
             )
             status = validateList(list_ipaddresses_after)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "IP Addresses Association Failed"
@@ -4199,7 +4200,7 @@ class TestIpAddresses(cloudstackTestCase):
                 domainid=self.domain.id
             )
             status = validateList(list_users)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Failed to list Users"
@@ -4207,7 +4208,7 @@ class TestIpAddresses(cloudstackTestCase):
             # Listing counters
             list_counters = Autoscale.listCounters(self.userapiclient)
             status = validateList(list_counters)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Failed to list Counters"
@@ -4320,13 +4321,13 @@ class TestIpAddresses(cloudstackTestCase):
                 lbruleid=lbrule.id
             )
             status = validateList(list_vmgroup_after)
-            self.assertEquals(
+            self.assertEqual(
                 PASS,
                 status[0],
                 "Failed to list Autoscale VM group after creation"
             )
             # Verifying only 1 Autoscale VM group is listed
-            self.assertEquals(
+            self.assertEqual(
                 1,
                 len(list_vmgroup_after),
                 "Autoscale VM group list count is not matching"
@@ -4341,7 +4342,7 @@ class TestIpAddresses(cloudstackTestCase):
                 "Failed to disable Autoscale VM group"
             )
             # Verifyign the state of the VM Group afte renabling
-            self.assertEquals(
+            self.assertEqual(
                 "disabled",
                 vmgroup_disabled.state,
                 "Disabled VM Group state is not matching"
@@ -4360,7 +4361,7 @@ class TestIpAddresses(cloudstackTestCase):
                 vmgroup_updated,
                 "Failed to update Autoscale VM group"
             )
-            self.assertEquals(
+            self.assertEqual(
                 40,
                 vmgroup_updated.interval,
                 "Updated Autoscale VM group interval value is not matching"
@@ -4375,7 +4376,7 @@ class TestIpAddresses(cloudstackTestCase):
                 "Failed to enable Autoscale VM group"
             )
             # Verifyign the state of the VM Group afte renabling
-            self.assertEquals(
+            self.assertEqual(
                 "enabled",
                 vmgroup_enabled.state,
                 "Enabled VM Group state is not matching"

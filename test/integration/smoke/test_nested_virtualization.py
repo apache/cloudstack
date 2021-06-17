@@ -108,8 +108,8 @@ class TestNestedVirtualization(cloudstackTestCase):
                 serviceofferingid=self.service_offering.id,
                 mode=self.services['mode']
             )
-            self.assert_(virtual_machine is not None, "VM failed to deploy")
-            self.assert_(virtual_machine.state == 'Running', "VM is not running")
+            self.assertTrue(virtual_machine is not None, "VM failed to deploy")
+            self.assertTrue(virtual_machine.state == 'Running', "VM is not running")
             self.logger.debug("Deployed vm: %s" % virtual_machine.id)
 
             isolated_network = Network.create(
@@ -137,7 +137,7 @@ class TestNestedVirtualization(cloudstackTestCase):
             self.rollback_nested_configurations(rollback_nv, rollback_nv_per_vm)
 
             #5) Check for CPU flags: vmx for Intel and svm for AMD indicates nested virtualization is enabled
-            self.assert_(result is not None, "Empty result for CPU flags")
+            self.assertTrue(result is not None, "Empty result for CPU flags")
             res = str(result)
             self.assertTrue('vmx' in res or 'svm' in res)
         except Exception as e:
@@ -157,5 +157,5 @@ class TestNestedVirtualization(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             cleanup_resources(cls.apiclient, cls.cleanup)
-        except Exception, e:
+        except Exception as e:
             raise Exception("Cleanup failed with %s" % e)

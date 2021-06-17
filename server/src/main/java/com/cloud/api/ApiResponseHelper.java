@@ -306,6 +306,7 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSHypervisor;
+import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
@@ -315,6 +316,8 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.storage.snapshot.SnapshotSchedule;
@@ -394,6 +397,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     private VMSnapshotDao vmSnapshotDao;
     @Inject
     private BackupOfferingDao backupOfferingDao;
+    @Inject
+    private GuestOSCategoryDao _guestOsCategoryDao;
+    @Inject
+    private GuestOSDao _guestOsDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -914,6 +921,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
+        // show vm info for shared networks
+        showVmInfoForSharedNetworks(forVirtualNetworks, ipAddr, ipResponse);
+
         // show this info to full view only
         if (view == ResponseView.Full) {
             VlanVO vl = ApiDBUtils.findVlanById(ipAddr.getVlanId());
@@ -946,6 +956,42 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         ipResponse.setObjectName("ipaddress");
         return ipResponse;
+    }
+
+    private void showVmInfoForSharedNetworks(boolean forVirtualNetworks, IpAddress ipAddr, IPAddressResponse ipResponse) {
+        if (!forVirtualNetworks) {
+            NicVO nic = ApiDBUtils.findByIp4AddressAndNetworkId(ipAddr.getAddress().toString(), ipAddr.getNetworkId());
+
+            if (nic == null) {  // find in nic_secondary_ips, user vm only
+                NicSecondaryIpVO secondaryIp =
+                        ApiDBUtils.findSecondaryIpByIp4AddressAndNetworkId(ipAddr.getAddress().toString(), ipAddr.getNetworkId());
+                if (secondaryIp != null) {
+                    UserVm vm = ApiDBUtils.findUserVmById(secondaryIp.getVmId());
+                    if (vm != null) {
+                        ipResponse.setVirtualMachineId(vm.getUuid());
+                        ipResponse.setVirtualMachineName(vm.getHostName());
+                        if (vm.getDisplayName() != null) {
+                            ipResponse.setVirtualMachineDisplayName(vm.getDisplayName());
+                        } else {
+                            ipResponse.setVirtualMachineDisplayName(vm.getHostName());
+                        }
+                    }
+                }
+            } else if (nic.getVmType() == VirtualMachine.Type.User) {
+                UserVm vm = ApiDBUtils.findUserVmById(nic.getInstanceId());
+                if (vm != null) {
+                    ipResponse.setVirtualMachineId(vm.getUuid());
+                    ipResponse.setVirtualMachineName(vm.getHostName());
+                    if (vm.getDisplayName() != null) {
+                        ipResponse.setVirtualMachineDisplayName(vm.getDisplayName());
+                    } else {
+                        ipResponse.setVirtualMachineDisplayName(vm.getHostName());
+                    }
+                }
+            } else if (nic.getVmType() == VirtualMachine.Type.DomainRouter) {
+                ipResponse.setIsSystem(true);
+            }
+        }
     }
 
     @Override
@@ -1410,7 +1456,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
 
-            if (vm.getType() == Type.SecondaryStorageVm || vm.getType() == Type.ConsoleProxy) {
+            if (VirtualMachine.systemVMs.contains(vm.getType())) {
                 Host systemVmHost = ApiDBUtils.findHostByTypeNameAndZoneId(vm.getDataCenterId(), vm.getHostName(),
                         Type.SecondaryStorageVm.equals(vm.getType()) ? Host.Type.SecondaryStorageVM : Host.Type.ConsoleProxy);
                 if (systemVmHost != null) {
@@ -1424,6 +1470,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 vmResponse.setState(vm.getState().toString());
             }
 
+            vmResponse.setDynamicallyScalable(vm.isDynamicallyScalable());
             // for console proxies, add the active sessions
             if (vm.getType() == Type.ConsoleProxy) {
                 ConsoleProxyVO proxy = ApiDBUtils.findConsoleProxy(vm.getId());
@@ -1900,7 +1947,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         //check permissions
         if (_accountMgr.isNormalUser(caller.getId())) {
-            //regular user can see only jobs he owns
+            //regular users can see only jobs they own
             if (caller.getId() != jobOwner.getId()) {
                 throw new PermissionDeniedException("Account " + caller + " is not authorized to see job id=" + job.getId());
             }
@@ -3211,6 +3258,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDpd(result.getDpd());
         response.setEncap(result.getEncap());
         response.setRemoved(result.getRemoved());
+        response.setIkeVersion(result.getIkeVersion());
+        response.setSplitConnections(result.getSplitConnections());
         response.setObjectName("vpncustomergateway");
 
         populateAccount(response, result.getAccountId());
@@ -3250,6 +3299,8 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setEspLifetime(customerGateway.getEspLifetime());
                 response.setDpd(customerGateway.getDpd());
                 response.setEncap(customerGateway.getEncap());
+                response.setIkeVersion(customerGateway.getIkeVersion());
+                response.setSplitConnections(customerGateway.getSplitConnections());
             }
         }
 
@@ -3401,7 +3452,16 @@ public class ApiResponseHelper implements ResponseGenerator {
                 resourceType = ResourceTag.ResourceObjectType.UserVm;
                 usageRecResponse.setUsageId(vm.getUuid());
                 resourceId = vm.getId();
-                usageRecResponse.setOsTypeId(vm.getGuestOSId());
+                final GuestOS guestOS = _guestOsDao.findById(vm.getGuestOSId());
+                if (guestOS != null) {
+                    usageRecResponse.setOsTypeId(guestOS.getUuid());
+                    usageRecResponse.setOsDisplayName(guestOS.getDisplayName());
+                    final GuestOsCategory guestOsCategory = _guestOsCategoryDao.findById(guestOS.getCategoryId());
+                    if (guestOsCategory != null) {
+                        usageRecResponse.setOsCategoryId(guestOsCategory.getUuid());
+                        usageRecResponse.setOsCategoryName(guestOsCategory.getName());
+                    }
+                }
             }
             //Hypervisor Type
             usageRecResponse.setType(usageRecord.getType());
@@ -3962,7 +4022,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         NicResponse response = new NicResponse();
         NetworkVO network = _entityMgr.findById(NetworkVO.class, result.getNetworkId());
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, result.getInstanceId());
-        UserVmJoinVO userVm = _entityMgr.findById(UserVmJoinVO.class, result.getInstanceId());
         List<NicExtraDhcpOptionVO> nicExtraDhcpOptionVOs = _nicExtraDhcpOptionDao.listByNicId(result.getId());
 
         // The numbered comments are to keep track of the data returned from here and UserVmJoinDaoImpl.setUserVmResponse()
@@ -3976,15 +4035,13 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setVmId(vm.getUuid());
         }
 
-        if (userVm != null){
-            if (userVm.getTrafficType() != null) {
-                /*4: trafficType*/
-                response.setTrafficType(userVm.getTrafficType().toString());
-            }
-            if (userVm.getGuestType() != null) {
-                /*5: guestType*/
-                response.setType(userVm.getGuestType().toString());
-            }
+        if (network.getTrafficType() != null) {
+            /*4: trafficType*/
+            response.setTrafficType(network.getTrafficType().toString());
+        }
+        if (network.getGuestType() != null) {
+            /*5: guestType*/
+            response.setType(network.getGuestType().toString());
         }
         /*6: ipAddress*/
         response.setIpaddress(result.getIPv4Address());
@@ -3993,9 +4050,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         /*8: netmask*/
         response.setNetmask(result.getIPv4Netmask());
         /*9: networkName*/
-        if(userVm != null && userVm.getNetworkName() != null) {
-            response.setNetworkName(userVm.getNetworkName());
-        }
+        response.setNetworkName(network.getName());
         /*10: macAddress*/
         response.setMacAddress(result.getMacAddress());
         /*11: IPv6Address*/

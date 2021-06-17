@@ -227,7 +227,8 @@ class TestPublicIP(cloudstackTestCase):
         # 1.listPublicIpAddresses should no more return the released address
         list_pub_ip_addr_resp = list_publicIP(
             self.apiclient,
-            id=ip_address.ipaddress.id
+            id=ip_address.ipaddress.id,
+            allocatedonly=True
         )
         if list_pub_ip_addr_resp is None:
             return
@@ -279,7 +280,8 @@ class TestPublicIP(cloudstackTestCase):
 
         list_pub_ip_addr_resp = list_publicIP(
             self.apiclient,
-            id=ip_address.ipaddress.id
+            id=ip_address.ipaddress.id,
+            allocatedonly=True
         )
 
         self.assertEqual(
@@ -883,7 +885,8 @@ class TestReleaseIP(cloudstackTestCase):
         while retriesCount > 0:
             listResponse = list_publicIP(
                 self.apiclient,
-                id=self.ip_addr.id
+                id=self.ip_addr.id,
+                state="Allocated"
             )
             if listResponse is None:
                 isIpAddressDisassociated = True
@@ -1738,7 +1741,7 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
         return len(response) == 3
 
     def enable_l2_nic(self, vm):
-        vm_ip = list(filter(lambda x: x['networkid'] == self.isolated_network.id, vm.nic))[0]['ipaddress']
+        vm_ip = list([x for x in vm.nic if x['networkid'] == self.isolated_network.id])[0]['ipaddress']
         ssh_client = vm.get_ssh_client()
         eth_device = "eth0"
         if len(ssh_client.execute("/sbin/ifconfig %s | grep %s" % (eth_device, vm_ip))) > 0:
@@ -1862,6 +1865,7 @@ class TestSharedNetwork(cloudstackTestCase):
         # Create Network Offering
         cls.services["shared_network_offering"]["specifyVlan"] = "True"
         cls.services["shared_network_offering"]["specifyIpRanges"] = "True"
+        cls.hv = cls.testClient.getHypervisorInfo()
         cls.shared_network_offering = NetworkOffering.create(cls.apiclient, cls.services["shared_network_offering"],
                                                              conservemode=False)
 
@@ -1884,6 +1888,7 @@ class TestSharedNetwork(cloudstackTestCase):
                                             zoneid=cls.zone.id)
         cls._cleanup = [
             cls.service_offering,
+            cls.shared_network,
             cls.shared_network_offering
         ]
         return
@@ -1960,6 +1965,8 @@ class TestSharedNetwork(cloudstackTestCase):
 
     @attr(tags=["advanced", "shared"])
     def test_01_deployVMInSharedNetwork(self):
+        if self.hv.lower() == 'simulator':
+            self.skipTest("Hypervisor is simulator - skipping Test..")
         try:
             self.virtual_machine = VirtualMachine.create(self.apiclient, self.services["virtual_machine"],
                                                          networkids=[self.shared_network.id],
@@ -1993,6 +2000,8 @@ class TestSharedNetwork(cloudstackTestCase):
 
     @attr(tags=["advanced", "shared"])
     def test_02_verifyRouterIpAfterNetworkRestart(self):
+        if self.hv.lower() == 'simulator':
+            self.skipTest("Hypervisor is simulator - skipping Test..")
         routerIp = self.services["shared_network"]["routerip"]
         self.debug("restarting network with cleanup")
         try:
@@ -2018,12 +2027,14 @@ class TestSharedNetwork(cloudstackTestCase):
 
     @attr(tags=["advanced", "shared"])
     def test_03_destroySharedNetwork(self):
+        if self.hv.lower() == 'simulator':
+            self.skipTest("Hypervisor is simulator - skipping Test..")
         routerIp = self.services["shared_network"]["routerip"]
         try:
             self.shared_network.delete(self.apiclient)
         except Exception as e:
             self.fail("Failed to destroy the shared network")
-
+        self._cleanup.remove(self.shared_network)
         self.debug("Fetch the placeholder record for the router")
         nic_ip_address = self.dbclient.execute(
             "select ip4_address from nics where strategy='Placeholder' and ip4_address = '%s' and removed is NOT NULL;" % routerIp);

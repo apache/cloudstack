@@ -30,8 +30,8 @@
       <div>{{ text }}</div>
       <small v-if="record.type!=='L2'">{{ $t('label.cidr') + ': ' + record.cidr }}</small>
     </template>
-    <template slot="ipAddress" slot-scope="text, record">
-      <a-form-item v-if="record.type!=='L2'">
+    <template slot="ipAddress" slot-scope="text, record, index">
+      <a-form-item v-if="record.type!=='L2' && index === 0">
         <a-input
           style="width: 150px;"
           v-decorator="['ipAddress' + record.id, {

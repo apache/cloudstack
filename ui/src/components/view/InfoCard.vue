@@ -106,19 +106,15 @@
         <div class="resource-detail-item" v-if="resource.id">
           <div class="resource-detail-item__label">{{ $t('label.id') }}</div>
           <div class="resource-detail-item__details">
-            <a-tooltip placement="right" >
-              <template slot="title">
-                <span>{{ $t('label.copyid') }}</span>
-              </template>
-              <a-button
-                style="margin-left: -5px"
-                shape="circle"
-                icon="barcode"
-                type="dashed"
-                size="small"
-                @click="$message.success($t('label.copied.clipboard'))"
-                v-clipboard:copy="resource.id" />
-            </a-tooltip>
+            <tooltip-button
+              tooltipPlacement="right"
+              :tooltip="$t('label.copyid')"
+              style="margin-left: -5px"
+              icon="barcode"
+              type="dashed"
+              size="small"
+              @click="$message.success($t('label.copied.clipboard'))"
+              v-clipboard:copy="resource.id" />
             <span style="margin-left: 10px;">{{ resource.id }}</span>
           </div>
         </div>
@@ -262,7 +258,8 @@
               <a-progress
                 class="progress-bar"
                 size="small"
-                :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeallocatedgb) / parseFloat(resource.disksizetotalgb)).toFixed(2))"
+                :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeallocatedgb) / (parseFloat(resource.disksizetotalgb) *
+                  (parseFloat(resource.overprovisionfactor) || 1.0))).toFixed(2))"
                 :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.disksizeallocatedgb')" />
             </span>
           </div>
@@ -284,6 +281,9 @@
                 style="margin-left: -24px; margin-top: 5px;">
                 <a-icon type="api" />eth{{ index }} {{ eth.ipaddress }}
                 <router-link v-if="eth.networkname && eth.networkid" :to="{ path: '/guestnetwork/' + eth.networkid }">({{ eth.networkname }})</router-link>
+                <a-tag v-if="eth.isdefault">
+                  {{ $t('label.default') }}
+                </a-tag >
               </div>
             </div>
           </div>
@@ -297,6 +297,9 @@
                 :key="network.id"
                 style="margin-top: 5px;">
                 <a-icon type="api" />{{ network.name }}
+                <span v-if="resource.defaultnetworkid === network.id">
+                  ({{ $t('label.default') }})
+                </span>
               </div>
             </div>
           </div>
@@ -310,6 +313,16 @@
               v-clipboard:copy="ipaddress" />
             <router-link v-if="resource.ipaddressid" :to="{ path: '/publicip/' + resource.ipaddressid }">{{ ipaddress }}</router-link>
             <span v-else>{{ ipaddress }}</span>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="ipV6Address && ipV6Address !== null">
+          <div class="resource-detail-item__label">{{ $t('label.ip6address') }}</div>
+          <div class="resource-detail-item__details">
+            <a-icon
+              type="environment"
+              @click="$message.success(`${$t('label.copied.clipboard')} : ${ ipV6Address }`)"
+              v-clipboard:copy="ipV6Address" />
+            {{ ipV6Address }}
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.projectid || resource.projectname">
@@ -395,10 +408,15 @@
           </span>
         </div>
         <div class="resource-detail-item" v-if="resource.templateid">
-          <div class="resource-detail-item__label">{{ $t('label.templatename') }}</div>
+          <div class="resource-detail-item__label">{{ resource.isoid ? $t('label.iso') : $t('label.templatename') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="picture" />
-            <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatename || resource.templateid }} </router-link>
+            <div v-if="resource.isoid">
+              <router-link :to="{ path: '/iso/' + resource.isoid }">{{ resource.isoname || resource.isoid }} </router-link>
+            </div>
+            <div v-else>
+              <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatename || resource.templateid }} </router-link>
+            </div>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
@@ -557,14 +575,14 @@
           <a-icon type="key" />
           <strong>
             {{ $t('label.apikey') }}
-            <a-tooltip placement="right" >
-              <template slot="title">
-                <span>{{ $t('label.copy') + ' ' + $t('label.apikey') }}</span>
-              </template>
-              <a-button shape="circle" type="dashed" size="small" @click="$message.success($t('label.copied.clipboard'))" v-clipboard:copy="resource.apikey">
-                <a-icon type="copy"/>
-              </a-button>
-            </a-tooltip>
+            <tooltip-button
+              tooltipPlacement="right"
+              :tooltip="$t('label.copy') + ' ' + $t('label.apikey')"
+              icon="copy"
+              type="dashed"
+              size="small"
+              @click="$message.success($t('label.copied.clipboard'))"
+              v-clipboard:copy="resource.apikey" />
           </strong>
           <div>
             {{ resource.apikey.substring(0, 20) }}...
@@ -574,14 +592,14 @@
           <a-icon type="lock" />
           <strong>
             {{ $t('label.secretkey') }}
-            <a-tooltip placement="right" >
-              <template slot="title">
-                <span>{{ $t('label.copy') + ' ' + $t('label.secretkey') }}</span>
-              </template>
-              <a-button shape="circle" type="dashed" size="small" @click="$message.success($t('label.copied.clipboard'))" v-clipboard:copy="resource.secretkey">
-                <a-icon type="copy"/>
-              </a-button>
-            </a-tooltip>
+            <tooltip-button
+              tooltipPlacement="right"
+              :tooltip="$t('label.copy') + ' ' + $t('label.secretkey')"
+              icon="copy"
+              type="dashed"
+              size="small"
+              @click="$message.success($t('label.copied.clipboard'))"
+              v-clipboard:copy="resource.secretkey" />
           </strong>
           <div>
             {{ resource.secretkey.substring(0, 20) }}...
@@ -610,12 +628,8 @@
                 <a-input ref="input" :value="inputKey" @change="handleKeyChange" style="width: 30%; text-align: center" :placeholder="$t('label.key')" />
                 <a-input style=" width: 30px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
                 <a-input :value="inputValue" @change="handleValueChange" style="width: 30%; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-                <a-button shape="circle" size="small" @click="handleInputConfirm">
-                  <a-icon type="check"/>
-                </a-button>
-                <a-button shape="circle" size="small" @click="inputVisible=false">
-                  <a-icon type="close"/>
-                </a-button>
+                <tooltip-button :tooltip="$t('label.ok')" icon="check" size="small" @click="handleInputConfirm" />
+                <tooltip-button :tooltip="$t('label.cancel')" icon="close" size="small" @click="inputVisible=false" />
               </a-input-group>
             </div>
             <a-tag @click="showInput" style="background: #fff; borderStyle: dashed;" v-else-if="isAdminOrOwner() && 'createTags' in $store.getters.apis">
@@ -685,13 +699,15 @@ import { api } from '@/api'
 import Console from '@/components/widgets/Console'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'InfoCard',
   components: {
     Console,
     OsLogo,
-    Status
+    Status,
+    TooltipButton
   },
   props: {
     resource: {
@@ -713,7 +729,6 @@ export default {
   },
   data () {
     return {
-      name: '',
       ipaddress: '',
       resourceType: '',
       annotationType: '',
@@ -769,10 +784,21 @@ export default {
   created () {
     this.setData()
   },
+  computed: {
+    name () {
+      return this.resource.displayname || this.resource.displaytext || this.resource.name || this.resource.username ||
+        this.resource.ipaddress || this.resource.virtualmachinename || this.resource.templatetype
+    },
+    ipV6Address () {
+      if (this.resource.nic && this.resource.nic.length > 0) {
+        return this.resource.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ')
+      }
+
+      return null
+    }
+  },
   methods: {
     setData () {
-      this.name = this.resource.displayname || this.resource.displaytext || this.resource.name || this.resource.username ||
-        this.resource.ipaddress || this.resource.virtualmachinename || this.resource.templatetype
       if (this.resource.nic && this.resource.nic.length > 0) {
         this.ipaddress = this.resource.nic.filter(e => { return e.ipaddress }).map(e => { return e.ipaddress }).join(', ')
       } else {

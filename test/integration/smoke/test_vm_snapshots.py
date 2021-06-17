@@ -457,6 +457,7 @@ class TestChangeServiceOfferingForVmWithSnapshots(cloudstackTestCase):
         self.debug("Stopping VM - ID: %s" % virtual_machine.id)
         try:
             virtual_machine.stop(self.apiclient)
+
             timeout = self.services["timeout"]
 
             while True:
@@ -469,7 +470,6 @@ class TestChangeServiceOfferingForVmWithSnapshots(cloudstackTestCase):
                 )
 
                 if isinstance(list_vm_response, list):
-
                     vm = list_vm_response[0]
                     if vm.state == 'Stopped':
                         self.debug("VM state: %s" % vm.state)
@@ -480,7 +480,6 @@ class TestChangeServiceOfferingForVmWithSnapshots(cloudstackTestCase):
                         "Failed to stop VM (ID: %s) in change service offering" % vm.id)
 
                 timeout = timeout - 1
-
         except Exception as e:
             self.fail("Failed to stop VM: %s" % e)
 

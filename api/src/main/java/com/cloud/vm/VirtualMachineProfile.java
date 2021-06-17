@@ -20,7 +20,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
@@ -53,6 +55,10 @@ public interface VirtualMachineProfile {
     String getConfigDriveIsoFile();
 
     void setConfigDriveIsoFile(String isoFile);
+
+    NetworkElement.Location getConfigDriveLocation();
+
+    void setConfigDriveLocation(NetworkElement.Location location);
 
     public static class Param {
 
@@ -99,6 +105,10 @@ public interface VirtualMachineProfile {
             return (other.getName().equals(this.getName()));
         }
     }
+
+    Long getHostId();
+
+    void setHost(Host host);
 
     String getHostName();
 

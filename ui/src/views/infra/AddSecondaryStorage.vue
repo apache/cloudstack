@@ -20,7 +20,7 @@
     <a-spin :spinning="loading">
       <a-form :form="form" layout="vertical">
         <a-form-item :label="$t('label.name')">
-          <a-input v-decorator="['name']" />
+          <a-input v-decorator="['name']" autoFocus />
         </a-form-item>
         <a-form-item :label="$t('label.providername')">
           <a-select
@@ -181,7 +181,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

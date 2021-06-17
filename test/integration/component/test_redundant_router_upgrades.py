@@ -228,7 +228,7 @@ class TestRvRUpgradeDowngrade(cloudstackTestCase):
         #    one Router running for this network
         # 3. listNetworkOfferings should show craeted offering for RvR
         # 4. listNetworks shows the network still successfully implemented
-        # 5. listRouters shows two routers Up and Running (MASTER and BACKUP)
+        # 5. listRouters shows two routers Up and Running (PRIMARY and BACKUP)
 
         network_offerings = NetworkOffering.list(
             self.apiclient,
@@ -349,7 +349,7 @@ class TestRvRUpgradeDowngrade(cloudstackTestCase):
         self.assertEqual(
             len(routers),
             2,
-            "Length of the list router should be 2 (MASTER & BACKUP)"
+            "Length of the list router should be 2 (PRIMARY & BACKUP)"
         )
         return
 
@@ -372,7 +372,7 @@ class TestRvRUpgradeDowngrade(cloudstackTestCase):
         # 1. listNetworkOfferings should show craeted offering for RvR
         # 2. listNetworks should show the created network in allocated state
         # 3. VM should be deployed and in Running state and there should be
-        #    two routers (MASTER and BACKUP) for this network
+        #    two routers (PRIMARY and BACKUP) for this network
         # 4. listNetworkOfferings should show craeted offering for VR
         # 5. listNetworks shows the network still successfully implemented
         # 6. listRouters shows only one router for this network in Running
@@ -456,7 +456,7 @@ class TestRvRUpgradeDowngrade(cloudstackTestCase):
         self.assertEqual(
             len(routers),
             2,
-            "Length of the list router should be 2 (MASTER & BACKUP)"
+            "Length of the list router should be 2 (PRIMARY & BACKUP)"
         )
 
         network_offerings = NetworkOffering.list(
