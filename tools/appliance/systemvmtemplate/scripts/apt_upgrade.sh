@@ -54,7 +54,6 @@ function apt_upgrade() {
   rm -fv /root/*.iso
   apt-get -q -y update
 
-  # Remove unused non-default kernel
   apt-get -q -y upgrade
   apt-get -q -y dist-upgrade
   apt-get -q -y upgrade -t buster-backports
