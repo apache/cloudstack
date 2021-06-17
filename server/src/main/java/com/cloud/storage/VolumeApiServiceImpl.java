@@ -1457,7 +1457,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * The volume is destroyed via {@link VolumeService#destroyVolume(long)} method.
      */
     protected void destroyVolumeIfPossible(VolumeVO volume) {
-        if (volume.getState() != Volume.State.Destroy && volume.getState() != Volume.State.Expunging && volume.getState() != Volume.State.Expunged && volume.getState() != Volume.State.Allocated && volume.getState() != Volume.State.Uploaded) {
+        if (volume.getState() != Volume.State.Destroy && volume.getState() != Volume.State.Expunging && volume.getState() != Volume.State.Expunged && volume.getState() != Volume.State.Allocated) {
             volService.destroyVolume(volume.getId());
         }
     }
