@@ -50,9 +50,9 @@ export default {
   watch: {
     '$store.getters.darkMode' (darkMode) {
       if (darkMode) {
-        document.body.classList.add('dark')
+        document.body.classList.add('dark-mode')
       } else {
-        document.body.classList.remove('dark')
+        document.body.classList.remove('dark-mode')
       }
     }
   },
@@ -60,12 +60,12 @@ export default {
     document.body.classList.add('userLayout')
     const darkMode = Vue.ls.get(DARK_MODE, false)
     if (this.$store.getters.darkMode || darkMode) {
-      document.body.classList.add('dark')
+      document.body.classList.add('dark-mode')
     }
   },
   beforeDestroy () {
     document.body.classList.remove('userLayout')
-    document.body.classList.remove('dark')
+    document.body.classList.remove('dark-mode')
   }
 }
 </script>

@@ -40,21 +40,14 @@
               :checked="$store.getters.usebrowsertimezone" />
           </a>
         </a-menu-item>
-        <a-menu-item class="user-menu-item" key="2">
-          <a @click="toggleDarkMode">
-            <a-icon class="user-menu-item-icon" type="bulb"/>
-            <span class="user-menu-item-name" style="margin-right: 5px">{{ $t('label.dark.mode') }}</span>
-            <a-switch :checked="$store.getters.darkMode" />
-          </a>
-        </a-menu-item>
-        <a-menu-item class="user-menu-item" key="3" disabled>
+        <a-menu-item class="user-menu-item" key="2" disabled>
           <a :href="$config.docBase" target="_blank">
             <a-icon class="user-menu-item-icon" type="question-circle-o"></a-icon>
             <span class="user-menu-item-name">{{ $t('label.help') }}</span>
           </a>
         </a-menu-item>
         <a-menu-divider/>
-        <a-menu-item class="user-menu-item" key="4">
+        <a-menu-item class="user-menu-item" key="3">
           <a href="javascript:;" @click="handleLogout">
             <a-icon class="user-menu-item-icon" type="logout"/>
             <span class="user-menu-item-name">{{ $t('label.logout') }}</span>
@@ -81,9 +74,6 @@ export default {
     ...mapGetters(['nickname', 'avatar']),
     toggleUseBrowserTimezone () {
       this.$store.dispatch('SetUseBrowserTimezone', !this.$store.getters.usebrowsertimezone)
-    },
-    toggleDarkMode () {
-      this.$store.dispatch('SetDarkMode', !this.$store.getters.darkMode)
     },
     handleLogout () {
       return this.Logout({}).then(() => {

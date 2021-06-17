@@ -37,7 +37,8 @@ const getters = {
   timezoneoffset: state => state.user.timezoneoffset,
   usebrowsertimezone: state => state.user.usebrowsertimezone,
   domainStore: state => state.user.domainStore,
-  darkMode: state => state.user.darkMode
+  darkMode: state => state.user.darkMode,
+  themeSetting: state => state.user.themeSetting
 }
 
 export default getters

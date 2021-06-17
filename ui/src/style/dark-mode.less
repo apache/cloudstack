@@ -33,7 +33,7 @@
 @table-body-hover-bgColor: #262626;
 @disabled-bgColor: #555;
 
-.dark {
+.dark-mode {
   background: @dark-bgColor;
 
   h1, h2, h3, h4, h5, h6 {
@@ -96,17 +96,28 @@
     background: @dark-secondary-bgColor;
   }
 
-  .ant-menu-item:not(.ant-menu-item-selected, :hover) > a,
-  .ant-menu-vertical .ant-menu-item,
-  .ant-menu-vertical-left .ant-menu-item,
-  .ant-menu-vertical-right .ant-menu-item,
-  .ant-menu-inline .ant-menu-item,
-  .ant-menu-vertical .ant-menu-submenu-title:not(:hover),
-  .ant-menu-vertical-left .ant-menu-submenu-title:not(:hover),
-  .ant-menu-vertical-right .ant-menu-submenu-title:not(:hover),
-  .ant-menu-inline .ant-menu-submenu-title:not(:hover)
-  {
-    color: @dark-text-color-3;
+  .ant-menu {
+    &-vertical:not(.ant-menu-dark) {
+      .ant-menu-item,
+      .ant-menu-submenu-title:not(:hover),
+      .ant-menu-item:not(.ant-menu-item-selected, :hover) > a {
+        color: @dark-text-color-3;
+      }
+    }
+
+    &-inline:not(.ant-menu-dark, .ant-menu-sub) {
+      .ant-menu-item,
+      .ant-menu-item > a:not(:hover),
+      .ant-menu-submenu-title:not(:hover) {
+        color: @dark-text-color-3;
+      }
+    }
+
+    &-submenu:not(.ant-menu-dark, .ant-menu-submenu-inline) {
+      .ant-menu-item:not(.ant-menu-item-selected, :hover) > a {
+        color: @dark-text-color-3;
+      }
+    }
   }
 
   .kubernet-icon path
@@ -862,6 +873,16 @@
       &-disabled > .ant-collapse-header > .arrow {
         color: @dark-text-color-1;
       }
+    }
+  }
+
+  .drawer {
+    .content {
+      background-color: @dark-secondary-bgColor;
+      box-shadow:
+        0 3px 6px -4px @box-shadow-1,
+        0 6px 16px 0 @box-shadow-2,
+        0 9px 28px 8px @box-shadow-3;
     }
   }
 }

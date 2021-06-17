@@ -36,7 +36,12 @@ export default {
     }
   },
   created () {
-    window.less.modifyVars(this.$config.theme)
+    const userThemeSetting = this.$store.getters.themeSetting || {}
+    if (Object.keys(userThemeSetting).length === 0) {
+      window.less.modifyVars(this.$config.theme)
+    } else {
+      window.less.modifyVars(userThemeSetting)
+    }
     console.log('config and theme applied')
   }
 }

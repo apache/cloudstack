@@ -90,6 +90,10 @@ a {
   box-shadow: 1px 1px 0px 0px #e8e8e8;
 }
 
+.sider.dark .logo {
+  background-color: @project-nav-background-color;
+}
+
 .sider.light {
   background: @navigation-background-color;
 
@@ -149,10 +153,6 @@ a {
 .ant-menu-submenu-title:hover
 {
   color: @primary-color;
-
-  .custom-icon path {
-    color: @primary-color;
-  }
 }
 
 .ant-menu-submenu-vertical > .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
@@ -313,4 +313,25 @@ a {
 .ant-dropdown-menu-item > a:hover,
 .ant-dropdown-menu-submenu-title > a:hover {
   color: @primary-color;
+}
+
+.drawer {
+  .img-checkbox {
+    .check-icon.light {
+      color: #000;
+    }
+    .check-icon.dark {
+      color: #ffffff;
+    }
+  }
+
+  .color-checkbox {
+    .check-icon {
+      color: #ffffff;
+    }
+  }
+
+  .input-group .color-picker {
+    border-color: @primary-color;
+  }
 }
