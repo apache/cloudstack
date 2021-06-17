@@ -110,6 +110,7 @@
 
     <div class="setting-action">
       <a-divider style="margin: 15px 0;" />
+      <a-alert class="setting-action-alert" :message="$t('label.theme.alert')" type="warning" show-icon />
       <a-button
         class="setting-action-btn"
         icon="copy"
@@ -376,7 +377,7 @@ export default {
 
   &-alert {
     margin: 20px 0 8px;
-    word-break: break-all
+    word-break: break-word;
   }
 
   &-btn {
