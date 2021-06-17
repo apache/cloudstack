@@ -281,6 +281,9 @@
                 style="margin-left: -24px; margin-top: 5px;">
                 <a-icon type="api" />eth{{ index }} {{ eth.ipaddress }}
                 <router-link v-if="!isStatic && eth.networkname && eth.networkid" :to="{ path: '/guestnetwork/' + eth.networkid }">({{ eth.networkname }})</router-link>
+                <a-tag v-if="eth.isdefault">
+                  {{ $t('label.default') }}
+                </a-tag >
               </div>
             </div>
           </div>
@@ -294,6 +297,9 @@
                 :key="network.id"
                 style="margin-top: 5px;">
                 <a-icon type="api" />{{ network.name }}
+                <span v-if="resource.defaultnetworkid === network.id">
+                  ({{ $t('label.default') }})
+                </span>
               </div>
             </div>
           </div>
