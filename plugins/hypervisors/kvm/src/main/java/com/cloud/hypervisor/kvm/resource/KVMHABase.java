@@ -181,7 +181,7 @@ public class KVMHABase {
         return result;
     }
 
-    public Boolean checkingHB() {
+    public Boolean checkingHeartBeat() {
         // TODO Auto-generated method stub
         return null;
     }

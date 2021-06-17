@@ -53,6 +53,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
 
 public class NexentaPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final Logger logger = Logger.getLogger(NexentaPrimaryDataStoreDriver.class);
@@ -200,6 +201,10 @@ public class NexentaPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {}
 
     @Override
+    public void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+    }
+
+    @Override
     public boolean canCopy(DataObject srcData, DataObject destData) {
         return false;
     }
@@ -209,4 +214,29 @@ public class NexentaPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void handleQualityOfServiceForVolumeMigration(VolumeInfo volumeInfo, QualityOfServiceState qualityOfServiceState) {}
+
+    @Override
+    public boolean canProvideStorageStats() {
+        return false;
+    }
+
+    @Override
+    public boolean canProvideVolumeStats() {
+        return false;
+    }
+
+    @Override
+    public Pair<Long, Long> getVolumeStats(StoragePool storagePool, String volumeId) {
+        return null;
+    }
+
+    @Override
+    public Pair<Long, Long> getStorageStats(StoragePool storagePool) {
+        return null;
+    }
+
+    @Override
+    public boolean canHostAccessStoragePool(Host host, StoragePool pool) {
+        return true;
+    }
 }

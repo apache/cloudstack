@@ -97,7 +97,7 @@
               :placeholder="this.$t('label.domainid')"
               @change="val => { this.handleDomainChange(this.domains[val]) }">
               <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
-                {{ opt.name || opt.description }}
+                {{ opt.path || opt.name || opt.description }}
               </a-select-option>
             </a-select>
           </a-form-item>

@@ -64,6 +64,7 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.cluster.ClusterManager;
@@ -206,48 +207,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Override public VirtualMachineTO implement(VirtualMachineProfile vm) {
         vmwareVmImplementer.setGlobalNestedVirtualisationEnabled(VmwareEnableNestedVirtualization.value());
         vmwareVmImplementer.setGlobalNestedVPerVMEnabled(VmwareEnableNestedVirtualizationPerVM.value());
-        return vmwareVmImplementer.implement(vm, toVirtualMachineTO(vm), getClusterId(vm.getId()));
-    }
-
-    private Long getClusterIdFromVmVolume(long vmId) {
-        Long clusterId = null;
-        List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
-        if (CollectionUtils.isNotEmpty(volumes)) {
-            for (VolumeVO rootVolume : volumes) {
-                if (rootVolume.getPoolId() != null) {
-                    StoragePoolVO pool = _storagePoolDao.findById(rootVolume.getPoolId());
-                    if (pool != null && pool.getClusterId() != null) {
-                        clusterId = pool.getClusterId();
-                        break;
-                    }
-                }
-            }
-        }
-        return clusterId;
-    }
-
-    private Long getClusterId(long vmId) {
-        Long clusterId = null;
-        Long hostId = null;
-        VMInstanceVO vm = _vmDao.findById(vmId);
-        if (vm != null) {
-            hostId = _vmDao.findById(vmId).getHostId();
-        }
-        if (vm != null && hostId == null) {
-            // If VM is in stopped state then hostId would be undefined. Hence read last host's Id instead.
-            hostId = _vmDao.findById(vmId).getLastHostId();
-        }
-        HostVO host = null;
-        if (hostId != null) {
-            host = _hostDao.findById(hostId);
-        }
-        if (host != null) {
-            clusterId = host.getClusterId();
-        } else {
-            clusterId = getClusterIdFromVmVolume(vmId);
-        }
-
-        return clusterId;
+        return vmwareVmImplementer.implement(vm, toVirtualMachineTO(vm), vmManager.findClusterAndHostIdForVm(vm.getId()).first());
     }
 
     @Override @DB public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
@@ -445,7 +405,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
     @Override public Map<String, String> getClusterSettings(long vmId) {
         Map<String, String> details = new HashMap<String, String>();
-        Long clusterId = getClusterId(vmId);
+        Long clusterId = vmManager.findClusterAndHostIdForVm(vmId).first();
         if (clusterId != null) {
             details.put(VmwareReserveCpu.key(), VmwareReserveCpu.valueIn(clusterId).toString());
             details.put(VmwareReserveMemory.key(), VmwareReserveMemory.valueIn(clusterId).toString());
@@ -1108,22 +1068,28 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return hostGuidInTargetCluster;
     }
 
-    @Override public List<Command> finalizeMigrate(VirtualMachine vm, StoragePool destination) {
+    @Override
+    public List<Command> finalizeMigrate(VirtualMachine vm, Map<Volume, StoragePool> volumeToPool) {
         List<Command> commands = new ArrayList<Command>();
 
         // OfflineVmwareMigration: specialised migration command
-        List<VolumeVO> volumes = _volumeDao.findByInstance(vm.getId());
-        List<VolumeTO> vols = new ArrayList<>();
-        for (Volume volume : volumes) {
-            VolumeTO vol = new VolumeTO(volume, destination);
-            vols.add(vol);
+        List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerTo = new ArrayList<Pair<VolumeTO, StorageFilerTO>>();
+        Long poolClusterId = null;
+        for (Map.Entry<Volume, StoragePool> entry : volumeToPool.entrySet()) {
+            Volume volume = entry.getKey();
+            StoragePool pool = entry.getValue();
+            VolumeTO volumeTo = new VolumeTO(volume, _storagePoolDao.findById(pool.getId()));
+            StorageFilerTO filerTo = new StorageFilerTO(pool);
+            if (pool.getClusterId() != null) {
+                poolClusterId = pool.getClusterId();
+            }
+            volumeToFilerTo.add(new Pair<VolumeTO, StorageFilerTO>(volumeTo, filerTo));
         }
-
-        final Long destClusterId = destination.getClusterId();
-        final Long srcClusterId = getClusterId(vm.getId());
+        final Long destClusterId = poolClusterId;
+        final Long srcClusterId = vmManager.findClusterAndHostIdForVm(vm.getId()).first();
         final boolean isInterClusterMigration = isInterClusterMigration(destClusterId, srcClusterId);
         MigrateVmToPoolCommand migrateVmToPoolCommand = new MigrateVmToPoolCommand(vm.getInstanceName(),
-                vols, destination.getUuid(), getHostGuidInTargetCluster(isInterClusterMigration, destClusterId), true);
+                volumeToFilerTo, getHostGuidInTargetCluster(isInterClusterMigration, destClusterId), true);
         commands.add(migrateVmToPoolCommand);
 
         // OfflineVmwareMigration: cleanup if needed

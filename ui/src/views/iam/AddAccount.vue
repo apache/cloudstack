@@ -145,7 +145,7 @@
               rules: [{ required: true, message: $t('message.error.select') }] }]"
             :placeholder="apiParams.domainid.description">
             <a-select-option v-for="domain in domainsList" :key="domain.id">
-              {{ domain.name }}
+              {{ domain.path || domain.name || domain.description }}
             </a-select-option>
           </a-select>
         </a-form-item>

@@ -586,9 +586,19 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         // if the storage pool is managed, the used bytes can be larger than the sum of the sizes of all of the non-destroyed volumes
         // in this case, call getUsedBytes(StoragePoolVO)
         if (pool.isManaged()) {
-            return getUsedBytes(pool);
-        }
-        else {
+            totalAllocatedSize = getUsedBytes(pool);
+
+            if (templateForVmCreation != null) {
+                VMTemplateStoragePoolVO templatePoolVO = _templatePoolDao.findByPoolTemplate(pool.getId(), templateForVmCreation.getId(), null);
+                if (templatePoolVO == null) {
+                    // template is not installed in the pool, consider the template size for allocation
+                    long templateForVmCreationSize = templateForVmCreation.getSize() != null ? templateForVmCreation.getSize() : 0;
+                    totalAllocatedSize += templateForVmCreationSize;
+                }
+            }
+
+            return totalAllocatedSize;
+        } else {
             // Get size for all the non-destroyed volumes.
             Pair<Long, Long> sizes = _volumeDao.getNonDestroyedCountAndTotalByPool(pool.getId());
 

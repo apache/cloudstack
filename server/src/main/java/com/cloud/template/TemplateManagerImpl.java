@@ -1150,7 +1150,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ISO_DETACH, eventDescription = "detaching ISO", async = true)
-    public boolean detachIso(long vmId) {
+    public boolean detachIso(long vmId, boolean forced) {
         Account caller = CallContext.current().getCallingAccount();
         Long userId = CallContext.current().getCallingUserId();
 
@@ -1178,7 +1178,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
         }
 
-        boolean result = attachISOToVM(vmId, userId, isoId, false); // attach=false
+        boolean result = attachISOToVM(vmId, userId, isoId, false, forced); // attach=false
         // => detach
         if (result) {
             return result;
@@ -1189,7 +1189,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ISO_ATTACH, eventDescription = "attaching ISO", async = true)
-    public boolean attachIso(long isoId, long vmId) {
+    public boolean attachIso(long isoId, long vmId, boolean forced) {
         Account caller = CallContext.current().getCallingAccount();
         Long userId = CallContext.current().getCallingUserId();
 
@@ -1231,7 +1231,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if ("vmware-tools.iso".equals(iso.getName()) && vm.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
             throw new InvalidParameterValueException("Cannot attach VMware tools drivers to incompatible hypervisor " + vm.getHypervisorType());
         }
-        boolean result = attachISOToVM(vmId, userId, isoId, true);
+        boolean result = attachISOToVM(vmId, userId, isoId, true, forced);
         if (result) {
             return result;
         } else {
@@ -1270,7 +1270,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
-    private boolean attachISOToVM(long vmId, long isoId, boolean attach) {
+    private boolean attachISOToVM(long vmId, long isoId, boolean attach, boolean forced) {
         UserVmVO vm = _userVmDao.findById(vmId);
 
         if (vm == null) {
@@ -1303,18 +1303,20 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Command cmd = null;
         if (attach) {
             cmd = new AttachCommand(disk, vmName, vmTO.getDetails());
+            ((AttachCommand)cmd).setForced(forced);
         } else {
             cmd = new DettachCommand(disk, vmName, vmTO.getDetails());
+            ((DettachCommand)cmd).setForced(forced);
         }
         Answer a = _agentMgr.easySend(vm.getHostId(), cmd);
         return (a != null && a.getResult());
     }
 
-    private boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach) {
+    private boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach, boolean forced) {
         UserVmVO vm = _userVmDao.findById(vmId);
         VMTemplateVO iso = _tmpltDao.findById(isoId);
 
-        boolean success = attachISOToVM(vmId, isoId, attach);
+        boolean success = attachISOToVM(vmId, isoId, attach, forced);
         if (success && attach) {
             vm.setIsoId(iso.getId());
             _userVmDao.update(vmId, vm);
@@ -1648,6 +1650,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         final Long accountId = CallContext.current().getCallingAccountId();
         SnapshotVO snapshot = null;
         VolumeVO volume = null;
+        Account caller = CallContext.current().getCallingAccount();
 
         try {
             TemplateInfo tmplInfo = _tmplFactory.getTemplate(templateId, DataStoreRole.Image);
@@ -1686,6 +1689,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                             throw new CloudRuntimeException("Cannot find snapshot " + snapshotId + " on secondary and could not create backup");
                         }
                     }
+                    _accountMgr.checkAccess(caller, null, true, snapInfo);
                     DataStore snapStore = snapInfo.getDataStore();
 
                     if (snapStore != null) {
@@ -1696,7 +1700,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 future = _tmpltSvr.createTemplateFromSnapshotAsync(snapInfo, tmplInfo, store);
             } else if (volumeId != null) {
                 VolumeInfo volInfo = _volFactory.getVolume(volumeId);
+                if (volInfo == null) {
+                    throw new InvalidParameterValueException("No such volume exist");
+                }
 
+                _accountMgr.checkAccess(caller, null, true, volInfo);
                 future = _tmpltSvr.createTemplateFromVolumeAsync(volInfo, tmplInfo, store);
             } else {
                 throw new CloudRuntimeException("Creating private Template need to specify snapshotId or volumeId");

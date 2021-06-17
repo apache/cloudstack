@@ -141,7 +141,7 @@ public class IvsVifDriver extends VifDriverBase {
     }
 
     @Override
-    public void unplug(InterfaceDef iface) {
+    public void unplug(InterfaceDef iface, boolean deleteBr) {
     }
 
     @Override
@@ -161,7 +161,7 @@ public class IvsVifDriver extends VifDriverBase {
 
     private String createVnetBr(String vNetId, String pifKey, String protocol) throws InternalErrorException {
         String nic = _pifs.get(pifKey);
-        if (nic == null) {
+        if (nic == null || protocol.equals(Networks.BroadcastDomainType.Vxlan.scheme())) {
             // if not found in bridge map, maybe traffic label refers to pif already?
             File pif = new File("/sys/class/net/" + pifKey);
             if (pif.isDirectory()) {
@@ -285,6 +285,10 @@ public class IvsVifDriver extends VifDriverBase {
             Script.runSimpleBashScript("ip link add " + privBrName + " type bridge; ip link set " + privBrName + " up");
             Script.runSimpleBashScript("ip address add " + NetUtils.getLinkLocalAddressFromCIDR(_controlCidr) + " dev " + privBrName, _timeout);
         }
+    }
+
+    @Override
+    public void deleteBr(NicTO nic) {
     }
 
     private boolean isBridgeExists(String bridgeName) {

@@ -57,7 +57,7 @@ public class Linux extends OvmObject {
      * {OS_Major_Version=5, Statistic=20, Membership_State=Unowned,
      * OVM_Version=3.2.1-517, OS_Type=Linux, Hypervisor_Name=Xen,
      * CPU_Type=x86_64, Manager_Core_API_Version=3.2.1.516,
-     * Is_Current_Master=false, OS_Name=Oracle VM Server,
+     * Is_Primary=false, OS_Name=Oracle VM Server,
      * Server_Roles=xen,utility, Pool_Unique_Id=none,
      * Host_Kernel_Release=2.6.39-300.22.2.el5uek, OS_Minor_Version=7,
      * Agent_Version=3.2.1-183, Boot_Time=1392366638, RPM_Version=3.2.1-183,
@@ -154,8 +154,8 @@ public class Linux extends OvmObject {
         return get("Server_Roles");
     }
 
-    public boolean getIsMaster() throws Ovm3ResourceException {
-        return Boolean.parseBoolean(get("Is_Current_Master"));
+    public boolean getIsPrimary() throws Ovm3ResourceException {
+        return Boolean.parseBoolean(get("Is_Primary"));
     }
 
     public String getOvmVersion() throws Ovm3ResourceException {

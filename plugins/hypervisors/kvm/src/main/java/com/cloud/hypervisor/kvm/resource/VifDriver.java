@@ -34,7 +34,7 @@ public interface VifDriver {
 
     public LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType, String nicAdapter, Map<String, String> extraConfig) throws InternalErrorException, LibvirtException;
 
-    public void unplug(LibvirtVMDef.InterfaceDef iface);
+    public void unplug(LibvirtVMDef.InterfaceDef iface, boolean delete);
 
     void attach(LibvirtVMDef.InterfaceDef iface);
 
@@ -43,5 +43,7 @@ public interface VifDriver {
     void createControlNetwork(String privBrName);
 
     boolean isExistingBridge(String bridgeName);
+
+    void deleteBr(NicTO nic);
 
 }

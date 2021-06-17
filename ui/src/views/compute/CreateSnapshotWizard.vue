@@ -65,7 +65,7 @@
           </span>
           <a-switch v-decorator="['quiescevm', { initialValue: false }]"/>
         </a-form-item>
-        <a-form-item>
+        <a-form-item v-if="!supportsStorageSnapshot">
           <span slot="label" :title="apiParams.asyncbackup.description">
             {{ $t('label.asyncbackup') }}
             <a-tooltip>
@@ -98,6 +98,7 @@ export default {
     return {
       loading: false,
       isQuiesceVm: false,
+      supportsStorageSnapshot: false,
       listVolumes: []
     }
   },
@@ -133,7 +134,10 @@ export default {
         const params = {}
         params.volumeid = values.volumeid
         params.name = values.name
-        params.asyncbackup = values.asyncbackup
+        params.asyncbackup = false
+        if (values.asyncbackup) {
+          params.asyncbackup = values.asyncbackup
+        }
         params.quiescevm = values.quiescevm
 
         const title = this.$t('label.action.vmstoragesnapshot.create')
@@ -178,6 +182,7 @@ export default {
       const volumeFilter = this.listVolumes.filter(volume => volume.id === volumeId)
       if (volumeFilter && volumeFilter.length > 0) {
         this.isQuiesceVm = volumeFilter[0].quiescevm
+        this.supportsStorageSnapshot = volumeFilter[0].supportsstoragesnapshot
       }
     },
     closeAction () {

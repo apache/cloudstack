@@ -31,7 +31,7 @@ export default {
       params: { isrecursive: 'true' },
       columns: ['name', 'displaytext', 'cpunumber', 'cpuspeed', 'memory', 'domain', 'zone', 'order'],
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'domain', 'zone', 'created']
+        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'domain', 'zone', 'created', 'dynamicscalingenabled']
         if (store.getters.apis.createServiceOffering &&
           store.getters.apis.createServiceOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')
@@ -87,7 +87,7 @@ export default {
       permission: ['listServiceOfferings', 'listInfrastructure'],
       params: { issystem: 'true', isrecursive: 'true' },
       columns: ['name', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'order'],
-      details: ['name', 'id', 'displaytext', 'systemvmtype', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'domain', 'zone', 'created'],
+      details: ['name', 'id', 'displaytext', 'systemvmtype', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'domain', 'zone', 'created', 'dynamicscalingenabled'],
       actions: [{
         api: 'createServiceOffering',
         icon: 'plus',
@@ -150,7 +150,7 @@ export default {
         label: 'label.edit',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
-        args: ['name', 'displaytext']
+        args: ['name', 'displaytext', 'tags']
       }, {
         api: 'updateDiskOffering',
         icon: 'lock',
@@ -174,7 +174,7 @@ export default {
       icon: 'cloud-upload',
       docHelp: 'adminguide/virtual_machines.html#backup-offerings',
       permission: ['listBackupOfferings', 'listInfrastructure'],
-      columns: ['name', 'description', 'zoneid'],
+      columns: ['name', 'description', 'zonename'],
       details: ['name', 'id', 'description', 'externalid', 'zone', 'created'],
       actions: [{
         api: 'importBackupOffering',
@@ -216,7 +216,7 @@ export default {
         label: 'label.edit',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
-        args: ['name', 'displaytext', 'availability'],
+        args: ['name', 'displaytext', 'availability', 'tags'],
         mapping: {
           availability: {
             options: ['Optional', 'Required']

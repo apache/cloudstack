@@ -32,6 +32,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -476,6 +477,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         SearchBuilder<VlanVO> vlanSearch = _vlanDao.createSearchBuilder();
         vlanSearch.and("type", vlanSearch.entity().getVlanType(), Op.EQ);
         vlanSearch.and("networkId", vlanSearch.entity().getNetworkId(), Op.EQ);
+        vlanSearch.and("vlanGateway", vlanSearch.entity().getVlanGateway(), Op.EQ);
         AssignIpAddressSearch.join("vlan", vlanSearch, vlanSearch.entity().getId(), AssignIpAddressSearch.entity().getVlanId(), JoinType.INNER);
         AssignIpAddressSearch.done();
 
@@ -487,6 +489,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         SearchBuilder<VlanVO> podVlanSearch = _vlanDao.createSearchBuilder();
         podVlanSearch.and("type", podVlanSearch.entity().getVlanType(), Op.EQ);
         podVlanSearch.and("networkId", podVlanSearch.entity().getNetworkId(), Op.EQ);
+        podVlanSearch.and("vlanGateway", podVlanSearch.entity().getVlanGateway(), Op.EQ);
         SearchBuilder<PodVlanMapVO> podVlanMapSB = _podVlanMapDao.createSearchBuilder();
         podVlanMapSB.and("podId", podVlanMapSB.entity().getPodId(), Op.EQ);
         AssignIpAddressFromPodVlanSearch.join("podVlanMapSB", podVlanMapSB, podVlanMapSB.entity().getVlanDbId(), AssignIpAddressFromPodVlanSearch.entity().getVlanId(),
@@ -755,34 +758,34 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem, boolean forSystemVms)
             throws InsufficientAddressCapacityException {
-        return fetchNewPublicIp(dcId, podId, null, owner, type, networkId, false, true, requestedIp, isSystem, null, null, forSystemVms);
+        return fetchNewPublicIp(dcId, podId, null, owner, type, networkId, false, true, requestedIp, null, isSystem, null, null, forSystemVms);
     }
 
     @Override
-    public PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem)
+    public PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, String requestedGateway, boolean isSystem)
             throws InsufficientAddressCapacityException {
-        return fetchNewPublicIp(dcId, podId, vlanDbIds, owner, type, networkId, false, true, requestedIp, isSystem, null, null, false);
+        return fetchNewPublicIp(dcId, podId, vlanDbIds, owner, type, networkId, false, true, requestedIp, requestedGateway, isSystem, null, null, false);
     }
 
     @Override
     public PublicIp getAvailablePublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem)
             throws InsufficientAddressCapacityException {
-        return fetchNewPublicIp(dcId, podId, vlanDbIds, owner, type, networkId, false, false, false, requestedIp, isSystem, null, null, false);
+        return fetchNewPublicIp(dcId, podId, vlanDbIds, owner, type, networkId, false, false, false, requestedIp, null, isSystem, null, null, false);
     }
 
     @DB
     public PublicIp fetchNewPublicIp(final long dcId, final Long podId, final List<Long> vlanDbIds, final Account owner, final VlanType vlanUse, final Long guestNetworkId,
-                                     final boolean sourceNat, final boolean allocate, final String requestedIp, final boolean isSystem, final Long vpcId, final Boolean displayIp, final boolean forSystemVms)
+                                     final boolean sourceNat, final boolean allocate, final String requestedIp, final String requestedGateway, final boolean isSystem, final Long vpcId, final Boolean displayIp, final boolean forSystemVms)
             throws InsufficientAddressCapacityException {
         return fetchNewPublicIp(dcId, podId, vlanDbIds, owner, vlanUse, guestNetworkId,
-                sourceNat, true, allocate, requestedIp, isSystem, vpcId, displayIp, forSystemVms);
+                sourceNat, true, allocate, requestedIp, requestedGateway, isSystem, vpcId, displayIp, forSystemVms);
     }
 
     @DB
     public PublicIp fetchNewPublicIp(final long dcId, final Long podId, final List<Long> vlanDbIds, final Account owner, final VlanType vlanUse, final Long guestNetworkId,
-            final boolean sourceNat, final boolean assign, final boolean allocate, final String requestedIp, final boolean isSystem, final Long vpcId, final Boolean displayIp, final boolean forSystemVms)
+            final boolean sourceNat, final boolean assign, final boolean allocate, final String requestedIp, final String requestedGateway, final boolean isSystem, final Long vpcId, final Boolean displayIp, final boolean forSystemVms)
                     throws InsufficientAddressCapacityException {
-        List<IPAddressVO> addrs = listAvailablePublicIps(dcId, podId, vlanDbIds, owner, vlanUse, guestNetworkId, sourceNat, assign, allocate, requestedIp, isSystem, vpcId, displayIp, forSystemVms, true);
+        List<IPAddressVO> addrs = listAvailablePublicIps(dcId, podId, vlanDbIds, owner, vlanUse, guestNetworkId, sourceNat, assign, allocate, requestedIp, requestedGateway, isSystem, vpcId, displayIp, forSystemVms, true);
         IPAddressVO addr = addrs.get(0);
         if (vlanUse == VlanType.VirtualNetwork) {
             _firewallMgr.addSystemFirewallRules(addr, owner);
@@ -793,7 +796,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     @Override
     public List<IPAddressVO> listAvailablePublicIps(final long dcId, final Long podId, final List<Long> vlanDbIds, final Account owner, final VlanType vlanUse, final Long guestNetworkId,
-                                                    final boolean sourceNat, final boolean assign, final boolean allocate, final String requestedIp, final boolean isSystem,
+                                                    final boolean sourceNat, final boolean assign, final boolean allocate, final String requestedIp, final String requestedGateway, final boolean isSystem,
                                                     final Long vpcId, final Boolean displayIp, final boolean forSystemVms, final boolean lockOneRow) throws InsufficientAddressCapacityException {
         return Transaction.execute(new TransactionCallbackWithException<List<IPAddressVO>, InsufficientAddressCapacityException>() {
             @Override
@@ -864,11 +867,21 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     sc.setJoinParameters("vlan", "networkId", guestNetworkId);
                     errorMessage.append(", network id=" + guestNetworkId);
                 }
+                if (requestedGateway != null) {
+                    sc.setJoinParameters("vlan", "vlanGateway", requestedGateway);
+                    errorMessage.append(", requested gateway=" + requestedGateway);
+                }
                 sc.setJoinParameters("vlan", "type", vlanUse);
-
+                String routerIpAddress = null;
+                if (network != null) {
+                    NetworkDetailVO routerIpDetail = _networkDetailsDao.findDetail(network.getId(), ApiConstants.ROUTER_IP);
+                    routerIpAddress = routerIpDetail != null ? routerIpDetail.getValue() : null;
+                }
                 if (requestedIp != null) {
                     sc.addAnd("address", SearchCriteria.Op.EQ, requestedIp);
                     errorMessage.append(": requested ip " + requestedIp + " is not available");
+                } else if (routerIpAddress != null) {
+                    sc.addAnd("address", Op.NEQ, routerIpAddress);
                 }
 
                 boolean ascOrder = ! forSystemVms;
@@ -1023,7 +1036,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                         VpcVO vpc = _vpcDao.findById(vpcId);
                         displayIp = vpc.isDisplay();
                     }
-                    return fetchNewPublicIp(dcId, null, null, owner, VlanType.VirtualNetwork, guestNtwkId, isSourceNat, true, null, false, vpcId, displayIp, false);
+                    return fetchNewPublicIp(dcId, null, null, owner, VlanType.VirtualNetwork, guestNtwkId, isSourceNat, true, null, null, false, vpcId, displayIp, false);
                 }
             });
             if (ip.getState() != State.Allocated) {
@@ -1219,7 +1232,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             ip = Transaction.execute(new TransactionCallbackWithException<PublicIp, InsufficientAddressCapacityException>() {
                 @Override
                 public PublicIp doInTransaction(TransactionStatus status) throws InsufficientAddressCapacityException {
-                    PublicIp ip = fetchNewPublicIp(zone.getId(), null, null, ipOwner, vlanType, null, false, assign, ipaddress, isSystem, null, displayIp, false);
+                    PublicIp ip = fetchNewPublicIp(zone.getId(), null, null, ipOwner, vlanType, null, false, assign, ipaddress, null, isSystem, null, displayIp, false);
 
                     if (ip == null) {
                         InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zone
@@ -1747,7 +1760,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                             s_logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId()
                                     + " as a part of createVlanIpRange process");
                             guestNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName()
-                                    + "-network", null, null, null, false, null, owner, null, physicalNetwork, zoneId, ACLType.Account, null, null, null, null, true, null, null, null);
+                                    + "-network", null, null, null, false, null, owner, null, physicalNetwork, zoneId, ACLType.Account, null, null, null, null, true, null, null, null, null, null);
                             if (guestNetwork == null) {
                                 s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
                                 throw new CloudRuntimeException("Failed to create a Guest Isolated Networks with SourceNAT "
@@ -2122,7 +2135,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientAddressCapacityException {
                 //This method allocates direct ip for the Shared network in Advance zones
                 boolean ipv4 = false;
-
                 if (network.getGateway() != null) {
                     if (nic.getIPv4Address() == null) {
                         PublicIp ip = null;

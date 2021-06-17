@@ -25,6 +25,8 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.domain.Domain;
 import com.cloud.serializer.Param;
 
+import java.util.Date;
+
 @EntityReference(value = Domain.class)
 public class DomainResponse extends BaseResponse implements ResourceLimitAndCountResponse {
     @SerializedName(ApiConstants.ID)
@@ -61,6 +63,9 @@ public class DomainResponse extends BaseResponse implements ResourceLimitAndCoun
 
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the domain")
     private String state;
+
+    @SerializedName(ApiConstants.CREATED) @Param(description="the date when this domain was created")
+    private Date created;
 
     @SerializedName(ApiConstants.VM_LIMIT) @Param(description="the total number of virtual machines that can be deployed by this domain")
     private String vmLimit;
@@ -230,6 +235,9 @@ public class DomainResponse extends BaseResponse implements ResourceLimitAndCoun
         this.path = path;
     }
 
+    public void setCreated(Date created) {
+        this.created = created;
+    }
 
     @Override
     public void setVmLimit(String vmLimit) {

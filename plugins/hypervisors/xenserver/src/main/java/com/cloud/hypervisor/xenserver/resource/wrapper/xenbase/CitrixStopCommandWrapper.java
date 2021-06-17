@@ -23,8 +23,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -53,6 +55,7 @@ public final class CitrixStopCommandWrapper extends CommandWrapper<StopCommand, 
     @Override
     public Answer execute(final StopCommand command, final CitrixResourceBase citrixResourceBase) {
         final String vmName = command.getVmName();
+        final Map<String, Boolean> vlanToPersistenceMap = command.getVlanToPersistenceMap();
         String platformstring = null;
         try {
             final Connection conn = citrixResourceBase.getConnection();
@@ -148,7 +151,8 @@ public final class CitrixStopCommandWrapper extends CommandWrapper<StopCommand, 
                             for (final Network network : networks) {
                                 try {
                                     if (network.getNameLabel(conn).startsWith("VLAN")) {
-                                        citrixResourceBase.disableVlanNetwork(conn, network);
+                                        String networkLabel = network.getNameLabel(conn);
+                                        citrixResourceBase.disableVlanNetwork(conn, network, shouldDeleteVlan(networkLabel, vlanToPersistenceMap));
                                     }
                                 } catch (final Exception e) {
                                     // network might be destroyed by other host
@@ -171,5 +175,19 @@ public final class CitrixStopCommandWrapper extends CommandWrapper<StopCommand, 
             return new StopAnswer(command, msg, platformstring, false);
         }
         return new StopAnswer(command, "Stop VM failed", platformstring, false);
+    }
+
+    private boolean shouldDeleteVlan(String networkLabel, Map<String, Boolean> vlanToPersistenceMap) {
+        String[] networkNameParts = null;
+        if (networkLabel.contains("-")) {
+            networkNameParts = networkLabel.split("-");
+        } else {
+            networkNameParts = networkLabel.split("VLAN");
+        }
+        String networkVlan = networkNameParts.length > 0 ? networkNameParts[networkNameParts.length - 1] : null;
+        if (networkVlan != null && MapUtils.isNotEmpty(vlanToPersistenceMap) && vlanToPersistenceMap.containsKey(networkVlan)) {
+            return vlanToPersistenceMap.get(networkVlan);
+        }
+        return true;
     }
 }

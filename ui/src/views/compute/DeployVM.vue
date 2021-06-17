@@ -107,7 +107,11 @@
                           @update-template-iso="updateFieldValue" />
                         <span>
                           {{ $t('label.override.rootdisk.size') }}
-                          <a-switch :disabled="template.deployasis" @change="val => { this.showRootDiskSizeChanger = val }" style="margin-left: 10px;"/>
+                          <a-switch
+                            :checked="showRootDiskSizeChanger && rootDiskSizeFixed > 0"
+                            :disabled="rootDiskSizeFixed > 0 || template.deployasis"
+                            @change="val => { this.showRootDiskSizeChanger = val }"
+                            style="margin-left: 10px;"/>
                           <div v-if="template.deployasis">  {{ this.$t('message.deployasis') }} </div>
                         </span>
                         <disk-size-selection
@@ -186,7 +190,7 @@
                     </a-form-item>
                     <compute-offering-selection
                       :compute-items="options.serviceOfferings"
-                      :selected-template="template"
+                      :selected-template="template ? template : {}"
                       :row-count="rowCount.serviceOfferings"
                       :zoneId="zoneId"
                       :value="serviceOffering ? serviceOffering.id : ''"
@@ -506,6 +510,21 @@
                         v-decorator="['bootintosetup']">
                       </a-switch>
                     </a-form-item>
+                    <a-form-item>
+                      <span slot="label">
+                        {{ $t('label.dynamicscalingenabled') }}
+                        <a-tooltip :title="$t('label.dynamicscalingenabled.tooltip')">
+                          <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                        </a-tooltip>
+                      </span>
+                      <a-form-item>
+                        <a-switch
+                          v-decorator="['dynamicscalingenabled']"
+                          :checked="isDynamicallyScalable() && dynamicscalingenabled"
+                          :disabled="!isDynamicallyScalable()"
+                          @change="val => { dynamicscalingenabled = val }"/>
+                      </a-form-item>
+                    </a-form-item>
                     <a-form-item :label="$t('label.userdata')">
                       <a-textarea
                         v-decorator="['userdata']">
@@ -672,6 +691,7 @@ export default {
       clusterId: null,
       zoneSelected: false,
       startvm: true,
+      dynamicscalingenabled: true,
       vm: {
         name: null,
         zoneid: null,
@@ -707,7 +727,8 @@ export default {
         groups: [],
         keyboards: [],
         bootTypes: [],
-        bootModes: []
+        bootModes: [],
+        dynamicScalingVmConfig: false
       },
       rowCount: {},
       loading: {
@@ -755,7 +776,7 @@ export default {
         'sharedexecutable'
       ],
       initDataConfig: {},
-      defaultNetwork: '',
+      defaultnetworkid: '',
       networkConfig: [],
       dataNetworkCreated: [],
       tabList: [
@@ -772,7 +793,8 @@ export default {
       dataPreFill: {},
       showDetails: false,
       showRootDiskSizeChanger: false,
-      securitygroupids: []
+      securitygroupids: [],
+      rootDiskSizeFixed: 0
     }
   },
   computed: {
@@ -888,6 +910,13 @@ export default {
             type: 'Routing'
           },
           field: 'hostid'
+        },
+        dynamicScalingVmConfig: {
+          list: 'listConfigurations',
+          options: {
+            zoneid: _.get(this.zone, 'id'),
+            name: 'enable.dynamic.scale.vm'
+          }
         }
       }
     },
@@ -966,6 +995,9 @@ export default {
     },
     showSecurityGroupSection () {
       return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
+    },
+    dynamicScalingVmConfigValue () {
+      return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
     }
   },
   watch: {
@@ -1034,6 +1066,7 @@ export default {
 
       if (this.networks) {
         this.vm.networks = this.networks
+        this.vm.defaultnetworkid = this.defaultnetworkid
       }
 
       if (this.template) {
@@ -1082,6 +1115,16 @@ export default {
       }
     }
   },
+  serviceOffering (oldValue, newValue) {
+    if (oldValue && newValue && oldValue.id !== newValue.id) {
+      this.dynamicscalingenabled = this.isDynamicallyScalable()
+    }
+  },
+  template (oldValue, newValue) {
+    if (oldValue && newValue && oldValue.id !== newValue.id) {
+      this.dynamicscalingenabled = this.isDynamicallyScalable()
+    }
+  },
   created () {
     this.form = this.$form.createForm(this, {
       onValuesChange: (props, fields) => {
@@ -1106,6 +1149,7 @@ export default {
     this.form.getFieldDecorator('multidiskoffering', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('affinitygroupids', { initialValue: [], preserve: true })
     this.form.getFieldDecorator('networkids', { initialValue: [], preserve: true })
+    this.form.getFieldDecorator('defaultnetworkid', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('keypair', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('cpunumber', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('cpuSpeed', { initialValue: undefined, preserve: true })
@@ -1174,6 +1218,9 @@ export default {
         ['name', 'keyboard', 'boottype', 'bootmode', 'userdata'].forEach(this.fillValue)
         this.instanceConfig = this.form.getFieldsValue() // ToDo: maybe initialize with some other defaults
       })
+    },
+    isDynamicallyScalable () {
+      return this.serviceOffering && this.serviceOffering.dynamicscalingenabled && this.template && this.template.isdynamicallyscalable && this.dynamicScalingVmConfigValue
     },
     async fetchDataByZone (zoneId) {
       this.fillValue('zoneid')
@@ -1333,7 +1380,10 @@ export default {
       })
     },
     updateDefaultNetworks (id) {
-      this.defaultNetwork = id
+      this.defaultnetworkid = id
+      this.form.setFieldsValue({
+        defaultnetworkid: id
+      })
     },
     updateNetworkConfig (networks) {
       this.networkConfig = networks
@@ -1413,6 +1463,7 @@ export default {
         deployVmData.keyboard = values.keyboard
         deployVmData.boottype = values.boottype
         deployVmData.bootmode = values.bootmode
+        deployVmData.dynamicscalingenabled = values.dynamicscalingenabled
         if (values.userdata && values.userdata.length > 0) {
           deployVmData.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
         }
@@ -1424,6 +1475,8 @@ export default {
         }
         if (this.showRootDiskSizeChanger && values.rootdisksize && values.rootdisksize > 0) {
           deployVmData.rootdisksize = values.rootdisksize
+        } else if (this.rootDiskSizeFixed > 0) {
+          deployVmData.rootdisksize = this.rootDiskSizeFixed
         }
         if (values.hypervisor && values.hypervisor.length > 0) {
           deployVmData.hypervisor = values.hypervisor
@@ -1482,9 +1535,9 @@ export default {
             networkIds = values.networkids
             if (networkIds.length > 0) {
               for (let i = 0; i < networkIds.length; i++) {
-                if (networkIds[i] === this.defaultNetwork) {
+                if (networkIds[i] === this.defaultnetworkid) {
                   const ipToNetwork = {
-                    networkid: this.defaultNetwork
+                    networkid: this.defaultnetworkid
                   }
                   arrNetwork.unshift(ipToNetwork)
                 } else {
@@ -1959,6 +2012,10 @@ export default {
         if ('memory' in this.form.fieldsStore.fieldsMeta) {
           this.updateFieldValue('memory', this.selectedTemplateConfiguration.memory)
         }
+      }
+      if (offering && offering.rootdisksize > 0) {
+        this.rootDiskSizeFixed = offering.rootdisksize / (1024 * 1024 * 1024.0).toFixed(2)
+        this.showRootDiskSizeChanger = false
       }
     }
   }

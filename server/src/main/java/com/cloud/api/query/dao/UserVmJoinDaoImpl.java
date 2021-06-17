@@ -339,16 +339,21 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 userVmResponse.setBootType("Bios");
                 userVmResponse.setBootMode("legacy");
             }
-            // Remove blacklisted settings if user is not admin
+
+            if (userVm.getPoolType() != null) {
+                userVmResponse.setPoolType(userVm.getPoolType().toString());
+            }
+
+            // Remove deny listed settings if user is not admin
             if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                String[] userVmSettingsToHide = QueryService.UserVMBlacklistedDetails.value().split(",");
+                String[] userVmSettingsToHide = QueryService.UserVMDeniedDetails.value().split(",");
                 for (String key : userVmSettingsToHide) {
                     resourceDetails.remove(key.trim());
                 }
             }
             userVmResponse.setDetails(resourceDetails);
             if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                userVmResponse.setReadOnlyUIDetails(QueryService.UserVMReadOnlyUIDetails.value());
+                userVmResponse.setReadOnlyDetails(QueryService.UserVMReadOnlyDetails.value());
             }
         }
 

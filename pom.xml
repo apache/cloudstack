@@ -29,7 +29,7 @@
 
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.15.1.0-SNAPSHOT</version>
+    <version>4.16.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Apache CloudStack</name>
     <description>Apache CloudStack is an IaaS ("Infrastructure as a Service") cloud orchestration platform.</description>
@@ -166,7 +166,7 @@
         <cs.servlet.version>4.0.1</cs.servlet.version>
         <cs.tomcat-embed-core.version>8.5.61</cs.tomcat-embed-core.version>
         <cs.trilead.version>build-217-jenkins-27</cs.trilead.version>
-        <cs.vmware.api.version>6.7</cs.vmware.api.version>
+        <cs.vmware.api.version>7.0</cs.vmware.api.version>
         <cs.winrm4j.version>0.5.0</cs.winrm4j.version>
         <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
         <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
@@ -742,14 +742,14 @@
     <repositories>
         <repository>
             <id>repo.jenkins-ci.org.releases</id>
-            <url>http://repo.jenkins-ci.org/releases/</url>
+            <url>https://repo.jenkins-ci.org/releases/</url>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
         </repository>
         <repository>
             <id>repo.jenkins-ci.org.public</id>
-            <url>http://repo.jenkins-ci.org/public/</url>
+            <url>https://repo.jenkins-ci.org/public/</url>
         </repository>
     </repositories>
 
@@ -974,6 +974,7 @@
                             <exclude>**/*.md</exclude>
                             <exclude>.java-version</exclude>
                             <exclude>.python-version</exclude>
+                            <exclude>systemvm/.pythen-version</exclude>
                             <exclude>.idea/</exclude>
                             <exclude>.metadata/**</exclude>
                             <exclude>.git/**</exclude>

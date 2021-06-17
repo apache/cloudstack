@@ -70,6 +70,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -327,6 +328,7 @@ public class KvmNonManagedStorageSystemDataMotionTest {
 
         VolumeInfo srcVolumeInfo = Mockito.mock(VolumeInfo.class);
         Mockito.when(srcVolumeInfo.getTemplateId()).thenReturn(0l);
+        Mockito.when(srcVolumeInfo.getVolumeType()).thenReturn(Volume.Type.ROOT);
 
         StoragePool srcStoragePool = Mockito.mock(StoragePool.class);
 
@@ -465,6 +467,8 @@ public class KvmNonManagedStorageSystemDataMotionTest {
     @Test(expected = CloudRuntimeException.class)
     public void testVerifyLiveMigrationMapForKVMMixedManagedUnmagedStorage() {
         when(pool1.isManaged()).thenReturn(true);
+        when(pool1.getId()).thenReturn(POOL_1_ID);
+        when(pool2.getId()).thenReturn(POOL_2_ID);
         lenient().when(pool2.isManaged()).thenReturn(false);
         kvmNonManagedStorageDataMotionStrategy.verifyLiveMigrationForKVM(migrationMap, host2);
     }
