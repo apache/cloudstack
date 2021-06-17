@@ -72,7 +72,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.org.Cluster;
 import com.cloud.org.Managed;
 import com.cloud.resource.ResourceState;
-import com.cloud.server.LockMasterListener;
+import com.cloud.server.LockControllerListener;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
@@ -120,12 +120,12 @@ public class EndpointSelectorTest {
     @Inject
     AccountManager accountManager;
 
-    LockMasterListener lockMasterListener;
+    LockControllerListener lockControllerListener;
     VolumeInfo vol = null;
     FakePrimaryDataStoreDriver driver = new FakePrimaryDataStoreDriver();
     @Inject
     MockStorageMotionStrategy mockStorageMotionStrategy;
-    Merovingian2 _lockMaster;
+    Merovingian2 _lockController;
     @Inject
     DataStoreManager dataStoreManager;
     @Inject
@@ -187,12 +187,12 @@ public class EndpointSelectorTest {
         when(accountManager.getSystemAccount()).thenReturn(account);
         when(accountManager.getSystemUser()).thenReturn(user);
 
-        if (Merovingian2.getLockMaster() == null) {
-            _lockMaster = Merovingian2.createLockMaster(1234);
+        if (Merovingian2.getLockController() == null) {
+            _lockController = Merovingian2.createLockController(1234);
         } else {
-            _lockMaster = Merovingian2.getLockMaster();
+            _lockController = Merovingian2.getLockController();
         }
-        _lockMaster.cleanupThisServer();
+        _lockController.cleanupThisServer();
         ComponentContext.initComponentsLifeCycle();
     }
 

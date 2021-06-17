@@ -48,8 +48,8 @@ public class CheckRouterAnswer extends Answer {
             state = RedundantState.UNKNOWN;
             return false;
         }
-        if (details.startsWith("Status: MASTER")) {
-            state = RedundantState.MASTER;
+        if (details.startsWith("Status: PRIMARY")) {
+            state = RedundantState.PRIMARY;
         } else if (details.startsWith("Status: BACKUP")) {
             state = RedundantState.BACKUP;
         } else if (details.startsWith("Status: FAULT")) {

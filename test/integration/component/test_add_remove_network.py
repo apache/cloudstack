@@ -309,7 +309,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
         self.debug("Filtered nics list: %s:" % nics)
 
         # Only the nics added to self.virtual_machine should be added to this list
-        # Nics added to his list are removed before execution of next test case because we are using
+        # Nics added to their list are removed before execution of next test case because we are using
         # same virtual machine in all test cases, so it is important that the common
         # virtual machine should contain only the default nic whenever new test case
         # execution starts

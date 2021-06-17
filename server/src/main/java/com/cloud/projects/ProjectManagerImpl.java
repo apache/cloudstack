@@ -17,11 +17,9 @@
 package com.cloud.projects;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.Random;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -31,13 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
-import javax.mail.Authenticator;
-import javax.mail.Message.RecipientType;
 import javax.mail.MessagingException;
-import javax.mail.PasswordAuthentication;
-import javax.mail.Session;
-import javax.mail.URLName;
-import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ProjectRole;
@@ -79,8 +71,6 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.DateUtil;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -90,14 +80,16 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.sun.mail.smtp.SMTPMessage;
-import com.sun.mail.smtp.SMTPSSLTransport;
-import com.sun.mail.smtp.SMTPTransport;
+import java.util.HashSet;
+import java.util.Set;
+import org.apache.cloudstack.utils.mailing.MailAddress;
+import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
+import org.apache.cloudstack.utils.mailing.SMTPMailSender;
+import org.apache.commons.lang3.BooleanUtils;
 
 @Component
 public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     public static final Logger s_logger = Logger.getLogger(ProjectManagerImpl.class);
-    private EmailInvite _emailInvite;
 
     @Inject
     private DomainDao _domainDao;
@@ -137,33 +129,23 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
     protected boolean _allowUserToCreateProject = true;
     protected ScheduledExecutorService _executor;
     protected int _projectCleanupExpInvInterval = 60; //Interval defining how often project invitation cleanup thread is running
+    private String senderAddress;
+    protected SMTPMailSender mailSender;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
 
         Map<String, String> configs = _configDao.getConfiguration(params);
-        _invitationRequired = Boolean.valueOf(configs.get(Config.ProjectInviteRequired.key()));
+        _invitationRequired = BooleanUtils.toBoolean(configs.get(Config.ProjectInviteRequired.key()));
 
         String value = configs.get(Config.ProjectInvitationExpirationTime.key());
         _invitationTimeOut = Long.parseLong(value != null ? value : "86400") * 1000;
-        _allowUserToCreateProject = Boolean.valueOf(configs.get(Config.AllowUserToCreateProject.key()));
+        _allowUserToCreateProject = BooleanUtils.toBoolean(configs.get(Config.AllowUserToCreateProject.key()));
+        senderAddress = configs.get("project.email.sender");
 
-        // set up the email system for project invitations
+        String namespace = "project.smtp";
 
-        String smtpHost = configs.get("project.smtp.host");
-        int smtpPort = NumbersUtil.parseInt(configs.get("project.smtp.port"), 25);
-        String useAuthStr = configs.get("project.smtp.useAuth");
-        boolean useAuth = ((useAuthStr == null) ? false : Boolean.parseBoolean(useAuthStr));
-        String smtpUsername = configs.get("project.smtp.username");
-        String smtpPassword = configs.get("project.smtp.password");
-        String emailSender = configs.get("project.email.sender");
-        String smtpDebugStr = configs.get("project.smtp.debug");
-        boolean smtpDebug = false;
-        if (smtpDebugStr != null) {
-            smtpDebug = Boolean.parseBoolean(smtpDebugStr);
-        }
-
-        _emailInvite = new EmailInvite(smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, smtpDebug);
+        mailSender = new SMTPMailSender(configs, namespace);
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Project-ExpireInvitations"));
 
         return true;
@@ -1081,7 +1063,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
         ProjectInvitation projectInvitation = _projectInvitationDao.persist(projectInvitationVO);
         try {
-            _emailInvite.sendInvite(token, email, project.getId());
+            sendInvite(token, email, project.getId());
         } catch (Exception ex) {
             s_logger.warn("Failed to send project id=" + project + " invitation to the email " + email + "; removing the invitation record from the db", ex);
             _projectInvitationDao.remove(projectInvitation.getId());
@@ -1089,6 +1071,27 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         }
 
         return projectInvitation;
+    }
+
+    protected void sendInvite(String token, String email, long projectId) throws MessagingException, UnsupportedEncodingException {
+        String subject = String.format("You are invited to join the cloud stack project id=[%s].", projectId);
+        String content = String.format("You've been invited to join the CloudStack project id=[%s]. Please use token [%s] to complete registration", projectId, token);
+
+        SMTPMailProperties mailProperties = new SMTPMailProperties();
+
+        mailProperties.setSender(new MailAddress(senderAddress));
+        mailProperties.setSubject(subject);
+        mailProperties.setContent(content);
+        mailProperties.setContentType("text/plain");
+
+        Set<MailAddress> addresses = new HashSet<>();
+
+        addresses.add(new MailAddress(email));
+
+        mailProperties.setRecipients(addresses);
+
+        mailSender.sendMail(mailProperties);
+
     }
 
     private boolean expireInvitation(ProjectInvitationVO invite) {
@@ -1304,91 +1307,6 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
             sb.append(charset.charAt(pos));
         }
         return sb.toString();
-    }
-    class EmailInvite {
-        private Session _smtpSession;
-        private final String _smtpHost;
-        private int _smtpPort = -1;
-        private boolean _smtpUseAuth = false;
-        private final String _smtpUsername;
-        private final String _smtpPassword;
-        private final String _emailSender;
-
-        public EmailInvite(String smtpHost, int smtpPort, boolean smtpUseAuth, final String smtpUsername, final String smtpPassword, String emailSender, boolean smtpDebug) {
-            _smtpHost = smtpHost;
-            _smtpPort = smtpPort;
-            _smtpUseAuth = smtpUseAuth;
-            _smtpUsername = smtpUsername;
-            _smtpPassword = smtpPassword;
-            _emailSender = emailSender;
-
-            if (_smtpHost != null) {
-                Properties smtpProps = new Properties();
-                smtpProps.put("mail.smtp.host", smtpHost);
-                smtpProps.put("mail.smtp.port", smtpPort);
-                smtpProps.put("mail.smtp.auth", "" + smtpUseAuth);
-                if (smtpUsername != null) {
-                    smtpProps.put("mail.smtp.user", smtpUsername);
-                }
-
-                smtpProps.put("mail.smtps.host", smtpHost);
-                smtpProps.put("mail.smtps.port", smtpPort);
-                smtpProps.put("mail.smtps.auth", "" + smtpUseAuth);
-                if (smtpUsername != null) {
-                    smtpProps.put("mail.smtps.user", smtpUsername);
-                }
-
-                if ((smtpUsername != null) && (smtpPassword != null)) {
-                    _smtpSession = Session.getInstance(smtpProps, new Authenticator() {
-                        @Override
-                        protected PasswordAuthentication getPasswordAuthentication() {
-                            return new PasswordAuthentication(smtpUsername, smtpPassword);
-                        }
-                    });
-                } else {
-                    _smtpSession = Session.getInstance(smtpProps);
-                }
-                _smtpSession.setDebug(smtpDebug);
-            } else {
-                _smtpSession = null;
-            }
-        }
-
-        public void sendInvite(String token, String email, long projectId) throws MessagingException, UnsupportedEncodingException {
-            if (_smtpSession != null) {
-                InternetAddress address = null;
-                if (email != null) {
-                    try {
-                        address = new InternetAddress(email, email);
-                    } catch (Exception ex) {
-                        s_logger.error("Exception creating address for: " + email, ex);
-                    }
-                }
-
-                String content = "You've been invited to join the CloudStack project id=" + projectId + ". Please use token " + token + " to complete registration";
-
-                SMTPMessage msg = new SMTPMessage(_smtpSession);
-                msg.setSender(new InternetAddress(_emailSender, _emailSender));
-                msg.setFrom(new InternetAddress(_emailSender, _emailSender));
-                msg.addRecipient(RecipientType.TO, address);
-                msg.setSubject("You are invited to join the cloud stack project id=" + projectId);
-                msg.setSentDate(new Date(DateUtil.currentGMTTime().getTime() >> 10));
-                msg.setContent(content, "text/plain");
-                msg.saveChanges();
-
-                SMTPTransport smtpTrans = null;
-                if (_smtpUseAuth) {
-                    smtpTrans = new SMTPSSLTransport(_smtpSession, new URLName("smtp", _smtpHost, _smtpPort, null, _smtpUsername, _smtpPassword));
-                } else {
-                    smtpTrans = new SMTPTransport(_smtpSession, new URLName("smtp", _smtpHost, _smtpPort, null, _smtpUsername, _smtpPassword));
-                }
-                smtpTrans.connect();
-                smtpTrans.sendMessage(msg, msg.getAllRecipients());
-                smtpTrans.close();
-            } else {
-                throw new CloudRuntimeException("Unable to send email invitation; smtp ses");
-            }
-        }
     }
 
     @Override
