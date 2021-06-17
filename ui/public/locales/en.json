@@ -2767,7 +2767,7 @@
 "message.error.custom.disk.size": "Please enter custom disk size",
 "message.error.date": "Please select a date",
 "message.error.description": "Please enter description",
-"message.error.discovering.feature": "Exception caught while discoverying features",
+"message.error.discovering.feature": "Exception caught while discovering features",
 "message.error.display.text": "Please enter display text",
 "message.error.domain": "Enter your domain, leave empty for ROOT domain",
 "message.error.enable.saml": "Unable to find users IDs to enable SAML Single Sign On, kindly enable it manually.",
