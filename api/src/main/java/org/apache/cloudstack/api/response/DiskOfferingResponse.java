@@ -157,7 +157,7 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
 
     @SerializedName("disksizestrictness")
     @Param(description = "To allow or disallow the resize operation on the disks created from this disk offering, if the flag is true then resize is not allowed", since = "4.16")
-    private String diskSizeStrictness;
+    private Boolean diskSizeStrictness;
 
     public Boolean getDisplayOffering() {
         return displayOffering;
@@ -368,11 +368,11 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
         this.vsphereStoragePolicy = vsphereStoragePolicy;
     }
 
-    public String getDiskSizeStrictness() {
+    public Boolean getDiskSizeStrictness() {
         return diskSizeStrictness;
     }
 
-    public void setDiskSizeStrictness(String diskSizeStrictness) {
+    public void setDiskSizeStrictness(Boolean diskSizeStrictness) {
         this.diskSizeStrictness = diskSizeStrictness;
     }
 }

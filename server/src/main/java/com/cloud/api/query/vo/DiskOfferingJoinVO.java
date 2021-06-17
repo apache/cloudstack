@@ -162,7 +162,7 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     String vsphereStoragePolicy;
 
     @Column(name = "disk_size_strictness")
-    String diskSizeStrictness;
+    boolean diskSizeStrictness;
 
     public DiskOfferingJoinVO() {
     }
@@ -353,7 +353,7 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
         return vsphereStoragePolicy;
     }
 
-    public String getDiskSizeStrictness() {
+    public boolean getDiskSizeStrictness() {
         return diskSizeStrictness;
     }
 }
