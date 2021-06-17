@@ -20,6 +20,7 @@ export default {
   name: 'project',
   title: 'label.projects',
   icon: 'project',
+  shortKey: "['p']",
   docHelp: 'adminguide/projects.html',
   permission: ['listProjects'],
   resourceType: 'Project',

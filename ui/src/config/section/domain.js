@@ -19,6 +19,7 @@ export default {
   name: 'domain',
   title: 'label.domains',
   icon: 'block',
+  shortKey: "['d']",
   docHelp: 'adminguide/accounts.html#domains',
   permission: ['listDomains', 'listDomainChildren'],
   resourceType: 'Domain',
