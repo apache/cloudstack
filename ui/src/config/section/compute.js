@@ -22,11 +22,13 @@ export default {
   name: 'compute',
   title: 'label.compute',
   icon: 'cloud',
+  shortKey: "['c']",
   children: [
     {
       name: 'vm',
       title: 'label.instances',
       icon: 'desktop',
+      shortKey: "['c','i']",
       docHelp: 'adminguide/virtual_machines.html',
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',

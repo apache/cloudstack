@@ -51,7 +51,6 @@ export default {
   methods: {
     toggleShowShortkey () {
       this.$store.dispatch('SetShowKeyboardShortkeys', !this.$store.getters.showshortkeys)
-      console.log(this.$store.getters.showshortkeys)
     }
   }
 }

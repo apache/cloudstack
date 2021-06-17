@@ -19,6 +19,7 @@ export default {
   name: 'event',
   title: 'label.events',
   icon: 'schedule',
+  shortKey: "['e']",
   docHelp: 'adminguide/events.html',
   permission: ['listEvents'],
   columns: ['level', 'type', 'state', 'description', 'username', 'account', 'domain', 'created'],

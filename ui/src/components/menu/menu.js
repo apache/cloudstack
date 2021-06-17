@@ -41,6 +41,10 @@ export default {
       type: Boolean,
       required: false,
       default: false
+    },
+    shortKey: {
+      type: String,
+      required: false
     }
   },
   data () {
@@ -127,6 +131,7 @@ export default {
           <router-link {...{ props }}>
             {this.renderIcon(menu.meta.icon, menu)}
             <span>{this.$t(menu.meta.title)}</span>
+            {this.$store.getters.showshortkeys ? <span>{menu.meta.shortKey}</span> : ''}
           </router-link>
         </Item>
       )
@@ -146,6 +151,7 @@ export default {
           <span slot="title">
             {this.renderIcon(menu.meta.icon, menu)}
             <span {...{ on: on }}>{this.$t(menu.meta.title)}</span>
+            {this.$store.getters.showshortkeys ? <span>{menu.meta.shortKey}</span> : ''}
           </span>
           {itemArr}
         </SubMenu>
@@ -190,7 +196,6 @@ export default {
       },
       openChange: this.onOpenChange
     }
-
     const menuTree = menu.map(item => {
       if (item.hidden) {
         return null
