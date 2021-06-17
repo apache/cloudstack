@@ -104,6 +104,14 @@
                     shape="round"
                     @click="fetchUnmanagedInstances()" >
                   </a-button>
+                  <span style="margin-left: 12px">
+                    <search-view
+                      :searchFilters="searchFilters.unmanaged"
+                      :searchParams="searchParams.unmanaged"
+                      :apiName="listInstancesApi.unmanaged"
+                      @search="searchUnmanagedInstances"
+                    />
+                  </span>
                 </span>
                 <a-table
                   class="instances-card-table"
@@ -162,6 +170,14 @@
                     shape="round"
                     @click="fetchManagedInstances()" >
                   </a-button>
+                  <span style="margin-left: 12px">
+                    <search-view
+                      :searchFilters="searchFilters.managed"
+                      :searchParams="searchParams.managed"
+                      :apiName="listInstancesApi.managed"
+                      @search="searchManagedInstances"
+                    />
+                  </span>
                 </span>
                 <a-table
                   class="instances-card-table"
@@ -238,12 +254,14 @@ import { api } from '@/api'
 import _ from 'lodash'
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 import Status from '@/components/widgets/Status'
+import SearchView from '@/components/view/SearchView'
 import ImportUnmanagedInstances from '@/views/tools/ImportUnmanagedInstance'
 
 export default {
   components: {
     Breadcrumb,
     Status,
+    SearchView,
     ImportUnmanagedInstances
   },
   name: 'ManageVms',
@@ -312,11 +330,23 @@ export default {
         unmanaged: 10,
         managed: 10
       },
+      searchFilters: {
+        unmanaged: [],
+        managed: []
+      },
+      searchParams: {
+        unmanaged: {},
+        managed: {}
+      },
       itemCount: {},
       zone: {},
       zoneId: undefined,
       podId: undefined,
       clusterId: undefined,
+      listInstancesApi: {
+        unmanaged: 'listUnmanagedInstances',
+        managed: 'listVirtualMachines'
+      },
       unmanagedInstancesColumns,
       unmanagedInstancesLoading: false,
       unmanagedInstances: [],
@@ -548,11 +578,15 @@ export default {
       params.pagesize = this.pageSize.unmanaged
       this.unmanagedInstances = []
       this.unmanagedInstancesSelectedRowKeys = []
+      if (this.searchParams.unmanaged.keyword) {
+        params.keyword = this.searchParams.unmanaged.keyword
+      }
       if (!this.clusterId) {
         return
       }
       this.unmanagedInstancesLoading = true
-      api('listUnmanagedInstances', params).then(json => {
+      this.searchParams.unmanaged = params
+      api(this.listInstancesApi.unmanaged, params).then(json => {
         const listUnmanagedInstances = json.listunmanagedinstancesresponse.unmanagedinstance
         if (this.arrayHasItems(listUnmanagedInstances)) {
           this.unmanagedInstances = this.unmanagedInstances.concat(listUnmanagedInstances)
@@ -561,6 +595,10 @@ export default {
       }).finally(() => {
         this.unmanagedInstancesLoading = false
       })
+    },
+    searchUnmanagedInstances (params) {
+      this.searchParams.unmanaged.keyword = params.searchQuery
+      this.fetchUnmanagedInstances()
     },
     fetchManagedInstances (page, pageSize) {
       const params = {
@@ -573,11 +611,15 @@ export default {
       params.pagesize = this.pageSize.managed
       this.managedInstances = []
       this.managedInstancesSelectedRowKeys = []
+      if (this.searchParams.managed.keyword) {
+        params.keyword = this.searchParams.managed.keyword
+      }
       if (!this.clusterId) {
         return
       }
       this.managedInstancesLoading = true
-      api('listVirtualMachines', params).then(json => {
+      this.searchParams.managed = params
+      api(this.listInstancesApi.managed, params).then(json => {
         const listManagedInstances = json.listvirtualmachinesresponse.virtualmachine
         if (this.arrayHasItems(listManagedInstances)) {
           this.managedInstances = this.managedInstances.concat(listManagedInstances)
@@ -586,6 +628,10 @@ export default {
       }).finally(() => {
         this.managedInstancesLoading = false
       })
+    },
+    searchManagedInstances (params) {
+      this.searchParams.managed.keyword = params.searchQuery
+      this.fetchManagedInstances()
     },
     onUnmanagedInstanceSelectRow (value) {
       this.unmanagedInstancesSelectedRowKeys = value
