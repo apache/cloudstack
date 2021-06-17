@@ -122,7 +122,7 @@ export default {
     return {
       collapsed: false,
       menus: [],
-      showSetting: true
+      showSetting: false
     }
   },
   computed: {
