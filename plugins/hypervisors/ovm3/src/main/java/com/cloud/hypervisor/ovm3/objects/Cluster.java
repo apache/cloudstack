@@ -91,7 +91,7 @@ public class Cluster extends OvmObject {
      * update_clusterConfiguration, <class 'agent.api.cluster.o2cb.ClusterO2CB'>
      * argument: self - default: None argument: cluster_conf - default: None <(
      * ? cluster_conf can be a "dict" or a plain file: print
-     * master.update_clusterConfiguration(
+     * primary.update_clusterConfiguration(
      * "heartbeat:\n\tregion = 0004FB0000050000E70FBDDEB802208F\n\tcluster = ba9aaf00ae5e2d72\n\nnode:\n\tip_port = 7777\n\tip_address = 192.168.1.64\n\tnumber = 0\n\tname = ovm-1\n\tcluster = ba9aaf00ae5e2d72\n\nnode:\n\tip_port = 7777\n\tip_address = 192.168.1.65\n\tnumber = 1\n\tname = ovm-2\n\tcluster = ba9aaf00ae5e2d72\n\ncluster:\n\tnode_count = 2\n\theartbeat_mode = global\n\tname = ba9aaf00ae5e2d72\n"
      * )
      */

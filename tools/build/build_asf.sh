@@ -19,7 +19,7 @@
 version='TESTBUILD'
 sourcedir=~/cloudstack/
 outputdir=/tmp/cloudstack-build/
-branch='master' # DH(20140604): maybe change default to `git symbolic-ref --short HEAD`
+branch='main' # DH(20140604): maybe change default to `git symbolic-ref --short HEAD`
 tag='no'
 certid='X'
 committosvn='X'
@@ -27,7 +27,7 @@ committosvn='X'
 usage(){
     echo "usage: $0 -v version [-b branch] [-s source dir] [-o output dir] [-t] [-u] [-c] [-h]"
     echo "  -v sets the version"
-    echo "  -b sets the branch (defaults to 'master')"
+    echo "  -b sets the branch (defaults to 'main')"
     echo "  -s sets the source directory (defaults to $sourcedir)"
     echo "  -o sets the output directory (defaults to $outputdir)"
     echo "  -t tags the git repo with the version"

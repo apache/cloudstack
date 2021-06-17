@@ -364,7 +364,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_01_createNetwork_admin(self):
         """
-        # Validate that Admin should be able to create network for himslef
+        # Validate that Admin should be able to create network with self-ownership
         """
         self.apiclient.connection.apiKey = self.user_root_apikey
         self.apiclient.connection.securityKey = self.user_root_secretkey
@@ -380,12 +380,12 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.cleanup.append(network)
         self.assertEqual(network.state.lower() == ALLOCATED.lower(),
                          True,
-                         "Admin User is not able to create a network for himself")
+                         "Admin User is not able to create a network with self-ownership")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_02_createNetwork_admin_foruserinsamedomain(self):
         """
-        # Validate that Admin should be able to create network for users in his domain
+        # Validate that Admin should be able to create network for users in their domain
         """
         self.apiclient.connection.apiKey = self.user_root_apikey
         self.apiclient.connection.securityKey = self.user_root_secretkey
@@ -403,13 +403,13 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.cleanup.append(network)
         self.assertEqual(network.state.lower() == ALLOCATED.lower(),
                          True,
-                         "Admin User is not able to create a network for other users in his domain")
+                         "Admin User is not able to create a network for other users in their domain")
 
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_03_createNetwork_admin_foruserinotherdomain(self):
         """
-        # Validate that Admin should be able to create network for users in his sub domain
+        # Validate that Admin should be able to create network for users in their sub domain
         """
         self.apiclient.connection.apiKey = self.user_root_apikey
         self.apiclient.connection.securityKey = self.user_root_secretkey
@@ -435,7 +435,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_04_createNetwork_domaindmin(self):
         """
-        # Validate that Domain admin should be able to create network for himslef
+        # Validate that Domain admin should be able to create network with self-ownership
         """
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
@@ -451,13 +451,13 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.cleanup.append(network)
         self.assertEqual(network.state.lower() == ALLOCATED.lower(),
                          True,
-                         "Domain admin User is not able to create a network for himself")
+                         "Domain admin User is not able to create a network with self-ownership")
 
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_05_createNetwork_domaindmin_foruserinsamedomain(self):
         """
-        # Validate that Domain admin should be able to create network for users in his domain
+        # Validate that Domain admin should be able to create network for users in their domain
         """
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
@@ -475,13 +475,13 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.cleanup.append(network)
         self.assertEqual(network.state.lower() == ALLOCATED.lower(),
                          True,
-                         "Domain admin User is not able to create a network for other users in his domain")
+                         "Domain admin User is not able to create a network for other users in their domain")
 
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_06_createNetwork_domaindmin_foruserinsubdomain(self):
         """
-        # Validate that Domain admin should be able to create network for users in his sub domain
+        # Validate that Domain admin should be able to create network for users in their sub domain
         """
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
@@ -499,13 +499,13 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.cleanup.append(network)
         self.assertEqual(network.state.lower() == ALLOCATED.lower(),
                          True,
-                         "Domain admin User is not able to create a network for other users in his sub domain")
+                         "Domain admin User is not able to create a network for other users in their sub domain")
 
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_07_createNetwork_domaindmin_forcrossdomainuser(self):
         """
-        # Validate that Domain admin should not be able to create network for users in his sub domain
+        # Validate that Domain admin should not be able to create network for users in their sub domain
         """
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
@@ -521,18 +521,18 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 domainid=self.account_d2a.domainid
             )
             self.cleanup.append(network)
-            self.fail("Domain admin is allowed to create network for users not in his domain ")
+            self.fail("Domain admin is allowed to create network for users not in their domain ")
         except Exception as e:
-            self.debug("When Domain admin tries to create network for users in his sub domain %s" % e)
+            self.debug("When Domain admin tries to create network for users in their sub domain %s" % e)
             if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_DOMAIN):
-                self.fail("Error message validation failed when Domain admin tries to create network for users not in his domain ")
+                self.fail("Error message validation failed when Domain admin tries to create network for users not in their domain ")
 
     ## Test cases relating to createNetwork as regular user
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_08_createNetwork_user(self):
         """
-        # Validate that Regular should be able to create network for himslef
+        # Validate that Regular should be able to create network with self-ownership
         """
         self.apiclient.connection.apiKey = self.user_d1a_apikey
         self.apiclient.connection.securityKey = self.user_d1a_secretkey
@@ -549,12 +549,12 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
         self.assertEqual(network.state.lower() == ALLOCATED.lower(),
                          True,
-                         "User is not able to create a network for himself")
+                         "User is not able to create a network with self-ownership")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_09_createNetwork_user_foruserinsamedomain(self):
         """
-        # Validate that  Regular user should NOT be able to create network for users in his domain
+        # Validate that  Regular user should NOT be able to create network for users in their domain
         """
         self.apiclient.connection.apiKey = self.user_d1a_apikey
         self.apiclient.connection.securityKey = self.user_d1a_secretkey
@@ -571,11 +571,11 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 domainid=self.account_d1b.domainid
             )
             self.cleanup.append(network)
-            self.fail("User is allowed to create network for other users in his domain ")
+            self.fail("User is allowed to create network for other users in their domain ")
         except Exception as e:
-            self.debug("When user tries to create network for users in his domain %s" % e)
+            self.debug("When user tries to create network for users in their domain %s" % e)
             if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.UNABLE_TO_LIST_NETWORK_ACCOUNT):
-                self.fail("Error message validation failed when when User tries to create network for other users in his domain ")
+                self.fail("Error message validation failed when when User tries to create network for other users in their domain ")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_10_createNetwork_user_foruserinotherdomain(self):
@@ -597,18 +597,18 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 domainid=self.account_d11a.domainid
             )
             self.cleanup.append(network)
-            self.fail("User is allowed to create network for users not in his domain ")
+            self.fail("User is allowed to create network for users not in their domain ")
         except Exception as e:
             self.debug("When user tries to create network for users in other domain %s" % e)
             if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.UNABLE_TO_LIST_NETWORK_ACCOUNT):
-                self.fail("Error message validation failed when User tries to create network for users not in his domain ")
+                self.fail("Error message validation failed when User tries to create network for users not in their domain ")
 
     ## Test cases relating to Deploying VM in a network as admin user
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_11_deployvm_admin(self):
         """
-        # Validate that Admin should be able to deploy VM in the networks he owns
+        # Validate that Admin should be able to deploy VM in the networks if it is self-owned
         """
         self.apiclient.connection.apiKey = self.user_root_apikey
         self.apiclient.connection.securityKey = self.user_root_secretkey
@@ -626,12 +626,12 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
         self.assertEqual(vm.state.lower() == RUNNING.lower(),
                          True,
-                         "Admin User is not able to deploy VM in his own network")
+                         "Admin User is not able to deploy VM in their own network")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_12_deployvm_admin_foruserinsamedomain(self):
         """
-        # Validate that Admin should be able to deploy Vm  for users in his domain
+        # Validate that Admin should be able to deploy Vm  for users in their domain
         """
         self.apiclient.connection.apiKey = self.user_root_apikey
         self.apiclient.connection.securityKey = self.user_root_secretkey
@@ -650,12 +650,12 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.cleanup.append(vm)
         self.assertEqual(vm.state.lower() == RUNNING.lower() and vm.account == self.account_roota.name and vm.domainid == self.account_roota.domainid,
                          True,
-                         "Admin User is not able to deploy VM for users in his domain")
+                         "Admin User is not able to deploy VM for users in their domain")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_13_deployvm_admin_foruserinotherdomain(self):
         """
-        # Validate that Admin should be able to deploy VM for users in his sub domain
+        # Validate that Admin should be able to deploy VM for users in their sub domain
         """
         self.apiclient.connection.apiKey = self.user_root_apikey
         self.apiclient.connection.securityKey = self.user_root_secretkey
@@ -707,7 +707,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_14_deployvm_domaindmin(self):
         """
-        # Validate that Domain admin should be able to deploy vm for himslef
+        # Validate that Domain admin should be able to deploy vm with self-ownership
         """
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
@@ -725,12 +725,12 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
         self.assertEqual(vm.state.lower() == RUNNING.lower(),
                          True,
-                         "Domain admin User is not able to deploy VM for himself")
+                         "Domain admin User is not able to deploy VM with self-ownership")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_15_deployvm_domaindmin_foruserinsamedomain(self):
         """
-        # Validate that Domain admin should be able to deploy vm for users in his domain
+        # Validate that Domain admin should be able to deploy vm for users in their domain
         """
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
@@ -749,12 +749,12 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.cleanup.append(vm)
         self.assertEqual(vm.state.lower() == RUNNING.lower() and vm.account == self.account_d1a.name and vm.domainid == self.account_d1a.domainid,
                          True,
-                         "Domain admin User is not able to deploy VM for other users in his domain")
+                         "Domain admin User is not able to deploy VM for other users in their domain")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_16_deployvm_domaindmin_foruserinsubdomain(self):
         """
-        # Validate that Domain admin should be able to deploy vm for users in his sub domain
+        # Validate that Domain admin should be able to deploy vm for users in their sub domain
         """
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
@@ -773,12 +773,12 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.cleanup.append(vm)
         self.assertEqual(vm.state.lower() == RUNNING.lower() and vm.account == self.account_d11a.name and vm.domainid == self.account_d11a.domainid,
                          True,
-                         "Domain admin User is not able to deploy vm for himself")
+                         "Domain admin User is not able to deploy vm with self-ownership")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_17_deployvm_domaindmin_forcrossdomainuser(self):
         """
-        # Validate that Domain admin should not be able allowed to deploy vm for users not in his sub domain
+        # Validate that Domain admin should not be able allowed to deploy vm for users not in their sub domain
         """
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
@@ -798,7 +798,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             self.cleanup.append(vm)
             self.fail("Domain admin is allowed to deploy vm for users not in hos domain ")
         except Exception as e:
-            self.debug("When Domain admin tries to deploy vm for users in his sub domain %s" % e)
+            self.debug("When Domain admin tries to deploy vm for users in their sub domain %s" % e)
             if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_DOMAIN):
                 self.fail("Error message validation failed when Domain admin tries to deploy vm for users not in hos domain ")
 
@@ -822,18 +822,18 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 domainid=self.account_d11a.domainid
             )
             self.cleanup.append(vm)
-            self.fail("Domain admin is allowed to deploy vm for users in a network that does not belong to him ")
+            self.fail("Domain admin is allowed to deploy vm for users in a network that is not self-owned ")
         except Exception as e:
             self.debug("When domain admin tries to deploy vm for users in network that does not belong to the user %s" % e)
             if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.UNABLE_TO_USE_NETWORK):
-                self.fail("Error message validation failed when Domain admin tries to deploy vm for users in a network that does not belong to him ")
+                self.fail("Error message validation failed when Domain admin tries to deploy vm for users in a network that is not self-owned ")
 
     ## Test cases relating to deploying VM as regular user
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_18_deployvm_user(self):
         """
-        # Validate that Regular should be able to deploy vm for himslef
+        # Validate that Regular should be able to deploy vm with self-ownership
         """
         self.apiclient.connection.apiKey = self.user_d1a_apikey
         self.apiclient.connection.securityKey = self.user_d1a_secretkey
@@ -850,12 +850,12 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.cleanup.append(vm)
         self.assertEqual(vm.state.lower() == RUNNING.lower(),
                          True,
-                         "User is not able to deploy vm for himself")
+                         "User is not able to deploy vm with self-ownership")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_19_deployvm_user_foruserinsamedomain(self):
         """
-        # Validate that Regular user should NOT be able to deploy vm for users in his domain
+        # Validate that Regular user should NOT be able to deploy vm for users in their domain
         """
         self.apiclient.connection.apiKey = self.user_d1a_apikey
         self.apiclient.connection.securityKey = self.user_d1a_secretkey
@@ -873,16 +873,16 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 domainid=self.account_d1b.domainid
             )
             self.cleanup.append(vm)
-            self.fail("Regular user is allowed to deploy vm for other users in his domain ")
+            self.fail("Regular user is allowed to deploy vm for other users in their domain ")
         except Exception as e:
-            self.debug("When user tries to deploy vm for users in his domain %s" % e)
+            self.debug("When user tries to deploy vm for users in their domain %s" % e)
             if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_ACCOUNT):
-                self.fail("Error message validation failed when Regular user tries to deploy vm for other users in his domain ")
+                self.fail("Error message validation failed when Regular user tries to deploy vm for other users in their domain ")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_20_deployvm_user_foruserincrossdomain(self):
         """
-        # Validate that Regular user should NOT be able to deploy vm for users in his domain
+        # Validate that Regular user should NOT be able to deploy vm for users in their domain
         """
         self.apiclient.connection.apiKey = self.user_d1a_apikey
         self.apiclient.connection.securityKey = self.user_d1a_secretkey
@@ -900,16 +900,16 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 domainid=self.account_d2a.domainid
             )
             self.cleanup.append(vm)
-            self.fail("Regular user is allowed to deploy vm for users not in his domain ")
+            self.fail("Regular user is allowed to deploy vm for users not in their domain ")
         except Exception as e:
             self.debug("When user tries to deploy vm for users n different domain %s" % e)
             if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_ACCOUNT):
-                self.fail("Error message validation failed when Regular user tries to deploy vm for users not in his domain ")
+                self.fail("Error message validation failed when Regular user tries to deploy vm for users not in their domain ")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_20_1_deployvm_user_incrossnetwork(self):
         """
-        #Validate that User should not be able deploy VM in a network that does not belong to him
+        #Validate that User should not be able deploy VM in a network that is not self-owned
         """
         self.apiclient.connection.apiKey = self.user_d11a_apikey
         self.apiclient.connection.securityKey = self.user_d11a_secretkey
@@ -924,18 +924,18 @@ class TestIsolatedNetwork(cloudstackTestCase):
                 networkids=self.network_d11b.id,
             )
             self.cleanup.append(vm)
-            self.fail("User is allowed to deploy VM  in a network that does not belong to him ")
+            self.fail("User is allowed to deploy VM  in a network that is not self-owned ")
         except Exception as e:
             self.debug("When user tries to deploy vm in a  network that does not belong to him %s" % e)
             if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.UNABLE_TO_USE_NETWORK):
-                self.fail("Error message validation failed when User is allowed to deploy VM  in a network that does not belong to him ")
+                self.fail("Error message validation failed when User is allowed to deploy VM  in a network that is not self-owned ")
 
     ## Test cases relating to restart Network as admin user
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_21_restartNetwork_admin(self):
         """
-        #Validate that Admin should be able to restart network for networks he owns
+        #Validate that Admin should be able to restart network for networks if it is self-owned
         """
         self.apiclient.connection.apiKey = self.user_root_apikey
         self.apiclient.connection.securityKey = self.user_root_secretkey
@@ -944,12 +944,12 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
         self.assertEqual(restartResponse.success,
                          True,
-                         "Admin User is not able to restart network he owns")
+                         "Admin User is not able to restart network if it is self-owned")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_22_restartNetwork_admin_foruserinsamedomain(self):
         """
-        # Validate that Admin should be able to restart network for users in his domain
+        # Validate that Admin should be able to restart network for users in their domain
         """
         self.apiclient.connection.apiKey = self.user_root_apikey
         self.apiclient.connection.securityKey = self.user_root_secretkey
@@ -958,12 +958,12 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
         self.assertEqual(restartResponse.success,
                          True,
-                         "Admin User is not able to restart network owned by users his domain")
+                         "Admin User is not able to restart network owned by users their domain")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_23_restartNetwork_admin_foruserinotherdomain(self):
         """
-        # Validate that Admin should be able to restart network for users in his sub domain
+        # Validate that Admin should be able to restart network for users in their sub domain
         """
         self.apiclient.connection.apiKey = self.user_root_apikey
         self.apiclient.connection.securityKey = self.user_root_secretkey
@@ -980,7 +980,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_24_restartNetwork_domaindmin(self):
         """
-        # Validate that Domain admin should be able to restart network for himslef
+        # Validate that Domain admin should be able to restart network with self-ownership
         """
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
@@ -989,12 +989,12 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
         self.assertEqual(restartResponse.success,
                          True,
-                         "Domain admin User is not able to restart network for himself")
+                         "Domain admin User is not able to restart network with self-ownership")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_25_restartNetwork_domaindmin_foruserinsamedomain(self):
         """
-        # Validate that Domain admin should be able to restart network for users in his domain
+        # Validate that Domain admin should be able to restart network for users in their domain
         """
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
@@ -1002,12 +1002,12 @@ class TestIsolatedNetwork(cloudstackTestCase):
         restartResponse = self.network_d1a.restart(self.apiclient)
         self.assertEqual(restartResponse.success,
                          True,
-                         "Domain admin User is not able to restart network for other users in his domain")
+                         "Domain admin User is not able to restart network for other users in their domain")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_26_restartNetwork_domaindmin_foruserinsubdomain(self):
         """
-        # Validate that Domain admin should be able to restart network for users in his sub domain
+        # Validate that Domain admin should be able to restart network for users in their sub domain
         """
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
@@ -1015,30 +1015,30 @@ class TestIsolatedNetwork(cloudstackTestCase):
         restartResponse = self.network_d11a.restart(self.apiclient)
         self.assertEqual(restartResponse.success,
                          True,
-                         "Domain admin User is not able to restart network he owns")
+                         "Domain admin User is not able to restart network if it is self-owned")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_27_restartNetwork_domaindmin_forcrossdomainuser(self):
         """
-        # Validate that Domain admin should be able to restart network for users in his sub domain
+        # Validate that Domain admin should be able to restart network for users in their sub domain
         """
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
 
         try:
             restartResponse = self.network_d2a.restart(self.apiclient)
-            self.fail("Domain admin is allowed to restart network for users not in his domain ")
+            self.fail("Domain admin is allowed to restart network for users not in their domain ")
         except Exception as e:
-            self.debug("When Domain admin tries to restart network for users in his sub domain %s" % e)
+            self.debug("When Domain admin tries to restart network for users in their sub domain %s" % e)
             if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_DOMAIN):
-                self.fail("Error message validation failed when Domain admin tries to restart network for users not in his domain ")
+                self.fail("Error message validation failed when Domain admin tries to restart network for users not in their domain ")
 
     ## Test cases relating restart network as regular user
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_28_restartNetwork_user(self):
         """
-        #Validate that  Regular should be able to restart network for himslef
+        #Validate that  Regular should be able to restart network with self-ownership
         """
         self.apiclient.connection.apiKey = self.user_d1a_apikey
         self.apiclient.connection.securityKey = self.user_d1a_secretkey
@@ -1046,23 +1046,23 @@ class TestIsolatedNetwork(cloudstackTestCase):
         restartResponse = self.network_d1a.restart(self.apiclient)
         self.assertEqual(restartResponse.success,
                          True,
-                         "User is not able to restart network he owns")
+                         "User is not able to restart network if it is self-owned")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_29_restartNetwork_user_foruserinsamedomain(self):
         """
-        #Validate that Regular user should NOT be able to restart network for users in his domain
+        #Validate that Regular user should NOT be able to restart network for users in their domain
         """
         self.apiclient.connection.apiKey = self.user_d1a_apikey
         self.apiclient.connection.securityKey = self.user_d1a_secretkey
 
         try:
             restartResponse = self.network_d1b.restart(self.apiclient)
-            self.fail("Regular user is allowed to restart network for users in his domain ")
+            self.fail("Regular user is allowed to restart network for users in their domain ")
         except Exception as e:
-            self.debug("When user tries to restart network for users in his domain %s" % e)
+            self.debug("When user tries to restart network for users in their domain %s" % e)
             if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_ACCOUNT):
-                self.fail("Error message validation failed when Regular user tries to restart network for users in his domain ")
+                self.fail("Error message validation failed when Regular user tries to restart network for users in their domain ")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_30_restartNetwork_user_foruserinotherdomain(self):
@@ -1074,11 +1074,11 @@ class TestIsolatedNetwork(cloudstackTestCase):
 
         try:
             restartResponse = self.network_d11a.restart(self.apiclient)
-            self.fail("Regular user is allowed to restart network for users not in his domain ")
+            self.fail("Regular user is allowed to restart network for users not in their domain ")
         except Exception as e:
             self.debug("When user tries to restart network for users in other domain %s" % e)
             if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_ACCOUNT):
-                self.fail("Error message validation failed when Regular user is allowed to restart network for users not in his domain ")
+                self.fail("Error message validation failed when Regular user is allowed to restart network for users not in their domain ")
 
     @staticmethod
     def generateKeysForUser(apiclient, account):
