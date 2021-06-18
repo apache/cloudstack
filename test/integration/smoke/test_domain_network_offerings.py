@@ -274,7 +274,6 @@ class TestDomainsNetworkOfferings(cloudstackTestCase):
     @attr(
         tags=[
             "advanced",
-            "basic",
             "eip",
             "sg",
             "advancedns",
