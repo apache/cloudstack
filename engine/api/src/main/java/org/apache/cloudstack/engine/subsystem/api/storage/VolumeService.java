@@ -104,11 +104,6 @@ public interface VolumeService {
 
     /**
      * After volume migration, copies snapshot policies from the source volume to destination volume; then, it destroys and expunges the source volume.
-     * @param destinationEvent
-     * @param destinationEventAnswer
-     * @param sourceVolume
-     * @param destinationVolume
-     * @param retryExpungeVolumeAsync
      * @return If no exception happens, it will return false, otherwise true.
      */
     boolean copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(ObjectInDataStoreStateMachine.Event destinationEvent, Answer destinationEventAnswer,
