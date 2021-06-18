@@ -222,19 +222,7 @@ export default {
   },
   created () {
     this.form = this.$form.createForm(this)
-<<<<<<< HEAD
     this.apiParams = this.$getApiParams('createUser', 'authorizeSamlSso')
-=======
-    this.apiConfig = this.$store.getters.apis.createUser || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
-    this.apiConfig = this.$store.getters.apis.authorizeSamlSso || { params: [] }
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
->>>>>>> 4.15
     this.fetchData()
   },
   methods: {
