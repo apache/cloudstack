@@ -4687,11 +4687,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         scaleVmCommand.getVirtualMachine().setUuid(vm.getUuid());
         scaleVmCommand.getVirtualMachine().setType(vm.getType());
 
-        final Long dstHostId = vm.getHostId();
-        if(vm.getHypervisorType().equals(HypervisorType.VMware)) {
-            final HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
-            Map<String, String> details = null;
-            details = hvGuru.getClusterSettings(vm.getId());
+        Long dstHostId = vm.getHostId();
+
+        if (vm.getHypervisorType().equals(HypervisorType.VMware)) {
+            HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
+            Map<String, String> details = hvGuru.getClusterSettings(vm.getId());
             scaleVmCommand.getVirtualMachine().setDetails(details);
         }
 
