@@ -653,9 +653,10 @@
             <a-list-item slot="renderItem" slot-scope="item">
               <a-comment
                 :content="item.annotation"
-                :datetime="$toLocaleDate(item.created)" >
+                :datetime="$toLocaleDate(item.created)"
+                :author="item.username" >
                 <a-button
-                  v-if="'removeAnnotation' in $store.getters.apis"
+                  v-if="'removeAnnotation' in $store.getters.apis && isAdminOrAnnotationOwner(item)"
                   slot="avatar"
                   type="danger"
                   shape="circle"
@@ -678,6 +679,9 @@
                 @change="handleNoteChange"
                 :value="annotation"
                 :placeholder="$t('label.add.note')" />
+              <a-checkbox @change="toggleNoteVisibility" v-if="['Admin'].includes(this.$store.getters.userInfo.roletype)">
+                {{ $t('label.annotation.admins.only') }}
+              </a-checkbox>
               <a-button
                 style="margin-top: 10px"
                 @click="saveNote"
@@ -745,7 +749,8 @@ export default {
       showKeys: false,
       showNotesInput: false,
       loadingTags: false,
-      loadingAnnotations: false
+      loadingAnnotations: false,
+      annotationAdminsOnly: false
     }
   },
   watch: {
@@ -871,6 +876,9 @@ export default {
         (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account) ||
         this.resource.project && this.resource.projectid === this.$store.getters.project.id
     },
+    isAdminOrAnnotationOwner (annotation) {
+      return ['Admin'].includes(this.$store.getters.userInfo.roletype) || this.$store.getters.userInfo.id === annotation.userid
+    },
     showInput () {
       this.inputVisible = true
       this.$nextTick(function () {
@@ -914,6 +922,9 @@ export default {
     handleNoteChange (e) {
       this.annotation = e.target.value
     },
+    toggleNoteVisibility () {
+      this.annotationAdminsOnly = !this.annotationAdminsOnly
+    },
     saveNote () {
       if (this.annotation.length < 1) {
         return
@@ -924,7 +935,7 @@ export default {
       args.entityid = this.resource.id
       args.entitytype = this.annotationType
       args.annotation = this.annotation
-      args.adminsonly = ['Admin'].includes(this.$store.getters.userInfo.roletype)
+      args.adminsonly = this.annotationAdminsOnly
       api('addAnnotation', args).then(json => {
       }).finally(e => {
         this.getNotes()

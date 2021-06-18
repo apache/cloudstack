@@ -27,6 +27,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -85,12 +86,29 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     @ActionEvent(eventType = EventTypes.EVENT_ANNOTATION_REMOVE, eventDescription = "removing an annotation on an entity")
     public AnnotationResponse removeAnnotation(RemoveAnnotationCmd removeAnnotationCmd) {
         String uuid = removeAnnotationCmd.getUuid();
-        if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug("marking annotation removed: " + uuid);
-        }
         AnnotationVO annotation = annotationDao.findByUuid(uuid);
-        annotationDao.remove(annotation.getId());
+        if (isCallingUserAllowedToRemoveAnnotation(annotation)) {
+            if(LOGGER.isDebugEnabled()) {
+                LOGGER.debug("marking annotation removed: " + uuid);
+            }
+            annotationDao.remove(annotation.getId());
+        } else {
+            throw new CloudRuntimeException("Only administrators or entity owner users can delete annotations, cannot remove annotation: " + uuid);
+        }
+
         return createAnnotationResponse(annotation);
+    }
+
+    private boolean isCallingUserAllowedToRemoveAnnotation(AnnotationVO annotation) {
+        if (annotation == null) {
+            return false;
+        }
+        if (isCallingUserAdmin()) {
+            return true;
+        }
+        UserVO callingUser = getCallingUserFromContext();
+        String annotationOwnerUuid = annotation.getUserUuid();
+        return annotationOwnerUuid != null && annotationOwnerUuid.equals(callingUser.getUuid());
     }
 
     private UserVO getCallingUserFromContext() {
@@ -173,7 +191,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         return listResponse;
     }
 
-    public static AnnotationResponse createAnnotationResponse(AnnotationVO annotation) {
+    public AnnotationResponse createAnnotationResponse(AnnotationVO annotation) {
         AnnotationResponse response = new AnnotationResponse();
         response.setUuid(annotation.getUuid());
         response.setEntityType(annotation.getEntityType());
@@ -182,6 +200,10 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         response.setUserUuid(annotation.getUserUuid());
         response.setCreated(annotation.getCreated());
         response.setRemoved(annotation.getRemoved());
+        UserVO user = userDao.findByUuid(annotation.getUserUuid());
+        if (user != null && StringUtils.isNotBlank(user.getUsername())) {
+            response.setUsername(user.getUsername());
+        }
         response.setObjectName("annotation");
 
         return response;
