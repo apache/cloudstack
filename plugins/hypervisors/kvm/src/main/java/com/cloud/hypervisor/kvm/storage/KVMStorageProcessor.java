@@ -27,7 +27,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.DateFormat;
-import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -75,7 +74,6 @@ import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
-import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 
 import com.ceph.rados.IoCTX;
@@ -117,6 +115,7 @@ import com.cloud.storage.resource.StorageProcessor;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
+import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateLocation;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -124,6 +123,13 @@ import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.S3.S3Utils;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class KVMStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(KVMStorageProcessor.class);
@@ -987,7 +993,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             } else {
                 final Script command = new Script(_manageSnapshotPath, cmd.getWaitInMillSeconds(), s_logger);
-                command.add("-b", snapshotDisk.getPath());
+                command.add("-b", snapshot.getPath());
                 command.add(NAME_OPTION, snapshotName);
                 command.add("-p", snapshotDestPath);
                 if (isCreatedFromVmSnapshot) {
@@ -1018,49 +1024,12 @@ public class KVMStorageProcessor implements StorageProcessor {
         } finally {
             if (isCreatedFromVmSnapshot) {
                 s_logger.debug("Ignoring removal of vm snapshot on primary as this snapshot is created from vm snapshot");
-            } else {
+            } else if (primaryPool.getType() != StoragePoolType.RBD) {
+                String snapshotPath = snapshot.getPath();
                 try {
-                    /* Delete the snapshot on primary */
-                    DomainInfo.DomainState state = null;
-                    Domain vm = null;
-                    if (vmName != null) {
-                        try {
-                            vm = resource.getDomain(conn, vmName);
-                            state = vm.getInfo().state;
-                        } catch (final LibvirtException e) {
-                            s_logger.trace("Ignoring libvirt error.", e);
-                        }
-                    }
-
-                    final KVMStoragePool primaryStorage = storagePoolMgr.getStoragePool(primaryStore.getPoolType(),
-                            primaryStore.getUuid());
-                    if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING && !primaryStorage.isExternalSnapshot()) {
-                        final DomainSnapshot snap = vm.snapshotLookupByName(snapshotName);
-                        try {
-                            s_logger.info(String.format("Suspending VM '%s' to delete snapshot,", vm.getName()));
-                            vm.suspend();
-                        } catch (final LibvirtException e) {
-                            s_logger.error("Failed to suspend the VM", e);
-                            throw e;
-                        }
-                        snap.delete(0);
-
-                        /*
-                         * libvirt on RHEL6 doesn't handle resume event emitted from
-                         * qemu
-                         */
-                        vm = resource.getDomain(conn, vmName);
-                        state = vm.getInfo().state;
-                        if (state == DomainInfo.DomainState.VIR_DOMAIN_PAUSED) {
-                            vm.resume();
-                        }
-                    } else {
-                        if (primaryPool.getType() != StoragePoolType.RBD) {
-                            deleteSnapshotViaManageSnapshotScript(snapshotName, snapshotDisk);
-                        }
-                    }
-                } catch (final Exception ex) {
-                    s_logger.error("Failed to delete snapshots on primary", ex);
+                    Files.deleteIfExists(Paths.get(snapshotPath));
+                } catch (IOException ex) {
+                    s_logger.error(String.format("Failed to delete snapshot [%s] on primary storage [%s].", snapshotPath, primaryPool.getUuid()), ex);
                 }
             }
 
@@ -1497,8 +1466,43 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
-    protected static final MessageFormat SnapshotXML = new MessageFormat("   <domainsnapshot>" + "       <name>{0}</name>" + "          <domain>"
-            + "            <uuid>{1}</uuid>" + "        </domain>" + "    </domainsnapshot>");
+    /**
+     * XML to take disk-only snapshot of the VM.<br><br>
+     * 1st parameter: snapshot's name;<br>
+     * 2nd parameter: disk's label (target.dev tag from VM's XML);<br>
+     * 3rd parameter: absolute path to create the snapshot;<br>
+     * 4th parameter: list of disks to avoid on snapshot {@link #TAG_AVOID_DISK_FROM_SNAPSHOT};
+     */
+    private static final String XML_CREATE_SNAPSHOT = "<domainsnapshot><name>%s</name><disks><disk name='%s' snapshot='external'><source file='%s'/></disk>%s</disks>"
+      + "</domainsnapshot>";
+
+    /**
+     * Tag to avoid disk from snapshot.<br><br>
+     * 1st parameter: disk's label (target.dev tag from VM's XML);
+     */
+    private static final String TAG_AVOID_DISK_FROM_SNAPSHOT = "<disk name='%s' snapshot='no' />";
+
+    /**
+     * Virsh command to merge (blockcommit) snapshot into the base file.<br><br>
+     * 1st parameter: VM's name;<br>
+     * 2nd parameter: disk's label (target.dev tag from VM's XML);<br>
+     * 3rd parameter: the absolute path of the base file;
+     */
+    private static final String COMMAND_MERGE_SNAPSHOT = "virsh blockcommit %s %s --base %s --active --wait --delete --pivot";
+
+    /**
+     * Flag to take disk-only snapshots from VM.<br><br>
+     * Libvirt lib for java does not have the enum virDomainSnapshotCreateFlags.
+     * @see <a href="https://libvirt.org/html/libvirt-libvirt-domain-snapshot.html">Module libvirt-domain-snapshot from libvirt</a>
+     */
+    private static final int VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY = 16;
+
+    /**
+     * Min rate between available pool and disk size to take disk snapshot.<br><br>
+     * As we are copying the base disk to a folder in the same primary storage, we need at least once more disk size of available space in the primary storage, plus 5% as a
+     * security margin.
+     */
+    private static final double MIN_RATE_BETWEEN_AVAILABLE_POOL_AND_DISK_SIZE_TO_TAKE_DISK_SNAPSHOT = 1.05;
 
     @Override
     public Answer createSnapshot(final CreateObjectCommand cmd) {
@@ -1507,6 +1511,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         final VolumeObjectTO volume = snapshotTO.getVolume();
         final String snapshotName = UUID.randomUUID().toString();
         final String vmName = volume.getVmName();
+
         try {
             final Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
             DomainInfo.DomainState state = null;
@@ -1523,15 +1528,25 @@ public class KVMStorageProcessor implements StorageProcessor {
             final KVMStoragePool primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
 
             final KVMPhysicalDisk disk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), volume.getPath());
-            if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING && !primaryPool.isExternalSnapshot()) {
-                final String vmUuid = vm.getUUIDString();
-                final Object[] args = new Object[] {snapshotName, vmUuid};
-                final String snapshot = SnapshotXML.format(args);
 
-                final long start = System.currentTimeMillis();
-                vm.snapshotCreateXML(snapshot);
-                final long total = (System.currentTimeMillis() - start)/1000;
-                s_logger.debug("snapshot takes " + total + " seconds to finish");
+            String snapshotPath = disk.getPath() + File.separator + snapshotName;
+            if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING && !primaryPool.isExternalSnapshot()) {
+
+                validateAvailableSizeOnPoolToTakeVolumeSnapshot(primaryPool, disk);
+
+                String diskPath = disk.getPath();
+
+                String diskLabel = takeVolumeSnapshot(resource.getDisks(conn, vmName), snapshotName, diskPath, vm);
+
+                snapshotPath = getSnapshotPathInPrimaryStorage(primaryPool.getLocalPath(), snapshotName);
+                String copyResult = copySnapshotToPrimaryStorageDir(primaryPool, diskPath, snapshotPath, volume);
+
+                mergeSnapshotIntoBaseFile(vm, diskLabel, diskPath, snapshotName, volume);
+
+                if (StringUtils.isNotEmpty(copyResult)) {
+                    Files.deleteIfExists(Paths.get(snapshotPath));
+                    throw new CloudRuntimeException(copyResult);
+                }
 
                 /*
                  * libvirt on RHEL6 doesn't handle resume event emitted from
@@ -1586,13 +1601,167 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             final SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
-            // NOTE: sort of hack, we'd better just put snapshtoName
-            newSnapshot.setPath(disk.getPath() + File.separator + snapshotName);
+
+            newSnapshot.setPath(snapshotPath);
             return new CreateObjectAnswer(newSnapshot);
-        } catch (final LibvirtException e) {
-            s_logger.debug("Failed to manage snapshot: ", e);
-            return new CreateObjectAnswer("Failed to manage snapshot: " + e.toString());
+        } catch (CloudRuntimeException | LibvirtException | IOException ex) {
+            String errorMsg = String.format("Failed take snapshot for volume [%s], in VM [%s], due to [%s].", volume, vmName, ex.getMessage());
+            s_logger.error(errorMsg, ex);
+            return new CreateObjectAnswer(errorMsg);
         }
+    }
+
+    /**
+     * Merges the snapshot into base file to keep volume and VM behavior after stopping - starting.
+     * @param vm Domain of the VM;
+     * @param diskLabel Disk label to manage snapshot and base file;
+     * @param baseFilePath Path of the base file;
+     * @param snapshotName Name of the snapshot;
+     * @throws LibvirtException
+     */
+    protected void mergeSnapshotIntoBaseFile(Domain vm, String diskLabel, String baseFilePath, String snapshotName, VolumeObjectTO volume) throws LibvirtException {
+        String vmName = vm.getName();
+        String mergeCommand = String.format(COMMAND_MERGE_SNAPSHOT, vmName, diskLabel, baseFilePath);
+        String mergeResult = Script.runSimpleBashScript(mergeCommand);
+
+        if (mergeResult == null) {
+            s_logger.debug(String.format("Successfully merged snapshot [%s] into VM [%s] %s base file.", snapshotName, vmName, volume));
+            return;
+        }
+
+        String errorMsg = String.format("Failed to merge snapshot [%s] into VM [%s] %s base file. Command [%s] resulted in [%s]. If the VM is stopped and then started, it"
+          + " will start to write in the base file again. All changes made between the snapshot and the VM stop will be in the snapshot. If the VM is stopped, the snapshot must be"
+          + " merged into the base file manually.", snapshotName, vmName, volume, mergeCommand, mergeResult);
+
+        s_logger.warn(String.format("%s VM XML: [%s].", errorMsg, vm.getXMLDesc(0)));
+        throw new CloudRuntimeException(errorMsg);
+    }
+
+    /**
+     * Creates the snapshot directory in the primary storage, if it does not exist; then copies the base file (VM's old writing file) to the snapshot dir..
+     * @param primaryPool Storage to create folder, if not exists;
+     * @param baseFile Base file of VM, which will be copied;
+     * @param snapshotPath Path to copy the base file;
+     * @return null if copies successfully or a error message.
+     */
+    protected String copySnapshotToPrimaryStorageDir(KVMStoragePool primaryPool, String baseFile, String snapshotPath, VolumeObjectTO volume) {
+        try {
+            primaryPool.createFolder(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR);
+            Files.copy(Paths.get(baseFile), Paths.get(snapshotPath));
+            s_logger.debug(String.format("Copied %s snapshot from [%s] to [%s].", volume, baseFile, snapshotPath));
+            return null;
+        } catch (IOException ex) {
+            return String.format("Unable to copy %s snapshot [%s] to [%s] due to [%s].", volume, baseFile, snapshotPath, ex.getMessage());
+        }
+    }
+
+    /**
+     * Retrieves the path of the snapshot on primary storage snapshot's dir.
+     * @param primaryStoragePath Path of the primary storage;
+     * @param snapshotName Snapshot name;
+     * @return the path of the snapshot in primary storage snapshot's dir.
+     */
+    protected String getSnapshotPathInPrimaryStorage(String primaryStoragePath, String snapshotName) {
+        return String.format("%s%s%s%s%s", primaryStoragePath, File.separator, TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, File.separator, snapshotName);
+    }
+
+    /**
+     * Take a volume snapshot of the specified volume.
+     * @param disks List of VM's disks;
+     * @param snapshotName Name of the snapshot;
+     * @param diskPath Path of the disk to take snapshot;
+     * @param vm VM in which disk stay;
+     * @return the disk label in VM's XML.
+     * @throws LibvirtException
+     */
+    protected String takeVolumeSnapshot(List<DiskDef> disks, String snapshotName, String diskPath, Domain vm) throws LibvirtException{
+        Pair<String, Set<String>> diskToSnapshotAndDisksToAvoid = getDiskToSnapshotAndDisksToAvoid(disks, diskPath, vm);
+        String diskLabelToSnapshot = diskToSnapshotAndDisksToAvoid.first();
+        String disksToAvoidsOnSnapshot = diskToSnapshotAndDisksToAvoid.second().stream().map(diskLabel -> String.format(TAG_AVOID_DISK_FROM_SNAPSHOT, diskLabel))
+          .collect(Collectors.joining());
+        String snapshotTemporaryPath = getSnapshotTemporaryPath(diskPath, snapshotName);
+
+        String createSnapshotXmlFormated = String.format(XML_CREATE_SNAPSHOT, snapshotName, diskLabelToSnapshot, snapshotTemporaryPath, disksToAvoidsOnSnapshot);
+
+        long start = System.currentTimeMillis();
+        vm.snapshotCreateXML(createSnapshotXmlFormated, VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY);
+        s_logger.debug(String.format("Snapshot [%s] took [%s] seconds to finish.", snapshotName, (System.currentTimeMillis() - start)/1000));
+
+        return diskLabelToSnapshot;
+    }
+
+    /**
+     * Retrieves the disk label to take snapshot and, in case that there is more than one disk attached to VM, the disk labels to avoid the snapshot;
+     * @param disks List of VM's disks;
+     * @param diskPath Path of the disk to take snapshot;
+     * @param vm VM in which disks stay;
+     * @return the label to take snapshot and the labels to avoid it. If the disk path not be found in VM's XML or be found more than once, it will throw a CloudRuntimeException.
+     * @throws org.libvirt.LibvirtException
+     */
+    protected Pair<String, Set<String>> getDiskToSnapshotAndDisksToAvoid(List<DiskDef> disks, String diskPath, Domain vm) throws LibvirtException {
+        String diskLabelToSnapshot = null;
+        Set<String> disksToAvoid = new HashSet<>();
+
+        for (DiskDef disk : disks) {
+            String diskDefPath = disk.getDiskPath();
+
+            if (StringUtils.isEmpty(diskDefPath)) {
+                continue;
+            }
+
+            String diskLabel = disk.getDiskLabel();
+
+            if (!diskPath.equals(diskDefPath)) {
+                disksToAvoid.add(diskLabel);
+                continue;
+            }
+
+            if (diskLabelToSnapshot != null) {
+                throw new CloudRuntimeException(String.format("VM [%s] has more than one disk with path [%s]. VM's XML [%s].", vm.getName(), diskPath, vm.getXMLDesc(0)));
+            }
+
+            diskLabelToSnapshot = diskLabel;
+        }
+
+        if (diskLabelToSnapshot == null) {
+            throw new CloudRuntimeException(String.format("VM [%s] has no disk with path [%s]. VM's XML [%s].", vm.getName(), diskPath, vm.getXMLDesc(0)));
+        }
+
+        return new Pair<>(diskLabelToSnapshot, disksToAvoid);
+    }
+
+    /**
+     * Retrieves the temporary path of the snapshot.
+     * @param diskPath Path of the disk to snapshot;
+     * @param snapshotName Snapshot name;
+     * @return the path of the disk replacing the disk with the snapshot.
+     */
+    protected String getSnapshotTemporaryPath(String diskPath, String snapshotName) {
+        String[] diskPathSplitted = diskPath.split(File.separator);
+        diskPathSplitted[diskPathSplitted.length - 1] = snapshotName;
+        return String.join(File.separator, diskPathSplitted);
+    }
+
+    /**
+     * Validate if the primary storage has enough capacity to take a disk snapshot, as the snapshot will duplicate the disk to backup.
+     * @param primaryPool Primary storage to verify capacity;
+     * @param disk Disk that will be snapshotted.
+     */
+    protected void validateAvailableSizeOnPoolToTakeVolumeSnapshot(KVMStoragePool primaryPool, KVMPhysicalDisk disk) {
+        long availablePoolSize = primaryPool.getAvailable();
+        String poolDescription = ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(primaryPool, "name", "localPath", "uuid");
+        String diskDescription = ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(disk, "name", "path", "size");
+
+        if (isAvailablePoolSizeDividedByDiskSizeLesserThanMinRate(availablePoolSize, disk.getSize())) {
+            throw new CloudRuntimeException(String.format("Pool [%s] available size [%s] must be at least once more of disk [%s] size, plus 5%%. Not taking snapshot.", poolDescription, availablePoolSize,
+                diskDescription));
+        }
+
+        s_logger.debug(String.format("Pool [%s] has enough available size [%s] to take volume [%s] snapshot.", poolDescription, availablePoolSize, diskDescription));
+    }
+
+    protected boolean isAvailablePoolSizeDividedByDiskSizeLesserThanMinRate(long availablePoolSize, long diskSize) {
+        return ((availablePoolSize * 1d) / (diskSize * 1d)) < MIN_RATE_BETWEEN_AVAILABLE_POOL_AND_DISK_SIZE_TO_TAKE_DISK_SNAPSHOT;
     }
 
     private Rados radosConnect(final KVMStoragePool primaryPool) throws RadosException {
