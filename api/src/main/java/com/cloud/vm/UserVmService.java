@@ -18,24 +18,12 @@ package com.cloud.vm;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
-import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
-import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
-import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
-import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
-import org.apache.cloudstack.api.command.user.vm.RemoveNicFromVMCmd;
-import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
-import org.apache.cloudstack.api.command.user.vm.ResetVMSSHKeyCmd;
-import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
-import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
-import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateDefaultNicForVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpCmd;
-import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
+import org.apache.cloudstack.api.command.user.vm.*;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 
@@ -84,6 +72,15 @@ public interface UserVmService {
      * @throws ResourceUnavailableException
      */
     UserVm destroyVm(long vmId, boolean expunge) throws ResourceUnavailableException, ConcurrentOperationException;
+
+    /**
+     * Clone a specific VM (full clone)
+     *
+     * @param cmd
+     *           - the command specifying vmId to be cloned
+     * @return the VM if cloneVM operation is successful
+     * */
+    Optional<UserVm> cloneVirtualMachine(CloneVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException;
 
     /**
      * Resets the password of a virtual machine.
