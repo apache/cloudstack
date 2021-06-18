@@ -23,9 +23,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
@@ -305,6 +307,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private long _maxVolumeSizeInGb;
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
+
+    private static final Set<Volume.State> STATES_VOLUME_CANNOT_BE_DESTROYED = new HashSet<>(Arrays.asList(Volume.State.Destroy, Volume.State.Expunging, Volume.State.Expunged, Volume.State.Allocated));
 
     protected VolumeApiServiceImpl() {
         _volStateMachine = Volume.State.getStateMachine();
@@ -1451,13 +1455,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * <ul>
      *  <li> {@value Volume.State#Destroy};
      *  <li> {@value Volume.State#Expunging};
-     *  <li> {@value Volume.State#Expunged}.
+     *  <li> {@value Volume.State#Expunged};
+     *  <li> {@value Volume.State#Allocated}.
      * </ul>
      *
      * The volume is destroyed via {@link VolumeService#destroyVolume(long)} method.
      */
     protected void destroyVolumeIfPossible(VolumeVO volume) {
-        if (volume.getState() != Volume.State.Destroy && volume.getState() != Volume.State.Expunging && volume.getState() != Volume.State.Expunged && volume.getState() != Volume.State.Allocated) {
+        if (!STATES_VOLUME_CANNOT_BE_DESTROYED.contains(volume.getState())) {
             volService.destroyVolume(volume.getId());
         }
     }
