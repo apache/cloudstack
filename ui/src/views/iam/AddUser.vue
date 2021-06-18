@@ -137,7 +137,9 @@
             </a-tooltip>
           </span>
           <a-select
-            v-decorator="['account']"
+            v-decorator="['account', {
+              rules: [{ required: true, message: $t('message.error.required.input') }]
+            }]"
             :loading="loadingAccount"
             :placeholder="apiParams.account.description">
             <a-select-option v-for="(item, idx) in accountList" :key="idx">
@@ -220,7 +222,19 @@ export default {
   },
   created () {
     this.form = this.$form.createForm(this)
+<<<<<<< HEAD
     this.apiParams = this.$getApiParams('createUser', 'authorizeSamlSso')
+=======
+    this.apiConfig = this.$store.getters.apis.createUser || {}
+    this.apiParams = {}
+    this.apiConfig.params.forEach(param => {
+      this.apiParams[param.name] = param
+    })
+    this.apiConfig = this.$store.getters.apis.authorizeSamlSso || { params: [] }
+    this.apiConfig.params.forEach(param => {
+      this.apiParams[param.name] = param
+    })
+>>>>>>> 4.15
     this.fetchData()
   },
   methods: {
@@ -311,7 +325,7 @@ export default {
 
         if (this.account) {
           params.account = this.account
-        } else if (values.account) {
+        } else if (this.accountList[values.account]) {
           params.account = this.accountList[values.account].name
         }
 
