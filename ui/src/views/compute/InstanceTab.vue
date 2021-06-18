@@ -138,6 +138,10 @@
       <a-tab-pane :tab="$t('label.settings')" key="settings">
         <DetailSettings :resource="resource" :loading="loading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.annotations')" key="annotations" v-if="'listAnnotations' in $store.getters.apis">
+        <AnnotationsTable :resource="vm" :loading="loading">
+        </AnnotationsTable>
+      </a-tab-pane>
     </a-tabs>
 
     <a-modal
@@ -283,6 +287,7 @@ import DetailSettings from '@/components/view/DetailSettings'
 import NicsTable from '@/views/network/NicsTable'
 import ListResourceTable from '@/components/view/ListResourceTable'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import AnnotationsTable from '@/components/view/AnnotationsTable'
 
 export default {
   name: 'InstanceTab',
@@ -293,7 +298,8 @@ export default {
     NicsTable,
     Status,
     ListResourceTable,
-    TooltipButton
+    TooltipButton,
+    AnnotationsTable
   },
   mixins: [mixinDevice],
   props: {
