@@ -716,7 +716,7 @@ export default {
           }
         }
         this.updateLoading(true)
-        const name = values.name
+        const name = this.resource.name
         api('importUnmanagedInstance', params).then(json => {
           const jobId = json.importunmanagedinstanceresponse.jobid
           this.$store.dispatch('AddAsyncJob', {
