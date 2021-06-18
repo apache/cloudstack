@@ -870,16 +870,9 @@ export default {
                 duration: 0
               })
             }
-          } else if (result.jobstatus === 1 && action.api === 'restoreVirtualMachine') {
-            const vm = result.jobresult.virtualmachine
-            const name = vm.displayname || vm.name || vm.id
-            if (vm.password) {
-              this.$notification.success({
-                message: `${this.$t('label.reinstall.vm')}: ` + name,
-                description: `${this.$t('label.password.reset.confirm')}: ` + vm.password,
-                duration: 0
-              })
-            }
+          }
+          if ('successMethod' in action) {
+            action.successMethod(this, result)
           }
         },
         errorMethod: () => this.fetchData(),
