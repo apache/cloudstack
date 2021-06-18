@@ -144,6 +144,18 @@ export default {
             virtualmachineid: {
               value: (record) => { return record.id }
             }
+          },
+          successMethod: (obj, result) => {
+            console.log('here')
+            const vm = result.jobresult.virtualmachine || {}
+            if (result.jobstatus === 1 && vm.password) {
+              const name = vm.displayname || vm.name || vm.id
+              obj.$notification.success({
+                message: `${obj.$t('label.reinstall.vm')}: ` + name,
+                description: `${obj.$t('label.password.reset.confirm')}: ` + vm.password,
+                duration: 0
+              })
+            }
           }
         },
         {
