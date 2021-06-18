@@ -51,6 +51,10 @@ public class AnnotationResponse extends BaseResponse {
     @Param(description = "The (uu)id of the user that entered the annotation")
     private String userUuid;
 
+    @SerializedName(ApiConstants.USERNAME)
+    @Param(description = "The username of the user that entered the annotation")
+    private String username;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the creation timestamp for this annotation")
     private Date created;
@@ -117,5 +121,13 @@ public class AnnotationResponse extends BaseResponse {
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 }
