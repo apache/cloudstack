@@ -325,7 +325,16 @@ const user = {
         })
       })
     },
-
+    UpdateConfiguration ({ commit }) {
+      return new Promise((resolve, reject) => {
+        api('listLdapConfigurations').then(response => {
+          const ldapEnable = (response.ldapconfigurationresponse.count > 0)
+          commit('SET_LDAP', ldapEnable)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    },
     SetDomainStore ({ commit }, domainStore) {
       commit('SET_DOMAIN_STORE', domainStore)
     }

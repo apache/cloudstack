@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm;
+package com.cloud.deploy;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -28,18 +28,30 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.host.Host;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
+import org.apache.commons.collections.CollectionUtils;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
@@ -73,15 +85,8 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.HostPodDao;
-import com.cloud.deploy.DataCenterDeployment;
-import com.cloud.deploy.DeployDestination;
-import com.cloud.deploy.DeploymentClusterPlanner;
-import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.DeploymentPlanner.PlannerResourceUsage;
-import com.cloud.deploy.DeploymentPlanningManagerImpl;
-import com.cloud.deploy.FirstFitPlanner;
-import com.cloud.deploy.PlannerHostReservationVO;
 import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.InsufficientServerCapacityException;
@@ -90,6 +95,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
+import com.cloud.org.Grouping.AllocationState;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ProvisioningType;
@@ -110,7 +116,8 @@ import com.cloud.host.dao.HostDetailsDao;
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 public class DeploymentPlanningManagerImplTest {
 
-    @Inject
+    @Spy
+    @InjectMocks
     DeploymentPlanningManagerImpl _dpm;
 
     @Inject
@@ -118,6 +125,12 @@ public class DeploymentPlanningManagerImplTest {
 
     @Inject
     VirtualMachineProfileImpl vmProfile;
+
+    @Inject
+    private AccountDao accountDao;
+
+    @Inject
+    private VMInstanceDao vmInstanceDao;
 
     @Inject
     AffinityGroupVMMapDao _affinityGroupVMMapDao;
@@ -146,11 +159,15 @@ public class DeploymentPlanningManagerImplTest {
     @Inject
     VMTemplateDao templateDao;
 
+    @Inject
+    HostPodDao hostPodDao;
+
     @Mock
     Host host;
 
     private static long dataCenterId = 1L;
     private static long hostId = 1l;
+    private static final long ADMIN_ACCOUNT_ROLE_ID = 1l;
 
     @BeforeClass
     public static void setUp() throws ConfigurationException {
@@ -189,6 +206,7 @@ public class DeploymentPlanningManagerImplTest {
         _dpm.setPlanners(planners);
 
         Mockito.when(host.getId()).thenReturn(hostId);
+        Mockito.doNothing().when(_dpm).avoidDisabledResources(vmProfile, dc, avoids);
     }
 
     @Test
@@ -196,7 +214,7 @@ public class DeploymentPlanningManagerImplTest {
         ServiceOfferingVO svcOffering =
             new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false, "test dpm",
                     ProvisioningType.THIN, false, false, null, false, VirtualMachine.Type.User,
-                    null, "FirstFitPlanner");
+                    null, "FirstFitPlanner", true);
         Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
@@ -211,7 +229,7 @@ public class DeploymentPlanningManagerImplTest {
         ServiceOfferingVO svcOffering =
             new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false, "test dpm",
                     ProvisioningType.THIN, false, false, null, false, VirtualMachine.Type.User,
-                    null, "UserDispersingPlanner");
+                    null, "UserDispersingPlanner", true);
         Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
@@ -227,7 +245,7 @@ public class DeploymentPlanningManagerImplTest {
         ServiceOfferingVO svcOffering =
             new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false, "test dpm",
                 ProvisioningType.THIN, false, false, null, false, VirtualMachine.Type.User,
-                    null, "FirstFitPlanner");
+                    null, "FirstFitPlanner", true);
         Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
@@ -257,6 +275,184 @@ public class DeploymentPlanningManagerImplTest {
     @Test
     public void testCheckAffinityNotEmptyPreferredHostsNotContainingHost() {
         assertFalse(_dpm.checkAffinity(host, Arrays.asList(3l, 4l, 2l)));
+    }
+
+    @Test
+    public void routerInDisabledResourceAssertFalse() {
+        Assert.assertFalse(DeploymentPlanningManager.allowRouterOnDisabledResource.value());
+    }
+
+    @Test
+    public void adminVmInDisabledResourceAssertFalse() {
+        Assert.assertFalse(DeploymentPlanningManager.allowAdminVmOnDisabledResource.value());
+    }
+
+    @Test
+    public void avoidDisabledResourcesTestAdminAccount() {
+        Type[] vmTypes = VirtualMachine.Type.values();
+        for (int i = 0; i < vmTypes.length - 1; ++i) {
+            Mockito.when(vmProfile.getType()).thenReturn(vmTypes[i]);
+            if (vmTypes[i].isUsedBySystem()) {
+                prepareAndVerifyAvoidDisabledResourcesTest(1, 0, 0, ADMIN_ACCOUNT_ROLE_ID, vmTypes[i], true, false);
+            } else {
+                prepareAndVerifyAvoidDisabledResourcesTest(0, 1, 1, ADMIN_ACCOUNT_ROLE_ID, vmTypes[i], true, false);
+            }
+        }
+    }
+
+    @Test
+    public void avoidDisabledResourcesTestUserAccounAdminCannotDeployOnDisabled() {
+        Type[] vmTypes = VirtualMachine.Type.values();
+        for (int i = 0; i < vmTypes.length - 1; ++i) {
+            Mockito.when(vmProfile.getType()).thenReturn(vmTypes[i]);
+            long userAccountId = ADMIN_ACCOUNT_ROLE_ID + 1;
+            if (vmTypes[i].isUsedBySystem()) {
+                prepareAndVerifyAvoidDisabledResourcesTest(1, 0, 0, userAccountId, vmTypes[i], true, false);
+            } else {
+                prepareAndVerifyAvoidDisabledResourcesTest(0, 0, 1, userAccountId, vmTypes[i], true, false);
+            }
+        }
+    }
+
+    @Test
+    public void avoidDisabledResourcesTestUserAccounAdminCanDeployOnDisabled() {
+        Type[] vmTypes = VirtualMachine.Type.values();
+        for (int i = 0; i < vmTypes.length - 1; ++i) {
+            Mockito.when(vmProfile.getType()).thenReturn(vmTypes[i]);
+            long userAccountId = ADMIN_ACCOUNT_ROLE_ID + 1;
+            if (vmTypes[i].isUsedBySystem()) {
+                prepareAndVerifyAvoidDisabledResourcesTest(1, 0, 0, userAccountId, vmTypes[i], true, true);
+            } else {
+                prepareAndVerifyAvoidDisabledResourcesTest(0, 0, 1, userAccountId, vmTypes[i], true, true);
+            }
+        }
+    }
+
+    private void prepareAndVerifyAvoidDisabledResourcesTest(int timesRouter, int timesAdminVm, int timesDisabledResource, long roleId, Type vmType, boolean isSystemDepolyable,
+            boolean isAdminVmDeployable) {
+        Mockito.doReturn(isSystemDepolyable).when(_dpm).isRouterDeployableInDisabledResources();
+        Mockito.doReturn(isAdminVmDeployable).when(_dpm).isAdminVmDeployableInDisabledResources();
+
+        VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+        DataCenter dc = Mockito.mock(DataCenter.class);
+        ExcludeList avoids = Mockito.mock(ExcludeList.class);
+
+        Mockito.when(vmProfile.getType()).thenReturn(vmType);
+        Mockito.when(vmProfile.getId()).thenReturn(1l);
+
+        Mockito.doNothing().when(_dpm).avoidDisabledDataCenters(dc, avoids);
+        Mockito.doNothing().when(_dpm).avoidDisabledPods(dc, avoids);
+        Mockito.doNothing().when(_dpm).avoidDisabledClusters(dc, avoids);
+        Mockito.doNothing().when(_dpm).avoidDisabledHosts(dc, avoids);
+
+        VMInstanceVO vmInstanceVO = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vmInstanceDao.findById(Mockito.anyLong())).thenReturn(vmInstanceVO);
+        AccountVO owner = Mockito.mock(AccountVO.class);
+        Mockito.when(owner.getRoleId()).thenReturn(roleId);
+        Mockito.when(accountDao.findById(Mockito.anyLong())).thenReturn(owner);
+
+        _dpm.avoidDisabledResources(vmProfile, dc, avoids);
+
+        Mockito.verify(_dpm, Mockito.times(timesRouter)).isRouterDeployableInDisabledResources();
+        Mockito.verify(_dpm, Mockito.times(timesAdminVm)).isAdminVmDeployableInDisabledResources();
+        Mockito.verify(_dpm, Mockito.times(timesDisabledResource)).avoidDisabledDataCenters(dc, avoids);
+        Mockito.verify(_dpm, Mockito.times(timesDisabledResource)).avoidDisabledPods(dc, avoids);
+        Mockito.verify(_dpm, Mockito.times(timesDisabledResource)).avoidDisabledClusters(dc, avoids);
+        Mockito.verify(_dpm, Mockito.times(timesDisabledResource)).avoidDisabledHosts(dc, avoids);
+        Mockito.reset(_dpm);
+    }
+
+    @Test
+    public void avoidDisabledDataCentersTest() {
+        DataCenter dc = Mockito.mock(DataCenter.class);
+        Mockito.when(dc.getId()).thenReturn(123l);
+
+        ExcludeList avoids = new ExcludeList();
+        AllocationState[] allocationStates = AllocationState.values();
+        for (int i = 0; i < allocationStates.length - 1; ++i) {
+            Mockito.when(dc.getAllocationState()).thenReturn(allocationStates[i]);
+
+            _dpm.avoidDisabledDataCenters(dc, avoids);
+
+            if (allocationStates[i] == AllocationState.Disabled) {
+                assertAvoidIsEmpty(avoids, false, true, true, true);
+                Assert.assertTrue(avoids.getDataCentersToAvoid().size() == 1);
+                Assert.assertTrue(avoids.getDataCentersToAvoid().contains(dc.getId()));
+            } else {
+                assertAvoidIsEmpty(avoids, true, true, true, true);
+            }
+        }
+    }
+
+    @Test
+    public void avoidDisabledPodsTestNoDisabledPod() {
+        DataCenter dc = Mockito.mock(DataCenter.class);
+        List<Long> podIds = new ArrayList<>();
+        long expectedPodId = 123l;
+        podIds.add(expectedPodId);
+        Mockito.doReturn(new ArrayList<>()).when(hostPodDao).listDisabledPods(Mockito.anyLong());
+        ExcludeList avoids = new ExcludeList();
+
+        _dpm.avoidDisabledPods(dc, avoids);
+        assertAvoidIsEmpty(avoids, true, true, true, true);
+    }
+
+    @Test
+    public void avoidDisabledPodsTestHasDisabledPod() {
+        DataCenter dc = Mockito.mock(DataCenter.class);
+        List<Long> podIds = new ArrayList<>();
+        long expectedPodId = 123l;
+        podIds.add(expectedPodId);
+        Mockito.doReturn(podIds).when(hostPodDao).listDisabledPods(Mockito.anyLong());
+
+        ExcludeList avoids = new ExcludeList();
+
+        _dpm.avoidDisabledPods(dc, avoids);
+        assertAvoidIsEmpty(avoids, true, false, true, true);
+        Assert.assertTrue(avoids.getPodsToAvoid().size() == 1);
+        Assert.assertTrue(avoids.getPodsToAvoid().contains(expectedPodId));
+    }
+
+    @Test
+    public void avoidDisabledClustersTestNoDisabledCluster() {
+        DataCenter dc = prepareAvoidDisabledTests();
+        Mockito.doReturn(new ArrayList<>()).when(_clusterDao).listDisabledClusters(Mockito.anyLong(), Mockito.anyLong());
+        ExcludeList avoids = new ExcludeList();
+
+        _dpm.avoidDisabledClusters(dc, avoids);
+        assertAvoidIsEmpty(avoids, true, true, true, true);
+    }
+
+    @Test
+    public void avoidDisabledClustersTestHasDisabledCluster() {
+        DataCenter dc = prepareAvoidDisabledTests();
+        long expectedClusterId = 123l;
+        List<Long> disabledClusters = new ArrayList<>();
+        disabledClusters.add(expectedClusterId);
+        Mockito.doReturn(disabledClusters).when(_clusterDao).listDisabledClusters(Mockito.anyLong(), Mockito.anyLong());
+        ExcludeList avoids = new ExcludeList();
+
+        _dpm.avoidDisabledClusters(dc, avoids);
+
+        assertAvoidIsEmpty(avoids, true, true, false, true);
+        Assert.assertTrue(avoids.getClustersToAvoid().size() == 1);
+        Assert.assertTrue(avoids.getClustersToAvoid().contains(expectedClusterId));
+    }
+
+    private DataCenter prepareAvoidDisabledTests() {
+        DataCenter dc = Mockito.mock(DataCenter.class);
+        Mockito.when(dc.getId()).thenReturn(123l);
+        List<Long> podIds = new ArrayList<>();
+        podIds.add(1l);
+        Mockito.doReturn(podIds).when(hostPodDao).listAllPods(Mockito.anyLong());
+        return dc;
+    }
+
+    private void assertAvoidIsEmpty(ExcludeList avoids, boolean isDcEmpty, boolean isPodsEmpty, boolean isClustersEmpty, boolean isHostsEmpty) {
+        Assert.assertEquals(isDcEmpty, CollectionUtils.isEmpty(avoids.getDataCentersToAvoid()));
+        Assert.assertEquals(isPodsEmpty, CollectionUtils.isEmpty(avoids.getPodsToAvoid()));
+        Assert.assertEquals(isClustersEmpty, CollectionUtils.isEmpty(avoids.getClustersToAvoid()));
+        Assert.assertEquals(isHostsEmpty, CollectionUtils.isEmpty(avoids.getHostsToAvoid()));
     }
 
     @Configuration
@@ -461,8 +657,13 @@ public class DeploymentPlanningManagerImplTest {
         }
 
         @Bean
-        public HostGpuGroupsDao hostGpuGroupsDap() {
+        public HostGpuGroupsDao hostGpuGroupsDao() {
             return Mockito.mock(HostGpuGroupsDao.class);
+        }
+
+        @Bean
+        public AccountDao accountDao() {
+            return Mockito.mock(AccountDao.class);
         }
 
         @Bean

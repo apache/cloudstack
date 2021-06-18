@@ -963,6 +963,9 @@ export default {
           break
         }
       }
+      if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
+        this.$store.dispatch('UpdateConfiguration')
+      }
       return false
     },
     execSubmit (e) {
@@ -983,13 +986,13 @@ export default {
               continue
             }
             if (!input === undefined || input === null ||
-              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork'].includes(action.api))) {
+              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering'].includes(action.api))) {
               if (param.type === 'boolean') {
                 params[key] = false
               }
               break
             }
-            if (!input) {
+            if (!input && input !== 0 && !['tags'].includes(key)) {
               continue
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {

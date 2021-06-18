@@ -59,6 +59,7 @@ import org.apache.cloudstack.storage.command.ResignatureAnswer;
 import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
+import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -69,6 +70,7 @@ import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -1194,6 +1196,14 @@ public class KVMStorageProcessor implements StorageProcessor {
             } else {
                 s_logger.debug("Detaching device: " + xml);
                 dm.detachDevice(xml);
+                LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+                parser.parseDomainXML(dm.getXMLDesc(0));
+                List<DiskDef> disks = parser.getDisks();
+                for (DiskDef diskDef : disks) {
+                    if (StringUtils.contains(xml, diskDef.getDiskPath())) {
+                        throw new InternalErrorException("Could not detach volume. Probably the VM is in boot state at the moment");
+                    }
+                }
             }
         } catch (final LibvirtException e) {
             if (attach) {
@@ -1922,8 +1932,14 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer CheckDataStoreStoragePolicyComplaince(CheckDataStoreStoragePolicyComplainceCommand cmd) {
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd) {
         s_logger.info("'CheckDataStoreStoragePolicyComplainceCommand' not currently applicable for KVMStorageProcessor");
         return new Answer(cmd,false,"Not currently applicable for KVMStorageProcessor");
+    }
+
+    @Override
+    public Answer syncVolumePath(SyncVolumePathCommand cmd) {
+        s_logger.info("SyncVolumePathCommand not currently applicable for KVMStorageProcessor");
+        return new Answer(cmd, false, "Not currently applicable for KVMStorageProcessor");
     }
 }

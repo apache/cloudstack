@@ -33,6 +33,9 @@ public interface OutOfBandManagementService {
     ConfigKey<Integer> SyncThreadPoolSize = new ConfigKey<Integer>("Advanced", Integer.class, "outofbandmanagement.sync.poolsize", "50",
             "The out of band management background sync thread pool size", true, ConfigKey.Scope.Global);
 
+    ConfigKey<Integer> OutOfBandManagementBackgroundTaskExecutionInterval = new ConfigKey<>("Advanced", Integer.class, "outofbandmanagement.background.task.execution.interval", "4",
+            "The interval in seconds for the out of band management (OOBM) background task.", true);
+
     long getId();
     boolean isOutOfBandManagementEnabled(Host host);
     void submitBackgroundPowerSyncTask(Host host);

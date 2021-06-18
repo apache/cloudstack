@@ -377,19 +377,19 @@ public class TransactionLegacy implements Closeable {
     }
 
     public boolean lock(final String name, final int timeoutSeconds) {
-        Merovingian2 lockMaster = Merovingian2.getLockMaster();
-        if (lockMaster == null) {
+        Merovingian2 lockController = Merovingian2.getLockController();
+        if (lockController == null) {
             throw new CloudRuntimeException("There's no support for locking yet");
         }
-        return lockMaster.acquire(name, timeoutSeconds);
+        return lockController.acquire(name, timeoutSeconds);
     }
 
     public boolean release(final String name) {
-        Merovingian2 lockMaster = Merovingian2.getLockMaster();
-        if (lockMaster == null) {
+        Merovingian2 lockController = Merovingian2.getLockController();
+        if (lockController == null) {
             throw new CloudRuntimeException("There's no support for locking yet");
         }
-        return lockMaster.release(name);
+        return lockController.release(name);
     }
 
     /**
@@ -644,9 +644,9 @@ public class TransactionLegacy implements Closeable {
         closeConnection();
 
         _stack.clear();
-        Merovingian2 lockMaster = Merovingian2.getLockMaster();
-        if (lockMaster != null) {
-            lockMaster.cleanupThread();
+        Merovingian2 lockController = Merovingian2.getLockController();
+        if (lockController != null) {
+            lockController.cleanupThread();
         }
     }
 
@@ -1063,11 +1063,11 @@ public class TransactionLegacy implements Closeable {
             final String url = dbProps.getProperty("db.cloud.url.params");
 
             String cloudDbHAParams = null;
-            String cloudSlaves = null;
+            String cloudReplicas = null;
             if (s_dbHAEnabled) {
                 cloudDbHAParams = getDBHAParams("cloud", dbProps);
-                cloudSlaves = dbProps.getProperty("db.cloud.slaves");
-                s_logger.info("The slaves configured for Cloud Data base is/are : " + cloudSlaves);
+                cloudReplicas = dbProps.getProperty("db.cloud.replicas");
+                s_logger.info("The replicas configured for Cloud Data base is/are : " + cloudReplicas);
             }
 
             final boolean useSSL = Boolean.parseBoolean(dbProps.getProperty("db.cloud.useSSL"));
@@ -1078,7 +1078,7 @@ public class TransactionLegacy implements Closeable {
                 System.setProperty("javax.net.ssl.trustStorePassword", dbProps.getProperty("db.cloud.trustStorePassword"));
             }
 
-            final String cloudConnectionUri = cloudDriver + "://" + cloudHost + (s_dbHAEnabled ? "," + cloudSlaves : "") + ":" + cloudPort + "/" + cloudDbName +
+            final String cloudConnectionUri = cloudDriver + "://" + cloudHost + (s_dbHAEnabled ? "," + cloudReplicas : "") + ":" + cloudPort + "/" + cloudDbName +
                     "?autoReconnect=" + cloudAutoReconnect + (url != null ? "&" + url : "") + (useSSL ? "&useSSL=true" : "") +
                     (s_dbHAEnabled ? "&" + cloudDbHAParams : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : "");
             DriverLoader.loadDriver(cloudDriver);
@@ -1101,7 +1101,7 @@ public class TransactionLegacy implements Closeable {
             final boolean usageAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.usage.autoReconnect"));
             final String usageUrl = dbProps.getProperty("db.usage.url.params");
 
-            final String usageConnectionUri = usageDriver + "://" + usageHost + (s_dbHAEnabled ? "," + dbProps.getProperty("db.cloud.slaves") : "") + ":" + usagePort +
+            final String usageConnectionUri = usageDriver + "://" + usageHost + (s_dbHAEnabled ? "," + dbProps.getProperty("db.cloud.replicas") : "") + ":" + usagePort +
                     "/" + usageDbName + "?autoReconnect=" + usageAutoReconnect + (usageUrl != null ? "&" + usageUrl : "") +
                     (s_dbHAEnabled ? "&" + getDBHAParams("usage", dbProps) : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : "");
             DriverLoader.loadDriver(usageDriver);
@@ -1196,8 +1196,8 @@ public class TransactionLegacy implements Closeable {
         sb.append("failOverReadOnly=" + dbProps.getProperty("db." + dbName + ".failOverReadOnly"));
         sb.append("&").append("reconnectAtTxEnd=" + dbProps.getProperty("db." + dbName + ".reconnectAtTxEnd"));
         sb.append("&").append("autoReconnectForPools=" + dbProps.getProperty("db." + dbName + ".autoReconnectForPools"));
-        sb.append("&").append("secondsBeforeRetryMaster=" + dbProps.getProperty("db." + dbName + ".secondsBeforeRetryMaster"));
-        sb.append("&").append("queriesBeforeRetryMaster=" + dbProps.getProperty("db." + dbName + ".queriesBeforeRetryMaster"));
+        sb.append("&").append("secondsBeforeRetrySource=" + dbProps.getProperty("db." + dbName + ".secondsBeforeRetrySource"));
+        sb.append("&").append("queriesBeforeRetrySource=" + dbProps.getProperty("db." + dbName + ".queriesBeforeRetrySource"));
         sb.append("&").append("initialTimeout=" + dbProps.getProperty("db." + dbName + ".initialTimeout"));
         return sb.toString();
     }

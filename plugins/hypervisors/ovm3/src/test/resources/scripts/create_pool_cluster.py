@@ -254,7 +254,7 @@ try:
     for node in poolDom.getElementsByTagName('Server_Pool'):
         id = node.getElementsByTagName('Unique_Id')[0].firstChild.nodeValue
         alias = node.getElementsByTagName('Pool_Alias')[0].firstChild.nodeValue
-        mvip = node.getElementsByTagName('Master_Virtual_Ip')[0].firstChild.nodeValue
+        mvip = node.getElementsByTagName('Primary_Virtual_Ip')[0].firstChild.nodeValue
         print "pool: %s, %s, %s" % (id, mvip, alias)
         members = node.getElementsByTagName('Member')
         for member in members:

@@ -890,7 +890,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         }
 
         if (dsMo != null && !"StoragePod".equals(morDatastore.getType()) && createBaseFolder) {
-            HypervisorHostHelper.createBaseFolderInDatastore(dsMo, this);
+            HypervisorHostHelper.createBaseFolderInDatastore(dsMo, this.getHyperHostDatacenter());
         }
 
         if (s_logger.isTraceEnabled())
