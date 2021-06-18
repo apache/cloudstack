@@ -171,6 +171,7 @@
                 :cpuSpeedInputDecorator="cpuSpeedKey"
                 :memoryInputDecorator="memoryKey"
                 :computeOfferingId="computeOffering.id"
+                :preFillContent="this.resource"
                 :isConstrained="'serviceofferingdetails' in computeOffering"
                 :minCpu="getMinCpu()"
                 :maxCpu="getMaxCpu()"
@@ -462,6 +463,7 @@ export default {
       if (newValue) {
         this.resetForm()
         this.$refs.displayname.focus()
+        this.selectMatchingComputeOffering()
       }
     }
   },
@@ -574,6 +576,7 @@ export default {
         this.computeOfferings.map(i => { this.offeringsMap[i.id] = i })
       }).finally(() => {
         this.computeOfferingLoading = false
+        this.selectMatchingComputeOffering()
       })
     },
     updateFieldValue (name, value) {
@@ -599,6 +602,37 @@ export default {
         this.updateFieldValue('templateid', undefined)
       }
     },
+    selectMatchingComputeOffering () {
+      var offerings = [...this.computeOfferings]
+      offerings.sort(function (a, b) {
+        return a.cpunumber - b.cpunumber
+      })
+      for (var offering of offerings) {
+        var cpuNumberMatches = false
+        var cpuSpeedMatches = false
+        var memoryMatches = false
+        if (!offering.iscustomized) {
+          cpuNumberMatches = offering.cpunumber === this.resource.cpunumber
+          cpuSpeedMatches = !this.resource.cpuspeed || offering.cpuspeed === this.resource.cpuspeed
+          memoryMatches = offering.memory === this.resource.memory
+        } else {
+          cpuNumberMatches = cpuSpeedMatches = memoryMatches = true
+          if (offering.serviceofferingdetails) {
+            cpuNumberMatches = (this.resource.cpunumber >= offering.serviceofferingdetails.mincpunumber &&
+              this.resource.cpunumber <= offering.serviceofferingdetails.maxcpunumber)
+            memoryMatches = (this.resource.memory >= offering.serviceofferingdetails.minmemory &&
+              this.resource.memory <= offering.serviceofferingdetails.maxmemory)
+            cpuSpeedMatches = !this.resource.cpuspeed || offering.cpuspeed === this.resource.cpuspeed
+          }
+        }
+        if (cpuNumberMatches && cpuSpeedMatches && memoryMatches) {
+          setTimeout(() => {
+            this.updateComputeOffering(offering.id)
+          }, 250)
+          break
+        }
+      }
+    },
     handleSubmit (e) {
       e.preventDefault()
       this.form.validateFields((err, values) => {
@@ -621,6 +655,13 @@ export default {
         if (this.computeOffering.iscustomized) {
           var details = [this.cpuNumberKey, this.cpuSpeedKey, this.memoryKey]
           for (var detail of details) {
+            if (!(values[detail] || this.computeOffering[detail])) {
+              this.$notification.error({
+                message: this.$t('message.request.failed'),
+                description: this.$t('message.please.enter.valid.value') + ': ' + this.$t('label.' + detail.toLowerCase())
+              })
+              return
+            }
             if (values[detail]) {
               params['details[0].' + detail] = values[detail]
             }
@@ -674,7 +715,6 @@ export default {
             nicIpIndex++
           }
         }
-        console.log(values, params)
         this.updateLoading(true)
         const name = values.name
         api('importUnmanagedInstance', params).then(json => {

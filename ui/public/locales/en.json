@@ -3038,6 +3038,7 @@
 "message.pending.projects.2": "To view, please go to the projects section, then select invitations from the drop-down.",
 "message.please.add.at.lease.one.traffic.range": "Please add at least one traffic range.",
 "message.please.confirm.remove.ssh.key.pair": "Please confirm that you want to remove this SSH Key Pair",
+"message.please.enter.valid.value": "Please enter a valid value",
 "message.please.enter.value": "Please enter values",
 "message.please.proceed": "Please proceed to the next step.",
 "message.please.select.a.configuration.for.your.zone": "Please select a configuration for your zone.",
