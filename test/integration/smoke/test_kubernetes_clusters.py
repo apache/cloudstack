@@ -17,7 +17,8 @@
 """ Tests for Kubernetes supported version """
 
 #Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.cloudstackAPI import (listInfrastructure,
                                   listTemplates,
                                   listKubernetesSupportedVersions,
@@ -245,7 +246,7 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         hypervisor = cls.hypervisor.lower()
 
-        if hypervisor not in cks_templates.keys():
+        if hypervisor not in list(cks_templates.keys()):
             cls.debug("Provided hypervisor has no CKS template")
             return FAILED, False
 
@@ -260,8 +261,8 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         if validateList(templates)[0] != PASS:
             details = None
-            if hypervisor in ["vmware"]:
-                details = [{"keyboard": "us"}]
+            if hypervisor in ["vmware"] and "details" in cks_template:
+                details = cks_template["details"]
             template = Template.register(cls.apiclient, cks_template, zoneid=cls.zone.id, hypervisor=hypervisor.lower(), randomize_name=False, details=details)
             template.download(cls.apiclient)
             return template, False
@@ -572,13 +573,13 @@ class TestKubernetesCluster(cloudstackTestCase):
             return clusterResponse[0]
         return clusterResponse
 
-    def createKubernetesCluster(self, name, version_id, size=1, master_nodes=1):
+    def createKubernetesCluster(self, name, version_id, size=1, control_nodes=1):
         createKubernetesClusterCmd = createKubernetesCluster.createKubernetesClusterCmd()
         createKubernetesClusterCmd.name = name
         createKubernetesClusterCmd.description = name + "-description"
         createKubernetesClusterCmd.kubernetesversionid = version_id
         createKubernetesClusterCmd.size = size
-        createKubernetesClusterCmd.masternodes = master_nodes
+        createKubernetesClusterCmd.controlnodes = control_nodes
         createKubernetesClusterCmd.serviceofferingid = self.cks_service_offering.id
         createKubernetesClusterCmd.zoneid = self.zone.id
         createKubernetesClusterCmd.noderootdisksize = 10
@@ -621,10 +622,10 @@ class TestKubernetesCluster(cloudstackTestCase):
         response = self.apiclient.scaleKubernetesCluster(scaleKubernetesClusterCmd)
         return response
 
-    def getValidKubernetesCluster(self, size=1, master_nodes=1):
+    def getValidKubernetesCluster(self, size=1, control_nodes=1):
         cluster = k8s_cluster
         version = self.kubernetes_version_2
-        if master_nodes != 1:
+        if control_nodes != 1:
             version = self.kubernetes_version_3
         valid = True
         if cluster == None:
@@ -641,7 +642,7 @@ class TestKubernetesCluster(cloudstackTestCase):
                 self.debug("Existing cluster, k8s_cluster ID: %s not returned by list API" % cluster_id)
         if valid == True:
             try:
-                self.verifyKubernetesCluster(cluster, cluster.name, None, size, master_nodes)
+                self.verifyKubernetesCluster(cluster, cluster.name, None, size, control_nodes)
                 self.debug("Existing Kubernetes cluster available with name %s" % cluster.name)
             except  AssertionError as error:
                 valid = False
@@ -651,15 +652,15 @@ class TestKubernetesCluster(cloudstackTestCase):
             self.debug("Creating for Kubernetes cluster with name %s" % name)
             try:
                 self.deleteAllLeftoverClusters()
-                cluster = self.createKubernetesCluster(name, version.id, size, master_nodes)
-                self.verifyKubernetesCluster(cluster, name, version.id, size, master_nodes)
+                cluster = self.createKubernetesCluster(name, version.id, size, control_nodes)
+                self.verifyKubernetesCluster(cluster, name, version.id, size, control_nodes)
             except Exception as ex:
                 self.fail("Kubernetes cluster deployment failed: %s" % ex)
             except AssertionError as err:
                 self.fail("Kubernetes cluster deployment failed during cluster verification: %s" % err)
         return cluster
 
-    def verifyKubernetesCluster(self, cluster_response, name, version_id=None, size=1, master_nodes=1):
+    def verifyKubernetesCluster(self, cluster_response, name, version_id=None, size=1, control_nodes=1):
         """Check if Kubernetes cluster is valid"""
 
         self.verifyKubernetesClusterState(cluster_response, 'Running')
@@ -680,7 +681,7 @@ class TestKubernetesCluster(cloudstackTestCase):
             "Check KubernetesCluster zone {}, {}".format(cluster_response.zoneid, self.zone.id)
         )
 
-        self.verifyKubernetesClusterSize(cluster_response, size, master_nodes)
+        self.verifyKubernetesClusterSize(cluster_response, size, control_nodes)
 
         db_cluster_name = self.dbclient.execute("select name from kubernetes_cluster where uuid = '%s';" % cluster_response.id)[0][0]
 
@@ -708,7 +709,7 @@ class TestKubernetesCluster(cloudstackTestCase):
             "Check KubernetesCluster version {}, {}".format(cluster_response.kubernetesversionid, version_id)
         )
 
-    def verifyKubernetesClusterSize(self, cluster_response, size=1, master_nodes=1):
+    def verifyKubernetesClusterSize(self, cluster_response, size=1, control_nodes=1):
         """Check if Kubernetes cluster node sizes are valid"""
 
         self.assertEqual(
@@ -718,9 +719,9 @@ class TestKubernetesCluster(cloudstackTestCase):
         )
 
         self.assertEqual(
-            cluster_response.masternodes,
-            master_nodes,
-            "Check KubernetesCluster master nodes {}, {}".format(cluster_response.masternodes, master_nodes)
+            cluster_response.controlnodes,
+            control_nodes,
+            "Check KubernetesCluster control nodes {}, {}".format(cluster_response.controlnodes, control_nodes)
         )
 
     def verifyKubernetesClusterUpgrade(self, cluster_response, version_id):
@@ -729,11 +730,11 @@ class TestKubernetesCluster(cloudstackTestCase):
         self.verifyKubernetesClusterState(cluster_response, 'Running')
         self.verifyKubernetesClusterVersion(cluster_response, version_id)
 
-    def verifyKubernetesClusterScale(self, cluster_response, size=1, master_nodes=1):
+    def verifyKubernetesClusterScale(self, cluster_response, size=1, control_nodes=1):
         """Check if Kubernetes cluster state and node sizes are valid after upgrade"""
 
         self.verifyKubernetesClusterState(cluster_response, 'Running')
-        self.verifyKubernetesClusterSize(cluster_response, size, master_nodes)
+        self.verifyKubernetesClusterSize(cluster_response, size, control_nodes)
 
     def stopAndVerifyKubernetesCluster(self, cluster_id):
         """Stop Kubernetes cluster and check if it is really stopped"""

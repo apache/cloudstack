@@ -163,13 +163,15 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
         DecimalFormat decimalFormat = new DecimalFormat("#.##");
         if (host.getType() == Host.Type.Routing) {
+            float cpuOverprovisioningFactor = ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId());
+            hostResponse.setCpuNumber((int)(host.getCpus() * cpuOverprovisioningFactor));
             if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity)) {
                 // set allocated capacities
                 Long mem = host.getMemReservedCapacity() + host.getMemUsedCapacity();
                 Long cpu = host.getCpuReservedCapacity() + host.getCpuUsedCapacity();
 
-                hostResponse.setMemoryTotal(host.getTotalMemory());
                 Float memWithOverprovisioning = host.getTotalMemory() * ApiDBUtils.getMemOverprovisioningFactor(host.getClusterId());
+                hostResponse.setMemoryTotal(memWithOverprovisioning.longValue());
                 hostResponse.setMemWithOverprovisioning(decimalFormat.format(memWithOverprovisioning));
                 hostResponse.setMemoryAllocated(mem);
                 hostResponse.setMemoryAllocatedBytes(mem);
@@ -188,12 +190,12 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
 
+                float cpuWithOverprovisioning = host.getCpus() * host.getSpeed() * cpuOverprovisioningFactor;
                 hostResponse.setCpuAllocatedValue(cpu);
-                String cpuAlloc = decimalFormat.format(((float)cpu / (float)(host.getCpus() * host.getSpeed())) * 100f) + "%";
-                hostResponse.setCpuAllocated(cpuAlloc);
-                hostResponse.setCpuAllocatedPercentage(cpuAlloc);
-                float cpuWithOverprovisioning = host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId());
-                hostResponse.setCpuAllocatedWithOverprovisioning(calculateResourceAllocatedPercentage(cpu, cpuWithOverprovisioning));
+                String cpuAllocated = calculateResourceAllocatedPercentage(cpu, cpuWithOverprovisioning);
+                hostResponse.setCpuAllocated(cpuAllocated);
+                hostResponse.setCpuAllocatedPercentage(cpuAllocated);
+                hostResponse.setCpuAllocatedWithOverprovisioning(cpuAllocated);
                 hostResponse.setCpuWithOverprovisioning(decimalFormat.format(cpuWithOverprovisioning));
             }
 

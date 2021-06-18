@@ -1507,13 +1507,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         final VDI patchVDI = findPatchIsoVDI(conn, sr);
         for (final VM vm : vms) {
             final String vmName = vm.getNameLabel(conn);
-            try {
-                if (!vmName.startsWith("r-") && !vmName.startsWith("s-") && !vmName.startsWith("v-")) {
-                    return;
-                }
-                final Set<VBD> vbds = vm.getVBDs(conn);
-                for (final VBD vbd : vbds) {
-                    if (Types.VbdType.CD.equals(vbd.getType(conn))) {
+            if (!vmName.startsWith("r-") && !vmName.startsWith("s-") && !vmName.startsWith("v-")) {
+                continue;
+            }
+            final Set<VBD> vbds = vm.getVBDs(conn);
+            for (final VBD vbd : vbds) {
+                if (Types.VbdType.CD.equals(vbd.getType(conn))) {
+                    try {
                         if (!vbd.getEmpty(conn)) {
                             vbd.eject(conn);
                         }
@@ -1522,12 +1522,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                             vbd.insert(conn, patchVDI);
                             vbd.eject(conn);
                         }
-                        vbd.destroy(conn);
-                        break;
+                    } catch (Exception e) {
+                        s_logger.debug("Cannot eject CD-ROM device for VM " + vmName + " due to " + e.toString(), e);
                     }
+                    try {
+                        vbd.destroy(conn);
+                    } catch (Exception e) {
+                        s_logger.debug("Cannot destroy CD-ROM device for VM " + vmName + " due to " + e.toString(), e);
+                    }
+                    break;
                 }
-            } catch (final Exception e) {
-                s_logger.debug("Cannot destroy CD-ROM device for VM " + vmName + " due to " + e.toString(), e);
             }
         }
     }

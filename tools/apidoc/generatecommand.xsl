@@ -40,7 +40,7 @@ version="1.0">
 </div><!-- #EndLibraryItem --></div>
         </div>
         
-        <div id="main_master">
+        <div id="main_controller">
             <div id="inside_header">
 
                 <div class="header_top">
@@ -147,7 +147,7 @@ version="1.0">
         </div><!-- #BeginLibraryItem "/libraries/footer.lbi" -->
 <div id="footer">
 
-        	<div id="footer_mainmaster">
+        	<div id="footer_maincontroller">
             	<ul class="footer_linksbox">
                 	<li><strong> Main </strong></li>
                     <li> <a href="index.html"> Home</a> </li>

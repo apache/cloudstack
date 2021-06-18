@@ -20,7 +20,8 @@
 
 import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
@@ -39,7 +40,7 @@ import string
 
 import telnetlib
 import os
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import time
 import tempfile
 _multiprocess_shared_ = True
@@ -136,7 +137,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         if len(expected_vals) != len(actual_vals):
             return False
 
-        keys = expected_vals.keys()
+        keys = list(expected_vals.keys())
         for i in range(0, len(expected_vals)):
             exp_val = expected_vals[keys[i]]
             act_val = actual_vals[keys[i]]
@@ -213,7 +214,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
-        print results.status_code
+        print(results.status_code)
         if results.status_code !=200: 
             self.fail("Upload is not fine")
 
@@ -299,7 +300,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
-        print results.status_code
+        print(results.status_code)
         if results.status_code !=200: 
             self.fail("Upload is not fine")
 
@@ -425,7 +426,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         results = requests.post(posturl,files=files,headers=headers,verify=False)
         time.sleep(60)
 
-        print results.status_code
+        print(results.status_code)
         if results.status_code == 200: 
                 self.fail("Upload URL is allowed to reuse")
 
@@ -547,7 +548,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         results = requests.post(posturl,files=files,headers=headers,verify=False)
         time.sleep(60)
 
-        print results.status_code
+        print(results.status_code)
         if results.status_code !=200: 
             self.fail("Upload is not fine")
 
@@ -593,7 +594,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         results = requests.post(posturl,files=files,headers=headers,verify=False)
         time.sleep(60)
 
-        print results.status_code
+        print(results.status_code)
         if results.status_code !=200: 
             self.fail("Upload is not fine")
 
@@ -647,7 +648,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                     self.apiclient,
                     id=volid
                 )
-        print list_volume_response[0]
+        print(list_volume_response[0])
         vmlist.attach_volume(
                     self.apiclient,
                     list_volume_response[0]
@@ -715,7 +716,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                     self.apiclient,
                     id=volid
                 )
-        print list_volume_response[0]
+        print(list_volume_response[0])
         vmdetails.detach_volume(self.apiclient,list_volume_response[0])
 
         # Sleep to ensure the current state will reflected in other calls
@@ -821,9 +822,9 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         extract_vol = self.apiclient.extractVolume(cmd)
 
         try:
-            formatted_url = urllib.unquote_plus(extract_vol.url)
+            formatted_url = urllib.parse.unquote_plus(extract_vol.url)
             self.debug("Attempting to download volume at url %s" % formatted_url)
-            response = urllib.urlopen(formatted_url)
+            response = urllib.request.urlopen(formatted_url)
             self.debug("response from volume url %s" % response.getcode())
             fd, path = tempfile.mkstemp()
             self.debug("Saving volume %s to path %s" %(volumeid, path))
@@ -1185,7 +1186,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.apiclient,
             templatefilter='self')
 
-        self.assertEquals(
+        self.assertEqual(
             templates_before_size + 1,
             len(list_templates_after),
             "Template creation failed from snapshot"
@@ -1763,7 +1764,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
-        print results.status_code
+        print(results.status_code)
         if results.status_code !=200: 
             self.fail("Upload is not fine")
 
@@ -1808,7 +1809,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
-        print results.status_code
+        print(results.status_code)
         if results.status_code !=200: 
             self.fail("Upload is not fine")
 
@@ -1916,7 +1917,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
-        print results.status_code
+        print(results.status_code)
         if results.status_code !=200: 
             self.fail("Upload is not fine")
 
@@ -1955,7 +1956,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
-        print results.status_code
+        print(results.status_code)
         if results.status_code ==200: 
             return("FAIL")
         return("PASS")
