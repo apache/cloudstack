@@ -199,6 +199,18 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name = "disk_offering_strictness")
     private boolean diskOfferingStrictness;
 
+    @Column(name = "disk_offering_id")
+    private long diskOfferingId;
+
+    @Column(name = "disk_offering_uuid")
+    private String diskOfferingUuid;
+
+    @Column(name = "disk_offering_name")
+    private String diskOfferingName;
+
+    @Column(name = "disk_offering_display_text")
+    private String diskOfferingDisplayText;
+
     public ServiceOfferingJoinVO() {
     }
 
@@ -416,4 +428,19 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
         return diskOfferingStrictness;
     }
 
+    public long getDiskOfferingId() {
+        return diskOfferingId;
+    }
+
+    public String getDiskOfferingUuid() {
+        return diskOfferingUuid;
+    }
+
+    public String getDiskOfferingName() {
+        return diskOfferingName;
+    }
+
+    public String getDiskOfferingDisplayText() {
+        return diskOfferingDisplayText;
+    }
 }
