@@ -1609,6 +1609,8 @@
 "label.override.rootdisk.size": "Override Root Disk Size",
 "label.overrideguesttraffic": "Override Guest-Traffic",
 "label.overridepublictraffic": "Override Public-Traffic",
+"label.override.diskoffering": "Override Disk Offering",
+"label.override.root.diskoffering": "Override Root Disk Offering",
 "label.ovf.properties": "vApp Properties",
 "label.ovm3cluster": "Native Clustering",
 "label.ovm3networklabel": "OVM3 Traffic Label",

@@ -97,6 +97,10 @@ export default {
     isIsoSelected: {
       type: Boolean,
       default: false
+    },
+    isRootDiskOffering: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -185,7 +189,7 @@ export default {
       }
     },
     isIsoSelected () {
-      if (this.isIsoSelected) {
+      if (this.isIsoSelected || this.isRootDiskOffering) {
         this.dataItems = this.dataItems.filter(item => item.id !== '0')
       } else {
         this.dataItems.unshift({
@@ -202,7 +206,7 @@ export default {
   methods: {
     initDataItem () {
       this.dataItems = []
-      if (this.options.page === 1 && !this.isIsoSelected) {
+      if (this.options.page === 1 && !this.isIsoSelected && !this.isRootDiskOffering) {
         this.dataItems.push({
           id: '0',
           name: this.$t('label.noselect'),
