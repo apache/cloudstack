@@ -3909,6 +3909,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("unable to find service offering " + offeringId);
         }
 
+        // Verify disk offering id mapped to the service offering
+        final DiskOfferingVO diskOffering = _diskOfferingDao.findById(offering.getDiskOfferingId());
+        if (diskOffering == null) {
+            throw new InvalidParameterValueException("unable to find disk offering " + offering.getDiskOfferingId() + " mapped to the service offering " + offeringId);
+        }
+
         if (offering.getDefaultUse()) {
             throw new InvalidParameterValueException("Default service offerings cannot be deleted");
         }
@@ -3933,6 +3939,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         annotationDao.removeByEntityType(AnnotationService.EntityType.SERVICE_OFFERING.name(), offering.getUuid());
+        if (diskOffering.isComputeOnly()) {
+            diskOffering.setState(DiskOffering.State.Inactive);
+            if (!_diskOfferingDao.update(diskOffering.getId(), diskOffering)) {
+                throw new CloudRuntimeException(String.format("Unable to delete disk offering %s mapped to the service offering %s", diskOffering.getUuid(), offering.getUuid()));
+            }
+        }
         offering.setState(ServiceOffering.State.Inactive);
         if (_serviceOfferingDao.update(offeringId, offering)) {
             CallContext.current().setEventDetails("Service offering id=" + offeringId);

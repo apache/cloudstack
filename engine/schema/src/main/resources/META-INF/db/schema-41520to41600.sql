@@ -120,7 +120,7 @@ CREATE VIEW `cloud`.`service_offering_view` AS
 		`cloud`.`service_offering_details` AS `vsphere_storage_policy` ON `vsphere_storage_policy`.`service_offering_id` = `disk_offering`.`id`
 				AND `vsphere_storage_policy`.`name` = 'storagepolicy'
     WHERE
-        `disk_offering`.`state`='Active'
+        `service_offering`.`state`='Active'
     GROUP BY
         `service_offering`.`id`;
 
