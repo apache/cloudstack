@@ -28,7 +28,6 @@
       :menu="menus"
       :theme="theme"
       :mode="mode"
-      :shortKey="shortKeys"
       @select="onSelect"></s-menu>
   </a-layout-sider>
 
@@ -68,11 +67,6 @@ export default {
     menus: {
       type: Array,
       required: true
-    },
-    shortkeys: {
-      type: String,
-      required: false,
-      default: null
     }
   },
   methods: {

@@ -45,9 +45,11 @@
           :shape="!dataView && action.icon === 'plus' ? 'round' : 'circle'"
           style="margin-left: 5px"
           :size="size"
+          v-shortkey="action.shortKey"
+          @shortkey="execAction(action)"
           @click="execAction(action)">
           <span v-if="!dataView && action.icon === 'plus'">
-            {{ $t(action.label) }}
+            {{ $t(action.label) }
           </span>
           <a-icon v-if="(typeof action.icon === 'string')" :type="action.icon" />
           <font-awesome-icon v-else :icon="action.icon" />
@@ -63,11 +65,14 @@
         :shape="!dataView && ['plus', 'user-add'].includes(action.icon) ? 'round' : 'circle'"
         style="margin-left: 5px"
         :size="size"
+        v-shortkey="action.shortKey"
+        @shortkey="execAction(action)"
         @click="execAction(action)">
         <span v-if="!dataView && ['plus', 'user-add'].includes(action.icon)">
           {{ $t(action.label) }}
         </span>
         <a-icon v-if="(typeof action.icon === 'string')" :type="action.icon" />
+        <span class="view-shortkey" v-if="$store.getters.showshortkeys">{{ action.shortKey[2] }}</span>
         <font-awesome-icon v-else :icon="action.icon" />
       </a-button>
     </a-tooltip>
@@ -138,6 +143,7 @@ export default {
         action.docHelp = this.$applyDocHelpMappings(action.docHelp)
       }
       this.$emit('exec-action', action)
+      console.log(action.shortKey)
     },
     handleShowBadge () {
       this.actionBadge = {}
@@ -183,6 +189,9 @@ export default {
           }
         }).catch(() => {})
       }
+    },
+    tempaction () {
+      console.log('hey hello')
     }
   }
 }
@@ -192,7 +201,14 @@ export default {
 .button-action-badge {
   margin-left: 5px;
 }
-
+.view-shortkey {
+ position: absolute;
+ bottom: 20px;
+ right: 5px;
+ background-color: black;
+ padding: 0px 5px 0px 5px;
+ border-radius: 4px;
+}
 /deep/.button-action-badge .ant-badge-count {
   right: 10px;
   z-index: 8;

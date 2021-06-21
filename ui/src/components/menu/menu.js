@@ -41,10 +41,6 @@ export default {
       type: Boolean,
       required: false,
       default: false
-    },
-    shortKey: {
-      type: String,
-      required: false
     }
   },
   data () {
@@ -122,9 +118,15 @@ export default {
     },
     renderMenuItem (menu) {
       const target = menu.meta.target || null
+      // const shortKey = menu.meta.shortKey || null
+      // const actionxyz = () => {
+      //   console.log('fired')
+      // }
       const props = {
         to: { name: menu.name },
         target: target
+        // 'v-shortkey': "['a']",
+        // '@shortkey': actionxyz
       }
       return (
         <Item {...{ key: menu.path }}>
@@ -196,6 +198,7 @@ export default {
       },
       openChange: this.onOpenChange
     }
+    // console.log(menu)
     const menuTree = menu.map(item => {
       if (item.hidden) {
         return null

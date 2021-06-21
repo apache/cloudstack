@@ -19,8 +19,6 @@
   <div class="logo">
     <img
       v-if="$config.logo"
-      v-shortkey="['f']"
-      @shortkey="toggleShowShortkey"
       :style="{
         width: $config.theme['@logo-width'],
         height: $config.theme['@logo-height']
@@ -46,11 +44,6 @@ export default {
       type: Boolean,
       default: true,
       required: false
-    }
-  },
-  methods: {
-    toggleShowShortkey () {
-      this.$store.dispatch('SetShowKeyboardShortkeys', !this.$store.getters.showshortkeys)
     }
   }
 }

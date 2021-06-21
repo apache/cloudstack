@@ -79,6 +79,7 @@ export default {
           api: 'deployVirtualMachine',
           icon: 'plus',
           label: 'label.vm.add',
+          shortKey: "['a']",
           docHelp: 'adminguide/virtual_machines.html#creating-vms',
           listView: true,
           component: () => import('@/views/compute/DeployVM.vue')

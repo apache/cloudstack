@@ -38,7 +38,15 @@
             <a-switch :checked="$store.getters.usebrowsertimezone" />
           </a>
         </a-menu-item>
-        <a-menu-item class="user-menu-item" key="2" disabled>
+        <a-menu-item class="user-menu-item" key="2">
+          <a v-shortkey="['f']" @shortkey="toggleShowShortkey" @click="toggleShowShortkey">
+            <a-icon v-if="$store.getters.showshortkeys" class="user-menu-item-icon" type="eye" />
+            <a-icon v-else class="user-menu-item-icon" type="eye-invisible" />
+            <span class="user-menu-item-name" style="margin-right: 5px">{{ $t('label.keyboard.show') }}</span>
+            <a-switch :checked="$store.getters.showshortkeys" />
+          </a>
+        </a-menu-item>
+        <a-menu-item class="user-menu-item" key="3" disabled>
           <a :href="$config.docBase" target="_blank">
             <a-icon class="user-menu-item-icon" type="question-circle-o"></a-icon>
             <span class="user-menu-item-name">{{ $t('label.help') }}</span>
@@ -72,6 +80,9 @@ export default {
     ...mapGetters(['nickname', 'avatar']),
     toggleUseBrowserTimezone () {
       this.$store.dispatch('SetUseBrowserTimezone', !this.$store.getters.usebrowsertimezone)
+    },
+    toggleShowShortkey () {
+      this.$store.dispatch('SetShowKeyboardShortkeys', !this.$store.getters.showshortkeys)
     },
     handleLogout () {
       return this.Logout({}).then(() => {

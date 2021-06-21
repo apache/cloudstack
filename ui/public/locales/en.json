@@ -1173,6 +1173,7 @@
 "label.key": "Key",
 "label.keyboard": "Keyboard language",
 "label.keyboardtype": "Keyboard type",
+"label.keyboard.show": "Show Shortkeys [F]",
 "label.keypair": "SSH Key Pair",
 "label.kubeconfig.cluster": "Kubernetes Cluster Config",
 "label.kubernetes": "Kubernetes",
