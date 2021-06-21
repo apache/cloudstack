@@ -224,8 +224,8 @@ public class VirtualMachineManagerImplTest {
         DiskOfferingVO mockCurrentDiskOffering = mock(DiskOfferingVO.class);
 
         when(serviceOfferingDaoMock.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn(mockCurrentServiceOffering);
-        when(mockCurrentServiceOffering.isUseLocalStorage()).thenReturn(true);
-        when(serviceOfferingMock.isUseLocalStorage()).thenReturn(true);
+        when(mockCurrentDiskOffering.isUseLocalStorage()).thenReturn(true);
+        when(diskOfferingMock.isUseLocalStorage()).thenReturn(true);
         when(mockCurrentServiceOffering.isSystemUse()).thenReturn(true);
         when(serviceOfferingMock.isSystemUse()).thenReturn(true);
         when(mockCurrentDiskOffering.getTags()).thenReturn("x,y");
@@ -681,7 +681,7 @@ public class VirtualMachineManagerImplTest {
     private void prepareAndRunCheckIfNewOfferingStorageScopeMatchesStoragePool(boolean isRootOnLocal, boolean isOfferingUsingLocal) {
         Mockito.doReturn(isRootOnLocal).when(virtualMachineManagerImpl).isRootVolumeOnLocalStorage(Mockito.anyLong());
         Mockito.doReturn("vmInstanceMockedToString").when(vmInstanceMock).toString();
-        Mockito.doReturn(isOfferingUsingLocal).when(serviceOfferingMock).isUseLocalStorage();
-        virtualMachineManagerImpl.checkIfNewOfferingStorageScopeMatchesStoragePool(vmInstanceMock, serviceOfferingMock);
+        Mockito.doReturn(isOfferingUsingLocal).when(diskOfferingMock).isUseLocalStorage();
+        virtualMachineManagerImpl.checkIfNewOfferingStorageScopeMatchesStoragePool(vmInstanceMock, diskOfferingMock);
     }
 }

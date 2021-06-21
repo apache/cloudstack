@@ -1655,19 +1655,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 }
             } else {
                 useLocalStorage = diskOffering.isUseLocalStorage();
-
-                // TODO: this is a hacking fix for the problem of deploy
-                // ISO-based VM on local storage
-                // when deploying VM based on ISO, we have a service offering
-                // and an additional disk offering, use-local storage flag is
-                // actually
-                // saved in service offering, override the flag from service
-                // offering when it is a ROOT disk
-                if (!useLocalStorage && vmProfile.getServiceOffering().isUseLocalStorage()) {
-                    if (toBeCreated.getVolumeType() == Volume.Type.ROOT) {
-                        useLocalStorage = true;
-                    }
-                }
             }
             diskProfile.setUseLocalStorage(useLocalStorage);
 

@@ -96,11 +96,6 @@ public interface ServiceOffering extends InfrastructureEntity, InternalIdentity,
     Integer getMulticastRateMbps();
 
     /**
-     * @return whether or not the service offering requires local storage
-     */
-    boolean isUseLocalStorage();
-
-    /**
      * @return tag that should be present on the host needed, optional parameter
      */
     String getHostTag();

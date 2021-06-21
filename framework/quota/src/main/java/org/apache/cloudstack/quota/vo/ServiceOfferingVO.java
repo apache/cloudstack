@@ -118,6 +118,9 @@ public class ServiceOfferingVO implements ServiceOffering {
     @Column(name = "dynamic_scaling_enabled")
     private boolean dynamicScalingEnabled;
 
+    @Column(name = "system_use")
+    private boolean systemUse;
+
     @Transient
     Map<String, String> details = new HashMap<String, String>();
 
@@ -286,7 +289,7 @@ public class ServiceOfferingVO implements ServiceOffering {
 
     @Override
     public boolean isSystemUse() {
-        return false;
+        return systemUse;
     }
 
     @Override
@@ -370,11 +373,6 @@ public class ServiceOfferingVO implements ServiceOffering {
     @Override
     public String getUuid() {
         return uuid;
-    }
-
-    @Override
-    public boolean isUseLocalStorage() {
-        return false;
     }
 
     @Override

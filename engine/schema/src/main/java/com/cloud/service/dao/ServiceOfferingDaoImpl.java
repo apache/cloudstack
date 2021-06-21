@@ -96,13 +96,14 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         assert offering.getUniqueName() != null : "how are you going to find this later if you don't set it?";
         ServiceOfferingVO vo = findByName(offering.getUniqueName());
         if (vo != null) {
+            DiskOfferingVO diskOfferingVO = diskOfferingDao.findById(vo.getDiskOfferingId());
             // check invalid CPU speed in system service offering, set it to default value of 500 Mhz if 0 CPU speed is found
             if (vo.getSpeed() <= 0) {
                 vo.setSpeed(500);
                 update(vo.getId(), vo);
             }
             if (!vo.getUniqueName().endsWith("-Local")) {
-                if (vo.isUseLocalStorage()) {
+                if (diskOfferingVO.isUseLocalStorage()) {
                     vo.setUniqueName(vo.getUniqueName() + "-Local");
                     vo.setName(vo.getName() + " - Local Storage");
                     update(vo.getId(), vo);
@@ -234,7 +235,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         }
 
         boolean useLocal = true;
-        if (offering.isUseLocalStorage()) { // if 1st one is already local then 2nd needs to be shared
+        if (diskOfferingVO.isUseLocalStorage()) { // if 1st one is already local then 2nd needs to be shared
             useLocal = false;
         }
 

@@ -799,9 +799,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 continue;
             }
             boolean poolSupportsOfferings = storagePoolSupportsDiskOffering(diskProfileStoragePool.second(), dOffering);
-            //FR123 get confirmation from Abhishek if (poolSupportsOfferings && profile.getType() == Volume.Type.ROOT) {
-            //    poolSupportsOfferings = storagePoolSupportsServiceOffering(diskProfileStoragePool.second(), serviceOffering);
-            //}
             if (poolSupportsOfferings) {
                 continue;
             }
@@ -817,9 +814,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 for (StoragePool pool : storagePools) {
                     if (diskProfileStoragePool.second().getId() != pool.getId() &&
                             storagePoolSupportsDiskOffering(pool, dOffering)
-                            //FR123 get confirmation from Abhishek
-                            //(!profile.getType().equals(Volume.Type.ROOT) ||
-                                    //profile.getType().equals(Volume.Type.ROOT) && storagePoolSupportsServiceOffering(pool, serviceOffering))
                             ) {
                         storagePool = pool;
                         break;
@@ -832,8 +826,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 for (StoragePool pool : storagePools) {
                     if (diskProfileStoragePool.second().getId() != pool.getId() &&
                             storagePoolSupportsDiskOffering(pool, dOffering)
-                            //FR123 get confimration from Abhishek(!profile.getType().equals(Volume.Type.ROOT) ||
-                                    //profile.getType().equals(Volume.Type.ROOT) && storagePoolSupportsServiceOffering(pool, serviceOffering))
                             ) {
                         storagePool = pool;
                         break;
