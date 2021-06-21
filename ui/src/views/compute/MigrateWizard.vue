@@ -45,7 +45,9 @@
           v-else />
       </div>
       <div slot="memused" slot-scope="record">
-        {{ record.memoryused | byteToGigabyte }} GB
+        <span v-if="record.memoryused | byteToGigabyte">
+          {{ record.memoryused | byteToGigabyte }} GB
+        </span>
       </div>
       <div slot="memoryallocatedpercentage" slot-scope="record">
         {{ record.memoryallocatedpercentage }}
@@ -168,7 +170,12 @@ export default {
         this.hosts.sort((a, b) => {
           return b.suitableformigration - a.suitableformigration
         })
-        this.hosts.unshift({ id: -1, name: 'autoselect', suitableformigration: true, requiresstoragemigration: false })
+        for (const key in this.hosts) {
+          if (this.hosts[key].suitableformigration && !this.hosts[key].requiresstoragemigration) {
+            this.hosts.unshift({ id: -1, name: 'autoselect', suitableformigration: true, requiresstoragemigration: false })
+            break
+          }
+        }
         this.totalCount = response.findhostsformigrationresponse.count
       }).catch(error => {
         this.$message.error(`${this.$t('message.load.host.failed')}: ${error}`)
