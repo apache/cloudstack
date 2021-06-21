@@ -47,6 +47,10 @@ class TestOutOfBandManagement(cloudstackTestCase):
         cls.host = None
         cls.cleanup = []
 
+        host = cls.getHost(cls)
+        if host.hypervisor.lower() == 'kvm' and "SUSE" in host.details['Host.OS'] :
+            cls.skipTest(cls, "Skipping since SUSE has known IPMI issues")
+
         # use random port for ipmisim
         s = socket.socket()
         s.bind(('', 0))
@@ -81,7 +85,6 @@ class TestOutOfBandManagement(cloudstackTestCase):
         self.mgtSvrDetails = self.config.__dict__["mgtSvr"][0].__dict__
         self.fakeMsId = random.randint(10000, 99999) * random.randint(10, 20)
         self.cleanup = []
-
 
     def tearDown(self):
         try:
