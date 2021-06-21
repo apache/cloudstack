@@ -20,6 +20,7 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
@@ -40,6 +41,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.command.user.vm.CloneVMCmd;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 
 public interface TemplateApiService {
@@ -98,6 +100,13 @@ public interface TemplateApiService {
     List<String> listTemplatePermissions(BaseListTemplateOrIsoPermissionsCmd cmd);
 
     boolean updateTemplateOrIsoPermissions(BaseUpdateTemplateOrIsoPermissionsCmd cmd);
+
+    /**
+     * create a template record for later usage of creating a real template by createPrivateTemplate
+     * */
+    VirtualMachineTemplate createPrivateTemplateRecord(CloneVMCmd cmd, Account templateOwner) throws ResourceAllocationException;
+
+    VirtualMachineTemplate createPrivateTemplateRecord(CloneVMCmd cmd) throws CloudRuntimeException;
 
     VirtualMachineTemplate createPrivateTemplateRecord(CreateTemplateCmd cmd, Account templateOwner) throws ResourceAllocationException;
 

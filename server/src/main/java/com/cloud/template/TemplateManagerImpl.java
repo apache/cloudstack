@@ -54,6 +54,7 @@ import org.apache.cloudstack.api.command.user.template.ListTemplatePermissionsCm
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
+import org.apache.cloudstack.api.command.user.vm.CloneVMCmd;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -1781,6 +1782,16 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template from clone", create = true)
+    public VMTemplateVO createPrivateTemplateRecord(CloneVMCmd cmd, Account templateOwner) throws ResourceAllocationException {
+        Account caller = CallContext.current().getCallingAccount();
+        boolean isAdmin = (_accountMgr.isAdmin(caller.getId()));
+        _accountMgr.checkAccess(caller, null, true, templateOwner);
+        String name = cmd.getTemplateName();
+        return null;
+    }
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template", create = true)
     public VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd, Account templateOwner) throws ResourceAllocationException {

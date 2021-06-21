@@ -22,8 +22,19 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -53,7 +64,22 @@ import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
-import org.apache.cloudstack.api.command.user.vm.*;
+import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
+import org.apache.cloudstack.api.command.user.vm.CloneVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
+import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
+import org.apache.cloudstack.api.command.user.vm.RemoveNicFromVMCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMSSHKeyCmd;
+import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
+import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
+import org.apache.cloudstack.api.command.user.vm.SecurityGroupAction;
+import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateDefaultNicForVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpCmd;
+import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
@@ -4476,9 +4502,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
+    public void checkCloneCondition(CloneVMCmd cmd) throws ResourceUnavailableException, CloudRuntimeException, ConcurrentOperationException {
+        UserVm curVm = cmd.getTargetVM();
+        if (curVm == null) {
+            throw new CloudRuntimeException("the VM doesn't exist or not registered in management server!");
+        }
+        UserVmVO vmStatus = _vmDao.findById(cmd.getId());
+        if (vmStatus.state != State.Shutdown) {
+            throw new CloudRuntimeException("You should clone an instance that's shutdown!");
+        }
+        List<VolumeVO> volumeInformation = _volsDao.findByInstanceAndType(cmd.getId(), Volume.Type.ROOT);
+        if (CollectionUtils.isEmpty(volumeInformation)) {
+            throw new CloudRuntimeException("The VM to copy does not have a Volume attached!");
+        }
+    }
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_CLONE, eventDescription = "clone vm", async = true)
-    public Optional<UserVm> cloneVirtualMachine(CloneVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException {
-        VolumeVO volumeInformation = _volsDao.findByUuid("");
+    public Optional<UserVm> cloneVirtualMachine(CloneVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException, CloudRuntimeException {
         return Optional.ofNullable(null);
     }
 
