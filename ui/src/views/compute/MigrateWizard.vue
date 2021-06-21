@@ -172,7 +172,7 @@ export default {
         })
         for (const key in this.hosts) {
           if (this.hosts[key].suitableformigration && !this.hosts[key].requiresstoragemigration) {
-            this.hosts.unshift({ id: -1, name: 'autoselect', suitableformigration: true, requiresstoragemigration: false })
+            this.hosts.unshift({ id: -1, name: this.$t('label.migrate.auto.select'), suitableformigration: true, requiresstoragemigration: false })
             break
           }
         }

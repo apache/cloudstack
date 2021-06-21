@@ -1355,6 +1355,7 @@
 "label.metrics.network.usage": "Network Usage",
 "label.metrics.network.write": "Write",
 "label.metrics.num.cpu.cores": "Cores",
+"label.migrate.auto.select": "AutoSelect",
 "label.migrate.data.from.image.store": "Migrate Data from Image store",
 "label.migrate.instance.to": "Migrate instance to",
 "label.migrate.instance.to.host": "Migrate instance to another host",
