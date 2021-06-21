@@ -67,6 +67,15 @@ public class KvmHaHelper {
         return agentStatus;
     }
 
+    /**
+     * Given a List of Hosts, it lists Hosts that are in the following states:
+     * <ul>
+     *  <li> Status.Alert;
+     *  <li> Status.Disconnected;
+     *  <li> Status.Down;
+     *  <li> Status.Error.
+     * </ul>
+     */
     @NotNull
     protected List<HostVO> listProblematicHosts(List<HostVO> hostsInCluster) {
         return hostsInCluster.stream().filter(neighbour -> PROBLEMATIC_HOST_STATUS.contains(neighbour.getStatus())).collect(Collectors.toList());

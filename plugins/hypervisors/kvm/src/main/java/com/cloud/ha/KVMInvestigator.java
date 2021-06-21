@@ -87,7 +87,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
         }
 
         boolean isKvmHaWebserviceEnabled = kvmHaHelper.isKvmHaWebserviceEnabled(agent);
-        if(isKvmHaWebserviceEnabled) {
+        if (isKvmHaWebserviceEnabled) {
             agentStatus = kvmHaHelper.checkAgentStatusViaKvmHaAgent(agent, agentStatus);
         }
 
@@ -130,13 +130,9 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
         Status neighbourStatus = null;
         CheckOnHostCommand cmd = new CheckOnHostCommand(agent);
 
-        try {
-            Answer answer = _agentMgr.easySend(agent.getId(), cmd);
-            if (answer != null) {
-                hostStatus = answer.getResult() ? Status.Down : Status.Up;
-            }
-        } catch (Exception e) {
-            s_logger.debug(String.format("Failed to send command to %s", agent));
+        Answer answer = _agentMgr.easySend(agent.getId(), cmd);
+        if (answer != null) {
+            hostStatus = answer.getResult() ? Status.Down : Status.Up;
         }
 
         if (hostStatus == null) {
@@ -155,7 +151,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
             }
             s_logger.debug(String.format("Investigating %s via neighbouring %s ", agent, neighbor));
             try {
-                Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
+                answer = _agentMgr.easySend(neighbor.getId(), cmd);
                 if (answer != null) {
                     neighbourStatus = answer.getResult() ? Status.Down : Status.Up;
                     s_logger.debug(String.format("Neighbouring %s returned status: %s for the investigated %s", neighbor, neighbourStatus, agent));
