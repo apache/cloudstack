@@ -167,7 +167,7 @@ class MarvinLog:
                 else:
                     self.__logFolderDir = os.path.join(temp_dir, str(test_module_name))
 
-            print("\n==== Log Folder Path: %s. All logs will be available here ====" % str(self.__logFolderDir))
+            print("\n==== Log Folder Path: %s All logs will be available here ====" % str(self.__logFolderDir))
             os.makedirs(self.__logFolderDir)
 
             '''

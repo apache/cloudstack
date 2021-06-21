@@ -306,7 +306,7 @@ class MarvinPlugin(Plugin):
                 dst = tmp + "/" + mod_name + "_" + random_gen()
             cmd = "mv " + src + " " + dst
             os.system(cmd)
-            print("===final results are now copied to: %s===" % str(dst))
+            print("=== Final results are now copied to: %s ===" % str(dst))
         except Exception as e:
             print("=== Exception occurred under finalize :%s ===" % \
                   str(GetDetailExceptionInfo(e)))
