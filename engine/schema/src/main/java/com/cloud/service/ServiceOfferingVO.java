@@ -180,6 +180,7 @@ public class ServiceOfferingVO implements ServiceOffering {
     }
 
     public ServiceOfferingVO(ServiceOfferingVO offering) {
+        id = offering.getId();
         diskOfferingId = offering.getDiskOfferingId();
         cpu = offering.getCpu();
         ramSize = offering.getRamSize();
