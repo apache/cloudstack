@@ -27,12 +27,7 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.kubernetesversionid') }}
-            <a-tooltip :title="apiParams.kubernetesversionid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label :title="$t('label.kubernetesversionid')" :tooltip="apiParams.kubernetesversionid.description"/>
           <a-select
             id="version-selection"
             v-decorator="['kubernetesversionid', {
@@ -63,9 +58,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/view/TooltipLabel'
 
 export default {
   name: 'UpgradeKubernetesCluster',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,

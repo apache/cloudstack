@@ -23,12 +23,7 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.name') }}
-            <a-tooltip :title="apiParams.name.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             autoFocus
             v-decorator="['name', {
@@ -37,12 +32,7 @@
             :placeholder="this.$t('label.name')"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.displaytext') }}
-            <a-tooltip :title="apiParams.displaytext.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
           <a-input
             v-decorator="['displaytext', {
               rules: [{ required: true, message: $t('message.error.description') }]
@@ -50,12 +40,7 @@
             :placeholder="this.$t('label.displaytext')"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.supportedservices') }}
-            <a-tooltip :title="apiParams.supportedservices.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label :title="$t('label.supportedservices')" :tooltip="apiParams.supportedservices.description"/>
           <div class="supported-services-container" scroll-to="last-child">
             <a-list itemLayout="horizontal" :dataSource="this.supportedServices">
               <a-list-item slot="renderItem" slot-scope="item">
@@ -84,12 +69,7 @@
           <a-switch v-decorator="['ispublic', {initialValue: this.isPublic}]" :defaultChecked="this.isPublic" @change="val => { this.isPublic = val }" />
         </a-form-item>
         <a-form-item v-if="!this.isPublic">
-          <span slot="label">
-            {{ $t('label.domainid') }}
-            <a-tooltip :title="apiParams.domainid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
           <a-select
             mode="multiple"
             v-decorator="['domainid', {
@@ -113,12 +93,7 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.zoneid') }}
-            <a-tooltip :title="apiParams.zoneid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             id="zone-selection"
             mode="multiple"
@@ -147,12 +122,7 @@
           </a-select>
         </a-form-item>
         <a-form-item v-if="apiParams.enable">
-          <span slot="label">
-            {{ $t('label.enable.vpc.offering') }}
-            <a-tooltip :title="apiParams.enable.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label :title="$t('label.enable.vpc.offering')" :tooltip="apiParams.enable.description"/>
           <a-switch v-decorator="['enable', {initialValue: false}]" />
         </a-form-item>
       </a-form>
@@ -167,11 +137,13 @@
 <script>
 import { api } from '@/api'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
+import TooltipLabel from '@/components/view/TooltipLabel'
 
 export default {
   name: 'AddVpcOffering',
   components: {
-    CheckBoxSelectPair
+    CheckBoxSelectPair,
+    TooltipLabel
   },
   data () {
     return {

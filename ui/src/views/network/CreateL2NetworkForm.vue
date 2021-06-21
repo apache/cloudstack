@@ -65,7 +65,7 @@
             </a-select>
           </a-form-item>
           <a-form-item v-if="this.isAdminOrDomainAdmin()">
-            <tooltip-label :title="$t('label.domain')" :tooltip="apiParams.domainid.description"/>
+            <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
             <a-select
               v-decorator="['domainid', {}]"
               showSearch

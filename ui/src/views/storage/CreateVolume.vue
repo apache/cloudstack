@@ -19,12 +19,7 @@
   <a-spin :spinning="loading">
     <a-form class="form" :form="form" @submit="handleSubmit" layout="vertical">
       <a-form-item>
-        <span slot="label">
-          {{ $t('label.name') }}
-          <a-tooltip :title="apiParams.name.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </span>
+        <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
         <a-input
           v-decorator="['name', {
             rules: [{ required: true, message: $t('message.error.volume.name') }]
@@ -33,12 +28,7 @@
           autoFocus />
       </a-form-item>
       <a-form-item>
-        <span slot="label">
-          {{ $t('label.zoneid') }}
-          <a-tooltip :title="apiParams.zoneid.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </span>
+        <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
         <a-select
           v-decorator="['zoneid', {
             initialValue: selectedZoneId,
@@ -54,12 +44,7 @@
         </a-select>
       </a-form-item>
       <a-form-item>
-        <span slot="label">
-          {{ $t('label.diskoffering') }}
-          <a-tooltip :title="apiParams.diskofferingid.description || 'Disk Offering'">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </span>
+        <tooltip-label :title="$t('label.diskoffering')" :tooltip="apiParams.diskoffering.description"/>
         <a-select
           v-decorator="['diskofferingid', {
             initialValue: selectedDiskOfferingId,
@@ -77,12 +62,7 @@
       </a-form-item>
       <span v-if="customDiskOffering">
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.sizegb') }}
-            <a-tooltip :title="apiParams.size.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label :title="$t('label.sizegb')" :tooltip="apiParams.size.description"/>
           <a-input
             v-decorator="['size', {
               rules: [{ required: true, message: $t('message.error.custom.disk.size') }]}]"
@@ -99,9 +79,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/view/TooltipLabel'
 
 export default {
   name: 'CreateVolume',
+  components: {
+    TooltipLabel
+  },
   data () {
     return {
       zones: [],
