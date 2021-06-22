@@ -69,6 +69,7 @@ export default {
         {
           api: 'createVolume',
           icon: 'plus',
+          shortKey: "['a']",
           docHelp: 'adminguide/storage.html#creating-a-new-volume',
           label: 'label.action.create.volume',
           listView: true,
@@ -78,6 +79,7 @@ export default {
         {
           api: 'createVolume',
           icon: 'cloud-upload',
+          shortKey: "['u']",
           docHelp: 'adminguide/storage.html#uploading-an-existing-volume-to-a-virtual-machine',
           label: 'label.upload.volume.from.local',
           listView: true,
@@ -87,6 +89,7 @@ export default {
         {
           api: 'uploadVolume',
           icon: 'link',
+          shortKey: "['l']",
           docHelp: 'adminguide/storage.html#uploading-an-existing-volume-to-a-virtual-machine',
           label: 'label.upload.volume.from.url',
           listView: true,

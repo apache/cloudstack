@@ -422,6 +422,7 @@ export default {
         {
           api: 'createKubernetesCluster',
           icon: 'plus',
+          shortKey: "['a']",
           label: 'label.kubernetes.cluster.create',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#creating-a-new-kubernetes-cluster',
           listView: true,
@@ -497,6 +498,7 @@ export default {
         {
           api: 'createInstanceGroup',
           icon: 'plus',
+          shortKey: "['a']",
           label: 'label.new.instance.group',
           listView: true,
           args: ['name']
@@ -540,6 +542,7 @@ export default {
         {
           api: 'createSSHKeyPair',
           icon: 'plus',
+          shortKey: "['a']",
           label: 'label.create.ssh.key.pair',
           docHelp: 'adminguide/virtual_machines.html#creating-the-ssh-keypair',
           listView: true,
@@ -591,6 +594,7 @@ export default {
         {
           api: 'createAffinityGroup',
           icon: 'plus',
+          shortKey: "['a']",
           label: 'label.add.affinity.group',
           docHelp: 'adminguide/virtual_machines.html#creating-a-new-affinity-group',
           listView: true,

@@ -143,7 +143,6 @@ export default {
         action.docHelp = this.$applyDocHelpMappings(action.docHelp)
       }
       this.$emit('exec-action', action)
-      console.log(action.shortKey)
     },
     handleShowBadge () {
       this.actionBadge = {}
@@ -205,9 +204,10 @@ export default {
  position: absolute;
  bottom: 20px;
  right: 5px;
- background-color: black;
+ background-color: rgba(0, 0, 0, .90);
  padding: 0px 5px 0px 5px;
  border-radius: 4px;
+ color: #e8e8e8;
 }
 /deep/.button-action-badge .ant-badge-count {
   right: 10px;

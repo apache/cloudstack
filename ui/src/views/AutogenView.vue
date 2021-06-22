@@ -28,8 +28,11 @@
                 shape="round"
                 size="small"
                 icon="reload"
+                v-shortkey="['r']"
+                @shortkey="fetchData({ irefresh: true })"
                 @click="fetchData({ irefresh: true })">
                 {{ $t('label.refresh') }}
+                <span class="view-shortkey" v-if="$store.getters.showshortkeys">r</span>
               </a-button>
               <a-switch
                 v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool'].includes($route.name)"
@@ -1209,7 +1212,15 @@ export default {
   margin-top: -16px;
   margin-bottom: 12px;
 }
-
+.view-shortkey {
+  position: absolute;
+ bottom: 20px;
+ right: 5px;
+ background-color: rgba(0, 0, 0, .90);
+ padding: 0px 5px 0px 5px;
+ border-radius: 4px;
+ color: #e8e8e8;
+}
 .row-element {
   margin-top: 10px;
   margin-bottom: 10px;

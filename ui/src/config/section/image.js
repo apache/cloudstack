@@ -74,6 +74,7 @@ export default {
         {
           api: 'registerTemplate',
           icon: 'plus',
+          shortKey: "['a']",
           label: 'label.action.register.template',
           docHelp: 'adminguide/templates.html#uploading-templates-from-a-remote-http-server',
           listView: true,
@@ -83,6 +84,7 @@ export default {
         {
           api: 'registerTemplate',
           icon: 'cloud-upload',
+          shortKey: "['u']",
           label: 'label.upload.template.from.local',
           docHelp: 'adminguide/templates.html#uploading-templates-and-isos-from-a-local-computer',
           listView: true,
@@ -213,6 +215,7 @@ export default {
         {
           api: 'registerIso',
           icon: 'plus',
+          shortKey: "['a']",
           label: 'label.action.register.iso',
           docHelp: 'adminguide/templates.html#id10',
           listView: true,
@@ -222,6 +225,7 @@ export default {
         {
           api: 'registerIso',
           icon: 'cloud-upload',
+          shortKey: "['u']",
           label: 'label.upload.iso.from.local',
           docHelp: 'adminguide/templates.html#id10',
           listView: true,
@@ -319,6 +323,7 @@ export default {
         {
           api: 'addKubernetesSupportedVersion',
           icon: 'plus',
+          shortKey: "['a']",
           label: 'label.kubernetes.version.add',
           listView: true,
           popup: true,
