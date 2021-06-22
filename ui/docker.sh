@@ -35,5 +35,6 @@ do
         case "$OPTION" in
                 p)podman build -t cloudstack-ui ${LABEL_DATE} ${LABEL_GIT_REV} ${LABEL_GIT_TAG};;
                 d)docker build -t cloudstack-ui ${LABEL_DATE} ${LABEL_GIT_REV} ${LABEL_GIT_TAG};;
+                *)echo "Please choose between -p for podman or -d for docker.";;
         esac
 done
