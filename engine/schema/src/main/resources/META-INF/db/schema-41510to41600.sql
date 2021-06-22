@@ -405,3 +405,6 @@ UPDATE `cloud`.`configuration` SET name='denied.routes', description='Routes tha
 ALTER TABLE `cloud`.`kubernetes_cluster` CHANGE master_node_count control_node_count bigint NOT NULL default '0' COMMENT 'the number of the control nodes deployed for this Kubernetes cluster';
 
 UPDATE `cloud`.`domain_router` SET redundant_state = 'PRIMARY' WHERE redundant_state = 'MASTER';
+
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 3, 'listConfigurations', 'ALLOW', 303) ON DUPLICATE KEY UPDATE rule=rule;
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 3, 'updateConfiguration', 'ALLOW', 304) ON DUPLICATE KEY UPDATE rule=rule;

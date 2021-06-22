@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.Set;
 import java.util.UUID;
 
@@ -87,6 +89,7 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
 import org.apache.cloudstack.region.PortableIpRange;
@@ -770,6 +773,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final ConfigurationVO config = _configDao.findByName(name);
         String catergory = null;
 
+        final Account caller = CallContext.current().getCallingAccount();
+        if (_accountMgr.isDomainAdmin(caller.getId())) {
+            if (domainId == null) {
+                throw new PermissionDeniedException("Domain admins can change only domain level configurations");
+            }
+
+            final List<String> domainAdminWhitelistConfigs = Stream.of(QueryService.DomainAdminAllowListedConfigurations.value().split(","))
+                    .map(item -> (item).trim())
+                    .collect(Collectors.toList());
+            if (!domainAdminWhitelistConfigs.contains(name)) {
+                throw new PermissionDeniedException("Domain admins can not change this configuration");
+            }
+        }
+
         // FIX ME - All configuration parameters are not moved from config.java to configKey
         if (config == null) {
             if (_configDepot.get(name) == null) {
@@ -806,11 +823,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             paramCountCheck++;
         }
         if (accountId != null) {
+            Account account = _accountMgr.getAccount(accountId);
+            _accountMgr.checkAccess(caller, _domainDao.findById(account.getDomainId()));
             scope = ConfigKey.Scope.Account.toString();
             id = accountId;
             paramCountCheck++;
         }
         if (domainId != null) {
+            _accountMgr.checkAccess(caller, _domainDao.findById(domainId));
             scope = ConfigKey.Scope.Domain.toString();
             id = domainId;
             paramCountCheck++;
