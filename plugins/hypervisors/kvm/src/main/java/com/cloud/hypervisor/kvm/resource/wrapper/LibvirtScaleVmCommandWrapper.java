@@ -56,7 +56,7 @@ public final class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCo
             logger.debug(String.format("Scaling %s.", scalingDetails));
 
             if (memoryToAttach > 0) {
-                String memoryDevice = new LibvirtVmMemoryDeviceDef(newMemory - LibvirtComputingResource.getDomainMemory(dm)).toString();
+                String memoryDevice = new LibvirtVmMemoryDeviceDef(memoryToAttach).toString();
                 logger.debug(String.format("Attaching memory device [%s] to %s.", memoryDevice, vmDefinition));
                 dm.attachDevice(memoryDevice);
             } else {
