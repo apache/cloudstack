@@ -16,8 +16,9 @@
 # under the License.
 
 import unittest
-from marvin.lib.utils import verifyElementInList, cleanup_resources
+from marvin.lib.utils import verifyElementInList
 from marvin.codes import PASS
+from marvin.lib.base import VirtualMachine
 
 
 def user(Name, DomainName, AcctType):
@@ -59,19 +60,21 @@ class cloudstackTestCase(unittest.case.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.debug("Cleaning up the resources")
         try:
             if hasattr(cls,'_cleanup'):
                 if hasattr(cls,'apiclient'):
-                    cleanup_resources(cls.apiclient, reversed(cls._cleanup))
+                    cls.cleanup_resources(cls.apiclient, reversed(cls._cleanup))
                 elif hasattr(cls,'api_client'):
-                    cleanup_resources(cls.api_client, reversed(cls._cleanup))
+                    cls.cleanup_resources(cls.api_client, reversed(cls._cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
     def tearDown(self):
+        self.debug("Cleaning up the resources")
         try:
             if hasattr(self,'apiclient') and hasattr(self,'cleanup'):
-                cleanup_resources(self.apiclient, reversed(self.cleanup))
+                self.cleanup_resources(self.apiclient, reversed(self.cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -83,3 +86,14 @@ class cloudstackTestCase(unittest.case.TestCase):
         if isinstance(msg, str):
             msg = msg.encode()
         super(cloudstackTestCase,self).assertEqual(first,second,msg)
+
+    @classmethod
+    def cleanup_resources(cls, api_client, resources):
+        """
+            Delete resources (created during tests)
+        """
+        for obj in resources:
+            if isinstance(obj, VirtualMachine):
+                obj.delete(api_client, expunge=True)
+            else:
+                obj.delete(api_client)
