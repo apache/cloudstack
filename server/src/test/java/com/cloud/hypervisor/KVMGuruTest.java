@@ -305,8 +305,7 @@ public class KVMGuruTest {
         guru.serviceOfferingDao = serviceOfferingDaoMock;
 
         Mockito.doReturn(serviceOfferingVoMock).when(serviceOfferingDaoMock).findById(Mockito.anyLong(), Mockito.anyLong());
-        Mockito.doReturn(true).when(serviceOfferingVoMock).isDynamic();
-        Mockito.doReturn(true).when(vmTO).isEnableDynamicallyScaleVm();
+        Mockito.doReturn(true).when(guru).isVmDynamicScalable(Mockito.any(), Mockito.any(), Mockito.any());
 
         guru.configureVmMemoryAndCpuCores(vmTO, host, virtualMachineMock, vmProfile);
 
@@ -319,8 +318,7 @@ public class KVMGuruTest {
         guru.serviceOfferingDao = serviceOfferingDaoMock;
 
         Mockito.doReturn(serviceOfferingVoMock).when(serviceOfferingDaoMock).findById(Mockito.anyLong(), Mockito.anyLong());
-        Mockito.doReturn(false).when(serviceOfferingVoMock).isDynamic();
-        Mockito.lenient().doReturn(true).when(vmTO).isEnableDynamicallyScaleVm();
+        Mockito.doReturn(false).when(guru).isVmDynamicScalable(Mockito.any(), Mockito.any(), Mockito.any());
 
         guru.configureVmMemoryAndCpuCores(vmTO, host, virtualMachineMock, vmProfile);
 

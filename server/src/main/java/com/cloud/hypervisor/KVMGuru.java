@@ -34,6 +34,7 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -178,7 +179,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         Integer maxCpuCores = minCpuCores;
 
         ServiceOfferingVO serviceOfferingVO = serviceOfferingDao.findById(virtualMachineProfile.getId(), virtualMachineProfile.getServiceOfferingId());
-        if (serviceOfferingVO.isDynamic() && virtualMachineTo.isEnableDynamicallyScaleVm()) {
+        if (isVmDynamicScalable(serviceOfferingVO, virtualMachineTo, virtualMachine)) {
             serviceOfferingDao.loadDetails(serviceOfferingVO);
 
             maxMemory = getVmMaxMemory(serviceOfferingVO, vmDescription, maxHostMemory);
@@ -188,6 +189,10 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         virtualMachineTo.setRam(minMemory, maxMemory);
         virtualMachineTo.setCpus(minCpuCores);
         virtualMachineTo.setVcpuMaxLimit(maxCpuCores);
+    }
+
+    protected boolean isVmDynamicScalable(ServiceOfferingVO serviceOfferingVO, VirtualMachineTO virtualMachineTo, VirtualMachine virtualMachine) {
+        return serviceOfferingVO.isDynamic() && virtualMachineTo.isEnableDynamicallyScaleVm() && UserVmManager.EnableDynamicallyScaleVm.valueIn(virtualMachine.getDataCenterId());
     }
 
     protected Pair<Long, Integer> getHostMaxMemoryAndCpuCores(HostVO host, VirtualMachine virtualMachine, String vmDescription){
