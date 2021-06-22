@@ -96,6 +96,9 @@ public interface QueryService {
             "user.vm.denied.details", "rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag",
             "Determines whether users can view certain VM settings. When set to empty, default value used is: rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag.", true);
 
+    static final ConfigKey<String> DomainAdminAllowListedConfigurations = new ConfigKey<String>("Advanced", String.class,
+            "domain.admin.allowlisted.config", "", "Determines which domain and account level configurations the domain admin is able to change", true);
+
     static final ConfigKey<String> UserVMReadOnlyDetails = new ConfigKey<String>("Advanced", String.class,
             "user.vm.readonly.details", "dataDiskController, rootDiskController",
             "List of read-only VM settings/details as comma separated string", true);
