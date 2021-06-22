@@ -90,7 +90,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  * state. If a Investigator finds the VM is dead, then HA process is started on the VM, skipping step 2. 2. If the list of
  * Investigators can not determine if the VM is dead or alive. The list of FenceBuilders is invoked to fence off the VM so that
  * it won't do any damage to the storage and network. 3. The VM is marked as stopped. 4. The VM is started again via the normal
- * process of starting VMs. Note that once the VM is marked as stopped, the user may have started the VM himself. 5. VMs that
+ * process of starting VMs. Note that once the VM is marked as stopped, the user may have started the VM explicitly. 5. VMs that
  * have re-started more than the configured number of times are marked as in Error state and the user is not allowed to restart
  * the VM.
  *

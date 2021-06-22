@@ -233,12 +233,12 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & Primary)"
                     )
 
         public_ips = list_publicIP(
@@ -398,12 +398,12 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & Primary)"
                     )
 
         public_ips = list_publicIP(
@@ -573,15 +573,15 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & Primary)"
                     )
 
-        vals = ["MASTER", "BACKUP", "UNKNOWN"]
+        vals = ["PRIMARY", "BACKUP", "UNKNOWN"]
         cnts = [0, 0, 0]
 
         result = "UNKNOWN"
@@ -632,8 +632,8 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
                 if result.count(vals[0]) == 1:
                     cnts[vals.index(vals[0])] += 1
 
-        if cnts[vals.index('MASTER')] != 1:
-            self.fail("No Master or too many master routers found %s" % cnts[vals.index('MASTER')])
+        if cnts[vals.index('PRIMARY')] != 1:
+            self.fail("No Primary or too many primary routers found %s" % cnts[vals.index('PRIMARY')])
 
         return
 

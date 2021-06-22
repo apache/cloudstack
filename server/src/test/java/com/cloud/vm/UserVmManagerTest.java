@@ -604,6 +604,7 @@ public class UserVmManagerTest {
 
         NicVO nic = new NicVO("nic", 1L, 2L, VirtualMachine.Type.User);
         when(_nicDao.findById(anyLong())).thenReturn(nic);
+        nic.setIPv4Address("10.10.10.9");
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
         when(_networkDao.findById(anyLong())).thenReturn(_networkMock);
         doReturn(9L).when(_networkMock).getNetworkOfferingId();
@@ -630,9 +631,9 @@ public class UserVmManagerTest {
         when(vlan.getVlanNetmask()).thenReturn("255.255.255.0");
 
         when(_ipAddrMgr.allocatePublicIpForGuestNic(Mockito.eq(_networkMock), nullable(Long.class), Mockito.eq(_accountMock), anyString())).thenReturn("10.10.10.10");
-        lenient().when(_ipAddressDao.findByIpAndSourceNetworkId(anyLong(), anyString())).thenReturn(null);
+        when(_ipAddressDao.findByIpAndSourceNetworkId(anyLong(), eq("10.10.10.10"))).thenReturn(newIp);
+        when(_ipAddressDao.findByIpAndSourceNetworkId(anyLong(), eq("10.10.10.9"))).thenReturn(null);
         when(_nicDao.persist(any(NicVO.class))).thenReturn(nic);
-        when(_ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(newIp);
         when(_vlanDao.findById(anyLong())).thenReturn(vlan);
 
         Account caller = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());

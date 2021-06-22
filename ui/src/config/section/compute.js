@@ -58,11 +58,9 @@ export default {
           fields.push('hostname')
           fields.push('zonename')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
-          fields.splice(2, 0, 'displayname')
           fields.push('account')
           fields.push('zonename')
         } else {
-          fields.splice(2, 0, 'displayname')
           fields.push('zonename')
         }
         return fields
@@ -287,6 +285,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#how-to-dynamically-scale-cpu-and-ram',
           dataView: true,
           show: (record) => { return ['Stopped'].includes(record.state) || (['Running'].includes(record.state) && record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') },
+          disabled: (record) => { return !record.isdynamicallyscalable },
           popup: true,
           component: () => import('@/views/compute/ScaleVM.vue')
         },

@@ -224,7 +224,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 
         _conn = new Connection(_ip, _agentUserName, _agentPassword);
         try {
-            OvmHost.registerAsMaster(_conn);
+            OvmHost.registerAsPrimary(_conn);
             OvmHost.registerAsVmServer(_conn);
             _bridges = OvmBridge.getAllBridges(_conn);
         } catch (XmlRpcException e) {
@@ -398,11 +398,11 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         try {
             OvmHost.Details d = OvmHost.getDetails(_conn);
             //TODO: cleanup halted vm
-            if (d.masterIp.equalsIgnoreCase(_ip)) {
+            if (d.primaryIp.equalsIgnoreCase(_ip)) {
                 return new ReadyAnswer(cmd);
             } else {
-                s_logger.debug("Master IP changes to " + d.masterIp + ", it should be " + _ip);
-                return new ReadyAnswer(cmd, "I am not the master server");
+                s_logger.debug("Primary IP changes to " + d.primaryIp + ", it should be " + _ip);
+                return new ReadyAnswer(cmd, "I am not the primary server");
             }
         } catch (XmlRpcException e) {
             s_logger.debug("XML RPC Exception" + e.getMessage(), e);
