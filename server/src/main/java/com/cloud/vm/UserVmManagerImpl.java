@@ -3081,6 +3081,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to create vm group, a group with name " + groupName + " already exists for account " + accountId);
         }
 
+        if (StringUtils.isEmpty(groupName)) {
+            throw new InvalidParameterValueException("Instance group name is empty");
+        }
         return createVmGroup(groupName, accountId);
     }
 
