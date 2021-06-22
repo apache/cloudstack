@@ -49,7 +49,7 @@
           @shortkey="execAction(action)"
           @click="execAction(action)">
           <span v-if="!dataView && action.icon === 'plus'">
-            {{ $t(action.label) }
+            {{ $t(action.label) }}
           </span>
           <a-icon v-if="(typeof action.icon === 'string')" :type="action.icon" />
           <font-awesome-icon v-else :icon="action.icon" />
@@ -188,9 +188,6 @@ export default {
           }
         }).catch(() => {})
       }
-    },
-    tempaction () {
-      console.log('hey hello')
     }
   }
 }
