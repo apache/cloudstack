@@ -21,12 +21,7 @@
     <translation-menu class="action"/>
     <header-notice class="action"/>
     <label class="user-menu-server-info action">
-      <a-icon
-        slot="prefix"
-        type="database"
-        :style="[{
-          color: $config.theme['@primary-color']
-        }]"></a-icon>
+      <a-icon slot="prefix" type="database""></a-icon>
       {{ server.name || server.apiBase || 'Local-Server' }}
     </label>
     <a-dropdown>
