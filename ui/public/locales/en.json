@@ -865,6 +865,7 @@
 "label.dynamicscalingenabled.tooltip": "VM can dynamically scale only when dynamic scaling is enabled on template, service offering and global setting",
 "label.diskofferingstrictness": "Disk Offering Strictness",
 "label.disksizestrictness": "Disk Size Strictness",
+"label.iscomputeonly.offering": "Compute only",
 "label.edit": "Edit",
 "label.edit.acl.list": "Edit ACL List",
 "label.edit.acl.rule": "Edit ACL rule",
