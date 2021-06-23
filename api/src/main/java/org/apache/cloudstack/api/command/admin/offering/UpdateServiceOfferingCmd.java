@@ -73,12 +73,12 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
             since = "4.13")
     private String zoneIds;
 
-    @Parameter(name = ApiConstants.TAGS,
+    @Parameter(name = ApiConstants.STORAGE_TAGS,
             type = CommandType.STRING,
             description = "comma-separated list of tags for the service offering, tags should match with existing storage pool tags",
             authorized = {RoleType.Admin},
             since = "4.16")
-    private String tags;
+    private String storageTags;
 
     @Parameter(name = ApiConstants.HOST_TAGS,
             type = CommandType.STRING,
@@ -167,11 +167,11 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
         return validZoneIds;
     }
 
-    public String getTags() {
-        return tags;
+    public String getStorageTags() {
+        return storageTags;
     }
 
-    public String getHostTag() {
+    public String getHostTags() {
         return hostTags;
     }
 

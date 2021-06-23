@@ -425,7 +425,7 @@ class TestServiceOfferings(cloudstackTestCase):
         cmd.id = self.service_offering_1.id
         cmd.displaytext = random_displaytext
         cmd.name = random_name
-        cmd.tags = random_tag
+        cmd.storagetags = random_tag
         cmd.hosttags = random_hosttag
         self.apiclient.updateServiceOffering(cmd)
 
@@ -457,7 +457,7 @@ class TestServiceOfferings(cloudstackTestCase):
         )
 
         self.assertEqual(
-            list_service_response[0].tags,
+            list_service_response[0].storagetags,
             random_tag,
             "Check storage tags in updateServiceOffering"
         )
