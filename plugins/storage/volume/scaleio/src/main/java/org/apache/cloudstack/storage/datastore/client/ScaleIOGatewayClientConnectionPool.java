@@ -62,8 +62,9 @@ public class ScaleIOGatewayClientConnectionPool {
                 final String encryptedPassword = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.GATEWAY_API_PASSWORD).getValue();
                 final String password = DBEncryptionUtil.decrypt(encryptedPassword);
                 final int clientTimeout = StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.valueIn(storagePoolId);
+                final int clientMaxConnections = StorageManager.STORAGE_POOL_CLIENT_MAX_CONNECTIONS.valueIn(storagePoolId);
 
-                client = new ScaleIOGatewayClientImpl(url, username, password, false, clientTimeout);
+                client = new ScaleIOGatewayClientImpl(url, username, password, false, clientTimeout, clientMaxConnections);
                 gatewayClients.put(storagePoolId, client);
                 LOGGER.debug("Added gateway client for the storage pool: " + storagePoolId);
             }
