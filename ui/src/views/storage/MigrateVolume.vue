@@ -235,8 +235,8 @@ export default {
   .migrate-volume-container {
     width: 85vw;
 
-    @media (min-width: 760px) {
-      width: 500px;
+    @media (min-width: 800px) {
+      width: 750px;
     }
   }
 
