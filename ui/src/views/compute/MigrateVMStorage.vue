@@ -17,35 +17,53 @@
 
 <template>
   <div class="form-layout">
-    <a-spin :spinning="loading">
-      <a-form
-        :form="form"
-        @submit="handleSubmit"
-        layout="vertical">
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.storageid')" :tooltip="apiParams.storageid ? apiParams.storageid.description : ''"/>
-          <a-select
-            :loading="loading"
-            v-decorator="['storageid', {
-              rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
-            }]"
-            showSearch
-            optionFilterProp="children"
-            :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option v-for="storagePool in storagePools" :key="storagePool.id">
-              {{ storagePool.name || storagePool.id }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
+    <a-input-search
+      :placeholder="$t('label.search')"
+      v-model="searchQuery"
+      style="margin-bottom: 10px;"
+      @search="fetchData"
+      autoFocus />
+    <a-table
+      size="small"
+      style="overflow-y: auto"
+      :loading="loading"
+      :columns="columns"
+      :dataSource="storagePools"
+      :pagination="false"
+      :rowKey="record => record.id">
+      <div slot="disksizeallocated" slot-scope="record">
+        {{ record.disksizeallocated | byteToGigabyte }} GB
+      </div>
+      <div slot="disksizetotal" slot-scope="record">
+        {{ record.disksizetotal | byteToGigabyte }} GB
+      </div>
+      <template slot="select" slot-scope="record">
+        <a-radio
+          @click="selectedPool = record"
+          :checked="record.id === selectedPool.id"></a-radio>
+      </template>
+    </a-table>
+    <a-pagination
+      class="pagination"
+      size="small"
+      :current="page"
+      :pageSize="pageSize"
+      :total="totalCount"
+      :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
+      :pageSizeOptions="['10', '20', '40', '80', '100']"
+      @change="handleChangePage"
+      @showSizeChange="handleChangePageSize"
+      showSizeChanger>
+      <template slot="buildOptionText" slot-scope="props">
+        <span>{{ props.value }} / {{ $t('label.page') }}</span>
+      </template>
+    </a-pagination>
 
-        <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
-        </div>
-      </a-form>
-    </a-spin>
+    <div style="margin-top: 20px; display: flex; justify-content:flex-end;">
+      <a-button type="primary" :disabled="!selectedPool.id" @click="submitForm">
+        {{ $t('label.ok') }}
+      </a-button>
+    </div>
   </div>
 </template>
 
@@ -67,7 +85,38 @@ export default {
   data () {
     return {
       loading: false,
-      storagePools: []
+      searchQuery: '',
+      totalCount: 0,
+      page: 1,
+      pageSize: 10,
+      storagePools: [],
+      selectedPool: {},
+      columns: [
+        {
+          title: this.$t('label.name'),
+          dataIndex: 'name'
+        },
+        {
+          title: this.$t('label.clusterid'),
+          dataIndex: 'clustername'
+        },
+        {
+          title: this.$t('label.podid'),
+          dataIndex: 'podname'
+        },
+        {
+          title: this.$t('label.disksizeallocated'),
+          scopedSlots: { customRender: 'disksizeallocated' }
+        },
+        {
+          title: this.$t('label.disksizetotal'),
+          scopedSlots: { customRender: 'disksizetotal' }
+        },
+        {
+          title: this.$t('label.select'),
+          scopedSlots: { customRender: 'select' }
+        }
+      ]
     }
   },
   beforeCreate () {
@@ -102,11 +151,15 @@ export default {
     fetchData () {
       this.loading = true
       api('listStoragePools', {
-        zoneid: this.resource.zoneid
+        zoneid: this.resource.zoneid,
+        keyword: this.searchQuery,
+        page: this.page,
+        pagesize: this.pageSize
       }).then(response => {
         if (this.arrayHasItems(response.liststoragepoolsresponse.storagepool)) {
           this.storagePools = response.liststoragepoolsresponse.storagepool
         }
+        this.totalCount = response.liststoragepoolsresponse.count
       }).finally(() => {
         this.loading = false
       })
@@ -120,42 +173,46 @@ export default {
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
-        this.loading = true
-        var isUserVm = true
-        if (this.$route.meta.name !== 'vm') {
-          isUserVm = false
-        }
-        var migrateApi = isUserVm ? 'migrateVirtualMachine' : 'migrateSystemVm'
-        if (isUserVm && this.apiParams.hostid && this.apiParams.hostid.required === false) {
-          migrateApi = 'migrateVirtualMachineWithVolume'
-          var rootVolume = null
-          api('listVolumes', {
-            listAll: true,
-            virtualmachineid: this.resource.id
-          }).then(response => {
-            var volumes = response.listvolumesresponse.volume
+    handleChangePage (page, pageSize) {
+      this.page = page
+      this.pageSize = pageSize
+      this.fetchData()
+    },
+    handleChangePageSize (currentPage, pageSize) {
+      this.page = currentPage
+      this.pageSize = pageSize
+      this.fetchData()
+    },
+    submitForm () {
+      this.loading = true
+      var isUserVm = true
+      if (this.$route.meta.name !== 'vm') {
+        isUserVm = false
+      }
+      var migrateApi = isUserVm ? 'migrateVirtualMachine' : 'migrateSystemVm'
+      if (isUserVm && this.apiParams.hostid && this.apiParams.hostid.required === false) {
+        migrateApi = 'migrateVirtualMachineWithVolume'
+        var rootVolume = null
+        api('listVolumes', {
+          listAll: true,
+          virtualmachineid: this.resource.id
+        }).then(response => {
+          var volumes = response.listvolumesresponse.volume
+          if (volumes && volumes.length > 0) {
+            volumes = volumes.filter(item => item.type === 'ROOT')
             if (volumes && volumes.length > 0) {
-              volumes = volumes.filter(item => item.type === 'ROOT')
-              if (volumes && volumes.length > 0) {
-                rootVolume = volumes[0]
-              }
-              if (rootVolume == null) {
-                this.$message.error('Failed to find ROOT volume for the VM ' + this.resource.id)
-                this.closeAction()
-              }
-              this.migrateVm(migrateApi, values.storageid, rootVolume.id)
+              rootVolume = volumes[0]
             }
-          })
-          return
-        }
-        this.migrateVm(migrateApi, values.storageid, null)
-      })
+            if (rootVolume == null) {
+              this.$message.error('Failed to find ROOT volume for the VM ' + this.resource.id)
+              this.closeAction()
+            }
+            this.migrateVm(migrateApi, this.selectedPool.id, rootVolume.id)
+          }
+        })
+        return
+      }
+      this.migrateVm(migrateApi, this.selectedPool.id, null)
     },
     migrateVm (migrateApi, storageId, rootVolumeId) {
       var params = {
@@ -205,17 +262,26 @@ export default {
     closeAction () {
       this.$emit('close-action')
     }
+  },
+  filters: {
+    byteToGigabyte: value => {
+      return (value / Math.pow(10, 9)).toFixed(2)
+    }
   }
 }
 </script>
 
 <style scoped lang="less">
   .form-layout {
-    width: 60vw;
+    width: 75vw;
 
-    @media (min-width: 500px) {
-      width: 450px;
+    @media (min-width: 700px) {
+      width: 650px;
     }
+  }
+
+  .pagination {
+    margin-top: 20px;
   }
 
   .action-button {
