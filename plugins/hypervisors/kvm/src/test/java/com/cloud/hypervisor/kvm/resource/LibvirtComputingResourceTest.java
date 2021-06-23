@@ -308,7 +308,24 @@ public class LibvirtComputingResourceTest {
      */
     @Test
     public void testCreateVMFromSpecWithTopology4() {
-        VirtualMachineTO to = createDefaultVM(false);
+        final int id = random.nextInt(65534);
+        final String name = "test-instance-1";
+
+        final int cpus = 8;
+        final int minSpeed = 1024;
+        final int maxSpeed = 2048;
+        final int minRam = 256 * 1024;
+        final int maxRam = 512 * 1024;
+
+        final String os = "Ubuntu";
+
+        final String vncAddr = "";
+        final String vncPassword = "mySuperSecretPassword";
+
+        final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
+        to.setVncAddr(vncAddr);
+        to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+
         LibvirtVMDef vm = libvirtComputingResourceSpy.createVMFromSpec(to);
         vm.setHvsType(hyperVisorType);
 
