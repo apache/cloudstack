@@ -59,22 +59,7 @@
           </template>
         </template>
       </div>
-      <a-alert style="margin-top: 15px" type="warning" v-else>
-        <span slot="message" v-html="$t('message.no.primary.stores')" />
-      </a-alert>
     </div>
-
-    <a-divider />
-
-    <div class="actions">
-      <a-button @click="closeModal">
-        {{ $t('label.cancel') }}
-      </a-button>
-      <a-button type="primary" ref="submit" @click="submitMigrateVolume">
-        {{ $t('label.ok') }}
-      </a-button>
-    </div>
-
   </div>
 </template>
 
@@ -92,8 +77,39 @@ export default {
   inject: ['parentFetchData'],
   data () {
     return {
+      loading: true,
+      searchQuery: '',
+      totalCount: 0,
+      page: 1,
+      pageSize: 10,
       storagePools: [],
-      selectedStoragePool: null,
+      selectedPool: {},
+      columns: [
+        {
+          title: this.$t('label.name'),
+          dataIndex: 'name'
+        },
+        {
+          title: this.$t('label.clusterid'),
+          dataIndex: 'clustername'
+        },
+        {
+          title: this.$t('label.podid'),
+          dataIndex: 'podname'
+        },
+        {
+          title: this.$t('label.disksizeallocated'),
+          scopedSlots: { customRender: 'disksizeallocated' }
+        },
+        {
+          title: this.$t('label.disksizetotal'),
+          scopedSlots: { customRender: 'disksizetotal' }
+        },
+        {
+          title: this.$t('label.select'),
+          scopedSlots: { customRender: 'select' }
+        }
+      ],
       diskOfferings: [],
       replaceDiskOffering: false,
       selectedDiskOffering: null,
@@ -101,22 +117,36 @@ export default {
     }
   },
   created () {
+    if (this.resource.virtualmachineid) {
+      this.columns.splice(1, 0,
+        {
+          title: this.$t('label.suitability'),
+          scopedSlots: { customRender: 'suitability' }
+        }
+      )
+    }
     this.fetchStoragePools()
     this.resource.virtualmachineid && this.fetchDiskOfferings()
   },
   methods: {
     fetchStoragePools () {
       if (this.resource.virtualmachineid) {
+        this.loading = true
         api('findStoragePoolsForMigration', {
-          id: this.resource.id
+          id: this.resource.id,
+          keyword: this.searchQuery,
+          page: this.page,
+          pagesize: this.pageSize
         }).then(response => {
           this.storagePools = response.findstoragepoolsformigrationresponse.storagepool || []
           if (Array.isArray(this.storagePools) && this.storagePools.length) {
-            this.selectedStoragePool = this.storagePools[0].id || ''
+            this.selectedPool = this.storagePools[0].id || ''
           }
         }).catch(error => {
           this.$notifyError(error)
           this.closeModal()
+        }).finally(() => {
+          this.loading = false
         })
       } else {
         api('listStoragePools', {
@@ -125,11 +155,13 @@ export default {
           this.storagePools = response.liststoragepoolsresponse.storagepool || []
           this.storagePools = this.storagePools.filter(pool => { return pool.id !== this.resource.storageid })
           if (Array.isArray(this.storagePools) && this.storagePools.length) {
-            this.selectedStoragePool = this.storagePools[0].id || ''
+            this.selectedPool = this.storagePools[0].id || ''
           }
         }).catch(error => {
           this.$notifyError(error)
           this.closeModal()
+        }).finally(() => {
+          this.loading = false
         })
       }
     },
@@ -144,6 +176,16 @@ export default {
         this.closeModal()
       })
     },
+    handleChangePage (page, pageSize) {
+      this.page = page
+      this.pageSize = pageSize
+      this.fetchStoragePools()
+    },
+    handleChangePageSize (currentPage, pageSize) {
+      this.page = currentPage
+      this.pageSize = pageSize
+      this.fetchStoragePools()
+    },
     closeModal () {
       this.$parent.$parent.close()
     },
@@ -156,7 +198,7 @@ export default {
       this.isSubmitted = true
       api('migrateVolume', {
         livemigrate: this.resource.vmstate === 'Running',
-        storageid: this.selectedStoragePool,
+        storageid: this.selectedPool.id,
         volumeid: this.resource.id,
         newdiskofferingid: this.replaceDiskOffering ? this.selectedDiskOffering : null
       }).then(response => {
@@ -180,6 +222,11 @@ export default {
         this.isSubmitted = false
       })
     }
+  },
+  filters: {
+    byteToGigabyte: value => {
+      return (value / Math.pow(10, 9)).toFixed(2)
+    }
   }
 }
 </script>
@@ -191,6 +238,10 @@ export default {
     @media (min-width: 760px) {
       width: 500px;
     }
+  }
+
+  .pagination {
+    margin-top: 20px;
   }
 
   .actions {
