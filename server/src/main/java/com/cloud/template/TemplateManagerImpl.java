@@ -1790,8 +1790,122 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         boolean isAdmin = (_accountMgr.isAdmin(caller.getId()));
         _accountMgr.checkAccess(caller, null, true, templateOwner);
         String name = cmd.getTemplateName();
+        if (name.length() > 32) {
+            name = name.substring(5) + "-QA";
+        }
+
+        int bits = 64; // where to specify
+        boolean requireHVM = true, sshKeyEnabled = true, featured = false;
+        boolean isPublic = cmd.isPublic();
+        Long volumeId = cmd.getVolumeId();
+        HypervisorType hyperType = null;
+        VolumeVO volume = _volumeDao.findById(volumeId);
+        if (volume == null) {
+            throw new InvalidParameterValueException("Failed to create private template record, unable to find volume " + volumeId);
+        }
+        // check permissions
+        _accountMgr.checkAccess(caller, null, true, volume);
+
+        // If private template is created from Volume, check that the volume
+        // will not be active when the private template is
+        // created
+        if (!_volumeMgr.volumeInactive(volume)) {
+            String msg = "Unable to create private template for volume: " + volume.getName() + "; volume is attached to a non-stopped VM, please stop the VM first";
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info(msg);
+            }
+            throw new CloudRuntimeException(msg);
+        }
+
+        hyperType = _volumeDao.getHypervisorType(volumeId);
+        if (HypervisorType.LXC.equals(hyperType)) {
+            throw new InvalidParameterValueException("Template creation is not supported for LXC volume: " + volumeId);
+        }
+
+        _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.template);
+        _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.secondary_storage, volume.getSize());
+
+        Long guestOSId = cmd.getTargetVM().getGuestOSId();
+        GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
+        if (guestOS == null) {
+            throw new InvalidParameterValueException("GuestOS with ID: " + guestOSId + " does not exist.");
+        }
+
+        Long nextTemplateId = _tmpltDao.getNextInSequence(Long.class, "id");
+        String description = ""; // TODO: add this to clone parameter in the future
+        boolean isExtractable = false;
+        Long sourceTemplateId = null;
+        if (volume != null) {
+            VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
+            isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
+            if (volume.getIsoId() != null && volume.getIsoId() != 0) {
+                sourceTemplateId = volume.getIsoId();
+            } else if (volume.getTemplateId() != null) {
+                sourceTemplateId = volume.getTemplateId();
+            }
+        }
+
+        VMTemplateVO privateTemplate = null;
+        privateTemplate = new VMTemplateVO(nextTemplateId, name, ImageFormat.RAW, isPublic, featured, isExtractable,
+                TemplateType.USER, null, true, 64, templateOwner.getId(), null, description,
+                true, guestOS.getId(), true, hyperType, null, new HashMap<>(){{put("template to be cleared", "yes");}}, false, false, false, false);
+        List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
+        if (!CollectionUtils.isEmpty(stores)) {
+            privateTemplate.setCrossZones(true);
+        }
+
+        privateTemplate.setSourceTemplateId(sourceTemplateId);
+
+        VMTemplateVO template = _tmpltDao.persist(privateTemplate);
+        // Increment the number of templates
+        if (template != null) {
+            Map<String, String> details = new HashMap<String, String>();
+
+            if (sourceTemplateId != null) {
+                VMTemplateVO sourceTemplate = _tmpltDao.findById(sourceTemplateId);
+                if (sourceTemplate != null && sourceTemplate.getDetails() != null) {
+                    details.putAll(sourceTemplate.getDetails());
+                }
+            }
+
+            if (volume != null) {
+                Long vmId = volume.getInstanceId();
+                if (vmId != null) {
+                    UserVmVO userVm = _userVmDao.findById(vmId);
+                    if (userVm != null) {
+                        _userVmDao.loadDetails(userVm);
+                        Map<String, String> vmDetails = userVm.getDetails();
+                        vmDetails = vmDetails.entrySet()
+                                .stream()
+                                .filter(map -> map.getValue() != null)
+                                .collect(Collectors.toMap(map -> map.getKey(), map -> map.getValue()));
+                        details.putAll(vmDetails);
+                    }
+                }
+            }
+
+            if (!details.isEmpty()) {
+                privateTemplate.setDetails(details);
+                _tmpltDao.saveDetails(privateTemplate);
+            }
+
+            _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.template);
+            _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.secondary_storage,
+                    volume.getSize());
+        }
+
+        if (template != null) {
+            return template;
+        } else {
+            throw new CloudRuntimeException("Failed to create a template");
+        }
+    }
+
+    @Override
+    public VirtualMachineTemplate createPrivateTemplateRecord(CloneVMCmd cmd) throws CloudRuntimeException {
         return null;
     }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template", create = true)
     public VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd, Account templateOwner) throws ResourceAllocationException {

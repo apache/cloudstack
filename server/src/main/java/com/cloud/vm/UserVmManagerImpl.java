@@ -4515,6 +4515,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (CollectionUtils.isEmpty(volumeInformation)) {
             throw new CloudRuntimeException("The VM to copy does not have a Volume attached!");
         }
+        cmd.setVolumeId(volumeInformation.get(0).getId());
     }
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_CLONE, eventDescription = "clone vm", async = true)

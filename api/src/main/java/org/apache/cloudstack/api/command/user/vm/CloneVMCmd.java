@@ -7,10 +7,17 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.ACL;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -31,6 +38,26 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType=UserVmResponse.class,
             required = true, description = "The ID of the virtual machine")
     private Long id;
+
+    public Long getVolumeId() {
+        return volumeId;
+    }
+
+    public void setVolumeId(Long volumeId) {
+        this.volumeId = volumeId;
+    }
+
+    private Long volumeId;
+
+    private VirtualMachineTemplate createdTemplate;
+
+    public void setCreatedTemplate(VirtualMachineTemplate template) {
+        this.createdTemplate = template;
+    }
+
+    public VirtualMachineTemplate getCreatedTemplate() {
+        return this.createdTemplate;
+    }
 
     public Long getId() {
         return this.id;
@@ -55,14 +82,17 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
         VirtualMachineTemplate template = null;
         try {
             _userVmService.checkCloneCondition(this);
+            template = _templateService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
+            setCreatedTemplate(template);
+//            _userVmService.createBasicSecurityGroupVirtualMachine(); // disabled since it crashes
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
         }
-        template = _templateService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
-        if (template == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to generate a template during clone!");
-        }
+    }
+
+    public boolean isPublic() {
+        return false;
     }
 
     public String getVMName() {
