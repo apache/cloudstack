@@ -575,7 +575,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.destroy.forcestop", "false",
             "On destroy, force-stop takes this value ", true);
 
-    public static final List<HypervisorType> VM_STORAGEMIGRATION_SUPPORTING_HYPERVISORS = new ArrayList<>(Arrays.asList(
+    public static final List<HypervisorType> VM_STORAGE_MIGRATION_SUPPORTING_HYPERVISORS = new ArrayList<>(Arrays.asList(
             HypervisorType.KVM,
             HypervisorType.VMware,
             HypervisorType.XenServer,
@@ -6376,7 +6376,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
         }
 
-        if (VM_STORAGEMIGRATION_SUPPORTING_HYPERVISORS.contains(vm.getHypervisorType())) {
+        if (VM_STORAGE_MIGRATION_SUPPORTING_HYPERVISORS.contains(vm.getHypervisorType())) {
             throw new InvalidParameterValueException(String.format("Unsupported hypervisor: %s for VM migration, we support XenServer/VMware/KVM only", vm.getHypervisorType()));
         }
 
