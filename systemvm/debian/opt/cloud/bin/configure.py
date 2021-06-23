@@ -111,7 +111,7 @@ class CsAcl(CsDataBag):
             self.rule['allowed'] = True
             self.rule['action'] = "ACCEPT"
 
-            if self.rule['type'] == 'all' and obj['source_cidr_list']:
+            if self.rule['type'] == 'all' and not obj['source_cidr_list']:
                 self.rule['cidr'] = []
             else:
                 self.rule['cidr'] = obj['source_cidr_list']
