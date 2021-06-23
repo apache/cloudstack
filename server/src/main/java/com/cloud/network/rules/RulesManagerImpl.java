@@ -630,17 +630,17 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     }
 
     protected void applyUserData(long vmId, Network network, Nic guestNic) throws ResourceUnavailableException {
-        UserVmVO vm = _vmDao.findById(vmId);
-        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
-        NicProfile nicProfile = new NicProfile(guestNic, network, null, null, null,
-                    _networkModel.isSecurityGroupSupportedInNetwork(network),
-                    _networkModel.getNetworkTag(template.getHypervisorType(), network));
-        VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm);
         UserDataServiceProvider element = _networkModel.getUserDataUpdateProvider(network);
         if (element == null) {
             s_logger.error("Can't find network element for " + Service.UserData.getName() + " provider needed for UserData update");
         } else {
+            UserVmVO vm = _vmDao.findById(vmId);
             try {
+                VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+                NicProfile nicProfile = new NicProfile(guestNic, network, null, null, null,
+                            _networkModel.isSecurityGroupSupportedInNetwork(network),
+                            _networkModel.getNetworkTag(template.getHypervisorType(), network));
+                VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm);
                 if (!element.saveUserData(network, nicProfile, vmProfile)) {
                     s_logger.error("Failed to update userdata for vm " + vm + " and nic " + guestNic);
                 }
