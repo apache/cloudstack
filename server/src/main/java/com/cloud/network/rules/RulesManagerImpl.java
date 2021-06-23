@@ -640,10 +640,13 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         if (element == null) {
             s_logger.error("Can't find network element for " + Service.UserData.getName() + " provider needed for UserData update");
         } else {
-            boolean result = element.saveUserData(network, nicProfile, vmProfile);
-            if (!result) {
+            try {
+                if (!element.saveUserData(network, nicProfile, vmProfile)) {
                     s_logger.error("Failed to update userdata for vm " + vm + " and nic " + guestNic);
                 }
+            } catch (Exception e) {
+                s_logger.error("Failed to update userdata for vm " + vm + " and nic " + guestNic + " due to " + e.getMessage(), e);
+            }
         }
     }
 
