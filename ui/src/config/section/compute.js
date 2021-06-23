@@ -110,6 +110,7 @@ export default {
         {
           api: 'stopVirtualMachine',
           icon: 'poweroff',
+          shortKey: "['s']",
           label: 'label.action.stop.instance',
           message: 'message.action.stop.instance',
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',

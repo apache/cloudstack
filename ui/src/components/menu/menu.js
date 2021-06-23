@@ -118,21 +118,20 @@ export default {
     },
     renderMenuItem (menu) {
       const target = menu.meta.target || null
-      // const shortKey = menu.meta.shortKey || null
-      // const actionxyz = () => {
-      //   console.log('fired')
-      // }
       const props = {
         to: { name: menu.name },
         target: target
-        // 'v-shortkey': "['a']",
-        // '@shortkey': actionxyz
+      }
+      const on = {
+        shortkey: () => {
+          this.handleClickParentMenu(menu)
+        }
       }
       return (
         <Item {...{ key: menu.path }}>
-          <router-link {...{ props }}>
+          <router-link {...{ props, on }}>
             {this.renderIcon(menu.meta.icon, menu)}
-            <span>{this.$t(menu.meta.title)}</span>
+            <span vShortkey={menu.meta.shortKey}>{this.$t(menu.meta.title)}</span>
             {this.$store.getters.showshortkeys ? <span>{menu.meta.shortKey}</span> : ''}
           </router-link>
         </Item>
@@ -143,6 +142,9 @@ export default {
       const on = {
         click: () => {
           this.handleClickParentMenu(menu)
+        },
+        shortkey: () => {
+          this.handleClickParentMenu(menu)
         }
       }
       if (!menu.hideChildrenInMenu) {
@@ -152,8 +154,8 @@ export default {
         <SubMenu {...{ key: menu.path }}>
           <span slot="title">
             {this.renderIcon(menu.meta.icon, menu)}
-            <span {...{ on: on }}>{this.$t(menu.meta.title)}</span>
-            {this.$store.getters.showshortkeys ? <span>{menu.meta.shortKey}</span> : ''}
+            <span vShortkey={menu.meta.shortKey} {...{ on: on }}>{this.$t(menu.meta.title)}</span>
+            {this.$store.getters.showshortkeys ? <span >{menu.meta.shortKey}</span> : ''}
           </span>
           {itemArr}
         </SubMenu>
@@ -166,6 +168,9 @@ export default {
       const props = {}
       const on = {
         click: () => {
+          this.handleClickParentMenu(menuItem)
+        },
+        shortkey: () => {
           this.handleClickParentMenu(menuItem)
         }
       }
@@ -198,7 +203,6 @@ export default {
       },
       openChange: this.onOpenChange
     }
-    // console.log(menu)
     const menuTree = menu.map(item => {
       if (item.hidden) {
         return null
