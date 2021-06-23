@@ -24,6 +24,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtVmMemoryDeviceDef;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -56,23 +57,31 @@ public final class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCo
             logger.debug(String.format("Scaling %s.", scalingDetails));
 
             if (memoryToAttach > 0) {
+                if (!dm.getXMLDesc(0).contains("<maxMemory slots='16' unit='KiB'>")) {
+                    throw new CloudRuntimeException(String.format("The %s is not prepared for dynamic scaling. To be prepared, the VM must be deployed with a dynamic service offering,"
+                      + " VM dynamic scale enabled and global setting \"enable.dynamic.scale.vm\" as \"true\". If you changed one of these settings after deploying the VM,"
+                      + " consider stopping and starting it again to prepared it to dynamic scaling.", vmDefinition));
+                }
+
                 String memoryDevice = new LibvirtVmMemoryDeviceDef(memoryToAttach).toString();
                 logger.debug(String.format("Attaching memory device [%s] to %s.", memoryDevice, vmDefinition));
                 dm.attachDevice(memoryDevice);
             } else {
-                logger.info(String.format("Not scaling the memory. To scale the memory of the %s, the new memory [%s] must be higher than the current memory [%s]. The current difference is [%s].", vmDefinition, newMemory, currentMemory, memoryToAttach));
+                logger.info(String.format("Not scaling the memory. To scale the memory of the %s, the new memory [%s] must be higher than the current memory [%s]. The current "
+                  + "difference is [%s].", vmDefinition, newMemory, currentMemory, memoryToAttach));
             }
 
             if (runningVcpus < newVcpus) {
                 dm.setVcpus(newVcpus);
             } else {
-                logger.info(String.format("Not scaling the cpu cores. To scale the cpu cores of the %s, the new cpu count [%s] must be higher than the current cpu count [%s].", vmDefinition, newVcpus, runningVcpus));
+                logger.info(String.format("Not scaling the cpu cores. To scale the cpu cores of the %s, the new cpu count [%s] must be higher than the current cpu count [%s].",
+                  vmDefinition, newVcpus, runningVcpus));
             }
 
             return new ScaleVmAnswer(command, true, String.format("Successfully scaled %s.", scalingDetails));
-        } catch (LibvirtException e) {
+        } catch (LibvirtException | CloudRuntimeException e) {
             String message = String.format("Unable to scale %s due to [%s].", scalingDetails, e.getMessage());
-            logger.warn(message, e);
+            logger.error(message, e);
             return new ScaleVmAnswer(command, false, message);
         } finally {
             if (conn != null) {
