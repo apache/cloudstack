@@ -20,7 +20,6 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.List;
 
-import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
