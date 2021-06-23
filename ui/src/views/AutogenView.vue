@@ -924,7 +924,7 @@ export default {
 
       this.showAction = true
       for (const param of this.currentAction.paramFields) {
-        if (param.type === 'list' && ['tags', 'hosttags'].includes(param.name)) {
+        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags'].includes(param.name)) {
           param.type = 'string'
         }
         if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
@@ -1207,7 +1207,7 @@ export default {
               }
               break
             }
-            if (!input && input !== 0 && !['tags', 'hosttags'].includes(key)) {
+            if (!input && input !== 0 && !['tags', 'hosttags', 'storagetags'].includes(key)) {
               continue
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {

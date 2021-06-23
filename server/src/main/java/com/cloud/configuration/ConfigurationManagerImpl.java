@@ -161,7 +161,9 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.gpu.GPU;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
@@ -211,6 +213,7 @@ import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.test.IPRangeConfig;
@@ -392,6 +395,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private VMTemplateZoneDao templateZoneDao;
     @Inject
     VsphereStoragePolicyDao vsphereStoragePolicyDao;
+    @Inject
+    HostTagsDao hostTagDao;
+    @Inject
+    StoragePoolTagsDao storagePoolTagDao;
 
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
@@ -2706,6 +2713,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long userId = CallContext.current().getCallingUserId();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
+        String storageTags = cmd.getStorageTags();
+        String hostTags = cmd.getHostTags();
 
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -2787,7 +2796,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to update service offering: %s by id user: %s because it is not root-admin or domain-admin", offeringHandle.getUuid(), user.getUuid()));
         }
 
-        final boolean updateNeeded = name != null || displayText != null || sortKey != null;
+        final boolean updateNeeded = name != null || displayText != null || sortKey != null || storageTags != null || hostTags != null;
         final boolean detailsUpdateNeeded = !filteredDomainIds.equals(existingDomainIds) || !filteredZoneIds.equals(existingZoneIds);
         if (!updateNeeded && !detailsUpdateNeeded) {
             return _serviceOfferingDao.findById(id);
@@ -2807,9 +2816,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             offering.setSortKey(sortKey);
         }
 
-        updateOfferingTagsIfIsNotNull(cmd.getTags(), offering);
+        updateOfferingTagsIfIsNotNull(storageTags, offering);
 
-        updateServiceOfferingHostTagsIfNotNull(cmd.getHostTag(), offering);
+        updateServiceOfferingHostTagsIfNotNull(hostTags, offering);
 
         if (updateNeeded && !_serviceOfferingDao.update(id, offering)) {
             return null;
@@ -3319,13 +3328,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
      * Check the tags parameters to the disk/service offering
      * <ul>
      *     <li>If tags is null, do nothing and return.</li>
-     *     <li>If tags is not null, set tag to the disk/service offering.</li>
+     *     <li>If tags is not null, will set tag to the disk/service offering if the pools with active volumes have the new tags.</li>
      *     <li>If tags is an blank string, set null on disk/service offering tag.</li>
      * </ul>
      */
     protected void updateOfferingTagsIfIsNotNull(String tags, DiskOfferingVO diskOffering) {
         if (tags == null) { return; }
         if (StringUtils.isNotBlank(tags)) {
+            tags = StringUtils.cleanupTags(tags);
+            List<StoragePoolVO> pools = _storagePoolDao.listStoragePoolsWithActiveVolumesByOfferingId(diskOffering.getId());
+            if (CollectionUtils.isNotEmpty(pools)) {
+                List<String> listOfTags = Arrays.asList(tags.split(","));
+                for (StoragePoolVO storagePoolVO : pools) {
+                    List<String> tagsOnPool = storagePoolTagDao.getStoragePoolTags(storagePoolVO.getId());
+                    if (CollectionUtils.isEmpty(tagsOnPool) || !tagsOnPool.containsAll(listOfTags)) {
+                        throw new InvalidParameterValueException(String.format("There are active volumes using offering [%s], and the pools [%s] don't have the new tags", diskOffering.getId(), pools));
+                    }
+                }
+            }
             diskOffering.setTags(tags);
         } else {
             diskOffering.setTags(null);
@@ -3336,7 +3356,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
      * Check the host tags parameters to the service offering
      * <ul>
      *     <li>If host tags is null, do nothing and return.</li>
-     *     <li>If host tags is not null, set host tag to the service offering.</li>
+     *     <li>If host tags is not null, will set host tag to the service offering if the hosts with active VMs have the new tags.</li>
      *     <li>If host tags is an blank string, set null on service offering tag.</li>
      * </ul>
      */
@@ -3345,6 +3365,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return;
         }
         if (StringUtils.isNotBlank(hostTags)) {
+            hostTags = StringUtils.cleanupTags(hostTags);
+            List<HostVO> hosts = _hostDao.listHostsWithActiveVMs(offering.getId());
+            if (CollectionUtils.isNotEmpty(hosts)) {
+                List<String> listOfHostTags = Arrays.asList(hostTags.split(","));
+                for (HostVO host : hosts) {
+                    List<String> tagsOnHost = hostTagDao.gethostTags(host.getId());
+                    if (CollectionUtils.isEmpty(tagsOnHost) || !tagsOnHost.containsAll(listOfHostTags)) {
+                        throw new InvalidParameterValueException(String.format("There are active VMs using offering [%s], and the hosts [%s] don't have the new tags", offering.getId(), hosts));
+                    }
+                }
+            }
             offering.setHostTag(hostTags);
         } else {
             offering.setHostTag(null);
