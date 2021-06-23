@@ -24,22 +24,12 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.allowuserexpungerecovervm">
-          <span slot="label">
-            {{ $t('label.expunge') }}
-            <a-tooltip placement="bottom" :title="apiParams.expunge.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label :title="$t('label.expunge')" :tooltip="apiParams.expunge.description"/>
           <a-switch v-decorator="['expunge']" :auto-focus="true" />
         </a-form-item>
 
         <a-form-item v-if="volumes.length > 0">
-          <span slot="label">
-            {{ $t('label.delete.volumes') }}
-            <a-tooltip placement="bottom" :title="apiParams.volumeids.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label :title="$t('label.delete.volumes')" :tooltip="apiParams.volumeids.description"/>
           <a-select
             v-decorator="['volumeids']"
             :placeholder="$t('label.delete.volumes')"
@@ -64,9 +54,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/view/TooltipLabel'
 
 export default {
   name: 'DestroyVM',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,

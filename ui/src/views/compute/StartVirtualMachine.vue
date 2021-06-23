@@ -28,12 +28,7 @@
         layout="vertical">
         <div v-if="this.$store.getters.userInfo.roletype === 'Admin'">
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.podid') }}
-              <a-tooltip :title="apiParams.podid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
             <a-select
               v-decorator="['podid', {}]"
               showSearch
@@ -51,12 +46,7 @@
             </a-select>
           </a-form-item>
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.clusterid') }}
-              <a-tooltip :title="apiParams.clusterid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label :title="$t('label.clusterid')" :tooltip="apiParams.clusterid.description"/>
             <a-select
               id="cluster-selection"
               v-decorator="['clusterid', {}]"
@@ -74,12 +64,7 @@
             </a-select>
           </a-form-item>
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.hostid') }}
-              <a-tooltip :title="apiParams.hostid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label :title="$t('label.hostid')" :tooltip="apiParams.hostid.description"/>
             <a-select
               id="host-selection"
               v-decorator="['hostid', {}]"
@@ -98,12 +83,7 @@
         </div>
 
         <a-form-item v-if="resource.hypervisor === 'VMware'">
-          <span slot="label">
-            {{ $t('label.bootintosetup') }}
-            <a-tooltip :title="apiParams.bootintosetup.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label :title="$t('label.bootintosetup')" :tooltip="apiParams.bootintosetup.description"/>
           <a-switch
             v-decorator="['bootintosetup']">
           </a-switch>
@@ -120,9 +100,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/view/TooltipLabel'
 
 export default {
   name: 'StartVirtualMachine',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,

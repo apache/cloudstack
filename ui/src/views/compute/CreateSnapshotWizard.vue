@@ -23,12 +23,7 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <span slot="label" :title="apiParams.volumeid.description">
-            {{ $t('label.volumeid') }}
-            <a-tooltip>
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label :title="$t('label.volumeid')" :tooltip="apiParams.volumeid.description"/>
           <a-select
             showSearch
             allowClear
@@ -46,32 +41,17 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label" :title="apiParams.name.description">
-            {{ $t('label.name') }}
-            <a-tooltip>
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-decorator="['name']"
             :placeholder="apiParams.name.description"/>
         </a-form-item>
         <a-form-item v-if="isQuiesceVm">
-          <span slot="label" :title="apiParams.quiescevm.description">
-            {{ $t('label.quiescevm') }}
-            <a-tooltip>
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label :title="$t('label.quiescevm')" :tooltip="apiParams.quiescevm.description"/>
           <a-switch v-decorator="['quiescevm', { initialValue: false }]"/>
         </a-form-item>
         <a-form-item v-if="!supportsStorageSnapshot">
-          <span slot="label" :title="apiParams.asyncbackup.description">
-            {{ $t('label.asyncbackup') }}
-            <a-tooltip>
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label :title="$t('label.asyncbackup')" :tooltip="apiParams.asyncbackup.description"/>
           <a-switch v-decorator="['asyncbackup', { initialValue: false }]"/>
         </a-form-item>
         <div :span="24" class="action-button">
@@ -85,9 +65,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/view/TooltipLabel'
 
 export default {
   name: 'CreateSnapshotWizard',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
