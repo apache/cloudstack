@@ -97,12 +97,12 @@ export default {
           dataIndex: 'name'
         },
         {
-          title: this.$t('label.clusterid'),
-          dataIndex: 'clustername'
-        },
-        {
           title: this.$t('label.podid'),
           dataIndex: 'podname'
+        },
+        {
+          title: this.$t('label.clusterid'),
+          dataIndex: 'clustername'
         },
         {
           title: this.$t('label.disksizeallocated'),
