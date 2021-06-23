@@ -669,8 +669,8 @@ export default {
     onUnmanageInstanceAction () {
       const self = this
       const title = this.managedInstancesSelectedRowKeys.length > 1
-        ? this.$t('message.action.unmanage.virtualmachines')
-        : this.$t('message.action.unmanage.virtualmachine')
+        ? this.$t('message.action.unmanage.instances')
+        : this.$t('message.action.unmanage.instance')
       var vmNames = []
       for (var index of this.managedInstancesSelectedRowKeys) {
         vmNames.push(this.managedInstances[index].name)
