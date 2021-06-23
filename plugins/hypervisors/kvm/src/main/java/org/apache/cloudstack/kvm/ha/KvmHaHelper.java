@@ -58,7 +58,7 @@ public class KvmHaHelper {
      */
     public Status checkAgentStatusViaKvmHaAgent(Host host, Status agentStatus) {
         boolean isVmsCountOnKvmMatchingWithDatabase = isKvmHaAgentHealthy(host);
-        if(isVmsCountOnKvmMatchingWithDatabase) {
+        if (isVmsCountOnKvmMatchingWithDatabase) {
             agentStatus = Status.Up;
             LOGGER.debug(String.format("Checking agent %s status; KVM HA Agent is Running as expected.", agentStatus));
         } else {
@@ -85,6 +85,8 @@ public class KvmHaHelper {
      * Returns false if the cluster has no problematic hosts or a small fraction of it.<br><br>
      * Returns true if the cluster is problematic. A cluster is problematic if many hosts are in Down or Disconnected states, in such case it should not recover/fence.<br>
      * Instead, Admins should be warned and check as it could be networking problems and also might not even have resources capacity on the few Healthy hosts at the cluster.
+     * <br><br>
+     * Admins can change the accepted ration of problematic hosts via global settings by updating configuration: "kvm.ha.accepted.problematic.hosts.ratio".
      */
     protected boolean isClusteProblematic(Host host) {
         List<HostVO> hostsInCluster = resourceManager.listAllHostsInCluster(host.getClusterId());
@@ -102,6 +104,9 @@ public class KvmHaHelper {
         return false;
     }
 
+    /**
+     * Returns true if the given Host KVM-HA-Helper is reachable by another host in the same cluster.
+     */
     protected boolean isHostAgentReachableByNeighbour(Host host) {
         List<HostVO> neighbors = resourceManager.listHostsInClusterByStatus(host.getClusterId(), Status.Up);
         for (HostVO neighbor : neighbors) {

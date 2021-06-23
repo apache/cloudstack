@@ -79,6 +79,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
 
         Status agentStatus = Status.Disconnected;
         boolean hasNfs = isHostServedByNfsPool(agent);
+        List<StoragePoolVO> clusterPools = _storagePoolDao.listPoolsByCluster(agent.getClusterId());
         if (hasNfs) {
             agentStatus = checkAgentStatusViaNfs(agent);
             s_logger.debug(String.format("Agent investigation was requested on host %s. Agent status via NFS heartbeat is %s.", agent, agentStatus));
