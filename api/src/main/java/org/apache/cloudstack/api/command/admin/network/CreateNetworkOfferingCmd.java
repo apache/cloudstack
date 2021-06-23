@@ -94,7 +94,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.SUPPORTED_SERVICES,
             type = CommandType.LIST,
-            required = true,
             collectionType = CommandType.STRING,
             description = "services supported by the network offering")
     private List<String> supportedServices;
@@ -205,7 +204,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     }
 
     public List<String> getSupportedServices() {
-        return supportedServices;
+        return supportedServices == null ? new ArrayList<String>() : supportedServices;
     }
 
     public String getGuestIpType() {
