@@ -775,7 +775,7 @@ export default {
         'sharedexecutable'
       ],
       initDataConfig: {},
-      defaultNetwork: '',
+      defaultnetworkid: '',
       networkConfig: [],
       dataNetworkCreated: [],
       tabList: [
@@ -1065,6 +1065,7 @@ export default {
 
       if (this.networks) {
         this.vm.networks = this.networks
+        this.vm.defaultnetworkid = this.defaultnetworkid
       }
 
       if (this.template) {
@@ -1147,6 +1148,7 @@ export default {
     this.form.getFieldDecorator('multidiskoffering', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('affinitygroupids', { initialValue: [], preserve: true })
     this.form.getFieldDecorator('networkids', { initialValue: [], preserve: true })
+    this.form.getFieldDecorator('defaultnetworkid', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('keypair', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('cpunumber', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('cpuSpeed', { initialValue: undefined, preserve: true })
@@ -1377,7 +1379,10 @@ export default {
       })
     },
     updateDefaultNetworks (id) {
-      this.defaultNetwork = id
+      this.defaultnetworkid = id
+      this.form.setFieldsValue({
+        defaultnetworkid: id
+      })
     },
     updateNetworkConfig (networks) {
       this.networkConfig = networks
@@ -1528,9 +1533,9 @@ export default {
             networkIds = values.networkids
             if (networkIds.length > 0) {
               for (let i = 0; i < networkIds.length; i++) {
-                if (networkIds[i] === this.defaultNetwork) {
+                if (networkIds[i] === this.defaultnetworkid) {
                   const ipToNetwork = {
-                    networkid: this.defaultNetwork
+                    networkid: this.defaultnetworkid
                   }
                   arrNetwork.unshift(ipToNetwork)
                 } else {
