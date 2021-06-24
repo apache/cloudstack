@@ -308,7 +308,8 @@ class TestVolumes(cloudstackTestCase):
             cls.apiclient,
             cls.zone.id,
             cls.services["ostype"],
-            cls.hypervisor
+            cls.hypervisor,
+            deploy_as_is=cls.hypervisor.lower() == "vmware"
         )
         if cls.template == FAILED:
             assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]

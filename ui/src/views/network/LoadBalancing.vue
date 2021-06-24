@@ -99,8 +99,8 @@
                 </router-link>
               </div>
               <div>{{ ip }}</div>
-              <a-button
-                shape="circle"
+              <tooltip-button
+                :tooltip="$t('label.action.delete.load.balancer')"
                 type="danger"
                 icon="delete"
                 @click="() => handleDeleteInstanceFromRule(instance, record, ip)" />
@@ -110,15 +110,15 @@
       </template>
       <template slot="actions" slot-scope="record">
         <div class="actions">
-          <a-button shape="circle" icon="edit" @click="() => openEditRuleModal(record)"></a-button>
-          <a-button :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" shape="circle" icon="tag" @click="() => openTagsModal(record.id)" />
+          <tooltip-button :tooltip="$t('label.edit')" icon="edit" @click="() => openEditRuleModal(record)" />
+          <tooltip-button :tooltip="$t('label.edit.tags')" :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" icon="tag" @click="() => openTagsModal(record.id)" />
           <a-popconfirm
             :title="$t('label.delete') + '?'"
             @confirm="handleDeleteRule(record)"
             :okText="$t('label.yes')"
             :cancelText="$t('label.no')"
           >
-            <a-button :disabled="!('deleteLoadBalancerRule' in $store.getters.apis)" shape="circle" type="danger" icon="delete" />
+            <tooltip-button :tooltip="$t('label.delete')" :disabled="!('deleteLoadBalancerRule' in $store.getters.apis)" type="danger" icon="delete" />
           </a-popconfirm>
         </div>
       </template>
@@ -384,11 +384,13 @@
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'LoadBalancing',
   components: {
-    Status
+    Status,
+    TooltipButton
   },
   props: {
     resource: {
@@ -554,7 +556,7 @@ export default {
         vpcid: this.resource.vpcid
       }).then(json => {
         this.tiers.data = json.listnetworksresponse.network || []
-        this.selectedTier = this.tiers.data && this.tiers.data[0].id ? this.tiers.data[0].id : null
+        this.selectedTier = this.tiers.data?.[0]?.id ? this.tiers.data[0].id : null
         this.$forceUpdate()
       }).catch(error => {
         this.$notifyError(error)

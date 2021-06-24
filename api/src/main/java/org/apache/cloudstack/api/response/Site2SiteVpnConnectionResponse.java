@@ -132,6 +132,14 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     @Param(description = "is connection for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
+    @SerializedName(ApiConstants.SPLIT_CONNECTIONS)
+    @Param(description = "Split multiple remote networks into multiple phase 2 SAs. Often used with Cisco some products.")
+    private Boolean splitConnections;
+
+    @SerializedName(ApiConstants.IKE_VERSION)
+    @Param(description = "Which IKE Version to use, one of ike (autoselect), ikev1, or ikev2. Defaults to ike")
+    private String ikeVersion;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -198,6 +206,14 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    public void setSplitConnections(Boolean splitConnections) {
+        this.splitConnections = splitConnections;
+    }
+
+    public void setIkeVersion(String ikeVersion) {
+        this.ikeVersion = ikeVersion;
     }
 
     @Override
