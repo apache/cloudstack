@@ -719,6 +719,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         mailProps.setContentType("text/plain");
 
         if (recipients == null) {
+            s_logger.info("No recipients set in 'alert.email.addresses', skipping sending an alert");
             return;
         }
 
