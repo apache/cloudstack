@@ -146,7 +146,6 @@ export default {
             }
           },
           successMethod: (obj, result) => {
-            console.log('here')
             const vm = result.jobresult.virtualmachine || {}
             if (result.jobstatus === 1 && vm.password) {
               const name = vm.displayname || vm.name || vm.id
@@ -355,6 +354,17 @@ export default {
             },
             domainid: {
               value: (record) => { return record.domainid }
+            }
+          },
+          successMethod: (obj, result) => {
+            const vm = result.jobresult.virtualmachine || {}
+            if (result.jobstatus === 1 && vm.password) {
+              const name = vm.displayname || vm.name || vm.id
+              obj.$notification.success({
+                message: `${obj.$t('label.reset.ssh.key.pair.on.vm')}: ` + name,
+                description: `${obj.$t('label.password.reset.confirm')}: ` + vm.password,
+                duration: 0
+              })
             }
           }
         },
