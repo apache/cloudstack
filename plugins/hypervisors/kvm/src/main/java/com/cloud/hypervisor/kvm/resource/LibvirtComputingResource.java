@@ -2357,7 +2357,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         vm.addComp(createClockDef(vmTO));
         vm.addComp(createDevicesDef(vmTO, guest, vcpus, isUefiEnabled));
 
-     // Add extra configuration to User VM Domain XML before starting
+        addExtraConfigsToVM(vmTO, vm, extraConfig);
+    }
+
+    /**
+     *  Add extra configuration to User VM Domain XML before starting.
+     */
+    private void addExtraConfigsToVM(VirtualMachineTO vmTO, LibvirtVMDef vm, Map<String, String> extraConfig) {
         if (MapUtils.isNotEmpty(extraConfig) && VirtualMachine.Type.User.equals(vmTO.getType())) {
             s_logger.debug(String.format("Appending extra configuration data [%s] to guest VM [%s] domain XML.", extraConfig, vmTO.toString()));
             addExtraConfigComponent(extraConfig, vm);
