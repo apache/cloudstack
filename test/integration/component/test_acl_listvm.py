@@ -2597,7 +2597,7 @@ class TestVMList(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVM_by_id_as_domainadmin_owns(self):
         """
-        # Domain admin should be able to list Vm that he owns by passing uuid in "id" parameter
+        # Domain admin should be able to list Vms that are self-owned by passing uuid in "id" parameter
         """
 
         self.apiclient.connection.apiKey = self.user_d1_apikey
@@ -2606,16 +2606,16 @@ class TestVMList(cloudstackTestCase):
 
         self.assertNotEqual(VMList,
                             None,
-                            "Domain Admin is not able to list Vms that he owns")
+                            "Domain Admin is not able to list Vms that are self-owned")
 
         self.assertEqual(len(VMList),
                          1,
-                         "Domain Admin is not able to list Vms that belongs to him")
+                         "Domain Admin is not able to list Vms that are self-owned")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVM_by_id_as_domainadmin_ownedbyusersindomain(self):
         """
-        # Domain admin should be able to list Vm that is  owned by any account in his domain by passing uuid in "id" parameter
+        # Domain admin should be able to list Vm that is owned by any account in their domain by passing uuid in "id" parameter
         """
 
         self.apiclient.connection.apiKey = self.user_d1_apikey
@@ -2624,16 +2624,16 @@ class TestVMList(cloudstackTestCase):
 
         self.assertNotEqual(VMList1,
                             None,
-                            "Domain Admin is not able to list Vms from his domain")
+                            "Domain Admin is not able to list Vms from their domain")
 
         self.assertEqual(len(VMList1),
                          1,
-                         "Domain Admin is not able to list Vms from his domain")
+                         "Domain Admin is not able to list Vms from their domain")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVM_by_id_as_domainadmin_ownedbyusersinsubdomain(self):
         """
-        # Domain admin should be able to list Vm that is  owned by any account in his sub-domain by passing uuid in "id" parameter
+        # Domain admin should be able to list Vm that is  owned by any account in their sub-domain by passing uuid in "id" parameter
         """
 
         self.apiclient.connection.apiKey = self.user_d1_apikey
@@ -2642,16 +2642,16 @@ class TestVMList(cloudstackTestCase):
 
         self.assertNotEqual(VMList2,
                             None,
-                            "Domain Admin is not able to list Vms from his sub domain")
+                            "Domain Admin is not able to list Vms from their sub domain")
 
         self.assertEqual(len(VMList2),
                          1,
-                         "Domain Admin is not able to list Vms from his sub domain")
+                         "Domain Admin is not able to list Vms from their sub domain")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVM_by_id_as_domainadmin_ownedbyusersnotindomain(self):
         """
-        # Domain admin should not be able to list Vm that is owned by account that is not in his domain by passing uuid in "id" parameter
+        # Domain admin should not be able to list Vm that is owned by account that is not in their domain by passing uuid in "id" parameter
         """
 
         self.apiclient.connection.apiKey = self.user_d1_apikey
@@ -2665,7 +2665,7 @@ class TestVMList(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVM_by_id_as_domainadmin_ownedbyusersinsubdomain2(self):
         """
-        # Domain admin should be able to list Vm that is owned by account that is in his sub domains by passing uuid in "id" parameter
+        # Domain admin should be able to list Vm that is owned by account that is in their sub domains by passing uuid in "id" parameter
         """
 
         self.apiclient.connection.apiKey = self.user_d1_apikey
@@ -2674,16 +2674,16 @@ class TestVMList(cloudstackTestCase):
 
         self.assertNotEqual(VMList4,
                             None,
-                            "Domain Admin is not able to list Vms from his subdomain")
+                            "Domain Admin is not able to list Vms from their sub domains")
 
         self.assertEqual(len(VMList4),
                          1,
-                         "Domain Admin is not able to list Vms from his sub domains")
+                         "Domain Admin is not able to list Vms from their sub domains")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVM_by_id_as_rootadmin_owns(self):
         """
-        # Domain admin should be able to list Vm that is owned by account that is in his sub domains by passing uuid in "id" parameter
+        # Domain admin should be able to list Vm that is owned by account that is in their sub domains by passing uuid in "id" parameter
         """
 
         self.apiclient.connection.apiKey = self.user_a_apikey
@@ -2691,10 +2691,10 @@ class TestVMList(cloudstackTestCase):
         VMList1 = VirtualMachine.list(self.apiclient, id=self.vm_a.id)
         self.assertNotEqual(VMList1,
                             None,
-                            "ROOT Admin not able to list Vms that he owns")
+                            "ROOT Admin not able to list Vms that are self-owned")
         self.assertEqual(len(VMList1),
                          1,
-                         "ROOT Admin not able to list Vms that he owns")
+                         "ROOT Admin not able to list Vms that are self-owned")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVM_by_id_as_rootadmin_Vmsownedbyothers(self):
@@ -2723,7 +2723,7 @@ class TestVMList(cloudstackTestCase):
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVM_by_id_as_user_own(self):
         """
-        # Regular user should be able to list Vm that is owned by him by passing uuid in "id" parameter
+        # Regular user should be able to list Vms that are self-owned by passing uuid in "id" parameter
         """
 
         self.apiclient.connection.apiKey = self.user_d11a_apikey
@@ -2732,11 +2732,11 @@ class TestVMList(cloudstackTestCase):
 
         self.assertNotEqual(VMList1,
                             None,
-                            "Regular User is not able to list Vms that he owns")
+                            "Regular User is not able to list Vms that are self-owned")
 
         self.assertEqual(len(VMList1),
                          1,
-                         "Regular User is not able to list Vms that he owns")
+                         "Regular User is not able to list Vms that are self-owned")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVM_by_id_as_user_vmfromsamedomaindifferentaccount(self):

@@ -608,13 +608,13 @@ class CsIP:
                 app.setup()
 
                 # If redundant then this is dealt with
-                # by the master backup functions
+                # by the primary backup functions
                 if not cmdline.is_redundant():
                     if method == "add":
                         CsPasswdSvc(self.address['public_ip']).start()
                     elif method == "delete":
                         CsPasswdSvc(self.address['public_ip']).stop()
-                elif cmdline.is_master():
+                elif cmdline.is_primary():
                     if method == "add":
                         CsPasswdSvc(self.get_gateway() + "," + self.address['public_ip']).start()
                     elif method == "delete":

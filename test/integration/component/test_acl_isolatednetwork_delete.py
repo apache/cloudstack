@@ -348,7 +348,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
     @attr("simulator_only",tags=["advanced"],required_hardware="false")
     def test_deleteNetwork_admin(self):
         """
-        Validate that Admin should be able to delete network he owns
+        Validate that Admin should be able to delete network that is self-owned
         """
         self.apiclient.connection.apiKey = self.user_root_apikey
         self.apiclient.connection.securityKey = self.user_root_secretkey
@@ -358,14 +358,14 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
 
         self.assertEqual(response,
                     None,
-                    "Admin User is not able to restart network he owns")
+                    "Admin User is not able to restart network that is self-owned")
         self._cleanup.remove(self.network_root)
 
 
     @attr("simulator_only",tags=["advanced"],required_hardware="false")
     def test_deleteNetwork_admin_foruserinsamedomain(self):
         """
-        Validate that Admin should be able to delete network for users in his domain
+        Validate that Admin should be able to delete network for users in their domain
         """
         self.apiclient.connection.apiKey = self.user_root_apikey
         self.apiclient.connection.securityKey = self.user_root_secretkey
@@ -375,12 +375,12 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
 
         self.assertEqual(response,
                     None,
-                    "Admin User is not able to delete network owned by users his domain")
+                    "Admin User is not able to delete network owned by users in their domain")
         self._cleanup.remove(self.network_roota)
 
     @attr("simulator_only",tags=["advanced"],required_hardware="false")
     def test_deleteNetwork_admin_foruserinotherdomain(self):
-        # Validate that Admin should be able to delete network for users in his sub domain
+        # Validate that Admin should be able to delete network for users in their sub domain
         self.apiclient.connection.apiKey = self.user_root_apikey
         self.apiclient.connection.securityKey = self.user_root_secretkey
 
@@ -397,7 +397,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
     @attr("simulator_only",tags=["advanced"],required_hardware="false")
     def test_deleteNetwork_domaindmin(self):
         """
-        Validate that Domain admin should be able to delete network for himslef
+        Validate that Domain admin should be able to delete network with self-ownership
         """
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
@@ -407,13 +407,13 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
 
         self.assertEqual(response,
                     None,
-                    "Domain admin User is not able to delete a network he owns")
+                    "Domain admin User is not able to delete a network that is self-owned")
         self._cleanup.remove(self.network_d1)
 
     @attr("simulator_only",tags=["advanced"],required_hardware="false")
     def test_deleteNetwork_domaindmin_foruserinsamedomain(self):
         """
-        Validate that Domain admin should be able to delete network for users in his domain
+        Validate that Domain admin should be able to delete network for users in their domain
         """
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
@@ -428,7 +428,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
     @attr("simulator_only",tags=["advanced"],required_hardware="false")
     def test_deleteNetwork_domaindmin_foruserinsubdomain(self):
         """
-        Validate that Domain admin should be able to delete network for users in his sub domain
+        Validate that Domain admin should be able to delete network for users in their sub domain
         """
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
@@ -444,7 +444,7 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
     @attr("simulator_only",tags=["advanced"],required_hardware="false")
     def test_deleteNetwork_domaindmin_forcrossdomainuser(self):
         """
-        Validate that Domain admin should be able to delete network for users in his sub domain
+        Validate that Domain admin should be able to delete network for users in their sub domain
         """
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
@@ -452,18 +452,18 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
         try:
             response = self.network_d2a.delete(self.apiclient)
             self._cleanup.remove(self.network_d2a)
-            self.fail("Domain admin is allowed to delete network for users not in his domain ")
+            self.fail("Domain admin is allowed to delete network for users not in their domain ")
         except Exception as e:
             self.debug ("When Domain admin tries to delete network for user in a different domain %s" %e)
             if not CloudstackAclException.verifyMsginException(e,CloudstackAclException.NO_PERMISSION_TO_OPERATE_DOMAIN):
-               self.fail("Error message validation failed when Domain admin tries to delete network for users not in his domain ")
+               self.fail("Error message validation failed when Domain admin tries to delete network for users not in their domain ")
 
 ## Test cases relating deleting network as regular user
 
     @attr("simulator_only",tags=["advanced"],required_hardware="false")
     def test_deleteNetwork_user(self):
         """
-        Validate that Regular should be able to delete network for himslef
+        Validate that Regular should be able to delete network with self-ownership
         """
         self.apiclient.connection.apiKey = self.user_d111a_apikey
         self.apiclient.connection.securityKey = self.user_d111a_secretkey
@@ -473,13 +473,13 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
 
         self.assertEqual(response,
                     None,
-                    "User is not able to delete a network he owns")
+                    "User is not able to delete a network that is self-owned")
         self._cleanup.remove(self.network_d111a)
 
     @attr("simulator_only",tags=["advanced"],required_hardware="false")
     def test_deleteNetwork_user_foruserinsamedomain(self):
         """
-        Validate that Regular user should NOT be able to delete network for users in his domain
+        Validate that Regular user should NOT be able to delete network for users in their domain
         """
         self.apiclient.connection.apiKey = self.user_d111a_apikey
         self.apiclient.connection.securityKey = self.user_d111a_secretkey
@@ -487,11 +487,11 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
         try:
             response = self.network_d111b.delete(self.apiclient)
             self._cleanup.remove(self.network_d111b)
-            self.fail("Regular user is allowed to delete network for users in his domain ")
+            self.fail("Regular user is allowed to delete network for users in their domain ")
         except Exception as e:
-                self.debug ("When user tries to delete network for users in his domain %s" %e)
+                self.debug ("When user tries to delete network for users in their domain %s" %e)
                 if not CloudstackAclException.verifyMsginException(e,CloudstackAclException.NO_PERMISSION_TO_OPERATE_ACCOUNT):
-                    self.fail("Regular user is allowed to delete network for users in his domain ")
+                    self.fail("Regular user is allowed to delete network for users in their domain ")
 
     @attr("simulator_only",tags=["advanced"],required_hardware="false")
     def test_deleteNetwork_user_foruserinotherdomain(self):
@@ -505,11 +505,11 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
         try:
             response = self.network_d11b.delete(self.apiclient)
             self._cleanup.remove(self.network_d11b)
-            self.fail("Regular user is allowed to delete network for users not in his domain ")
+            self.fail("Regular user is allowed to delete network for users not in their domain ")
         except Exception as e:
             self.debug ("When user tries to delete network for users in other domain %s" %e)
             if not CloudstackAclException.verifyMsginException(e,CloudstackAclException.NO_PERMISSION_TO_OPERATE_ACCOUNT):
-                self.fail("Error message validation failed when Regular user tries to delete network for users not in his domain ")
+                self.fail("Error message validation failed when Regular user tries to delete network for users not in their domain ")
 
     @staticmethod
     def generateKeysForUser(apiclient,account):

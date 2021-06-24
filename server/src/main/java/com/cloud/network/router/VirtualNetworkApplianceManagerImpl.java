@@ -805,7 +805,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             if (conns == null || conns.isEmpty()) {
                 continue;
             }
-            if (router.getIsRedundantRouter() && router.getRedundantState() != RedundantState.MASTER){
+            if (router.getIsRedundantRouter() && router.getRedundantState() != RedundantState.PRIMARY){
                 continue;
             }
             if (router.getState() != VirtualMachine.State.Running) {
@@ -935,7 +935,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 final String context = "Redundant virtual router (name: " + router.getHostName() + ", id: " + router.getId() + ") " + " just switch from " + prevState + " to "
                         + currState;
                 s_logger.info(context);
-                if (currState == RedundantState.MASTER) {
+                if (currState == RedundantState.PRIMARY) {
                     _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
                 }
             }
@@ -943,12 +943,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     }
 
     // Ensure router status is update to date before execute this function. The
-    // function would try best to recover all routers except MASTER
-    protected void recoverRedundantNetwork(final DomainRouterVO masterRouter, final DomainRouterVO backupRouter) {
-        if (masterRouter.getState() == VirtualMachine.State.Running && backupRouter.getState() == VirtualMachine.State.Running) {
-            final HostVO masterHost = _hostDao.findById(masterRouter.getHostId());
+    // function would try best to recover all routers except PRIMARY
+    protected void recoverRedundantNetwork(final DomainRouterVO primaryRouter, final DomainRouterVO backupRouter) {
+        if (primaryRouter.getState() == VirtualMachine.State.Running && backupRouter.getState() == VirtualMachine.State.Running) {
+            final HostVO primaryHost = _hostDao.findById(primaryRouter.getHostId());
             final HostVO backupHost = _hostDao.findById(backupRouter.getHostId());
-            if (masterHost.getState() == Status.Up && backupHost.getState() == Status.Up) {
+            if (primaryHost.getState() == Status.Up && backupHost.getState() == Status.Up) {
                 final String title = "Reboot " + backupRouter.getInstanceName() + " to ensure redundant virtual routers work";
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(title);
@@ -971,7 +971,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         /*
          * In order to make fail-over works well at any time, we have to ensure:
-         * 1. Backup router's priority = Master's priority - DELTA + 1
+         * 1. Backup router's priority = Primary's priority - DELTA + 1
          */
         private void checkSanity(final List<DomainRouterVO> routers) {
             final Set<Long> checkedNetwork = new HashSet<Long>();
@@ -1000,16 +1000,16 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         continue;
                     }
 
-                    DomainRouterVO masterRouter = null;
+                    DomainRouterVO primaryRouter = null;
                     DomainRouterVO backupRouter = null;
                     for (final DomainRouterVO r : checkingRouters) {
-                        if (r.getRedundantState() == RedundantState.MASTER) {
-                            if (masterRouter == null) {
-                                masterRouter = r;
+                        if (r.getRedundantState() == RedundantState.PRIMARY) {
+                            if (primaryRouter == null) {
+                                primaryRouter = r;
                             } else {
                                 // Wilder Rodrigues (wrodrigues@schubergphilis.com
                                 // Force a restart in order to fix the conflict
-                                // recoverRedundantNetwork(masterRouter, r);
+                                // recoverRedundantNetwork(primaryRouter, r);
                                 break;
                             }
                         } else if (r.getRedundantState() == RedundantState.BACKUP) {
@@ -1027,7 +1027,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
         }
 
-        private void checkDuplicateMaster(final List<DomainRouterVO> routers) {
+        private void checkDuplicatePrimary(final List<DomainRouterVO> routers) {
             final Map<Long, DomainRouterVO> networkRouterMaps = new HashMap<Long, DomainRouterVO>();
             for (final DomainRouterVO router : routers) {
                 final List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
@@ -1035,13 +1035,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 final Long vpcId = router.getVpcId();
                 if (vpcId != null || routerGuestNtwkIds.size() > 0) {
                     Long routerGuestNtwkId = vpcId != null ? vpcId : routerGuestNtwkIds.get(0);
-                    if (router.getRedundantState() == RedundantState.MASTER) {
+                    if (router.getRedundantState() == RedundantState.PRIMARY) {
                         if (networkRouterMaps.containsKey(routerGuestNtwkId)) {
                             final DomainRouterVO dupRouter = networkRouterMaps.get(routerGuestNtwkId);
-                            final String title = "More than one redundant virtual router is in MASTER state! Router " + router.getHostName() + " and router "
+                            final String title = "More than one redundant virtual router is in PRIMARY state! Router " + router.getHostName() + " and router "
                                     + dupRouter.getHostName();
                             final String context = "Virtual router (name: " + router.getHostName() + ", id: " + router.getId() + " and router (name: " + dupRouter.getHostName()
-                                    + ", id: " + router.getId() + ") are both in MASTER state! If the problem persist, restart both of routers. ";
+                                    + ", id: " + router.getId() + ") are both in PRIMARY state! If the problem persist, restart both of routers. ";
                             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
                             s_logger.warn(context);
                         } else {
@@ -1083,7 +1083,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         updateRoutersRedundantState(routers);
                         // Wilder Rodrigues (wrodrigues@schubergphilis.com) - One of the routers is not running,
                         // so we don't have to continue here since the host will be null any way. Also, there is no need
-                        // To check either for sanity of duplicate master. Thus, just update the state and get lost.
+                        // To check either for sanity of duplicate primary. Thus, just update the state and get lost.
                         continue;
                     }
 
@@ -1104,7 +1104,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         continue;
                     }
                     updateRoutersRedundantState(routers);
-                    checkDuplicateMaster(routers);
+                    checkDuplicatePrimary(routers);
                     checkSanity(routers);
                 } catch (final Exception ex) {
                     s_logger.error("Fail to complete the RvRStatusUpdateTask! ", ex);
@@ -2231,13 +2231,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             String redundantState = RedundantState.BACKUP.toString();
             router.setRedundantState(RedundantState.BACKUP);
             if (routers.size() == 0) {
-                redundantState = RedundantState.MASTER.toString();
-                router.setRedundantState(RedundantState.MASTER);
+                redundantState = RedundantState.PRIMARY.toString();
+                router.setRedundantState(RedundantState.PRIMARY);
             } else {
                 final DomainRouterVO router0 = routers.get(0);
                 if (router.getId() == router0.getId()) {
-                    redundantState = RedundantState.MASTER.toString();
-                    router.setRedundantState(RedundantState.MASTER);
+                    redundantState = RedundantState.PRIMARY.toString();
+                    router.setRedundantState(RedundantState.PRIMARY);
                 }
             }
 

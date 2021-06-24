@@ -28,7 +28,7 @@ def merge(dbag, data):
     else:
         remove_keys = set()
         for key, entry in dbag.iteritems():
-            if key != 'id' and entry['mac_address'] == data['mac_address'] and data['remove']:
+            if key != 'id' and entry['mac_address'] == data['mac_address']:
                 remove_keys.add(key)
                 break
 

@@ -454,7 +454,7 @@ class TestPrivateGwACL(cloudstackTestCase):
         self.check_pvt_gw_connectivity(vm1, public_ip_1, [vm2.nic[0].ipaddress, vm3.nic[0].ipaddress, vm4.nic[0].ipaddress])
         self.check_pvt_gw_connectivity(vm2, public_ip_2, [vm2.nic[0].ipaddress, vm3.nic[0].ipaddress, vm4.nic[0].ipaddress])
 
-        self.stop_router_by_type("MASTER")
+        self.stop_router_by_type("PRIMARY")
         self.check_routers_state()
 
         self.check_private_gateway_interfaces()
@@ -852,10 +852,10 @@ class TestPrivateGwACL(cloudstackTestCase):
         else:
             self.assertTrue(check_state == 1, "Routers private gateway interface should should have been removed!")
 
-    def check_routers_state(self, status_to_check="MASTER", expected_count=1):
+    def check_routers_state(self, status_to_check="PRIMARY", expected_count=1):
         routers = self.query_routers()
 
-        vals = ["MASTER", "BACKUP", "UNKNOWN"]
+        vals = ["PRIMARY", "BACKUP", "UNKNOWN"]
         cnts = [0, 0, 0]
 
         result = "UNKNOWN"

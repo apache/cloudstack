@@ -1281,7 +1281,7 @@
 "label.management.server": "\uad00\ub9ac \uc11c\ubc84",
 "label.management.servers": "\uad00\ub9ac \uc11c\ubc84",
 "label.managementservers": "\uad00\ub9ac \uc11c\ubc84\uc758 \uc218",
-"label.masternodes": "\ub9c8\uc2a4\ud130 \ub178\ub4dc",
+"label.controlnodes": "\ub9c8\uc2a4\ud130 \ub178\ub4dc",
 "label.max.primary.storage": "\ucd5c\ub300 \uae30\ubcf8 \uae30\ud1a0\ub9ac\uc9c0(GiB)",
 "label.max.secondary.storage": "\ucd5c\ub300 2\ucc28 \uc2a4\ud1a0\ub9ac\uc9c0(GiB)",
 "label.maxcpu": "\ucd5c\ub300 CPU \ucf54\uc5b4",

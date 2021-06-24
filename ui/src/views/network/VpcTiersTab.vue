@@ -204,12 +204,20 @@
               v-decorator="['externalId']"></a-input>
           </a-form-item>
           <a-form-item :label="$t('label.aclid')">
-            <a-select v-decorator="['acl']">
+            <a-select
+              v-decorator="['acl',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+              @change="val => { this.handleNetworkAclChange(val) }">
               <a-select-option v-for="item in networkAclList" :key="item.id" :value="item.id">
-                {{ item.name }}
+                <strong>{{ item.name }}</strong> ({{ item.description }})
               </a-select-option>
             </a-select>
           </a-form-item>
+          <a-alert v-if="this.selectedNetworkAcl.name==='default_allow'" type="warning" show-icon>
+            <span slot="message" v-html="$t('message.network.acl.default.allow')" />
+          </a-alert>
+          <a-alert v-else-if="this.selectedNetworkAcl.name==='default_deny'" type="warning" show-icon>
+            <span slot="message" v-html="$t('message.network.acl.default.deny')" />
+          </a-alert>
         </a-form>
       </a-spin>
     </a-modal>
@@ -293,6 +301,7 @@ export default {
       showAddInternalLB: false,
       networkOfferings: [],
       networkAclList: [],
+      selectedNetworkAcl: {},
       modalLoading: false,
       internalLB: {},
       LBPublicIPs: {},
@@ -430,11 +439,7 @@ export default {
       this.modalLoading = true
       api('listNetworkACLLists', { vpcid: this.resource.id }).then(json => {
         this.networkAclList = json.listnetworkacllistsresponse.networkacllist || []
-        this.$nextTick(function () {
-          this.form.setFieldsValue({
-            acl: this.networkAclList[0].id
-          })
-        })
+        this.handleNetworkAclChange(null)
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -540,6 +545,13 @@ export default {
     },
     handleNetworkOfferingChange (networkOfferingId) {
       this.selectedNetworkOffering = this.networkOfferings.filter(offering => offering.id === networkOfferingId)[0]
+    },
+    handleNetworkAclChange (aclId) {
+      if (aclId) {
+        this.selectedNetworkAcl = this.networkAclList.filter(acl => acl.id === aclId)[0]
+      } else {
+        this.selectedNetworkAcl = {}
+      }
     },
     closeModal () {
       this.$emit('close-action')

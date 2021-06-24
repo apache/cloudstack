@@ -288,6 +288,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#how-to-dynamically-scale-cpu-and-ram',
           dataView: true,
           show: (record) => { return ['Stopped'].includes(record.state) || (['Running'].includes(record.state) && record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') },
+          disabled: (record) => { return !record.isdynamicallyscalable },
           popup: true,
           component: () => import('@/views/compute/ScaleVM.vue')
         },
@@ -372,7 +373,7 @@ export default {
           api: 'expungeVirtualMachine',
           icon: 'delete',
           label: 'label.action.expunge.instance',
-          message: 'message.action.expunge.instance',
+          message: (record) => { return record.backupofferingid ? 'message.action.expunge.instance.with.backups' : 'message.action.expunge.instance' },
           docHelp: 'adminguide/virtual_machines.html#deleting-vms',
           dataView: true,
           show: (record, store) => { return ['Destroyed', 'Expunging'].includes(record.state) && store.features.allowuserexpungerecovervm }

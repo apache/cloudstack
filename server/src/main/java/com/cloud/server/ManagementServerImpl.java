@@ -879,7 +879,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private VpcDao _vpcDao;
 
-    private LockMasterListener _lockMasterListener;
+    private LockControllerListener _lockControllerListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
 
@@ -985,11 +985,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // Set human readable sizes
         NumbersUtil.enableHumanReadableSizes = _configDao.findByName("display.human.readable.sizes").getValue().equals("true");
 
-        if (_lockMasterListener == null) {
-            _lockMasterListener = new LockMasterListener(ManagementServerNode.getManagementServerId());
+        if (_lockControllerListener == null) {
+            _lockControllerListener = new LockControllerListener(ManagementServerNode.getManagementServerId());
         }
 
-        _clusterMgr.registerListener(_lockMasterListener);
+        _clusterMgr.registerListener(_lockControllerListener);
 
         enableAdminUser("password");
         return true;
@@ -3815,7 +3815,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         String signature = "";
         try {
-            // get the user obj to get his secret key
+            // get the user obj to get their secret key
             user = _accountMgr.getActiveUser(userId);
             final String secretKey = user.getSecretKey();
             final String input = cloudIdentifier;
@@ -4233,26 +4233,23 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    public String getVMPassword(final GetVMPasswordCmd cmd) {
-        final Account caller = getCaller();
+    public String getVMPassword(GetVMPasswordCmd cmd) {
+        Account caller = getCaller();
+        long vmId = cmd.getId();
+        UserVmVO vm = _userVmDao.findById(vmId);
 
-        final UserVmVO vm = _userVmDao.findById(cmd.getId());
         if (vm == null) {
-            final InvalidParameterValueException ex = new InvalidParameterValueException("No VM with specified id found.");
-            ex.addProxyObject(cmd.getId().toString(), "vmId");
-            throw ex;
+            throw new InvalidParameterValueException(String.format("No VM found with id [%s].", vmId));
         }
 
-        // make permission check
         _accountMgr.checkAccess(caller, null, true, vm);
 
         _userVmDao.loadDetails(vm);
-        final String password = vm.getDetail("Encrypted.Password");
-        if (password == null || password.equals("")) {
-            final InvalidParameterValueException ex = new InvalidParameterValueException(
-                    "No password for VM with specified id found. " + "If VM is created from password enabled template and SSH keypair is assigned to VM then only password can be retrieved.");
-            ex.addProxyObject(vm.getUuid(), "vmId");
-            throw ex;
+        String password = vm.getDetail("Encrypted.Password");
+
+        if (StringUtils.isEmpty(password)) {
+            throw new InvalidParameterValueException(String.format("No password found for VM with id [%s]. When the VM's SSH keypair is changed, the current encrypted password is "
+              + "removed due to incosistency in the encryptation, as the new SSH keypair is different from which the password was encrypted. To get a new password, it must be reseted.", vmId));
         }
 
         return password;
@@ -4551,12 +4548,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         _storagePoolAllocators = storagePoolAllocators;
     }
 
-    public LockMasterListener getLockMasterListener() {
-        return _lockMasterListener;
+    public LockControllerListener getLockControllerListener() {
+        return _lockControllerListener;
     }
 
-    public void setLockMasterListener(final LockMasterListener lockMasterListener) {
-        _lockMasterListener = lockMasterListener;
+    public void setLockControllerListener(final LockControllerListener lockControllerListener) {
+        _lockControllerListener = lockControllerListener;
     }
 
 }

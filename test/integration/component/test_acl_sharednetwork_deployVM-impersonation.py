@@ -1196,12 +1196,12 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
                 accountid=self.account_d2a.name,
                 domainid=self.account_d2a.domainid
             )
-            self.fail("Domain admin user is able to Deploy VM for a domain user he does not have access to in a shared network with scope=domain with no subdomain access ")
+            self.fail("Domain admin user is able to Deploy VM for a domain user,  but there is no access to in a shared network with scope=domain with no subdomain access ")
         except Exception as e:
-            self.debug("When a Domain admin user  deploys a VM for a domain user he does not have access to in a shared network with scope=domain with no subdomain access %s" % e)
+            self.debug("When a Domain admin user  deploys a VM for a domain user, but there is no access to in a shared network with scope=domain with no subdomain access %s" % e)
             if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_DOMAIN):
                 self.fail(
-                    "Error mesage validation failed when Domain admin user tries to Deploy VM for a domain user he does not have access to in a shared network with scope=domain with no subdomain access ")
+                    "Error mesage validation failed when Domain admin user tries to Deploy VM for a domain user, but there is no access to in a shared network with scope=domain with no subdomain access ")
 
     ## Test cases relating to deploying Virtual Machine as Domain admin for other users in shared network with scope=Domain and no subdomain access
 

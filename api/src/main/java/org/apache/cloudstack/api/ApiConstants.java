@@ -824,6 +824,7 @@ public class ApiConstants {
     public static final String KUBERNETES_VERSION_ID = "kubernetesversionid";
     public static final String KUBERNETES_VERSION_NAME = "kubernetesversionname";
     public static final String MASTER_NODES = "masternodes";
+    public static final String CONTROL_NODES = "controlnodes";
     public static final String MIN_SEMANTIC_VERSION = "minimumsemanticversion";
     public static final String MIN_KUBERNETES_VERSION_ID = "minimumkubernetesversionid";
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
@@ -837,6 +838,7 @@ public class ApiConstants {
     public static final String CROSS_ZONES = "crossZones";
     public static final String TEMPLATETYPE = "templatetype";
     public static final String SOURCETEMPLATEID = "sourcetemplateid";
+    public static final String DYNAMIC_SCALING_ENABLED = "dynamicscalingenabled";
 
     public static final String POOL_TYPE ="pooltype";
 

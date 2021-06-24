@@ -509,6 +509,21 @@
                         v-decorator="['bootintosetup']">
                       </a-switch>
                     </a-form-item>
+                    <a-form-item>
+                      <span slot="label">
+                        {{ $t('label.dynamicscalingenabled') }}
+                        <a-tooltip :title="$t('label.dynamicscalingenabled.tooltip')">
+                          <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                        </a-tooltip>
+                      </span>
+                      <a-form-item>
+                        <a-switch
+                          v-decorator="['dynamicscalingenabled']"
+                          :checked="isDynamicallyScalable() && dynamicscalingenabled"
+                          :disabled="!isDynamicallyScalable()"
+                          @change="val => { dynamicscalingenabled = val }"/>
+                      </a-form-item>
+                    </a-form-item>
                     <a-form-item :label="$t('label.userdata')">
                       <a-textarea
                         v-decorator="['userdata']">
@@ -675,6 +690,7 @@ export default {
       clusterId: null,
       zoneSelected: false,
       startvm: true,
+      dynamicscalingenabled: true,
       vm: {
         name: null,
         zoneid: null,
@@ -710,7 +726,8 @@ export default {
         groups: [],
         keyboards: [],
         bootTypes: [],
-        bootModes: []
+        bootModes: [],
+        dynamicScalingVmConfig: false
       },
       rowCount: {},
       loading: {
@@ -758,7 +775,7 @@ export default {
         'sharedexecutable'
       ],
       initDataConfig: {},
-      defaultNetwork: '',
+      defaultnetworkid: '',
       networkConfig: [],
       dataNetworkCreated: [],
       tabList: [
@@ -892,6 +909,13 @@ export default {
             type: 'Routing'
           },
           field: 'hostid'
+        },
+        dynamicScalingVmConfig: {
+          list: 'listConfigurations',
+          options: {
+            zoneid: _.get(this.zone, 'id'),
+            name: 'enable.dynamic.scale.vm'
+          }
         }
       }
     },
@@ -970,6 +994,9 @@ export default {
     },
     showSecurityGroupSection () {
       return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
+    },
+    dynamicScalingVmConfigValue () {
+      return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
     }
   },
   watch: {
@@ -1038,6 +1065,7 @@ export default {
 
       if (this.networks) {
         this.vm.networks = this.networks
+        this.vm.defaultnetworkid = this.defaultnetworkid
       }
 
       if (this.template) {
@@ -1086,6 +1114,16 @@ export default {
       }
     }
   },
+  serviceOffering (oldValue, newValue) {
+    if (oldValue && newValue && oldValue.id !== newValue.id) {
+      this.dynamicscalingenabled = this.isDynamicallyScalable()
+    }
+  },
+  template (oldValue, newValue) {
+    if (oldValue && newValue && oldValue.id !== newValue.id) {
+      this.dynamicscalingenabled = this.isDynamicallyScalable()
+    }
+  },
   created () {
     this.form = this.$form.createForm(this, {
       onValuesChange: (props, fields) => {
@@ -1110,6 +1148,7 @@ export default {
     this.form.getFieldDecorator('multidiskoffering', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('affinitygroupids', { initialValue: [], preserve: true })
     this.form.getFieldDecorator('networkids', { initialValue: [], preserve: true })
+    this.form.getFieldDecorator('defaultnetworkid', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('keypair', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('cpunumber', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('cpuSpeed', { initialValue: undefined, preserve: true })
@@ -1178,6 +1217,9 @@ export default {
         ['name', 'keyboard', 'boottype', 'bootmode', 'userdata'].forEach(this.fillValue)
         this.instanceConfig = this.form.getFieldsValue() // ToDo: maybe initialize with some other defaults
       })
+    },
+    isDynamicallyScalable () {
+      return this.serviceOffering && this.serviceOffering.dynamicscalingenabled && this.template && this.template.isdynamicallyscalable && this.dynamicScalingVmConfigValue
     },
     async fetchDataByZone (zoneId) {
       this.fillValue('zoneid')
@@ -1337,7 +1379,10 @@ export default {
       })
     },
     updateDefaultNetworks (id) {
-      this.defaultNetwork = id
+      this.defaultnetworkid = id
+      this.form.setFieldsValue({
+        defaultnetworkid: id
+      })
     },
     updateNetworkConfig (networks) {
       this.networkConfig = networks
@@ -1416,6 +1461,7 @@ export default {
         deployVmData.keyboard = values.keyboard
         deployVmData.boottype = values.boottype
         deployVmData.bootmode = values.bootmode
+        deployVmData.dynamicscalingenabled = values.dynamicscalingenabled
         if (values.userdata && values.userdata.length > 0) {
           deployVmData.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
         }
@@ -1487,9 +1533,9 @@ export default {
             networkIds = values.networkids
             if (networkIds.length > 0) {
               for (let i = 0; i < networkIds.length; i++) {
-                if (networkIds[i] === this.defaultNetwork) {
+                if (networkIds[i] === this.defaultnetworkid) {
                   const ipToNetwork = {
-                    networkid: this.defaultNetwork
+                    networkid: this.defaultnetworkid
                   }
                   arrNetwork.unshift(ipToNetwork)
                 } else {
