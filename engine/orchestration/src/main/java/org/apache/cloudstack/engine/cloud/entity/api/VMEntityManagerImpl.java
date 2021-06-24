@@ -253,7 +253,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
                     }
 
                     _itMgr.start(vm.getUuid(), params, plan, null);
-                }else{
+                } else {
                     throw ex;
                 }
             }
