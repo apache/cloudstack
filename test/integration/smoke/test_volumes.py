@@ -372,7 +372,14 @@ class TestVolumes(cloudstackTestCase):
             if self.attached:
                 self.virtual_machine.detach_volume(self.apiClient, self.volume)
             self.virtual_machine.start(self.apiClient)
-            self.virtual_machine.get_ssh_client(reconnect=True)
+            try:
+                self.virtual_machine.get_ssh_client(reconnect=True)
+            except Exception as err:
+                self.fail("SSH failed for Virtual machine: %s due to %s" % 
+                (self.virtual_machine.ipaddress, err))
+        elif self.attached:
+            self.virtual_machine.detach_volume(self.apiClient, self.volume)
+
         super(TestVolumes, self).tearDown()
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
