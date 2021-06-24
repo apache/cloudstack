@@ -39,8 +39,8 @@
       <a-button key="back" @click="handleCancel"> {{ $t('label.close') }} </a-button>
     </template>
     <a-card :bordered="false" style="background:#f1f1f1">
-      <div><a-icon type="check-circle-o" style="color: #52c41a; margin-right: 8px"/> {{ $t('label.success') + ': ' + selectedItems.filter(item => item.status === 'success').length || 0 }}</div>
-      <div><a-icon type="close-circle-o" style="color: #f5222d; margin-right: 8px"/> {{ $t('state.failed') + ': ' + selectedItems.filter(item => item.status === 'failed').length || 0 }}</div>
+      <div><a-icon type="check-circle-o" style="color: #52c41a; margin-right: 8px"/> {{ $t('label.success') + ': ' + succeededCount }}</div>
+      <div><a-icon type="close-circle-o" style="color: #f5222d; margin-right: 8px"/> {{ $t('state.failed') + ': ' + failedCount }}</div>
       <div><a-icon type="sync-o" style="color: #1890ff; margin-right: 8px"/> {{ $t('state.inprogress') + ': ' + selectedItems.filter(item => item.status === 'InProgress').length || 0 }}</div>
     </a-card>
     <a-divider />
@@ -120,22 +120,54 @@ export default {
   },
   data () {
     return {
+      appliedFilterStatus: {},
       filteredItems: [],
+      filterItemsTimer: null,
       tableChanged: false
     }
   },
   inject: ['parentFetchData'],
+  watch: {
+    succeededCount (count) {
+      if (count > 0) {
+        this.filterItemsDelayed()
+      }
+    },
+    failedCount (count) {
+      if (count > 0) {
+        this.filterItemsDelayed()
+      }
+    }
+  },
+  computed: {
+    succeededCount () {
+      return this.selectedItems.filter(item => item.status === 'success').length || 0
+    },
+    failedCount () {
+      return this.selectedItems.filter(item => item.status === 'failed').length || 0
+    }
+  },
   methods: {
     handleTableChange (pagination, filters, sorter) {
       this.filteredItems = this.selectedItems
-      if (filters?.status.length > 0) {
+      this.appliedFilterStatus = filters.status
+      this.filterItems()
+      this.tableChanged = true
+    },
+    filterItems () {
+      if (this.appliedFilterStatus && this.appliedFilterStatus.length > 0) {
         this.filteredItems = this.selectedItems.filter(item => {
-          if (filters.status.includes(item.status)) {
+          if (this.appliedFilterStatus.includes(item.status)) {
             return item
           }
         })
       }
-      this.tableChanged = true
+    },
+    filterItemsDelayed () {
+      clearTimeout(this.filterItemsTimer)
+      this.filterItemsTimer = setTimeout(() => {
+        this.filterItems()
+      }, 50)
     },
     handleCancel () {
       this.filteredItems = []
