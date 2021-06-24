@@ -718,6 +718,10 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         mailProps.setContent(content);
         mailProps.setContentType("text/plain");
 
+        if (recipients == null) {
+            return;
+        }
+
         Set<MailAddress> addresses = new HashSet<>();
         for (String recipient : recipients) {
             addresses.add(new MailAddress(recipient));
