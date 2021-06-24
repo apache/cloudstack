@@ -25,7 +25,8 @@ from marvin.lib.base import (Account,
                              ServiceOffering,
                              Template,
                              VirtualMachine,
-                             VmSnapshot)
+                             VmSnapshot,
+                             Host)
 from marvin.lib.common import (get_zone,
                                get_domain,
                                get_template,
@@ -52,6 +53,16 @@ class TestVmSnapshot(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+
+        hosts = Host.list(
+            cls.apiclient,
+            zoneid=cls.zone.id,
+            type='Routing',
+            hypervisor='KVM')
+
+        for host in hosts:
+            if host.details['Host.OS'] in ['CentOS']:
+                raise unittest.SkipTest("The standard `qemu-kvm` which is the default for CentOS does not support the new functionality. It has to be installed `qemu-kvm-ev`")
 
         Configurations.update(cls.apiclient,
             name = "kvm.vmstoragesnapshot.enabled",
