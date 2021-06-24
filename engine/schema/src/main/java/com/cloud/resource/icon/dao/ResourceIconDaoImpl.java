@@ -26,6 +26,9 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ResourceIconDaoImpl extends GenericDaoBase<ResourceIconVO, Long> implements ResourceIconDao {
     public static final Logger s_logger = Logger.getLogger(ResourceIconDaoImpl.class);
     private final SearchBuilder<ResourceIconVO> AllFieldsSearch;
@@ -33,7 +36,7 @@ public class ResourceIconDaoImpl extends GenericDaoBase<ResourceIconVO, Long> im
     protected ResourceIconDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("resourceId", AllFieldsSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("uuid", AllFieldsSearch.entity().getResourceUuid(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("uuid", AllFieldsSearch.entity().getResourceUuid(), SearchCriteria.Op.IN);
         AllFieldsSearch.and("resourceType", AllFieldsSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
@@ -51,8 +54,25 @@ public class ResourceIconDaoImpl extends GenericDaoBase<ResourceIconVO, Long> im
     @Override
     public ResourceIconVO findByResourceUuid(String resourceUuid, ResourceTag.ResourceObjectType resourceType) {
         SearchCriteria<ResourceIconVO> sc = AllFieldsSearch.create();
-        sc.setParameters("uuid", resourceUuid);
+        sc.setParameters("uuid", (Object[]) new String[]{resourceUuid});
         sc.setParameters("resourceType", resourceType);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<ResourceIconResponse> listResourceIcons(List<String> resourceUuids, ResourceTag.ResourceObjectType resourceType) {
+        SearchCriteria<ResourceIconVO> sc = AllFieldsSearch.create();
+        sc.setParameters("uuid", resourceUuids.toArray());
+        sc.setParameters("resourceType", resourceType);
+        List<ResourceIconVO> resourceIcons = listBy(sc);
+        List<ResourceIconResponse> iconResponses = new ArrayList<>();
+        for (ResourceIconVO resourceIcon : resourceIcons) {
+            ResourceIconResponse response = new ResourceIconResponse();
+            response.setResourceId(resourceIcon.getResourceUuid());
+            response.setResourceType(resourceIcon.getResourceType());
+            response.setImage(resourceIcon.getIcon());
+            iconResponses.add(response);
+        }
+        return iconResponses;
     }
 }

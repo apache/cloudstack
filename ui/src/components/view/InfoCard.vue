@@ -25,7 +25,7 @@
               class="avatar"
               @click="showUploadModal(true)"
               v-clipboard:copy="name" >
-              <resource-icon :visible="showUpload" :resource="resource" @handle-close="showUpload(false)"/>
+              <upload-resource-icon v-if="'uploadResourceIcon' in $store.getters.apis" :visible="showUpload" :resource="resource" @handle-close="showUpload(false)"/>
               <slot name="avatar">
                 <span v-if="['zone', 'template', 'iso', 'account', 'user', 'vm'].includes($route.path.split('/')[1]) && resource.icon && resource.icon.base64image">
                   <img :src="getImg(resource.icon.base64image)" height="56px" width="56px" />
@@ -706,7 +706,8 @@ import Console from '@/components/widgets/Console'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/view/TooltipButton'
-import ResourceIcon from '@/components/view/ResourceIcon'
+import UploadResourceIcon from '@/components/view/UploadResourceIcon'
+import ResourceIcon from '@/components/view/ResourceCountUsage'
 import eventBus from '@/config/eventBus'
 
 export default {
@@ -716,6 +717,7 @@ export default {
     OsLogo,
     Status,
     TooltipButton,
+    UploadResourceIcon,
     ResourceIcon
   },
   props: {
@@ -813,7 +815,7 @@ export default {
   methods: {
     showUploadModal (show) {
       if (show) {
-        if (['zone', 'template', 'iso', 'account', 'user', 'vm'].includes(this.$route?.path?.split('/')[1])) {
+        if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm'].includes(this.$route?.path?.split('/')[1])) {
           this.showUpload = true
         }
       } else {

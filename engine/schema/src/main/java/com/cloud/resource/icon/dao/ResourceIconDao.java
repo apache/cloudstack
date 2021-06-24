@@ -22,8 +22,10 @@ import com.cloud.server.ResourceTag;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 
+import java.util.List;
+
 public interface ResourceIconDao extends GenericDao<ResourceIconVO, Long> {
     ResourceIconResponse newResourceIconResponse(ResourceIcon resourceIconVO);
     ResourceIconVO findByResourceUuid(String resourceUuid, ResourceTag.ResourceObjectType resourceType);
-
+    List<ResourceIconResponse> listResourceIcons(List<String> resourceUuids, ResourceTag.ResourceObjectType resourceType);
 }

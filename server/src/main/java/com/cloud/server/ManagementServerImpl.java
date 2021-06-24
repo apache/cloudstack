@@ -176,6 +176,7 @@ import org.apache.cloudstack.api.command.admin.resource.ListCapacityCmd;
 import org.apache.cloudstack.api.command.admin.resource.StartRollingMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateCmd;
 import org.apache.cloudstack.api.command.admin.resource.icon.DeleteResourceIconCmd;
+import org.apache.cloudstack.api.command.admin.resource.icon.ListResourceIconCmd;
 import org.apache.cloudstack.api.command.admin.resource.icon.UploadResourceIconCmd;
 import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
 import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
@@ -3439,6 +3440,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(MigrateSecondaryStorageDataCmd.class);
         cmdList.add(UploadResourceIconCmd.class);
         cmdList.add(DeleteResourceIconCmd.class);
+        cmdList.add(ListResourceIconCmd.class);
 
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);

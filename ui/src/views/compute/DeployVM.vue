@@ -31,9 +31,35 @@
                   <div style="margin-top: 15px">
                     <span>{{ $t('message.select.a.zone') }}</span><br/>
                     <a-form-item :label="this.$t('label.zoneid')">
+                      <div v-if="zones.length < 10">
+                        <a-row type="flex" :gutter="5">
+                          <div v-for="(testzone, idx) in zones" :key="idx">
+                            <a-radio-group
+                              :key="idx"
+                              v-decorator="['zoneid', {
+                                rules: [{ required: true, message: `${$t('message.error.select')}` }]}]"
+                              @change="onSelectZoneId(testzone.id)">
+                              <a-col :span="8">
+                                <a-card-grid style="width:200px;" :title="testzone.name" :hoverable="false">
+                                  <a-radio :value="testzone.id">
+                                    <img
+                                      v-if="testzone && testzone.icon && testzone.icon.base64image"
+                                      :src="getImg(testzone.icon.base64image)"
+                                      style="marginLeft: 20px"
+                                      width="36px"
+                                      height="36px" />
+                                    <a-icon v-else style="font-size: 36px; marginLeft: 20px" type="global"/>
+                                  </a-radio>
+                                </a-card-grid>
+                              </a-col>
+                            </a-radio-group>
+                          </div>
+                        </a-row>
+                      </div>
                       <a-select
+                        v-else
                         v-decorator="['zoneid', {
-                          rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
+                          rules: [{ required: true, message: `${$t('message.error.select')}` }]
                         }]"
                         showSearch
                         optionFilterProp="children"
@@ -685,6 +711,7 @@ export default {
   mixins: [mixin, mixinDevice],
   data () {
     return {
+      test: [1, 2],
       zoneId: '',
       podId: null,
       clusterId: null,
@@ -793,7 +820,8 @@ export default {
       showDetails: false,
       showRootDiskSizeChanger: false,
       securitygroupids: [],
-      rootDiskSizeFixed: 0
+      rootDiskSizeFixed: 0,
+      zones: []
     }
   },
   computed: {
@@ -1200,6 +1228,7 @@ export default {
       this.form.getFieldDecorator([field], { initialValue: this.dataPreFill[field] })
     },
     fetchData () {
+      this.fetchZones()
       if (this.dataPreFill.zoneid) {
         this.fetchDataByZone(this.dataPreFill.zoneid)
       } else {
@@ -1220,6 +1249,9 @@ export default {
     },
     isDynamicallyScalable () {
       return this.serviceOffering && this.serviceOffering.dynamicscalingenabled && this.template && this.template.isdynamicallyscalable && this.dynamicScalingVmConfigValue
+    },
+    getImg (image) {
+      return 'data:image/png;charset=utf-8;base64, ' + image
     },
     async fetchDataByZone (zoneId) {
       this.fillValue('zoneid')
@@ -1642,9 +1674,9 @@ export default {
       return new Promise((resolve) => {
         this.loading.zones = true
         const param = this.params.zones
-        api(param.list, { listall: true }).then(json => {
-          const zones = json.listzonesresponse.zone || []
-          resolve(zones)
+        api(param.list, { listall: true, showicon: true }).then(json => {
+          this.zones = json.listzonesresponse.zone || []
+          resolve(this.zones)
         }).catch(function (error) {
           console.log(error.stack)
         }).finally(() => {

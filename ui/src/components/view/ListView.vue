@@ -73,7 +73,7 @@
           <tooltip-button type="dashed" size="small" icon="login" @click="changeProject(record)" />
         </span>
         <span v-if="['template', 'iso'].includes($route.path.split('/')[1]) && record.icon && record.icon.base64image">
-          <img :src="getImg(record.icon.base64image)" height="16px" width="16px" />
+          <resource-icon :resource="record" size="1x" style="margin-right: 5px"/>
         </span>
         <span v-else>
           <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
@@ -332,6 +332,7 @@ import Status from '@/components/widgets/Status'
 import InfoCard from '@/components/view/InfoCard'
 import QuickView from '@/components/view/QuickView'
 import TooltipButton from '@/components/view/TooltipButton'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'ListView',
@@ -341,7 +342,8 @@ export default {
     Status,
     InfoCard,
     QuickView,
-    TooltipButton
+    TooltipButton,
+    ResourceIcon
   },
   props: {
     columns: {
@@ -427,9 +429,6 @@ export default {
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering'].join('|'))
         .test(this.$route.path)
-    },
-    getImg (image) {
-      return 'data:image/png;charset=utf-8;base64, ' + image
     },
     fetchColumns () {
       if (this.isOrderUpdatable()) {

@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.cloud.resource.icon.dao.ResourceIconDao;
 import com.cloud.server.ResourceManagerUtil;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.vm.VirtualMachineManager;
@@ -52,6 +53,7 @@ import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.iso.ListIsosCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
+import org.apache.cloudstack.api.command.admin.resource.icon.ListResourceIconCmd;
 import org.apache.cloudstack.api.command.admin.router.GetRouterHealthCheckResultsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
@@ -97,6 +99,7 @@ import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceDetailResponse;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
@@ -431,6 +434,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private VirtualMachineManager virtualMachineManager;
+
+    @Inject
+    private ResourceIconDao resourceIconDao;
 
     /*
      * (non-Javadoc)
@@ -3761,6 +3767,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
         return new DetailOptionsResponse(options);
+    }
+
+    @Override
+    public ListResponse<ResourceIconResponse> listResourceIcons(ListResourceIconCmd cmd) {
+        ListResponse<ResourceIconResponse> responses = new ListResponse<>();
+        responses.setResponses(resourceIconDao.listResourceIcons(cmd.getResourceIds(), cmd.getResourceType()));
+        return responses;
     }
 
     private void fillVMOrTemplateDetailOptions(final Map<String, List<String>> options, final HypervisorType hypervisorType) {

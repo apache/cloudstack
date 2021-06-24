@@ -37,7 +37,8 @@ import java.util.List;
 
 @APICommand(name = "uploadResourceIcon", description = "Uploads an icon for the specified resource(s)",
         responseObject = SuccessResponse.class, since = "4.16.0.0", entityType = {ResourceIcon.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin})
 public class UploadResourceIconCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UploadResourceIconCmd.class.getName());
 

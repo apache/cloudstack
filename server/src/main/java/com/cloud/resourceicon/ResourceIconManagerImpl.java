@@ -102,6 +102,7 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_ICON_DELETE, eventDescription = "deleting resource icon")
     public boolean deleteResourceIcon(List<String> resourceIds, ResourceTag.ResourceObjectType resourceType) {
         Account caller = CallContext.current().getCallingAccount();
         if (!accountService.isAdmin(caller.getId())) {
