@@ -375,8 +375,8 @@ class TestVolumes(cloudstackTestCase):
             try:
                 self.virtual_machine.get_ssh_client(reconnect=True)
             except Exception as err:
-                self.fail("SSH failed for Virtual machine: %s due to %s" % 
-                (self.virtual_machine.ipaddress, err))
+                self.fail("SSH failed for Virtual machine: %s due to %s" %
+                          (self.virtual_machine.ipaddress, err))
         elif self.attached:
             self.virtual_machine.detach_volume(self.apiClient, self.volume)
 
@@ -516,8 +516,8 @@ class TestVolumes(cloudstackTestCase):
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_06_download_detached_volume(self):
         """Download a Volume unattached to an VM
-        # Validate the following
-        # 1. able to download the volume when its not attached to instance
+        Validate the following
+        1. able to download the volume when its not attached to instance
         """
 
         self.debug("Extract detached Volume ID: %s" % self.volume.id)
@@ -548,10 +548,10 @@ class TestVolumes(cloudstackTestCase):
             with open(path, 'wb') as fd:
                 fd.write(response.read())
             self.debug("Saved volume successfully")
-        except Exception:
+        except Exception as e:
             self.fail(
-                "Extract Volume Failed with invalid URL %s (vol id: %s)"
-                % (extract_vol.url, self.volume.id)
+                "Extract Volume Failed  (URL: %s , vol id: %s) due to %s"
+                % (extract_vol.url, self.volume.id, e)
             )
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
@@ -860,11 +860,11 @@ class TestVolumes(cloudstackTestCase):
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_11_attach_volume_with_unstarted_vm(self):
         """Attach a created Volume to a unstarted VM
-        # Validate the following
-        # 1. Attach to a vm in startvm=false state works and vm can be started afterwards.
-        # 2. shows list of volumes
-        # 3. "Attach Disk" pop-up box will display with list of  instances
-        # 4. disk should be  attached to instance successfully
+        Validate the following
+        1. Attach to a vm in startvm=false state works and vm can be started afterwards.
+        2. shows list of volumes
+        3. "Attach Disk" pop-up box will display with list of  instances
+        4. disk should be  attached to instance successfully
         """
 
         test_vm = VirtualMachine.create(
@@ -936,13 +936,10 @@ class TestVolumes(cloudstackTestCase):
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_11_migrate_volume_and_change_offering(self):
         """
-        # Validates the following
-        #
-        # 1. Creates a new Volume with a small disk offering
-        #
-        # 2. Migrates the Volume to another primary storage and changes the offering
-        #
-        # 3. Verifies the Volume has new offering when migrated to the new storage.
+        Validates the following
+        1. Creates a new Volume with a small disk offering
+        2. Migrates the Volume to another primary storage and changes the offering
+        3. Verifies the Volume has new offering when migrated to the new storage.
         """
 
         small_offering = list_disk_offering(
@@ -962,7 +959,6 @@ class TestVolumes(cloudstackTestCase):
             domainid=self.account.domainid,
             diskofferingid=small_offering.id
         )
-        self.cleanup.append(volume)
         self.debug("Created a small volume: %s" % volume.id)
 
         self.virtual_machine.attach_volume(self.apiclient, volume=volume)
@@ -1008,6 +1004,4 @@ class TestVolumes(cloudstackTestCase):
             large_offering.name,
             "Offering name did not match with the new one "
         )
-        # make sure we can cleanup
-        self.virtual_machine.detach_volume(self.apiclient, volume=volume)
         return
