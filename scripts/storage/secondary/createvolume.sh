@@ -135,7 +135,8 @@ create_from_file() {
   local tmpltname=$3
 
   [ -n "$verbose" ] && echo "Moving to $tmpltfs/$tmpltname...could take a while" >&2
-  mv $tmpltimg /$tmpltfs/$tmpltname
+  cp -rf $tmpltimg /$tmpltfs/$tmpltname
+  rm -rf $tmpltimg
 
 }
 
