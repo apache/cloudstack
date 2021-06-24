@@ -211,7 +211,7 @@ class TestHAKVM(cloudstackTestCase):
 
     def skipIfHostIsSUSE(self) :
         host = self.getHost()
-        if "SUSE" in host.details['Host.OS'] :
+        if "suse" in host.details['Host.OS'].lower() :
             self.skipTest("Skipping since SUSE has known IPMI issues")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")

@@ -48,7 +48,7 @@ class TestOutOfBandManagement(cloudstackTestCase):
         cls.cleanup = []
 
         host = cls.getHost(cls)
-        if host.hypervisor.lower() == 'kvm' and "SUSE" in host.details['Host.OS'] :
+        if host.hypervisor.lower() == 'kvm' and "suse" in host.details['Host.OS'].lower() :
             cls.skipTest(cls, "Skipping since SUSE has known IPMI issues")
 
         # use random port for ipmisim

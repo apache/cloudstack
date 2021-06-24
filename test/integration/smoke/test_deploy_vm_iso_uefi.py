@@ -224,7 +224,7 @@ class TestDeployVMFromISOWithUefi(cloudstackTestCase):
 
         instancename = self.virtual_machine.instancename
         virshxml = self.getVirshXML(host, instancename)
-        hostos = host['details']['Host.OS'].lower()
+        hostos = host.details['Host.OS'].lower()
         self.checkBootTypeAndMode(virshxml, bootmodesecure, isWindowsIso, hostos)
 
     @classmethod
