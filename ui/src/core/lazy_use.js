@@ -15,36 +15,33 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Vue from 'vue'
-import VueStorage from 'vue-ls'
-import config from '@/config/settings'
-
 // base library'
-// import Viser from 'viser-vue'
 import VueCropper from 'vue-cropper'
-import '@/core/lazy_lib/components_use'
+import componentsUse from '@/core/lazy_lib/components_use'
+import iconsUse from '@/core/lazy_lib/icons_use'
 
 import 'ant-design-vue/dist/antd.min.css'
 import '@/style/vars.less'
 
 // ext library
-import VueClipboard from 'vue-clipboard2'
+import VueClipboard from 'vue3-clipboard'
 import PermissionHelper from '@/utils/helper/permission'
 
 // customisation
-import Spin from 'ant-design-vue/es/spin/Spin'
-
-VueClipboard.config.autoSetContainer = true
-
-// Vue.use(Viser)
-
-Vue.use(VueStorage, config.storageOptions)
-Vue.use(VueClipboard)
-Vue.use(PermissionHelper)
-Vue.use(VueCropper)
+import { Spin } from 'ant-design-vue'
 
 Spin.setDefaultIndicator({
-  indicator: (h) => {
-    return <a-icon type="loading" style="font-size: 30px" spin />
+  indicator: () => {
+    return <LoadingOutlined style="font-size: 30px" spin />
   }
 })
+
+export default {
+  install: (app) => {
+    app.use(VueClipboard, { autoSetContainer: true })
+    app.use(PermissionHelper)
+    app.use(VueCropper)
+    app.use(componentsUse)
+    app.use(iconsUse)
+  }
+}

@@ -16,7 +16,6 @@
 // under the License.
 
 import Cookies from 'js-cookie'
-import Vue from 'vue'
 import { i18n } from './locales'
 import router from './router'
 import store from './store'
@@ -32,61 +31,70 @@ NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
 const whiteList = ['login'] // no redirect whitelist
 
-router.beforeEach((to, from, next) => {
-  // start progress bar
-  NProgress.start()
-  if (to.meta && typeof to.meta.title !== 'undefined') {
-    const title = i18n.t(to.meta.title) + ' - ' + Vue.prototype.$config.appTitle
-    setDocumentTitle(title)
-  }
-  const validLogin = Vue.ls.get(ACCESS_TOKEN) || Cookies.get('userid') || Cookies.get('userid', { path: '/client' })
-  if (validLogin) {
-    if (to.path === '/user/login') {
-      next({ path: '/dashboard' })
-      NProgress.done()
-    } else {
-      if (Object.keys(store.getters.apis).length === 0) {
-        const cachedApis = Vue.ls.get(APIS, {})
-        if (Object.keys(cachedApis).length > 0) {
-          message.loading(`${i18n.t('label.loading')}...`, 1.5)
-        }
-        store
-          .dispatch('GetInfo')
-          .then(apis => {
-            store.dispatch('GenerateRoutes', { apis }).then(() => {
-              router.addRoutes(store.getters.addRouters)
-              const redirect = decodeURIComponent(from.query.redirect || to.path)
-              if (to.path === redirect) {
-                next({ ...to, replace: true })
-              } else {
-                next({ path: redirect })
-              }
-            })
-          })
-          .catch(() => {
-            notification.error({
-              message: 'Error',
-              description: i18n.t('message.error.discovering.feature'),
-              duration: 0
-            })
-            store.dispatch('Logout').then(() => {
-              next({ path: '/user/login', query: { redirect: to.fullPath } })
-            })
-          })
-      } else {
-        next()
-      }
-    }
-  } else {
-    if (whiteList.includes(to.name)) {
-      next()
-    } else {
-      next({ path: '/user/login', query: { redirect: to.fullPath } })
-      NProgress.done()
-    }
-  }
-})
+export default {
+  install: (app) => {
+    router.beforeEach((to, from, next) => {
+      // start progress bar
+      NProgress.start()
 
-router.afterEach(() => {
-  NProgress.done() // finish progress bar
-})
+      if (to.meta && typeof to.meta.title !== 'undefined') {
+        const title = i18n.global.t(to.meta.title) + ' - ' + app.config.globalProperties.$config.appTitle
+        setDocumentTitle(title)
+      }
+
+      const ls = app.config.globalProperties.$localStorage
+      const validLogin = ls.get(ACCESS_TOKEN) || Cookies.get('userid') || Cookies.get('userid', { path: '/client' })
+      if (validLogin) {
+        if (to.path === '/user/login') {
+          next({ path: '/dashboard' })
+          NProgress.done()
+        } else {
+          if (Object.keys(store.getters.apis).length === 0) {
+            const cachedApis = ls.get(APIS, {})
+            if (Object.keys(cachedApis).length > 0) {
+              message.loading(`${i18n.global.t('label.loading')}...`, 1.5)
+            }
+            store
+              .dispatch('GetInfo')
+              .then(apis => {
+                store.dispatch('GenerateRoutes', { apis }).then(() => {
+                  store.getters.addRouters.map(route => {
+                    router.addRoute(route)
+                  })
+                  const redirect = decodeURIComponent(from.query.redirect || to.path)
+                  if (to.path === redirect) {
+                    next({ ...to, replace: true })
+                  } else {
+                    next({ path: redirect })
+                  }
+                })
+              })
+              .catch(() => {
+                notification.error({
+                  message: 'Error',
+                  description: i18n.global.t('message.error.discovering.feature'),
+                  duration: 0
+                })
+                store.dispatch('Logout').then(() => {
+                  next({ path: '/user/login', query: { redirect: to.fullPath } })
+                })
+              })
+          } else {
+            next()
+          }
+        }
+      } else {
+        if (whiteList.includes(to.name)) {
+          next()
+        } else {
+          next({ path: '/user/login', query: { redirect: to.fullPath } })
+          NProgress.done()
+        }
+      }
+    })
+
+    router.afterEach(() => {
+      NProgress.done() // finish progress bar
+    })
+  }
+}

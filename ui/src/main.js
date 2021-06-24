@@ -15,39 +15,49 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Vue from 'vue'
+import { createApp } from 'vue'
+import StoragePlugin from 'vue-web-storage'
+
 import App from './App.vue'
 import router from './router'
 import store from './store'
 import { i18n, loadLanguageAsync } from './locales'
 
 import bootstrap from './core/bootstrap'
-import './core/lazy_use'
-import './core/ext'
-import './permission' // permission control
-import './utils/filter' // global filter
+import lazyUsePlugs from './core/lazy_use'
+import permission from './permission' // permission control
+import filter from './utils/filter' // global filter
+
 import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin } from './utils/plugins'
 import { VueAxios } from './utils/request'
+import setting from '@/config/settings'
 
-Vue.config.productionTip = false
-Vue.use(VueAxios, router)
-Vue.use(pollJobPlugin)
-Vue.use(notifierPlugin)
-Vue.use(toLocaleDatePlugin)
+const app = createApp(App)
+
+app.config.productionTip = false
+app.use(VueAxios, router)
+app.use(pollJobPlugin)
+app.use(permission)
+app.use(notifierPlugin)
+app.use(toLocaleDatePlugin)
+app.use(configUtilPlugin)
+app.use(filter)
 
 fetch('config.json').then(response => response.json()).then(config => {
-  Vue.prototype.$config = config
-  Vue.axios.defaults.baseURL = config.apiBase
+  app.config.globalProperties.$config = config
+  app.use(StoragePlugin, setting.storageOptions)
+  // set global localStorage for using
+  window.ls = app.config.globalProperties.$localStorage
+  window.appPrototype = app.config.globalProperties
 
   loadLanguageAsync().then(() => {
-    new Vue({
-      router,
-      store,
-      i18n,
-      created: bootstrap,
-      render: h => h(App)
-    }).$mount('#app')
+    app.use(store)
+      .use(lazyUsePlugs)
+      .use(router)
+      .use(i18n)
+      .use(bootstrap)
+      .mount('#app')
+
+    app.config.globalProperties.axios.defaults.baseURL = config.apiBase
   })
 })
-
-Vue.use(configUtilPlugin)
