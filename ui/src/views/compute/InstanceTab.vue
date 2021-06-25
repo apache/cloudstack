@@ -139,7 +139,10 @@
         <DetailSettings :resource="resource" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.annotations')" key="annotations" v-if="'listAnnotations' in $store.getters.apis">
-        <AnnotationsTable :resource="vm" :loading="loading">
+        <AnnotationsTable
+          apiName="listVMSnapshot"
+          :resource="vm"
+          :loading="loading">
         </AnnotationsTable>
       </a-tab-pane>
     </a-tabs>

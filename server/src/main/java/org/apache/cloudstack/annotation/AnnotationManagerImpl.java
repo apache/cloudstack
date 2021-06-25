@@ -43,6 +43,8 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
+import static org.apache.commons.lang.StringUtils.isNotBlank;
+
 /**
  * @since 4.11
  */
@@ -140,7 +142,13 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     private List<AnnotationVO> getAnnotationsForApiCmd(ListAnnotationsCmd cmd) {
         List<AnnotationVO> annotations;
         String userUuid = cmd.getUserUuid();
+        String annotationFilter = isNotBlank(cmd.getAnnotationFilter()) ? cmd.getAnnotationFilter() : "self";
         boolean isCallerAdmin = isCallingUserAdmin();
+        if (!isCallerAdmin && annotationFilter.equalsIgnoreCase("all")) {
+            throw new CloudRuntimeException("Only admins can filter all the annotations");
+        }
+        UserVO callingUser = getCallingUserFromContext();
+        String callingUserUuid = callingUser.getUuid();
 
         if(cmd.getUuid() != null) {
             annotations = new ArrayList<>();
@@ -151,6 +159,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
 
             AnnotationVO annotationVO = annotationDao.findByUuid(uuid);
             if (annotationVO != null && annotationVO.getUserUuid().equals(userUuid) &&
+                    (annotationFilter.equalsIgnoreCase("all") ||
+                    (annotationFilter.equalsIgnoreCase("self") && annotationVO.getUserUuid().equals(callingUserUuid))) &&
                 annotationVO.isAdminsOnly() == isCallerAdmin) {
                 annotations.add(annotationVO);
             }
@@ -164,9 +174,11 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
                 if(LOGGER.isDebugEnabled()) {
                     LOGGER.debug("getting annotations for entity: " + uuid);
                 }
-                annotations = annotationDao.listByEntity(type, cmd.getEntityUuid(), userUuid, isCallerAdmin);
+                annotations = annotationDao.listByEntity(type, cmd.getEntityUuid(), userUuid, isCallerAdmin,
+                        annotationFilter, callingUserUuid);
             } else {
-                annotations = annotationDao.listByEntityType(type, userUuid, isCallerAdmin);
+                annotations = annotationDao.listByEntityType(type, userUuid, isCallerAdmin,
+                        annotationFilter, callingUserUuid);
             }
         } else {
             if(LOGGER.isDebugEnabled()) {
@@ -204,6 +216,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         if (user != null && StringUtils.isNotBlank(user.getUsername())) {
             response.setUsername(user.getUsername());
         }
+        response.setAdminsOnly(annotation.isAdminsOnly());
         response.setObjectName("annotation");
 
         return response;

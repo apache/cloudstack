@@ -52,6 +52,14 @@ public class ListAnnotationsCmd extends BaseListCmd {
             description = "optional: the id of the user of the annotation", required = false)
     private String userUuid;
 
+    @Parameter(name = ApiConstants.ANNOTATION_FILTER,
+            type = CommandType.STRING,
+            required = true,
+            description = "possible values are \"self\" and \"all\". "
+                    + "* self : annotations that have been created by the calling user. "
+                    + "* all : all templates (only usable by admins).")
+    private String annotationFilter;
+
     public String getUuid() {
         return uuid;
     }
@@ -66,6 +74,10 @@ public class ListAnnotationsCmd extends BaseListCmd {
 
     public String getUserUuid() {
         return userUuid;
+    }
+
+    public String getAnnotationFilter() {
+        return annotationFilter;
     }
 
     @Override public void execute()

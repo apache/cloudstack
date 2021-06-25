@@ -14,18 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.annotation.dao;
+import store from '@/store'
 
-import org.apache.cloudstack.annotation.AnnotationVO;
-import com.cloud.utils.db.GenericDao;
-
-import java.util.List;
-
-/**
- * @since 4.11
- */
-public interface AnnotationDao extends GenericDao<AnnotationVO, Long> {
-    List<AnnotationVO> listByEntityType(String entityType, String userUuid, boolean isCallerAdmin, String annotationFilter, String callingUserUuid);
-    List<AnnotationVO> listByEntity(String entityType, String entityUuid, String userUuid, boolean isCallerAdmin, String annotationFilter, String callingUserUuid);
-    List<AnnotationVO> listAllAnnotations(String userUuid, boolean isCallerAdmin);
+export default {
+  name: 'comment',
+  title: 'label.comments',
+  icon: 'message',
+  docHelp: 'adminguide/events.html',
+  permission: ['listAnnotations'],
+  columns: ['created', 'annotation', 'entityid', 'entitytype', 'username', 'adminsonly'],
+  searchFilters: ['annotation', 'username', 'keyword'],
+  filters: () => {
+    const filters = ['self']
+    if (['Admin'].includes(store.getters.userInfo.roletype)) {
+      filters.push('all')
+    }
+    return filters
+  },
+  actions: [
+  ]
 }

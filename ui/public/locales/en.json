@@ -441,7 +441,7 @@
 "label.allowuserdrivenbackups": "Allow User Driven Backups",
 "label.annotated.by": "Annotator",
 "label.annotation": "Annotation",
-"label.annotations": "Annotations",
+"label.annotations": "Comments",
 "label.annotation.admins.only": "Only visible to Administrators",
 "label.annotation.entity.id": "Entity ID",
 "label.annotation.entity.type": "Entity Type",

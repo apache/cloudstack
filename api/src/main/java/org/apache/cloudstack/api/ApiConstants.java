@@ -845,6 +845,7 @@ public class ApiConstants {
     public static final String POOL_TYPE = "pooltype";
 
     public static final String ADMINS_ONLY = "adminsonly";
+    public static final String ANNOTATION_FILTER = "annotationfilter";
 
     public enum BootType {
         UEFI, BIOS;

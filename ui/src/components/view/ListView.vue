@@ -420,7 +420,7 @@ export default {
         '/guestnetwork', '/vpc', '/vpncustomergateway',
         '/template', '/iso',
         '/project', '/account',
-        '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm',
+        '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering'].join('|'))
         .test(this.$route.path)
     },

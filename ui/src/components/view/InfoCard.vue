@@ -904,31 +904,6 @@ export default {
   }
 
 }
-.account-center-team {
-  .members {
-    a {
-      display: block;
-      margin: 12px 0;
-      line-height: 24px;
-      height: 24px;
-      .member {
-        font-size: 14px;
-        color: rgba(0, 0, 0, 0.65);
-        line-height: 24px;
-        max-width: 100px;
-        vertical-align: top;
-        margin-left: 12px;
-        transition: all 0.3s;
-        display: inline-block;
-      }
-      &:hover {
-        span {
-          color: #1890ff;
-        }
-      }
-    }
-  }
-}
 .title {
   margin-bottom: 5px;
   font-weight: bold;

@@ -55,6 +55,10 @@ public class AnnotationResponse extends BaseResponse {
     @Param(description = "The username of the user that entered the annotation")
     private String username;
 
+    @SerializedName(ApiConstants.ADMINS_ONLY)
+    @Param(description = "True if the annotation is available for admins only")
+    private Boolean adminsOnly;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the creation timestamp for this annotation")
     private Date created;
@@ -129,5 +133,13 @@ public class AnnotationResponse extends BaseResponse {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public Boolean getAdminsOnly() {
+        return adminsOnly;
+    }
+
+    public void setAdminsOnly(Boolean adminsOnly) {
+        this.adminsOnly = adminsOnly;
     }
 }
