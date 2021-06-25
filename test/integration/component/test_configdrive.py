@@ -53,7 +53,8 @@ from marvin.lib.base import (Account,
                              Hypervisor, Template)
 from marvin.lib.common import (get_domain,
                                get_template,
-                               get_zone, get_test_template,
+                               get_zone,
+                               get_test_template,
                                is_config_suitable)
 from marvin.lib.utils import random_gen
 # Import System Modules
@@ -974,6 +975,7 @@ class ConfigDriveUtils:
         vm.add_nic(self.api_client, network.id)
         self.debug("Added NIC in VM with ID - %s and network with ID - %s"
                    % (vm.id, network.id))
+        vm.password_test = ConfigDriveUtils.PasswordTest(expect_pw=False)
 
     def unplug_nic(self, vm, network):
         nic = self._find_nic(vm, network)
@@ -1702,6 +1704,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
                        "%s to Host: %s" % (vm.id, host.id))
             try:
                 vm.migrate(self.api_client, hostid=host.id)
+                vm.password_test = ConfigDriveUtils.PasswordTest(expect_pw=False)
             except Exception as e:
                 self.fail("Failed to migrate instance, %s" % e)
             self.debug("Migrated VM with ID: "
@@ -1917,7 +1920,8 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         # =====================================================================
         self.debug("+++ Scenario: "
                    "update userdata and reset password after migrate")
-        self.migrate_VM(vm1)
+        host = self.migrate_VM(vm1)
+        vm1.hostname = host.name
         self.then_config_drive_is_as_expected(vm1, public_ip_1, metadata=True)
         self.debug("Updating userdata after migrating VM - %s" % vm1.name)
         self.update_and_validate_userdata(vm1, "hello after migrate",
@@ -2112,7 +2116,8 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         # =====================================================================
         self.debug("+++ Scenario: "
                    "update userdata and reset password after migrate")
-        self.migrate_VM(vm)
+        host = self.migrate_VM(vm)
+        vm.hostname = host.name
         self.then_config_drive_is_as_expected(vm, public_ip_1, metadata=True)
         self.update_and_validate_userdata(vm, "hello migrate", public_ip_1)
 
@@ -2362,6 +2367,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         self.debug("+++Deploy VM in the created Isolated network "
                    "with user data provider as configdrive")
 
+        self.given_template_password_enabled_is(True)
         vm1 = self.when_I_deploy_a_vm(network1)
 
         public_ip_1 = self.when_I_create_a_static_nat_ip_to(vm1, network1)
@@ -2476,6 +2482,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         # =====================================================================
         self.debug("+++ Scenario: "
                    "Deploy VM in the Tier 1 with user data")
+        self.given_template_password_enabled_is(True)
         vm = self.when_I_deploy_a_vm(network1)
         public_ip_1 = self.when_I_create_a_static_nat_ip_to(vm, network1)
 
