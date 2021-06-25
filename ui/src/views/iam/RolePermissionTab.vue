@@ -110,7 +110,7 @@ import { api } from '@/api'
 import draggable from 'vuedraggable'
 import PermissionEditable from './PermissionEditable'
 import RuleDelete from './RuleDelete'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'RolePermissionTab',

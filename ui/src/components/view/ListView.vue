@@ -326,7 +326,7 @@ import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
 import InfoCard from '@/components/view/InfoCard'
 import QuickView from '@/components/view/QuickView'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'ListView',

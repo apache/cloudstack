@@ -166,7 +166,7 @@
 </template>
 <script>
 
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   components: {
