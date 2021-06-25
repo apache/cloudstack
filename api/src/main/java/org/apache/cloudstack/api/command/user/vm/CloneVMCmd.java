@@ -1,8 +1,11 @@
 package org.apache.cloudstack.api.command.user.vm;
 
 import com.cloud.event.EventTypes;
-import com.cloud.exception.*;
-import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
@@ -19,7 +22,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.context.CallContext;
+//import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import java.util.Optional;
