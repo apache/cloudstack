@@ -18,7 +18,7 @@
 <template slot="label">
   <span>
     {{ title }}
-    <a-tooltip v-if="tooltip" :title="tooltip">
+    <a-tooltip v-if="tooltip" :title="tooltip" :placement="tooltipPlacement">
       <a-icon type="info-circle" class=".tooltip-icon" />
     </a-tooltip>
   </span>
@@ -36,6 +36,10 @@ export default {
     tooltip: {
       type: String,
       default: null
+    },
+    tooltipPlacement: {
+      type: String,
+      default: 'top'
     }
   }
 }
