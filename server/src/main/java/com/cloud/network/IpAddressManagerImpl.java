@@ -1135,7 +1135,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         DataCenter zone = _entityMgr.findByUuid(DataCenter.class, zoneId);
         Account caller = CallContext.current().getCallingAccount();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
-            ResourceAllocationException ex = new ResourceAllocationException(generateErrorMessageForOperationOnDisabledZone("allocate Pod IP addresses", zone), ResourceType.network);
+            ResourceAllocationException ex = new ResourceAllocationException(
+                    generateErrorMessageForOperationOnDisabledZone("allocate Pod IP addresses", zone), ResourceType.network);
             throw ex;
         }
 
