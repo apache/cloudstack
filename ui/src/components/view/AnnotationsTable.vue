@@ -30,6 +30,7 @@
         size="small" >
         <a-list-item slot="renderItem" slot-scope="item">
           <a-comment
+            class="comment"
             :content="item.annotation"
             :datetime="$toLocaleDate(item.created)"
             :author="item.username" >
@@ -187,7 +188,7 @@ export default {
       args.adminsonly = this.annotationAdminsOnly
       api('addAnnotation', args).then(json => {
       }).finally(e => {
-        this.getNotes()
+        this.getAnnotations()
       })
       this.annotation = ''
       this.annotationAdminsOnly = false
@@ -198,9 +199,49 @@ export default {
       args.id = annotation.id
       api('removeAnnotation', args).then(json => {
       }).finally(e => {
-        this.getNotes()
+        this.getAnnotations()
       })
     }
   }
 }
 </script>
+
+<style lang="scss" scoped>
+
+.account-center-team {
+  .members {
+    a {
+      display: block;
+      margin: 12px 0;
+      line-height: 24px;
+      height: 24px;
+      .member {
+        font-size: 14px;
+        color: rgba(0, 0, 0, 0.65);
+        line-height: 24px;
+        max-width: 100px;
+        vertical-align: top;
+        margin-left: 12px;
+        transition: all 0.3s;
+        display: inline-block;
+      }
+      &:hover {
+        span {
+          color: #1890ff;
+        }
+      }
+    }
+  }
+}
+
+.title {
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.comment {
+  display: inline-block;
+  text-overflow: ellipsis;
+  width: calc(100%);
+}
+</style>

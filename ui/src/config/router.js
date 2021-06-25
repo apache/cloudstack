@@ -36,6 +36,7 @@ import offering from '@/config/section/offering'
 import config from '@/config/section/config'
 import quota from '@/config/section/plugin/quota'
 import cloudian from '@/config/section/plugin/cloudian'
+import comment from '@/config/section/comment'
 
 function generateRouterMap (section) {
   var map = {
@@ -171,6 +172,10 @@ function generateRouterMap (section) {
     map.meta.actions = section.actions
   }
 
+  if (section.params) {
+    map.meta.params = section.params
+  }
+
   return map
 }
 
@@ -226,6 +231,7 @@ export function asyncRouterMap () {
       generateRouterMap(config),
       generateRouterMap(quota),
       generateRouterMap(cloudian),
+      generateRouterMap(comment),
 
       {
         path: '/exception',
