@@ -5899,21 +5899,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         DeployDestination dest = null;
         if (destinationHost == null) {
-            vm.setLastHostId(null); // Last host does not have higher priority in vm migration
-            final ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
-            final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, offering, null, null);
-            final Host host = _hostDao.findById(srcHostId);
-            final DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null, null);
-            ExcludeList excludes = new ExcludeList();
-            excludes.addHost(srcHostId);
-            try {
-                dest = _planningMgr.planDeployment(profile, plan, excludes, null);
-            } catch (final AffinityConflictException e2) {
-                s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
-                throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict");
-            } catch (final InsufficientServerCapacityException e3) {
-                throw new CloudRuntimeException("Unable to find a server to migrate the vm to");
-            }
+            dest = chooseVmMigrationDestination(vm, srcHost);
         } else {
             dest = checkVmMigrationDestination(vm, srcHost, destinationHost);
         }
@@ -5930,6 +5916,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         _itMgr.migrate(vm.getUuid(), srcHostId, dest);
         return findMigratedVm(vm.getId(), vm.getType());
+    }
+
+    private DeployDestination chooseVmMigrationDestination(VMInstanceVO vm, Host srcHost) {
+        vm.setLastHostId(null); // Last host does not have higher priority in vm migration
+        final ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, offering, null, null);
+        final Long srcHostId = srcHost.getId();
+        final Host host = _hostDao.findById(srcHostId);
+        final DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null, null);
+        ExcludeList excludes = new ExcludeList();
+        excludes.addHost(srcHostId);
+        try {
+            return _planningMgr.planDeployment(profile, plan, excludes, null);
+        } catch (final AffinityConflictException e2) {
+            s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
+            throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict");
+        } catch (final InsufficientServerCapacityException e3) {
+            throw new CloudRuntimeException("Unable to find a server to migrate the vm to");
+        }
     }
 
     private DeployDestination checkVmMigrationDestination(VMInstanceVO vm, Host srcHost, Host destinationHost) throws VirtualMachineMigrationException {
