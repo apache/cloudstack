@@ -44,7 +44,7 @@ function prepare_mount
     if [ -e $DefaultDisk ]; then
         Disk=$DefaultDisk
     else
-        BLOCK_DEVICE=$(blkid -t LABEL='config' /dev/hd? /dev/sd? /dev/xvd? /dev/vd? -o device)
+        BLOCK_DEVICE=$(blkid -t LABEL='config-2' /dev/hd? /dev/sd? /dev/xvd? /dev/vd? -o device)
         if [ -n $BLOCK_DEVICE ]; then
             Disk=$BLOCK_DEVICE
         else
