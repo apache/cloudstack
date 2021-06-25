@@ -42,7 +42,12 @@
       </a-col>
       <a-col :xs="24" :md="12" :style="{height: '350px'}">
         <div class="avatar-upload-preview">
-          <img :src="previews.url" :style="previews.img"/>
+          <span v-if="previews.url">
+            <img :src="previews.url" :style="previews.img"/>
+          </span>
+          <span v-else>
+            <img :src="preview.url" :style="preview.img"/>
+          </span>
         </div>
       </a-col>
     </a-row>
@@ -86,6 +91,12 @@ export default {
     }
   },
   inject: ['parentFetchData'],
+  computed: {
+    preview: function (data) {
+      this.realTime(data)
+      return this.previews
+    }
+  },
   data () {
     return {
       id: null,
@@ -105,18 +116,23 @@ export default {
   methods: {
     handleClose () {
       this.options.img = ''
+      this.previews = {}
       eventBus.$emit('handle-close')
     },
     realTime (data) {
-      if (data.url) {
+      if (data && data.url) {
         this.previews = data
       } else {
-        this.previews.url = 'data:image/png;charset=utf-8;base64, ' + this.resource?.icon?.base64image || ''
-        this.previews.img = {
-          height: '52px',
-          width: '52px',
-          marginLeft: '65px',
-          marginTop: '50px'
+        if (this.resource?.icon?.base64image) {
+          this.previews.url = 'data:image/png;charset=utf-8;base64, ' + this.resource.icon.base64image || ''
+          this.previews.img = {
+            height: '52px',
+            width: '52px',
+            marginLeft: '65px',
+            marginTop: '50px'
+          }
+        } else {
+          this.previews = {}
         }
       }
     },

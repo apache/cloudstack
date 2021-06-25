@@ -709,6 +709,7 @@ export default {
     }
   },
   mixins: [mixin, mixinDevice],
+  inject: ['parentFetchData'],
   data () {
     return {
       test: [1, 2],
