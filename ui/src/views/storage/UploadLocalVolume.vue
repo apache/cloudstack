@@ -106,7 +106,7 @@
 <script>
 import { api } from '@/api'
 import { axios } from '../../utils/request'
-import TooltipLabel from '@/components/view/TooltipLabel'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'UploadLocalVolume',

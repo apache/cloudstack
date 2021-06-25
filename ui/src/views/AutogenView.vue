@@ -347,7 +347,7 @@ import ListView from '@/components/view/ListView'
 import ResourceView from '@/components/view/ResourceView'
 import ActionButton from '@/components/view/ActionButton'
 import SearchView from '@/components/view/SearchView'
-import TooltipLabel from '@/components/view/TooltipLabel'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'Resource',

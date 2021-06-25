@@ -634,7 +634,7 @@ import NetworkSelection from '@views/compute/wizard/NetworkSelection'
 import NetworkConfiguration from '@views/compute/wizard/NetworkConfiguration'
 import SshKeyPairSelection from '@views/compute/wizard/SshKeyPairSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
-import TooltipLabel from '@/components/view/TooltipLabel'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'Wizard',

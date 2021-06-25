@@ -169,7 +169,7 @@ import router from '@/router'
 
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 import ChartCard from '@/components/widgets/ChartCard'
-import TooltipLabel from '@/components/view/TooltipLabel'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'InfraSummary',

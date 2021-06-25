@@ -79,7 +79,7 @@
 
 <script>
 import { api } from '@/api'
-import TooltipLabel from '@/components/view/TooltipLabel'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateVolume',

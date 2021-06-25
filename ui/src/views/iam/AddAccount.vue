@@ -160,7 +160,7 @@
 import { api } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
-import TooltipLabel from '@/components/view/TooltipLabel'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddAccountForm',

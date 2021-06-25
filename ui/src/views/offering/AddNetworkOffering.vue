@@ -390,7 +390,7 @@
 <script>
 import { api } from '@/api'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
-import TooltipLabel from '@/components/view/TooltipLabel'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddNetworkOffering',
