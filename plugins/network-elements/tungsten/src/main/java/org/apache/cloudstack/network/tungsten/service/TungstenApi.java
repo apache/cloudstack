@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.service;
 
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.TungstenUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import net.juniper.tungsten.api.ApiConnector;
@@ -26,11 +27,23 @@ import net.juniper.tungsten.api.Status;
 import net.juniper.tungsten.api.types.AccessControlList;
 import net.juniper.tungsten.api.types.AclRuleType;
 import net.juniper.tungsten.api.types.ActionListType;
+import net.juniper.tungsten.api.types.AddressGroup;
 import net.juniper.tungsten.api.types.AddressType;
+import net.juniper.tungsten.api.types.ApplicationPolicySet;
+import net.juniper.tungsten.api.types.ConfigRoot;
 import net.juniper.tungsten.api.types.Domain;
 import net.juniper.tungsten.api.types.FatFlowProtocols;
+import net.juniper.tungsten.api.types.FirewallPolicy;
+import net.juniper.tungsten.api.types.FirewallRule;
+import net.juniper.tungsten.api.types.FirewallRuleEndpointType;
+import net.juniper.tungsten.api.types.FirewallRuleMatchTagsType;
+import net.juniper.tungsten.api.types.FirewallSequence;
+import net.juniper.tungsten.api.types.FirewallServiceGroupType;
+import net.juniper.tungsten.api.types.FirewallServiceType;
 import net.juniper.tungsten.api.types.FloatingIp;
 import net.juniper.tungsten.api.types.FloatingIpPool;
+import net.juniper.tungsten.api.types.GlobalSystemConfig;
+import net.juniper.tungsten.api.types.GlobalVrouterConfig;
 import net.juniper.tungsten.api.types.InstanceIp;
 import net.juniper.tungsten.api.types.IpamSubnetType;
 import net.juniper.tungsten.api.types.KeyValuePairs;
@@ -50,6 +63,7 @@ import net.juniper.tungsten.api.types.MatchConditionType;
 import net.juniper.tungsten.api.types.NetworkIpam;
 import net.juniper.tungsten.api.types.NetworkPolicy;
 import net.juniper.tungsten.api.types.PolicyEntriesType;
+import net.juniper.tungsten.api.types.PolicyManagement;
 import net.juniper.tungsten.api.types.PolicyRuleType;
 import net.juniper.tungsten.api.types.PortMap;
 import net.juniper.tungsten.api.types.PortMappings;
@@ -57,7 +71,11 @@ import net.juniper.tungsten.api.types.PortType;
 import net.juniper.tungsten.api.types.Project;
 import net.juniper.tungsten.api.types.SecurityGroup;
 import net.juniper.tungsten.api.types.SequenceType;
+import net.juniper.tungsten.api.types.ServiceGroup;
+import net.juniper.tungsten.api.types.SubnetListType;
 import net.juniper.tungsten.api.types.SubnetType;
+import net.juniper.tungsten.api.types.Tag;
+import net.juniper.tungsten.api.types.TagType;
 import net.juniper.tungsten.api.types.VirtualMachine;
 import net.juniper.tungsten.api.types.VirtualMachineInterface;
 import net.juniper.tungsten.api.types.VirtualNetwork;
@@ -75,6 +93,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class TungstenApi {
 
@@ -89,6 +108,9 @@ public class TungstenApi {
     public static final String TUNGSTEN_DEFAULT_DOMAIN = "default-domain";
     public static final String TUNGSTEN_DEFAULT_PROJECT = "default-project";
     public static final String TUNGSTEN_DEFAULT_IPAM = "default-network-ipam";
+    public static final String TUNGSTEN_DEFAULT_POLICY_MANAGEMENT = "default-policy-management";
+    public static final String TUNGSTEN_GLOBAL_SYSTEM_CONFIG = "default-global-system-config";
+    public static final String TUNGSTEN_GLOBAL_VROUTER_CONFIG = "default-global-vrouter-config";
 
     private String hostname;
     private String port;
@@ -187,7 +209,7 @@ public class TungstenApi {
             status.ifFailure(errorHandler);
             return (VirtualMachine) apiConnector.findByFQN(VirtualMachine.class, getFqnName(virtualMachine));
         } catch (IOException e) {
-            S_LOGGER.error("Unable to create tungsten vm " + vmUuid, e);
+            S_LOGGER.error("Unable to create Tungsten-Fabric vm " + vmUuid, e);
             return null;
         }
     }
@@ -203,7 +225,7 @@ public class TungstenApi {
             virtualMachine = (VirtualMachine) apiConnector.findById(VirtualMachine.class, virtualMachineUuid);
             project = (Project) apiConnector.findById(Project.class, projectUuid);
         } catch (IOException e) {
-            S_LOGGER.error("Failed getting the resources needed for virtual machine interface creation from tungsten");
+            S_LOGGER.error("Failed getting the resources needed for virtual machine interface creation from Tungsten-Fabric");
         }
 
         VirtualMachineInterface virtualMachineInterface = new VirtualMachineInterface();
@@ -222,7 +244,7 @@ public class TungstenApi {
             return (VirtualMachineInterface) apiConnector.findById(VirtualMachineInterface.class,
                 virtualMachineInterface.getUuid());
         } catch (IOException e) {
-            S_LOGGER.error("Failed creating virtual machine interface in tungsten");
+            S_LOGGER.error("Failed creating virtual machine interface in Tungsten-Fabric");
             return null;
         }
     }
@@ -237,7 +259,7 @@ public class TungstenApi {
             virtualMachineInterface = (VirtualMachineInterface) apiConnector.findById(VirtualMachineInterface.class,
                 vmInterfaceUuid);
         } catch (IOException e) {
-            S_LOGGER.error("Failed getting the resources needed for virtual machine interface creation from tungsten");
+            S_LOGGER.error("Failed getting the resources needed for virtual machine interface creation from Tungsten-Fabric");
             return null;
         }
 
@@ -251,7 +273,7 @@ public class TungstenApi {
             status.ifFailure(errorHandler);
             return (InstanceIp) apiConnector.findById(InstanceIp.class, instanceIp.getUuid());
         } catch (IOException e) {
-            S_LOGGER.error("Failed creating instance ip in tungsten");
+            S_LOGGER.error("Failed creating instance ip in Tungsten-Fabric");
             return null;
         }
     }
@@ -266,7 +288,7 @@ public class TungstenApi {
             virtualMachineInterface = (VirtualMachineInterface) apiConnector.findById(VirtualMachineInterface.class,
                 vmInterfaceUuid);
         } catch (IOException e) {
-            S_LOGGER.error("Failed getting the resources needed for virtual machine interface creation from tungsten");
+            S_LOGGER.error("Failed getting the resources needed for virtual machine interface creation from Tungsten-Fabric");
             return null;
         }
 
@@ -281,7 +303,7 @@ public class TungstenApi {
             status.ifFailure(errorHandler);
             return (InstanceIp) apiConnector.findById(InstanceIp.class, instanceIp.getUuid());
         } catch (IOException e) {
-            S_LOGGER.error("Failed creating instance ip in tungsten");
+            S_LOGGER.error("Failed creating instance ip in Tungsten-Fabric");
             return null;
         }
     }
@@ -292,7 +314,7 @@ public class TungstenApi {
             status.ifFailure(errorHandler);
             return status.isSuccess();
         } catch (IOException e) {
-            S_LOGGER.error("Failed deleting the network from tungsten");
+            S_LOGGER.error("Failed deleting the network from Tungsten-Fabric");
             return false;
         }
     }
@@ -310,7 +332,7 @@ public class TungstenApi {
             status.ifFailure(errorHandler);
             return status.isSuccess();
         } catch (IOException e) {
-            S_LOGGER.error("Failed deleting the virtual machine interface from tungsten");
+            S_LOGGER.error("Failed deleting the virtual machine interface from Tungsten-Fabric");
             return false;
         }
     }
@@ -324,7 +346,7 @@ public class TungstenApi {
             }
             return true;
         } catch (IOException e) {
-            S_LOGGER.error("Failed deleting the virtual machine from tungsten");
+            S_LOGGER.error("Failed deleting the virtual machine from Tungsten-Fabric");
             return false;
         }
     }
@@ -569,6 +591,13 @@ public class TungstenApi {
 
     public String getTungstenNatIp(String projectUuid, String logicalRouterUuid) {
         try {
+            // wait for service instance created
+            try {
+                TimeUnit.SECONDS.sleep(1);
+            } catch (InterruptedException e) {
+                S_LOGGER.error("can not delay for service instance create");
+            }
+
             Project project = (Project) apiConnector.findById(Project.class, projectUuid);
             List<InstanceIp> instanceIps = (List<InstanceIp>) apiConnector.list(InstanceIp.class, null);
             if (instanceIps != null) {
@@ -703,20 +732,8 @@ public class TungstenApi {
             NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.find(NetworkPolicy.class, project, name);
             if (networkPolicy == null) {
                 PolicyEntriesType policyEntriesType = new PolicyEntriesType();
-                for (TungstenRule tungstenRule : tungstenRuleList) {
-                    PolicyRuleType policyRuleType = getPolicyRuleType(tungstenRule);
-                    AddressType srcAddressType = new AddressType();
-                    srcAddressType.addSubnet(
-                        new SubnetType(tungstenRule.getSrcIpPrefix(), tungstenRule.getSrcIpPrefixLen()));
-                    AddressType dstAddressType = new AddressType();
-                    dstAddressType.addSubnet(
-                        new SubnetType(tungstenRule.getDstIpPrefix(), tungstenRule.getDstIpPrefixLen()));
-                    policyRuleType.addSrcAddresses(srcAddressType);
-                    policyRuleType.addDstAddresses(dstAddressType);
-                    policyRuleType.addSrcPorts(tungstenRule.getSrcStartPort(), tungstenRule.getSrcEndPort());
-                    policyRuleType.addDstPorts(tungstenRule.getDstStartPort(), tungstenRule.getDstEndPort());
-                    policyEntriesType.addPolicyRule(policyRuleType);
-                }
+
+                getPolicyEntriesType(tungstenRuleList, policyEntriesType);
 
                 networkPolicy = new NetworkPolicy();
                 networkPolicy.setName(name);
@@ -730,16 +747,30 @@ public class TungstenApi {
                 } else {
                     return null;
                 }
-            }
+            } else {
+                PolicyEntriesType policyEntriesType = networkPolicy.getEntries();
+                if (policyEntriesType == null) {
+                    policyEntriesType = new PolicyEntriesType();
+                    networkPolicy.setEntries(policyEntriesType);
+                }
 
-            return networkPolicy;
+                getPolicyEntriesType(tungstenRuleList, policyEntriesType);
+
+                Status status = apiConnector.update(networkPolicy);
+                status.ifFailure(errorHandler);
+                if (status.isSuccess()) {
+                    return apiConnector.findById(NetworkPolicy.class, networkPolicy.getUuid());
+                } else {
+                    return null;
+                }
+            }
         } catch (IOException e) {
             return null;
         }
     }
 
-    public boolean applyTungstenNetworkPolicy(String projectUuid, String networkPolicyName, String networkUuid,
-        boolean priority) {
+    public ApiObjectBase applyTungstenNetworkPolicy(String projectUuid, String networkPolicyName, String networkUuid,
+        int majorSequence, int minorSequence) {
         try {
             Project project = (Project) getTungstenObject(Project.class, projectUuid);
             NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.find(NetworkPolicy.class, project,
@@ -750,23 +781,53 @@ public class TungstenApi {
             if (objectReferenceList != null) {
                 for (ObjectReference<VirtualNetworkPolicyType> objectReference : objectReferenceList) {
                     if (objectReference.getUuid().equals(networkPolicy.getUuid())) {
-                        return true;
+                        return networkPolicy;
                     }
                 }
             }
 
             if (networkPolicy == null || network == null) {
-                return false;
+                return null;
             }
 
             network.addNetworkPolicy(networkPolicy,
-                new VirtualNetworkPolicyType(new SequenceType(priority ? 0 : 1, 0)));
+                new VirtualNetworkPolicyType(new SequenceType(majorSequence, minorSequence)));
             network.setPerms2(null);
             Status status = apiConnector.update(network);
             status.ifFailure(errorHandler);
-            return status.isSuccess();
+            return apiConnector.find(NetworkPolicy.class, project, networkPolicyName);
         } catch (IOException e) {
-            return false;
+            return null;
+        }
+    }
+
+    public ApiObjectBase applyTungstenNetworkPolicy(String policyUuid, String networkUuid, int majorSequence,
+        int minorSequence) {
+        try {
+            NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.findById(NetworkPolicy.class, policyUuid);
+            VirtualNetwork network = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
+
+            List<ObjectReference<VirtualNetworkPolicyType>> objectReferenceList = network.getNetworkPolicy();
+            if (objectReferenceList != null) {
+                for (ObjectReference<VirtualNetworkPolicyType> objectReference : objectReferenceList) {
+                    if (objectReference.getUuid().equals(networkPolicy.getUuid())) {
+                        return networkPolicy;
+                    }
+                }
+            }
+
+            if (networkPolicy == null || network == null) {
+                return null;
+            }
+
+            network.addNetworkPolicy(networkPolicy,
+                new VirtualNetworkPolicyType(new SequenceType(majorSequence, minorSequence)));
+            network.setPerms2(null);
+            Status status = apiConnector.update(network);
+            status.ifFailure(errorHandler);
+            return apiConnector.findById(NetworkPolicy.class, policyUuid);
+        } catch (IOException e) {
+            return null;
         }
     }
 
@@ -777,8 +838,6 @@ public class TungstenApi {
             return null;
         }
     }
-
-
 
     public ApiObjectBase createTungstenDomain(String domainName, String domainUuid) {
         try {
@@ -805,7 +864,7 @@ public class TungstenApi {
             }
             return getTungstenObject(Domain.class, tungstenDomain.getUuid());
         } catch (IOException e) {
-            throw new CloudRuntimeException("Failed creating domain resource in tungsten.");
+            throw new CloudRuntimeException("Failed creating domain resource in Tungsten-Fabric.");
         }
     }
 
@@ -833,7 +892,7 @@ public class TungstenApi {
             apiConnector.create(tungstenProject);
             return getTungstenObject(Project.class, tungstenProject.getUuid());
         } catch (IOException e) {
-            throw new CloudRuntimeException("Failed creating project resource in tungsten.");
+            throw new CloudRuntimeException("Failed creating project resource in Tungsten-Fabric.");
         }
     }
 
@@ -1296,6 +1355,810 @@ public class TungstenApi {
         }
     }
 
+    public ApiObjectBase createTungstenTagType(String uuid, String name) {
+        try {
+            TagType tagType = new TagType();
+            tagType.setUuid(uuid);
+            tagType.setName(name);
+            Status status = apiConnector.create(tagType);
+            status.ifFailure(errorHandler);
+            return apiConnector.findById(TagType.class, tagType.getUuid());
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase createTungstenTag(final String uuid, final String tagType, final String tagValue) {
+        try {
+            Tag tag = new Tag();
+            tag.setUuid(uuid);
+            tag.setName(tagType + "=" + tagValue);
+            tag.setTypeName(tagType);
+            tag.setValue(tagValue);
+            tag.setParent(new ConfigRoot());
+            Status status = apiConnector.create(tag);
+            status.ifFailure(errorHandler);
+            return apiConnector.findById(Tag.class, tag.getUuid());
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase createTungstenApplicationPolicySet(String uuid, String name) {
+        try {
+            PolicyManagement policyManagement = (PolicyManagement) apiConnector.find(PolicyManagement.class,
+                new ConfigRoot(), TUNGSTEN_DEFAULT_POLICY_MANAGEMENT);
+            if (policyManagement == null) {
+                return null;
+            }
+
+            ApplicationPolicySet applicationPolicySet = new ApplicationPolicySet();
+            applicationPolicySet.setUuid(uuid);
+            applicationPolicySet.setName(name);
+            applicationPolicySet.setParent(policyManagement);
+            Status status = apiConnector.create(applicationPolicySet);
+            status.ifFailure(errorHandler);
+            return apiConnector.findById(ApplicationPolicySet.class, applicationPolicySet.getUuid());
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase createTungstenFirewallPolicy(String uuid, String name) {
+        try {
+            PolicyManagement policyManagement = (PolicyManagement) apiConnector.find(PolicyManagement.class,
+                new ConfigRoot(), TUNGSTEN_DEFAULT_POLICY_MANAGEMENT);
+            if (policyManagement == null) {
+                return null;
+            }
+
+            FirewallPolicy firewallPolicy = new FirewallPolicy();
+            firewallPolicy.setUuid(uuid);
+            firewallPolicy.setName(name);
+            firewallPolicy.setParent(policyManagement);
+            Status status = apiConnector.create(firewallPolicy);
+            status.ifFailure(errorHandler);
+            return apiConnector.findById(FirewallPolicy.class, firewallPolicy.getUuid());
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase createTungstenFirewallRule(String uuid, String name, String action, String serviceGroupUuid,
+        String srcTagUuid, String srcAddressGroupUuid, String direction, String destTagUuid,
+        String destAddressGroupUuid, String tagTypeUuid) {
+        try {
+            PolicyManagement policyManagement = (PolicyManagement) apiConnector.find(PolicyManagement.class,
+                new ConfigRoot(), TUNGSTEN_DEFAULT_POLICY_MANAGEMENT);
+            if (policyManagement == null) {
+                return null;
+            }
+
+            ServiceGroup serviceGroup = (ServiceGroup) apiConnector.findById(ServiceGroup.class, serviceGroupUuid);
+            AddressGroup srcAddressGroup = (AddressGroup) apiConnector.findById(AddressGroup.class,
+                srcAddressGroupUuid);
+            AddressGroup destAddressGroup = (AddressGroup) apiConnector.findById(AddressGroup.class,
+                destAddressGroupUuid);
+            Tag srcTag = (Tag) apiConnector.findById(Tag.class, srcTagUuid);
+            Tag destTag = (Tag) apiConnector.findById(Tag.class, destTagUuid);
+            TagType tagType = (TagType) apiConnector.findById(TagType.class, tagTypeUuid);
+            if (serviceGroup == null) {
+                return null;
+            }
+
+            if (srcAddressGroup == null && srcTag == null) {
+                return null;
+            }
+
+            if (destAddressGroup == null && destTag == null) {
+                return null;
+            }
+
+            FirewallRule firewallRule = new FirewallRule();
+            firewallRule.setUuid(uuid);
+            firewallRule.setName(name);
+            firewallRule.setParent(policyManagement);
+            firewallRule.setActionList(new ActionListType(action));
+            firewallRule.setServiceGroup(serviceGroup);
+            FirewallRuleEndpointType srcFirewallRuleEndpointType = new FirewallRuleEndpointType();
+            if (srcTag != null) {
+                srcFirewallRuleEndpointType.addTags(srcTag.getName());
+            } else {
+                String srcAddressGroupName = StringUtils.join(srcAddressGroup.getQualifiedName(), ":");
+                srcFirewallRuleEndpointType.setAddressGroup(srcAddressGroupName);
+            }
+
+            FirewallRuleEndpointType destFirewallRuleEndpointType = new FirewallRuleEndpointType();
+            if (destTag != null) {
+                destFirewallRuleEndpointType.addTags(destTag.getName());
+            } else {
+                String destAddressGroupName = StringUtils.join(destAddressGroup.getQualifiedName(), ":");
+                destFirewallRuleEndpointType.setAddressGroup(destAddressGroupName);
+            }
+
+            firewallRule.setEndpoint1(srcFirewallRuleEndpointType);
+            firewallRule.setDirection(direction);
+            firewallRule.setEndpoint2(destFirewallRuleEndpointType);
+            FirewallRuleMatchTagsType firewallRuleMatchTagsType = new FirewallRuleMatchTagsType();
+            if (tagType != null) {
+                firewallRuleMatchTagsType.addTag(tagType.getName());
+                firewallRule.setMatchTags(firewallRuleMatchTagsType);
+            }
+
+            Status status = apiConnector.create(firewallRule);
+            status.ifFailure(errorHandler);
+            return apiConnector.findById(FirewallRule.class, firewallRule.getUuid());
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase createTungstenServiceGroup(String uuid, String name, String protocol, int startPort,
+        int endPort) {
+        try {
+            PolicyManagement policyManagement = (PolicyManagement) apiConnector.find(PolicyManagement.class,
+                new ConfigRoot(), TUNGSTEN_DEFAULT_POLICY_MANAGEMENT);
+            if (policyManagement == null) {
+                return null;
+            }
+
+            ServiceGroup serviceGroup = new ServiceGroup();
+            serviceGroup.setUuid(uuid);
+            serviceGroup.setName(name);
+            serviceGroup.setParent(policyManagement);
+            FirewallServiceType firewallServiceType = new FirewallServiceType();
+            firewallServiceType.setProtocol(protocol);
+            firewallServiceType.setSrcPorts(new PortType(0));
+            firewallServiceType.setDstPorts(new PortType(startPort, endPort));
+            FirewallServiceGroupType firewallServiceGroupType = new FirewallServiceGroupType();
+            firewallServiceGroupType.addFirewallService(firewallServiceType);
+            serviceGroup.setFirewallServiceList(firewallServiceGroupType);
+            Status status = apiConnector.create(serviceGroup);
+            status.ifFailure(errorHandler);
+            return apiConnector.findById(ServiceGroup.class, serviceGroup.getUuid());
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase createTungstenAddressGroup(String uuid, String name, String ipPrefix, int ipPrefixLen) {
+        try {
+            PolicyManagement policyManagement = (PolicyManagement) apiConnector.find(PolicyManagement.class,
+                new ConfigRoot(), TUNGSTEN_DEFAULT_POLICY_MANAGEMENT);
+            if (policyManagement == null) {
+                return null;
+            }
+
+            AddressGroup addressGroup = new AddressGroup();
+            addressGroup.setUuid(uuid);
+            addressGroup.setName(name);
+            SubnetListType subnetListType = new SubnetListType();
+            subnetListType.addSubnet(ipPrefix, ipPrefixLen);
+            addressGroup.setPrefix(subnetListType);
+            addressGroup.setParent(policyManagement);
+            Status status = apiConnector.create(addressGroup);
+            status.ifFailure(errorHandler);
+            return apiConnector.findById(AddressGroup.class, addressGroup.getUuid());
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public boolean applyTungstenNetworkTag(List<String> networkUuids, String tagUuid) {
+        try {
+            boolean result = true;
+            for (String networkUuid : networkUuids) {
+                Tag tag = (Tag) apiConnector.findById(Tag.class, tagUuid);
+                VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class,
+                    networkUuid);
+                virtualNetwork.addTag(tag);
+                Status status = apiConnector.update(virtualNetwork);
+                status.ifFailure(errorHandler);
+                result = result && status.isSuccess();
+            }
+            return result;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean applyTungstenVmTag(List<String> vmUuids, String tagUuid) {
+        try {
+            boolean result = true;
+            Tag tag = (Tag) apiConnector.findById(Tag.class, tagUuid);
+            for (String vmUuid : vmUuids) {
+                VirtualMachine virtualMachine = (VirtualMachine) apiConnector.findById(VirtualMachine.class, vmUuid);
+                virtualMachine.addTag(tag);
+                Status status = apiConnector.update(virtualMachine);
+                status.ifFailure(errorHandler);
+                result = result && status.isSuccess();
+            }
+            return result;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean applyTungstenNicTag(List<String> nicUuids, String tagUuid) {
+        try {
+            boolean result = true;
+            Tag tag = (Tag) apiConnector.findById(Tag.class, tagUuid);
+            for (String nicUuid : nicUuids) {
+                VirtualMachineInterface virtualMachineInterface = (VirtualMachineInterface) apiConnector.findById(
+                    VirtualMachineInterface.class, nicUuid);
+                virtualMachineInterface.addTag(tag);
+                Status status = apiConnector.update(virtualMachineInterface);
+                status.ifFailure(errorHandler);
+                result = result && status.isSuccess();
+            }
+            return result;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean applyTungstenPolicyTag(String policyUuid, String tagUuid) {
+        try {
+            Tag tag = (Tag) apiConnector.findById(Tag.class, tagUuid);
+            NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.findById(NetworkPolicy.class, policyUuid);
+            networkPolicy.addTag(tag);
+            Status status = apiConnector.update(networkPolicy);
+            status.ifFailure(errorHandler);
+            return status.isSuccess();
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public ApiObjectBase removeTungstenTag(List<String> networkUuids, List<String> vmUuids, List<String> nicUuids,
+        String policyUuid, String tagUuid) {
+        try {
+            Tag tag = (Tag) getTungstenObject(Tag.class, tagUuid);
+            if (tag == null) {
+                return null;
+            }
+
+            if (networkUuids != null) {
+                for (String networkUuid : networkUuids) {
+                    VirtualNetwork virtualNetwork = (VirtualNetwork) getTungstenObject(VirtualNetwork.class,
+                        networkUuid);
+                    if (virtualNetwork != null) {
+                        virtualNetwork.removeTag(tag);
+                        Status status = apiConnector.update(virtualNetwork);
+                        status.ifFailure(errorHandler);
+                    }
+                }
+            }
+
+            if (vmUuids != null) {
+                for (String vmUuid : vmUuids) {
+                    VirtualMachine virtualMachine = (VirtualMachine) getTungstenObject(VirtualMachine.class, vmUuid);
+                    if (virtualMachine != null) {
+                        virtualMachine.removeTag(tag);
+                        Status status = apiConnector.update(virtualMachine);
+                        status.ifFailure(errorHandler);
+                    }
+                }
+            }
+
+            if (nicUuids != null) {
+                for (String nicUuid : nicUuids) {
+                    VirtualMachineInterface virtualMachineInterface = (VirtualMachineInterface) getTungstenObject(
+                        VirtualMachineInterface.class, nicUuid);
+                    if (tag != null && virtualMachineInterface != null) {
+                        virtualMachineInterface.removeTag(tag);
+                        Status status = apiConnector.update(virtualMachineInterface);
+                        status.ifFailure(errorHandler);
+                    }
+                }
+            }
+
+            if (policyUuid != null) {
+                NetworkPolicy networkPolicy = (NetworkPolicy) getTungstenObject(NetworkPolicy.class, policyUuid);
+                if (tag != null && networkPolicy != null) {
+                    networkPolicy.removeTag(tag);
+                    Status status = apiConnector.update(networkPolicy);
+                    status.ifFailure(errorHandler);
+                }
+            }
+
+            return apiConnector.findById(Tag.class, tagUuid);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase removeTungstenPolicy(String networkUuid, String policyUuid) {
+        try {
+            NetworkPolicy networkPolicy = (NetworkPolicy) getTungstenObject(NetworkPolicy.class, policyUuid);
+            VirtualNetwork virtualNetwork = (VirtualNetwork) getTungstenObject(VirtualNetwork.class, networkUuid);
+            if (networkPolicy != null && virtualNetwork != null) {
+                virtualNetwork.removeNetworkPolicy(networkPolicy, new VirtualNetworkPolicyType());
+                Status status = apiConnector.update(virtualNetwork);
+                status.ifFailure(errorHandler);
+                return apiConnector.findById(NetworkPolicy.class, policyUuid);
+            }
+            return null;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase createTungstenPolicy(final String uuid, final String name, final String projectUuid) {
+        try {
+            Project project = (Project) getTungstenObject(Project.class, projectUuid);
+            NetworkPolicy networkPolicy = new NetworkPolicy();
+            networkPolicy.setUuid(uuid);
+            networkPolicy.setName(name);
+            networkPolicy.setParent(project);
+            Status status = apiConnector.create(networkPolicy);
+            status.ifFailure(errorHandler);
+            return apiConnector.findById(NetworkPolicy.class, networkPolicy.getUuid());
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase addTungstenPolicyRule(final String uuid, final String policyUuid, final String action,
+        final String protocol, final String direction, final String srcNetwork, final String srcIpPrefix,
+        final int srcIpPrefixLen, final int srcStartPort, final int srcEndPort, final String destNetwork,
+        final String destIpPrefix, final int destIpPrefixLen, final int destStartPort, final int destEndPort) {
+        try {
+            NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.findById(NetworkPolicy.class, policyUuid);
+            PolicyEntriesType policyEntriesType = networkPolicy.getEntries();
+            if (policyEntriesType == null) {
+                policyEntriesType = new PolicyEntriesType();
+                networkPolicy.setEntries(policyEntriesType);
+            }
+
+            PolicyRuleType policyRuleType = new PolicyRuleType();
+            policyRuleType.setActionList(new ActionListType(action));
+            policyRuleType.setProtocol(protocol);
+            policyRuleType.setRuleUuid(uuid);
+            policyRuleType.setDirection(direction);
+
+            AddressType srcAddressType = new AddressType();
+            if (srcNetwork != null) {
+                srcAddressType.setVirtualNetwork(srcNetwork);
+            }
+
+            if (srcIpPrefix != null) {
+                srcAddressType.addSubnet(new SubnetType(srcIpPrefix, srcIpPrefixLen));
+            }
+
+            AddressType dstAddressType = new AddressType();
+            if (destNetwork != null) {
+                dstAddressType.setVirtualNetwork(destNetwork);
+            }
+
+            if (destIpPrefix != null) {
+                dstAddressType.addSubnet(new SubnetType(destIpPrefix, destIpPrefixLen));
+            }
+            policyRuleType.addSrcAddresses(srcAddressType);
+            policyRuleType.addDstAddresses(dstAddressType);
+            policyRuleType.addSrcPorts(srcStartPort, srcEndPort);
+            policyRuleType.addDstPorts(destStartPort, destEndPort);
+
+            policyEntriesType.addPolicyRule(policyRuleType);
+            Status status = apiConnector.update(networkPolicy);
+            status.ifFailure(errorHandler);
+            return apiConnector.findById(NetworkPolicy.class, policyUuid);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase addTungstenFirewallPolicy(final String applicationPolicySetUuid,
+        final String firewallPolicyUuid, final int sequence, final String tagUuid) {
+        try {
+            ApplicationPolicySet applicationPolicySet = (ApplicationPolicySet) apiConnector.findById(
+                ApplicationPolicySet.class, applicationPolicySetUuid);
+            FirewallPolicy firewallPolicy = (FirewallPolicy) apiConnector.findById(FirewallPolicy.class,
+                firewallPolicyUuid);
+            Tag tag = (Tag) apiConnector.findById(Tag.class, tagUuid);
+            if (applicationPolicySet == null || firewallPolicy == null || tag == null) {
+                return null;
+            }
+
+            applicationPolicySet.setFirewallPolicy(firewallPolicy, new FirewallSequence(String.valueOf(sequence)));
+            applicationPolicySet.setTag(tag);
+
+            Status status = apiConnector.update(applicationPolicySet);
+            status.ifFailure(errorHandler);
+            return apiConnector.findById(ApplicationPolicySet.class, applicationPolicySetUuid);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase addTungstenFirewallRule(final String firewallPolicyUuid, final String firewallRuleUuid,
+        final int sequence) {
+        try {
+            FirewallPolicy firewallPolicy = (FirewallPolicy) apiConnector.findById(FirewallPolicy.class,
+                firewallPolicyUuid);
+            FirewallRule firewallRule = (FirewallRule) apiConnector.findById(FirewallRule.class, firewallRuleUuid);
+            if (firewallPolicy == null || firewallRule == null) {
+                return null;
+            }
+            firewallPolicy.addFirewallRule(firewallRule, new FirewallSequence(String.valueOf(sequence)));
+            Status status = apiConnector.update(firewallPolicy);
+            status.ifFailure(errorHandler);
+            return apiConnector.findById(FirewallPolicy.class, firewallPolicyUuid);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase listTungstenPolicyRule(final String policyUuid) {
+        try {
+            NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.findById(NetworkPolicy.class, policyUuid);
+            return networkPolicy;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public List<? extends ApiObjectBase> listTungstenAddressPolicy(String projectFqn, String policyName) {
+        Project project = (Project) getTungstenProjectByFqn(projectFqn);
+        List<NetworkPolicy> networkPolicyList = new ArrayList<>();
+        NetworkPolicy networkPolicy = (NetworkPolicy) getTungstenObjectByName(NetworkPolicy.class,
+            project.getQualifiedName(), policyName);
+
+        if (networkPolicy != null) {
+            networkPolicyList.add(networkPolicy);
+        }
+
+        return networkPolicyList;
+    }
+
+    public List<? extends ApiObjectBase> listTungstenPolicy(String projectFqn, String policyUuid) {
+        Project project = (Project) getTungstenProjectByFqn(projectFqn);
+        return getTungstenListObject(NetworkPolicy.class, project, policyUuid);
+    }
+
+    public List<? extends ApiObjectBase> listTungstenNetwork(String projectFqn, String networkUuid) {
+        Project project = (Project) getTungstenProjectByFqn(projectFqn);
+        return getTungstenListObject(VirtualNetwork.class, project, networkUuid);
+    }
+
+    public List<? extends ApiObjectBase> listTungstenVm(String projectFqn, String vmUuid) {
+        Project project = (Project) getTungstenProjectByFqn(projectFqn);
+        return getTungstenListObject(VirtualMachine.class, project, vmUuid);
+    }
+
+    public List<? extends ApiObjectBase> listTungstenNic(String projectFqn, String nicUuid) {
+        Project project = (Project) getTungstenProjectByFqn(projectFqn);
+        return getTungstenListObject(VirtualMachineInterface.class, project, nicUuid);
+    }
+
+    public List<? extends ApiObjectBase> listTungstenTag(String networkUuid, String vmUuid, String nicUuid,
+        String policyUuid, String tagUuid) {
+        try {
+            List<Tag> tagList = new ArrayList<>();
+
+            if (networkUuid != null) {
+                VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class,
+                    networkUuid);
+                tagList = (List<Tag>) getTungstenListObject(Tag.class, virtualNetwork.getTag());
+            } else if (vmUuid != null) {
+                VirtualMachine virtualMachine = (VirtualMachine) apiConnector.findById(VirtualMachine.class, vmUuid);
+                tagList = (List<Tag>) getTungstenListObject(Tag.class, virtualMachine.getTag());
+            } else if (nicUuid != null) {
+                VirtualMachineInterface virtualMachineInterface = (VirtualMachineInterface) apiConnector.findById(
+                    VirtualMachineInterface.class, nicUuid);
+                tagList = (List<Tag>) getTungstenListObject(Tag.class, virtualMachineInterface.getTag());
+            } else if (policyUuid != null) {
+                NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.findById(NetworkPolicy.class, policyUuid);
+                tagList = (List<Tag>) getTungstenListObject(Tag.class, networkPolicy.getTag());
+            } else {
+                tagList = (List<Tag>) getTungstenListObject(Tag.class);
+            }
+
+            return getObjectList(tagList, tagUuid);
+        } catch (IOException e) {
+            return new ArrayList<>();
+        }
+    }
+
+    public List<? extends ApiObjectBase> listTungstenTagType(String tagTypeUuid) {
+        try {
+            List<TagType> tagTypeList = new ArrayList<>();
+            if (tagTypeUuid != null) {
+                TagType tagType = (TagType) apiConnector.findById(TagType.class, tagTypeUuid);
+                if (tagType != null) {
+                    tagTypeList.add(tagType);
+                }
+            } else {
+                List<TagType> list = (List<TagType>) apiConnector.list(TagType.class, null);
+                if (list != null) {
+                    for (TagType tagType : list) {
+                        tagTypeList.add((TagType) apiConnector.findById(TagType.class, tagType.getUuid()));
+                    }
+                }
+            }
+            return tagTypeList;
+        } catch (IOException e) {
+            return new ArrayList<>();
+        }
+    }
+
+    public List<? extends ApiObjectBase> listTungstenNetworkPolicy(String networkUuid, String policyUuid) {
+        try {
+            VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
+            List<NetworkPolicy> networkPolicyList = new ArrayList<>();
+            if (virtualNetwork == null)
+                return networkPolicyList;
+
+            List<ObjectReference<VirtualNetworkPolicyType>> objectReferenceList = virtualNetwork.getNetworkPolicy();
+            if (objectReferenceList != null) {
+                for (ObjectReference<VirtualNetworkPolicyType> objectReference : objectReferenceList) {
+                    if (policyUuid == null) {
+                        NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.findById(NetworkPolicy.class,
+                            objectReference.getUuid());
+                        networkPolicyList.add(networkPolicy);
+                    } else {
+                        if (objectReference.getUuid().equals(policyUuid)) {
+                            NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.findById(NetworkPolicy.class,
+                                objectReference.getUuid());
+                            networkPolicyList.add(networkPolicy);
+                        }
+                    }
+                }
+            }
+
+            return networkPolicyList;
+        } catch (IOException e) {
+            return new ArrayList<>();
+        }
+    }
+
+    public List<? extends ApiObjectBase> listTungstenApplicationPolicySet(String applicationPolicySetUuid) {
+        try {
+            List<ApplicationPolicySet> applicationPolicySetList = new ArrayList<>();
+            if (applicationPolicySetUuid != null) {
+                ApplicationPolicySet applicationPolicySet = (ApplicationPolicySet) apiConnector.findById(
+                    ApplicationPolicySet.class, applicationPolicySetUuid);
+                if (applicationPolicySet != null) {
+                    applicationPolicySetList.add(applicationPolicySet);
+                }
+            } else {
+                List<ApplicationPolicySet> list = (List<ApplicationPolicySet>) apiConnector.list(
+                    ApplicationPolicySet.class, null);
+                if (list != null) {
+                    for (ApplicationPolicySet applicationPolicySet : list) {
+                        List<String> qualifiedName = applicationPolicySet.getQualifiedName();
+                        if (qualifiedName.get(0).equals(TUNGSTEN_DEFAULT_POLICY_MANAGEMENT)) {
+                            applicationPolicySetList.add(
+                                (ApplicationPolicySet) apiConnector.findById(ApplicationPolicySet.class,
+                                    applicationPolicySet.getUuid()));
+                        }
+                    }
+                }
+            }
+            return applicationPolicySetList;
+        } catch (IOException e) {
+            return new ArrayList<>();
+        }
+    }
+
+    public List<? extends ApiObjectBase> listTungstenFirewallPolicy(String applicationPolicySetUuid,
+        String firewallPolicyUuid) {
+        try {
+            List<FirewallPolicy> firewallPolicyList = new ArrayList<>();
+            if (applicationPolicySetUuid != null) {
+                ApplicationPolicySet applicationPolicySet = (ApplicationPolicySet) apiConnector.findById(
+                    ApplicationPolicySet.class, applicationPolicySetUuid);
+                List<ObjectReference<FirewallSequence>> objectReferenceList = applicationPolicySet.getFirewallPolicy();
+                if (objectReferenceList != null) {
+                    for (ObjectReference<FirewallSequence> objectReference : objectReferenceList) {
+                        FirewallPolicy firewallPolicy = (FirewallPolicy) apiConnector.findById(FirewallPolicy.class,
+                            objectReference.getUuid());
+                        if (firewallPolicyUuid != null) {
+                            if (objectReference.getUuid().equals(firewallPolicyUuid)) {
+                                firewallPolicyList.add(firewallPolicy);
+                            }
+                        } else {
+                            firewallPolicyList.add(firewallPolicy);
+                        }
+                    }
+                }
+            } else {
+                List<FirewallPolicy> firewallPolicies = (List<FirewallPolicy>) apiConnector.list(FirewallPolicy.class,
+                    null);
+                if (firewallPolicies != null) {
+                    for (FirewallPolicy firewallPolicy : firewallPolicies) {
+                        if (firewallPolicyUuid != null) {
+                            if (firewallPolicy.getUuid().equals(firewallPolicyUuid)) {
+                                firewallPolicyList.add(
+                                    (FirewallPolicy) apiConnector.findById(FirewallPolicy.class, firewallPolicyUuid));
+                            }
+                        } else {
+                            String parentName = firewallPolicy.getQualifiedName().get(0);
+                            if (parentName.equals(TUNGSTEN_DEFAULT_POLICY_MANAGEMENT)) {
+                                firewallPolicyList.add((FirewallPolicy) apiConnector.findById(FirewallPolicy.class,
+                                    firewallPolicy.getUuid()));
+                            }
+                        }
+                    }
+                }
+            }
+            return firewallPolicyList;
+        } catch (IOException e) {
+            return new ArrayList<>();
+        }
+    }
+
+    public List<? extends ApiObjectBase> listTungstenFirewallRule(String firewallPolicyUuid, String firewallRuleUuid) {
+        try {
+            List<FirewallRule> firewallRuleList = new ArrayList<>();
+            if (firewallPolicyUuid != null) {
+                FirewallPolicy firewallPolicy = (FirewallPolicy) apiConnector.findById(FirewallPolicy.class,
+                    firewallPolicyUuid);
+                List<ObjectReference<FirewallSequence>> objectReferenceList = firewallPolicy.getFirewallRule();
+                if (objectReferenceList != null) {
+                    for (ObjectReference<FirewallSequence> objectReference : objectReferenceList) {
+                        FirewallRule firewallRule = (FirewallRule) apiConnector.findById(FirewallPolicy.class,
+                            objectReference.getUuid());
+                        if (firewallRuleUuid != null) {
+                            if (objectReference.getUuid().equals(firewallRuleUuid)) {
+                                firewallRuleList.add(firewallRule);
+                            }
+                        } else {
+                            firewallRuleList.add(firewallRule);
+                        }
+                    }
+                }
+            } else {
+                List<FirewallRule> firewallRules = (List<FirewallRule>) apiConnector.list(FirewallRule.class, null);
+                if (firewallRules != null) {
+                    for (FirewallRule firewallRule : firewallRules) {
+                        if (firewallRuleUuid != null) {
+                            if (firewallRule.getUuid().equals(firewallRuleUuid)) {
+                                firewallRuleList.add(
+                                    (FirewallRule) apiConnector.findById(FirewallRule.class, firewallRuleUuid));
+                            }
+                        } else {
+                            String parentName = firewallRule.getQualifiedName().get(0);
+                            if (parentName.equals(TUNGSTEN_DEFAULT_POLICY_MANAGEMENT)) {
+                                firewallRuleList.add(
+                                    (FirewallRule) apiConnector.findById(FirewallRule.class, firewallRule.getUuid()));
+                            }
+                        }
+                    }
+                }
+            }
+            return firewallRuleList;
+        } catch (IOException e) {
+            return new ArrayList<>();
+        }
+    }
+
+    public List<? extends ApiObjectBase> listTungstenServiceGroup(String serviceGroupUuid) {
+        try {
+            List<ServiceGroup> serviceGroupList = new ArrayList<>();
+            List<ServiceGroup> serviceGroups = (List<ServiceGroup>) apiConnector.list(ServiceGroup.class, null);
+            if (serviceGroups != null) {
+                for (ServiceGroup serviceGroup : serviceGroups) {
+                    if (serviceGroupUuid != null) {
+                        if (serviceGroup.getUuid().equals(serviceGroupUuid)) {
+                            serviceGroupList.add(
+                                (ServiceGroup) apiConnector.findById(ServiceGroup.class, serviceGroupUuid));
+                        }
+                    } else {
+                        String parentName = serviceGroup.getQualifiedName().get(0);
+                        if (parentName.equals(TUNGSTEN_DEFAULT_POLICY_MANAGEMENT)) {
+                            serviceGroupList.add(
+                                (ServiceGroup) apiConnector.findById(ServiceGroup.class, serviceGroup.getUuid()));
+                        }
+                    }
+                }
+            }
+            return serviceGroupList;
+        } catch (IOException e) {
+            return new ArrayList<>();
+        }
+    }
+
+    public List<? extends ApiObjectBase> listTungstenAddressGroup(String addressGroupUuid) {
+        try {
+            List<AddressGroup> addressGroupList = new ArrayList<>();
+            List<AddressGroup> addressGroups = (List<AddressGroup>) apiConnector.list(AddressGroup.class, null);
+            if (addressGroups != null) {
+                for (AddressGroup addressGroup : addressGroups) {
+                    if (addressGroupUuid != null) {
+                        if (addressGroup.getUuid().equals(addressGroupUuid)) {
+                            addressGroupList.add(
+                                (AddressGroup) apiConnector.findById(AddressGroup.class, addressGroupUuid));
+                        }
+                    } else {
+                        String parentName = addressGroup.getQualifiedName().get(0);
+                        if (parentName.equals(TUNGSTEN_DEFAULT_POLICY_MANAGEMENT)) {
+                            addressGroupList.add(
+                                (AddressGroup) apiConnector.findById(AddressGroup.class, addressGroup.getUuid()));
+                        }
+                    }
+                }
+            }
+            return addressGroupList;
+        } catch (IOException e) {
+            return new ArrayList<>();
+        }
+    }
+
+    public ApiObjectBase removeTungstenNetworkPolicyRule(String policyUuid, String ruleUuid) {
+        try {
+            NetworkPolicy networkPolicy = (NetworkPolicy) apiConnector.findById(NetworkPolicy.class, policyUuid);
+            PolicyEntriesType policyEntriesType = networkPolicy.getEntries();
+            List<PolicyRuleType> policyRuleTypeList = policyEntriesType.getPolicyRule();
+            PolicyRuleType removePolicyRuleType = null;
+            for (PolicyRuleType policyRuleType : policyRuleTypeList) {
+                if (policyRuleType.getRuleUuid().equals(ruleUuid)) {
+                    removePolicyRuleType = policyRuleType;
+                }
+            }
+            policyRuleTypeList.remove(removePolicyRuleType);
+            Status status = apiConnector.update(networkPolicy);
+            status.ifFailure(errorHandler);
+            return apiConnector.findById(NetworkPolicy.class, policyUuid);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase removeTungstenFirewallPolicy(String applicationPolicySetUuid, String firewallPolicyUuid) {
+        try {
+            ApplicationPolicySet applicationPolicySet = (ApplicationPolicySet) apiConnector.findById(
+                ApplicationPolicySet.class, applicationPolicySetUuid);
+            FirewallPolicy firewallPolicy = (FirewallPolicy) apiConnector.findById(FirewallPolicy.class,
+                firewallPolicyUuid);
+            if (applicationPolicySet == null || firewallPolicy == null) {
+                return null;
+            }
+            applicationPolicySet.removeFirewallPolicy(firewallPolicy, new FirewallSequence());
+            applicationPolicySet.clearTag();
+            Status status = apiConnector.update(applicationPolicySet);
+            status.ifFailure(errorHandler);
+            return apiConnector.findById(ApplicationPolicySet.class, applicationPolicySetUuid);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase removeTungstenFirewallRule(String firewallPolicyUuid, String firewallRuleUuid) {
+        try {
+            FirewallPolicy firewallPolicy = (FirewallPolicy) apiConnector.findById(FirewallPolicy.class,
+                firewallPolicyUuid);
+            FirewallRule firewallRule = (FirewallRule) apiConnector.findById(FirewallRule.class, firewallRuleUuid);
+            if (firewallPolicy == null || firewallRule == null) {
+                return null;
+            }
+            firewallPolicy.removeFirewallRule(firewallRule, new FirewallSequence());
+            Status status = apiConnector.update(firewallPolicy);
+            status.ifFailure(errorHandler);
+            return apiConnector.findById(FirewallPolicy.class, firewallPolicyUuid);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public ApiObjectBase updateTungstenVrouterConfig(String forwardingMode) {
+        try {
+            GlobalSystemConfig globalSystemConfig = (GlobalSystemConfig) apiConnector.find(GlobalSystemConfig.class,
+                null, TUNGSTEN_GLOBAL_SYSTEM_CONFIG);
+            GlobalVrouterConfig globalVrouterConfig = (GlobalVrouterConfig) apiConnector.find(GlobalVrouterConfig.class,
+                globalSystemConfig, TUNGSTEN_GLOBAL_VROUTER_CONFIG);
+            if (globalVrouterConfig == null) {
+                return null;
+            }
+            globalVrouterConfig.setForwardingMode(forwardingMode);
+            Status status = apiConnector.update(globalVrouterConfig);
+            status.ifFailure(errorHandler);
+            return apiConnector.findById(GlobalVrouterConfig.class, globalVrouterConfig.getUuid());
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
     public boolean deleteTungstenObject(ApiObjectBase apiObjectBase) {
         try {
             Status status = apiConnector.delete(apiObjectBase);
@@ -1306,14 +2169,18 @@ public class TungstenApi {
         }
     }
 
-    public List<? extends ApiObjectBase> getTungstenListObject(Class<? extends ApiObjectBase> cls,
-        ApiObjectBase parent) {
+    public List<? extends ApiObjectBase> getTungstenListObject(Class<? extends ApiObjectBase> cls, ApiObjectBase parent,
+        String uuid) {
         try {
             List resultList = new ArrayList();
-            List<? extends ApiObjectBase> list = apiConnector.list(cls, parent.getQualifiedName());
-            if (list != null) {
-                for (ApiObjectBase object : list) {
-                    resultList.add(apiConnector.findById(object.getClass(), object.getUuid()));
+            if (uuid != null) {
+                resultList.add(apiConnector.findById(cls, uuid));
+            } else {
+                List<? extends ApiObjectBase> list = apiConnector.list(cls, parent.getQualifiedName());
+                if (list != null) {
+                    for (ApiObjectBase object : list) {
+                        resultList.add(apiConnector.findById(object.getClass(), object.getUuid()));
+                    }
                 }
             }
             return resultList;
@@ -1345,13 +2212,63 @@ public class TungstenApi {
 
     private PolicyRuleType getPolicyRuleType(TungstenRule tungstenRule) {
         PolicyRuleType policyRuleType = new PolicyRuleType();
-        if (tungstenRule.getRuleId() != null) {
-            policyRuleType.setRuleUuid(tungstenRule.getRuleId());
+        if (tungstenRule.getUuid() != null) {
+            policyRuleType.setRuleUuid(tungstenRule.getUuid());
         }
         policyRuleType.setActionList(new ActionListType(tungstenRule.getAction()));
         policyRuleType.setDirection(tungstenRule.getDirection());
         policyRuleType.setProtocol(tungstenRule.getProtocol());
         return policyRuleType;
+    }
+
+    private void getPolicyEntriesType(List<TungstenRule> tungstenRuleList, PolicyEntriesType policyEntriesType) {
+        for (TungstenRule tungstenRule : tungstenRuleList) {
+            PolicyRuleType policyRuleType = getPolicyRuleType(tungstenRule);
+            AddressType srcAddressType = new AddressType();
+            AddressType dstAddressType = new AddressType();
+            String srcIpPrefix = tungstenRule.getSrcIpPrefix();
+            int srcIpPrefixLen = tungstenRule.getSrcIpPrefixLen();
+            String dstIpPrefix = tungstenRule.getDstIpPrefix();
+            int dstIpPrefixLen = tungstenRule.getDstIpPrefixLen();
+            String srcNetwork = tungstenRule.getSrcNetwork();
+            String dstNetwork = tungstenRule.getDstNetwork();
+
+            if (srcNetwork == null || srcNetwork.isEmpty() || srcNetwork.isBlank()) {
+                srcNetwork = TungstenUtils.ANY;
+            }
+
+            if (dstNetwork == null || dstNetwork.isEmpty() || dstNetwork.isBlank()) {
+                dstNetwork = TungstenUtils.ANY;
+            }
+
+            if (srcIpPrefix == null || srcIpPrefix.isEmpty() || srcIpPrefix.isBlank()) {
+                srcIpPrefix = TungstenUtils.ALL_IP4_PREFIX;
+                srcIpPrefixLen = 0;
+            }
+
+            if (dstIpPrefix == null || dstIpPrefix.isEmpty() || dstIpPrefix.isBlank()) {
+                dstIpPrefix = TungstenUtils.ALL_IP4_PREFIX;
+                dstIpPrefixLen = 0;
+            }
+
+            if (!srcNetwork.equals(TungstenUtils.ANY)) {
+                srcAddressType.setVirtualNetwork(srcNetwork);
+            } else {
+                srcAddressType.setSubnet(new SubnetType(srcIpPrefix, srcIpPrefixLen));
+            }
+
+            if (!dstNetwork.equals(TungstenUtils.ANY)) {
+                dstAddressType.setVirtualNetwork(dstNetwork);
+            } else {
+                dstAddressType.setSubnet(new SubnetType(dstIpPrefix, dstIpPrefixLen));
+            }
+
+            policyRuleType.addSrcAddresses(srcAddressType);
+            policyRuleType.addDstAddresses(dstAddressType);
+            policyRuleType.addSrcPorts(tungstenRule.getSrcStartPort(), tungstenRule.getSrcEndPort());
+            policyRuleType.addDstPorts(tungstenRule.getDstStartPort(), tungstenRule.getDstEndPort());
+            policyEntriesType.addPolicyRule(policyRuleType);
+        }
     }
 
     public String getSubnetUuid(String networkUuid) {
@@ -1377,10 +2294,11 @@ public class TungstenApi {
     }
 
     public ApiObjectBase createTungstenSecurityGroup(String securityGroupUuid, String securityGroupName,
-                                                     String securityGroupDescription, String projectFqn) {
+        String securityGroupDescription, String projectFqn) {
         try {
-            SecurityGroup tungstenSecurityGroup = (SecurityGroup) apiConnector.findById(SecurityGroup.class, securityGroupUuid);
-            if(tungstenSecurityGroup != null) {
+            SecurityGroup tungstenSecurityGroup = (SecurityGroup) apiConnector.findById(SecurityGroup.class,
+                securityGroupUuid);
+            if (tungstenSecurityGroup != null) {
                 return tungstenSecurityGroup;
             }
             Project project = (Project) getTungstenProjectByFqn(projectFqn);
@@ -1403,7 +2321,8 @@ public class TungstenApi {
 
     public boolean deleteTungstenSecurityGroup(String tungstenSecurityGroupUuid) {
         try {
-            SecurityGroup securityGroup = (SecurityGroup) getTungstenObject(SecurityGroup.class, tungstenSecurityGroupUuid);
+            SecurityGroup securityGroup = (SecurityGroup) getTungstenObject(SecurityGroup.class,
+                tungstenSecurityGroupUuid);
             if (securityGroup != null) {
                 Status status = apiConnector.delete(SecurityGroup.class, tungstenSecurityGroupUuid);
                 status.ifFailure(errorHandler);
@@ -1416,20 +2335,22 @@ public class TungstenApi {
     }
 
     public boolean addTungstenSecurityGroupRule(String tungstenSecurityGroupUuid, String securityGroupRuleUuid,
-                                                String securityGroupRuleType, int startPort, int endPort,
-                                                String cidr, String ipPrefix, int ipPrefixLen, String protocol) {
+        String securityGroupRuleType, int startPort, int endPort, String cidr, String ipPrefix, int ipPrefixLen,
+        String protocol) {
         try {
-            SecurityGroup securityGroup = (SecurityGroup) getTungstenObject(SecurityGroup.class, tungstenSecurityGroupUuid);
+            SecurityGroup securityGroup = (SecurityGroup) getTungstenObject(SecurityGroup.class,
+                tungstenSecurityGroupUuid);
             if (securityGroup == null) {
                 return false;
             }
             for (ObjectReference<ApiPropertyBase> accessControl : securityGroup.getAccessControlLists()) {
                 AccessControlList accessControlList = (AccessControlList) getTungstenObject(AccessControlList.class,
-                        accessControl.getUuid());
+                    accessControl.getUuid());
                 if (accessControlList.getName().equals(TungstenUtils.getTungstenAccessControl(securityGroupRuleType))) {
-                    AclRuleType aclRuleType = createAclRuleType(securityGroupRuleUuid, securityGroupRuleType,
-                            startPort, endPort, cidr, ipPrefix, ipPrefixLen, protocol);
-                    PolicyRuleType policyRuleType = createPolicyRuleType(aclRuleType.getMatchCondition(), securityGroupRuleUuid);
+                    AclRuleType aclRuleType = createAclRuleType(securityGroupRuleUuid, securityGroupRuleType, startPort,
+                        endPort, cidr, ipPrefix, ipPrefixLen, protocol);
+                    PolicyRuleType policyRuleType = createPolicyRuleType(aclRuleType.getMatchCondition(),
+                        securityGroupRuleUuid);
                     accessControlList.getEntries().addAclRule(aclRuleType);
                     if (securityGroup.getEntries() == null) {
                         securityGroup.setEntries(new PolicyEntriesType(new ArrayList<>(Arrays.asList(policyRuleType))));
@@ -1452,15 +2373,16 @@ public class TungstenApi {
     }
 
     public boolean removeTungstenSecurityGroupRule(String tungstenSecurityGroupUuid, String securityGroupRuleUuid,
-                                                   String securityGroupRuleType) {
+        String securityGroupRuleType) {
         try {
-            SecurityGroup securityGroup = (SecurityGroup) getTungstenObject(SecurityGroup.class, tungstenSecurityGroupUuid);
+            SecurityGroup securityGroup = (SecurityGroup) getTungstenObject(SecurityGroup.class,
+                tungstenSecurityGroupUuid);
             if (securityGroup == null) {
                 return false;
             }
             for (ObjectReference<ApiPropertyBase> accessControl : securityGroup.getAccessControlLists()) {
                 AccessControlList accessControlList = (AccessControlList) getTungstenObject(AccessControlList.class,
-                        accessControl.getUuid());
+                    accessControl.getUuid());
                 if (accessControlList.getName().equals(TungstenUtils.getTungstenAccessControl(securityGroupRuleType))) {
                     List<AclRuleType> existingAclList = accessControlList.getEntries().getAclRule();
                     accessControlList.getEntries().clearAclRule();
@@ -1481,7 +2403,8 @@ public class TungstenApi {
 
     public boolean removeTungstenPolicyRule(String tungstenSecurityGroupUuid, String securityGroupRuleUuid) {
         try {
-            SecurityGroup securityGroup = (SecurityGroup) getTungstenObject(SecurityGroup.class, tungstenSecurityGroupUuid);
+            SecurityGroup securityGroup = (SecurityGroup) getTungstenObject(SecurityGroup.class,
+                tungstenSecurityGroupUuid);
             if (securityGroup == null) {
                 return false;
             }
@@ -1499,13 +2422,11 @@ public class TungstenApi {
         }
     }
 
-    public AclRuleType createAclRuleType(String securityGroupRuleUuid, String securityGroupRuleType,
-                                         int startPort, int endPort, String cidr, String ipPrefix,
-                                         int ipPrefixLen, String protocol) {
+    public AclRuleType createAclRuleType(String securityGroupRuleUuid, String securityGroupRuleType, int startPort,
+        int endPort, String cidr, String ipPrefix, int ipPrefixLen, String protocol) {
         String tungstenProtocol = TungstenUtils.getTungstenProtocol(protocol, cidr);
         String tungstenEthertType = TungstenUtils.getEthertTypeFromCidr(cidr);
-        AddressType addressType = new AddressType(new SubnetType(ipPrefix, ipPrefixLen), null,
-                null, null);
+        AddressType addressType = new AddressType(new SubnetType(ipPrefix, ipPrefixLen), null, null, null);
 
         MatchConditionType matchConditionType = new MatchConditionType();
         matchConditionType.setSrcPort(new PortType(0, 65535));
@@ -1547,8 +2468,8 @@ public class TungstenApi {
 
             VirtualMachineInterface vmi = null;
             for (ObjectReference obj : vm.getVirtualMachineInterfaceBackRefs()) {
-                VirtualMachineInterface tungstenVmi =
-                        (VirtualMachineInterface) apiConnector.findById(VirtualMachineInterface.class, obj.getUuid());
+                VirtualMachineInterface tungstenVmi = (VirtualMachineInterface) apiConnector.findById(
+                    VirtualMachineInterface.class, obj.getUuid());
                 if (tungstenVmi.getName().startsWith("vmi")) {
                     vmi = tungstenVmi;
                     break;
@@ -1559,7 +2480,8 @@ public class TungstenApi {
                 return false;
             }
             for (String securityGroupUuid : securityGroupUuidList) {
-                SecurityGroup tungstenSecurityGroup = (SecurityGroup) apiConnector.findById(SecurityGroup.class, securityGroupUuid);
+                SecurityGroup tungstenSecurityGroup = (SecurityGroup) apiConnector.findById(SecurityGroup.class,
+                    securityGroupUuid);
                 if (tungstenSecurityGroup != null) {
                     vmi.addSecurityGroup(tungstenSecurityGroup);
                     apiConnector.update(vmi);
@@ -1569,5 +2491,51 @@ public class TungstenApi {
         } catch (IOException e) {
             return false;
         }
+    }
+
+    private List<? extends ApiObjectBase> getTungstenListObject(Class<? extends ApiObjectBase> cls) {
+        try {
+            List resultList = new ArrayList();
+            List<? extends ApiObjectBase> list = apiConnector.list(cls, null);
+            if (list != null) {
+                for (ApiObjectBase object : list) {
+                    resultList.add(apiConnector.findById(object.getClass(), object.getUuid()));
+                }
+            }
+            return resultList;
+        } catch (IOException e) {
+            return new ArrayList<>();
+        }
+    }
+
+    private List<? extends ApiObjectBase> getTungstenListObject(Class<? extends ApiObjectBase> cls,
+        List<ObjectReference<ApiPropertyBase>> objectReferenceList) {
+        try {
+            if (objectReferenceList == null) {
+                return new ArrayList<>();
+            }
+
+            List resultList = new ArrayList();
+            for (ObjectReference<ApiPropertyBase> object : objectReferenceList) {
+                resultList.add(apiConnector.findById(cls, object.getUuid()));
+            }
+
+            return resultList;
+        } catch (IOException e) {
+            return new ArrayList<>();
+        }
+    }
+
+    private List<? extends ApiObjectBase> getObjectList(List<? extends ApiObjectBase> list, String uuid) {
+        if (uuid == null)
+            return list;
+
+        for (ApiObjectBase apiObjectBase : list) {
+            if (apiObjectBase.getUuid().equals(uuid)) {
+                return Arrays.asList(apiObjectBase);
+            }
+        }
+
+        return new ArrayList<>();
     }
 }

@@ -24,15 +24,16 @@ import com.cloud.utils.script.Script;
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
+import java.io.File;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
 public class VRouterVifDriver extends VifDriverBase {
     private static final Logger s_logger = Logger.getLogger(VRouterVifDriver.class);
-    private int _timeout;
-    private String _createTapDeviceScript;
-    private String _deleteTapDeviceScript;
+    private int timeout;
+    private String createTapDeviceScript;
+    private String deleteTapDeviceScript;
 
     @Override
     public void configure(final Map<String, Object> params) throws ConfigurationException {
@@ -40,19 +41,19 @@ public class VRouterVifDriver extends VifDriverBase {
         super.configure(params);
 
         String tungstenScriptsDir = (String) params.get("tungsten.scripts.dir");
-        tungstenScriptsDir = tungstenScriptsDir == null ? "scripts/vm/network/tungsten" : tungstenScriptsDir;
+        tungstenScriptsDir = tungstenScriptsDir == null ? _libvirtComputingResource.getDefaultTungstenScriptsDir() : tungstenScriptsDir;
 
         final String value = (String) params.get("scripts.timeout");
-        _timeout = NumbersUtil.parseInt(value, 30 * 60) * 1000;
+        timeout = NumbersUtil.parseInt(value, 30 * 60) * 1000;
 
-        _createTapDeviceScript = Script.findScript(tungstenScriptsDir, "create_tap_device.sh");
-        _deleteTapDeviceScript = Script.findScript(tungstenScriptsDir, "delete_tap_device.sh");
+        createTapDeviceScript = Script.findScript(tungstenScriptsDir, "create_tap_device.sh");
+        deleteTapDeviceScript = Script.findScript(tungstenScriptsDir, "delete_tap_device.sh");
 
-        if (_createTapDeviceScript == null) {
+        if (createTapDeviceScript == null) {
             throw new ConfigurationException("Unable to find create_tap_device.sh");
         }
 
-        if (_deleteTapDeviceScript == null) {
+        if (deleteTapDeviceScript == null) {
             throw new ConfigurationException("Unable to find delete_tap_device.sh");
         }
     }
@@ -62,9 +63,9 @@ public class VRouterVifDriver extends VifDriverBase {
         final Map<String, String> extraConfig) throws InternalErrorException, LibvirtException {
 
         final String tapDeviceName = TungstenUtils.getTapName(nic.getMac());
-        final String script = _createTapDeviceScript;
+        final String script = createTapDeviceScript;
 
-        final Script command = new Script(script, _timeout, s_logger);
+        final Script command = new Script(script, timeout, s_logger);
         command.add(tapDeviceName);
 
         final String result = command.execute();
@@ -81,9 +82,9 @@ public class VRouterVifDriver extends VifDriverBase {
     @Override
     public void unplug(final LibvirtVMDef.InterfaceDef iface) {
         final String tapDeviceName = TungstenUtils.getTapName(iface.getMacAddress());
-        final String script = _deleteTapDeviceScript;
+        final String script = deleteTapDeviceScript;
 
-        final Script command = new Script(script, _timeout, s_logger);
+        final Script command = new Script(script, timeout, s_logger);
         command.add(tapDeviceName);
 
         final String result = command.execute();
@@ -106,6 +107,7 @@ public class VRouterVifDriver extends VifDriverBase {
 
     @Override
     public boolean isExistingBridge(String bridgeName) {
-        return bridgeName != null ? TungstenUtils.isTungstenBridge(bridgeName) : false;
+        File f = new File("/sys/devices/virtual/net/" + bridgeName);
+        return f.exists();
     }
 }

@@ -20,14 +20,28 @@ public class ApplyTungstenNetworkPolicyCommand extends TungstenCommand {
     private final String projectFqn;
     private final String networkPolicyName;
     private final String networkUuid;
-    private final boolean priority;
+    private final String policyUuid;
+    private final int majorSequence;
+    private final int minorSequence;
+
+    public ApplyTungstenNetworkPolicyCommand(final String networkUuid, final String policyUuid, final int majorSequence,
+        final int minorSequence) {
+        this.projectFqn = null;
+        this.networkPolicyName = null;
+        this.networkUuid = networkUuid;
+        this.policyUuid = policyUuid;
+        this.majorSequence = majorSequence;
+        this.minorSequence = minorSequence;
+    }
 
     public ApplyTungstenNetworkPolicyCommand(final String projectFqn, final String networkPolicyName,
-        final String networkUuid, final boolean priority) {
+        final String networkUuid, final int majorSequence, final int minorSequence) {
         this.projectFqn = projectFqn;
         this.networkPolicyName = networkPolicyName;
         this.networkUuid = networkUuid;
-        this.priority = priority;
+        this.policyUuid = null;
+        this.majorSequence = majorSequence;
+        this.minorSequence = minorSequence;
     }
 
     public String getProjectFqn() {
@@ -42,7 +56,15 @@ public class ApplyTungstenNetworkPolicyCommand extends TungstenCommand {
         return networkUuid;
     }
 
-    public boolean isPriority() {
-        return priority;
+    public String getPolicyUuid() {
+        return policyUuid;
+    }
+
+    public int getMajorSequence() {
+        return majorSequence;
+    }
+
+    public int getMinorSequence() {
+        return minorSequence;
     }
 }

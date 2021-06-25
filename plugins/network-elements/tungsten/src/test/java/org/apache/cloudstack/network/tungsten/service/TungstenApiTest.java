@@ -46,7 +46,7 @@ public class TungstenApiTest {
 
     private static final Logger s_logger = Logger.getLogger(TungstenApiTest.class);
 
-    private ApiConnector _api;
+    private ApiConnector api;
     private TungstenApi tungstenApi = new TungstenApi();
     private String defaultDomainName = "default-domain";
     private String defaultProjectName = "default-project";
@@ -70,9 +70,9 @@ public class TungstenApiTest {
     @Before
     public void setUp() throws Exception {
         s_logger.debug("Create Tungsten-Fabric api connector mock.");
-        _api = new ApiConnectorMock(null, 0);
+        api = new ApiConnectorMock(null, 0);
 
-        tungstenApi.setApiConnector(_api);
+        tungstenApi.setApiConnector(api);
         domainUuid = UUID.randomUUID().toString();
         projectUuid = UUID.randomUUID().toString();
 
@@ -81,7 +81,7 @@ public class TungstenApiTest {
         Domain domain = new Domain();
         domain.setUuid(domainUuid);
         domain.setName(defaultDomainName);
-        _api.create(domain);
+        api.create(domain);
 
         //create Tungsten-Fabric default project
         s_logger.debug("Create default project in Tungsten-Fabric.");
@@ -89,7 +89,7 @@ public class TungstenApiTest {
         project.setUuid(projectUuid);
         project.setName(defaultProjectName);
         project.setParent(domain);
-        _api.create(project);
+        api.create(project);
     }
 
     @Test
@@ -270,8 +270,8 @@ public class TungstenApiTest {
         egressAcl.setParent(securityGroup);
 
         try {
-            _api.create(ingressAcl);
-            _api.create(egressAcl);
+            api.create(ingressAcl);
+            api.create(egressAcl);
         } catch (IOException e) {
             assertTrue("Creation of security group acl rules failed", false);
         }
@@ -312,8 +312,8 @@ public class TungstenApiTest {
         egressAcl.setParent(securityGroup);
 
         try {
-            _api.create(ingressAcl);
-            _api.create(egressAcl);
+            api.create(ingressAcl);
+            api.create(egressAcl);
         } catch (IOException e) {
             assertTrue("Creation of security group acl rules failed", false);
         }

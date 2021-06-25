@@ -232,7 +232,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Inject
     private NetworkService _networkService;
     @Inject
-    TungstenGuestNetworkIpAddressDao _tungstenGuestNetworkIpAddressDao;
+    TungstenGuestNetworkIpAddressDao tungstenGuestNetworkIpAddressDao;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
@@ -2030,7 +2030,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         List<String> lbIps = _appLbRuleDao.listLbIpsBySourceIpNetworkId(network.getId());
         ips.addAll(lbIps);
         //Get ips used by tungsten
-        List<String> tfIps = _tungstenGuestNetworkIpAddressDao.listByNetworkId(network.getId());
+        List<String> tfIps = tungstenGuestNetworkIpAddressDao.listByNetworkId(network.getId());
         ips.addAll(tfIps);
         return ips;
     }

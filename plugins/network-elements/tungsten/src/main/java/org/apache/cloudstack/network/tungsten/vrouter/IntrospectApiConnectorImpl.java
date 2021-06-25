@@ -33,15 +33,15 @@ import javax.xml.parsers.ParserConfigurationException;
 
 public class IntrospectApiConnectorImpl implements IntrospectApiConnector {
     private static final Logger s_logger = Logger.getLogger(IntrospectApiConnectorImpl.class);
-    private String _url;
+    private String url;
 
     public IntrospectApiConnectorImpl(VRouter vRouter) {
-        _url = "http://" + vRouter.getHost() + ":" + vRouter.getPort() + "/";
+        url = "http://" + vRouter.getHost() + ":" + vRouter.getPort() + "/";
     }
 
     public Document getSnhItfReq(String uuid) {
         final StringBuffer url = new StringBuffer();
-        url.append(_url).append("Snh_ItfReq?uuid=").append(uuid);
+        url.append(this.url).append("Snh_ItfReq?uuid=").append(uuid);
         HttpUriRequest request = new HttpGet(url.toString());
         try (CloseableHttpClient httpClient = HttpClients.createDefault();
             CloseableHttpResponse httpResponse = httpClient.execute(request)) {

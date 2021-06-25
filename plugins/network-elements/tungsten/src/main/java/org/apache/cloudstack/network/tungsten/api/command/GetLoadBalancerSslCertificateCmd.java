@@ -37,28 +37,27 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = "getLoadBalancerSslCertificate", description = "get load balancer certificate", responseObject =
-    TlsDataResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = GetLoadBalancerSslCertificateCmd.APINAME, description = "get load balancer certificate",
+    responseObject = TlsDataResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetLoadBalancerSslCertificateCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GetLoadBalancerSslCertificateCmd.class.getName());
-    private static final String s_name = "getloadbalancersslcertificateresponse";
+    public static final String APINAME = "getLoadBalancerSslCertificate";
 
     @Inject
-    private LoadBalancingRulesManager _lbMgr;
+    private LoadBalancingRulesManager lbMgr;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TlsDataResponse.class, required = true,
-        description = "the ID of Lb")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TlsDataResponse.class, required = true, description = "the ID of Lb")
     private Long id;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        LoadBalancingRule.LbSslCert lbSslCert = _lbMgr.getLbSslCert(id);
+        LoadBalancingRule.LbSslCert lbSslCert = lbMgr.getLbSslCert(id);
         if (lbSslCert != null) {
             TlsDataResponse tlsDataResponse = new TlsDataResponse();
             tlsDataResponse.setCrt(Base64.encodeBase64String(lbSslCert.getCert().getBytes()));
             tlsDataResponse.setKey(Base64.encodeBase64String(lbSslCert.getKey().getBytes()));
-            tlsDataResponse.setResponseName(s_name);
+            tlsDataResponse.setResponseName(getCommandName());
             tlsDataResponse.setObjectName("data");
             setResponseObject(tlsDataResponse);
         } else {
@@ -68,7 +67,7 @@ public class GetLoadBalancerSslCertificateCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

@@ -15,12 +15,18 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-while [ ! -f /var/lib/contrail/loadbalancer/haproxy/$1/haproxy.conf ]; do sleep 1; done
+i=0;
+while [ ! -f /var/lib/contrail/loadbalancer/haproxy/$1/haproxy.conf ];
+do
+  sleep 1;
+  ((i=i+1))
+  if [ $i -eq 5 ]; then exit 1; fi
+done
 if grep -qw "bind $5:$6 $" /var/lib/contrail/loadbalancer/haproxy/$1/haproxy.conf; then
 rm -rf /var/lib/contrail/loadbalancer/haproxy/$1/$2.pem
 cat >> /var/lib/contrail/loadbalancer/haproxy/$1/$2.pem << EOF
-$3$4
+$3
+$4
 EOF
 sed -i "/bind $5:$6 $/c\	bind $5:$6 ssl crt /var/lib/contrail/loadbalancer/haproxy/$1/$2.pem" /var/lib/contrail/loadbalancer/haproxy/$1/haproxy.conf
 container=$(docker ps | grep contrail-vrouter-agent | awk '{print $1}')

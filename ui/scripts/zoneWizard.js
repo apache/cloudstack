@@ -820,7 +820,7 @@
                     tungstenproviderport: {
                         label: 'Tungsten provider port',
                         validation: {
-                            required: true
+                            required: false
                         },
                         desc: 'Tungsten provider port'
                     },
@@ -4178,7 +4178,7 @@
 
                 createTungstenPublicNetwork: function(args) {
                     $.ajax({
-                        url: createURL('configTungstenService'),
+                        url: createURL('configTungstenFabricService'),
                         data: {
                             zoneid: args.data.returnedZone.id,
                             physicalnetworkid: tungstenPhysicalNetworkId
@@ -4190,15 +4190,15 @@
                         },
                         error: function (XMLHttpResponse) {
                             var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                            error('configTungstenService', errorMsg, {
-                                fn: 'configTungstenService',
+                            error('configTungstenFabricService', errorMsg, {
+                                fn: 'configTungstenFabricService',
                                 args: args
                             });
                         }
                     });
 
                     $.ajax({
-                        url: createURL('createTungstenProvider'),
+                        url: createURL('createTungstenFabricProvider'),
                         data: {
                             tungstenproviderhostname: args.data.tungstenProvider.tungstenproviderhostname,
                             name: args.data.tungstenProvider.name,
@@ -4215,15 +4215,15 @@
                         },
                         error: function (XMLHttpResponse) {
                             var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                            error('createTungstenProvider', errorMsg, {
-                                fn: 'createTungstenProvider',
+                            error('createTungstenFabricProvider', errorMsg, {
+                                fn: 'createTungstenFabricProvider',
                                 args: args
                             });
                         }
                     });
 
                     $.ajax({
-                        url: createURL("createTungstenPublicNetwork&zoneId=" + args.data.returnedZone.id),
+                        url: createURL("createTungstenFabricPublicNetwork&zoneId=" + args.data.returnedZone.id),
                         dataType: "json",
                         async: false,
                         success: function(json) {
@@ -4231,15 +4231,15 @@
                         },
                         error : function(XMLHttpResponse) {
                             var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                            error('createTungstenPublicNetwork', errorMsg, {
-                                fn: 'createTungstenPublicNetwork',
+                            error('createTungstenFabricPublicNetwork', errorMsg, {
+                                fn: 'createTungstenFabricPublicNetwork',
                                 args: args
                             });
                         }
                     });
 
                     $.ajax({
-                        url: createURL("createTungstenManagementNetwork&podId=" + args.data.returnedPod.id),
+                        url: createURL("createTungstenFabricManagementNetwork&podId=" + args.data.returnedPod.id),
                         dataType: "json",
                         async: false,
                         success: function(json) {
@@ -4247,8 +4247,8 @@
                         },
                         error : function(XMLHttpResponse) {
                             var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                            error('createTungstenManagementNetwork', errorMsg, {
-                                fn: 'createTungstenManagementNetwork',
+                            error('createTungstenFabricManagementNetwork', errorMsg, {
+                                fn: 'createTungstenFabricManagementNetwork',
                                 args: args
                             });
                         }

@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.command;
 
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -25,56 +26,60 @@ import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.network.tungsten.api.response.TungstenProviderResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = "synchronizeTungstenData", description = "Synchronize tungsten data", responseObject =
-    SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class SynchronizeTungstenDataCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(SynchronizeTungstenDataCmd.class.getName());
-    private static final String s_name = "synchronizetungstendataresponse";
-
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TungstenProviderResponse.class,
-        required = true, description = "provider id")
-    private Long tungstenProviderId;
+@APICommand(name = DeleteTungstenFabricFirewallRuleCmd.APINAME, description = "delete Tungsten-Fabric firewall rule",
+    responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class DeleteTungstenFabricFirewallRuleCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(DeleteTungstenFabricFirewallRuleCmd.class.getName());
+    public static final String APINAME = "deleteTungstenFabricFirewallRule";
 
     @Inject
-    TungstenService _tungstenService;
+    TungstenService tungstenService;
+
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
+    private Long zoneId;
+
+    @Parameter(name = ApiConstants.FIREWALL_RULE_UUID, type = CommandType.STRING, required = true, description = "the uuid of Tungsten-Fabric firewall rule")
+    private String firewallRuleUuid;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        boolean result = _tungstenService.synchronizeTungstenData(tungstenProviderId);
+        boolean result = tungstenService.deleteTungstenFirewallRule(zoneId, firewallRuleUuid);
         if (result) {
-            SuccessResponse successResponse = new SuccessResponse(getCommandName());
-            setResponseObject(successResponse);
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to synchronize tungsten data");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Tungsten-Fabric firewall rule");
         }
     }
 
     @Override
+    public String getEventType() {
+        return EventTypes.EVENT_TUNGSTEN_DELETE_FIREWALL_RULE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "delete Tungsten-Fabric firewall rule";
+    }
+
+    @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + BaseAsyncCmd.RESPONSE_SUFFIX;
     }
 
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
-    }
-
-    public Long getTungstenProviderId() {
-        return tungstenProviderId;
-    }
-
-    public void setTungstenProviderId(final Long tungstenProviderId) {
-        this.tungstenProviderId = tungstenProviderId;
     }
 }

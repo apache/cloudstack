@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.command;
 
-import com.cloud.dc.HostPodVO;
-import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -26,62 +24,54 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.PodResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricFirewallRuleResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
 import org.apache.log4j.Logger;
 
+import java.util.List;
+
 import javax.inject.Inject;
 
-@APICommand(name = "createTungstenManagementNetwork", description = "create a Tungsten-Fabric management network",
-    responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class CreateTungstenManagementNetworkCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateTungstenManagementNetworkCmd.class.getName());
-
-    private static final String s_name = "createtungstenmanagementnetworkresponse";
+@APICommand(name = ListTungstenFabricFirewallRuleCmd.APINAME, description = "list Tungsten-Fabric firewall rule",
+    responseObject = TungstenFabricFirewallRuleResponse.class, requestHasSensitiveInfo = false,
+    responseHasSensitiveInfo = false)
+public class ListTungstenFabricFirewallRuleCmd extends BaseListCmd {
+    public static final Logger s_logger = Logger.getLogger(ListTungstenFabricFirewallRuleCmd.class.getName());
+    public static final String APINAME = "listTungstenFabricFirewallRule";
 
     @Inject
-    HostPodDao _podDao;
-    @Inject
-    TungstenService _tungstenService;
+    TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, required = true,
-        description = "the ID of pod")
-    private Long podId;
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
+    private Long zoneId;
 
-    public Long getPodId() {
-        return podId;
-    }
+    @Parameter(name = ApiConstants.FIREWALL_POLICY_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric firewall policy")
+    private String firewallPolicyUuid;
 
-    public void setPodId(final Long podId) {
-        this.podId = podId;
-    }
+    @Parameter(name = ApiConstants.FIREWALL_RULE_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric firewall rule")
+    private String firewallRuleUuid;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        HostPodVO pod = _podDao.findById(podId);
-
-        if (!_tungstenService.createManagementNetwork(pod.getDataCenterId())) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to create tungsten management network");
-        }
-
-        if (!_tungstenService.addManagementNetworkSubnet(pod)) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to add management network subnet");
-        }
-
-        SuccessResponse response = new SuccessResponse(getCommandName());
-        response.setDisplayText("create tungsten management network successfully");
-        setResponseObject(response);
+        List<TungstenFabricFirewallRuleResponse> tungstenFabricFirewallRuleResponseList =
+            tungstenService.listTungstenFirewallRule(
+            zoneId, firewallPolicyUuid, firewallRuleUuid);
+        ListResponse<TungstenFabricFirewallRuleResponse> listResponse = new ListResponse<>();
+        listResponse.setResponses(tungstenFabricFirewallRuleResponseList);
+        listResponse.setResponseName(getCommandName());
+        setResponseObject(listResponse);
     }
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

@@ -27,7 +27,7 @@ import com.cloud.projects.dao.ProjectDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenProviderCmd;
+import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricProviderCmd;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -68,13 +68,13 @@ public class TungstenProviderServiceTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         tungstenProviderService = new TungstenProviderServiceImpl();
-        tungstenProviderService._zoneDao = dcDao;
-        tungstenProviderService._resourceMgr = resourceMgr;
-        tungstenProviderService._domainDao = domainDao;
-        tungstenProviderService._projectDao = projectDao;
-        tungstenProviderService._tungstenProviderDao = tungstenProviderDao;
-        tungstenProviderService._hostDetailsDao = hostDetailsDao;
-        tungstenProviderService._messageBus = messageBus;
+        tungstenProviderService.zoneDao = dcDao;
+        tungstenProviderService.resourceMgr = resourceMgr;
+        tungstenProviderService.domainDao = domainDao;
+        tungstenProviderService.projectDao = projectDao;
+        tungstenProviderService.tungstenProviderDao = tungstenProviderDao;
+        tungstenProviderService.hostDetailsDao = hostDetailsDao;
+        tungstenProviderService.messageBus = messageBus;
 
         when(dcDao.findById(anyLong())).thenReturn(zone);
         when(zone.getName()).thenReturn("ZoneName");
@@ -86,7 +86,7 @@ public class TungstenProviderServiceTest {
 
     @Test
     public void addTungstenProviderTest() {
-        CreateTungstenProviderCmd cmd = Mockito.mock(CreateTungstenProviderCmd.class);
+        CreateTungstenFabricProviderCmd cmd = Mockito.mock(CreateTungstenFabricProviderCmd.class);
         when(cmd.getZoneId()).thenReturn(1l);
         when(cmd.getName()).thenReturn("TungstenProviderName");
         when(cmd.getHostname()).thenReturn("192.168.0.100");

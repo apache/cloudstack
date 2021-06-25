@@ -53,30 +53,29 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-@APICommand(name = "configTungstenService", description = "config tungsten service", responseObject =
-    SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ConfigTungstenServiceCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(ConfigTungstenServiceCmd.class.getName());
-    private static final String s_name = "configtungstenserviceresponse";
-    public final static String DefaultTungstenNetworkOffering = "DefaultTungstenNetworkOffering";
+@APICommand(name = ConfigTungstenFabricServiceCmd.APINAME, description = "config Tungsten-Fabric service",
+    responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class ConfigTungstenFabricServiceCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(ConfigTungstenFabricServiceCmd.class.getName());
+    public static final String APINAME = "configTungstenFabricService";
+    public final static String DefaultTungstenFarbicNetworkOffering = "DefaultTungstenFarbicNetworkOffering";
 
     @Inject
-    NetworkModel _networkModel;
+    NetworkModel networkModel;
     @Inject
-    NetworkOfferingDao _networkOfferingDao;
+    NetworkOfferingDao networkOfferingDao;
     @Inject
-    NetworkOfferingServiceMapDao _networkOfferingServiceMapDao;
+    NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
     @Inject
-    NetworkServiceMapDao _networkServiceMapDao;
+    NetworkServiceMapDao networkServiceMapDao;
     @Inject
-    PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
+    PhysicalNetworkServiceProviderDao physicalNetworkServiceProviderDao;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true
         , description = "the ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType =
-        PhysicalNetworkResponse.class, required = true, description = "the ID of physical network")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, required = true, description = "the ID of physical network")
     private Long physicalNetworkId;
 
     public Long getZoneId() {
@@ -101,16 +100,16 @@ public class ConfigTungstenServiceCmd extends BaseCmd {
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
-                NetworkOfferingVO networkOfferingVO = _networkOfferingDao.findByUniqueName(
-                    DefaultTungstenNetworkOffering);
+                NetworkOfferingVO networkOfferingVO = networkOfferingDao.findByUniqueName(
+                    DefaultTungstenFarbicNetworkOffering);
                 if (networkOfferingVO == null) {
-                    networkOfferingVO = new NetworkOfferingVO(DefaultTungstenNetworkOffering,
-                        "Default offering for Tungsten Network", Networks.TrafficType.Guest, false, false, null, null,
-                        true, NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated, true, false,
-                        false, false, true, false);
+                    networkOfferingVO = new NetworkOfferingVO(DefaultTungstenFarbicNetworkOffering,
+                        "Default offering for Tungsten-Fabric Network", Networks.TrafficType.Guest, false, false, null,
+                        null, true, NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated, true,
+                        false, false, false, true, false);
                     networkOfferingVO.setForTungsten(true);
                     networkOfferingVO.setState(NetworkOffering.State.Enabled);
-                    _networkOfferingDao.persist(networkOfferingVO);
+                    networkOfferingDao.persist(networkOfferingVO);
 
                     Map<Network.Service, Network.Provider> tungstenServiceProvider = new HashMap<>();
                     tungstenServiceProvider.put(Network.Service.Dhcp, Network.Provider.Tungsten);
@@ -126,39 +125,39 @@ public class ConfigTungstenServiceCmd extends BaseCmd {
                     for (Network.Service service : tungstenServiceProvider.keySet()) {
                         NetworkOfferingServiceMapVO networkOfferingServiceMapVO = new NetworkOfferingServiceMapVO(
                             networkOfferingVO.getId(), service, tungstenServiceProvider.get(service));
-                        _networkOfferingServiceMapDao.persist(networkOfferingServiceMapVO);
+                        networkOfferingServiceMapDao.persist(networkOfferingServiceMapVO);
                     }
                 }
 
                 PhysicalNetworkServiceProviderVO physicalNetworkServiceProvider =
-                    _physicalNetworkServiceProviderDao.findByServiceProvider(
+                    physicalNetworkServiceProviderDao.findByServiceProvider(
                     physicalNetworkId, Network.Provider.Tungsten.getName());
                 physicalNetworkServiceProvider.setState(PhysicalNetworkServiceProvider.State.Enabled);
-                _physicalNetworkServiceProviderDao.persist(physicalNetworkServiceProvider);
+                physicalNetworkServiceProviderDao.persist(physicalNetworkServiceProvider);
 
-                Network publicNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(zoneId,
+                Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId,
                     Networks.TrafficType.Public);
                 NetworkServiceMapVO publicNetworkServiceMapVO = new NetworkServiceMapVO(publicNetwork.getId(),
                     Network.Service.Connectivity, Network.Provider.Tungsten);
-                _networkServiceMapDao.persist(publicNetworkServiceMapVO);
+                networkServiceMapDao.persist(publicNetworkServiceMapVO);
 
-                Network managementNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(zoneId,
+                Network managementNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId,
                     Networks.TrafficType.Management);
                 NetworkServiceMapVO managementNetworkServiceMapVO = new NetworkServiceMapVO(managementNetwork.getId(),
                     Network.Service.Connectivity, Network.Provider.Tungsten);
-                _networkServiceMapDao.persist(managementNetworkServiceMapVO);
+                networkServiceMapDao.persist(managementNetworkServiceMapVO);
             }
         });
 
         SuccessResponse response = new SuccessResponse(getCommandName());
-        response.setDisplayText("configured tungsten service successfully");
+        response.setDisplayText("configured Tungsten-Fabric service successfully");
 
         setResponseObject(response);
     }
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

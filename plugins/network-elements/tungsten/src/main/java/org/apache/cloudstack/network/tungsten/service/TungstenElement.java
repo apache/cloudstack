@@ -120,6 +120,7 @@ import org.apache.cloudstack.network.tungsten.agent.api.ReleaseTungstenFloatingI
 import org.apache.cloudstack.network.tungsten.agent.api.SetupTungstenVRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.StartupTungstenCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
+import org.apache.cloudstack.network.tungsten.agent.api.TungstenCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.UpdateTungstenLoadBalancerListenerCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.UpdateTungstenLoadBalancerMemberCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.UpdateTungstenLoadBalancerPoolCommand;
@@ -145,51 +146,51 @@ public class TungstenElement extends AdapterBase
     implements StaticNatServiceProvider, UserDataServiceProvider, IpDeployer, FirewallServiceProvider,
     LoadBalancingServiceProvider, PortForwardingServiceProvider, ResourceStateAdapter, DnsServiceProvider, Listener {
     private static final Logger s_logger = Logger.getLogger(TungstenElement.class);
-    private final Map<Network.Service, Map<Network.Capability, String>> _capabilities = InitCapabilities();
+    private final Map<Network.Service, Map<Network.Capability, String>> capabilities = InitCapabilities();
     @Inject
-    HostPodDao _podDao;
+    HostPodDao podDao;
     @Inject
-    NetworkModel _networkModel;
+    NetworkModel networkModel;
     @Inject
-    AccountManager _accountMgr;
+    AccountManager accountMgr;
     @Inject
-    ResourceManager _resourceMgr;
+    ResourceManager resourceMgr;
     @Inject
-    IPAddressDao _ipAddressDao;
+    IPAddressDao ipAddressDao;
     @Inject
-    IpAddressManager _ipAddressMgr;
+    IpAddressManager ipAddressMgr;
     @Inject
-    PhysicalNetworkDao _physicalNetworkDao;
+    PhysicalNetworkDao physicalNetworkDao;
     @Inject
-    VMInstanceDao _vmInstanceDao;
+    VMInstanceDao vmInstanceDao;
     @Inject
-    AgentManager _agentMgr;
+    AgentManager agentMgr;
     @Inject
-    ConfigurationDao _configDao;
+    ConfigurationDao configDao;
     @Inject
-    VlanDao _vlanDao;
+    VlanDao vlanDao;
     @Inject
-    HostDao _hostDao;
+    HostDao hostDao;
     @Inject
-    NetworkServiceMapDao _networkServiceMapDao;
+    NetworkServiceMapDao networkServiceMapDao;
     @Inject
-    NetworkDetailsDao _networkDetailsDao;
+    NetworkDetailsDao networkDetailsDao;
     @Inject
-    LoadBalancerVMMapDao _lbVmMapDao;
+    LoadBalancerVMMapDao lbVmMapDao;
     @Inject
-    LoadBalancerDao _lbDao;
+    LoadBalancerDao lbDao;
     @Inject
-    TungstenService _tungstenService;
+    TungstenService tungstenService;
     @Inject
-    MessageBus _messageBus;
+    MessageBus messageBus;
     @Inject
-    TungstenProviderDao _tungstenProviderDao;
+    TungstenProviderDao tungstenProviderDao;
     @Inject
-    TungstenGuestNetworkIpAddressDao _tungstenGuestNetworkIpAddressDao;
+    TungstenGuestNetworkIpAddressDao tungstenGuestNetworkIpAddressDao;
     @Inject
-    TungstenFabricUtils _tungstenFabricUtils;
+    TungstenFabricUtils tungstenFabricUtils;
     @Inject
-    PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
+    PhysicalNetworkTrafficTypeDao physicalNetworkTrafficTypeDao;
 
     private static Map<Network.Service, Map<Network.Capability, String>> InitCapabilities() {
         Map<Network.Service, Map<Network.Capability, String>> capabilities = new HashMap<Network.Service,
@@ -255,7 +256,7 @@ public class TungstenElement extends AdapterBase
         s_logger.debug("Checking if TungstenElement can handle service " + service.getName() + " on network "
             + network.getDisplayText());
 
-        if (!_networkModel.isProviderForNetwork(getProvider(), network.getId())) {
+        if (!networkModel.isProviderForNetwork(getProvider(), network.getId())) {
             s_logger.debug("TungstenElement is not a provider for network " + network.getDisplayText());
             return false;
         }
@@ -268,23 +269,23 @@ public class TungstenElement extends AdapterBase
         throws ResourceUnavailableException {
         StaticNat staticNat = rules.get(0);
         long sourceIpAddressId = staticNat.getSourceIpAddressId();
-        IPAddressVO ipAddressVO = _ipAddressDao.findByIdIncludingRemoved(sourceIpAddressId);
-        VMInstanceVO vm = _vmInstanceDao.findByIdIncludingRemoved(ipAddressVO.getAssociatedWithVmId());
-        Nic nic = _networkModel.getNicInNetworkIncludingRemoved(vm.getId(), config.getId());
-        Network publicNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(config.getDataCenterId(),
+        IPAddressVO ipAddressVO = ipAddressDao.findByIdIncludingRemoved(sourceIpAddressId);
+        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(ipAddressVO.getAssociatedWithVmId());
+        Nic nic = networkModel.getNicInNetworkIncludingRemoved(vm.getId(), config.getId());
+        Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(config.getDataCenterId(),
             Networks.TrafficType.Public);
         if (!staticNat.isForRevoke()) {
-            AssignTungstenFloatingIpCommand assignTungstenFloatingIpCommand = new AssignTungstenFloatingIpCommand(
+            TungstenCommand assignTungstenFloatingIpCommand = new AssignTungstenFloatingIpCommand(
                 publicNetwork.getUuid(), nic.getUuid(), TungstenUtils.getFloatingIpPoolName(config.getDataCenterId()),
                 TungstenUtils.getFloatingIpName(ipAddressVO.getId()), nic.getIPv4Address());
-            TungstenAnswer assignFloatingIpAnswer = _tungstenFabricUtils.sendTungstenCommand(
+            TungstenAnswer assignFloatingIpAnswer = tungstenFabricUtils.sendTungstenCommand(
                 assignTungstenFloatingIpCommand, config.getDataCenterId());
             return assignFloatingIpAnswer.getResult();
         } else {
-            ReleaseTungstenFloatingIpCommand releaseTungstenFloatingIpCommand = new ReleaseTungstenFloatingIpCommand(
+            TungstenCommand releaseTungstenFloatingIpCommand = new ReleaseTungstenFloatingIpCommand(
                 publicNetwork.getUuid(), TungstenUtils.getFloatingIpPoolName(config.getDataCenterId()),
                 TungstenUtils.getFloatingIpName(ipAddressVO.getId()));
-            TungstenAnswer releaseFloatingIpAnswer = _tungstenFabricUtils.sendTungstenCommand(
+            TungstenAnswer releaseFloatingIpAnswer = tungstenFabricUtils.sendTungstenCommand(
                 releaseTungstenFloatingIpCommand, config.getDataCenterId());
             return releaseFloatingIpAnswer.getResult();
         }
@@ -292,10 +293,10 @@ public class TungstenElement extends AdapterBase
 
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
-        Network publicNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(network.getDataCenterId(),
+        Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(network.getDataCenterId(),
             Networks.TrafficType.Public);
         for (LoadBalancingRule loadBalancingRule : rules) {
-            String tungstenProjectFqn = _tungstenService.getTungstenProjectFqn(network);
+            String tungstenProjectFqn = tungstenService.getTungstenProjectFqn(network);
             if (loadBalancingRule.getState() == FirewallRule.State.Add) {
                 String protocol = StringUtils.upperCase(loadBalancingRule.getLbProtocol());
                 if (loadBalancingRule.getSourcePortStart() == NetUtils.HTTP_PORT
@@ -303,17 +304,17 @@ public class TungstenElement extends AdapterBase
                     protocol = "HTTP";
                 }
 
-                IPAddressVO ipAddressVO = _ipAddressDao.findByIpAndDcId(network.getDataCenterId(),
+                IPAddressVO ipAddressVO = ipAddressDao.findByIpAndDcId(network.getDataCenterId(),
                     loadBalancingRule.getSourceIp().addr());
-                List<LoadBalancerVMMapVO> loadBalancerVMMapVOList = _lbVmMapDao.listByLoadBalancerId(
+                List<LoadBalancerVMMapVO> loadBalancerVMMapVOList = lbVmMapDao.listByLoadBalancerId(
                     loadBalancingRule.getId(), false);
 
                 TungstenGuestNetworkIpAddressVO guestNetworkIpAddressVO =
-                    _tungstenGuestNetworkIpAddressDao.findByNetworkIdAndPublicIp(
+                    tungstenGuestNetworkIpAddressDao.findByNetworkIdAndPublicIp(
                     network.getId(), ipAddressVO.getAddress().addr());
                 String lbIp;
                 if (guestNetworkIpAddressVO == null) {
-                    lbIp = _ipAddressMgr.acquireGuestIpAddress(network, null);
+                    lbIp = ipAddressMgr.acquireGuestIpAddress(network, null);
                 } else {
                     lbIp = guestNetworkIpAddressVO.getGuestIpAddress().addr();
                 }
@@ -336,8 +337,7 @@ public class TungstenElement extends AdapterBase
                     memberIp.add(tungstenLoadBalancerMember);
                 }
 
-                CreateTungstenNetworkLoadbalancerCommand createTungstenNetworkLoadbalancerCommand =
-                    new CreateTungstenNetworkLoadbalancerCommand(
+                TungstenCommand createTungstenNetworkLoadbalancerCommand = new CreateTungstenNetworkLoadbalancerCommand(
                     tungstenProjectFqn, network.getUuid(), publicNetwork.getUuid(),
                     TungstenUtils.getLoadBalancerAlgorithm(loadBalancingRule.getAlgorithm()),
                     TungstenUtils.getLoadBalancerName(ipAddressVO.getId()),
@@ -350,7 +350,7 @@ public class TungstenElement extends AdapterBase
                     loadBalancingRule.getDefaultPortStart(), lbIp,
                     TungstenUtils.getFloatingIpPoolName(network.getDataCenterId()),
                     TungstenUtils.getFloatingIpName(ipAddressVO.getId()), "PING", 3, 5, 5, null, null, null);
-                TungstenAnswer createTungstenNetworkLoadbalancerAnswer = _tungstenFabricUtils.sendTungstenCommand(
+                TungstenAnswer createTungstenNetworkLoadbalancerAnswer = tungstenFabricUtils.sendTungstenCommand(
                     createTungstenNetworkLoadbalancerCommand, network.getDataCenterId());
                 if (!createTungstenNetworkLoadbalancerAnswer.getResult()) {
                     return false;
@@ -369,12 +369,12 @@ public class TungstenElement extends AdapterBase
                     }
                 }
 
-                UpdateTungstenLoadBalancerPoolCommand updateTungstenLoadBalancerPoolCommand;
-                String lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
+                TungstenCommand updateTungstenLoadBalancerPoolCommand;
+                String lbStatsVisibility = configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
                 if (!lbStatsVisibility.equals("disabled")) {
-                    String lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
-                    String lbStatsAuth = _configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
-                    String lbStatsPort = _configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
+                    String lbStatsUri = configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
+                    String lbStatsAuth = configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
+                    String lbStatsPort = configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
                     updateTungstenLoadBalancerPoolCommand = new UpdateTungstenLoadBalancerPoolCommand(
                         tungstenProjectFqn, TungstenUtils.getLoadBalancerPoolName(loadBalancingRule.getId()),
                         TungstenUtils.getLoadBalancerAlgorithm(loadBalancingRule.getAlgorithm()), lbSessionPersistence,
@@ -385,17 +385,16 @@ public class TungstenElement extends AdapterBase
                         TungstenUtils.getLoadBalancerAlgorithm(loadBalancingRule.getAlgorithm()), lbSessionPersistence,
                         lbPersistenceCookieName, protocol, false, null, null, null);
                 }
-                TungstenAnswer updateTungstenLoadBalancerPoolAnswer = _tungstenFabricUtils.sendTungstenCommand(
+                TungstenAnswer updateTungstenLoadBalancerPoolAnswer = tungstenFabricUtils.sendTungstenCommand(
                     updateTungstenLoadBalancerPoolCommand, network.getDataCenterId());
                 if (!updateTungstenLoadBalancerPoolAnswer.getResult()) {
                     return false;
                 }
 
-                UpdateTungstenLoadBalancerMemberCommand updateTungstenLoadBalancerMemberCommand =
-                    new UpdateTungstenLoadBalancerMemberCommand(
+                TungstenCommand updateTungstenLoadBalancerMemberCommand = new UpdateTungstenLoadBalancerMemberCommand(
                     tungstenProjectFqn, network.getUuid(),
                     TungstenUtils.getLoadBalancerPoolName(loadBalancingRule.getId()), memberIp);
-                TungstenAnswer updateTungstenLoadBalancerMemberAnswer = _tungstenFabricUtils.sendTungstenCommand(
+                TungstenAnswer updateTungstenLoadBalancerMemberAnswer = tungstenFabricUtils.sendTungstenCommand(
                     updateTungstenLoadBalancerMemberCommand, network.getDataCenterId());
                 if (!updateTungstenLoadBalancerMemberAnswer.getResult()) {
                     return false;
@@ -406,7 +405,7 @@ public class TungstenElement extends AdapterBase
                     String httpsProtocol = "TERMINATED_HTTPS";
                     int listenerPort = NetUtils.HTTPS_PORT;
 
-                    User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
+                    User callerUser = accountMgr.getActiveUser(CallContext.current().getCallingUserId());
                     String apiKey = callerUser.getApiKey();
                     String secretKey = callerUser.getSecretKey();
                     if (apiKey != null && secretKey != null) {
@@ -421,18 +420,18 @@ public class TungstenElement extends AdapterBase
                             return false;
                         }
 
-                        UpdateTungstenLoadBalancerListenerCommand updateTungstenLoadBalancerListenerCommand =
+                        TungstenCommand updateTungstenLoadBalancerListenerCommand =
                             new UpdateTungstenLoadBalancerListenerCommand(
                             tungstenProjectFqn, TungstenUtils.getLoadBalancerListenerName(loadBalancingRule.getId()),
                             httpsProtocol, listenerPort, url);
                         TungstenAnswer updateTungstenLoadBalancerListenerAnswer =
-                            _tungstenFabricUtils.sendTungstenCommand(
+                            tungstenFabricUtils.sendTungstenCommand(
                             updateTungstenLoadBalancerListenerCommand, network.getDataCenterId());
                         if (!updateTungstenLoadBalancerListenerAnswer.getResult()) {
                             return false;
                         }
                     } else {
-                        s_logger.error("tungsten ssl require user api key");
+                        s_logger.error("Tungsten-Fabric ssl require user api key");
                     }
                 }
 
@@ -443,46 +442,45 @@ public class TungstenElement extends AdapterBase
                     tungstenGuestNetworkIpAddressVO.setNetworkId(network.getId());
                     tungstenGuestNetworkIpAddressVO.setPublicIpAddress(ipAddressVO.getAddress());
                     tungstenGuestNetworkIpAddressVO.setGuestIpAddress(new Ip(lbIp));
-                    _tungstenGuestNetworkIpAddressDao.persist(tungstenGuestNetworkIpAddressVO);
+                    tungstenGuestNetworkIpAddressDao.persist(tungstenGuestNetworkIpAddressVO);
                 }
 
-                return _tungstenService.updateLoadBalancer(network, loadBalancingRule);
+                return tungstenService.updateLoadBalancer(network, loadBalancingRule);
             }
 
             if (loadBalancingRule.getState() == FirewallRule.State.Revoke) {
-                IPAddressVO ipAddressVO = _ipAddressDao.findByIpAndDcId(network.getDataCenterId(),
+                IPAddressVO ipAddressVO = ipAddressDao.findByIpAndDcId(network.getDataCenterId(),
                     loadBalancingRule.getSourceIp().addr());
-                List<LoadBalancerVO> listLoadBalancerVO = _lbDao.listByIpAddress(ipAddressVO.getId());
+                List<LoadBalancerVO> listLoadBalancerVO = lbDao.listByIpAddress(ipAddressVO.getId());
                 if (listLoadBalancerVO.size() > 1) {
-                    DeleteTungstenLoadBalancerListenerCommand deleteTungstenLoadBalancerListenerCommand =
+                    TungstenCommand deleteTungstenLoadBalancerListenerCommand =
                         new DeleteTungstenLoadBalancerListenerCommand(
                         tungstenProjectFqn, TungstenUtils.getLoadBalancerListenerName(loadBalancingRule.getId()));
-                    TungstenAnswer deleteTungstenLoadBalancerListenerAnswer = _tungstenFabricUtils.sendTungstenCommand(
+                    TungstenAnswer deleteTungstenLoadBalancerListenerAnswer = tungstenFabricUtils.sendTungstenCommand(
                         deleteTungstenLoadBalancerListenerCommand, network.getDataCenterId());
                     if (!deleteTungstenLoadBalancerListenerAnswer.getResult()) {
                         return false;
                     }
 
-                    return _tungstenService.updateLoadBalancer(network, loadBalancingRule);
+                    return tungstenService.updateLoadBalancer(network, loadBalancingRule);
                 } else {
-                    DeleteTungstenLoadBalancerCommand deleteTungstenLoadBalancerCommand =
-                        new DeleteTungstenLoadBalancerCommand(
+                    TungstenCommand deleteTungstenLoadBalancerCommand = new DeleteTungstenLoadBalancerCommand(
                         tungstenProjectFqn, publicNetwork.getUuid(),
                         TungstenUtils.getLoadBalancerName(ipAddressVO.getId()),
                         TungstenUtils.getLoadBalancerHealthMonitorName(ipAddressVO.getId()),
                         TungstenUtils.getLoadBalancerVmiName(ipAddressVO.getId()),
                         TungstenUtils.getFloatingIpPoolName(network.getDataCenterId()),
                         TungstenUtils.getFloatingIpName(ipAddressVO.getId()));
-                    TungstenAnswer deleteTungstenLoadBalancerAnswer = _tungstenFabricUtils.sendTungstenCommand(
+                    TungstenAnswer deleteTungstenLoadBalancerAnswer = tungstenFabricUtils.sendTungstenCommand(
                         deleteTungstenLoadBalancerCommand, network.getDataCenterId());
                     if (!deleteTungstenLoadBalancerAnswer.getResult()) {
                         return false;
                     }
 
                     TungstenGuestNetworkIpAddressVO guestNetworkIpAddressVO =
-                        _tungstenGuestNetworkIpAddressDao.findByNetworkIdAndPublicIp(
+                        tungstenGuestNetworkIpAddressDao.findByNetworkIdAndPublicIp(
                         network.getId(), ipAddressVO.getAddress().addr());
-                    _tungstenGuestNetworkIpAddressDao.remove(guestNetworkIpAddressVO.getId());
+                    tungstenGuestNetworkIpAddressDao.remove(guestNetworkIpAddressVO.getId());
                 }
             }
         }
@@ -508,7 +506,7 @@ public class TungstenElement extends AdapterBase
     @Override
     public boolean applyPFRules(final Network network, final List<PortForwardingRule> rules)
         throws ResourceUnavailableException {
-        Network publicNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(network.getDataCenterId(),
+        Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(network.getDataCenterId(),
             Networks.TrafficType.Public);
         // tungsten port forwarding don't support multiple vm per public ip address
         // if multiple vm, only 1 vm get effect
@@ -516,16 +514,15 @@ public class TungstenElement extends AdapterBase
         for (PortForwardingRule rule : rules) {
             IPAddressVO publicIp = ApiDBUtils.findIpAddressById(rule.getSourceIpAddressId());
             UserVm vm = ApiDBUtils.findUserVmById(rule.getVirtualMachineId());
-            Nic guestNic = _networkModel.getNicInNetwork(vm.getId(), network.getId());
+            Nic guestNic = networkModel.getNicInNetwork(vm.getId(), network.getId());
             if (rule.getState() == FirewallRule.State.Add || rule.getState() == FirewallRule.State.Revoke) {
-                ApplyTungstenPortForwardingCommand applyTungstenPortForwardingCommand =
-                    new ApplyTungstenPortForwardingCommand(
+                TungstenCommand applyTungstenPortForwardingCommand = new ApplyTungstenPortForwardingCommand(
                     rule.getState() == FirewallRule.State.Add, publicNetwork.getUuid(),
                     TungstenUtils.getFloatingIpPoolName(network.getDataCenterId()),
                     TungstenUtils.getFloatingIpName(publicIp.getId()), guestNic.getUuid(),
                     StringUtils.upperCase(rule.getProtocol()), rule.getSourcePortStart(),
                     rule.getDestinationPortStart());
-                TungstenAnswer applyTungstenPortForwardingAnswer = _tungstenFabricUtils.sendTungstenCommand(
+                TungstenAnswer applyTungstenPortForwardingAnswer = tungstenFabricUtils.sendTungstenCommand(
                     applyTungstenPortForwardingCommand, network.getDataCenterId());
                 if (!applyTungstenPortForwardingAnswer.getResult()) {
                     return false;
@@ -543,7 +540,7 @@ public class TungstenElement extends AdapterBase
 
     @Override
     public Map<Network.Service, Map<Network.Capability, String>> getCapabilities() {
-        return _capabilities;
+        return capabilities;
     }
 
     @Override
@@ -569,66 +566,67 @@ public class TungstenElement extends AdapterBase
         ReservationContext context)
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         if (network.getTrafficType() == Networks.TrafficType.Public) {
-            String tungstenProjectFqn = _tungstenService.getTungstenProjectFqn(network);
+            String tungstenProjectFqn = tungstenService.getTungstenProjectFqn(network);
             String vmType = vm.getType() == VirtualMachine.Type.ConsoleProxy ? TungstenUtils.getProxyVm() :
                 TungstenUtils.getSecstoreVm();
-            VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(vm.getId());
-            HostVO host = _hostDao.findById(vmInstanceVO.getHostId());
+            VMInstanceVO vmInstanceVO = vmInstanceDao.findById(vm.getId());
+            HostVO host = hostDao.findById(vmInstanceVO.getHostId());
 
-            CreateTungstenVirtualMachineCommand createTungstenVirtualMachineCommand =
-                new CreateTungstenVirtualMachineCommand(
+            TungstenCommand createTungstenVirtualMachineCommand = new CreateTungstenVirtualMachineCommand(
                 tungstenProjectFqn, network.getUuid(), vm.getUuid(), vm.getInstanceName(), nic.getUuid(), nic.getId(),
                 nic.getIPv4Address(), nic.getMacAddress(), vmType, TungstenUtils.getPublicType(),
                 host.getPublicIpAddress());
-            TungstenAnswer createVirtualMachineAnswer = _tungstenFabricUtils.sendTungstenCommand(
+            TungstenAnswer createVirtualMachineAnswer = tungstenFabricUtils.sendTungstenCommand(
                 createTungstenVirtualMachineCommand, network.getDataCenterId());
             if (!createVirtualMachineAnswer.getResult()) {
-                throw new CloudRuntimeException("can not create tungsten vm");
+                throw new CloudRuntimeException("can not create Tungsten-Fabric vm");
             }
 
             // get tungsten public firewall rule
-            IPAddressVO ipAddressVO = _ipAddressDao.findByIpAndDcId(network.getDataCenterId(), nic.getIPv4Address());
+            IPAddressVO ipAddressVO = ipAddressDao.findByIpAndDcId(network.getDataCenterId(), nic.getIPv4Address());
             List<TungstenRule> tungstenRuleList = createDefaultTungstenFirewallRuleList(vm.getType(),
                 nic.getIPv4Address());
 
             // create tungsten public network policy for system vm
-            CreateTungstenNetworkPolicyCommand createTungstenNetworkPolicyCommand =
-                new CreateTungstenNetworkPolicyCommand(
+            TungstenCommand createTungstenNetworkPolicyCommand = new CreateTungstenNetworkPolicyCommand(
                 TungstenUtils.getPublicNetworkPolicyName(ipAddressVO.getId()), null, tungstenRuleList);
-            TungstenAnswer createTungstenNetworkPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
+            TungstenAnswer createTungstenNetworkPolicyAnswer = tungstenFabricUtils.sendTungstenCommand(
                 createTungstenNetworkPolicyCommand, network.getDataCenterId());
             if (!createTungstenNetworkPolicyAnswer.getResult()) {
-                throw new CloudRuntimeException("can not create tungsten public network policy");
+                throw new CloudRuntimeException("can not create Tungsten-Fabric public network policy");
             }
 
-            _messageBus.publish(_name, TungstenService.MESSAGE_APPLY_NETWORK_POLICY_EVENT, PublishScope.LOCAL, network);
+            messageBus.publish(_name, TungstenService.MESSAGE_APPLY_NETWORK_POLICY_EVENT, PublishScope.LOCAL, network);
 
             nic.setBroadcastType(Networks.BroadcastDomainType.Tungsten);
             nic.setBroadcastUri(Networks.BroadcastDomainType.Tungsten.toUri("tf"));
-            nic.setName(nic.getName() + TungstenUtils.getBridgeName());
+            if (nic.getName() == null) {
+                nic.setName(TungstenUtils.getDefaultVhostInterface());
+            }
         }
 
         if (network.getTrafficType() == Networks.TrafficType.Management) {
-            String tungstenProjectFqn = _tungstenService.getTungstenProjectFqn(network);
+            String tungstenProjectFqn = tungstenService.getTungstenProjectFqn(network);
             String vmType = vm.getType() == VirtualMachine.Type.ConsoleProxy ? TungstenUtils.getProxyVm() :
                 TungstenUtils.getSecstoreVm();
-            VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(vm.getId());
-            HostVO host = _hostDao.findById(vmInstanceVO.getHostId());
+            VMInstanceVO vmInstanceVO = vmInstanceDao.findById(vm.getId());
+            HostVO host = hostDao.findById(vmInstanceVO.getHostId());
 
-            CreateTungstenVirtualMachineCommand createTungstenVirtualMachineCommand =
-                new CreateTungstenVirtualMachineCommand(
+            TungstenCommand createTungstenVirtualMachineCommand = new CreateTungstenVirtualMachineCommand(
                 tungstenProjectFqn, network.getUuid(), vm.getUuid(), vm.getInstanceName(), nic.getUuid(), nic.getId(),
                 nic.getIPv4Address(), nic.getMacAddress(), vmType, TungstenUtils.getManagementType(),
                 host.getPublicIpAddress());
-            TungstenAnswer createVirtualMachineAnswer = _tungstenFabricUtils.sendTungstenCommand(
+            TungstenAnswer createVirtualMachineAnswer = tungstenFabricUtils.sendTungstenCommand(
                 createTungstenVirtualMachineCommand, network.getDataCenterId());
             if (!createVirtualMachineAnswer.getResult()) {
-                throw new CloudRuntimeException("can not create tungsten vm");
+                throw new CloudRuntimeException("can not create Tungsten-Fabric vm");
             }
 
             nic.setBroadcastType(Networks.BroadcastDomainType.Tungsten);
             nic.setBroadcastUri(Networks.BroadcastDomainType.Tungsten.toUri("tf"));
-            nic.setName(nic.getName() + TungstenUtils.getBridgeName());
+            if (nic.getName() == null) {
+                nic.setName(TungstenUtils.getDefaultVhostInterface());
+            }
         }
 
         return true;
@@ -637,8 +635,8 @@ public class TungstenElement extends AdapterBase
     @Override
     public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context)
         throws ConcurrentOperationException, ResourceUnavailableException {
-        VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(vm.getId());
-        HostVO host = _hostDao.findById(vmInstanceVO.getLastHostId());
+        VMInstanceVO vmInstanceVO = vmInstanceDao.findById(vm.getId());
+        HostVO host = hostDao.findById(vmInstanceVO.getLastHostId());
 
         if (host == null) {
             return true;
@@ -646,56 +644,52 @@ public class TungstenElement extends AdapterBase
 
         if (network.getTrafficType() == Networks.TrafficType.Public) {
             try {
-                DeleteTungstenVRouterPortCommand deleteTungstenVRouterPortCommand =
-                    new DeleteTungstenVRouterPortCommand(
+                TungstenCommand deleteTungstenVRouterPortCommand = new DeleteTungstenVRouterPortCommand(
                     host.getPublicIpAddress(), nic.getUuid());
-                _tungstenFabricUtils.sendTungstenCommand(deleteTungstenVRouterPortCommand, network.getDataCenterId());
+                tungstenFabricUtils.sendTungstenCommand(deleteTungstenVRouterPortCommand, network.getDataCenterId());
 
                 String vmType = vm.getType() == VirtualMachine.Type.ConsoleProxy ? TungstenUtils.getProxyVm() :
                     TungstenUtils.getSecstoreVm();
                 String nicName = TungstenUtils.getVmiName(TungstenUtils.getPublicType(), vmType, vm.getInstanceName(),
                     nic.getId());
-                String tungstenProjectFqn = _tungstenService.getTungstenProjectFqn(network);
+                String tungstenProjectFqn = tungstenService.getTungstenProjectFqn(network);
                 DeleteTungstenVmInterfaceCommand deleteVmiCmd = new DeleteTungstenVmInterfaceCommand(tungstenProjectFqn,
                     nicName);
-                _tungstenFabricUtils.sendTungstenCommand(deleteVmiCmd, network.getDataCenterId());
+                tungstenFabricUtils.sendTungstenCommand(deleteVmiCmd, network.getDataCenterId());
 
-                DeleteTungstenVmCommand deleteVmCmd = new DeleteTungstenVmCommand(vm.getUuid());
-                _tungstenFabricUtils.sendTungstenCommand(deleteVmCmd, network.getDataCenterId());
+                TungstenCommand deleteVmCmd = new DeleteTungstenVmCommand(vm.getUuid());
+                tungstenFabricUtils.sendTungstenCommand(deleteVmCmd, network.getDataCenterId());
 
-                IPAddressVO ipAddressVO = _ipAddressDao.findByIpAndDcId(network.getDataCenterId(),
+                IPAddressVO ipAddressVO = ipAddressDao.findByIpAndDcId(network.getDataCenterId(),
                     nic.getIPv4Address());
-                DeleteTungstenNetworkPolicyCommand deleteTungstenNetworkPolicyCommand =
-                    new DeleteTungstenNetworkPolicyCommand(
+                TungstenCommand deleteTungstenNetworkPolicyCommand = new DeleteTungstenNetworkPolicyCommand(
                     TungstenUtils.getPublicNetworkPolicyName(ipAddressVO.getId()), null, network.getUuid());
-                _tungstenFabricUtils.sendTungstenCommand(deleteTungstenNetworkPolicyCommand, network.getDataCenterId());
+                tungstenFabricUtils.sendTungstenCommand(deleteTungstenNetworkPolicyCommand, network.getDataCenterId());
             } catch (IllegalArgumentException e) {
                 throw new CloudRuntimeException(
-                    "Failing to expunge the vm from tungsten with the uuid " + vm.getUuid());
+                    "Failing to expunge the vm from Tungsten-Fabric with the uuid " + vm.getUuid());
             }
         }
 
         if (network.getTrafficType() == Networks.TrafficType.Management) {
             try {
-                DeleteTungstenVRouterPortCommand deleteTungstenVRouterPortCommand =
-                    new DeleteTungstenVRouterPortCommand(
+                TungstenCommand deleteTungstenVRouterPortCommand = new DeleteTungstenVRouterPortCommand(
                     host.getPublicIpAddress(), nic.getUuid());
-                _tungstenFabricUtils.sendTungstenCommand(deleteTungstenVRouterPortCommand, network.getDataCenterId());
+                tungstenFabricUtils.sendTungstenCommand(deleteTungstenVRouterPortCommand, network.getDataCenterId());
 
                 String vmType = vm.getType() == VirtualMachine.Type.ConsoleProxy ? TungstenUtils.getProxyVm() :
                     TungstenUtils.getSecstoreVm();
                 String nicName = TungstenUtils.getVmiName(TungstenUtils.getManagementType(), vmType,
                     vm.getInstanceName(), nic.getId());
-                String tungstenProjectFqn = _tungstenService.getTungstenProjectFqn(network);
-                DeleteTungstenVmInterfaceCommand deleteVmiCmd = new DeleteTungstenVmInterfaceCommand(tungstenProjectFqn,
-                    nicName);
-                _tungstenFabricUtils.sendTungstenCommand(deleteVmiCmd, network.getDataCenterId());
+                String tungstenProjectFqn = tungstenService.getTungstenProjectFqn(network);
+                TungstenCommand deleteVmiCmd = new DeleteTungstenVmInterfaceCommand(tungstenProjectFqn, nicName);
+                tungstenFabricUtils.sendTungstenCommand(deleteVmiCmd, network.getDataCenterId());
 
-                DeleteTungstenVmCommand deleteVmCmd = new DeleteTungstenVmCommand(vm.getUuid());
-                _tungstenFabricUtils.sendTungstenCommand(deleteVmCmd, network.getDataCenterId());
+                TungstenCommand deleteVmCmd = new DeleteTungstenVmCommand(vm.getUuid());
+                tungstenFabricUtils.sendTungstenCommand(deleteVmCmd, network.getDataCenterId());
             } catch (IllegalArgumentException e) {
                 throw new CloudRuntimeException(
-                    "Failing to expunge the vm from tungsten with the uuid " + vm.getUuid());
+                    "Failing to expunge the vm from Tungsten-Fabric with the uuid " + vm.getUuid());
             }
         }
 
@@ -713,19 +707,18 @@ public class TungstenElement extends AdapterBase
         throws ConcurrentOperationException, ResourceUnavailableException {
         boolean result = true;
         // delete floating ips
-        List<IPAddressVO> staticNatIpList = _ipAddressDao.listByAssociatedNetwork(network.getId(), false);
+        List<IPAddressVO> staticNatIpList = ipAddressDao.listByAssociatedNetwork(network.getId(), false);
         for (IPAddressVO ipAddressVO : staticNatIpList) {
-            DeleteTungstenFloatingIpCommand deleteTungstenFloatingIpCommand = new DeleteTungstenFloatingIpCommand(
-                network.getUuid(), TungstenUtils.getFloatingIpPoolName(network.getDataCenterId()),
+            TungstenCommand deleteTungstenFloatingIpCommand = new DeleteTungstenFloatingIpCommand(network.getUuid(),
+                TungstenUtils.getFloatingIpPoolName(network.getDataCenterId()),
                 TungstenUtils.getFloatingIpName(ipAddressVO.getId()));
-            TungstenAnswer tungstenDeleteFIPAnswer = _tungstenFabricUtils.sendTungstenCommand(
+            TungstenAnswer tungstenDeleteFIPAnswer = tungstenFabricUtils.sendTungstenCommand(
                 deleteTungstenFloatingIpCommand, network.getDataCenterId());
             result = result && tungstenDeleteFIPAnswer.getResult();
 
-            DeleteTungstenNetworkPolicyCommand deleteTungstenNetworkPolicyCommand =
-                new DeleteTungstenNetworkPolicyCommand(
+            TungstenCommand deleteTungstenNetworkPolicyCommand = new DeleteTungstenNetworkPolicyCommand(
                 TungstenUtils.getPublicNetworkPolicyName(ipAddressVO.getId()), null, network.getUuid());
-            TungstenAnswer tungstenDeleteNPAnswer = _tungstenFabricUtils.sendTungstenCommand(
+            TungstenAnswer tungstenDeleteNPAnswer = tungstenFabricUtils.sendTungstenCommand(
                 deleteTungstenNetworkPolicyCommand, network.getDataCenterId());
             result = result && tungstenDeleteNPAnswer.getResult();
         }
@@ -735,37 +728,37 @@ public class TungstenElement extends AdapterBase
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
-        PhysicalNetworkTrafficTypeVO publicNetwork = _physicalNetworkTrafficTypeDao.findBy(
+        PhysicalNetworkTrafficTypeVO publicNetwork = physicalNetworkTrafficTypeDao.findBy(
             provider.getPhysicalNetworkId(), Networks.TrafficType.Public);
-        PhysicalNetworkTrafficTypeVO managementNetwork = _physicalNetworkTrafficTypeDao.findBy(
-                provider.getPhysicalNetworkId(), Networks.TrafficType.Management);
+        PhysicalNetworkTrafficTypeVO managementNetwork = physicalNetworkTrafficTypeDao.findBy(
+            provider.getPhysicalNetworkId(), Networks.TrafficType.Management);
         return publicNetwork != null || managementNetwork != null;
     }
 
     @Override
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context)
         throws ConcurrentOperationException, ResourceUnavailableException {
-        long zoneId = _physicalNetworkDao.findById(provider.getPhysicalNetworkId()).getDataCenterId();
-        Network publicNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Public);
+        long zoneId = physicalNetworkDao.findById(provider.getPhysicalNetworkId()).getDataCenterId();
+        Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Public);
 
         // delete network service map
-        _networkServiceMapDao.deleteByNetworkId(publicNetwork.getId());
+        networkServiceMapDao.deleteByNetworkId(publicNetwork.getId());
 
-        TungstenProvider tungstenProvider = _tungstenProviderDao.findByZoneId(zoneId);
+        TungstenProvider tungstenProvider = tungstenProviderDao.findByZoneId(zoneId);
         if (tungstenProvider != null) {
-            List<VlanVO> listVlanVO = _vlanDao.listByZone(zoneId);
+            List<VlanVO> listVlanVO = vlanDao.listVlansByNetworkIdIncludingRemoved(publicNetwork.getId());
             for (VlanVO vlanVO : listVlanVO) {
-                _tungstenService.removePublicNetworkSubnet(vlanVO);
+                tungstenService.removePublicNetworkSubnet(vlanVO);
             }
 
-            _tungstenService.deletePublicNetwork(zoneId);
+            tungstenService.deletePublicNetwork(zoneId);
 
-            List<HostPodVO> listPod = _podDao.listByDataCenterId(zoneId);
+            List<HostPodVO> listPod = podDao.listByDataCenterId(zoneId);
             for (HostPodVO pod : listPod) {
-                _tungstenService.removeManagementNetworkSubnet(pod);
+                tungstenService.removeManagementNetworkSubnet(pod);
             }
 
-            _tungstenService.deleteManagementNetwork(zoneId);
+            tungstenService.deleteManagementNetwork(zoneId);
         }
         return true;
     }
@@ -783,8 +776,8 @@ public class TungstenElement extends AdapterBase
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        _agentMgr.registerForHostEvents(this, true, true, true);
-        _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
+        agentMgr.registerForHostEvents(this, true, true, true);
+        resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }
 
@@ -866,10 +859,10 @@ public class TungstenElement extends AdapterBase
     public void processConnect(final Host host, final StartupCommand cmd, final boolean forRebalance)
         throws ConnectionException {
         long zoneId = host.getDataCenterId();
-        TungstenProviderVO tungstenProvider = _tungstenProviderDao.findByZoneId(zoneId);
+        TungstenProviderVO tungstenProvider = tungstenProviderDao.findByZoneId(zoneId);
         if (host.getHypervisorType() == Hypervisor.HypervisorType.KVM && tungstenProvider != null
             && host.getPublicIpAddress().equals(tungstenProvider.getGateway())) {
-            List<VlanVO> vlanList = _vlanDao.listByZone(zoneId);
+            List<VlanVO> vlanList = vlanDao.listByZone(zoneId);
             List<String> publicSubnetList = new ArrayList<>();
 
             for (VlanVO vlanVO : vlanList) {
@@ -878,12 +871,12 @@ public class TungstenElement extends AdapterBase
             }
 
             String publicSubnet = StringUtils.join(publicSubnetList.toArray(), " ");
-            Network publicNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(zoneId,
+            Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId,
                 Networks.TrafficType.Public);
-            NetworkDetailVO networkDetail = _networkDetailsDao.findDetail(publicNetwork.getId(), "vrf");
+            NetworkDetailVO networkDetail = networkDetailsDao.findDetail(publicNetwork.getId(), "vrf");
             SetupTungstenVRouterCommand setupTungstenVRouterCommand = new SetupTungstenVRouterCommand("create",
                 TungstenUtils.getVgwName(zoneId), publicSubnet, NetUtils.ALL_IP4_CIDRS, networkDetail.getValue());
-            _agentMgr.easySend(host.getId(), setupTungstenVRouterCommand);
+            agentMgr.easySend(host.getId(), setupTungstenVRouterCommand);
         }
     }
 
@@ -894,16 +887,16 @@ public class TungstenElement extends AdapterBase
 
     @Override
     public void processHostAboutToBeRemoved(final long hostId) {
-        Host host = _hostDao.findById(hostId);
+        Host host = hostDao.findById(hostId);
         long zoneId = host.getDataCenterId();
 
-        TungstenProviderVO tungstenProvider = _tungstenProviderDao.findByZoneId(zoneId);
+        TungstenProviderVO tungstenProvider = tungstenProviderDao.findByZoneId(zoneId);
         if (host.getHypervisorType() == Hypervisor.HypervisorType.KVM && tungstenProvider != null
             && host.getPublicIpAddress().equals(tungstenProvider.getGateway())) {
             SetupTungstenVRouterCommand setupTungstenVRouterCommand = new SetupTungstenVRouterCommand("delete",
                 TungstenUtils.getVgwName(zoneId), NetUtils.ALL_IP4_CIDRS, NetUtils.ALL_IP4_CIDRS,
                 NetUtils.ALL_IP4_CIDRS);
-            _agentMgr.easySend(host.getId(), setupTungstenVRouterCommand);
+            agentMgr.easySend(host.getId(), setupTungstenVRouterCommand);
         }
     }
 
@@ -932,7 +925,8 @@ public class TungstenElement extends AdapterBase
         boolean result = true;
         String tungstenProjectFqn;
         String networkUuid;
-        Network publicNetwork = _networkModel.getSystemNetworkByZoneAndTrafficType(network.getDataCenterId(),
+        String policyName;
+        Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(network.getDataCenterId(),
             Networks.TrafficType.Public);
         for (FirewallRule firewallRule : rules) {
             if (firewallRule.getPurpose() == FirewallRule.Purpose.Firewall) {
@@ -945,27 +939,25 @@ public class TungstenElement extends AdapterBase
                 tungstenRuleList.add(tungstenRule);
 
                 if (firewallRule.getTrafficType() == FirewallRule.TrafficType.Egress) {
-                    tungstenProjectFqn = _tungstenService.getTungstenProjectFqn(network);
+                    tungstenProjectFqn = tungstenService.getTungstenProjectFqn(network);
                     networkUuid = network.getUuid();
+                    policyName = TungstenUtils.getRuleNetworkPolicyName(firewallRule.getId());
                 } else {
                     tungstenProjectFqn = null;
                     networkUuid = publicNetwork.getUuid();
+                    policyName = TungstenUtils.getPublicNetworkPolicyName(firewallRule.getSourceIpAddressId());
                 }
 
                 if (firewallRule.getState() == FirewallRule.State.Add) {
-                    CreateTungstenNetworkPolicyCommand createTungstenNetworkPolicyCommand =
-                        new CreateTungstenNetworkPolicyCommand(
-                        TungstenUtils.getRuleNetworkPolicyName(firewallRule.getId()), tungstenProjectFqn,
-                        tungstenRuleList);
-                    TungstenAnswer createNetworkPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
+                    TungstenCommand createTungstenNetworkPolicyCommand = new CreateTungstenNetworkPolicyCommand(
+                        policyName, tungstenProjectFqn, tungstenRuleList);
+                    TungstenAnswer createNetworkPolicyAnswer = tungstenFabricUtils.sendTungstenCommand(
                         createTungstenNetworkPolicyCommand, network.getDataCenterId());
                     result = result && createNetworkPolicyAnswer.getResult();
 
-                    ApplyTungstenNetworkPolicyCommand applyTungstenNetworkPolicyCommand =
-                        new ApplyTungstenNetworkPolicyCommand(
-                        tungstenProjectFqn, TungstenUtils.getRuleNetworkPolicyName(firewallRule.getId()), networkUuid,
-                        true);
-                    TungstenAnswer applyNetworkPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
+                    TungstenCommand applyTungstenNetworkPolicyCommand = new ApplyTungstenNetworkPolicyCommand(
+                        tungstenProjectFqn, policyName, networkUuid, 0, 0);
+                    TungstenAnswer applyNetworkPolicyAnswer = tungstenFabricUtils.sendTungstenCommand(
                         applyTungstenNetworkPolicyCommand, network.getDataCenterId());
                     result = result && applyNetworkPolicyAnswer.getResult();
 
@@ -973,10 +965,9 @@ public class TungstenElement extends AdapterBase
                 }
 
                 if (firewallRule.getState() == FirewallRule.State.Revoke) {
-                    DeleteTungstenNetworkPolicyCommand deleteTungstenNetworkPolicyCommand =
-                        new DeleteTungstenNetworkPolicyCommand(
-                        TungstenUtils.getRuleNetworkPolicyName(firewallRule.getId()), tungstenProjectFqn, networkUuid);
-                    TungstenAnswer deleteNetworkPolicyAnswer = _tungstenFabricUtils.sendTungstenCommand(
+                    TungstenCommand deleteTungstenNetworkPolicyCommand = new DeleteTungstenNetworkPolicyCommand(
+                        policyName, tungstenProjectFqn, networkUuid);
+                    TungstenAnswer deleteNetworkPolicyAnswer = tungstenFabricUtils.sendTungstenCommand(
                         deleteTungstenNetworkPolicyCommand, network.getDataCenterId());
 
                     return deleteNetworkPolicyAnswer.getResult();
@@ -994,8 +985,8 @@ public class TungstenElement extends AdapterBase
         int dstPrefixLen = dstCidrs.size() == 1 ? NetUtils.getCidr(dstCidrs.get(0)).second() : 0;
         int dstPortStart = firewallRule.getSourcePortStart() != null ? firewallRule.getSourcePortStart() : -1;
         int dstPortEnd = firewallRule.getSourcePortEnd() != null ? firewallRule.getSourcePortEnd() : -1;
-        String tungstenProtocol = firewallRule.getProtocol().equals(NetUtils.ALL_PROTO) ? TungstenUtils.ANY_PROTO :
-            firewallRule.getProtocol();
+        String tungstenProtocol =
+            firewallRule.getProtocol().equals(NetUtils.ALL_PROTO) ? TungstenUtils.ANY : firewallRule.getProtocol();
 
         if (srcCidrs == null || srcCidrs.size() != 1) {
             throw new ResourceUnavailableException("invalid source cidr", FirewallRule.class, firewallRule.getId());
@@ -1010,45 +1001,59 @@ public class TungstenElement extends AdapterBase
 
         if (firewallRule.getTrafficType() == FirewallRule.TrafficType.Ingress) {
             long id = firewallRule.getSourceIpAddressId();
-            IPAddressVO ipAddressVO = _ipAddressDao.findById(id);
+            IPAddressVO ipAddressVO = ipAddressDao.findById(id);
             dstPrefix = ipAddressVO.getAddress().addr();
             dstPrefixLen = 32;
         }
 
         return new TungstenRule(firewallRule.getUuid(), TungstenUtils.PASS_ACTION, TungstenUtils.ONE_WAY_DIRECTION,
-            tungstenProtocol, srcSubnet.first(), srcSubnet.second(), -1, -1, dstPrefix, dstPrefixLen, dstPortStart,
-            dstPortEnd);
+            tungstenProtocol, TungstenUtils.ANY, srcSubnet.first(), srcSubnet.second(), -1, -1, TungstenUtils.ANY,
+            dstPrefix, dstPrefixLen, dstPortStart, dstPortEnd);
     }
 
-    private TungstenRule getDefaultRule(String ip, String protocol, int startPort, int endPort) {
-        return new TungstenRule(null, TungstenUtils.PASS_ACTION, TungstenUtils.ONE_WAY_DIRECTION, protocol,
-            TungstenUtils.ALL_IP4_PREFIX, 0, -1, -1, ip, TungstenUtils.MAX_CIDR, startPort, endPort);
+    private TungstenRule getDefaultIngressRule(String ip, String protocol, int startPort, int endPort) {
+        return new TungstenRule(TungstenUtils.PASS_ACTION, TungstenUtils.TWO_WAY_DIRECTION, protocol, TungstenUtils.ANY,
+            TungstenUtils.ALL_IP4_PREFIX, 0, -1, -1, TungstenUtils.ANY, ip, TungstenUtils.MAX_CIDR, startPort, endPort);
+    }
+
+    private TungstenRule getDefaultEgressRule(String ip, String protocol, int startPort, int endPort) {
+        return new TungstenRule(TungstenUtils.PASS_ACTION, TungstenUtils.ONE_WAY_DIRECTION, protocol, TungstenUtils.ANY,
+            TungstenUtils.ALL_IP4_PREFIX, 0, startPort, endPort, TungstenUtils.ANY, ip, TungstenUtils.MAX_CIDR, -1, -1);
     }
 
     private List<TungstenRule> createDefaultTungstenFirewallRuleList(VirtualMachine.Type vmType, String ip) {
         List<TungstenRule> tungstenRuleList = new ArrayList<>();
-        tungstenRuleList.add(getDefaultRule(ip, NetUtils.ICMP_PROTO, -1, -1));
+        tungstenRuleList.add(getDefaultIngressRule(ip, NetUtils.ICMP_PROTO, -1, -1));
+        tungstenRuleList.add(getDefaultEgressRule(ip, NetUtils.UDP_PROTO, TungstenUtils.DNS_SERVICE_PORT,
+            TungstenUtils.DNS_SERVICE_PORT));
+        tungstenRuleList.add(getDefaultEgressRule(ip, NetUtils.UDP_PROTO, TungstenUtils.NTP_SERVICE_PORT,
+            TungstenUtils.NTP_SERVICE_PORT));
         if (vmType == VirtualMachine.Type.ConsoleProxy) {
-            tungstenRuleList.add(getDefaultRule(ip, NetUtils.TCP_PROTO, NetUtils.HTTP_PORT, NetUtils.HTTP_PORT));
+            tungstenRuleList.add(getDefaultIngressRule(ip, NetUtils.TCP_PROTO, NetUtils.HTTP_PORT, NetUtils.HTTP_PORT));
+            tungstenRuleList.add(getDefaultIngressRule(ip, NetUtils.TCP_PROTO, TungstenUtils.WEB_SERVICE_PORT,
+                TungstenUtils.WEB_SERVICE_PORT));
             tungstenRuleList.add(
-                getDefaultRule(ip, NetUtils.TCP_PROTO, TungstenUtils.WEB_SERVICE_PORT, TungstenUtils.WEB_SERVICE_PORT));
-            tungstenRuleList.add(getDefaultRule(ip, NetUtils.TCP_PROTO, NetUtils.HTTPS_PORT, NetUtils.HTTPS_PORT));
+                getDefaultIngressRule(ip, NetUtils.TCP_PROTO, NetUtils.HTTPS_PORT, NetUtils.HTTPS_PORT));
         }
 
         return tungstenRuleList;
     }
 
     @Override
-    public boolean addDnsEntry(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Network.Service.Dhcp, getProvider())) {
+    public boolean addDnsEntry(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest,
+        ReservationContext context)
+        throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        if (networkModel.isProviderSupportServiceInNetwork(network.getId(), Network.Service.Dhcp, getProvider())) {
             return true;
         }
         return false;
     }
 
     @Override
-    public boolean configDnsSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Network.Service.Dhcp, getProvider())) {
+    public boolean configDnsSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile vm,
+        DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        if (networkModel.isProviderSupportServiceInNetwork(network.getId(), Network.Service.Dhcp, getProvider())) {
             return true;
         }
         return false;
@@ -1056,7 +1061,7 @@ public class TungstenElement extends AdapterBase
 
     @Override
     public boolean removeDnsSupportForSubnet(Network network) throws ResourceUnavailableException {
-        if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Network.Service.Dhcp, getProvider())) {
+        if (networkModel.isProviderSupportServiceInNetwork(network.getId(), Network.Service.Dhcp, getProvider())) {
             return true;
         }
         return false;

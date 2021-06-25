@@ -47,8 +47,8 @@ public class TungstenFabricUtils {
         TungstenAnswer answer = (TungstenAnswer) agentMgr.easySend(tungstenProviderVO.getHostId(), cmd);
 
         if (answer == null || !answer.getResult()) {
-            s_logger.error("Tungsten API Command failed");
-            throw new IllegalArgumentException("Failed API call to Tungsten Network plugin");
+            s_logger.error("Tungsten-Fabric API Command failed");
+            throw new IllegalArgumentException("Failed API call to Tungsten-Fabric Network plugin");
         }
 
         return answer;

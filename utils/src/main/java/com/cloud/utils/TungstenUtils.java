@@ -25,7 +25,8 @@ import java.util.List;
 
 // TODO : will determine later
 public class TungstenUtils {
-    private static final String tungstenBridge = "-tungsten";
+    private static final String defaultVhostInterface = "vhost0";
+    private static final String defaultForwardingMode = "l3";
     private static final String proxyVm = "proxyvm";
     private static final String secstoreVm = "secstorevm";
     private static final String userVm = "userVm";
@@ -38,25 +39,29 @@ public class TungstenUtils {
     public static final String EGRESS_RULE = "egress";
 
     public static final int MAX_CIDR = 32;
+    public static final int DNS_SERVICE_PORT = 53;
+    public static final int NTP_SERVICE_PORT = 123;
     public static final int WEB_SERVICE_PORT = 8080;
     public static final String ALL_IP4_PREFIX = "0.0.0.0";
-    public static final String ANY_PROTO = "any";
+    public static final String ANY = "any";
     public static final String DENY_ACTION = "deny";
     public static final String PASS_ACTION = "pass";
     public static final String ONE_WAY_DIRECTION = ">";
     public static final String TWO_WAY_DIRECTION = "<>";
     public static final String FABRIC_NETWORK_FQN = "default-domain:default-project:ip-fabric";
+    public static final String DEFAULT_FABRIC_NAME = "ip-fabric";
+    public static final String DEFAULT_PROJECT_FQN = "default-domain:default-project";
 
     public static String getTapName(final String macAddress) {
         return "tap" + macAddress.replace(":", "");
     }
 
-    public static boolean isTungstenBridge(final String bridgeName) {
-        return bridgeName.contains(tungstenBridge);
+    public static String getDefaultVhostInterface() {
+        return defaultVhostInterface;
     }
 
-    public static String getBridgeName() {
-        return tungstenBridge;
+    public static String getDefaultForwardingMode() {
+        return defaultForwardingMode;
     }
 
     public static String getVmiName(String trafficType, String vmType, String vmName, long nicId) {
@@ -155,16 +160,24 @@ public class TungstenUtils {
         return "public-network-policy" + publicIpAddressId;
     }
 
+    public static String getManagementPolicyName(long zoneId) {
+        return "management-network-policy" + zoneId;
+    }
+
+    public static String getFabricPolicyName(long zoneId) {
+        return "fabric-network-policy" + zoneId;
+    }
+
     public static String getVirtualNetworkPolicyName(long networkId) {
         return "virtual-network-policy" + networkId;
     }
 
-    public static String getDefaultPublicNetworkPolicyName(long vlanId) {
-        return "default-public-network-policy" + vlanId;
+    public static String getDefaultPublicNetworkPolicyName(long zoneId) {
+        return "default-public-network-policy" + zoneId;
     }
 
-    public static String getFabricNetworkPolicyName() {
-        return "fabric-network-policy";
+    public static String getDefaultPublicSubnetPolicyName(long subnetId) {
+        return "default-public-subnet-policy" + subnetId;
     }
 
     public static String getRuleNetworkPolicyName(long ruleId) {

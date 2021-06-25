@@ -24,26 +24,31 @@ import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.network.tungsten.api.response.TungstenProviderResponse;
+import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricProviderResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenProviderService;
+import org.apache.log4j.Logger;
+
+import java.util.List;
 
 import javax.inject.Inject;
-import java.util.Arrays;
 
-@APICommand(name = "listTungstenProviders", responseObject = TungstenProviderResponse.class, description = "Lists Tungsten-Fabric providers",
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListTungstenProvidersCmd extends BaseCmd {
+@APICommand(name = ListTungstenFabricProvidersCmd.APINAME, responseObject = TungstenFabricProviderResponse.class,
+    description = "Lists Tungsten-Fabric providers", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class ListTungstenFabricProvidersCmd extends BaseListCmd {
+    public static final Logger s_logger = Logger.getLogger(ListTungstenFabricProvidersCmd.class.getName());
+    public static final String APINAME = "listTungstenFabricProviders";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, required = true, entityType = ZoneResponse.class)
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class)
     private Long zoneId;
 
     /////////////////////////////////////////////////////
@@ -52,7 +57,7 @@ public class ListTungstenProvidersCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-        return "listTungstenProviders";
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override
@@ -68,14 +73,13 @@ public class ListTungstenProvidersCmd extends BaseCmd {
     private TungstenProviderService tungstenProviderService;
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
-            NetworkRuleConflictException {
-        TungstenProviderResponse provider = tungstenProviderService.getTungstenProvider(zoneId);
-        ListResponse<TungstenProviderResponse> responseList = new ListResponse<TungstenProviderResponse>();
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
+        ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+        List<TungstenFabricProviderResponse> provider = tungstenProviderService.listTungstenProvider(zoneId);
+        ListResponse<TungstenFabricProviderResponse> responseList = new ListResponse<TungstenFabricProviderResponse>();
         responseList.setResponseName(getCommandName());
-        responseList.setResponses(Arrays.asList(provider));
+        responseList.setResponses(provider);
         setResponseObject(responseList);
     }
-
 }
 

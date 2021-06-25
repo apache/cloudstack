@@ -4890,10 +4890,10 @@
                                     dataProvider: function (args) {
                                         var providerObj
                                         $.ajax({
-                                            url: createURL("listTungstenProviders&zoneid=" + args.context.zones[0].id),
+                                            url: createURL("listTungstenFabricProviders&zoneid=" + args.context.zones[0].id),
                                             async: false,
                                             success: function (json) {
-                                                providerObj = json.listTungstenProviders.tungstenProvider
+                                                providerObj = json.listtungstenfabricprovidersresponse.tungstenProvider
                                             }
                                         });
                                         args.response.success({
@@ -4901,10 +4901,10 @@
                                         });
                                     },
                                     detailView: {
-                                        name: "Tungsten Provider",
+                                        name: 'label.tungsten.provider',
                                         tabs: {
                                             details: {
-                                                title: 'label.tungsten.providerdetail',
+                                                title: 'label.tungsten.provider.detail',
                                                 fields: [{
                                                     name: {
                                                         label: 'label.name'
@@ -4928,11 +4928,11 @@
                                                 dataProvider: function (args) {
                                                     var providerObj
                                                     $.ajax({
-                                                        url: createURL("listTungstenProviders&zoneid=" + args.context.zones[0].id),
+                                                        url: createURL("listTungstenFabricProviders&zoneid=" + args.context.zones[0].id),
                                                         dataType: "json",
                                                         async: false,
                                                         success: function (json) {
-                                                            providerObj = json.listTungstenProviders.tungstenProvider
+                                                            providerObj = json.listtungstenfabricprovidersresponse.tungstenProvider
                                                         }
                                                     });
                                                     args.response.success({
@@ -21895,7 +21895,7 @@
 
     function addTungstenProvider(args) {
         $.ajax({
-            url: createURL('createTungstenProvider'),
+            url: createURL('createTungstenFabricProvider'),
             data: {
                 nspid: nspMap[ "Tungsten"].id,
                 tungstenproviderhostname: args.data.hostname,

@@ -16,39 +16,66 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.model;
 
+import java.util.UUID;
+
 public class TungstenRule {
-    private final String ruleId;
+    private final String uuid;
     private final String action;
     private final String direction;
     private final String protocol;
+    private final String srcNetwork;
     private final String srcIpPrefix;
     private final int srcIpPrefixLen;
     private final int srcStartPort;
     private final int srcEndPort;
+    private final String dstNetwork;
     private final String dstIpPrefix;
     private final int dstIpPrefixLen;
     private final int dstStartPort;
     private final int dstEndPort;
 
-    public TungstenRule(final String ruleId, final String action, final String direction, final String protocol,
-        final String srcIpPrefix, final int srcIpPrefixLen, final int srcStartPort, final int srcEndPort,
-        final String dstIpPrefix, final int dstIpPrefixLen, final int dstStartPort, final int dstEndPort) {
-        this.ruleId = ruleId;
+    public TungstenRule(final String uuid, final String action, final String direction, final String protocol,
+        final String srcNetwork, final String srcIpPrefix, final int srcIpPrefixLen, final int srcStartPort,
+        final int srcEndPort, final String dstNetwork, final String dstIpPrefix, final int dstIpPrefixLen,
+        final int dstStartPort, final int dstEndPort) {
+        this.uuid = uuid;
         this.action = action;
         this.direction = direction;
         this.protocol = protocol;
+        this.srcNetwork = srcNetwork;
         this.srcIpPrefix = srcIpPrefix;
         this.srcIpPrefixLen = srcIpPrefixLen;
         this.srcStartPort = srcStartPort;
         this.srcEndPort = srcEndPort;
+        this.dstNetwork = dstNetwork;
         this.dstIpPrefix = dstIpPrefix;
         this.dstIpPrefixLen = dstIpPrefixLen;
         this.dstStartPort = dstStartPort;
         this.dstEndPort = dstEndPort;
     }
 
-    public String getRuleId() {
-        return ruleId;
+    public TungstenRule(final String action, final String direction, final String protocol, final String srcNetwork,
+        final String srcIpPrefix, final int srcIpPrefixLen, final int srcStartPort, final int srcEndPort,
+        final String dstNetwork, final String dstIpPrefix, final int dstIpPrefixLen, final int dstStartPort,
+        final int dstEndPort) {
+        this.uuid = UUID.randomUUID().toString();
+        this.action = action;
+        this.direction = direction;
+        this.protocol = protocol;
+        this.srcNetwork = srcNetwork;
+        this.srcIpPrefix = srcIpPrefix;
+        this.srcIpPrefixLen = srcIpPrefixLen;
+        this.srcStartPort = srcStartPort;
+        this.srcEndPort = srcEndPort;
+        this.dstNetwork = dstNetwork;
+        this.dstIpPrefix = dstIpPrefix;
+        this.dstIpPrefixLen = dstIpPrefixLen;
+        this.dstStartPort = dstStartPort;
+        this.dstEndPort = dstEndPort;
+    }
+
+    public String getUuid() {
+        return uuid;
     }
 
     public String getAction() {
@@ -61,6 +88,10 @@ public class TungstenRule {
 
     public String getProtocol() {
         return protocol;
+    }
+
+    public String getSrcNetwork() {
+        return srcNetwork;
     }
 
     public String getSrcIpPrefix() {
@@ -77,6 +108,10 @@ public class TungstenRule {
 
     public int getSrcEndPort() {
         return srcEndPort;
+    }
+
+    public String getDstNetwork() {
+        return dstNetwork;
     }
 
     public String getDstIpPrefix() {

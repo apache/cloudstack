@@ -35,19 +35,58 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.collect.Lists;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.cloudstack.network.tungsten.api.command.ConfigTungstenServiceCmd;
-import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenManagementNetworkCmd;
-import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenProviderCmd;
-import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenPublicNetworkCmd;
+import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricFirewallPolicyCmd;
+import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricFirewallRuleCmd;
+import org.apache.cloudstack.network.tungsten.api.command.AddTungstenFabricPolicyRuleCmd;
+import org.apache.cloudstack.network.tungsten.api.command.ApplyTungstenFabricPolicyCmd;
+import org.apache.cloudstack.network.tungsten.api.command.ApplyTungstenFabricTagCmd;
+import org.apache.cloudstack.network.tungsten.api.command.ConfigTungstenFabricServiceCmd;
+import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricAddressGroupCmd;
+import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricApplicationPolicySetCmd;
+import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricFirewallPolicyCmd;
+import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricFirewallRuleCmd;
+import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricManagementNetworkCmd;
+import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricPolicyCmd;
+import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricProviderCmd;
+import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricPublicNetworkCmd;
+import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricServiceGroupCmd;
+import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricTagCmd;
+import org.apache.cloudstack.network.tungsten.api.command.CreateTungstenFabricTagTypeCmd;
+import org.apache.cloudstack.network.tungsten.api.command.DeleteTungstenFabricAddressGroupCmd;
+import org.apache.cloudstack.network.tungsten.api.command.DeleteTungstenFabricApplicationPolicySetCmd;
+import org.apache.cloudstack.network.tungsten.api.command.DeleteTungstenFabricFirewallPolicyCmd;
+import org.apache.cloudstack.network.tungsten.api.command.DeleteTungstenFabricFirewallRuleCmd;
+import org.apache.cloudstack.network.tungsten.api.command.DeleteTungstenFabricPolicyCmd;
+import org.apache.cloudstack.network.tungsten.api.command.DeleteTungstenFabricServiceGroupCmd;
+import org.apache.cloudstack.network.tungsten.api.command.DeleteTungstenFabricTagCmd;
+import org.apache.cloudstack.network.tungsten.api.command.DeleteTungstenFabricTagTypeCmd;
 import org.apache.cloudstack.network.tungsten.api.command.GetLoadBalancerSslCertificateCmd;
-import org.apache.cloudstack.network.tungsten.api.command.ListTungstenProvidersCmd;
-import org.apache.cloudstack.network.tungsten.api.command.SynchronizeTungstenDataCmd;
-import org.apache.cloudstack.network.tungsten.api.response.TungstenProviderResponse;
+import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricAddressGroupCmd;
+import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricApplictionPolicySetCmd;
+import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricFirewallPolicyCmd;
+import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricFirewallRuleCmd;
+import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricNetworkCmd;
+import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricNicCmd;
+import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricPolicyCmd;
+import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricPolicyRuleCmd;
+import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricProvidersCmd;
+import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricServiceGroupCmd;
+import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricTagCmd;
+import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricTagTypeCmd;
+import org.apache.cloudstack.network.tungsten.api.command.ListTungstenFabricVmCmd;
+import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricFirewallPolicyCmd;
+import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricFirewallRuleCmd;
+import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricPolicyCmd;
+import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricPolicyRuleCmd;
+import org.apache.cloudstack.network.tungsten.api.command.RemoveTungstenFabricTagCmd;
+import org.apache.cloudstack.network.tungsten.api.command.SynchronizeTungstenFabricDataCmd;
+import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricProviderResponse;
 import org.apache.cloudstack.network.tungsten.resource.TungstenResource;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,30 +101,47 @@ public class TungstenProviderServiceImpl extends ManagerBase implements Tungsten
     private static final Logger s_logger = Logger.getLogger(TungstenProviderServiceImpl.class);
 
     @Inject
-    TungstenProviderDao _tungstenProviderDao;
+    TungstenProviderDao tungstenProviderDao;
     @Inject
-    DataCenterDao _zoneDao;
+    DataCenterDao zoneDao;
     @Inject
-    ResourceManager _resourceMgr;
+    ResourceManager resourceMgr;
     @Inject
-    HostDetailsDao _hostDetailsDao;
+    HostDetailsDao hostDetailsDao;
     @Inject
-    DomainDao _domainDao;
+    DomainDao domainDao;
     @Inject
-    ProjectDao _projectDao;
+    ProjectDao projectDao;
     @Inject
-    MessageBus _messageBus;
+    MessageBus messageBus;
 
     @Override
     public List<Class<?>> getCommands() {
-        return Lists.<Class<?>>newArrayList(CreateTungstenProviderCmd.class, ConfigTungstenServiceCmd.class,
-            CreateTungstenPublicNetworkCmd.class, ListTungstenProvidersCmd.class,
-            CreateTungstenManagementNetworkCmd.class, GetLoadBalancerSslCertificateCmd.class,
-            SynchronizeTungstenDataCmd.class);
+        return Lists.<Class<?>>newArrayList(CreateTungstenFabricProviderCmd.class, ConfigTungstenFabricServiceCmd.class,
+            CreateTungstenFabricPublicNetworkCmd.class, ListTungstenFabricProvidersCmd.class,
+            CreateTungstenFabricManagementNetworkCmd.class, GetLoadBalancerSslCertificateCmd.class,
+            SynchronizeTungstenFabricDataCmd.class, CreateTungstenFabricPolicyCmd.class,
+            AddTungstenFabricPolicyRuleCmd.class, ListTungstenFabricPolicyCmd.class,
+            ListTungstenFabricPolicyRuleCmd.class, RemoveTungstenFabricPolicyRuleCmd.class,
+            DeleteTungstenFabricPolicyCmd.class, CreateTungstenFabricTagCmd.class, CreateTungstenFabricTagTypeCmd.class,
+            DeleteTungstenFabricTagCmd.class, DeleteTungstenFabricTagTypeCmd.class, ListTungstenFabricTagCmd.class,
+            ListTungstenFabricTagTypeCmd.class, ApplyTungstenFabricPolicyCmd.class, ApplyTungstenFabricTagCmd.class,
+            RemoveTungstenFabricPolicyCmd.class, RemoveTungstenFabricTagCmd.class, ListTungstenFabricNetworkCmd.class,
+            ListTungstenFabricVmCmd.class, ListTungstenFabricNicCmd.class,
+            CreateTungstenFabricApplicationPolicySetCmd.class, CreateTungstenFabricFirewallPolicyCmd.class,
+            CreateTungstenFabricFirewallRuleCmd.class, CreateTungstenFabricServiceGroupCmd.class,
+            CreateTungstenFabricAddressGroupCmd.class, ListTungstenFabricApplictionPolicySetCmd.class,
+            ListTungstenFabricFirewallPolicyCmd.class, ListTungstenFabricFirewallRuleCmd.class,
+            ListTungstenFabricServiceGroupCmd.class, ListTungstenFabricAddressGroupCmd.class,
+            AddTungstenFabricFirewallPolicyCmd.class, AddTungstenFabricFirewallRuleCmd.class,
+            DeleteTungstenFabricApplicationPolicySetCmd.class, DeleteTungstenFabricFirewallPolicyCmd.class,
+            DeleteTungstenFabricFirewallRuleCmd.class, DeleteTungstenFabricAddressGroupCmd.class,
+            DeleteTungstenFabricServiceGroupCmd.class, RemoveTungstenFabricFirewallPolicyCmd.class,
+            RemoveTungstenFabricFirewallRuleCmd.class);
     }
 
     @Override
-    public TungstenProvider addProvider(CreateTungstenProviderCmd cmd) {
+    public TungstenProvider addProvider(CreateTungstenFabricProviderCmd cmd) {
         TungstenProviderVO tungstenProvider;
         final Long zoneId = cmd.getZoneId();
         final String name = cmd.getName();
@@ -101,7 +157,7 @@ public class TungstenProviderServiceImpl extends ManagerBase implements Tungsten
 
         TungstenResource tungstenResource = new TungstenResource();
 
-        DataCenterVO zone = _zoneDao.findById(zoneId);
+        DataCenterVO zone = zoneDao.findById(zoneId);
         String zoneName;
         if (zone != null) {
             zoneName = zone.getName();
@@ -114,7 +170,7 @@ public class TungstenProviderServiceImpl extends ManagerBase implements Tungsten
         params.put("zoneId", zoneId.toString());
         params.put("name", "TungstenDevice - " + cmd.getName());
         params.put("hostname", cmd.getHostname());
-        params.put("port", cmd.getPort());
+        params.put("port", port);
         params.put("gateway", cmd.getGateway());
         params.put("vrouterPort", vrouterPort);
         params.put("introspectPort", introspectPort);
@@ -123,23 +179,23 @@ public class TungstenProviderServiceImpl extends ManagerBase implements Tungsten
 
         try {
             tungstenResource.configure(cmd.getHostname(), hostdetails);
-            final Host host = _resourceMgr.addHost(zoneId, tungstenResource, Host.Type.L2Networking, params);
+            final Host host = resourceMgr.addHost(zoneId, tungstenResource, Host.Type.L2Networking, params);
             if (host != null) {
                 tungstenProvider = Transaction.execute(new TransactionCallback<TungstenProviderVO>() {
                     @Override
                     public TungstenProviderVO doInTransaction(TransactionStatus status) {
                         TungstenProviderVO tungstenProviderVO = new TungstenProviderVO(zoneId, name, host.getId(), port,
                             hostname, gateway, vrouterPort, introspectPort);
-                        _tungstenProviderDao.persist(tungstenProviderVO);
+                        tungstenProviderDao.persist(tungstenProviderVO);
 
                         DetailVO detail = new DetailVO(host.getId(), "tungstendeviceid",
                             String.valueOf(tungstenProviderVO.getId()));
-                        _hostDetailsDao.persist(detail);
+                        hostDetailsDao.persist(detail);
 
                         return tungstenProviderVO;
                     }
                 });
-                _messageBus.publish(_name, TungstenService.MESSAGE_SYNC_TUNGSTEN_DB_WITH_DOMAINS_AND_PROJECTS_EVENT,
+                messageBus.publish(_name, TungstenService.MESSAGE_SYNC_TUNGSTEN_DB_WITH_DOMAINS_AND_PROJECTS_EVENT,
                     PublishScope.LOCAL, tungstenProvider);
             } else {
                 throw new CloudRuntimeException("Failed to add Tungsten-Fabric provider due to internal error.");
@@ -152,23 +208,32 @@ public class TungstenProviderServiceImpl extends ManagerBase implements Tungsten
     }
 
     @Override
-    public TungstenProviderResponse getTungstenProvider(long zoneId) {
-        TungstenProviderVO tungstenProvider = _tungstenProviderDao.findByZoneId(zoneId);
-        if (tungstenProvider != null)
-            return createTungstenProviderResponse(tungstenProvider);
-        else
-            return null;
+    public List<TungstenFabricProviderResponse> listTungstenProvider(Long zoneId) {
+        List<TungstenFabricProviderResponse> tungstenProviderResponseList = new ArrayList<>();
+        if (zoneId != null) {
+            TungstenProviderVO tungstenProviderVO = tungstenProviderDao.findByZoneId(zoneId);
+            tungstenProviderResponseList.add(createTungstenProviderResponse(tungstenProviderVO));
+        } else {
+            List<TungstenProviderVO> tungstenProviderVOList = tungstenProviderDao.listAll();
+            for (TungstenProviderVO tungstenProviderVO : tungstenProviderVOList) {
+                tungstenProviderResponseList.add(createTungstenProviderResponse(tungstenProviderVO));
+            }
+        }
+
+        return tungstenProviderResponseList;
     }
 
-    public TungstenProviderResponse createTungstenProviderResponse(TungstenProviderVO tungstenProviderVO) {
-        TungstenProviderResponse tungstenProviderResponse = new TungstenProviderResponse();
-        tungstenProviderResponse.setHostname(tungstenProviderVO.getHostname());
-        tungstenProviderResponse.setName(tungstenProviderVO.getProviderName());
-        tungstenProviderResponse.setPort(tungstenProviderVO.getPort());
-        tungstenProviderResponse.setUuid(tungstenProviderVO.getUuid());
-        tungstenProviderResponse.setGateway(tungstenProviderVO.getGateway());
-        tungstenProviderResponse.setIntrospectPort(tungstenProviderVO.getIntrospectPort());
-        tungstenProviderResponse.setVrouterPort(tungstenProviderVO.getVrouterPort());
+    @Override
+    public TungstenFabricProviderResponse createTungstenProviderResponse(TungstenProvider tungstenProvider) {
+        TungstenFabricProviderResponse tungstenProviderResponse = new TungstenFabricProviderResponse();
+        tungstenProviderResponse.setHostname(tungstenProvider.getHostname());
+        tungstenProviderResponse.setName(tungstenProvider.getProviderName());
+        tungstenProviderResponse.setPort(tungstenProvider.getPort());
+        tungstenProviderResponse.setUuid(tungstenProvider.getUuid());
+        tungstenProviderResponse.setGateway(tungstenProvider.getGateway());
+        tungstenProviderResponse.setIntrospectPort(tungstenProvider.getIntrospectPort());
+        tungstenProviderResponse.setVrouterPort(tungstenProvider.getVrouterPort());
+        tungstenProviderResponse.setZoneId(tungstenProvider.getZoneId());
         tungstenProviderResponse.setObjectName("tungstenProvider");
         return tungstenProviderResponse;
     }

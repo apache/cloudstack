@@ -34,16 +34,16 @@ import java.util.List;
 
 public class VRouterApiConnectorImpl implements VRouterApiConnector {
     private static final Logger s_logger = Logger.getLogger(VRouterApiConnector.class);
-    private String _url;
+    private String url;
 
     public VRouterApiConnectorImpl(VRouter vRouter) {
-        _url = "http://" + vRouter.getHost() + ":" + vRouter.getPort() + "/";
+        url = "http://" + vRouter.getHost() + ":" + vRouter.getPort() + "/";
     }
 
     @Override
     public boolean addPort(final Port port) throws IOException {
         final StringBuffer url = new StringBuffer();
-        url.append(_url).append("port");
+        url.append(this.url).append("port");
         Gson gson = new Gson();
         final String jsonData = gson.toJson(port);
         HttpPost httpPost = new HttpPost(url.toString());
@@ -60,7 +60,7 @@ public class VRouterApiConnectorImpl implements VRouterApiConnector {
     @Override
     public boolean deletePort(final String portId) {
         final StringBuffer url = new StringBuffer();
-        url.append(_url).append("port/").append(portId);
+        url.append(this.url).append("port/").append(portId);
         HttpDelete httpDelete = new HttpDelete(url.toString());
         try (CloseableHttpClient httpClient = HttpClients.createDefault();
             CloseableHttpResponse httpResponse = httpClient.execute(httpDelete)) {
@@ -74,7 +74,7 @@ public class VRouterApiConnectorImpl implements VRouterApiConnector {
     @Override
     public boolean enablePort(final String portId) {
         final StringBuffer url = new StringBuffer();
-        url.append(_url).append("enable-port/").append(portId);
+        url.append(this.url).append("enable-port/").append(portId);
         HttpPut httpPut = new HttpPut(url.toString());
         try (CloseableHttpClient httpClient = HttpClients.createDefault();
             CloseableHttpResponse httpResponse = httpClient.execute(httpPut)) {
@@ -88,7 +88,7 @@ public class VRouterApiConnectorImpl implements VRouterApiConnector {
     @Override
     public boolean disablePort(final String portId) {
         final StringBuffer url = new StringBuffer();
-        url.append(_url).append("disable-port/").append(portId);
+        url.append(this.url).append("disable-port/").append(portId);
         HttpPut httpPut = new HttpPut(url.toString());
         try (CloseableHttpClient httpClient = HttpClients.createDefault();
             CloseableHttpResponse httpResponse = httpClient.execute(httpPut)) {
@@ -103,7 +103,7 @@ public class VRouterApiConnectorImpl implements VRouterApiConnector {
     @Override
     public boolean addGateway(List<Gateway> gatewayList) throws IOException {
         final StringBuffer url = new StringBuffer();
-        url.append(_url).append("gateway");
+        url.append(this.url).append("gateway");
         HttpPost httpPost = new HttpPost(url.toString());
         Gson gson = new Gson();
         final String jsonData = gson.toJson(gatewayList);
@@ -120,7 +120,7 @@ public class VRouterApiConnectorImpl implements VRouterApiConnector {
     @Override
     public boolean deleteGateway(List<Gateway> gatewayList) throws IOException {
         final StringBuffer url = new StringBuffer();
-        url.append(_url).append("gateway");
+        url.append(this.url).append("gateway");
         CustomHttpDelete customHttpDelete = new CustomHttpDelete(url.toString());
         Gson gson = new Gson();
         final String jsonData = gson.toJson(gatewayList);

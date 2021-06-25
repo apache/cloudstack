@@ -19,6 +19,7 @@ package org.apache.cloudstack.network.tungsten.agent.api;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import net.juniper.tungsten.api.ApiObjectBase;
+import net.juniper.tungsten.api.ApiPropertyBase;
 
 import java.util.List;
 
@@ -26,12 +27,19 @@ public class TungstenAnswer extends Answer {
 
     ApiObjectBase apiObjectBase;
     List<? extends ApiObjectBase> apiObjectBaseList;
+    ApiPropertyBase apiPropertyBase;
 
     public TungstenAnswer(final Command command, final boolean success, final String details) {
         super(command, success, details);
     }
 
     public TungstenAnswer(final Command command, ApiObjectBase apiObjectBase, final boolean success,
+        final String details) {
+        super(command, success, details);
+        setApiObjectBase(apiObjectBase);
+    }
+
+    public TungstenAnswer(final Command command, ApiPropertyBase apiPropertyBase, final boolean success,
         final String details) {
         super(command, success, details);
         setApiObjectBase(apiObjectBase);
@@ -61,5 +69,13 @@ public class TungstenAnswer extends Answer {
 
     public void setApiObjectBaseList(final List<? extends ApiObjectBase> apiObjectBaseList) {
         this.apiObjectBaseList = apiObjectBaseList;
+    }
+
+    public ApiPropertyBase getApiPropertyBase() {
+        return apiPropertyBase;
+    }
+
+    public void setApiPropertyBase(ApiPropertyBase apiPropertyBase) {
+        this.apiPropertyBase = apiPropertyBase;
     }
 }

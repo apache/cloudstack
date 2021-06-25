@@ -24,35 +24,47 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 @EntityReference(value = {TungstenProvider.class})
-public class TungstenProviderResponse extends BaseResponse {
+public class TungstenFabricProviderResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "tungsten provider name")
+    @Param(description = "Tungsten-Fabric provider name")
     private String name;
 
-    @SerializedName(ApiConstants.UUID)
-    @Param(description = "tungsten provider uuid")
+    @SerializedName(ApiConstants.TUNGSTEN_PROVIDER_UUID)
+    @Param(description = "Tungsten-Fabric provider uuid")
     private String uuid;
 
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "Tungsten-Fabric provider zone id")
+    private long zoneId;
+
     @SerializedName(ApiConstants.TUNGSTEN_PROVIDER_HOSTNAME)
-    @Param(description = "tungsten provider hostname")
+    @Param(description = "Tungsten-Fabric provider hostname")
     private String hostname;
 
     @SerializedName(ApiConstants.TUNGSTEN_PROVIDER_PORT)
-    @Param(description = "tungsten provider port")
+    @Param(description = "Tungsten-Fabric provider port")
     private String port;
 
     @SerializedName(ApiConstants.TUNGSTEN_GATEWAY)
-    @Param(description = "tungsten gateway")
+    @Param(description = "Tungsten-Fabric provider gateway")
     private String gateway;
 
     @SerializedName(ApiConstants.TUNGSTEN_PROVIDER_VROUTER_PORT)
-    @Param(description = "tungsten provider vrouter port")
+    @Param(description = "Tungsten-Fabric provider vrouter port")
     private String vrouterPort;
 
     @SerializedName(ApiConstants.TUNGSTEN_PROVIDER_INTROSPECT_PORT)
-    @Param(description = "tungsten provider introspect port")
+    @Param(description = "Tungsten-Fabric provider introspect port")
     private String introspectPort;
+
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(final long zoneId) {
+        this.zoneId = zoneId;
+    }
 
     public String getHostname() {
         return hostname;

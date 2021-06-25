@@ -122,6 +122,7 @@ public class TungstenProviderVO implements TungstenProvider {
         this.port = port;
     }
 
+    @Override
     public long getZoneId() {
         return zoneId;
     }
@@ -130,6 +131,7 @@ public class TungstenProviderVO implements TungstenProvider {
         this.zoneId = zoneId;
     }
 
+    @Override
     public String getGateway() {
         return gateway;
     }
@@ -138,6 +140,7 @@ public class TungstenProviderVO implements TungstenProvider {
         this.gateway = gateway;
     }
 
+    @Override
     public String getIntrospectPort() {
         return introspectPort;
     }
@@ -146,6 +149,7 @@ public class TungstenProviderVO implements TungstenProvider {
         this.introspectPort = introspectPort;
     }
 
+    @Override
     public String getVrouterPort() {
         return vrouterPort;
     }
@@ -154,6 +158,7 @@ public class TungstenProviderVO implements TungstenProvider {
         this.vrouterPort = vrouterPort;
     }
 
+    @Override
     public long getHostId() {
         return hostId;
     }

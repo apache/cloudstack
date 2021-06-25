@@ -16,7 +16,13 @@
 # specific language governing permissions and limitations
 # under the License.
 
-while [ ! -f /var/lib/contrail/loadbalancer/haproxy/$1/haproxy.conf ]; do sleep 1; done
+i=0;
+while [ ! -f /var/lib/contrail/loadbalancer/haproxy/$1/haproxy.conf ];
+do
+  sleep 1;
+  ((i=i+1))
+  if [ $i -eq 5 ]; then exit 1; fi
+done
 if ! grep -q "listen stats" /var/lib/contrail/loadbalancer/haproxy/$1/haproxy.conf; then
 cat << EOF >> /var/lib/contrail/loadbalancer/haproxy/$1/haproxy.conf
 listen stats :$2

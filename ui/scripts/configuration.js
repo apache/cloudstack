@@ -3631,7 +3631,7 @@
                                             $supportsstrechedl2subnet.hide();
                                         }
 
-                                        //Tungsten Provider
+                                        //Tungsten-Fabric Provider
                                         var $useTungsten = args.$form.find('.form-item[rel=\"useTungsten\"]');
                                         var $useTungstenCb = $useTungsten.find("input[type=checkbox]");
                                         if ($useTungsten.is(':visible') && $useTungstenCb.is(':checked')) { //*** tungsten ***
