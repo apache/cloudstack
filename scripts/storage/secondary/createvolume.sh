@@ -135,9 +135,18 @@ create_from_file() {
   local tmpltname=$3
 
   [ -n "$verbose" ] && echo "Moving to $tmpltfs/$tmpltname...could take a while" >&2
+  mv $tmpltimg /$tmpltfs/$tmpltname
+
+}
+
+copy_from_file() {
+  local tmpltfs=$1
+  local tmpltimg=$2
+  local tmpltname=$3
+
+  [ -n "$verbose" ] && echo "Copying to $tmpltfs/$tmpltname...could take a while" >&2
   cp -rf $tmpltimg /$tmpltfs/$tmpltname
   rm -rf $tmpltimg
-
 }
 
 tflag=
@@ -229,7 +238,11 @@ fi
 
 imgsize=$(ls -l $tmpltimg2| awk -F" " '{print $5}')
 
-create_from_file $tmpltfs $tmpltimg2 $tmpltname
+if [ "$descr" = "configDrive" ] && [ "$Sflag" = "" ];then
+  copy_from_file $tmpltfs $tmpltimg2 $tmpltname
+else
+  create_from_file $tmpltfs $tmpltimg2 $tmpltname
+fi
 
 touch /$tmpltfs/volume.properties
 rollback_if_needed $tmpltfs $? "Failed to create volume.properties file"
