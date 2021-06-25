@@ -4504,8 +4504,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public void checkCloneCondition(CloneVMCmd cmd) throws InvalidParameterValueException, ResourceUnavailableException, CloudRuntimeException, ResourceAllocationException {
-        final DomainVO domain = _domainDao.findById(cmd.getDomainId());
-        final Account account = _accountService.getActiveAccountByName(cmd.getAccountName(), cmd.getDomainId());
+        if (cmd.getAccountName() != null && cmd.getDomainId() == null) {
+            throw new InvalidParameterValueException("You must input the domainId together with the account name");
+        }
+        final DomainVO domain = cmd.getDomainId() == null ? null : _domainDao.findById(cmd.getDomainId());
+        final Account account = cmd.getAccountName() == null ? null : _accountService.getActiveAccountByName(cmd.getAccountName(), cmd.getDomainId());
         if (domain  != null && account != null) {
             if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                 throw new InvalidParameterValueException("Invalid user type: project to clone the VM");
@@ -5570,6 +5573,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public UserVm recordVirtualMachineToDB(CloneVMCmd cmd) throws ConcurrentOperationException {
         //network configurations and check, then create the template
+        UserVm curVm = cmd.getTargetVM();
+        // check if host is available
+        Long hostId = curVm.getHostId();
+        getDestinationHost(hostId, true);
+
+
         return null;
     }
 
