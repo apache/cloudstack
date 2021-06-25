@@ -4544,7 +4544,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (serviceOffering == null) {
             throw new InvalidParameterValueException("Service offering Id for this VM: " + serviceOfferingId + " doesn't exist now");
         }
-        if (!serviceOffering.isDynamic()) {
+        if (!serviceOffering.isDynamic() && details != null) {
             for(String detail: details.keySet()) {
                 if(detail.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) || detail.equalsIgnoreCase(VmDetailConstants.CPU_SPEED) || detail.equalsIgnoreCase(VmDetailConstants.MEMORY)) {
                     throw new InvalidParameterValueException("cpuNumber or cpuSpeed or memory should not be specified for static service offering");
