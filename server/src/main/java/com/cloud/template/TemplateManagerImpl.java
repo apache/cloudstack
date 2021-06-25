@@ -1797,7 +1797,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         int bits = 64; // where to specify
         boolean requireHVM = true, sshKeyEnabled = true, featured = false;
         boolean isPublic = cmd.isPublic();
-        Long volumeId = cmd.getVolumeId();
+        Long volumeId = _volumeDao.findByInstanceAndType(cmd.getId(), Volume.Type.ROOT).get(0).getId();
         HypervisorType hyperType = null;
         VolumeVO volume = _volumeDao.findById(volumeId);
         if (volume == null) {

@@ -1,9 +1,7 @@
 package org.apache.cloudstack.api.command.user.vm;
 
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.*;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
@@ -19,6 +17,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
@@ -39,24 +38,19 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
             required = true, description = "The ID of the virtual machine")
     private Long id;
 
-    public Long getVolumeId() {
-        return volumeId;
+    //Owner information
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the virtual machine. Must be used with domainId.")
+    private String accountName;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used.")
+    private Long domainId;
+
+    public String getAccountName() {
+        return accountName;
     }
 
-    public void setVolumeId(Long volumeId) {
-        this.volumeId = volumeId;
-    }
-
-    private Long volumeId;
-
-    private VirtualMachineTemplate createdTemplate;
-
-    public void setCreatedTemplate(VirtualMachineTemplate template) {
-        this.createdTemplate = template;
-    }
-
-    public VirtualMachineTemplate getCreatedTemplate() {
-        return this.createdTemplate;
+    public Long getDomainId() {
+        return domainId;
     }
 
     public Long getId() {
@@ -79,15 +73,21 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        VirtualMachineTemplate template = null;
         try {
             _userVmService.checkCloneCondition(this);
-            template = _templateService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
-            setCreatedTemplate(template);
+            UserVm vmRecord = _userVmService.recordVirtualMachineToDB(this);
+            if (vmRecord == null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "unable to record a new VM to db!");
+            }
+            setEntityId(vmRecord.getId());
+            setEntityUuid(vmRecord.getUuid());
 //            _userVmService.createBasicSecurityGroupVirtualMachine(); // disabled since it crashes
-        } catch (ResourceUnavailableException e) {
+        } catch (ResourceUnavailableException | InsufficientCapacityException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
+        } catch (InvalidParameterValueException e) {
+            s_logger.warn("Exception: ", e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
 
@@ -107,7 +107,8 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
     public void execute() {
         Optional<UserVm> result;
         try {
-            CallContext.current().setEventDetails("Vm Id for full clone: " + getId());
+//            CallContext.current().setEventDetails("Vm Id for full clone: " + getId());
+//            VirtualMachineTemplate template = _templateService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
             result = _userVmService.cloneVirtualMachine(this);
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
@@ -116,6 +117,10 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
+//        catch (ResourceAllocationException ex) {
+//            s_logger.warn("Exception: ", ex);
+//            throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
+//        }
         result.ifPresentOrElse((userVm)-> {
             UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", userVm).get(0);
             response.setResponseName("test_clone");

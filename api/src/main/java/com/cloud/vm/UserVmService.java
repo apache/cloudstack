@@ -96,7 +96,7 @@ public interface UserVmService {
      * */
     Optional<UserVm> cloneVirtualMachine(CloneVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException;
 
-    void checkCloneCondition(CloneVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException;
+    void checkCloneCondition(CloneVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException, ResourceAllocationException;
 
     /**
      * Resets the password of a virtual machine.
@@ -441,6 +441,9 @@ public interface UserVmService {
 
     UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
         StorageUnavailableException, ResourceAllocationException;
+
+    UserVm recordVirtualMachineToDB(CloneVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
+            StorageUnavailableException, ResourceAllocationException;
 
     UserVm getUserVm(long vmId);
 

@@ -51,6 +51,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.user.*;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -292,16 +293,6 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateApiService;
 import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountService;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.SSHKeyPair;
-import com.cloud.user.SSHKeyPairVO;
-import com.cloud.user.User;
-import com.cloud.user.UserStatisticsVO;
-import com.cloud.user.UserVO;
-import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
@@ -4502,7 +4493,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public void checkCloneCondition(CloneVMCmd cmd) throws ResourceUnavailableException, CloudRuntimeException, ConcurrentOperationException {
+    public void checkCloneCondition(CloneVMCmd cmd) throws InvalidParameterValueException, ResourceUnavailableException, CloudRuntimeException, ResourceAllocationException {
+        final DomainVO domain = _domainDao.findById(cmd.getDomainId());
+        final Account account = _accountService.getActiveAccountByName(cmd.getAccountName(), cmd.getDomainId());
+        if (domain  != null && account != null) {
+            if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                throw new InvalidParameterValueException("Invalid user type: project to clone the VM");
+            }
+            if (account.getState() != Account.State.enabled) {
+                throw new InvalidParameterValueException("User is not enabled to clone this VM");
+            }
+        }
         UserVm curVm = cmd.getTargetVM();
         if (curVm == null) {
             throw new CloudRuntimeException("the VM doesn't exist or not registered in management server!");
@@ -4511,11 +4512,59 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vmStatus.state != State.Shutdown) {
             throw new CloudRuntimeException("You should clone an instance that's shutdown!");
         }
-        List<VolumeVO> volumeInformation = _volsDao.findByInstanceAndType(cmd.getId(), Volume.Type.ROOT);
-        if (CollectionUtils.isEmpty(volumeInformation)) {
+        List<VolumeVO> volumes = _volsDao.findByInstanceAndType(cmd.getId(), Volume.Type.ROOT);
+        if (CollectionUtils.isEmpty(volumes)) {
             throw new CloudRuntimeException("The VM to copy does not have a Volume attached!");
         }
-        cmd.setVolumeId(volumeInformation.get(0).getId());
+        // verify that the VM doesn't expire
+        Map<String, String> details = curVm.getDetails();
+        verifyDetails(details);
+//        Account activeOwner = _accountDao.findById(cmd.getEntityOwnerId());
+        long zoneId = curVm.getDataCenterId();
+        DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Unable to find a zone in the current VM by zone id=" + zoneId);
+        }
+        // service offering check
+        long serviceOfferingId = curVm.getServiceOfferingId();
+        ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
+        if (serviceOffering == null) {
+            throw new InvalidParameterValueException("Service offering Id for this VM: " + serviceOfferingId + " doesn't exist now");
+        }
+        if (!serviceOffering.isDynamic()) {
+            for(String detail: details.keySet()) {
+                if(detail.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) || detail.equalsIgnoreCase(VmDetailConstants.CPU_SPEED) || detail.equalsIgnoreCase(VmDetailConstants.MEMORY)) {
+                    throw new InvalidParameterValueException("cpuNumber or cpuSpeed or memory should not be specified for static service offering");
+                }
+            }
+        }
+        // disk offering check
+        VolumeVO rootDisk = volumes.get(0);
+        Long diskOfferingID = rootDisk.getDiskOfferingId();
+        DiskOfferingVO diskOffering =null;
+        if (diskOfferingID != null) {
+            diskOffering = _diskOfferingDao.findById(diskOfferingID);
+            if (diskOffering == null) {
+                throw new CloudRuntimeException("Unable to find disk offering " + diskOfferingID);
+            }
+        }
+        if (!zone.isLocalStorageEnabled()) {
+            if (serviceOffering.isUseLocalStorage()) {
+                throw new CloudRuntimeException("Zone is not configured to use local storage now but this service offering " + serviceOffering.getName() + " uses it");
+            }
+            if (diskOffering != null && diskOffering.isUseLocalStorage()) {
+                throw new CloudRuntimeException("Zone is not configured to use local storage but disk offering " + diskOffering.getName() + " uses it");
+            }
+        }
+        // resource limit checks & account check
+        AccountVO activeOwner = _accountDao.findById(cmd.getEntityOwnerId());
+        List<VolumeVO> totalVolumes = _volsDao.findByInstance(cmd.getId());
+        _resourceLimitMgr.checkResourceLimit(activeOwner, ResourceType.volume, totalVolumes.size());
+        Long totalSize = 0L;
+        for (VolumeVO volumeToCheck : totalVolumes) {
+            totalSize += volumeToCheck.getSize();
+        }
+        _resourceLimitMgr.checkResourceLimit(activeOwner, ResourceType.primary_storage, totalSize);
     }
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_CLONE, eventDescription = "clone vm", async = true)
@@ -5506,6 +5555,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return vm;
+    }
+
+    @Override
+    public UserVm recordVirtualMachineToDB(CloneVMCmd cmd) throws ConcurrentOperationException {
+        //network configurations and check, then create the template
+        return null;
     }
 
     /**
