@@ -105,12 +105,12 @@ class Services:
         self.services = {
             "test_templates": {
                 "kvm": {
-                    "name": "Centos-5.5-configdrive",
-                    "displaytext": "ConfigDrive enabled CentOS",
+                    "name": "Centos-5.5-sshkey-and-configdrive",
+                    "displaytext": "SSHkey and ConfigDrive enabled CentOS",
                     "format": "qcow2",
                     "hypervisor": "kvm",
                     "ostype": "CentOS 5.5 (64-bit)",
-                    "url": "http://people.apache.org/~fmaximus/centos55-extended.qcow2.bz2",
+                    "url": "http://people.apache.org/~weizhou/centos55-sshkey-configdrive.qcow2.bz2",
                     "requireshvm": "False",
                     "ispublic": "True",
                     "isextractable": "True"
