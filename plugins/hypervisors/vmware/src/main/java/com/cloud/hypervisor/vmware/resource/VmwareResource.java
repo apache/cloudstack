@@ -5827,9 +5827,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if (!VmwareManager.s_vmwareCleanupPortGroups.value()){
             return;
         }
-        assert(netDetails.getName() != null);
         try {
             synchronized(this) {
+                if (netDetails.getName() == null) {
+                    throw new CloudRuntimeException("Unspecified port group name, unable to cleanup network");
+                }
                 NetworkMO networkMo = new NetworkMO(hostMo.getContext(), netDetails.getNetworkMor());
                 List<ManagedObjectReference> vms = networkMo.getVMsOnNetwork();
                 if(vms == null || vms.size() == 0) {
@@ -5840,7 +5842,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
         } catch(Throwable e) {
-            s_logger.warn("Unable to cleanup network due to exception, skip for next time");
+            s_logger.warn("Unable to cleanup network due to exception.", e);
         }
     }
 
