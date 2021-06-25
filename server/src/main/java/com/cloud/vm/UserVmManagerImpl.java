@@ -4522,7 +4522,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("the VM doesn't exist or not registered in management server!");
         }
         UserVmVO vmStatus = _vmDao.findById(cmd.getId());
-        if (vmStatus.state != State.Shutdown || vmStatus.state != State.Stopped) {
+        if (vmStatus.state != State.Shutdown && vmStatus.state != State.Stopped) {
             throw new CloudRuntimeException("You should clone an instance that's shutdown!");
         }
         List<VolumeVO> volumes = _volsDao.findByInstanceAndType(cmd.getId(), Volume.Type.ROOT);
