@@ -24,7 +24,7 @@
           @submit="handleSubmit"
           layout="vertical">
           <a-form-item v-if="pods && pods.length > 0">
-            <tooltip-label :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
+            <tooltip-label slot="label" :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
             <a-select
               autoFocus
               v-decorator="['podid', {
@@ -36,7 +36,7 @@
             </a-select>
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.gateway')" :tooltip="apiParams.gateway.description"/>
+            <tooltip-label slot="label" :title="$t('label.gateway')" :tooltip="apiParams.gateway.description"/>
             <a-input
               autoFocus
               v-decorator="['gateway', {
@@ -45,7 +45,7 @@
               :placeholder="apiParams.gateway.description"/>
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.netmask')" :tooltip="apiParams.netmask.description"/>
+            <tooltip-label slot="label" :title="$t('label.netmask')" :tooltip="apiParams.netmask.description"/>
             <a-input
               v-decorator="['netmask', {
                 rules: [{ required: true, message: $t('message.error.netmask') }]
@@ -55,7 +55,7 @@
           <a-row :gutter="12">
             <a-col :md="12" lg="12">
               <a-form-item>
-                <tooltip-label :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
+                <tooltip-label slot="label" :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
                 <a-input
                   v-decorator="['startip', {
                     rules: [
@@ -72,7 +72,7 @@
             </a-col>
             <a-col :md="12" :lg="12">
               <a-form-item>
-                <tooltip-label :title="$t('label.endipv4')" :tooltip="apiParams.endip.description"/>
+                <tooltip-label slot="label" :title="$t('label.endipv4')" :tooltip="apiParams.endip.description"/>
                 <a-input
                   v-decorator="['endip', {
                     rules: [
@@ -89,13 +89,13 @@
             </a-col>
           </a-row>
           <a-form-item>
-            <tooltip-label :title="$t('label.ip6cidr')" :tooltip="apiParams.ip6cidr.description"/>
+            <tooltip-label slot="label" :title="$t('label.ip6cidr')" :tooltip="apiParams.ip6cidr.description"/>
             <a-input
               v-decorator="['ip6cidr']"
               :placeholder="apiParams.ip6cidr.description"/>
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.ip6gateway')" :tooltip="apiParams.ip6gateway.description"/>
+            <tooltip-label slot="label" :title="$t('label.ip6gateway')" :tooltip="apiParams.ip6gateway.description"/>
             <a-input
               v-decorator="['ip6gateway']"
               :placeholder="apiParams.ip6gateway.description"/>
@@ -103,7 +103,7 @@
           <a-row :gutter="12">
             <a-col :md="12" :lg="12">
               <a-form-item>
-                <tooltip-label :title="$t('label.startipv6')" :tooltip="apiParams.startipv6.description"/>
+                <tooltip-label slot="label" :title="$t('label.startipv6')" :tooltip="apiParams.startipv6.description"/>
                 <a-input
                   v-decorator="['startipv6', {
                     rules: [
@@ -119,7 +119,7 @@
             </a-col>
             <a-col :md="12" :lg="12">
               <a-form-item>
-                <tooltip-label :title="$t('label.endipv6')" :tooltip="apiParams.endipv6.description"/>
+                <tooltip-label slot="label" :title="$t('label.endipv6')" :tooltip="apiParams.endipv6.description"/>
                 <a-input
                   v-decorator="['endipv6', {
                     rules: [

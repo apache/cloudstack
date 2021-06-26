@@ -21,7 +21,7 @@
         :form="form"
         layout="vertical">
         <a-form-item>
-          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -30,7 +30,7 @@
             autoFocus/>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
+          <tooltip-label slot="label" :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
           <a-input
             v-decorator="['displaytext', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -38,7 +38,7 @@
             :placeholder="apiParams.displaytext.description"/>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             :loading="loadingZone"
             v-decorator="['zoneid', {
@@ -52,7 +52,7 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.cidr')" :tooltip="apiParams.cidr.description"/>
+          <tooltip-label slot="label" :title="$t('label.cidr')" :tooltip="apiParams.cidr.description"/>
           <a-input
             v-decorator="['cidr', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -60,13 +60,13 @@
             :placeholder="apiParams.cidr.description"/>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
+          <tooltip-label slot="label" :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
           <a-input
             v-decorator="['networkdomain']"
             :placeholder="apiParams.networkdomain.description"/>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.vpcofferingid')" :tooltip="apiParams.vpcofferingid.description"/>
+          <tooltip-label slot="label" :title="$t('label.vpcofferingid')" :tooltip="apiParams.vpcofferingid.description"/>
           <a-select
             :loading="loadingOffering"
             v-decorator="['vpcofferingid', {
@@ -78,7 +78,7 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.start')" :tooltip="apiParams.start.description"/>
+          <tooltip-label slot="label" :title="$t('label.start')" :tooltip="apiParams.start.description"/>
           <a-switch v-decorator="['start', {initialValue: true}]" defaultChecked />
         </a-form-item>
       </a-form>

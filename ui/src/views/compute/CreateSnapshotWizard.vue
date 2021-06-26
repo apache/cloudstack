@@ -23,7 +23,7 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <tooltip-label :title="$t('label.volumeid')" :tooltip="apiParams.volumeid.description"/>
+          <tooltip-label slot="label" :title="$t('label.volumeid')" :tooltip="apiParams.volumeid.description"/>
           <a-select
             showSearch
             allowClear
@@ -41,17 +41,17 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-decorator="['name']"
             :placeholder="apiParams.name.description"/>
         </a-form-item>
         <a-form-item v-if="isQuiesceVm">
-          <tooltip-label :title="$t('label.quiescevm')" :tooltip="apiParams.quiescevm.description"/>
+          <tooltip-label slot="label" :title="$t('label.quiescevm')" :tooltip="apiParams.quiescevm.description"/>
           <a-switch v-decorator="['quiescevm', { initialValue: false }]"/>
         </a-form-item>
         <a-form-item v-if="!supportsStorageSnapshot">
-          <tooltip-label :title="$t('label.asyncbackup')" :tooltip="apiParams.asyncbackup.description"/>
+          <tooltip-label slot="label" :title="$t('label.asyncbackup')" :tooltip="apiParams.asyncbackup.description"/>
           <a-switch v-decorator="['asyncbackup', { initialValue: false }]"/>
         </a-form-item>
         <div :span="24" class="action-button">

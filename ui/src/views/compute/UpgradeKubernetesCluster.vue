@@ -27,7 +27,7 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <tooltip-label :title="$t('label.kubernetesversionid')" :tooltip="apiParams.kubernetesversionid.description"/>
+          <tooltip-label slot="label" :title="$t('label.kubernetesversionid')" :tooltip="apiParams.kubernetesversionid.description"/>
           <a-select
             id="version-selection"
             v-decorator="['kubernetesversionid', {

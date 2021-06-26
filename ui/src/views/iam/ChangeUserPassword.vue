@@ -23,7 +23,7 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item v-if="!this.isAdminOrDomainAdmin()">
-          <tooltip-label :title="$t('label.currentpassword')" :tooltip="apiParams.currentpassword.description"/>
+          <tooltip-label slot="label" :title="$t('label.currentpassword')" :tooltip="apiParams.currentpassword.description"/>
           <a-input-password
             v-decorator="['currentpassword', {
               rules: [{ required: true, message: $t('message.error.current.password') }]
@@ -32,7 +32,7 @@
             autoFocus />
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.new.password')" :tooltip="apiParams.password.description"/>
+          <tooltip-label slot="label" :title="$t('label.new.password')" :tooltip="apiParams.password.description"/>
           <a-input-password
             v-decorator="['password', {
               rules: [{ required: true, message: $t('message.error.new.password') }]
@@ -40,7 +40,7 @@
             :placeholder="$t('label.new.password')"/>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.confirmpassword')" :tooltip="apiParams.password.description"/>
+          <tooltip-label slot="label" :title="$t('label.confirmpassword')" :tooltip="apiParams.password.description"/>
           <a-input-password
             v-decorator="['confirmpassword', {
               rules: [

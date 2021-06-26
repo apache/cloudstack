@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-<template slot="label">
+<template>
   <span>
     {{ title }}
     <a-tooltip v-if="tooltip" :title="tooltip" :placement="tooltipPlacement">

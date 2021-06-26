@@ -23,7 +23,7 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -33,14 +33,14 @@
         </a-form-item>
 
         <a-form-item>
-          <tooltip-label :title="$t('label.description')" :tooltip="apiParams.description.description"/>
+          <tooltip-label slot="label" :title="$t('label.description')" :tooltip="apiParams.description.description"/>
           <a-input
             v-decorator="['description']"
             :placeholder="apiParams.description.description" />
         </a-form-item>
 
         <a-form-item v-if="'roleid' in apiParams">
-          <tooltip-label :title="$t('label.based.on')" :tooltip="$t('label.based.on.role.id.or.type')"/>
+          <tooltip-label slot="label" :title="$t('label.based.on')" :tooltip="$t('label.based.on.role.id.or.type')"/>
           <a-radio-group
             v-decorator="['using', {
               initialValue: this.createRoleUsing
@@ -57,7 +57,7 @@
         </a-form-item>
 
         <a-form-item v-if="this.createRoleUsing === 'type'">
-          <tooltip-label :title="$t('label.type')" :tooltip="apiParams.type.description"/>
+          <tooltip-label slot="label" :title="$t('label.type')" :tooltip="apiParams.type.description"/>
           <a-select
             v-decorator="['type', {
               rules: [{ required: true, message: $t('message.error.select') }]
@@ -70,7 +70,7 @@
         </a-form-item>
 
         <a-form-item v-if="this.createRoleUsing === 'role'">
-          <tooltip-label :title="$t('label.role')" :tooltip="apiParams.roleid.description"/>
+          <tooltip-label slot="label" :title="$t('label.role')" :tooltip="apiParams.roleid.description"/>
           <a-select
             v-decorator="['roleid', {
               rules: [{ required: true, message: $t('message.error.select') }]

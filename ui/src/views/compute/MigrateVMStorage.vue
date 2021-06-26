@@ -23,7 +23,7 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <tooltip-label :title="$t('label.storageid')" :tooltip="apiParams.storageid ? apiParams.storageid.description : ''"/>
+          <tooltip-label slot="label" :title="$t('label.storageid')" :tooltip="apiParams.storageid ? apiParams.storageid.description : ''"/>
           <a-select
             :loading="loading"
             v-decorator="['storageid', {

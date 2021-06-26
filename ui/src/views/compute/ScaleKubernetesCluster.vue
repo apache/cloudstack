@@ -27,7 +27,7 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <tooltip-label :title="$t('label.cks.cluster.size')" :tooltip="apiParams.size.description"/>
+          <tooltip-label slot="label" :title="$t('label.cks.cluster.size')" :tooltip="apiParams.size.description"/>
           <a-input
             v-decorator="['size', {
               initialValue: originalSize,
@@ -44,7 +44,7 @@
             autoFocus />
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
+          <tooltip-label slot="label" :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
           <a-select
             id="offering-selection"
             v-decorator="['serviceofferingid', {}]"

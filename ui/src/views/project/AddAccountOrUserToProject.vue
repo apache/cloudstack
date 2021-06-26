@@ -23,20 +23,20 @@
           @submit="addAccountToProject"
           layout="vertical">
           <a-form-item>
-            <tooltip-label :title="$t('label.account')" :tooltip="apiParams.addAccountToProject.account.description"/>
+            <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.addAccountToProject.account.description"/>
             <a-input
               v-decorator="['account']"
               :placeholder="apiParams.addAccountToProject.account.description"
               autoFocus />
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.email')" :tooltip="apiParams.addAccountToProject.email.description"/>
+            <tooltip-label slot="label" :title="$t('label.email')" :tooltip="apiParams.addAccountToProject.email.description"/>
             <a-input
               v-decorator="['email']"
               :placeholder="apiParams.addAccountToProject.email.description"></a-input>
           </a-form-item>
           <a-form-item v-if="apiParams.addAccountToProject.projectroleid">
-            <tooltip-label :title="$t('label.project.role')" :tooltip="apiParams.addAccountToProject.projectroleid.description"/>
+            <tooltip-label slot="label" :title="$t('label.project.role')" :tooltip="apiParams.addAccountToProject.projectroleid.description"/>
             <a-select
               showSearch
               v-decorator="['projectroleid']"
@@ -49,7 +49,7 @@
             </a-select>
           </a-form-item>
           <a-form-item v-if="apiParams.addAccountToProject.roletype">
-            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.addAccountToProject.roletype.description"/>
+            <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.addAccountToProject.roletype.description"/>
             <a-select
               showSearch
               v-decorator="['roletype']"
@@ -73,20 +73,20 @@
             <span slot="message" v-html="$t('message.add.user.to.project')"></span>
           </a-alert>
           <a-form-item>
-            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.addUserToProject.username.description"/>
+            <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.addUserToProject.username.description"/>
             <a-input
               v-decorator="['username']"
               :placeholder="apiParams.addUserToProject.username.description"
               autoFocus />
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.email')" :tooltip="apiParams.addUserToProject.email.description"/>
+            <tooltip-label slot="label" :title="$t('label.email')" :tooltip="apiParams.addUserToProject.email.description"/>
             <a-input
               v-decorator="['email']"
               :placeholder="apiParams.addUserToProject.email.description"></a-input>
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.project.role')" :tooltip="apiParams.addUserToProject.roletype.description"/>
+            <tooltip-label slot="label" :title="$t('label.project.role')" :tooltip="apiParams.addUserToProject.roletype.description"/>
             <a-select
               showSearch
               v-decorator="['projectroleid']"
@@ -99,7 +99,7 @@
             </a-select>
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.roletype')" :tooltip="apiParams.addUserToProject.roletype.description"/>
+            <tooltip-label slot="label" :title="$t('label.roletype')" :tooltip="apiParams.addUserToProject.roletype.description"/>
             <a-select
               showSearch
               v-decorator="['roletype']"

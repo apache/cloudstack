@@ -45,7 +45,7 @@
           </a-upload-dragger>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.volume.name') }]
@@ -54,7 +54,7 @@
             autoFocus />
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             v-decorator="['zoneId', {
               initialValue: zoneSelected,
@@ -71,7 +71,7 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.format')" :tooltip="apiParams.format.description"/>
+          <tooltip-label slot="label" :title="$t('label.format')" :tooltip="apiParams.format.description"/>
           <a-select
             v-decorator="['format', {
               initialValue: formats[0],
@@ -88,7 +88,7 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.volumechecksum')" :tooltip="apiParams.volumechecksum.description"/>
+          <tooltip-label slot="label" :title="$t('label.volumechecksum')" :tooltip="apiParams.volumechecksum.description"/>
           <a-input
             v-decorator="['checksum']"
             :placeholder="$t('label.volumechecksum.description')"

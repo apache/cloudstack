@@ -20,7 +20,7 @@
     <a-spin :spinning="loading">
       <a-form :form="form" :loading="loading" @submit="handleSubmit" layout="vertical">
         <a-form-item>
-          <tooltip-label :title="$t('label.username')" :tooltip="apiParams.username.description"/>
+          <tooltip-label slot="label" :title="$t('label.username')" :tooltip="apiParams.username.description"/>
           <a-input
             v-decorator="['username', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -29,7 +29,7 @@
             autoFocus />
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.email')" :tooltip="apiParams.email.description"/>
+          <tooltip-label slot="label" :title="$t('label.email')" :tooltip="apiParams.email.description"/>
           <a-input
             v-decorator="['email', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -39,7 +39,7 @@
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item>
-              <tooltip-label :title="$t('label.firstname')" :tooltip="apiParams.firstname.description"/>
+              <tooltip-label slot="label" :title="$t('label.firstname')" :tooltip="apiParams.firstname.description"/>
               <a-input
                 v-decorator="['firstname', {
                   rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -49,7 +49,7 @@
           </a-col>
           <a-col :md="24" :lg="12">
             <a-form-item>
-              <tooltip-label :title="$t('label.lastname')" :tooltip="apiParams.lastname.description"/>
+              <tooltip-label slot="label" :title="$t('label.lastname')" :tooltip="apiParams.lastname.description"/>
               <a-input
                 v-decorator="['lastname', {
                   rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -59,7 +59,7 @@
           </a-col>
         </a-row>
         <a-form-item>
-          <tooltip-label :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
+          <tooltip-label slot="label" :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
           <a-select
             showSearch
             v-decorator="['timezone']"

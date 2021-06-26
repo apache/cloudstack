@@ -23,7 +23,7 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <tooltip-label :title="$t('label.rules.file')" :tooltip="$t('label.rules.file.to.import')"/>
+          <tooltip-label slot="label" :title="$t('label.rules.file')" :tooltip="$t('label.rules.file.to.import')"/>
           <a-upload-dragger
             :multiple="false"
             :fileList="fileList"
@@ -47,7 +47,7 @@
           </a-upload-dragger>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -57,14 +57,14 @@
         </a-form-item>
 
         <a-form-item>
-          <tooltip-label :title="$t('label.description')" :tooltip="apiParams.description.description"/>
+          <tooltip-label slot="label" :title="$t('label.description')" :tooltip="apiParams.description.description"/>
           <a-input
             v-decorator="['description']"
             :placeholder="apiParams.description.description" />
         </a-form-item>
 
         <a-form-item>
-          <tooltip-label :title="$t('label.type')" :tooltip="apiParams.type.description"/>
+          <tooltip-label slot="label" :title="$t('label.type')" :tooltip="apiParams.type.description"/>
           <a-select
             v-decorator="['type', {
               rules: [{ required: true, message: $t('message.error.select') }]
@@ -77,7 +77,7 @@
         </a-form-item>
 
         <a-form-item>
-          <tooltip-label :title="$t('label.forced')" :tooltip="apiParams.forced.description"/>
+          <tooltip-label slot="label" :title="$t('label.forced')" :tooltip="apiParams.forced.description"/>
           <a-switch
             v-decorator="['forced', {
               initialValue: false

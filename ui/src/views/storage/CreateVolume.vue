@@ -19,7 +19,7 @@
   <a-spin :spinning="loading">
     <a-form class="form" :form="form" @submit="handleSubmit" layout="vertical">
       <a-form-item>
-        <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+        <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
         <a-input
           v-decorator="['name', {
             rules: [{ required: true, message: $t('message.error.volume.name') }]
@@ -28,7 +28,7 @@
           autoFocus />
       </a-form-item>
       <a-form-item>
-        <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+        <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
         <a-select
           v-decorator="['zoneid', {
             initialValue: selectedZoneId,
@@ -44,7 +44,7 @@
         </a-select>
       </a-form-item>
       <a-form-item>
-        <tooltip-label :title="$t('label.diskoffering')" :tooltip="apiParams.diskoffering.description"/>
+        <tooltip-label slot="label" :title="$t('label.diskoffering')" :tooltip="apiParams.diskoffering.description"/>
         <a-select
           v-decorator="['diskofferingid', {
             initialValue: selectedDiskOfferingId,
@@ -62,7 +62,7 @@
       </a-form-item>
       <span v-if="customDiskOffering">
         <a-form-item>
-          <tooltip-label :title="$t('label.sizegb')" :tooltip="apiParams.size.description"/>
+          <tooltip-label slot="label" :title="$t('label.sizegb')" :tooltip="apiParams.size.description"/>
           <a-input
             v-decorator="['size', {
               rules: [{ required: true, message: $t('message.error.custom.disk.size') }]}]"

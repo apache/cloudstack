@@ -20,7 +20,7 @@
     <a-spin :spinning="loading">
       <a-form :form="form" :loading="loading" @submit="handleSubmit" layout="vertical">
         <a-form-item>
-          <tooltip-label :title="$t('label.traffictype')" :tooltip="apiParams.id.description"/>
+          <tooltip-label slot="label" :title="$t('label.traffictype')" :tooltip="apiParams.id.description"/>
           <a-select
             autoFocus
             v-decorator="['id', {
@@ -35,7 +35,7 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.kvmnetworklabel')" :tooltip="apiParams.kvmnetworklabel.description"/>
+          <tooltip-label slot="label" :title="$t('label.kvmnetworklabel')" :tooltip="apiParams.kvmnetworklabel.description"/>
           <a-input
             v-decorator="['kvmnetworklabel', {
               initialValue: trafficResource.kvmnetworklabel
@@ -43,7 +43,7 @@
             :placeholder="$t('label.network.label.display.for.blank.value')" />
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.vmwarenetworklabel')" :tooltip="apiParams.vmwarenetworklabel.description"/>
+          <tooltip-label slot="label" :title="$t('label.vmwarenetworklabel')" :tooltip="apiParams.vmwarenetworklabel.description"/>
           <a-input
             v-decorator="['vmwarenetworklabel', {
               initialValue: trafficResource.vmwarenetworklabel
@@ -51,7 +51,7 @@
             :placeholder="$t('label.network.label.display.for.blank.value')" />
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.xennetworklabel')" :tooltip="apiParams.xennetworklabel.description"/>
+          <tooltip-label slot="label" :title="$t('label.xennetworklabel')" :tooltip="apiParams.xennetworklabel.description"/>
           <a-input
             v-decorator="['xennetworklabel', {
               initialValue: trafficResource.xennetworklabel
@@ -59,7 +59,7 @@
             :placeholder="$t('label.network.label.display.for.blank.value')" />
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.hypervnetworklabel')" :tooltip="apiParams.hypervnetworklabel.description"/>
+          <tooltip-label slot="label" :title="$t('label.hypervnetworklabel')" :tooltip="apiParams.hypervnetworklabel.description"/>
           <a-input
             v-decorator="['hypervnetworklabel', {
               initialValue: trafficResource.hypervnetworklabel
@@ -67,7 +67,7 @@
             :placeholder="$t('label.network.label.display.for.blank.value')" />
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.ovm3networklabel')" :tooltip="apiParams.ovm3networklabel.description"/>
+          <tooltip-label slot="label" :title="$t('label.ovm3networklabel')" :tooltip="apiParams.ovm3networklabel.description"/>
           <a-input
             v-decorator="['ovm3networklabel', {
               initialValue: trafficResource.ovm3networklabel

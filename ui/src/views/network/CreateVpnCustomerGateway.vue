@@ -18,7 +18,7 @@
   <div>
     <a-form class="form-layout" :form="form" layout="vertical">
       <a-form-item>
-        <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+        <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
         <a-input
           v-decorator="[
             'name',
@@ -30,7 +30,7 @@
           autoFocus />
       </a-form-item>
       <a-form-item>
-        <tooltip-label :title="$t('label.gateway')" :tooltip="apiParams.gateway.description"/>
+        <tooltip-label slot="label" :title="$t('label.gateway')" :tooltip="apiParams.gateway.description"/>
         <a-input
           v-decorator="[
             'gateway',
@@ -41,7 +41,7 @@
           :placeholder="$t('label.vpncustomergateway')" />
       </a-form-item>
       <a-form-item>
-        <tooltip-label :title="$t('label.cidrlist')" :tooltip="apiParams.cidrlist.description"/>
+        <tooltip-label slot="label" :title="$t('label.cidrlist')" :tooltip="apiParams.cidrlist.description"/>
         <a-input
           v-decorator="[
             'cidrlist',
@@ -52,7 +52,7 @@
           :placeholder="$t('label.vpncustomergateway.cidrlist')" />
       </a-form-item>
       <a-form-item>
-        <tooltip-label :title="$t('label.ipsecpsk')" :tooltip="apiParams.ipsecpsk.description"/>
+        <tooltip-label slot="label" :title="$t('label.ipsecpsk')" :tooltip="apiParams.ipsecpsk.description"/>
         <a-input
           v-decorator="[
             'ipsecpsk',
@@ -89,7 +89,7 @@
         </a-select>
       </a-form-item>
       <a-form-item>
-        <tooltip-label :title="$t('label.ikeversion')" :tooltip="apiParams.ikeversion.description"/>
+        <tooltip-label slot="label" :title="$t('label.ikeversion')" :tooltip="apiParams.ikeversion.description"/>
         <a-select
           v-decorator="[
             'ikeversion',
@@ -167,7 +167,7 @@
         </a-select>
       </a-form-item>
       <a-form-item>
-        <tooltip-label :title="$t('label.ikelifetime')" :tooltip="apiParams.ikelifetime.description"/>
+        <tooltip-label slot="label" :title="$t('label.ikelifetime')" :tooltip="apiParams.ikelifetime.description"/>
         <a-input
           v-decorator="[
             'ikelifetime',
@@ -178,7 +178,7 @@
           :placeholder="$t('label.vpncustomergateway.ikelifetime')"/>
       </a-form-item>
       <a-form-item>
-        <tooltip-label :title="$t('label.esplifetime')" :tooltip="apiParams.esplifetime.description"/>
+        <tooltip-label slot="label" :title="$t('label.esplifetime')" :tooltip="apiParams.esplifetime.description"/>
         <a-input
           v-decorator="[
             'esplifetime',
@@ -189,7 +189,7 @@
           :placeholder="$t('label.vpncustomergateway.esplifetime')"/>
       </a-form-item>
       <a-form-item>
-        <tooltip-label :title="$t('label.dpd')" :tooltip="apiParams.dpd.description"/>
+        <tooltip-label slot="label" :title="$t('label.dpd')" :tooltip="apiParams.dpd.description"/>
         <a-switch
           v-decorator="[
             'dpd',
@@ -199,7 +199,7 @@
           ]"/>
       </a-form-item>
       <a-form-item v-if="ikeversion !== 'ikev1'">
-        <tooltip-label :title="$t('label.splitconnections')" :tooltip="apiParams.splitconnections.description"/>
+        <tooltip-label slot="label" :title="$t('label.splitconnections')" :tooltip="apiParams.splitconnections.description"/>
         <a-switch
           v-decorator="[
             'splitconnections',
@@ -209,7 +209,7 @@
           ]"/>
       </a-form-item>
       <a-form-item>
-        <tooltip-label :title="$t('label.forceencap')" :tooltip="apiParams.forceencap.description"/>
+        <tooltip-label slot="label" :title="$t('label.forceencap')" :tooltip="apiParams.forceencap.description"/>
         <a-switch
           v-decorator="[
             'forceencap',

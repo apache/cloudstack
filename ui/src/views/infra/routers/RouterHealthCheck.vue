@@ -55,7 +55,7 @@
             @submit="handleGetHealthChecksSubmit"
             layout="vertical">
             <a-form-item>
-              <tooltip-label :title="$t('label.perform.fresh.checks')" :tooltip="apiParams.performfreshchecks.description"/>
+              <tooltip-label slot="label" :title="$t('label.perform.fresh.checks')" :tooltip="apiParams.performfreshchecks.description"/>
               <a-switch
                 v-decorator="[$t('performfreshchecks')]"
                 :placeholder="apiParams.performfreshchecks.description"

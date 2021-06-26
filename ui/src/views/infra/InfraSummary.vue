@@ -51,7 +51,7 @@
 
             <a-form @submit.prevent="handleSslFormSubmit" ref="sslForm" :form="form">
               <a-form-item :required="true">
-                <tooltip-label :title="$t('label.root.certificate')" :tooltip="apiParams.name.description" tooltipPlacement="bottom"/>
+                <tooltip-label slot="label" :title="$t('label.root.certificate')" :tooltip="apiParams.name.description" tooltipPlacement="bottom"/>
                 <a-textarea
                   id="rootCert"
                   rows="2"
@@ -70,7 +70,7 @@
                   v-for="(item, index) in intermediateCertificates"
                   :key="`key-${index}`"
                   class="intermediate-certificate">
-                  <tooltip-label :title="$t('label.intermediate.certificate') + ` ${index + 1} `" :tooltip="apiParams.id.description" tooltipPlacement="bottom"/>
+                  <tooltip-label slot="label" :title="$t('label.intermediate.certificate') + ` ${index + 1} `" :tooltip="apiParams.id.description" tooltipPlacement="bottom"/>
                   <a-textarea
                     :id="`intermediateCert${index}`"
                     rows="2"
@@ -92,7 +92,7 @@
               </a-form-item>
 
               <a-form-item :required="true">
-                <tooltip-label :title="$t('label.server.certificate')" :tooltip="apiParams.certificate.description" tooltipPlacement="bottom"/>
+                <tooltip-label slot="label" :title="$t('label.server.certificate')" :tooltip="apiParams.certificate.description" tooltipPlacement="bottom"/>
                 <a-textarea
                   id="serverCert"
                   rows="2"
@@ -106,7 +106,7 @@
               </a-form-item>
 
               <a-form-item :required="true">
-                <tooltip-label :title="$t('label.pkcs.private.certificate')" :tooltip="apiParams.privatekey.description" tooltipPlacement="bottom"/>
+                <tooltip-label slot="label" :title="$t('label.pkcs.private.certificate')" :tooltip="apiParams.privatekey.description" tooltipPlacement="bottom"/>
                 <a-textarea
                   id="pkcsKey"
                   rows="2"
@@ -120,7 +120,7 @@
               </a-form-item>
 
               <a-form-item :required="true">
-                <tooltip-label :title="$t('label.domain.suffix')" :tooltip="apiParams.domainsuffix.description" tooltipPlacement="bottom"/>
+                <tooltip-label slot="label" :title="$t('label.domain.suffix')" :tooltip="apiParams.domainsuffix.description" tooltipPlacement="bottom"/>
                 <a-input
                   id="dnsSuffix"
                   :placeholder="$t('label.domain.suffix')"

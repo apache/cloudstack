@@ -23,7 +23,7 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <tooltip-label :title="$t('label.semanticversion')" :tooltip="apiParams.semanticversion.description"/>
+          <tooltip-label slot="label" :title="$t('label.semanticversion')" :tooltip="apiParams.semanticversion.description"/>
           <a-input
             v-decorator="['semanticversion', {
               rules: [{ required: true, message: $t('message.error.kuberversion') }]
@@ -32,7 +32,7 @@
             autoFocus />
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-decorator="['name', {
               rules: [{ message: $t('message.error.name') }]
@@ -40,7 +40,7 @@
             :placeholder="$t('label.name')"/>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             id="zone-selection"
             v-decorator="['zoneid', {
@@ -68,7 +68,7 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.url')" :tooltip="apiParams.url.description"/>
+          <tooltip-label slot="label" :title="$t('label.url')" :tooltip="apiParams.url.description"/>
           <a-input
             v-decorator="['url', {
               rules: [{ required: true, message: $t('message.error.binaries.iso.url') }]
@@ -76,7 +76,7 @@
             :placeholder="apiParams.url.description" />
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.checksum')" :tooltip="apiParams.checksum.description"/>
+          <tooltip-label slot="label" :title="$t('label.checksum')" :tooltip="apiParams.checksum.description"/>
           <a-input
             v-decorator="['checksum', {
               rules: [{ required: false, message: $t('message.error.required.input') }]
@@ -84,7 +84,7 @@
             :placeholder="apiParams.checksum.description" />
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.mincpunumber')" :tooltip="apiParams.mincpunumber.description"/>
+          <tooltip-label slot="label" :title="$t('label.mincpunumber')" :tooltip="apiParams.mincpunumber.description"/>
           <a-input
             v-decorator="['mincpunumber', {
               rules: [{ required: true, message: $t('message.please.enter.value') },
@@ -101,7 +101,7 @@
             :placeholder="apiParams.mincpunumber.description"/>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.minmemory')" :tooltip="apiParams.minmemory.description"/>
+          <tooltip-label slot="label" :title="$t('label.minmemory')" :tooltip="apiParams.minmemory.description"/>
           <a-input
             v-decorator="['minmemory', {
               rules: [{ required: true, message: $t('message.please.enter.value') },

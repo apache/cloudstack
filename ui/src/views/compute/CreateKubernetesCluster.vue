@@ -23,7 +23,7 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.kubecluster.name') }]
@@ -32,7 +32,7 @@
             autoFocus />
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.description')" :tooltip="apiParams.description.description"/>
+          <tooltip-label slot="label" :title="$t('label.description')" :tooltip="apiParams.description.description"/>
           <a-input
             v-decorator="['description', {
               rules: [{ required: true, message: $t('message.error.cluster.description') }]
@@ -40,7 +40,7 @@
             :placeholder="apiParams.description.description"/>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             id="zone-selection"
             v-decorator="['zoneid', {
@@ -60,7 +60,7 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.kubernetesversionid')" :tooltip="apiParams.kubernetesversionid.description"/>
+          <tooltip-label slot="label" :title="$t('label.kubernetesversionid')" :tooltip="apiParams.kubernetesversionid.description"/>
           <a-select
             id="version-selection"
             v-decorator="['kubernetesversionid', {
@@ -80,7 +80,7 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
+          <tooltip-label slot="label" :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
           <a-select
             id="offering-selection"
             v-decorator="['serviceofferingid', {
@@ -99,7 +99,7 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.noderootdisksize')" :tooltip="apiParams.noderootdisksize.description"/>
+          <tooltip-label slot="label" :title="$t('label.noderootdisksize')" :tooltip="apiParams.noderootdisksize.description"/>
           <a-input
             v-decorator="['noderootdisksize', {
               rules: [{
@@ -114,7 +114,7 @@
             :placeholder="apiParams.noderootdisksize.description"/>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.networkid')" :tooltip="apiParams.networkid.description"/>
+          <tooltip-label slot="label" :title="$t('label.networkid')" :tooltip="apiParams.networkid.description"/>
           <a-select
             id="network-selection"
             v-decorator="['networkid', {}]"
@@ -134,7 +134,7 @@
           <a-switch v-decorator="['haenable', {initialValue: this.haEnabled}]" :checked="this.haEnabled" @change="val => { this.haEnabled = val }" />
         </a-form-item>
         <a-form-item v-if="this.haEnabled">
-          <tooltip-label :title="$t('label.controlnodes')" :tooltip="apiParams.controlnodes.description"/>
+          <tooltip-label slot="label" :title="$t('label.controlnodes')" :tooltip="apiParams.controlnodes.description"/>
           <a-input
             v-decorator="['controlnodes', {
               initialValue: '2',
@@ -152,13 +152,13 @@
             :placeholder="apiParams.controlnodes.description"/>
         </a-form-item>
         <a-form-item v-if="this.haEnabled">
-          <tooltip-label :title="$t('label.externalloadbalanceripaddress')" :tooltip="apiParams.externalloadbalanceripaddress.description"/>
+          <tooltip-label slot="label" :title="$t('label.externalloadbalanceripaddress')" :tooltip="apiParams.externalloadbalanceripaddress.description"/>
           <a-input
             v-decorator="['externalloadbalanceripaddress', {}]"
             :placeholder="apiParams.externalloadbalanceripaddress.description"/>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.cks.cluster.size')" :tooltip="apiParams.size.description"/>
+          <tooltip-label slot="label" :title="$t('label.cks.cluster.size')" :tooltip="apiParams.size.description"/>
           <a-input
             v-decorator="['size', {
               initialValue: '1',
@@ -176,7 +176,7 @@
             :placeholder="apiParams.size.description"/>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.keypair')" :tooltip="apiParams.keypair.description"/>
+          <tooltip-label slot="label" :title="$t('label.keypair')" :tooltip="apiParams.keypair.description"/>
           <a-select
             id="keypair-selection"
             v-decorator="['keypair', {}]"
@@ -198,7 +198,7 @@
           </a-form-item>
           <div v-if="usePrivateRegistry">
             <a-form-item>
-              <tooltip-label :title="$t('label.dockerregistryusername')" :tooltip="apiParams.dockerregistryusername.description"/>
+              <tooltip-label slot="label" :title="$t('label.dockerregistryusername')" :tooltip="apiParams.dockerregistryusername.description"/>
               <a-input
                 v-decorator="['dockerregistryusername', {
                   rules: [{ required: true, message: $t('label.required') }]
@@ -206,7 +206,7 @@
                 :placeholder="apiParams.dockerregistryusername.description"/>
             </a-form-item>
             <a-form-item>
-              <tooltip-label :title="$t('label.dockerregistrypassword')" :tooltip="apiParams.dockerregistrypassword.description"/>
+              <tooltip-label slot="label" :title="$t('label.dockerregistrypassword')" :tooltip="apiParams.dockerregistrypassword.description"/>
               <a-input-password
                 v-decorator="['dockerregistrypassword', {
                   rules: [{ required: true, message: $t('label.required') }]
@@ -214,7 +214,7 @@
                 :placeholder="apiParams.dockerregistrypassword.description"/>
             </a-form-item>
             <a-form-item>
-              <tooltip-label :title="$t('label.dockerregistryurl')" :tooltip="apiParams.dockerregistryurl.description"/>
+              <tooltip-label slot="label" :title="$t('label.dockerregistryurl')" :tooltip="apiParams.dockerregistryurl.description"/>
               <a-input
                 v-decorator="['dockerregistryurl', {
                   rules: [{ required: true, message: $t('label.required') }]
@@ -222,7 +222,7 @@
                 :placeholder="apiParams.dockerregistryurl.description"/>
             </a-form-item>
             <a-form-item>
-              <tooltip-label :title="$t('label.dockerregistryemail')" :tooltip="apiParams.dockerregistryemail.description"/>
+              <tooltip-label slot="label" :title="$t('label.dockerregistryemail')" :tooltip="apiParams.dockerregistryemail.description"/>
               <a-input
                 v-decorator="['dockerregistryemail', {
                   rules: [{ required: true, message: $t('label.required') }]

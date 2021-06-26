@@ -177,7 +177,7 @@
             </a-select>
           </a-form-item>
           <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan">
-            <tooltip-label :title="$t('label.vlan')" :tooltip="$t('label.vlan')"/>
+            <tooltip-label slot="label" :title="$t('label.vlan')" :tooltip="$t('label.vlan')"/>
             <a-input
               v-decorator="['vlan', {
                 rules: [{ required: true, message: $t('message.please.enter.value') }]

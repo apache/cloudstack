@@ -23,7 +23,7 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             autoFocus
             v-decorator="['name', {
@@ -32,7 +32,7 @@
             :placeholder="apiParams.name.description"/>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
+          <tooltip-label slot="label" :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
           <a-input
             v-decorator="['displaytext', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -40,7 +40,7 @@
             :placeholder="apiParams.displaytext.description"/>
         </a-form-item>
         <a-form-item v-if="isSystem">
-          <tooltip-label :title="$t('label.systemvmtype')" :tooltip="apiParams.systemvmtype.description"/>
+          <tooltip-label slot="label" :title="$t('label.systemvmtype')" :tooltip="apiParams.systemvmtype.description"/>
           <a-select
             v-decorator="['systemvmtype', {
               initialValue: 'domainrouter'
@@ -57,7 +57,7 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.storagetype')" :tooltip="apiParams.storagetype.description"/>
+          <tooltip-label slot="label" :title="$t('label.storagetype')" :tooltip="apiParams.storagetype.description"/>
           <a-radio-group
             v-decorator="['storagetype', {
               initialValue: storageType
@@ -73,7 +73,7 @@
           </a-radio-group>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.provisioningtype')" :tooltip="apiParams.provisioningtype.description"/>
+          <tooltip-label slot="label" :title="$t('label.provisioningtype')" :tooltip="apiParams.provisioningtype.description"/>
           <a-radio-group
             v-decorator="['provisioningtype', {
               initialValue: provisioningType
@@ -92,7 +92,7 @@
           </a-radio-group>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.cachemode')" :tooltip="apiParams.cachemode.description"/>
+          <tooltip-label slot="label" :title="$t('label.cachemode')" :tooltip="apiParams.cachemode.description"/>
           <a-radio-group
             v-decorator="['cachemode', {
               initialValue: cacheMode
@@ -129,7 +129,7 @@
           </a-radio-group>
         </a-form-item>
         <a-form-item v-if="offeringType === 'fixed'">
-          <tooltip-label :title="$t('label.cpunumber')" :tooltip="apiParams.cpunumber.description"/>
+          <tooltip-label slot="label" :title="$t('label.cpunumber')" :tooltip="apiParams.cpunumber.description"/>
           <a-input
             v-decorator="['cpunumber', {
               rules: [{ required: true, message: $t('message.error.required.input') },
@@ -146,7 +146,7 @@
             :placeholder="apiParams.cpunumber.description"/>
         </a-form-item>
         <a-form-item v-if="offeringType !== 'customunconstrained'">
-          <tooltip-label :title="$t('label.cpuspeed')" :tooltip="apiParams.cpuspeed.description"/>
+          <tooltip-label slot="label" :title="$t('label.cpuspeed')" :tooltip="apiParams.cpuspeed.description"/>
           <a-input
             v-decorator="['cpuspeed', {
               rules: [{ required: true, message: $t('message.error.required.input') },
@@ -163,7 +163,7 @@
             :placeholder="apiParams.cpuspeed.description"/>
         </a-form-item>
         <a-form-item v-if="offeringType === 'customconstrained'">
-          <tooltip-label :title="$t('label.mincpunumber')" :tooltip="apiParams.mincpunumber.description"/>
+          <tooltip-label slot="label" :title="$t('label.mincpunumber')" :tooltip="apiParams.mincpunumber.description"/>
           <a-input
             v-decorator="['mincpunumber', {
               rules: [{ required: true, message: $t('message.error.required.input') },
@@ -180,7 +180,7 @@
             :placeholder="apiParams.mincpunumber.description"/>
         </a-form-item>
         <a-form-item v-if="offeringType === 'customconstrained'">
-          <tooltip-label :title="$t('label.maxcpunumber')" :tooltip="apiParams.maxcpunumber.description"/>
+          <tooltip-label slot="label" :title="$t('label.maxcpunumber')" :tooltip="apiParams.maxcpunumber.description"/>
           <a-input
             v-decorator="['maxcpunumber', {
               rules: [{ required: true, message: $t('message.error.required.input') },
@@ -197,7 +197,7 @@
             :placeholder="apiParams.maxcpunumber.description"/>
         </a-form-item>
         <a-form-item v-if="offeringType === 'fixed'">
-          <tooltip-label :title="$t('label.memory.mb')" :tooltip="apiParams.memory.description"/>
+          <tooltip-label slot="label" :title="$t('label.memory.mb')" :tooltip="apiParams.memory.description"/>
           <a-input
             v-decorator="['memory', {
               rules: [{ required: true, message: $t('message.error.required.input') },
@@ -214,7 +214,7 @@
             :placeholder="apiParams.memory.description"/>
         </a-form-item>
         <a-form-item v-if="offeringType === 'customconstrained'">
-          <tooltip-label :title="$t('label.minmemory')" :tooltip="apiParams.minmemory.description"/>
+          <tooltip-label slot="label" :title="$t('label.minmemory')" :tooltip="apiParams.minmemory.description"/>
           <a-input
             v-decorator="['minmemory', {
               rules: [{ required: true, message: $t('message.error.required.input') },
@@ -231,7 +231,7 @@
             :placeholder="apiParams.minmemory.description"/>
         </a-form-item>
         <a-form-item v-if="offeringType === 'customconstrained'">
-          <tooltip-label :title="$t('label.maxmemory')" :tooltip="apiParams.maxmemory.description"/>
+          <tooltip-label slot="label" :title="$t('label.maxmemory')" :tooltip="apiParams.maxmemory.description"/>
           <a-input
             v-decorator="['maxmemory', {
               rules: [{ required: true, message: $t('message.error.required.input') },
@@ -248,7 +248,7 @@
             :placeholder="apiParams.maxmemory.description"/>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.networkrate')" :tooltip="apiParams.networkrate.description"/>
+          <tooltip-label slot="label" :title="$t('label.networkrate')" :tooltip="apiParams.networkrate.description"/>
           <a-input
             v-decorator="['networkrate', {
               rules: [
@@ -265,7 +265,7 @@
             :placeholder="apiParams.networkrate.description"/>
         </a-form-item>
         <a-form-item v-if="apiParams.rootdisksize">
-          <tooltip-label :title="$t('label.root.disk.size')" :tooltip="apiParams.rootdisksize.description"/>
+          <tooltip-label slot="label" :title="$t('label.root.disk.size')" :tooltip="apiParams.rootdisksize.description"/>
           <a-input
             v-decorator="['rootdisksize', {
               rules: [
@@ -300,7 +300,7 @@
           </a-radio-group>
         </a-form-item>
         <a-form-item v-if="qosType === 'hypervisor'">
-          <tooltip-label :title="$t('label.diskbytesreadrate')" :tooltip="apiParams.bytesreadrate.description"/>
+          <tooltip-label slot="label" :title="$t('label.diskbytesreadrate')" :tooltip="apiParams.bytesreadrate.description"/>
           <a-input
             v-decorator="['diskbytesreadrate', {
               rules: [{
@@ -315,7 +315,7 @@
             :placeholder="apiParams.bytesreadrate.description"/>
         </a-form-item>
         <a-form-item v-if="qosType === 'hypervisor'">
-          <tooltip-label :title="$t('label.diskbyteswriterate')" :tooltip="apiParams.byteswriterate.description"/>
+          <tooltip-label slot="label" :title="$t('label.diskbyteswriterate')" :tooltip="apiParams.byteswriterate.description"/>
           <a-input
             v-decorator="['diskbyteswriterate', {
               rules: [{
@@ -330,7 +330,7 @@
             :placeholder="apiParams.byteswriterate.description"/>
         </a-form-item>
         <a-form-item v-if="qosType === 'hypervisor'">
-          <tooltip-label :title="$t('label.diskiopsreadrate')" :tooltip="apiParams.iopsreadrate.description"/>
+          <tooltip-label slot="label" :title="$t('label.diskiopsreadrate')" :tooltip="apiParams.iopsreadrate.description"/>
           <a-input
             v-decorator="['diskiopsreadrate', {
               rules: [{
@@ -345,7 +345,7 @@
             :placeholder="apiParams.iopsreadrate.description"/>
         </a-form-item>
         <a-form-item v-if="qosType === 'hypervisor'">
-          <tooltip-label :title="$t('label.diskiopswriterate')" :tooltip="apiParams.iopswriterate.description"/>
+          <tooltip-label slot="label" :title="$t('label.diskiopswriterate')" :tooltip="apiParams.iopswriterate.description"/>
           <a-input
             v-decorator="['diskiopswriterate', {
               rules: [{
@@ -360,11 +360,11 @@
             :placeholder="apiParams.iopswriterate.description"/>
         </a-form-item>
         <a-form-item v-if="!isSystem && qosType === 'storage'">
-          <tooltip-label :title="$t('label.iscustomizeddiskiops')" :tooltip="apiParams.customizediops.description"/>
+          <tooltip-label slot="label" :title="$t('label.iscustomizeddiskiops')" :tooltip="apiParams.customizediops.description"/>
           <a-switch v-decorator="['iscustomizeddiskiops', {initialValue: isCustomizedDiskIops}]" :defaultChecked="isCustomizedDiskIops" @change="val => { isCustomizedDiskIops = val }" />
         </a-form-item>
         <a-form-item v-if="qosType === 'storage' && !isCustomizedDiskIops">
-          <tooltip-label :title="$t('label.diskiopsmin')" :tooltip="apiParams.miniops.description"/>
+          <tooltip-label slot="label" :title="$t('label.diskiopsmin')" :tooltip="apiParams.miniops.description"/>
           <a-input
             v-decorator="['diskiopsmin', {
               rules: [{
@@ -379,7 +379,7 @@
             :placeholder="apiParams.miniops.description"/>
         </a-form-item>
         <a-form-item v-if="qosType === 'storage' && !isCustomizedDiskIops">
-          <tooltip-label :title="$t('label.diskiopsmax')" :tooltip="apiParams.maxiops.description"/>
+          <tooltip-label slot="label" :title="$t('label.diskiopsmax')" :tooltip="apiParams.maxiops.description"/>
           <a-input
             v-decorator="['diskiopsmax', {
               rules: [{
@@ -394,7 +394,7 @@
             :placeholder="apiParams.maxiops.description"/>
         </a-form-item>
         <a-form-item v-if="!isSystem && qosType === 'storage'">
-          <tooltip-label :title="$t('label.hypervisorsnapshotreserve')" :tooltip="apiParams.hypervisorsnapshotreserve.description"/>
+          <tooltip-label slot="label" :title="$t('label.hypervisorsnapshotreserve')" :tooltip="apiParams.hypervisorsnapshotreserve.description"/>
           <a-input
             v-decorator="['hypervisorsnapshotreserve', {
               rules: [{
@@ -409,21 +409,21 @@
             :placeholder="apiParams.hypervisorsnapshotreserve.description"/>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.offerha')" :tooltip="apiParams.offerha.description"/>
+          <tooltip-label slot="label" :title="$t('label.offerha')" :tooltip="apiParams.offerha.description"/>
           <a-switch v-decorator="['offerha', {initialValue: false}]" />
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.dynamicscalingenabled')" :tooltip="apiParams.dynamicscalingenabled.description"/>
+          <tooltip-label slot="label" :title="$t('label.dynamicscalingenabled')" :tooltip="apiParams.dynamicscalingenabled.description"/>
           <a-switch v-decorator="['dynamicscalingenabled', {initialValue: dynamicscalingenabled}]" :checked="dynamicscalingenabled" @change="val => { dynamicscalingenabled = val }"/>
         </a-form-item>
         <a-form-item v-if="isAdmin()">
-          <tooltip-label :title="$t('label.hosttags')" :tooltip="apiParams.hosttags.description"/>
+          <tooltip-label slot="label" :title="$t('label.hosttags')" :tooltip="apiParams.hosttags.description"/>
           <a-input
             v-decorator="['hosttags', {}]"
             :placeholder="apiParams.hosttags.description"/>
         </a-form-item>
         <a-form-item v-if="isAdmin()">
-          <tooltip-label :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
+          <tooltip-label slot="label" :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
           <a-select
             mode="tags"
             v-decorator="['storagetags', {}]"
@@ -441,15 +441,15 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.limitcpuuse')" :tooltip="apiParams.limitcpuuse.description"/>
+          <tooltip-label slot="label" :title="$t('label.limitcpuuse')" :tooltip="apiParams.limitcpuuse.description"/>
           <a-switch v-decorator="['limitcpuuse', {initialValue: false}]" />
         </a-form-item>
         <a-form-item v-if="!isSystem">
-          <tooltip-label :title="$t('label.isvolatile')" :tooltip="apiParams.isvolatile.description"/>
+          <tooltip-label slot="label" :title="$t('label.isvolatile')" :tooltip="apiParams.isvolatile.description"/>
           <a-switch v-decorator="['isvolatile', {initialValue: false}]" />
         </a-form-item>
         <a-form-item v-if="!isSystem && isAdmin()">
-          <tooltip-label :title="$t('label.deploymentplanner')" :tooltip="apiParams.deploymentplanner.description"/>
+          <tooltip-label slot="label" :title="$t('label.deploymentplanner')" :tooltip="apiParams.deploymentplanner.description"/>
           <a-select
             v-decorator="['deploymentplanner', {
               initialValue: deploymentPlanners.length > 0 ? deploymentPlanners[0].name : ''
@@ -515,7 +515,7 @@
           <a-switch v-decorator="['ispublic', {initialValue: isPublic}]" :checked="isPublic" @change="val => { isPublic = val }" />
         </a-form-item>
         <a-form-item v-if="!isPublic">
-          <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+          <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
           <a-select
             mode="multiple"
             v-decorator="['domainid', {
@@ -539,7 +539,7 @@
           </a-select>
         </a-form-item>
         <a-form-item v-if="!isSystem">
-          <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             id="zone-selection"
             mode="multiple"
@@ -569,7 +569,7 @@
           </a-select>
         </a-form-item>
         <a-form-item v-if="'listVsphereStoragePolicies' in $store.getters.apis && storagePolicies !== null">
-          <tooltip-label :title="$t('label.vmware.storage.polic')" :tooltip="apiParams.storagepolicy.description"/>
+          <tooltip-label slot="label" :title="$t('label.vmware.storage.polic')" :tooltip="apiParams.storagepolicy.description"/>
           <a-select
             v-decorator="['storagepolicy']"
             :placeholder="apiParams.storagepolicy.description">

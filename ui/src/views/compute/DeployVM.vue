@@ -162,7 +162,7 @@
                 <template slot="description">
                   <div v-if="zoneSelected">
                     <a-form-item v-if="zoneSelected && templateConfigurationExists">
-                      <tooltip-label :title="$t('label.configuration')" :tooltip="$t('message.ovf.configurations')"/>
+                      <tooltip-label slot="label" :title="$t('label.configuration')" :tooltip="$t('message.ovf.configurations')"/>
                       <a-select
                         showSearch
                         optionFilterProp="children"
@@ -280,7 +280,7 @@
                         v-for="(nic, nicIndex) in templateNics"
                         :key="nicIndex"
                         :v-bind="nic.name" >
-                        <tooltip-label :title="nic.elementName + ' - ' + nic.name" :tooltip="nic.networkDescription"/>
+                        <tooltip-label slot="label" :title="nic.elementName + ' - ' + nic.name" :tooltip="nic.networkDescription"/>
                         <a-select
                           showSearch
                           optionFilterProp="children"
@@ -367,7 +367,7 @@
                         v-for="(property, propertyIndex) in props"
                         :key="propertyIndex"
                         :v-bind="property.key" >
-                        <tooltip-label style="text-transform: capitalize" :title="property.label" :tooltip="property.description"/>
+                        <tooltip-label slot="label" style="text-transform: capitalize" :title="property.label" :tooltip="property.description"/>
 
                         <span v-if="property.type && property.type==='boolean'">
                           <a-switch
@@ -495,7 +495,7 @@
                       </a-switch>
                     </a-form-item>
                     <a-form-item>
-                      <tooltip-label :title="$t('label.dynamicscalingenabled')" :tooltip="$t('label.dynamicscalingenabled.tooltip')"/>
+                      <tooltip-label slot="label" :title="$t('label.dynamicscalingenabled')" :tooltip="$t('label.dynamicscalingenabled.tooltip')"/>
                       <a-form-item>
                         <a-switch
                           v-decorator="['dynamicscalingenabled']"
@@ -565,7 +565,7 @@
                         v-for="(license, licenseIndex) in templateLicenses"
                         :key="licenseIndex"
                         :v-bind="license.id">
-                        <tooltip-label style="text-transform: capitalize" :title="$t('label.agreement' + ' ' + (licenseIndex+1) + ': ' + license.name)"/>
+                        <tooltip-label slot="label" style="text-transform: capitalize" :title="$t('label.agreement' + ' ' + (licenseIndex+1) + ': ' + license.name)"/>
                         <a-textarea
                           :value="license.text"
                           :auto-size="{ minRows: 3, maxRows: 8 }"

@@ -22,7 +22,7 @@
       :form="form"
       @submit="handleSubmit">
       <a-form-item>
-        <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+        <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
         <a-input
           autoFocus
           v-decorator="['name', {
@@ -30,14 +30,14 @@
           }]"/>
       </a-form-item>
       <a-form-item>
-        <tooltip-label :title="$t('label.description')" :tooltip="apiParams.description.description"/>
+        <tooltip-label slot="label" :title="$t('label.description')" :tooltip="apiParams.description.description"/>
         <a-input
           v-decorator="['description', {
             rules: [{ required: true, message: $t('message.error.required.input') }]
           }]"/>
       </a-form-item>
       <a-form-item>
-        <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+        <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
         <a-select
           showSearch
           allowClear
@@ -52,7 +52,7 @@
         </a-select>
       </a-form-item>
       <a-form-item>
-        <tooltip-label :title="$t('label.externalid')" :tooltip="apiParams.externalid.description"/>
+        <tooltip-label slot="label" :title="$t('label.externalid')" :tooltip="apiParams.externalid.description"/>
         <a-select
           allowClear
           v-decorator="['externalid', {
@@ -65,7 +65,7 @@
         </a-select>
       </a-form-item>
       <a-form-item>
-        <tooltip-label :title="$t('label.allowuserdrivenbackups')" :tooltip="apiParams.allowuserdrivenbackups.description"/>
+        <tooltip-label slot="label" :title="$t('label.allowuserdrivenbackups')" :tooltip="apiParams.allowuserdrivenbackups.description"/>
         <a-switch
           v-decorator="['allowuserdrivenbackups']"
           :default-checked="true"/>

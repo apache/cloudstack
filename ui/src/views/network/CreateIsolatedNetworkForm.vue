@@ -24,7 +24,7 @@
           layout="vertical"
           @submit="handleSubmit">
           <a-form-item>
-            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+            <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
             <a-input
               v-decorator="['name', {
                 rules: [{ required: true, message: $t('message.error.name') }]
@@ -33,7 +33,7 @@
               autoFocus/>
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
+            <tooltip-label slot="label" :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
             <a-input
               v-decorator="['displaytext', {
                 rules: [{ required: true, message: $t('message.error.display.text') }]
@@ -41,7 +41,7 @@
               :placeholder="this.$t('label.display.text')"/>
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+            <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
             <a-select
               v-decorator="['zoneid', {
                 rules: [
@@ -65,7 +65,7 @@
             </a-select>
           </a-form-item>
           <a-form-item v-if="this.isAdminOrDomainAdmin()">
-            <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+            <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
             <a-select
               v-decorator="['domainid', {}]"
               showSearch
@@ -82,7 +82,7 @@
             </a-select>
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
+            <tooltip-label slot="label" :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
             <a-select
               v-decorator="['networkofferingid', {
                 rules: [
@@ -106,7 +106,7 @@
             </a-select>
           </a-form-item>
           <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan">
-            <tooltip-label :title="$t('label.vlan')" :tooltip="apiParams.vlan.description"/>
+            <tooltip-label slot="label" :title="$t('label.vlan')" :tooltip="apiParams.vlan.description"/>
             <a-input
               v-decorator="['vlanid', {
                 rules: [{ required: true, message: $t('message.please.enter.value') }]
@@ -114,7 +114,7 @@
               :placeholder="this.$t('label.vlanid')"/>
           </a-form-item>
           <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.forvpc">
-            <tooltip-label :title="$t('label.vpcid')" :tooltip="apiParams.vpcid.description"/>
+            <tooltip-label slot="label" :title="$t('label.vpcid')" :tooltip="apiParams.vpcid.description"/>
             <a-select
               v-decorator="['vpcid', {
                 rules: [
@@ -138,31 +138,31 @@
             </a-select>
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.externalid')" :tooltip="apiParams.externalid.description"/>
+            <tooltip-label slot="label" :title="$t('label.externalid')" :tooltip="apiParams.externalid.description"/>
             <a-input
               v-decorator="['externalid', {}]"
               :placeholder="$t('label.externalid')"/>
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.gateway')" :tooltip="apiParams.gateway.description"/>
+            <tooltip-label slot="label" :title="$t('label.gateway')" :tooltip="apiParams.gateway.description"/>
             <a-input
               v-decorator="['gateway', {}]"
               :placeholder="this.$t('label.gateway')"/>
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.netmask')" :tooltip="apiParams.netmask.description"/>
+            <tooltip-label slot="label" :title="$t('label.netmask')" :tooltip="apiParams.netmask.description"/>
             <a-input
               v-decorator="['netmask', {}]"
               :placeholder="this.$t('label.netmask')"/>
           </a-form-item>
           <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && !this.selectedNetworkOffering.forvpc">
-            <tooltip-label :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
+            <tooltip-label slot="label" :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
             <a-input
               v-decorator="['networkdomain', {}]"
               :placeholder="this.$t('label.networkdomain')"/>
           </a-form-item>
           <a-form-item v-if="this.accountVisible">
-            <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+            <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.account.description"/>
             <a-input
               v-decorator="['account']"
               :placeholder="this.$t('label.account')"/>

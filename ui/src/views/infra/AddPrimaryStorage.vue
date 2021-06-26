@@ -20,7 +20,7 @@
     <a-spin :spinning="loading">
       <a-form :form="form" layout="vertical">
         <a-form-item>
-          <tooltip-label :title="$t('label.scope')" :tooltip="apiParams.scope.description"/>
+          <tooltip-label slot="label" :title="$t('label.scope')" :tooltip="apiParams.scope.description"/>
           <a-select
             v-decorator="['scope', { initialValue: 'cluster' }]"
             @change="val => { this.scope = val }"
@@ -31,7 +31,7 @@
         </a-form-item>
         <div v-if="this.scope === 'zone'">
           <a-form-item>
-            <tooltip-label :title="$t('label.hypervisor')" :tooltip="apiParams.hypervisor.description"/>
+            <tooltip-label slot="label" :title="$t('label.hypervisor')" :tooltip="apiParams.hypervisor.description"/>
             <a-select
               v-decorator="['hypervisor', { initialValue: hypervisors[0]}]"
               @change="val => this.selectedHypervisor = val">
@@ -42,7 +42,7 @@
           </a-form-item>
         </div>
         <a-form-item>
-          <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             v-decorator="['zone', { initialValue: this.zoneSelected, rules: [{ required: true, message: `${$t('label.required')}`}] }]"
             @change="val => changeZone(val)">
@@ -53,7 +53,7 @@
         </a-form-item>
         <div v-if="this.scope === 'cluster' || this.scope === 'host'">
           <a-form-item>
-            <tooltip-label :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
+            <tooltip-label slot="label" :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
             <a-select
               v-decorator="['pod', { initialValue: this.podSelected, rules: [{ required: true, message: `${$t('label.required')}`}] }]"
               @change="val => changePod(val)">
@@ -63,7 +63,7 @@
             </a-select>
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.clusterid')" :tooltip="apiParams.clusterid.description"/>
+            <tooltip-label slot="label" :title="$t('label.clusterid')" :tooltip="apiParams.clusterid.description"/>
             <a-select
               v-decorator="['cluster', { initialValue: this.clusterSelected, rules: [{ required: true, message: `${$t('label.required')}`}] }]"
               @change="val => fetchHypervisor(val)">
@@ -85,11 +85,11 @@
           </a-form-item>
         </div>
         <a-form-item>
-          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input v-decorator="['name', { rules: [{ required: true, message: `${$t('label.required')}` }] }]"/>
         </a-form-item>
         <a-form-item>
-          <tooltip-label :title="$t('label.protocol')" :tooltip="$t('message.protocol.description')"/>
+          <tooltip-label slot="label" :title="$t('label.protocol')" :tooltip="$t('message.protocol.description')"/>
           <a-select
             v-decorator="['protocol', { initialValue: this.protocols[0], rules: [{ required: true, message: `${$t('label.required')}`}] }]"
             @change="val => this.protocolSelected = val">
@@ -102,13 +102,13 @@
           v-if="protocolSelected === 'nfs' || protocolSelected === 'SMB' || protocolSelected === 'iscsi' || protocolSelected === 'vmfs'|| protocolSelected === 'Gluster' ||
             (protocolSelected === 'PreSetup' && hypervisorType === 'VMware') || protocolSelected === 'datastorecluster'">
           <a-form-item>
-            <tooltip-label :title="$t('label.server')" :tooltip="$t('message.server.description')"/>
+            <tooltip-label slot="label" :title="$t('label.server')" :tooltip="$t('message.server.description')"/>
             <a-input v-decorator="['server', { rules: [{ required: true, message: `${$t('label.required')}` }] }]" />
           </a-form-item>
         </div>
         <div v-if="protocolSelected === 'nfs' || protocolSelected === 'SMB' || protocolSelected === 'ocfs2' || (protocolSelected === 'PreSetup' && hypervisorType !== 'VMware') || protocolSelected === 'SharedMountPoint'">
           <a-form-item>
-            <tooltip-label :title="$t('label.path')" :tooltip="$t('message.path.description')"/>
+            <tooltip-label slot="label" :title="$t('label.path')" :tooltip="$t('message.path.description')"/>
             <a-input v-decorator="['path', { rules: [{ required: true, message: `${$t('label.required')}` }] }]" />
           </a-form-item>
         </div>
@@ -133,16 +133,16 @@
         </div>
         <div v-if="protocolSelected === 'vmfs' || (protocolSelected === 'PreSetup' && hypervisorType === 'VMware') || protocolSelected === 'datastorecluster'">
           <a-form-item>
-            <tooltip-label :title="$t('label.vcenterdatacenter')" :tooltip="$t('message.datacenter.description')"/>
+            <tooltip-label slot="label" :title="$t('label.vcenterdatacenter')" :tooltip="$t('message.datacenter.description')"/>
             <a-input v-decorator="['vCenterDataCenter', { rules: [{ required: true, message: `${$t('label.required')}` }] }]"/>
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.vcenterdatastore')" :tooltip="$t('message.datastore.description')"/>
+            <tooltip-label slot="label" :title="$t('label.vcenterdatastore')" :tooltip="$t('message.datastore.description')"/>
             <a-input v-decorator="['vCenterDataStore', { rules: [{ required: true, message: `${$t('label.required')}` }] }]"/>
           </a-form-item>
         </div>
         <a-form-item>
-          <tooltip-label :title="$t('label.providername')" :tooltip="apiParams.provider.description"/>
+          <tooltip-label slot="label" :title="$t('label.providername')" :tooltip="apiParams.provider.description"/>
           <a-select
             v-decorator="['provider', { initialValue: providerSelected, rules: [{ required: true, message: `${$t('label.required')}`}] }]"
             @change="updateProviderAndProtocol">
@@ -153,39 +153,39 @@
         </a-form-item>
         <div v-if="this.providerSelected !== 'DefaultPrimary' && this.providerSelected !== 'PowerFlex'">
           <a-form-item>
-            <tooltip-label :title="$t('label.ismanaged')" :tooltip="apiParams.managed.description"/>
+            <tooltip-label slot="label" :title="$t('label.ismanaged')" :tooltip="apiParams.managed.description"/>
             <a-checkbox-group v-decorator="['managed']" >
               <a-checkbox value="ismanaged"></a-checkbox>
             </a-checkbox-group>
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.capacitybytes')" :tooltip="apiParams.capacitybytes.description"/>
+            <tooltip-label slot="label" :title="$t('label.capacitybytes')" :tooltip="apiParams.capacitybytes.description"/>
             <a-input v-decorator="['capacityBytes']" />
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.capacityiops')" :tooltip="apiParams.capacityiops.description"/>
+            <tooltip-label slot="label" :title="$t('label.capacityiops')" :tooltip="apiParams.capacityiops.description"/>
             <a-input v-decorator="['capacityIops']" />
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.url')" :tooltip="apiParams.url.description"/>
+            <tooltip-label slot="label" :title="$t('label.url')" :tooltip="apiParams.url.description"/>
             <a-input v-decorator="['url']" />
           </a-form-item>
         </div>
         <div v-if="this.providerSelected === 'PowerFlex'">
           <a-form-item>
-            <tooltip-label :title="$t('label.powerflex.gateway')" :tooltip="$t('label.powerflex.gateway')"/>
+            <tooltip-label slot="label" :title="$t('label.powerflex.gateway')" :tooltip="$t('label.powerflex.gateway')"/>
             <a-input v-decorator="['powerflexGateway', { rules: [{ required: true, message: `${$t('label.required')}` }] }]"/>
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.powerflex.gateway.username')" :tooltip="$t('label.powerflex.gateway.username')"/>
+            <tooltip-label slot="label" :title="$t('label.powerflex.gateway.username')" :tooltip="$t('label.powerflex.gateway.username')"/>
             <a-input v-decorator="['powerflexGatewayUsername', { rules: [{ required: true, message: `${$t('label.required')}` }] }]"/>
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.powerflex.gateway.password')" :tooltip="$t('label.powerflex.gateway.password')"/>
+            <tooltip-label slot="label" :title="$t('label.powerflex.gateway.password')" :tooltip="$t('label.powerflex.gateway.password')"/>
             <a-input-password v-decorator="['powerflexGatewayPassword', { rules: [{ required: true, message: `${$t('label.required')}` }] }]"/>
           </a-form-item>
           <a-form-item>
-            <tooltip-label :title="$t('label.powerflex.storage.pool')" :tooltip="$t('label.powerflex.storage.pool')"/>
+            <tooltip-label slot="label" :title="$t('label.powerflex.storage.pool')" :tooltip="$t('label.powerflex.storage.pool')"/>
             <a-input v-decorator="['powerflexStoragePool', { rules: [{ required: true, message: `${$t('label.required')}` }] }]"/>
           </a-form-item>
         </div>
@@ -213,7 +213,7 @@
           </a-form-item>
         </div>
         <a-form-item>
-          <tooltip-label :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
+          <tooltip-label slot="label" :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
           <a-select
             mode="tags"
             v-model="selectedTags"

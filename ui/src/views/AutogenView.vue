@@ -159,7 +159,7 @@
               :v-bind="field.name"
               v-if="!(currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].value)"
             >
-              <tooltip-label :title="$t('label.' + field.name)" :tooltip="field.description"/>
+              <tooltip-label slot="label" :title="$t('label.' + field.name)" :tooltip="field.description"/>
 
               <span v-if="field.type==='boolean'">
                 <a-switch

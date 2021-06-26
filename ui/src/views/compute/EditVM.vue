@@ -23,18 +23,18 @@
       :form="form"
       @submit="handleSubmit">
       <a-form-item>
-        <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+        <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
         <a-input
           v-decorator="['name', { initialValue: resource.name || '' }]"
           autoFocus />
       </a-form-item>
       <a-form-item>
-        <tooltip-label :title="$t('label.displayname')" :tooltip="apiParams.displayname.description"/>
+        <tooltip-label slot="label" :title="$t('label.displayname')" :tooltip="apiParams.displayname.description"/>
         <a-input
           v-decorator="['displayname', { initialValue: resource.displayname || '' }]" />
       </a-form-item>
       <a-form-item>
-        <tooltip-label :title="$t('label.ostypeid')" :tooltip="apiParams.ostypeid.description"/>
+        <tooltip-label slot="label" :title="$t('label.ostypeid')" :tooltip="apiParams.ostypeid.description"/>
         <a-select
           showSearch
           optionFilterProp="children"
@@ -49,20 +49,20 @@
         </a-select>
       </a-form-item>
       <a-form-item>
-        <tooltip-label :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
+        <tooltip-label slot="label" :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
         <a-switch
           :default-checked="resource.isdynamicallyscalable"
           v-decorator="['isdynamicallyscalable']"
           :disabled="!canDynamicScalingEnabled()" />
       </a-form-item>
       <a-form-item>
-        <tooltip-label :title="$t('label.haenable')" :tooltip="apiParams.haenable.description"/>
+        <tooltip-label slot="label" :title="$t('label.haenable')" :tooltip="apiParams.haenable.description"/>
         <a-switch
           :default-checked="resource.haenable"
           v-decorator="['haenable']" />
       </a-form-item>
       <a-form-item>
-        <tooltip-label :title="$t('label.group')" :tooltip="apiParams.group.description"/>
+        <tooltip-label slot="label" :title="$t('label.group')" :tooltip="apiParams.group.description"/>
         <a-auto-complete
           v-decorator="['group', { initialValue: resource.group }]"
           :filterOption="(input, option) => {
