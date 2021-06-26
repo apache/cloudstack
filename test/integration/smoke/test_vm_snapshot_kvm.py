@@ -35,6 +35,7 @@ from marvin.lib.common import (get_zone,
                                list_configurations)
 from marvin.cloudstackAPI import (listTemplates)
 import time
+import unittest
 
 class TestVmSnapshot(cloudstackTestCase):
 
