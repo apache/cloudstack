@@ -29,7 +29,7 @@
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.name') }]
             }]"
-            :placeholder="this.$t('label.name')"/>
+            :placeholder="apiParams.name.description"/>
         </a-form-item>
         <a-form-item>
           <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
@@ -37,12 +37,12 @@
             v-decorator="['displaytext', {
               rules: [{ required: true, message: $t('message.error.description') }]
             }]"
-            :placeholder="this.$t('label.displaytext')"/>
+            :placeholder="apiParams.displaytext.description"/>
         </a-form-item>
         <a-form-item>
           <tooltip-label :title="$t('label.supportedservices')" :tooltip="apiParams.supportedservices.description"/>
           <div class="supported-services-container" scroll-to="last-child">
-            <a-list itemLayout="horizontal" :dataSource="this.supportedServices">
+            <a-list itemLayout="horizontal" :dataSource="supportedServices">
               <a-list-item slot="renderItem" slot-scope="item">
                 <CheckBoxSelectPair
                   v-decorator="['service.'+item.name, {}]"
@@ -56,19 +56,19 @@
             </a-list>
           </div>
         </a-form-item>
-        <a-form-item :label="$t('label.service.connectivity.regionlevelvpccapabilitycheckbox')" v-if="this.connectivityServiceChecked">
+        <a-form-item :label="$t('label.service.connectivity.regionlevelvpccapabilitycheckbox')" v-if="connectivityServiceChecked">
           <a-switch v-decorator="['regionlevelvpc', {initialValue: true}]" defaultChecked />
         </a-form-item>
-        <a-form-item :label="$t('label.service.connectivity.distributedroutercapabilitycheckbox')" v-if="this.connectivityServiceChecked">
+        <a-form-item :label="$t('label.service.connectivity.distributedroutercapabilitycheckbox')" v-if="connectivityServiceChecked">
           <a-switch v-decorator="['distributedrouter', {initialValue: true}]" defaultChecked />
         </a-form-item>
-        <a-form-item :label="$t('label.redundantrouter')" v-if="this.sourceNatServiceChecked">
+        <a-form-item :label="$t('label.redundantrouter')" v-if="sourceNatServiceChecked">
           <a-switch v-decorator="['redundantrouter', {initialValue: false}]" />
         </a-form-item>
-        <a-form-item :label="$t('label.ispublic')" v-if="this.isAdmin()">
-          <a-switch v-decorator="['ispublic', {initialValue: this.isPublic}]" :defaultChecked="this.isPublic" @change="val => { this.isPublic = val }" />
+        <a-form-item :label="$t('label.ispublic')" v-if="isAdmin()">
+          <a-switch v-decorator="['ispublic', {initialValue: isPublic}]" :defaultChecked="isPublic" @change="val => { isPublic = val }" />
         </a-form-item>
-        <a-form-item v-if="!this.isPublic">
+        <a-form-item v-if="!isPublic">
           <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
           <a-select
             mode="multiple"
@@ -76,7 +76,7 @@
               rules: [
                 {
                   required: true,
-                  message: `${this.$t('message.error.select')}`
+                  message: $t('message.error.select')
                 }
               ]
             }]"
@@ -86,8 +86,8 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
-            :placeholder="this.$t('label.domain')">
-            <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
+            :placeholder="apiParams.domainid.description">
+            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
               {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -115,8 +115,8 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
-            :placeholder="this.$t('label.zone')">
-            <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
+            :placeholder="apiParams.zoneid.description">
+            <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -127,8 +127,8 @@
         </a-form-item>
       </a-form>
       <div :span="24" class="action-button">
-        <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-spin>
   </div>
