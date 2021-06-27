@@ -26,15 +26,12 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.storage.StoragePoolStatus;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.dao.CapacityDao;
@@ -42,10 +39,12 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StorageUtil;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.VolumeDao;
@@ -87,11 +86,16 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         return false;
     }
 
-    protected abstract List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo);
+    protected abstract List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck);
 
     @Override
     public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
-        List<StoragePool> pools = select(dskCh, vmProfile, plan, avoid, returnUpTo);
+        return allocateToPool(dskCh, vmProfile, plan, avoid, returnUpTo, false);
+    }
+
+    @Override
+    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
+        List<StoragePool> pools = select(dskCh, vmProfile, plan, avoid, returnUpTo, bypassStorageTypeCheck);
         return reorderPools(pools, vmProfile, plan);
     }
 
@@ -211,12 +215,16 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             return false;
         }
 
+        Volume volume = volumeDao.findById(dskCh.getVolumeId());
+        if(!storageMgr.storagePoolCompatibleWithVolumePool(pool, volume)) {
+            return false;
+        }
+
         if (pool.isManaged() && !storageUtil.managedStoragePoolCanScale(pool, plan.getClusterId(), plan.getHostId())) {
             return false;
         }
 
         // check capacity
-        Volume volume = volumeDao.findById(dskCh.getVolumeId());
         List<Volume> requestVolumes = new ArrayList<>();
         requestVolumes.add(volume);
         if (dskCh.getHypervisorType() == HypervisorType.VMware) {

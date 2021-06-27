@@ -26,6 +26,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "changeServiceForVirtualMachine", responseObject=UserVmResponse.class, description="Changes the service offering for a virtual machine. " +
                                             "The virtual machine must be in a \"Stopped\" state for " +
-        "this command to take effect.", responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+        "this command to take effect. Note that it only changes the VM's compute offering and it does not update the root volume offering. "
+        + "If the Service Offering has a root disk size the volume will be resized only if using API command 'scaleVirtualMachine'.", responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class UpgradeVMCmdByAdmin extends UpgradeVMCmd implements AdminCmd {}

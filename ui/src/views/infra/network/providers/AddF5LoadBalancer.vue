@@ -25,6 +25,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item :label="$t('label.ip')">
             <a-input
+              autoFocus
               v-decorator="['ip', {
                 rules: [{ required: true, message: $t('message.error.required.input') }]
               }]" />

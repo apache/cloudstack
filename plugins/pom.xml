@@ -121,6 +121,7 @@
         <module>storage/volume/nexenta</module>
         <module>storage/volume/sample</module>
         <module>storage/volume/solidfire</module>
+        <module>storage/volume/scaleio</module>
 
         <module>storage-allocators/random</module>
 

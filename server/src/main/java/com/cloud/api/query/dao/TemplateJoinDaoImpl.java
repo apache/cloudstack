@@ -30,6 +30,7 @@ import com.cloud.deployasis.DeployAsIsConstants;
 import com.cloud.deployasis.TemplateDeployAsIsDetailVO;
 import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -52,7 +53,6 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -133,7 +133,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         String templateStatus = null;
         if (template.getDownloadState() != Status.DOWNLOADED) {
             templateStatus = "Processing";
-            if (template.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
+            if (template.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
                 if (template.getDownloadPercent() == 100) {
                     templateStatus = "Installing Template";
                 } else {
@@ -146,7 +146,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             }else {
                 templateStatus = template.getErrorString();
             }
-        } else if (template.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
+        } else if (template.getDownloadState() == Status.DOWNLOADED) {
             templateStatus = "Download Complete";
         } else {
             templateStatus = "Successfully Installed";
@@ -161,10 +161,13 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         HashMap<String, String> downloadDetailInImageStores = null;
         for (TemplateDataStoreVO templateInStore : templatesInStore) {
             downloadDetailInImageStores = new HashMap<>();
-            downloadDetailInImageStores.put("datastore", dataStoreDao.findById(templateInStore.getDataStoreId()).getName());
-            downloadDetailInImageStores.put("downloadPercent", Integer.toString(templateInStore.getDownloadPercent()));
-            downloadDetailInImageStores.put("downloadState", (templateInStore.getDownloadState() != null ? templateInStore.getDownloadState().toString() : ""));
-            downloadProgressDetails.add(downloadDetailInImageStores);
+            ImageStoreVO datastore = dataStoreDao.findById(templateInStore.getDataStoreId());
+            if (datastore != null) {
+                downloadDetailInImageStores.put("datastore", datastore.getName());
+                downloadDetailInImageStores.put("downloadPercent", Integer.toString(templateInStore.getDownloadPercent()));
+                downloadDetailInImageStores.put("downloadState", (templateInStore.getDownloadState() != null ? templateInStore.getDownloadState().toString() : ""));
+                downloadProgressDetails.add(downloadDetailInImageStores);
+            }
         }
 
         TemplateResponse templateResponse = new TemplateResponse();
@@ -399,9 +402,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             // add download status
             if (iso.getDownloadState() != Status.DOWNLOADED) {
                 String isoStatus = "Processing";
-                if (iso.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
+                if (iso.getDownloadState() == Status.DOWNLOADED) {
                     isoStatus = "Download Complete";
-                } else if (iso.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
+                } else if (iso.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
                     if (iso.getDownloadPercent() == 100) {
                         isoStatus = "Installing ISO";
                     } else {
@@ -522,6 +525,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         sc.setParameters("store_id", storeId);
         sc.setParameters("type", TemplateType.USER);
         sc.setParameters("templateState", VirtualMachineTemplate.State.Active);
+        sc.setParameters("public", Boolean.FALSE);
         return searchIncludingRemoved(sc, null, null, false);
     }
 

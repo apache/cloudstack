@@ -222,13 +222,13 @@ export default {
         this.$emit('stepError', step, this.stepData)
       }
     },
-    trafficLabelParam (trafficTypeID, physicalNetworkID) {
+    trafficLabelParam (trafficTypeID, physicalNetworkIndex) {
       const hypervisor = this.prefillContent.hypervisor.value
-      physicalNetworkID = this.isAdvancedZone ? physicalNetworkID : 0
+      physicalNetworkIndex = this.isAdvancedZone ? physicalNetworkIndex : 0
       let physicalNetwork = []
       let trafficConfig = null
       if (this.prefillContent.physicalNetworks) {
-        physicalNetwork = this.prefillContent.physicalNetworks[0].traffics.filter(traffic => traffic.type === trafficTypeID)
+        physicalNetwork = this.prefillContent.physicalNetworks[physicalNetworkIndex].traffics.filter(traffic => traffic.type === trafficTypeID)
         trafficConfig = physicalNetwork.length > 0 ? physicalNetwork[0] : null
       }
       let trafficLabel
@@ -476,13 +476,13 @@ export default {
             try {
               if (!this.stepData.stepMove.includes('addTrafficType' + index + key)) {
                 if (traffic.type === 'public') {
-                  await this.addTrafficType('Public')
+                  await this.addTrafficType('Public', index)
                 } else if (traffic.type === 'management') {
-                  await this.addTrafficType('Management')
+                  await this.addTrafficType('Management', index)
                 } else if (traffic.type === 'guest') {
-                  await this.addTrafficType('Guest')
+                  await this.addTrafficType('Guest', index)
                 } else if (traffic.type === 'storage') {
-                  await this.addTrafficType('Storage')
+                  await this.addTrafficType('Storage', index)
                 }
                 this.stepData.stepMove.push('addTrafficType' + index + key)
               }
@@ -1283,7 +1283,7 @@ export default {
         }
       }
 
-      const server = this.prefillContent.primaryStorageServer ? this.prefillContent.primaryStorageServer.value : null
+      var server = this.prefillContent.primaryStorageServer ? this.prefillContent.primaryStorageServer.value : null
       let url = ''
       const protocol = this.prefillContent.primaryStorageProtocol.value
 
@@ -1303,7 +1303,13 @@ export default {
         params['details[0].password'] = this.prefillContent.primaryStorageSMBPassword.value
         params['details[0].domain'] = this.prefillContent.primaryStorageSMBDomain.value
       } else if (protocol === 'PreSetup') {
-        let path = this.prefillContent.primaryStoragePath.value
+        let path = ''
+        if (this.stepData.clusterReturned.hypervisortype === 'XenServer') {
+          path = this.prefillContent.primaryStorageSRLabel.value
+          server = 'localhost'
+        } else {
+          path = this.prefillContent.primaryStoragePath.value
+        }
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
@@ -1599,8 +1605,8 @@ export default {
         })
       })
     },
-    addTrafficType (trafficType) {
-      const getTrafficParams = this.trafficLabelParam(trafficType.toLowerCase())
+    addTrafficType (trafficType, index) {
+      const getTrafficParams = this.trafficLabelParam(trafficType.toLowerCase(), index)
       let params = {}
 
       params.trafficType = trafficType

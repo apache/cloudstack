@@ -63,7 +63,8 @@
               </span>
               <a-switch
                 v-decorator="[$t('performfreshchecks')]"
-                :placeholder="apiParams.performfreshchecks.description" />
+                :placeholder="apiParams.performfreshchecks.description"
+                autoFocus/>
             </a-form-item>
           </a-form>
         </a-spin>
@@ -130,7 +131,7 @@ export default {
       this.updateResource(newItem)
     }
   },
-  mounted () {
+  created () {
     this.updateResource(this.resource)
   },
   methods: {

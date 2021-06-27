@@ -111,7 +111,7 @@ public class GetRouterHealthCheckResultsCmd extends BaseCmd {
             setResponseObject(routerResponse);
         } catch (CloudRuntimeException ex){
             ex.printStackTrace();
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to execute command due to exception: " + ex.getLocalizedMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to get health check results due to: " + ex.getLocalizedMessage());
         }
     }
 }

@@ -16,6 +16,14 @@
 // under the License.
 package com.cloud.storage;
 
+import java.util.List;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.CollectionUtils;
+
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.HostVO;
@@ -24,13 +32,6 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.collections.CollectionUtils;
-
-import java.util.List;
-import javax.inject.Inject;
 
 public class StorageUtil {
     @Inject private ClusterDao clusterDao;

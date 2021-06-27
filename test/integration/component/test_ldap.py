@@ -89,7 +89,7 @@ class TestLdap(cloudstackTestCase):
         else:
             self.delflag = 1
             self.acctRes = self.apiClient.createAccount(self.acct)
-        self.assertEquals(self.delflag,  1, "LDAP account details are not provided,please check the configuration")
+        self.assertEqual(self.delflag,  1, "LDAP account details are not provided,please check the configuration")
         return
 
     def tearDown(self):
@@ -134,13 +134,13 @@ class TestLdap(cloudstackTestCase):
                 self.services["configurableData"]["ldap_configuration"]["ldapUsername"],
                 self.services["configurableData"]["ldap_configuration"]["ldapPassword"])
             self.debug(loginRes)
-            self.assertEquals(loginRes, 1, self.reason)
+            self.assertEqual(loginRes, 1, self.reason)
 
         else:
 
             self.debug("LDAP Configuration failed with exception")
 
-            self.assertEquals(
+            self.assertEqual(
                 self.ldapconfRes,
                 1,
                 self.reason)
@@ -250,7 +250,7 @@ class TestLdap(cloudstackTestCase):
             tn = telnetlib.Telnet(ldapConfiguration['hostname'], ldapConfiguration['port'], timeout=15)
             if tn is not None:
                 tn.set_debuglevel(1)
-                print tn.msg("Connected to the server")
+                print(tn.msg("Connected to the server"))
                 self.debug("Ldap Server is Up and listening on the port %s" % tn.msg("Connected to the server"))
                 flag = True
                 tn.close()

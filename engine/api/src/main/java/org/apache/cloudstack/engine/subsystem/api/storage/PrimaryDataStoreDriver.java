@@ -23,6 +23,7 @@ import org.apache.cloudstack.storage.command.CommandResult;
 
 import com.cloud.host.Host;
 import com.cloud.storage.StoragePool;
+import com.cloud.utils.Pair;
 
 public interface PrimaryDataStoreDriver extends DataStoreDriver {
     enum QualityOfServiceState { MIGRATION, NO_MIGRATION }
@@ -72,4 +73,34 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     void revertSnapshot(SnapshotInfo snapshotOnImageStore, SnapshotInfo snapshotOnPrimaryStore, AsyncCompletionCallback<CommandResult> callback);
 
     void handleQualityOfServiceForVolumeMigration(VolumeInfo volumeInfo, QualityOfServiceState qualityOfServiceState);
+
+    /**
+     * intended for managed storage
+     * returns true if the storage can provide the stats (capacity and used bytes)
+     */
+    boolean canProvideStorageStats();
+
+    /**
+     * intended for managed storage
+     * returns the total capacity and used size in bytes
+     */
+    Pair<Long, Long> getStorageStats(StoragePool storagePool);
+
+    /**
+     * intended for managed storage
+     * returns true if the storage can provide the volume stats (physical and virtual size)
+     */
+    boolean canProvideVolumeStats();
+
+    /**
+     * intended for managed storage
+     * returns the volume's physical and virtual size in bytes
+     */
+    Pair<Long, Long> getVolumeStats(StoragePool storagePool, String volumeId);
+
+    /**
+     * intended for managed storage
+     * returns true if the host can access the storage pool
+     */
+    boolean canHostAccessStoragePool(Host host, StoragePool pool);
 }

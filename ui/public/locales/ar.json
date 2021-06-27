@@ -1221,7 +1221,7 @@
 "label.ovm3cluster": "Native Clustering",
 "label.ovm3networklabel": "OVM3 traffic label",
 "label.ovm3pool": "Native Pooling",
-"label.ovm3vip": "Master Vip IP",
+"label.ovm3vip": "Primary Vip IP",
 "label.ovmnetworklabel": "OVM traffic label",
 "label.ovs": "OVS",
 "label.owned.public.ips": "Owned Public IP Addresses",

@@ -27,7 +27,7 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name = ("ovs_tunnel_interface"))
+@Table(name = "ovs_tunnel_interface")
 public class OvsTunnelInterfaceVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

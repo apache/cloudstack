@@ -18,12 +18,15 @@
 
 # requires netaddr
 
+which python
+python --version
+
 export PYTHONPATH="../debian/opt/cloud/bin/"
 export PYTHONDONTWRITEBYTECODE=False
 
 echo "Running pycodestyle to check systemvm/python code for errors"
-pycodestyle --max-line-length=179 *py
-pycodestyle --max-line-length=179 --exclude=monitorServices.py,baremetal-vr.py,passwd_server_ip.py `find ../debian -name \*.py`
+python -m pycodestyle --max-line-length=179 *py
+python -m pycodestyle --max-line-length=179 --exclude=monitorServices.py,baremetal-vr.py,passwd_server_ip.py `find ../debian -name \*.py`
 if [ $? -gt 0 ]
 then
     echo "pycodestyle failed, please check your code"
@@ -31,8 +34,10 @@ then
 fi
 
 echo "Running pylint to check systemvm/python code for errors"
-pylint --disable=R,C,W *.py
-pylint --disable=R,C,W `find ../debian -name \*.py`
+python --version
+pylint --version
+pylint --disable=R,C,W,E *.py
+pylint --disable=R,C,W,E `find ../debian -name \*.py`
 if [ $? -gt 0 ]
 then
     echo "pylint failed, please check your code"
@@ -40,5 +45,5 @@ then
 fi
 
 echo "Running systemvm/python unit tests"
-nosetests .
+nosetests2.7 .
 exit $?
