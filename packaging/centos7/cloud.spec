@@ -94,6 +94,7 @@ management, and intelligence in CloudStack.
 Summary: Apache CloudStack common files and scripts
 Requires: python
 Requires: python3
+Requires: bsdtar
 Requires: python3-pip
 Group:   System Environment/Libraries
 %description common
