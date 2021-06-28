@@ -432,6 +432,9 @@ grep -s -q "db.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.pr
 grep -s -q "db.usage.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.usage.driver=jdbc:mysql"  "%{_sysconfdir}/%{name}/management/db.properties"
 grep -s -q "db.simulator.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.simulator.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
 
+grep -s -q "slaves" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/slaves/replicas/g" "%{_sysconfdir}/%{name}/management/db.properties"
+grep -s -q "Master" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/Master/Source/g" "%{_sysconfdir}/%{name}/management/db.properties"
+
 if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
     echo Please download vhd-util from http://download.cloudstack.org/tools/vhd-util and put it in
     echo %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/
