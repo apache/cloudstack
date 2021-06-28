@@ -334,7 +334,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         _discoverers = discoverers;
     }
 
-    protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     protected GenericSearchBuilder<StoragePoolHostVO, Long> UpHostsInPoolSearch;
     protected SearchBuilder<VMInstanceVO> StoragePoolSearch;
     protected SearchBuilder<StoragePoolVO> LocalStorageSearch;
@@ -1817,7 +1816,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 } else {
                     // This is to find datastores which are removed from datastore cluster.
                     // The final set childDatastoreUUIDs contains the UUIDs of child datastores which needs to be removed from datastore cluster
-                    childDatastoreUUIDs.remove(childStoragePoolInfo.getUuid());
+                    childDatastoreUUIDs.remove(dataStoreVO.getUuid());
                 }
             } else {
                 dataStoreVO = createChildDatastoreVO(datastoreClusterPool, childDataStoreAnswer);
@@ -3130,6 +3129,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 MaxNumberOfManagedClusteredFileSystems,
                 STORAGE_POOL_DISK_WAIT,
                 STORAGE_POOL_CLIENT_TIMEOUT,
+                STORAGE_POOL_CLIENT_MAX_CONNECTIONS,
                 PRIMARY_STORAGE_DOWNLOAD_WAIT,
                 SecStorageMaxMigrateSessions,
                 MaxDataMigrationWaitTime

@@ -27,7 +27,7 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name = ("global_load_balancer_lb_rule_map"))
+@Table(name = "global_load_balancer_lb_rule_map")
 public class GlobalLoadBalancerLbRuleMapVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

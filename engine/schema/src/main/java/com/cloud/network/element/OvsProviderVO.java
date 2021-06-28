@@ -30,7 +30,7 @@ import com.cloud.network.OvsProvider;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name = ("ovs_providers"))
+@Table(name = "ovs_providers")
 public class OvsProviderVO implements OvsProvider {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

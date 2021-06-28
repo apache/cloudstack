@@ -224,7 +224,7 @@ public class BridgeVifDriver extends VifDriverBase {
                         String brName = createVnetBr(vNetId, trafficLabel, protocol);
                         intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
                     } else {
-                        String brName = createVnetBr(vNetId, "private", protocol);
+                        String brName = createVnetBr(vNetId, _bridges.get("private"), protocol);
                         intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
                     }
             } else {
@@ -291,7 +291,7 @@ public class BridgeVifDriver extends VifDriverBase {
 
     private String createVnetBr(String vNetId, String pifKey, String protocol) throws InternalErrorException {
         String nic = _pifs.get(pifKey);
-        if (nic == null) {
+        if (nic == null || protocol.equals(Networks.BroadcastDomainType.Vxlan.scheme())) {
             // if not found in bridge map, maybe traffic label refers to pif already?
             File pif = new File("/sys/class/net/" + pifKey);
             if (pif.isDirectory()) {
@@ -376,7 +376,9 @@ public class BridgeVifDriver extends VifDriverBase {
             command.add("-v", vNetId);
             command.add("-p", pName);
             command.add("-b", brName);
-            command.add("-d", String.valueOf(deleteBr));
+            if (cmdout != null && !cmdout.contains("vxlan")) {
+                command.add("-d", String.valueOf(deleteBr));
+            }
 
             final String result = command.execute();
             if (result != null) {
