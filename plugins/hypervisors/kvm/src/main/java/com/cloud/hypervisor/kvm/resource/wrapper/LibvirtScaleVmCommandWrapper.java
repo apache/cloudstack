@@ -31,7 +31,7 @@ import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
 
 @ResourceWrapper(handles = ScaleVmCommand.class)
-public final class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCommand, Answer, LibvirtComputingResource> {
+public class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCommand, Answer, LibvirtComputingResource> {
 
     @Override
     public Answer execute(ScaleVmCommand command, LibvirtComputingResource libvirtComputingResource) {
@@ -42,7 +42,7 @@ public final class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCo
         long newMemory = ByteScaleUtils.bytesToKib(vmSpec.getMaxRam());
         int newVcpus = vmSpec.getCpus();
         String vmDefinition = vmSpec.toString();
-        String scalingDetails = String.format("%s memory to [%s KiB] and cpu cores to [%s]", vmDefinition, newMemory, newVcpus);
+        String scalingDetails = String.format("%s memory to [%s KiB] and CPU cores to [%s]", vmDefinition, newMemory, newVcpus);
 
         try {
             LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
@@ -50,33 +50,9 @@ public final class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCo
             conn = libvirtUtilitiesHelper.getConnectionByVmName(vmName);
             Domain dm = conn.domainLookupByName(vmName);
 
-            long currentMemory = LibvirtComputingResource.getDomainMemory(dm);
-            long runningVcpus = libvirtComputingResource.countDomainRunningVcpus(dm);
-            long memoryToAttach = newMemory - currentMemory;
-
             logger.debug(String.format("Scaling %s.", scalingDetails));
-
-            if (memoryToAttach > 0) {
-                if (!dm.getXMLDesc(0).contains("<maxMemory slots='16' unit='KiB'>")) {
-                    throw new CloudRuntimeException(String.format("The %s is not prepared for dynamic scaling. To be prepared, the VM must be deployed with a dynamic service offering,"
-                      + " VM dynamic scale enabled and global setting \"enable.dynamic.scale.vm\" as \"true\". If you changed one of these settings after deploying the VM,"
-                      + " consider stopping and starting it again to prepared it to dynamic scaling.", vmDefinition));
-                }
-
-                String memoryDevice = new LibvirtVmMemoryDeviceDef(memoryToAttach).toString();
-                logger.debug(String.format("Attaching memory device [%s] to %s.", memoryDevice, vmDefinition));
-                dm.attachDevice(memoryDevice);
-            } else {
-                logger.info(String.format("Not scaling the memory. To scale the memory of the %s, the new memory [%s] must be higher than the current memory [%s]. The current "
-                  + "difference is [%s].", vmDefinition, newMemory, currentMemory, memoryToAttach));
-            }
-
-            if (runningVcpus < newVcpus) {
-                dm.setVcpus(newVcpus);
-            } else {
-                logger.info(String.format("Not scaling the cpu cores. To scale the cpu cores of the %s, the new cpu count [%s] must be higher than the current cpu count [%s].",
-                  vmDefinition, newVcpus, runningVcpus));
-            }
+            scaleMemory(dm, newMemory, vmDefinition);
+            scaleVcpus(dm, newVcpus, vmDefinition);
 
             return new ScaleVmAnswer(command, true, String.format("Successfully scaled %s.", scalingDetails));
         } catch (LibvirtException | CloudRuntimeException e) {
@@ -94,4 +70,36 @@ public final class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCo
         }
     }
 
+    protected void scaleVcpus(Domain dm, int newVcpus, String vmDefinition) throws LibvirtException {
+        long runningVcpus = LibvirtComputingResource.countDomainRunningVcpus(dm);
+
+        if (runningVcpus < newVcpus) {
+            dm.setVcpus(newVcpus);
+            return;
+        }
+
+        logger.info(String.format("Not scaling the CPU cores. To scale the CPU cores of the %s, the new CPU count [%s] must be higher than the current CPU count [%s].",
+            vmDefinition, newVcpus, runningVcpus));
+    }
+
+    protected void scaleMemory(Domain dm, long newMemory, String vmDefinition) throws LibvirtException, CloudRuntimeException {
+        long currentMemory = LibvirtComputingResource.getDomainMemory(dm);
+        long memoryToAttach = newMemory - currentMemory;
+
+        if (memoryToAttach <= 0) {
+            logger.info(String.format("Not scaling the memory. To scale the memory of the %s, the new memory [%s] must be higher than the current memory [%s]. The current "
+              + "difference is [%s].", vmDefinition, newMemory, currentMemory, memoryToAttach));
+            return;
+        }
+
+        if (!dm.getXMLDesc(0).contains("<maxMemory slots='16' unit='KiB'>")) {
+            throw new CloudRuntimeException(String.format("The %s is not prepared for dynamic scaling. To be prepared, the VM must be deployed with a dynamic service offering,"
+              + " VM dynamic scale enabled and global setting \"enable.dynamic.scale.vm\" as \"true\". If you changed one of these settings after deploying the VM,"
+              + " consider stopping and starting it again to prepared it to dynamic scaling.", vmDefinition));
+        }
+
+        String memoryDevice = new LibvirtVmMemoryDeviceDef(memoryToAttach).toString();
+        logger.debug(String.format("Attaching memory device [%s] to %s.", memoryDevice, vmDefinition));
+        dm.attachDevice(memoryDevice);
+    }
 }

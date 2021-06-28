@@ -5294,7 +5294,6 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void validateCountDomainRunningVcpus() throws LibvirtException{
-        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
         VcpuInfo vcpus[] = new VcpuInfo[5];
         long valueExpected = 3; // 3 vcpus with state VIR_VCPU_RUNNING
 
@@ -5305,7 +5304,7 @@ public class LibvirtComputingResourceTest {
         vcpus[4] = createVcpuInfoWithState(VcpuInfo.VcpuState.VIR_VCPU_RUNNING);
 
         Mockito.doReturn(vcpus).when(domainMock).getVcpusInfo();
-        long result =  libvirtComputingResource.countDomainRunningVcpus(domainMock);
+        long result =  LibvirtComputingResource.countDomainRunningVcpus(domainMock);
 
         Assert.assertEquals(valueExpected, result);
     }

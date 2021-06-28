@@ -4368,7 +4368,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * @return the quantity of running VCPUs of the running VM.
      * @throws org.libvirt.LibvirtException
      **/
-    public long countDomainRunningVcpus(Domain dm) throws LibvirtException {
+    public static long countDomainRunningVcpus(Domain dm) throws LibvirtException {
         VcpuInfo vcpus[] = dm.getVcpusInfo();
         return Arrays.stream(vcpus).filter(vcpu -> vcpu.state.equals(VcpuInfo.VcpuState.VIR_VCPU_RUNNING)).count();
     }
