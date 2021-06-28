@@ -5628,7 +5628,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         UserVm vmResult = createBasicSecurityGroupVirtualMachine(dataCenter, serviceOffering, template, securityGroupIdList, curAccount, hostName, displayName, diskOfferingId,
                 size , group , hypervisorType, cmd.getHttpMethod(), userData , sshKeyPair , ipToNetoworkMap, addr, isDisplayVM , keyboard , null,
-                curVm.getDetails(), cmd.getCustomId(), new HashMap<>(),
+                curVm.getDetails() == null ? new HashMap<>() : curVm.getDetails(), cmd.getCustomId(), new HashMap<>(),
                 null, new HashMap<>(), dynamicScalingEnabled);
         return vmResult;
     }
