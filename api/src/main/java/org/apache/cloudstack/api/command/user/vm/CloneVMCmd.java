@@ -110,6 +110,7 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
         } finally {
             if (getTemporaryTemlateId() != null) {
                 // TODO: delete template in the service
+                s_logger.warn("clearing the temporary template: " + getTemporaryTemlateId());
             }
         }
     }
