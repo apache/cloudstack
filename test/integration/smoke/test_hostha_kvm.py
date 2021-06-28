@@ -30,7 +30,7 @@ from ipmisim.ipmisim import IpmiServerContext, IpmiServer, ThreadedIpmiServer
 import random
 import socket
 import sys
-import _thread
+import thread
 import time
 
 
@@ -209,11 +209,6 @@ class TestHAKVM(cloudstackTestCase):
         except Exception as e:
             raise self.skipTest("Failed to deploy VM, skipping kvm host-ha test case")
 
-    def skipIfHostIsSUSE(self) :
-        host = self.getHost()
-        if "suse" in host.details['Host.OS'].lower() :
-            self.skipTest("Skipping since SUSE has known IPMI issues")
-
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_disable_oobm_ha_state_ineligible(self):
         """
@@ -281,10 +276,10 @@ class TestHAKVM(cloudstackTestCase):
         self.logger.debug("Starting test_hostha_enable_ha_when_host_in_maintenance")
         self.logger.debug("Pausing to wait for VMs to have finished starting")
         time.sleep(300)
-
+        
         # Enable HA
         self.configureAndEnableHostHa()
-
+        
 
         # Prepare for maintenance Host
         self.setHostToMaintanance(self.host.id)
@@ -356,7 +351,6 @@ class TestHAKVM(cloudstackTestCase):
             Tests degraded HA state when agent is stopped/killed
         """
 
-        self.skipIfHostIsSUSE()
         self.configureAndStartIpmiServer()
         self.assertIssueCommandState('ON', 'On')
         self.configureAndEnableHostHa()
@@ -393,7 +387,6 @@ class TestHAKVM(cloudstackTestCase):
             Tests recovery and fencing HA state transitions
         """
 
-        self.skipIfHostIsSUSE()
         self.configureAndStartIpmiServer()
         self.assertIssueCommandState('ON', 'On')
         self.configureAndEnableHostHa()
@@ -433,7 +426,7 @@ class TestHAKVM(cloudstackTestCase):
         """
         self.logger.debug("Starting test_ha_kvm_host_fencing")
 
-        self.skipIfHostIsSUSE()
+
         self.configureAndStartIpmiServer()
         self.assertIssueCommandState('ON', 'On')
         self.configureAndEnableHostHa()
@@ -518,7 +511,7 @@ class TestHAKVM(cloudstackTestCase):
         IpmiServerContext('reset')
         ThreadedIpmiServer.allow_reuse_address = False
         server = ThreadedIpmiServer(('0.0.0.0', self.getIpmiServerPort()), IpmiServer)
-        _thread.start_new_thread(startIpmiServer, ("ipmi-server", server,))
+        thread.start_new_thread(startIpmiServer, ("ipmi-server", server,))
         self.server = server
 
     def stopIpmiServer(self):

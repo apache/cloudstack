@@ -30,7 +30,7 @@ from ipmisim.ipmisim import IpmiServerContext, IpmiServer, ThreadedIpmiServer
 import random
 import socket
 import sys
-import _thread
+import thread
 import time
 
 
@@ -47,10 +47,6 @@ class TestOutOfBandManagement(cloudstackTestCase):
         cls.host = None
         cls.cleanup = []
 
-        host = cls.getHost(cls)
-        if host.hypervisor.lower() == 'kvm' and "suse" in host.details['Host.OS'].lower() :
-            cls.skipTest(cls, "Skipping since SUSE has known IPMI issues")
-
         # use random port for ipmisim
         s = socket.socket()
         s.bind(('', 0))
@@ -64,7 +60,7 @@ class TestOutOfBandManagement(cloudstackTestCase):
         IpmiServerContext('reset')
         ThreadedIpmiServer.allow_reuse_address = True
         server = ThreadedIpmiServer(('0.0.0.0', cls.serverPort), IpmiServer)
-        _thread.start_new_thread(startIpmiServer, ("ipmi-server", server,))
+        thread.start_new_thread(startIpmiServer, ("ipmi-server", server,))
         cls.server = server
 
 
@@ -85,6 +81,7 @@ class TestOutOfBandManagement(cloudstackTestCase):
         self.mgtSvrDetails = self.config.__dict__["mgtSvr"][0].__dict__
         self.fakeMsId = random.randint(10000, 99999) * random.randint(10, 20)
         self.cleanup = []
+
 
     def tearDown(self):
         try:
@@ -500,7 +497,7 @@ class TestOutOfBandManagement(cloudstackTestCase):
         currentMsHosts = []
         mshosts = self.dbclient.execute("select msid from mshost where version='%s' and removed is NULL and state='Up'" % (cloudstackVersion))
         if len(mshosts) > 0:
-            currentMsHosts = [row[0] for row in mshosts]
+            currentMsHosts = map(lambda row: row[0], mshosts)
 
         # Inject fake ms host
         self.dbclient.execute("insert into mshost (msid,runid,name,state,version,service_ip,service_port,last_update) values (%s,%s,'oobm-marvin-fakebox', 'Down', '%s', '127.0.0.1', '22', NOW())" % (self.getFakeMsId(), self.getFakeMsRunId(), cloudstackVersion))
