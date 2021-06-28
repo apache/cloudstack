@@ -60,11 +60,11 @@ class TestL2PersistentNetworks(cloudstackTestCase):
             # Test only if all the hosts use OVS
             grepCmd = 'grep "network.bridge.type=openvswitch" /etc/cloudstack/agent/agent.properties'
             hosts = list_hosts(cls.api_client, type='Routing', hypervisor='kvm')
-            if len(hosts) > 0 :
-                isOVSEnabled = True
             for host in hosts :
-                isOVSEnabled = isOVSEnabled or len(SshClient(host.ipaddress, port=22, user=hostConfig["username"],
-                    passwd=hostConfig["password"]).execute(grepCmd)) != 0
+                if len(SshClient(host.ipaddress, port=22, user=hostConfig["username"],
+                    passwd=hostConfig["password"]).execute(grepCmd)) != 0 :
+                        isOVSEnabled = True
+                        break
         if isKVM and isOVSEnabled :
             cls.skipTest(cls, "KVM with OVS doesn't support persistent networks, skipping")
 
