@@ -734,100 +734,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 s_logger.debug("Found " + routers.size() + " running routers. ");
 
                 for (final DomainRouterVO router : routers) {
-                    final String privateIP = router.getPrivateIpAddress();
-
-                    if (privateIP != null) {
-                        final boolean forVpc = router.getVpcId() != null;
-                        final List<? extends Nic> routerNics = _nicDao.listByVmId(router.getId());
-                        for (final Nic routerNic : routerNics) {
-                            final Network network = _networkModel.getNetwork(routerNic.getNetworkId());
-                            // Send network usage command for public nic in VPC VR
-                            // Send network usage command for isolated guest nic of non) VPC VR
-
-                            //[TODO] Avoiding the NPE now, but I have to find out what is going on with the network. - Wilder Rodrigues
-                            if (network == null) {
-                                s_logger.error("Could not find a network with ID => " + routerNic.getNetworkId() + ". It might be a problem!");
-                                continue;
-                            }
-                            if (forVpc && network.getTrafficType() == TrafficType.Public || !forVpc && network.getTrafficType() == TrafficType.Guest
-                                    && network.getGuestType() == Network.GuestType.Isolated) {
-                                final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(), forVpc, routerNic.getIPv4Address());
-                                final String routerType = router.getType().toString();
-                                final UserStatisticsVO previousStats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterId(), network.getId(),
-                                        forVpc ? routerNic.getIPv4Address() : null, router.getId(), routerType);
-                                NetworkUsageAnswer answer = null;
-                                try {
-                                    answer = (NetworkUsageAnswer) _agentMgr.easySend(router.getHostId(), usageCmd);
-                                } catch (final Exception e) {
-                                    s_logger.warn("Error while collecting network stats from router: " + router.getInstanceName() + " from host: " + router.getHostId(), e);
-                                    continue;
-                                }
-
-                                if (answer != null) {
-                                    if (!answer.getResult()) {
-                                        s_logger.warn("Error while collecting network stats from router: " + router.getInstanceName() + " from host: " + router.getHostId()
-                                                + "; details: " + answer.getDetails());
-                                        continue;
-                                    }
-                                    try {
-                                        if (answer.getBytesReceived() == 0 && answer.getBytesSent() == 0) {
-                                            s_logger.debug("Recieved and Sent bytes are both 0. Not updating user_statistics");
-                                            continue;
-                                        }
-                                        final NetworkUsageAnswer answerFinal = answer;
-                                        Transaction.execute(new TransactionCallbackNoReturn() {
-                                            @Override
-                                            public void doInTransactionWithoutResult(final TransactionStatus status) {
-                                                final UserStatisticsVO stats = _userStatsDao.lock(router.getAccountId(), router.getDataCenterId(), network.getId(),
-                                                        forVpc ? routerNic.getIPv4Address() : null, router.getId(), routerType);
-                                                if (stats == null) {
-                                                    s_logger.warn("unable to find stats for account: " + router.getAccountId());
-                                                    return;
-                                                }
-
-                                                if (previousStats != null
-                                                        && (previousStats.getCurrentBytesReceived() != stats.getCurrentBytesReceived() || previousStats.getCurrentBytesSent() != stats
-                                                        .getCurrentBytesSent())) {
-                                                    s_logger.debug("Router stats changed from the time NetworkUsageCommand was sent. " + "Ignoring current answer. Router: "
-                                                            + answerFinal.getRouterName() + " Rcvd: " + answerFinal.getBytesReceived() + "Sent: " + answerFinal.getBytesSent());
-                                                    return;
-                                                }
-
-                                                if (stats.getCurrentBytesReceived() > answerFinal.getBytesReceived()) {
-                                                    if (s_logger.isDebugEnabled()) {
-                                                        s_logger.debug("Received # of bytes that's less than the last one.  "
-                                                                + "Assuming something went wrong and persisting it. Router: " + answerFinal.getRouterName() + " Reported: "
-                                                                + toHumanReadableSize(answerFinal.getBytesReceived()) + " Stored: " + toHumanReadableSize(stats.getCurrentBytesReceived()));
-                                                    }
-                                                    stats.setNetBytesReceived(stats.getNetBytesReceived() + stats.getCurrentBytesReceived());
-                                                }
-                                                stats.setCurrentBytesReceived(answerFinal.getBytesReceived());
-                                                if (stats.getCurrentBytesSent() > answerFinal.getBytesSent()) {
-                                                    if (s_logger.isDebugEnabled()) {
-                                                        s_logger.debug("Received # of bytes that's less than the last one.  "
-                                                                + "Assuming something went wrong and persisting it. Router: " + answerFinal.getRouterName() + " Reported: "
-                                                                + toHumanReadableSize(answerFinal.getBytesSent()) + " Stored: " + toHumanReadableSize(stats.getCurrentBytesSent()));
-                                                    }
-                                                    stats.setNetBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
-                                                }
-                                                stats.setCurrentBytesSent(answerFinal.getBytesSent());
-                                                if (!_dailyOrHourly) {
-                                                    // update agg bytes
-                                                    stats.setAggBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
-                                                    stats.setAggBytesReceived(stats.getNetBytesReceived() + stats.getCurrentBytesReceived());
-                                                }
-                                                _userStatsDao.update(stats.getId(), stats);
-                                            }
-                                        });
-
-                                    } catch (final Exception e) {
-                                        s_logger.warn("Unable to update user statistics for account: " + router.getAccountId() + " Rx: " + toHumanReadableSize(answer.getBytesReceived()) + "; Tx: "
-                                                + toHumanReadableSize(answer.getBytesSent()));
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    collectNetworkStatistics(router, null);
                 }
             } catch (final Exception e) {
                 s_logger.warn("Error while collecting network stats", e);
@@ -898,7 +805,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             if (conns == null || conns.isEmpty()) {
                 continue;
             }
-            if (router.getIsRedundantRouter() && router.getRedundantState() != RedundantState.MASTER){
+            if (router.getIsRedundantRouter() && router.getRedundantState() != RedundantState.PRIMARY){
                 continue;
             }
             if (router.getState() != VirtualMachine.State.Running) {
@@ -1028,7 +935,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 final String context = "Redundant virtual router (name: " + router.getHostName() + ", id: " + router.getId() + ") " + " just switch from " + prevState + " to "
                         + currState;
                 s_logger.info(context);
-                if (currState == RedundantState.MASTER) {
+                if (currState == RedundantState.PRIMARY) {
                     _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
                 }
             }
@@ -1036,12 +943,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     }
 
     // Ensure router status is update to date before execute this function. The
-    // function would try best to recover all routers except MASTER
-    protected void recoverRedundantNetwork(final DomainRouterVO masterRouter, final DomainRouterVO backupRouter) {
-        if (masterRouter.getState() == VirtualMachine.State.Running && backupRouter.getState() == VirtualMachine.State.Running) {
-            final HostVO masterHost = _hostDao.findById(masterRouter.getHostId());
+    // function would try best to recover all routers except PRIMARY
+    protected void recoverRedundantNetwork(final DomainRouterVO primaryRouter, final DomainRouterVO backupRouter) {
+        if (primaryRouter.getState() == VirtualMachine.State.Running && backupRouter.getState() == VirtualMachine.State.Running) {
+            final HostVO primaryHost = _hostDao.findById(primaryRouter.getHostId());
             final HostVO backupHost = _hostDao.findById(backupRouter.getHostId());
-            if (masterHost.getState() == Status.Up && backupHost.getState() == Status.Up) {
+            if (primaryHost.getState() == Status.Up && backupHost.getState() == Status.Up) {
                 final String title = "Reboot " + backupRouter.getInstanceName() + " to ensure redundant virtual routers work";
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(title);
@@ -1064,7 +971,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         /*
          * In order to make fail-over works well at any time, we have to ensure:
-         * 1. Backup router's priority = Master's priority - DELTA + 1
+         * 1. Backup router's priority = Primary's priority - DELTA + 1
          */
         private void checkSanity(final List<DomainRouterVO> routers) {
             final Set<Long> checkedNetwork = new HashSet<Long>();
@@ -1093,16 +1000,16 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         continue;
                     }
 
-                    DomainRouterVO masterRouter = null;
+                    DomainRouterVO primaryRouter = null;
                     DomainRouterVO backupRouter = null;
                     for (final DomainRouterVO r : checkingRouters) {
-                        if (r.getRedundantState() == RedundantState.MASTER) {
-                            if (masterRouter == null) {
-                                masterRouter = r;
+                        if (r.getRedundantState() == RedundantState.PRIMARY) {
+                            if (primaryRouter == null) {
+                                primaryRouter = r;
                             } else {
                                 // Wilder Rodrigues (wrodrigues@schubergphilis.com
                                 // Force a restart in order to fix the conflict
-                                // recoverRedundantNetwork(masterRouter, r);
+                                // recoverRedundantNetwork(primaryRouter, r);
                                 break;
                             }
                         } else if (r.getRedundantState() == RedundantState.BACKUP) {
@@ -1120,7 +1027,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
         }
 
-        private void checkDuplicateMaster(final List<DomainRouterVO> routers) {
+        private void checkDuplicatePrimary(final List<DomainRouterVO> routers) {
             final Map<Long, DomainRouterVO> networkRouterMaps = new HashMap<Long, DomainRouterVO>();
             for (final DomainRouterVO router : routers) {
                 final List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
@@ -1128,13 +1035,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 final Long vpcId = router.getVpcId();
                 if (vpcId != null || routerGuestNtwkIds.size() > 0) {
                     Long routerGuestNtwkId = vpcId != null ? vpcId : routerGuestNtwkIds.get(0);
-                    if (router.getRedundantState() == RedundantState.MASTER) {
+                    if (router.getRedundantState() == RedundantState.PRIMARY) {
                         if (networkRouterMaps.containsKey(routerGuestNtwkId)) {
                             final DomainRouterVO dupRouter = networkRouterMaps.get(routerGuestNtwkId);
-                            final String title = "More than one redundant virtual router is in MASTER state! Router " + router.getHostName() + " and router "
+                            final String title = "More than one redundant virtual router is in PRIMARY state! Router " + router.getHostName() + " and router "
                                     + dupRouter.getHostName();
                             final String context = "Virtual router (name: " + router.getHostName() + ", id: " + router.getId() + " and router (name: " + dupRouter.getHostName()
-                                    + ", id: " + router.getId() + ") are both in MASTER state! If the problem persist, restart both of routers. ";
+                                    + ", id: " + router.getId() + ") are both in PRIMARY state! If the problem persist, restart both of routers. ";
                             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
                             s_logger.warn(context);
                         } else {
@@ -1176,7 +1083,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         updateRoutersRedundantState(routers);
                         // Wilder Rodrigues (wrodrigues@schubergphilis.com) - One of the routers is not running,
                         // so we don't have to continue here since the host will be null any way. Also, there is no need
-                        // To check either for sanity of duplicate master. Thus, just update the state and get lost.
+                        // To check either for sanity of duplicate primary. Thus, just update the state and get lost.
                         continue;
                     }
 
@@ -1197,7 +1104,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         continue;
                     }
                     updateRoutersRedundantState(routers);
-                    checkDuplicateMaster(routers);
+                    checkDuplicatePrimary(routers);
                     checkSanity(routers);
                 } catch (final Exception ex) {
                     s_logger.error("Fail to complete the RvRStatusUpdateTask! ", ex);
@@ -1700,9 +1607,15 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL, RouterHealthChecksBasicInterval.value().toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL, RouterHealthChecksAdvancedInterval.value().toString());
         String excludedTests = RouterHealthChecksToExclude.valueIn(router.getDataCenterId());
-        if (router.getIsRedundantRouter() && RedundantState.BACKUP.equals(router.getRedundantState())) {
-            excludedTests = excludedTests.isEmpty() ? BACKUP_ROUTER_EXCLUDED_TESTS : excludedTests + "," + BACKUP_ROUTER_EXCLUDED_TESTS;
+        if (router.getIsRedundantRouter()) {
+            // Disable gateway check if VPC has no tiers or no active VM's in it
+            final List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
+            if (RedundantState.BACKUP.equals(router.getRedundantState()) ||
+                    routerGuestNtwkIds == null || routerGuestNtwkIds.isEmpty()) {
+                excludedTests = excludedTests.isEmpty() ? BACKUP_ROUTER_EXCLUDED_TESTS : excludedTests + "," + BACKUP_ROUTER_EXCLUDED_TESTS;
+            }
         }
+
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, excludedTests);
         command.setHealthChecksConfig(getRouterHealthChecksConfig(router));
         command.setReconfigureAfterUpdate(reconfigure);
@@ -2318,13 +2231,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             String redundantState = RedundantState.BACKUP.toString();
             router.setRedundantState(RedundantState.BACKUP);
             if (routers.size() == 0) {
-                redundantState = RedundantState.MASTER.toString();
-                router.setRedundantState(RedundantState.MASTER);
+                redundantState = RedundantState.PRIMARY.toString();
+                router.setRedundantState(RedundantState.PRIMARY);
             } else {
                 final DomainRouterVO router0 = routers.get(0);
                 if (router.getId() == router0.getId()) {
-                    redundantState = RedundantState.MASTER.toString();
-                    router.setRedundantState(RedundantState.MASTER);
+                    redundantState = RedundantState.PRIMARY.toString();
+                    router.setRedundantState(RedundantState.PRIMARY);
                 }
             }
 
@@ -3121,6 +3034,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // Collect network usage before stopping Vm
 
         final DomainRouterVO router = _routerDao.findById(profile.getVirtualMachine().getId());
+        collectNetworkStatistics(router, null);
+    }
+
+    @Override
+    public <T extends VirtualRouter> void collectNetworkStatistics(final T router, final Nic nic) {
         if (router == null) {
             return;
         }
@@ -3129,12 +3047,23 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         if (privateIP != null) {
             final boolean forVpc = router.getVpcId() != null;
-            final List<? extends Nic> routerNics = _nicDao.listByVmId(router.getId());
+            List<Nic> routerNics = new ArrayList<Nic>();
+            if (nic != null) {
+                routerNics.add(nic);
+            } else {
+                routerNics.addAll(_nicDao.listByVmId(router.getId()));
+            }
             for (final Nic routerNic : routerNics) {
                 final Network network = _networkModel.getNetwork(routerNic.getNetworkId());
                 // Send network usage command for public nic in VPC VR
                 // Send network usage command for isolated guest nic of non VPC
                 // VR
+
+                //[TODO] Avoiding the NPE now, but I have to find out what is going on with the network. - Wilder Rodrigues
+                if (network == null) {
+                    s_logger.error("Could not find a network with ID => " + routerNic.getNetworkId() + ". It might be a problem!");
+                    continue;
+                }
                 if (forVpc && network.getTrafficType() == TrafficType.Public || !forVpc && network.getTrafficType() == TrafficType.Guest
                         && network.getGuestType() == Network.GuestType.Isolated) {
                     final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(), forVpc, routerNic.getIPv4Address());

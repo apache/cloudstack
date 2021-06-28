@@ -32,6 +32,7 @@
             }]"
             :loading="loading"
             @change="val => { selectedStore = val }"
+            autoFocus
           >
             <a-select-option
               v-for="store in imageStores"
@@ -98,7 +99,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchImageStores()
   },
   methods: {

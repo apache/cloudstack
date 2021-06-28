@@ -26,11 +26,15 @@
             v-decorator="['id', {
               initialValue: this.selectedIso,
               rules: [{ required: true, message: `${this.$t('label.required')}`}]
-            }]" >
+            }]"
+            autoFocus>
             <a-select-option v-for="iso in isos" :key="iso.id">
               {{ iso.displaytext || iso.name }}
             </a-select-option>
           </a-select>
+        </a-form-item>
+        <a-form-item :label="$t('label.forced')" v-if="resource && resource.hypervisor === 'VMware'">
+          <a-switch v-decorator="['forced']" :auto-focus="true" />
         </a-form-item>
       </a-form>
       <div :span="24" class="action-button">
@@ -63,7 +67,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {
@@ -115,6 +119,11 @@ export default {
           id: values.id,
           virtualmachineid: this.resource.id
         }
+
+        if (values.forced) {
+          params.forced = values.forced
+        }
+
         this.loading = true
         const title = this.$t('label.action.attach.iso')
         api('attachIso', params).then(json => {

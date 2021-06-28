@@ -6,8 +6,8 @@
   "logo": "assets/logo.svg",
   "banner": "assets/banner.svg",
   "error": {
-    "404": "assets/404.png",
     "403": "assets/403.png",
+    "404": "assets/404.png",
     "500": "assets/500.png"
   },
   "theme": {
@@ -46,5 +46,7 @@
     "jp": "label.japanese.keyboard",
     "sc": "label.simplified.chinese.keyboard"
   },
-  "plugins": []
+  "plugins": [],
+  "basicZoneEnabled": true,
+  "docHelpMappings": {}
 }

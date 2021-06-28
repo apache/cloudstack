@@ -38,6 +38,7 @@ import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.utils.StringUtils;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
@@ -227,6 +228,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     UserVmDetailsDao userVmDetailsDao;
     @Inject
     private SecondaryStorageVmDao secondaryStorageVmDao;
+    @Inject
+    VolumeApiService _volumeApiService;
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -1101,6 +1104,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     } else {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Detaching " + vol);
+                        }
+                        VMInstanceVO vm = _userVmDao.findById(vmId);
+                        if (vm.getHypervisorType().equals(HypervisorType.VMware)) {
+                            _volumeApiService.detachVolumeViaDestroyVM(vmId, vol.getId());
                         }
                         _volsDao.detachVolume(vol.getId());
                     }

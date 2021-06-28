@@ -23,7 +23,10 @@
           <span slot="message" v-html="$t('message.migrate.volume')" />
         </a-alert>
         <p class="modal-form__label">{{ $t('label.storagepool') }}</p>
-        <a-select v-model="selectedStoragePool" style="width: 100%;">
+        <a-select
+          v-model="selectedStoragePool"
+          style="width: 100%;"
+          :autoFocus="storagePools.length > 0">
           <a-select-option v-for="(storagePool, index) in storagePools" :value="storagePool.id" :key="index">
             {{ storagePool.name }} <span v-if="resource.virtualmachineid">{{ storagePool.suitableformigration ? `(${$t('label.suitable')})` : `(${$t('label.not.suitable')})` }}</span>
           </a-select-option>
@@ -84,7 +87,7 @@ export default {
       selectedDiskOffering: null
     }
   },
-  mounted () {
+  created () {
     this.fetchStoragePools()
     this.resource.virtualmachineid && this.fetchDiskOfferings()
   },

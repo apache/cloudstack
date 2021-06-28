@@ -1679,7 +1679,7 @@ public class HypervisorHostHelper {
 
         return controllerSpec;
     }
-    public static VirtualMachineMO createWorkerVM(VmwareHypervisorHost hyperHost, DatastoreMO dsMo, String vmName, String hardwareVersion) throws Exception {
+    public static VirtualMachineMO createWorkerVM(VmwareHypervisorHost hyperHost, DatastoreMO dsMo, String vmName, String vmxFormattedHardwareVersion) throws Exception {
 
         // Allow worker VM to float within cluster so that we will have better chance to
         // create it successfully
@@ -1693,8 +1693,8 @@ public class HypervisorHostHelper {
         VirtualMachineMO workingVM = null;
         VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
         vmConfig.setName(vmName);
-        if (hardwareVersion != null){
-            vmConfig.setVersion(("vmx-" + hardwareVersion));
+        if (StringUtils.isNotBlank(vmxFormattedHardwareVersion)){
+            vmConfig.setVersion(vmxFormattedHardwareVersion);
         }  else {
             ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(), hyperHost.getHyperHostCluster());
             DatacenterMO dataCenterMo = new DatacenterMO(hyperHost.getContext(), hyperHost.getHyperHostDatacenter());
@@ -2234,23 +2234,23 @@ public class HypervisorHostHelper {
             List<ManagedObjectReference> datastoresInCluster = storagepodMO.getDatastoresInDatastoreCluster();
             for (ManagedObjectReference datastore : datastoresInCluster) {
                 DatastoreMO childDsMo = new DatastoreMO(hyperHost.getContext(), datastore);
-                createBaseFolderInDatastore(childDsMo, hyperHost);
+                createBaseFolderInDatastore(childDsMo, hyperHost.getHyperHostDatacenter());
             }
         } else {
-            createBaseFolderInDatastore(dsMo, hyperHost);
+            createBaseFolderInDatastore(dsMo, hyperHost.getHyperHostDatacenter());
         }
     }
 
-    public static void createBaseFolderInDatastore(DatastoreMO dsMo, VmwareHypervisorHost hyperHost) throws Exception {
+    public static void createBaseFolderInDatastore(DatastoreMO dsMo, ManagedObjectReference mor) throws Exception {
         String dsPath = String.format("[%s]", dsMo.getName());
         String folderPath = String.format("[%s] %s", dsMo.getName(), VSPHERE_DATASTORE_BASE_FOLDER);
         String hiddenFolderPath = String.format("%s/%s", folderPath, VSPHERE_DATASTORE_HIDDEN_FOLDER);
 
         if (!dsMo.folderExists(dsPath, VSPHERE_DATASTORE_BASE_FOLDER)) {
             s_logger.info(String.format("vSphere datastore base folder: %s does not exist, now creating on datastore: %s", VSPHERE_DATASTORE_BASE_FOLDER, dsMo.getName()));
-            dsMo.makeDirectory(folderPath, hyperHost.getHyperHostDatacenter());
+            dsMo.makeDirectory(folderPath, mor);
             // Adding another directory so vCentre doesn't remove the fcd directory when it's empty
-            dsMo.makeDirectory(hiddenFolderPath, hyperHost.getHyperHostDatacenter());
+            dsMo.makeDirectory(hiddenFolderPath, mor);
         }
     }
 
@@ -2266,5 +2266,22 @@ public class HypervisorHostHelper {
         }
         version = apiVersionHardwareVersionMap.get(hostApiVersion);
         return version;
+    }
+
+    /*
+      Finds minimum host hardware version as String, of two hosts when both of them are not null
+      and hardware version of both hosts is different.
+      Return null otherwise
+     */
+    public static String getMinimumHostHardwareVersion(VmwareHypervisorHost host1, VmwareHypervisorHost host2) {
+        String hardwareVersion = null;
+        if (host1 != null & host2 != null) {
+            Integer host1Version = getHostHardwareVersion(host1);
+            Integer host2Version = getHostHardwareVersion(host2);
+            if (host1Version != null && host2Version != null && !host1Version.equals(host2Version)) {
+                hardwareVersion = VirtualMachineMO.getVmxFormattedVirtualHardwareVersion(Math.min(host1Version, host2Version));
+            }
+        }
+        return hardwareVersion;
     }
 }

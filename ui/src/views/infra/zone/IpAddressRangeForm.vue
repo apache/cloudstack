@@ -24,78 +24,94 @@
     </a-card>
     <a-table
       bordered
+      :scroll="{ x: 500 }"
       :dataSource="ipRanges"
       :columns="columns"
       :pagination="false"
-      style="margin-bottom: 24px;" >
+      style="margin-bottom: 24px; width: 100%" >
       <template slot="actions" slot-scope="text, record">
-        <a-button type="danger" shape="circle" icon="delete" @click="onDelete(record.key)" />
+        <tooltip-button :tooltip="$t('label.delete')" type="danger" icon="delete" @click="onDelete(record.key)" />
       </template>
       <template slot="footer">
         <a-form
-          layout="inline"
+          :layout="isMobile() ? 'horizontal': 'inline'"
           :form="form"
           @submit="handleAddRange">
-          <a-form-item :style="{ display: 'inline-block', width: '14%' }">
-            <a-input
-              v-decorator="[ 'gateway', {
-                rules: [{ required: true, message: $t('message.error.gateway') }]
-              }]"
-              :placeholder="$t('label.gateway')"
-            />
-          </a-form-item>
-          <a-form-item :style="{ display: 'inline-block', width: '14%' }">
-            <a-input
-              v-decorator="[ 'netmask', {
-                rules: [{ required: true, message: $t('message.error.netmask') }]
-              }]"
-              :placeholder="$t('label.netmask')"
-            />
-          </a-form-item>
-          <a-form-item :style="{ display: 'inline-block', width: '14%' }">
-            <a-input
-              v-decorator="[ 'vlan', { rules: [{ required: false }] }]"
-              :placeholder="$t('label.vlan')"
-            />
-          </a-form-item>
-          <a-form-item :style="{ display: 'inline-block', width: '14%' }">
-            <a-input
-              v-decorator="[ 'startIp', {
-                rules: [
-                  {
-                    required: true,
-                    message: $t('message.error.startip')
-                  },
-                  {
-                    validator: checkIpFormat,
-                    ipV4: true,
-                    message: $t('message.error.ipv4.address')
-                  }
-                ]
-              }]"
-              :placeholder="$t('label.start.ip')"
-            />
-          </a-form-item>
-          <a-form-item :style="{ display: 'inline-block', width: '14%' }">
-            <a-input
-              v-decorator="[ 'endIp', {
-                rules: [
-                  {
-                    required: true,
-                    message: $t('message.error.endip')
-                  },
-                  {
-                    validator: checkIpFormat,
-                    ipV4: true,
-                    message: $t('message.error.ipv4.address')
-                  }]
-              }]"
-              :placeholder="$t('label.end.ip')"
-            />
-          </a-form-item>
-          <a-form-item :style="{ display: 'inline-block', width: '14%' }">
-            <a-button type="primary" html-type="submit">{{ $t('label.add') }}</a-button>
-          </a-form-item>
+          <a-row :gutter="12">
+            <a-col :md="4" :lg="4">
+              <a-form-item>
+                <a-input
+                  v-decorator="[ 'gateway', {
+                    rules: [{ required: true, message: $t('message.error.gateway') }]
+                  }]"
+                  :placeholder="$t('label.gateway')"
+                  autoFocus
+                />
+              </a-form-item>
+            </a-col>
+            <a-col :md="4" :lg="4">
+              <a-form-item>
+                <a-input
+                  v-decorator="[ 'netmask', {
+                    rules: [{ required: true, message: $t('message.error.netmask') }]
+                  }]"
+                  :placeholder="$t('label.netmask')"
+                />
+              </a-form-item>
+            </a-col>
+            <a-col :md="4" :lg="4">
+              <a-form-item>
+                <a-input
+                  v-decorator="[ 'vlan', { rules: [{ required: false }] }]"
+                  :placeholder="$t('label.vlan')"
+                />
+              </a-form-item>
+            </a-col>
+            <a-col :md="4" :lg="4">
+              <a-form-item>
+                <a-input
+                  v-decorator="[ 'startIp', {
+                    rules: [
+                      {
+                        required: true,
+                        message: $t('message.error.startip')
+                      },
+                      {
+                        validator: checkIpFormat,
+                        ipV4: true,
+                        message: $t('message.error.ipv4.address')
+                      }
+                    ]
+                  }]"
+                  :placeholder="$t('label.start.ip')"
+                />
+              </a-form-item>
+            </a-col>
+            <a-col :md="4" :lg="4">
+              <a-form-item>
+                <a-input
+                  v-decorator="[ 'endIp', {
+                    rules: [
+                      {
+                        required: true,
+                        message: $t('message.error.endip')
+                      },
+                      {
+                        validator: checkIpFormat,
+                        ipV4: true,
+                        message: $t('message.error.ipv4.address')
+                      }]
+                  }]"
+                  :placeholder="$t('label.end.ip')"
+                />
+              </a-form-item>
+            </a-col>
+            <a-col :md="4" :lg="4">
+              <a-form-item :style="{ display: 'inline-block', float: 'right' }">
+                <a-button type="primary" html-type="submit">{{ $t('label.add') }}</a-button>
+              </a-form-item>
+            </a-col>
+          </a-row>
         </a-form>
       </template>
     </a-table>
@@ -125,7 +141,15 @@
   </div>
 </template>
 <script>
+
+import TooltipButton from '@/components/view/TooltipButton'
+import { mixinDevice } from '@/utils/mixin.js'
+
 export default {
+  components: {
+    TooltipButton
+  },
+  mixins: [mixinDevice],
   props: {
     traffic: {
       type: String,
@@ -182,7 +206,7 @@ export default {
           title: '',
           dataIndex: 'actions',
           scopedSlots: { customRender: 'actions' },
-          width: 50
+          width: 70
         }
       ],
       showError: false,

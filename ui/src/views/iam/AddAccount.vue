@@ -31,7 +31,8 @@
               initialValue: selectedRole,
               rules: [{ required: true, message: $t('message.error.select') }] }]"
             :loading="roleLoading"
-            :placeholder="apiParams.roleid.description">
+            :placeholder="apiParams.roleid.description"
+            autoFocus>
             <a-select-option v-for="role in roles" :key="role.id">
               {{ role.name + ' (' + role.type + ')' }}
             </a-select-option>
@@ -144,7 +145,7 @@
               rules: [{ required: true, message: $t('message.error.select') }] }]"
             :placeholder="apiParams.domainid.description">
             <a-select-option v-for="domain in domainsList" :key="domain.id">
-              {{ domain.name }}
+              {{ domain.path || domain.name || domain.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -256,7 +257,7 @@ export default {
       })
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

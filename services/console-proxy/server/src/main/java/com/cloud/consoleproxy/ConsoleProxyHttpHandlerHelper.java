@@ -93,6 +93,9 @@ public class ConsoleProxyHttpHandlerHelper {
                     map.put("password", param.getPassword());
                 if (param.getSourceIP() != null)
                     map.put("sourceIP", param.getSourceIP());
+                if (param.getWebsocketUrl() != null) {
+                    map.put("websocketUrl", param.getWebsocketUrl());
+                }
             } else {
                 s_logger.error("Unable to decode token");
             }
@@ -116,5 +119,6 @@ public class ConsoleProxyHttpHandlerHelper {
         map.remove("hypervHost");
         map.remove("username");
         map.remove("password");
+        map.remove("websocketUrl");
     }
 }

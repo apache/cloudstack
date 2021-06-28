@@ -36,10 +36,10 @@
         </span>
       </template>
       <template slot="remove" slot-scope="text, record">
-        <a-button
+        <tooltip-button
+          :tooltip="$t('label.remove.vm.from.lb')"
           type="danger"
           icon="delete"
-          shape="circle"
           @click="removeVmFromLB(record)" />
       </template>
       <a-divider />
@@ -63,9 +63,13 @@
 </template>
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'InternalLBAssignedVmTab',
+  components: {
+    TooltipButton
+  },
   props: {
     resource: {
       type: Object,
@@ -97,7 +101,7 @@ export default {
       ]
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {

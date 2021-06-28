@@ -714,8 +714,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             }
 
             if ((caller.getAccountId() == accountId.longValue()) && (_accountMgr.isDomainAdmin(caller.getId()) || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)) {
-                // If the admin is trying to update his own account, disallow.
-                throw new PermissionDeniedException("Unable to update resource limit for his own account " + accountId + ", permission denied");
+                // If the admin is trying to update their own account, disallow.
+                throw new PermissionDeniedException("Unable to update resource limit for their own account " + accountId + ", permission denied");
             }
 
             if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {

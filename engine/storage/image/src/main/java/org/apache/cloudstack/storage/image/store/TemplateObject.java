@@ -137,24 +137,6 @@ public class TemplateObject implements TemplateInfo {
         if (dataStore == null) {
             return imageVO.getSize();
         }
-
-        /*
-         *
-         * // If the template that was passed into this allocator is not
-         * installed in the storage pool, // add 3 * (template size on secondary
-         * storage) to the running total VMTemplateHostVO templateHostVO =
-         * _storageMgr.findVmTemplateHost(templateForVmCreation.getId(), null);
-         *
-         * if (templateHostVO == null) { VMTemplateSwiftVO templateSwiftVO =
-         * _swiftMgr.findByTmpltId(templateForVmCreation.getId()); if
-         * (templateSwiftVO != null) { long templateSize =
-         * templateSwiftVO.getPhysicalSize(); if (templateSize == 0) {
-         * templateSize = templateSwiftVO.getSize(); } totalAllocatedSize +=
-         * (templateSize + _extraBytesPerVolume); } } else { long templateSize =
-         * templateHostVO.getPhysicalSize(); if ( templateSize == 0 ){
-         * templateSize = templateHostVO.getSize(); } totalAllocatedSize +=
-         * (templateSize + _extraBytesPerVolume); }
-         */
         VMTemplateVO image = imageDao.findById(imageVO.getId());
         return image.getSize();
     }

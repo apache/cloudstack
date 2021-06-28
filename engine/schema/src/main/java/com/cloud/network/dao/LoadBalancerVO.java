@@ -35,7 +35,7 @@ import com.cloud.utils.net.NetUtils;
  *
  */
 @Entity
-@Table(name = ("load_balancing_rules"))
+@Table(name = "load_balancing_rules")
 @DiscriminatorValue(value = "LoadBalancing")
 @PrimaryKeyJoinColumn(name = "id")
 public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {

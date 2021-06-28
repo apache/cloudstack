@@ -33,7 +33,8 @@
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.kubecluster.name') }]
             }]"
-            :placeholder="apiParams.name.description"/>
+            :placeholder="apiParams.name.description"
+            autoFocus />
         </a-form-item>
         <a-form-item>
           <span slot="label">
@@ -169,13 +170,13 @@
         </a-form-item>
         <a-form-item v-if="this.haEnabled">
           <span slot="label">
-            {{ $t('label.masternodes') }}
-            <a-tooltip :title="apiParams.masternodes.description">
+            {{ $t('label.controlnodes') }}
+            <a-tooltip :title="apiParams.controlnodes.description">
               <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </span>
           <a-input
-            v-decorator="['masternodes', {
+            v-decorator="['controlnodes', {
               initialValue: '2',
               rules: [{ required: true, message: $t('message.error.input.value') },
                       {
@@ -188,7 +189,7 @@
                       }
               ]
             }]"
-            :placeholder="apiParams.masternodes.description"/>
+            :placeholder="apiParams.controlnodes.description"/>
         </a-form-item>
         <a-form-item v-if="this.haEnabled">
           <span slot="label">
@@ -360,8 +361,6 @@ export default {
         name: ''
       }
     ]
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {
@@ -515,8 +514,8 @@ export default {
         if (this.isValidValueForKey(values, 'noderootdisksize') && values.noderootdisksize > 0) {
           params.noderootdisksize = values.noderootdisksize
         }
-        if (this.isValidValueForKey(values, 'masternodes') && values.masternodes > 0) {
-          params.masternodes = values.masternodes
+        if (this.isValidValueForKey(values, 'controlnodes') && values.controlnodes > 0) {
+          params.controlnodes = values.controlnodes
         }
         if (this.isValidValueForKey(values, 'externalloadbalanceripaddress') && values.externalloadbalanceripaddress !== '') {
           params.externalloadbalanceripaddress = values.externalloadbalanceripaddress

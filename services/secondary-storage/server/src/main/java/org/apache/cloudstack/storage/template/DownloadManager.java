@@ -23,6 +23,7 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.TemplateDownloader;
 import com.cloud.storage.template.TemplateProp;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.net.Proxy;
 import org.apache.cloudstack.storage.command.DownloadCommand;
@@ -68,7 +69,7 @@ public interface DownloadManager extends Manager {
      * @param jobId job Id
      * @return status of the download job
      */
-    public VMTemplateHostVO.Status getDownloadStatus2(String jobId);
+    public Status getDownloadStatus2(String jobId);
 
     /**
      * Get the download percent of a download job

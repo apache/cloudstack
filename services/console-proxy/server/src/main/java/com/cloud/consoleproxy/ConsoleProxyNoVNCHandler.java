@@ -88,6 +88,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
         String username = queryMap.get("username");
         String password = queryMap.get("password");
         String sourceIP = queryMap.get("sourceIP");
+        String websocketUrl = queryMap.get("websocketUrl");
 
         if (tag == null)
             tag = "";
@@ -131,6 +132,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             param.setHypervHost(hypervHost);
             param.setUsername(username);
             param.setPassword(password);
+            param.setWebsocketUrl(websocketUrl);
             viewer = ConsoleProxy.getNoVncViewer(param, ajaxSessionIdStr, session);
         } catch (Exception e) {
             s_logger.warn("Failed to create viewer due to " + e.getMessage(), e);

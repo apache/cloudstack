@@ -43,7 +43,8 @@
               }"
               :loading="podsLoading"
               :placeholder="apiParams.podid.description"
-              @change="handlePodChange">
+              @change="handlePodChange"
+              :autoFocus="this.$store.getters.userInfo.roletype === 'Admin'">
               <a-select-option v-for="pod in this.pods" :key="pod.id">
                 {{ pod.name }}
               </a-select-option>
@@ -148,7 +149,7 @@ export default {
       this.apiParams[param.name] = param
     })
   },
-  mounted () {
+  created () {
     if (this.$store.getters.userInfo.roletype === 'Admin') {
       this.fetchPods()
       this.fetchClusters()

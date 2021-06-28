@@ -1429,10 +1429,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         // if the network offering has persistent set to true, implement the network
         if (ntwkOff.isPersistent()) {
             try {
-                if (network.getState() == Network.State.Setup) {
-                    s_logger.debug("Network id=" + network.getId() + " is already provisioned");
-                    return network;
-                }
                 DeployDestination dest = new DeployDestination(zone, null, null, null);
                 UserVO callerUser = _userDao.findById(CallContext.current().getCallingUserId());
                 Journal journal = new Journal.LogJournal("Implementing " + network, s_logger);

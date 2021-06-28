@@ -30,6 +30,7 @@
             </a-tooltip>
           </span>
           <a-input
+            autoFocus
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
@@ -191,7 +192,7 @@
               rules: [{ required: true, message: $t('message.error.required.input') },
                       {
                         validator: (rule, value, callback) => {
-                          if (value && (isNaN(value) || value <= 0)) {
+                          if (value && (isNaN(value) || value < 0)) {
                             callback(this.$t('message.error.number'))
                           }
                           callback()
@@ -531,6 +532,15 @@
           </span>
           <a-switch v-decorator="['offerha', {initialValue: false}]" />
         </a-form-item>
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.dynamicscalingenabled') }}
+            <a-tooltip :title="apiParams.dynamicscalingenabled.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
+          <a-switch v-decorator="['dynamicscalingenabled', {initialValue: dynamicscalingenabled}]" :checked="dynamicscalingenabled" @change="val => { dynamicscalingenabled = val }"/>
+        </a-form-item>
         <a-form-item v-if="this.isAdmin()">
           <span slot="label">
             {{ $t('label.hosttags') }}
@@ -679,7 +689,7 @@
             :loading="domainLoading"
             :placeholder="this.$t('label.domainid')">
             <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
-              {{ opt.name || opt.description }}
+              {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -796,7 +806,8 @@ export default {
       ],
       vGpuVisible: false,
       vGpuTypes: [],
-      loading: false
+      loading: false,
+      dynamicscalingenabled: true
     }
   },
   beforeCreate () {
@@ -818,8 +829,6 @@ export default {
         name: this.$t('label.all.zone')
       }
     ]
-  },
-  mounted () {
     if (this.$route.meta.name === 'systemoffering') {
       this.isSystem = true
     }
@@ -960,7 +969,8 @@ export default {
           cachemode: values.cachemode,
           customized: values.offeringtype !== 'fixed',
           offerha: values.offerha === true,
-          limitcpuuse: values.limitcpuuse === true
+          limitcpuuse: values.limitcpuuse === true,
+          dynamicscalingenabled: values.dynamicscalingenabled
         }
 
         // custom fields (begin)

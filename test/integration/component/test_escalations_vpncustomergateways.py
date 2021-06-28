@@ -120,7 +120,7 @@ class TestVpnCustomerGateways(cloudstackTestCase):
         if len(expected_vals) != len(actual_vals):
             return False
 
-        keys = expected_vals.keys()
+        keys = list(expected_vals.keys())
         for i in range(0, len(expected_vals)):
             exp_val = expected_vals[keys[i]]
             act_val = actual_vals[keys[i]]
@@ -186,13 +186,13 @@ class TestVpnCustomerGateways(cloudstackTestCase):
                                                                  listall=self.services["listall"]
                                                                  )
         status = validateList(list_vpncustomergateways_after)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "VPN Customer Gateway creation failed"
                           )
         # Verifying that list size is pagesize + 1
-        self.assertEquals(
+        self.assertEqual(
                           self.services["pagesize"] + 1,
                           len(list_vpncustomergateways_after),
                           "Failed to create pagesize + 1 number of VPN Customer Gateways"
@@ -205,13 +205,13 @@ class TestVpnCustomerGateways(cloudstackTestCase):
                                                                  pagesize=self.services["pagesize"]
                                                                  )
         status = validateList(list_vpncustomergateways_page1)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Failed to list VPN Customer Gateways in page 1"
                           )
         # Verifying the list size to be equal to pagesize
-        self.assertEquals(
+        self.assertEqual(
                           self.services["pagesize"],
                           len(list_vpncustomergateways_page1),
                           "Size of VPN Customer Gateways in page 1 is not matching"
@@ -224,13 +224,13 @@ class TestVpnCustomerGateways(cloudstackTestCase):
                                                                  pagesize=self.services["pagesize"]
                                                                  )
         status = validateList(list_vpncustomergateways_page2)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Failed to list VPN Customer Gateways in page 2"
                           )
         # Verifying the list size to be equal to 1
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_vpncustomergateways_page2),
                           "Size of VPN Customer Gateways in page 2 is not matching"
@@ -301,13 +301,13 @@ class TestVpnCustomerGateways(cloudstackTestCase):
                                                                  listall=self.services["listall"]
                                                                  )
         status = validateList(list_vpncustomergateways_after)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "VPN Customer Gateway creation failed"
                           )
         # Verifying that list size is 1
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_vpncustomergateways_after),
                           "Failed to create VPN Customer Gateways"
@@ -332,13 +332,13 @@ class TestVpnCustomerGateways(cloudstackTestCase):
                                                           id=vpncustomergateway_created.id
                                                           )
         status = validateList(list_vpncustomergateway)
-        self.assertEquals(
+        self.assertEqual(
                           PASS,
                           status[0],
                           "Failed to list VPN Customer Gateways by Id"
                           )
         # Verifying the list size to be equal to 1
-        self.assertEquals(
+        self.assertEqual(
                           1,
                           len(list_vpncustomergateway),
                           "Size of VPN Customer Gateways by id is not matching"

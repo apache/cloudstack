@@ -44,7 +44,8 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="kubernetesVersionLoading"
-            :placeholder="apiParams.kubernetesversionid.description">
+            :placeholder="apiParams.kubernetesversionid.description"
+            autoFocus >
             <a-select-option v-for="(opt, optIndex) in this.kubernetesVersions" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -89,8 +90,6 @@ export default {
     })
   },
   created () {
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

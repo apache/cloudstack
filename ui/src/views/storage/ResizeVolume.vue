@@ -26,6 +26,7 @@
           :loading="loading"
           :placeholder="$t('label.diskoffering')"
           @change="id => (customDiskOffering = offerings.filter(x => x.id === id)[0].iscustomized || false)"
+          :autoFocus="resource.type !== 'ROOT'"
         >
           <a-select-option
             v-for="(offering, index) in offerings"
@@ -39,7 +40,8 @@
           <a-input
             v-decorator="['size', {
               rules: [{ required: true, message: $t('message.error.size') }]}]"
-            :placeholder="$t('label.disksize')"/>
+            :placeholder="$t('label.disksize')"
+            :autoFocus="customDiskOffering || resource.type === 'ROOT'"/>
         </a-form-item>
       </div>
       <a-form-item :label="$t('label.shrinkok')">
@@ -74,7 +76,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

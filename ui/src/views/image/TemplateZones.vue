@@ -30,22 +30,20 @@
         <span v-else>{{ $t('label.no') }}</span>
       </div>
       <template slot="action" slot-scope="text, record">
-        <span style="margin-right: 5px">
-          <a-button
-            :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
-            icon="copy"
-            shape="circle"
-            :loading="copyLoading"
-            @click="showCopyTemplate(record)" />
-        </span>
-        <span style="margin-right: 5px">
-          <a-button
-            :disabled="!('deleteTemplate' in $store.getters.apis)"
-            type="danger"
-            icon="delete"
-            shape="circle"
-            @click="onShowDeleteModal(record)"/>
-        </span>
+        <tooltip-button
+          style="margin-right: 5px"
+          :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
+          :title="$t('label.action.copy.template')"
+          icon="copy"
+          :loading="copyLoading"
+          @click="showCopyTemplate(record)" />
+        <tooltip-button
+          style="margin-right: 5px"
+          :disabled="!('deleteTemplate' in $store.getters.apis)"
+          :title="$t('label.action.delete.template')"
+          type="danger"
+          icon="delete"
+          @click="onShowDeleteModal(record)"/>
       </template>
     </a-table>
     <a-pagination
@@ -100,7 +98,8 @@
               :filterOption="(input, option) => {
                 return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
-              :loading="zoneLoading">
+              :loading="zoneLoading"
+              autoFocus>
               <a-select-option v-for="zone in zones" :key="zone.id">
                 {{ zone.name }}
               </a-select-option>
@@ -133,9 +132,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'TemplateZones',
+  components: {
+    TooltipButton
+  },
   props: {
     resource: {
       type: Object,
@@ -203,8 +206,6 @@ export default {
       (userInfo.account !== this.resource.account || userInfo.domain !== this.resource.domain)) {
       this.columns = this.columns.filter(col => { return col.dataIndex !== 'status' })
     }
-  },
-  mounted () {
     this.fetchData()
   },
   watch: {
