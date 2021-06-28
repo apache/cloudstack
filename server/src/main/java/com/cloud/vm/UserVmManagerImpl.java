@@ -68,6 +68,8 @@ import com.cloud.user.User;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.VmDiskStatisticsVO;
+import com.cloud.utils.net.MacAddress;
+import com.googlecode.ipv6.IPv6Address;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -5581,7 +5583,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public UserVm recordVirtualMachineToDB(CloneVMCmd cmd) throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException {
+    public UserVm recordVirtualMachineToDB(CloneVMCmd cmd) throws ConcurrentOperationException, ResourceAllocationException, InsufficientCapacityException, ResourceUnavailableException {
         //network configurations and check, then create the template
         UserVm curVm = cmd.getTargetVM();
         // check if host is available
@@ -5595,7 +5597,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Account curAccount = _accountDao.findById(curVm.getAccountId());
         long callingUserId = CallContext.current().getCallingUserId();
         Account callerAccount = CallContext.current().getCallingAccount();
-//        IpAddress ipAddress = _ipAddrMgr.allocateIp(curAccount, curAccount.getId() == Account.ACCOUNT_ID_SYSTEM, callerAccount, callingUserId, dataCenter, null, null);
+        IpAddress ipAddress = _ipAddrMgr.allocateIp(curAccount, curAccount.getId() == Account.ACCOUNT_ID_SYSTEM, callerAccount, callingUserId, dataCenter, null, null);
+        String ipv6Address = null;
+        String macAddress = null;
+        IpAddresses addr = new IpAddresses(ipAddress.getVmIp(), null, macAddress);
         long serviceOfferingId = curVm.getServiceOfferingId();
         ServiceOffering serviceOffering = _serviceOfferingDao.findById(curVm.getId(), serviceOfferingId);
         List<SecurityGroupVO> securityGroupList = _securityGroupMgr.getSecurityGroupsForVm(curVm.getId());
@@ -5608,14 +5613,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         HTTPMethod httpMethod = cmd.getHttpMethod();
         String userData = curVm.getUserData();
         String sshKeyPair = null;
-        Map<Long, IpAddress> ipToNetoworkMap = null; // Since we've specified Ip
+        Map<Long, IpAddresses> ipToNetoworkMap = null; // Since we've specified Ip
         boolean isDisplayVM = curVm.isDisplayVm();
         boolean dynamicScalingEnabled = curVm.isDynamicallyScalable();
-
-//        if (dataCenter.getNetworkType() == NetworkType.Basic) {
-//
-//        }
-        return null;
+        Long templateId = cmd.getTemporaryTemlateId();
+        VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
+        if (template == null) {
+            throw new CloudRuntimeException("the temporary template is not created, server error, contact your sys admin");
+        }
+        List<Long> networkIds = null;
+        String group = null;
+        InstanceGroupVO groupVo = getGroupForVm(cmd.getId());
+        if (groupVo != null) {
+            group = groupVo.getName();
+        }
+        UserVm vmResult = createBasicSecurityGroupVirtualMachine(dataCenter, serviceOffering, template, securityGroupIdList, curAccount, hostName, displayName, diskOfferingId,
+                size , group , hypervisorType, cmd.getHttpMethod(), userData , sshKeyPair , ipToNetoworkMap, addr, isDisplayVM , keyboard , null,
+                curVm.getDetails(), cmd.getCustomId(), new HashMap<>(),
+                null, new HashMap<>(), dynamicScalingEnabled);
+        return vmResult;
     }
 
     /**
