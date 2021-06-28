@@ -5589,7 +5589,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         getDestinationHost(hostId, true);
         Long zoneId = curVm.getDataCenterId();
         DataCenter dataCenter = _entityMgr.findById(DataCenter.class, zoneId);
-        Map<String, String> vmProperties = curVm.getDetails();
+        Map<String, String> vmProperties = curVm.getDetails() != null ? curVm.getDetails() : new HashMap<>();
         String keyboard = vmProperties.get(VmDetailConstants.KEYBOARD);
         HypervisorType hypervisorType = curVm.getHypervisorType();
         Account curAccount = _accountDao.findById(curVm.getAccountId());
