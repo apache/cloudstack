@@ -176,12 +176,13 @@ class TestDeployVMFromISOWithUefi(cloudstackTestCase):
         parser = etree.XMLParser(remove_blank_text=True)
         return ET.fromstring(xml_as_str, parser=parser)
 
-    def checkBootTypeAndMode(self, root, bootmodesecure, isWindowsIso, hostos):
+    def checkBootTypeAndMode(self, root, bootmodesecure, isWindowsIso):
 
         machine = root.find(".os/type").get("machine")
         self.assertEqual(("q35" in machine), True, "The virtual machine is not with UEFI boot type")
 
-        if 'suse' not in hostos :
+        bootmode = root.find(".os/loader").get("secure")
+        if bootmode is not None :
             bootmode = root.find(".os/loader").get("secure")
             self.assertEqual((bootmode == bootmodesecure), True, "The VM is not in the right boot mode")
 
@@ -224,8 +225,7 @@ class TestDeployVMFromISOWithUefi(cloudstackTestCase):
 
         instancename = self.virtual_machine.instancename
         virshxml = self.getVirshXML(host, instancename)
-        hostos = host.details['Host.OS'].lower()
-        self.checkBootTypeAndMode(virshxml, bootmodesecure, isWindowsIso, hostos)
+        self.checkBootTypeAndMode(virshxml, bootmodesecure, isWindowsIso)
 
     @classmethod
     def isUefiEnabledOnAtLeastOnHost(cls, hosts):
