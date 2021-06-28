@@ -30,7 +30,7 @@ from ipmisim.ipmisim import IpmiServerContext, IpmiServer, ThreadedIpmiServer
 import random
 import socket
 import sys
-import thread
+import _thread
 import time
 
 
@@ -42,10 +42,12 @@ class TestOutOfBandManagement(cloudstackTestCase):
     def setUpClass(cls):
         testClient = super(TestOutOfBandManagement, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
+        cls.mgtSvrDetails = cls.config.__dict__["mgtSvr"][0].__dict__
         cls.services = testClient.getParsedTestDataConfig()
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.host = None
         cls.cleanup = []
+        cls.skipIfMSIsUnsupported(cls)
 
         # use random port for ipmisim
         s = socket.socket()
@@ -60,7 +62,7 @@ class TestOutOfBandManagement(cloudstackTestCase):
         IpmiServerContext('reset')
         ThreadedIpmiServer.allow_reuse_address = True
         server = ThreadedIpmiServer(('0.0.0.0', cls.serverPort), IpmiServer)
-        thread.start_new_thread(startIpmiServer, ("ipmi-server", server,))
+        _thread.start_new_thread(startIpmiServer, ("ipmi-server", server,))
         cls.server = server
 
 
@@ -82,7 +84,6 @@ class TestOutOfBandManagement(cloudstackTestCase):
         self.fakeMsId = random.randint(10000, 99999) * random.randint(10, 20)
         self.cleanup = []
 
-
     def tearDown(self):
         try:
             self.dbclient.execute("delete from oobm where port=%d" % self.getIpmiServerPort())
@@ -94,6 +95,17 @@ class TestOutOfBandManagement(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
+    def skipIfMSIsUnsupported(self) :
+        os_details = SshClient(self.mgtSvrDetails["mgtSvrIp"], 22, self.mgtSvrDetails["user"], self.mgtSvrDetails["passwd"]).execute \
+            ("/usr/share/cloudstack-common/scripts/vm/hypervisor/versions.sh | cut -d '=' -f2")
+        os = os_details[0].lower()
+        if 'ubuntu' in os or 'debian' in os :
+            return
+        # RHEL < 8 works fine
+        os_ver = os_details[1].split('.')[0]
+        if float(os_ver) < 8:
+            return
+        self.skipTest(self, reason="Skipping since RHEL8 / SUSE have known IPMI issues")
 
     def getFakeMsId(self):
         return self.fakeMsId
@@ -497,7 +509,7 @@ class TestOutOfBandManagement(cloudstackTestCase):
         currentMsHosts = []
         mshosts = self.dbclient.execute("select msid from mshost where version='%s' and removed is NULL and state='Up'" % (cloudstackVersion))
         if len(mshosts) > 0:
-            currentMsHosts = map(lambda row: row[0], mshosts)
+            currentMsHosts = [row[0] for row in mshosts]
 
         # Inject fake ms host
         self.dbclient.execute("insert into mshost (msid,runid,name,state,version,service_ip,service_port,last_update) values (%s,%s,'oobm-marvin-fakebox', 'Down', '%s', '127.0.0.1', '22', NOW())" % (self.getFakeMsId(), self.getFakeMsRunId(), cloudstackVersion))
