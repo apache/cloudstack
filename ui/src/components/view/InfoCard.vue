@@ -26,6 +26,9 @@
               @click="showUploadModal(true)"
               v-clipboard:copy="name" >
               <upload-resource-icon v-if="'uploadResourceIcon' in $store.getters.apis" :visible="showUpload" :resource="resource" @handle-close="showUpload(false)"/>
+              <!-- <div class="ant-upload-preview" >
+                <a-icon type="cloud-upload-o" class="upload-icon"/>
+              </div> -->
               <slot name="avatar">
                 <span v-if="resource.icon && resource.icon.base64image || image || resourceIcon">
                   <img :src="getImg()" height="56px" width="56px" />
@@ -1149,5 +1152,16 @@ export default {
     margin-left: 5px;
   }
 
+}
+
+.upload-icon {
+  position: absolute;
+  top: 10px;
+  left: 60px;
+  font-size: 0.75em;
+  padding: 0.25rem;
+  background: rgba(247, 245, 245, 0.767);
+  border-radius: 50%;
+  border: 1px solid rgba(177, 177, 177, 0.788);
 }
 </style>

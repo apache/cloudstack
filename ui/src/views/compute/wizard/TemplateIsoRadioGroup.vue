@@ -34,9 +34,9 @@
             :value="os.id">
             {{ os.displaytext }}&nbsp;
             <resource-icon
-              v-if="image"
+              v-if="os.icon && os.icon.base64image"
               class="radio-group__os-logo"
-              :image="image"
+              :image="os.icon.base64image"
               size="1x" />
             <os-logo
               v-else
@@ -69,7 +69,6 @@
 
 <script>
 import OsLogo from '@/components/widgets/OsLogo'
-import { api } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
@@ -117,7 +116,6 @@ export default {
     selected (newVal, oldVal) {
       if (newVal === oldVal) return
       this.onSelectTemplateIso()
-      this.fetchTemplate(this.selected)
     }
   },
   methods: {
@@ -146,24 +144,6 @@ export default {
     onClickRow (os) {
       this.value = os.id
       this.$emit('emit-update-template-iso', this.inputDecorator, this.value)
-    },
-    fetchTemplate (templateid) {
-      return new Promise((resolve, reject) => {
-        api('listTemplates', {
-          id: templateid,
-          listall: true,
-          templatefilter: 'all',
-          showicon: true
-        }).then((json) => {
-          const response = json?.listtemplatesresponse?.template || []
-          if (response?.[0]?.icon) {
-            this.image = response[0].icon?.base64image
-            resolve(this.image)
-          }
-        }).catch(error => {
-          reject(error.response.headers['x-description'])
-        })
-      })
     }
   }
 }

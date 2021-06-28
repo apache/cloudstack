@@ -49,9 +49,10 @@
                                         style="marginTop: -30px; marginLeft: 60px"
                                         width="36px"
                                         height="36px" />
-                                      <a-icon v-else style="font-size: 36px; marginLeft: 60px; marginTop: -30px;" type="global"/>
+                                      <a-icon v-else :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-40px'}" type="global"/>
                                     </div>
-                                    <span :style="{ textAlign: 'center' }">{{ zoneItem.name }} </span>
+                                    <a-card-meta title="" :description="zoneItem.name" style="text-align:center; paddingTop: 10px;">
+                                    </a-card-meta>
                                   </a-radio>
                                 </a-card-grid>
                               </a-col>
@@ -1758,6 +1759,7 @@ export default {
       args.zoneid = _.get(this.zone, 'id')
       args.templatefilter = templateFilter
       args.details = 'all'
+      args.showicon = 'true'
 
       return new Promise((resolve, reject) => {
         api('listTemplates', args).then((response) => {

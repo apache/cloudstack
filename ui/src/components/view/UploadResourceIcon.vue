@@ -174,7 +174,7 @@ export default {
         ctx.drawImage(newImage, 0, 0, width, height)
         base64Canvas = canvas.toDataURL('image/png', 1).split(';base64,')[1]
       }
-      api('uploadResourceIcon', {
+      api('uploadResourceIcon', {}, 'POST', {
         resourceids: resourceid,
         resourcetype: resourceType,
         base64image: base64Canvas
