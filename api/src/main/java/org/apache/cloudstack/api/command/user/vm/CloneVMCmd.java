@@ -6,6 +6,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
@@ -88,6 +89,10 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
     public void create() throws ResourceAllocationException {
         try {
             _userVmService.checkCloneCondition(this);
+            VirtualMachineTemplate template = _templateService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
+            if (template == null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "failed to create a template to db");
+            }
             UserVm vmRecord = _userVmService.recordVirtualMachineToDB(this);
             if (vmRecord == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "unable to record a new VM to db!");

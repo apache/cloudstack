@@ -1786,7 +1786,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template from clone", create = true)
     public VMTemplateVO createPrivateTemplateRecord(CloneVMCmd cmd, Account templateOwner) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
-        boolean isAdmin = (_accountMgr.isAdmin(caller.getId()));
         _accountMgr.checkAccess(caller, null, true, templateOwner);
         String name = cmd.getTemplateName();
         if (name.length() > 32) {
@@ -1794,7 +1793,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         int bits = 64; // where to specify
-        boolean requireHVM = true, sshKeyEnabled = true, featured = false;
+        boolean featured = false;
         boolean isPublic = cmd.isPublic();
         Long volumeId = _volumeDao.findByInstanceAndType(cmd.getId(), Volume.Type.ROOT).get(0).getId();
         HypervisorType hyperType = null;
