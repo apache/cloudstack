@@ -51,6 +51,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.network.*;
+import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -226,14 +228,10 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
-import com.cloud.network.IpAddressManager;
-import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -4525,6 +4523,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vmStatus.state != State.Shutdown && vmStatus.state != State.Stopped) {
             throw new CloudRuntimeException("You should clone an instance that's shutdown!");
         }
+        if (vmStatus.getHypervisorType() != HypervisorType.KVM && vmStatus.getHypervisorType() != HypervisorType.Simulator) {
+            throw new CloudRuntimeException("The clone operation is only supported on KVM and Simulator!");
+        }
+        Long accountId = curVm.getAccountId();
+        Account vmOwner = _accountDao.findById(accountId);
+        if (vmOwner == null) {
+            throw new CloudRuntimeException("This VM doesn't have an owner account, please assign one to it");
+        }
         List<VolumeVO> volumes = _volsDao.findByInstanceAndType(cmd.getId(), Volume.Type.ROOT);
         if (CollectionUtils.isEmpty(volumes)) {
             throw new CloudRuntimeException("The VM to copy does not have a Volume attached!");
@@ -5571,14 +5577,40 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public UserVm recordVirtualMachineToDB(CloneVMCmd cmd) throws ConcurrentOperationException {
+    public UserVm recordVirtualMachineToDB(CloneVMCmd cmd) throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException {
         //network configurations and check, then create the template
         UserVm curVm = cmd.getTargetVM();
         // check if host is available
         Long hostId = curVm.getHostId();
         getDestinationHost(hostId, true);
+        Long zoneId = curVm.getDataCenterId();
+        DataCenter dataCenter = _entityMgr.findById(DataCenter.class, zoneId);
+        Map<String, String> vmProperties = curVm.getDetails();
+        String keyboard = vmProperties.get(VmDetailConstants.KEYBOARD);
+        HypervisorType hypervisorType = curVm.getHypervisorType();
+        Account curAccount = _accountDao.findById(curVm.getAccountId());
+        long callingUserId = CallContext.current().getCallingUserId();
+        Account callerAccount = CallContext.current().getCallingAccount();
+//        IpAddress ipAddress = _ipAddrMgr.allocateIp(curAccount, curAccount.getId() == Account.ACCOUNT_ID_SYSTEM, callerAccount, callingUserId, dataCenter, null, null);
+        long serviceOfferingId = curVm.getServiceOfferingId();
+        ServiceOffering serviceOffering = _serviceOfferingDao.findById(curVm.getId(), serviceOfferingId);
+        List<SecurityGroupVO> securityGroupList = _securityGroupMgr.getSecurityGroupsForVm(curVm.getId());
+        List<Long> securityGroupIdList = securityGroupList.stream().map(SecurityGroupVO::getId).collect(Collectors.toList());
+        String uuidName = _uuidMgr.generateUuid(UserVm.class, null);
+        String hostName = generateHostName(uuidName);
+        String displayName = hostName + "-Clone";
+        Long diskOfferingId = curVm.getDiskOfferingId();
+        Long size = null; // mutual exclusive with disk offering id
+        HTTPMethod httpMethod = cmd.getHttpMethod();
+        String userData = curVm.getUserData();
+        String sshKeyPair = null;
+        Map<Long, IpAddress> ipToNetoworkMap = null; // Since we've specified Ip
+        boolean isDisplayVM = curVm.isDisplayVm();
+        boolean dynamicScalingEnabled = curVm.isDynamicallyScalable();
 
-
+//        if (dataCenter.getNetworkType() == NetworkType.Basic) {
+//
+//        }
         return null;
     }
 

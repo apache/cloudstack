@@ -1783,7 +1783,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     @Override
-    @DB
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template from clone", create = true)
     public VMTemplateVO createPrivateTemplateRecord(CloneVMCmd cmd, Account templateOwner) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
