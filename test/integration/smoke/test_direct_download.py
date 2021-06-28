@@ -196,6 +196,7 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
                     cls.apiclient,
                     cls.services["l2-network_offering"],
                 )
+                cls._cleanup.append(cls.network_offering)
                 cls.network_offering.update(cls.apiclient, state='Enabled')
                 cls.services["network"]["networkoffering"] = cls.network_offering.id
                 cls.network = Network.create(
@@ -205,7 +206,6 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
                     networkofferingid=cls.network_offering.id
                 )
                 cls._cleanup.append(cls.network)
-                cls._cleanup.append(cls.network_offering)
 
             storage_pools = StoragePool.list(
                 cls.apiclient,
@@ -229,11 +229,7 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestDirectDownloadTemplates, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -242,11 +238,7 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestDirectDownloadTemplates, self).tearDown()
 
     def getCurrentStoragePoolTags(self, poolId):
         local_pool = StoragePool.list(
@@ -291,6 +283,7 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
                 serviceofferingid=offering.id,
                 networkids=self.network.id
             )
+        self.cleanup.append(vm)
         return vm
 
     @skipTestIf("nfsKvmNotAvailable")
@@ -314,7 +307,6 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
 
         # Revert storage tags for the storage pool used in this test
         self.updateStoragePoolTags(self.nfsPoolId, tags)
-        self.cleanup.append(vm)
         self.cleanup.append(nfs_storage_offering)
         return
 
@@ -340,7 +332,6 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
 
         # Revert storage tags for the storage pool used in this test
         self.updateStoragePoolTags(self.localPoolId, tags)
-        self.cleanup.append(vm)
         self.cleanup.append(local_storage_offering)
         return
 
