@@ -5595,10 +5595,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Account curAccount = _accountDao.findById(curVm.getAccountId());
         long callingUserId = CallContext.current().getCallingUserId();
         Account callerAccount = CallContext.current().getCallingAccount();
-        IpAddress ipAddress = _ipAddrMgr.allocateIp(curAccount, curAccount.getId() == Account.ACCOUNT_ID_SYSTEM, callerAccount, callingUserId, dataCenter, null, null);
+//        IpAddress ipAddress = _ipAddrMgr.allocateIp(curAccount, curAccount.getId() == Account.ACCOUNT_ID_SYSTEM, callerAccount, callingUserId, dataCenter, null, null);
         String ipv6Address = null;
         String macAddress = null;
-        IpAddresses addr = new IpAddresses(ipAddress.getVmIp(), null, macAddress);
+//        IpAddresses addr = new IpAddresses(ipAddress.getVmIp(), null, macAddress);
+        IpAddresses addr = new IpAddresses("127.20.0.183", ipv6Address, macAddress);
         long serviceOfferingId = curVm.getServiceOfferingId();
         ServiceOffering serviceOffering = _serviceOfferingDao.findById(curVm.getId(), serviceOfferingId);
         List<SecurityGroupVO> securityGroupList = _securityGroupMgr.getSecurityGroupsForVm(curVm.getId());

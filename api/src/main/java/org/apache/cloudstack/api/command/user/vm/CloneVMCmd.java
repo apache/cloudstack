@@ -107,6 +107,10 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
         } catch (InvalidParameterValueException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
+        } finally {
+            if (getTemporaryTemlateId() != null) {
+                // TODO: delete template in the service
+            }
         }
     }
 
