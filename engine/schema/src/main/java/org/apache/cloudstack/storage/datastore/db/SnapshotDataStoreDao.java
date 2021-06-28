@@ -78,4 +78,10 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
     List<SnapshotDataStoreVO> findSnapshots(Long storeId, Date start, Date end);
 
     SnapshotDataStoreVO findDestroyedReferenceBySnapshot(long snapshotId, DataStoreRole role);
+
+    /**
+     * Removes reference from database according to snapshot id and data store role.
+     * @return true if success, otherwise, false.
+     */
+    boolean expungeReferenceBySnapshotIdAndDataStoreRole(long snapshotId, DataStoreRole dataStorerole);
 }

@@ -57,7 +57,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private SearchBuilder<SnapshotDataStoreVO> storeStateSearch;
     private SearchBuilder<SnapshotDataStoreVO> destroyedSearch;
     private SearchBuilder<SnapshotDataStoreVO> cacheSearch;
-    private SearchBuilder<SnapshotDataStoreVO> snapshotSearch;
+    protected SearchBuilder<SnapshotDataStoreVO> snapshotSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeSnapshotSearch;
     private SearchBuilder<SnapshotDataStoreVO> snapshotIdSearch;
     private SearchBuilder<SnapshotDataStoreVO> volumeIdSearch;
@@ -333,18 +333,14 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public SnapshotDataStoreVO findBySnapshot(long snapshotId, DataStoreRole role) {
-        SearchCriteria<SnapshotDataStoreVO> sc = snapshotSearch.create();
-        sc.setParameters("snapshot_id", snapshotId);
-        sc.setParameters("store_role", role);
+        SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
         sc.setParameters("state", State.Ready);
         return findOneBy(sc);
     }
 
     @Override
     public SnapshotDataStoreVO findBySourceSnapshot(long snapshotId, DataStoreRole role) {
-        SearchCriteria<SnapshotDataStoreVO> sc = snapshotSearch.create();
-        sc.setParameters("snapshot_id", snapshotId);
-        sc.setParameters("store_role", role);
+        SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
         sc.setParameters("state", State.Migrating);
         return findOneBy(sc);
     }
@@ -487,11 +483,20 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     public SnapshotDataStoreVO findDestroyedReferenceBySnapshot(long snapshotId, DataStoreRole role) {
+        SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
+        sc.setParameters("state", State.Destroyed);
+        return findOneBy(sc);
+    }
+
+    /**
+     * Creates a SearchCriteria with snapshot id and data store role.
+     * @return A SearchCriteria with snapshot id and data store role
+     */
+    protected SearchCriteria<SnapshotDataStoreVO> createSearchCriteriaBySnapshotIdAndStoreRole(long snapshotId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = snapshotSearch.create();
         sc.setParameters("snapshot_id", snapshotId);
         sc.setParameters("store_role", role);
-        sc.setParameters("state", State.Destroyed);
-        return findOneBy(sc);
+        return sc;
     }
 
     private boolean isSnapshotChainingRequired(long volumeId) {
@@ -508,6 +513,17 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         }
 
         return false;
+    }
+
+    @Override
+    public boolean expungeReferenceBySnapshotIdAndDataStoreRole(long snapshotId, DataStoreRole dataStoreRole) {
+        SnapshotDataStoreVO snapshotDataStoreVo = findOneBy(createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, dataStoreRole));
+
+        if (snapshotDataStoreVo == null) {
+            return true;
+        }
+
+        return expunge(snapshotDataStoreVo.getId());
     }
 
 }
