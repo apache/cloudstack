@@ -33,22 +33,25 @@
                     <a-form-item :label="this.$t('label.zoneid')">
                       <div v-if="zones.length < 10">
                         <a-row type="flex" :gutter="5">
-                          <div v-for="(testzone, idx) in zones" :key="idx">
+                          <div v-for="(zoneItem, idx) in zones" :key="idx">
                             <a-radio-group
                               :key="idx"
                               v-decorator="['zoneid', {
                                 rules: [{ required: true, message: `${$t('message.error.select')}` }]}]"
-                              @change="onSelectZoneId(testzone.id)">
+                              @change="onSelectZoneId(zoneItem.id)">
                               <a-col :span="8">
-                                <a-card-grid style="width:200px;" :title="testzone.name" :hoverable="false">
-                                  <a-radio :value="testzone.id">
-                                    <img
-                                      v-if="testzone && testzone.icon && testzone.icon.base64image"
-                                      :src="getImg(testzone.icon.base64image)"
-                                      style="marginLeft: 20px"
-                                      width="36px"
-                                      height="36px" />
-                                    <a-icon v-else style="font-size: 36px; marginLeft: 20px" type="global"/>
+                                <a-card-grid style="width:200px;" :title="zoneItem.name" :hoverable="false">
+                                  <a-radio :value="zoneItem.id">
+                                    <div>
+                                      <img
+                                        v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
+                                        :src="getImg(zoneItem.icon.base64image)"
+                                        style="marginTop: -30px; marginLeft: 60px"
+                                        width="36px"
+                                        height="36px" />
+                                      <a-icon v-else style="font-size: 36px; marginLeft: 60px; marginTop: -30px;" type="global"/>
+                                    </div>
+                                    <span :style="{ textAlign: 'center' }">{{ zoneItem.name }} </span>
                                   </a-radio>
                                 </a-card-grid>
                               </a-col>
@@ -709,10 +712,8 @@ export default {
     }
   },
   mixins: [mixin, mixinDevice],
-  inject: ['parentFetchData'],
   data () {
     return {
-      test: [1, 2],
       zoneId: '',
       podId: null,
       clusterId: null,

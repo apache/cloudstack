@@ -413,6 +413,11 @@ export default {
         this.fetchData()
       }
     })
+    eventBus.$on('refresh-icon', () => {
+      if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm'].includes(this.$route?.path?.split('/')[1]) && this.resource?.icon?.base64image) {
+        this.fetchData()
+      }
+    })
     eventBus.$on('async-job-complete', (action) => {
       if (this.$route.path.includes('/vm/')) {
         if (action && 'api' in action && ['destroyVirtualMachine'].includes(action.api)) {

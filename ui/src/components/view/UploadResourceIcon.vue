@@ -90,7 +90,6 @@ export default {
       required: true
     }
   },
-  inject: ['parentFetchData'],
   computed: {
     preview: function (data) {
       this.realTime(data)
@@ -194,7 +193,7 @@ export default {
         })
       }).finally(() => {
         this.handleClose()
-        this.parentFetchData()
+        eventBus.$emit('refresh-icon')
       })
     },
     deleteIcon () {
@@ -218,7 +217,7 @@ export default {
         })
       }).finally(() => {
         this.handleClose()
-        this.parentFetchData()
+        eventBus.$emit('refresh-icon')
       })
     }
   }

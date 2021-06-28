@@ -27,8 +27,8 @@
               v-clipboard:copy="name" >
               <upload-resource-icon v-if="'uploadResourceIcon' in $store.getters.apis" :visible="showUpload" :resource="resource" @handle-close="showUpload(false)"/>
               <slot name="avatar">
-                <span v-if="['zone', 'template', 'iso', 'account', 'user', 'vm'].includes($route.path.split('/')[1]) && resource.icon && resource.icon.base64image">
-                  <img :src="getImg(resource.icon.base64image)" height="56px" width="56px" />
+                <span v-if="resource.icon && resource.icon.base64image || image || resourceIcon">
+                  <img :src="getImg()" height="56px" width="56px" />
                 </span>
                 <span v-else>
                   <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" @update-osname="(name) => this.resource.ostypename = name"/>
@@ -127,7 +127,10 @@
         <div class="resource-detail-item" v-if="resource.ostypename && resource.ostypeid">
           <div class="resource-detail-item__label">{{ $t('label.ostypename') }}</div>
           <div class="resource-detail-item__details">
-            <os-logo :osId="resource.ostypeid" :osName="resource.ostypename" size="lg" style="margin-left: -1px" />
+            <span v-if="resource.icon && resource.icon.base64image || image">
+              <img :src="getImg()" height="16px" width="16px" />
+            </span>
+            <os-logo v-else :osId="resource.ostypeid" :osName="resource.ostypename" size="lg" style="margin-left: -1px" />
             <span style="margin-left: 8px">{{ resource.ostypename }}</span>
           </div>
         </div>
@@ -707,8 +710,8 @@ import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/view/TooltipButton'
 import UploadResourceIcon from '@/components/view/UploadResourceIcon'
-import ResourceIcon from '@/components/view/ResourceCountUsage'
 import eventBus from '@/config/eventBus'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'InfoCard',
@@ -753,7 +756,8 @@ export default {
       showNotesInput: false,
       loadingTags: false,
       loadingAnnotations: false,
-      showUpload: false
+      showUpload: false,
+      image: ''
     }
   },
   watch: {
@@ -791,6 +795,15 @@ export default {
       if ('apikey' in this.resource) {
         this.getUserKeys()
       }
+    },
+    async templateIcon (id) {
+      if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm'].includes(this.$route?.path?.split('/')[1]) && this.resource?.icon?.base64image) {
+        this.image = this.resource.icon.base64image
+      }
+      if (id && ['deployVirtualMachine'].includes(this.$route.path.split('/')[2])) {
+        await this.fetchTemplate(id)
+      }
+      return this.image
     }
   },
   created () {
@@ -810,6 +823,23 @@ export default {
       }
 
       return null
+    },
+    templateIcon () {
+      return this.resource.templateid
+    },
+    resourceIcon () {
+      if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm'].includes(this.$route?.path?.split('/')[1]) && this.resource?.icon?.base64image) {
+        return this.resource.icon.base64image
+      }
+      return null
+    }
+  },
+  mounted () {
+    if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm'].includes(this.$route?.path?.split('/')[1]) && this.resource?.icon?.base64image) {
+      this.image = this.resource.icon.base64image
+    }
+    if (this.resource.templateid) {
+      this.fetchTemplate(this.resource.templateid)
     }
   },
   methods: {
@@ -822,8 +852,26 @@ export default {
         this.showUpload = false
       }
     },
-    getImg (image) {
-      return 'data:image/png;charset=utf-8;base64, ' + image
+    getImg () {
+      return 'data:image/png;charset=utf-8;base64, ' + (this.image || this.resource?.icon?.base64image)
+    },
+    fetchTemplate (templateid) {
+      return new Promise((resolve, reject) => {
+        api('listTemplates', {
+          id: templateid,
+          listall: true,
+          templatefilter: 'all',
+          showicon: true
+        }).then((json) => {
+          const response = json?.listtemplatesresponse?.template || []
+          if (response?.[0]?.icon) {
+            this.image = response[0].icon?.base64image
+            resolve(this.image)
+          }
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
     },
     setData () {
       if (this.resource.nic && this.resource.nic.length > 0) {

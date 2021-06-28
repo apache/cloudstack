@@ -73,7 +73,7 @@
           <tooltip-button type="dashed" size="small" icon="login" @click="changeProject(record)" />
         </span>
         <span v-if="['template', 'iso'].includes($route.path.split('/')[1]) && record.icon && record.icon.base64image">
-          <resource-icon :resource="record" size="1x" style="margin-right: 5px"/>
+          <resource-icon :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
         </span>
         <span v-else>
           <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />

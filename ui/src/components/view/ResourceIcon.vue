@@ -16,27 +16,27 @@
 // under the License.
 
 <template>
-  <img :src="getImg(resource.icon.base64image)" :style="{ height: size === '4x' ? '56px' : '16px', width: size === '4x' ? '56px' : '16px' }" />
+  <img :src="getImg()" :height="size === '4x' ? '56px' : '16px'" :width="size === '4x' ? '56px' : '16px'" />
 </template>
 <script>
 export default {
   name: 'ResourceIcon',
   props: {
-    resource: {
-      type: Object,
+    image: {
+      type: String,
       required: true
     },
     size: {
       type: String,
-      default: 'lg'
+      default: '4x'
     }
   },
   data () {
     return {}
   },
   methods: {
-    getImg (image) {
-      return 'data:image/png;charset=utf-8;base64, ' + image
+    getImg () {
+      return 'data:image/png;charset=utf-8;base64, ' + this.image
     }
   }
 }
