@@ -124,7 +124,16 @@ public interface StorageManager extends StorageService {
             "Storage",
             "60",
             "Timeout (in secs) for the storage pool client connection timeout (for managed pools). Currently only supported for PowerFlex.",
-            true,
+            false,
+            ConfigKey.Scope.StoragePool,
+            null);
+
+    ConfigKey<Integer> STORAGE_POOL_CLIENT_MAX_CONNECTIONS = new ConfigKey<>(Integer.class,
+            "storage.pool.client.max.connections",
+            "Storage",
+            "100",
+            "Maximum connections for the storage pool client (for managed pools). Currently only supported for PowerFlex.",
+            false,
             ConfigKey.Scope.StoragePool,
             null);
 

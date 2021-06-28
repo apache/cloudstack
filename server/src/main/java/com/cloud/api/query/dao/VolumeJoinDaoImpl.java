@@ -34,7 +34,6 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.Storage;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
 import com.cloud.user.AccountManager;
@@ -135,9 +134,6 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
             volResponse.setState(volume.getState().toString());
         }
         if (volume.getState() == Volume.State.UploadOp) {
-            // com.cloud.storage.VolumeHostVO volumeHostRef =
-            // ApiDBUtils.findVolumeHostRef(volume.getId(),
-            // volume.getDataCenterId());
             volResponse.setSize(volume.getVolumeStoreSize());
             volResponse.setCreated(volume.getCreatedOnStore());
 
@@ -145,7 +141,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
                 volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat()).toString());
             if (volume.getDownloadState() != Status.DOWNLOADED) {
                 String volumeStatus = "Processing";
-                if (volume.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
+                if (volume.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
                     if (volume.getDownloadPercent() == 100) {
                         volumeStatus = "Checking Volume";
                     } else {
@@ -154,14 +150,14 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
                     volResponse.setState("Uploading");
                 } else {
                     volumeStatus = volume.getErrorString();
-                    if (volume.getDownloadState() == VMTemplateHostVO.Status.NOT_DOWNLOADED) {
+                    if (volume.getDownloadState() == Status.NOT_DOWNLOADED) {
                         volResponse.setState("UploadNotStarted");
                     } else {
                         volResponse.setState("UploadError");
                     }
                 }
                 volResponse.setStatus(volumeStatus);
-            } else if (volume.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
+            } else if (volume.getDownloadState() == Status.DOWNLOADED) {
                 volResponse.setStatus("Upload Complete");
                 volResponse.setState("Uploaded");
             } else {

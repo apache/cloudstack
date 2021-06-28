@@ -926,7 +926,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             self.cleanup.append(vm)
             self.fail("User is allowed to deploy VM  in a network that is not self-owned ")
         except Exception as e:
-            self.debug("When user tries to deploy vm in a  network that does not belong to him %s" % e)
+            self.debug("When user tries to deploy vm in a network that does not belong to the user %s" % e)
             if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.UNABLE_TO_USE_NETWORK):
                 self.fail("Error message validation failed when User is allowed to deploy VM  in a network that is not self-owned ")
 

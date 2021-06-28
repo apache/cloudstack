@@ -862,22 +862,28 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         _accountMgr.checkAccess(caller, null, true, userVm);
-        String password = null;
-        String sshPublicKey = s.getPublicKey();
-        if (template != null && template.isEnablePassword()) {
-            password = _mgr.generateRandomPassword();
-        }
 
-        boolean result = resetVMSSHKeyInternal(vmId, sshPublicKey, password);
+        String sshPublicKey = s.getPublicKey();
+
+        boolean result = resetVMSSHKeyInternal(vmId, sshPublicKey);
 
         if (!result) {
             throw new CloudRuntimeException("Failed to reset SSH Key for the virtual machine ");
         }
-        userVm.setPassword(password);
+
+        removeEncryptedPasswordFromUserVmVoDetails(userVm);
+
         return userVm;
     }
 
-    private boolean resetVMSSHKeyInternal(Long vmId, String sshPublicKey, String password) throws ResourceUnavailableException, InsufficientCapacityException {
+    protected void removeEncryptedPasswordFromUserVmVoDetails(UserVmVO userVmVo) {
+        Map<String, String> details = userVmVo.getDetails();
+        details.remove(VmDetailConstants.ENCRYPTED_PASSWORD);
+        userVmVo.setDetails(details);
+        _vmDao.saveDetails(userVmVo);
+    }
+
+    private boolean resetVMSSHKeyInternal(Long vmId, String sshPublicKey) throws ResourceUnavailableException, InsufficientCapacityException {
         Long userId = CallContext.current().getCallingUserId();
         VMInstanceVO vmInstance = _vmDao.findById(vmId);
 
@@ -894,10 +900,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vmInstance);
 
-        if (template.isEnablePassword()) {
-            vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
-        }
-
         UserDataServiceProvider element = _networkMgr.getSSHKeyResetProvider(defaultNetwork);
         if (element == null) {
             throw new CloudRuntimeException("Can't find network element for " + Service.UserData.getName() + " provider needed for SSH Key reset");
@@ -912,11 +914,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             final UserVmVO userVm = _vmDao.findById(vmId);
             _vmDao.loadDetails(userVm);
             userVm.setDetail(VmDetailConstants.SSH_PUBLIC_KEY, sshPublicKey);
-            if (template.isEnablePassword()) {
-                userVm.setPassword(password);
-                //update the encrypted password in vm_details table too
-                encryptAndStorePassword(userVm, password);
-            }
             _vmDao.saveDetails(userVm);
 
             if (vmInstance.getState() == State.Stopped) {
@@ -1754,7 +1751,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("Allocating ip to guest nic " + nicVO.getUuid() + " failed, please choose another ip");
                 }
 
-                final IPAddressVO newIp = _ipAddressDao.findByIpAndDcId(dc.getId(), ipaddr);
+                final IPAddressVO newIp = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), ipaddr);
                 final Vlan vlan = _vlanDao.findById(newIp.getVlanId());
                 nicVO.setIPv4Gateway(vlan.getVlanGateway());
                 nicVO.setIPv4Netmask(vlan.getVlanNetmask());
