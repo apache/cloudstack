@@ -224,7 +224,7 @@ class sysConfigSUSE(sysConfigAgentSUSE):
         self.services = [securityPolicyConfigSUSE(self),
                          networkConfigSUSE(self),
                          libvirtConfigSUSE(self),
-                         firewallConfigAgent(self), # TODO
+                         firewallConfigAgent(self),
                          nfsConfig(self),
                          cloudAgentConfig(self)]
 
