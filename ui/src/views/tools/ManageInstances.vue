@@ -190,6 +190,9 @@
                   size="middle"
                   :rowClassName="getRowClassName"
                 >
+                  <a slot="name" slot-scope="text, record" href="javascript:;">
+                    <router-link :to="{ path: '/vm/' + record.id }">{{ text }}</router-link>
+                  </a>
                   <template slot="state" slot-scope="text">
                     <status :text="text ? text : ''" displayText />
                   </template>
@@ -290,7 +293,8 @@ export default {
       {
         title: this.$t('label.name'),
         dataIndex: 'name',
-        width: 100
+        width: 100,
+        scopedSlots: { customRender: 'name' }
       },
       {
         title: this.$t('label.instancename'),
@@ -357,14 +361,17 @@ export default {
       managedInstances: [],
       managedInstancesSelectedRowKeys: [],
       showUnmanageForm: false,
-      selectedUnmanagedInstance: {}
+      selectedUnmanagedInstance: {},
+      query: {}
     }
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
   created () {
-    this.originalSize = 1
+    console.log('---------------created', this.$route.query)
+    this.page.unmanaged = parseInt(this.$route.query.unmanagedpage || 1)
+    this.page.managed = parseInt(this.$route.query.managedpage || 1)
     this.fetchData()
   },
   computed: {
@@ -501,28 +508,7 @@ export default {
 
             this.$forceUpdate()
           })
-          if (name === 'zones' || name === 'pods' || name === 'clusters') {
-            let paramid = ''
-            if (this.options[name].length === 1) {
-              paramid = (this.options[name])[0].id
-            }
-            if (paramid) {
-              this.form.getFieldDecorator([param.field], { initialValue: paramid })
-              if (name === 'zones') {
-                this.onSelectZoneId(paramid)
-              } else if (name === 'pods') {
-                this.form.setFieldsValue({
-                  podid: paramid
-                })
-                this.onSelectPodId(paramid)
-              } else if (name === 'clusters') {
-                this.form.setFieldsValue({
-                  clusterid: paramid
-                })
-                this.onSelectClusterId(paramid)
-              }
-            }
-          }
+          this.handleFetchOptionsSuccess(name, param)
         })
       }).catch(function (error) {
         console.log(error.stack)
@@ -537,42 +523,92 @@ export default {
       }
       return 'dark-row'
     },
+    handleFetchOptionsSuccess (name, param) {
+      if (['zones', 'pods', 'clusters'].includes(name)) {
+        let paramid = ''
+        const query = Object.assign({}, this.$route.query)
+        if (query[param.field] && _.find(this.options[name], (option) => option.id === query[param.field])) {
+          paramid = query[param.field]
+        }
+        if (!paramid && this.options[name].length === 1) {
+          paramid = (this.options[name])[0].id
+        }
+        if (paramid) {
+          this.form.getFieldDecorator([param.field], { initialValue: paramid })
+          if (name === 'zones') {
+            this.onSelectZoneId(paramid)
+          } else if (name === 'pods') {
+            this.form.setFieldsValue({
+              podid: paramid
+            })
+            this.onSelectPodId(paramid)
+          } else if (name === 'clusters') {
+            this.form.setFieldsValue({
+              clusterid: paramid
+            })
+            this.onSelectClusterId(paramid)
+          }
+        }
+      }
+    },
+    updateQuery (field, value) {
+      const query = Object.assign({}, this.$route.query)
+      console.log(field, value, query[field])
+      if (query[field] === value + '') {
+        return
+      }
+      query[field] = value
+      if (['zoneid', 'podid', 'clusterid'].includes(field)) {
+        query.managedpage = 1
+        query.unmanagedpage = 1
+      }
+      this.$router.push({ query })
+    },
+    resetListsPage () {
+      this.page.unmanaged = 1
+      this.page.managed = 1
+    },
     onSelectZoneId (value) {
       this.zoneId = value
       this.podId = null
       this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
+      this.resetListsPage()
       this.form.setFieldsValue({
         clusterid: undefined,
         podid: undefined
       })
+      this.updateQuery('zoneid', value)
       this.fetchOptions(this.params.pods, 'pods')
     },
     onSelectPodId (value) {
       this.podId = value
+      this.resetListsPage()
       this.form.setFieldsValue({
         clusterid: undefined
       })
-
+      this.updateQuery('podid', value)
       this.fetchOptions(this.params.clusters, 'clusters', value)
     },
     onSelectClusterId (value) {
       this.clusterId = value
-      this.page.unmanaged = 1
-      this.page.managed = 1
-      if (this.selectedCluster.hypervisortype === 'VMware') {
-        this.fetchInstances()
-      }
+      this.resetListsPage()
+      this.updateQuery('clusterid', value)
+      this.fetchInstances()
     },
     fetchInstances () {
-      this.fetchUnmanagedInstances()
-      this.fetchManagedInstances()
+      if (this.selectedCluster.hypervisortype === 'VMware') {
+        this.fetchUnmanagedInstances()
+        this.fetchManagedInstances()
+      }
     },
     fetchUnmanagedInstances (page, pageSize) {
       const params = {
         clusterid: this.clusterId
       }
-      this.page.unmanaged = page || this.page.unmanaged
+      const query = Object.assign({}, this.$route.query)
+      this.page.unmanaged = page || query.unmanagedpage || this.page.unmanaged
+      this.updateQuery('unmanagedpage', this.page.unmanaged)
       params.page = this.page.unmanaged
       this.pageSize.unmanaged = pageSize || this.pageSize.unmanaged
       params.pagesize = this.pageSize.unmanaged
@@ -605,7 +641,9 @@ export default {
         listall: true,
         clusterid: this.clusterId
       }
-      this.page.managed = page || this.page.managed
+      const query = Object.assign({}, this.$route.query)
+      this.page.managed = page || query.managedpage || this.page.managed
+      this.updateQuery('managedpage', this.page.managed)
       params.page = this.page.managed
       this.pageSize.managed = pageSize || this.pageSize.managed
       params.pagesize = this.pageSize.managed
