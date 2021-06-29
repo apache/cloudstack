@@ -414,7 +414,7 @@ export default {
       }
     })
     eventBus.$on('refresh-icon', () => {
-      if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm'].includes(this.$route?.path?.split('/')[1]) && this.resource?.icon?.base64image) {
+      if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm'].includes(this.$route?.path?.split('/')[1])) {
         this.fetchData()
       }
     })

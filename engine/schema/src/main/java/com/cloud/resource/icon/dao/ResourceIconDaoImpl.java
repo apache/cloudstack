@@ -71,6 +71,7 @@ public class ResourceIconDaoImpl extends GenericDaoBase<ResourceIconVO, Long> im
             response.setResourceId(resourceIcon.getResourceUuid());
             response.setResourceType(resourceIcon.getResourceType());
             response.setImage(resourceIcon.getIcon());
+            response.setObjectName(ApiConstants.RESOURCE_ICON);
             iconResponses.add(response);
         }
         return iconResponses;

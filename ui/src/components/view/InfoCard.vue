@@ -30,8 +30,8 @@
                 <a-icon type="cloud-upload-o" class="upload-icon"/>
               </div> -->
               <slot name="avatar">
-                <span v-if="resource.icon && resource.icon.base64image || image || resourceIcon">
-                  <img :src="getImg()" height="56px" width="56px" />
+                <span v-if="resource.icon && resource.icon.base64image || images.template || resourceIcon">
+                  <img :src="getImage(images.template)" height="56px" width="56px" />
                 </span>
                 <span v-else>
                   <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" @update-osname="(name) => this.resource.ostypename = name"/>
@@ -130,8 +130,8 @@
         <div class="resource-detail-item" v-if="resource.ostypename && resource.ostypeid">
           <div class="resource-detail-item__label">{{ $t('label.ostypename') }}</div>
           <div class="resource-detail-item__details">
-            <span v-if="resource.icon && resource.icon.base64image || image">
-              <img :src="getImg()" height="16px" width="16px" />
+            <span v-if="resource.icon && resource.icon.base64image || images.template">
+              <img :src="getImage(images.template)" height="16px" width="16px" />
             </span>
             <os-logo v-else :osId="resource.ostypeid" :osName="resource.ostypename" size="lg" style="margin-left: -1px" />
             <span style="margin-left: 8px">{{ resource.ostypename }}</span>
@@ -508,7 +508,10 @@
         <div class="resource-detail-item" v-if="resource.zoneid">
           <div class="resource-detail-item__label">{{ $t('label.zone') }}</div>
           <div class="resource-detail-item__details">
-            <a-icon type="global" />
+            <span v-if="images.zone">
+              <img :src="getImage(images.zone)" height="16px" width="16px" style="marginRight: 10px"/>
+            </span>
+            <a-icon v-else type="global" />
             <router-link v-if="$router.resolve('/zone/' + resource.zoneid).route.name !== '404'" :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
             <span v-else>{{ resource.zone || resource.zonename || resource.zoneid }}</span>
           </div>
@@ -760,7 +763,10 @@ export default {
       loadingTags: false,
       loadingAnnotations: false,
       showUpload: false,
-      image: ''
+      images: {
+        zone: '',
+        template: ''
+      }
     }
   },
   watch: {
@@ -804,9 +810,13 @@ export default {
         this.image = this.resource.icon.base64image
       }
       if (id && ['deployVirtualMachine'].includes(this.$route.path.split('/')[2])) {
-        await this.fetchTemplate(id)
+        await this.fetchResourceIcon(id, 'template')
       }
       return this.image
+    },
+    async zoneIcon (id) {
+      await this.fetchResourceIcon(id, 'zone')
+      return this.images.zone
     }
   },
   created () {
@@ -830,6 +840,9 @@ export default {
     templateIcon () {
       return this.resource.templateid
     },
+    zoneIcon () {
+      return this.resource.zoneid
+    },
     resourceIcon () {
       if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm'].includes(this.$route?.path?.split('/')[1]) && this.resource?.icon?.base64image) {
         return this.resource.icon.base64image
@@ -839,10 +852,11 @@ export default {
   },
   mounted () {
     if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm'].includes(this.$route?.path?.split('/')[1]) && this.resource?.icon?.base64image) {
-      this.image = this.resource.icon.base64image
+      const type = this.getResourceType()
+      this.images[type] = this.resource.icon.base64image
     }
     if (this.resource.templateid) {
-      this.fetchTemplate(this.resource.templateid)
+      this.fetchResourceIcon(this.resource.templateid, 'template')
     }
   },
   methods: {
@@ -855,26 +869,36 @@ export default {
         this.showUpload = false
       }
     },
-    getImg () {
-      return 'data:image/png;charset=utf-8;base64, ' + (this.image || this.resource?.icon?.base64image)
+    getResourceType () {
+      const type = this.$route.path.split('/')[1]
+      if (type === 'vm') {
+        return 'UserVM'
+      } else if (type === 'accountuser') {
+        return 'User'
+      } else {
+        return type
+      }
     },
-    fetchTemplate (templateid) {
-      return new Promise((resolve, reject) => {
-        api('listTemplates', {
-          id: templateid,
-          listall: true,
-          templatefilter: 'all',
-          showicon: true
-        }).then((json) => {
-          const response = json?.listtemplatesresponse?.template || []
-          if (response?.[0]?.icon) {
-            this.image = response[0].icon?.base64image
-            resolve(this.image)
-          }
-        }).catch(error => {
-          reject(error.response.headers['x-description'])
+    getImage (image) {
+      return 'data:image/png;charset=utf-8;base64, ' + (image || this.resource?.icon?.base64image)
+    },
+    fetchResourceIcon (resourceid, type) {
+      if (resourceid) {
+        return new Promise((resolve, reject) => {
+          api('listResourceIcon', {
+            resourceids: resourceid,
+            resourcetype: type
+          }).then(json => {
+            const response = json.listresourceiconresponse.icon || []
+            if (response?.[0]) {
+              this.images[type] = response[0].base64image
+              resolve(this.images)
+            }
+          }).catch(error => {
+            reject(error)
+          })
         })
-      })
+      }
     },
     setData () {
       if (this.resource.nic && this.resource.nic.length > 0) {
