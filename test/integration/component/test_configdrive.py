@@ -654,8 +654,7 @@ class ConfigDriveUtils:
         orig_state = self.template.passwordenabled
         self.debug("Updating guest VM template to password enabled "
                    "from %s to %s" % (orig_state, new_state))
-        if orig_state != new_state:
-            self.update_template(passwordenabled=new_state)
+        self.update_template(passwordenabled=new_state)
         self.assertEqual(self.template.passwordenabled, new_state,
                          "Guest VM template is not password enabled")
         return orig_state
@@ -851,7 +850,7 @@ class ConfigDriveUtils:
 
         self.debug("SSHing into the VM %s" % vm.name)
 
-        ssh = self.ssh_into_VM(vm, public_ip, reconnect=reconnect)
+        ssh = self.ssh_into_VM(vm, public_ip, reconnect=reconnect, keypair=vm.key_pair)
 
         d = {x.name: x for x in ssh.logger.handlers}
         ssh.logger.handlers = list(d.values())
@@ -1532,12 +1531,14 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         self.debug("SSH into VM with ID - %s on public IP address - %s" %
                    (vm.id, public_ip.ipaddress.ipaddress))
         tries = 1 if negative_test else 3
+        private_key_file_location = keypair.private_key_file if keypair else None
 
         @retry(tries=tries)
         def retry_ssh():
             ssh_client = vm.get_ssh_client(
                 ipaddress=public_ip.ipaddress.ipaddress,
                 reconnect=reconnect,
+                keyPairFileLocation=private_key_file_location,
                 retries=3 if negative_test else 30
             )
             self.debug("Successful to SSH into VM with ID - %s on "
@@ -1959,7 +1960,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         # =====================================================================
         self.debug("+++ Scenario: "
                    "Update Userdata on a VM that is not password enabled")
-        self.update_template(passwordenabled=False)
+        self.given_template_password_enabled_is(False)
         vm1 = self.when_I_deploy_a_vm_with_keypair_in(network1)
 
         public_ip_1 = \
@@ -2155,7 +2156,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         self.debug("+++ Scenario: "
                    "Update Userdata on a VM that is not password enabled")
 
-        self.update_template(passwordenabled=False)
+        self.given_template_password_enabled_is(False)
 
         vm = self.when_I_deploy_a_vm(network1,
                                      keypair=self.keypair.name)
@@ -2290,7 +2291,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         self.delete(vm1, expunge=True)
 
         self.given_config_drive_provider_is("Enabled")
-        self.update_template(passwordenabled=False)
+        self.given_template_password_enabled_is(False)
 
         vm1 = self.create_VM(
             [shared_network.network],
