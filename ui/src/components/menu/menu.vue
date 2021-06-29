@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+<script>
 
 import Menu from 'ant-design-vue/es/menu'
 import Icon from 'ant-design-vue/es/icon'
@@ -124,15 +125,17 @@ export default {
       }
       const on = {
         shortkey: () => {
-          this.handleClickParentMenu(menu)
+          console.log('hello')
+          this.$router.push({ path: target })
         }
       }
+      // console.log(typeof (menu.meta.shortKey))
       return (
-        <Item {...{ key: menu.path }}>
-          <router-link {...{ props, on }}>
+        <Item vShortkey={menu.meta.shortKey} {...{ key: menu.path, on: on }} >
+          <router-link {...{ props }}>
             {this.renderIcon(menu.meta.icon, menu)}
-            <span vShortkey={menu.meta.shortKey}>{this.$t(menu.meta.title)}</span>
-            {this.$store.getters.showshortkeys ? <span>{menu.meta.shortKey}</span> : ''}
+            <span>{this.$t(menu.meta.title)}</span>
+            {this.$store.getters.showshortkeys ? menu.meta.shortKey ? <span class="show-shortkey" >{menu.meta.shortKey}</span> : '' : ''}
           </router-link>
         </Item>
       )
@@ -155,7 +158,7 @@ export default {
           <span slot="title">
             {this.renderIcon(menu.meta.icon, menu)}
             <span vShortkey={menu.meta.shortKey} {...{ on: on }}>{this.$t(menu.meta.title)}</span>
-            {this.$store.getters.showshortkeys ? <span >{menu.meta.shortKey}</span> : ''}
+            {this.$store.getters.showshortkeys ? <span>{menu.meta.shortKey}</span> : ''}
           </span>
           {itemArr}
         </SubMenu>
@@ -169,10 +172,10 @@ export default {
       const on = {
         click: () => {
           this.handleClickParentMenu(menuItem)
-        },
-        shortkey: () => {
-          this.handleClickParentMenu(menuItem)
         }
+        // shortkey: () => {
+        //   this.handleClickParentMenu(menuItem)
+        // }
       }
       typeof (icon) === 'object' ? props.component = icon : props.type = icon
       return (
@@ -201,6 +204,10 @@ export default {
         this.selectedKeys = obj.selectedKeys
         this.$emit('select', obj)
       },
+      // shortkey: obj => {
+      //   this.selectedKeys = obj.selectedKeys
+      //   this.$emit('select', obj)
+      // },
       openChange: this.onOpenChange
     }
     const menuTree = menu.map(item => {
@@ -211,9 +218,21 @@ export default {
     })
     // {...{ props, on: on }}
     return (
-      <Menu vModel={this.selectedKeys} {...{ props, on: on }}>
+      <Menu vModel={this.selectedKeys} {...{ props, on }} >
         {menuTree}
       </Menu>
     )
   }
 }
+</script>
+<style scoped>
+.show-shortkey {
+ position: absolute;
+ /* bottom: 20px;
+ right: 5px; */
+ background-color: rgba(0, 0, 0, .90);
+ padding: 0px 2px 0px 2px;
+ border-radius: 4px;
+ color: #e8e8e8;
+}
+</style>

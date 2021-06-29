@@ -53,7 +53,7 @@
           </a>
         </a-menu-item>
         <a-menu-divider/>
-        <a-menu-item class="user-menu-item" key="3">
+        <a-menu-item class="user-menu-item" key="4">
           <a href="javascript:;" @click="handleLogout">
             <a-icon class="user-menu-item-icon" type="logout"/>
             <span class="user-menu-item-name">{{ $t('label.logout') }}</span>

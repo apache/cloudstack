@@ -22,13 +22,13 @@ export default {
   name: 'compute',
   title: 'label.compute',
   icon: 'cloud',
-  shortKey: "['c']",
+  // shortKey: "['c']",
   children: [
     {
       name: 'vm',
       title: 'label.instances',
       icon: 'desktop',
-      shortKey: "['c','i']",
+      shortKey: ['c', 'i'],
       docHelp: 'adminguide/virtual_machines.html',
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
@@ -403,7 +403,7 @@ export default {
       name: 'kubernetes',
       title: 'label.kubernetes',
       icon: kubernetes,
-      shortKey: "['c','k']",
+      shortKey: "['k']",
       docHelp: 'plugins/cloudstack-kubernetes-service.html',
       permission: ['listKubernetesClusters'],
       columns: () => {
@@ -485,7 +485,7 @@ export default {
       name: 'vmgroup',
       title: 'label.instance.groups',
       icon: 'gold',
-      shortKey: "['c','g']",
+      shortKey: ['c', 'g'],
       docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
       permission: ['listInstanceGroups'],
       columns: ['name', 'account'],
@@ -523,7 +523,7 @@ export default {
       name: 'ssh',
       title: 'label.ssh.key.pairs',
       icon: 'key',
-      shortKey: "['c','s']",
+      shortKey: "['c', 'l']",
       docHelp: 'adminguide/virtual_machines.html#using-ssh-keys-for-authentication',
       permission: ['listSSHKeyPairs'],
       columns: () => {

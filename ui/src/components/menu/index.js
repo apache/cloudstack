@@ -15,5 +15,5 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import SMenu from './menu'
+import SMenu from './menu.vue'
 export default SMenu
