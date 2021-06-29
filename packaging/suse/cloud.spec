@@ -628,6 +628,9 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %attr(0755,root,root) %{_bindir}/cloudstack-setup-baremetal
 
 %changelog
+* Tue Jun 29 2021 David Jumani <dj.davidjumani1994@gmail.com> 4.16.0
+- Adding SUSE 15 support
+
 * Thu Apr 30 2015 Rohit Yadav <bhaisaab@apache.org> 4.6.0
 - Remove awsapi package
 
