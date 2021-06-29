@@ -23,18 +23,18 @@
     :autoAdjustOverflow="true"
     :arrowPointAtCenter="true"
     overlayClassName="header-notice-popover">
-    <template slot="content">
+    <template #content>
       <a-spin :spinning="loading">
         <a-list style="min-width: 200px; max-width: 300px">
           <a-list-item>
             <a-list-item-meta :title="$t('label.notifications')">
-              <a-avatar :style="{backgroundColor: '#6887d0', verticalAlign: 'middle'}" icon="notification" slot="avatar"/>
-              <a-button size="small" slot="description" @click="clearJobs">{{ $t('label.clear.list') }}</a-button>
+              <template #avatar><a-avatar :style="{backgroundColor: '#6887d0', verticalAlign: 'middle'}" icon="notification"/></template>
+              <template #description><a-button size="small" @click="clearJobs">{{ $t('label.clear.list') }}</a-button></template>
             </a-list-item-meta>
           </a-list-item>
           <a-list-item v-for="(job, index) in jobs" :key="index">
             <a-list-item-meta :title="job.title" :description="job.description">
-              <a-avatar :style="notificationAvatar[job.status].style" :icon="notificationAvatar[job.status].icon" slot="avatar"/>
+              <template #avatar><a-avatar :style="notificationAvatar[job.status].style" :icon="notificationAvatar[job.status].icon"/></template>
             </a-list-item-meta>
           </a-list-item>
         </a-list>
@@ -42,7 +42,7 @@
     </template>
     <span @click="showNotifications" class="header-notice-opener">
       <a-badge :count="jobs.length">
-        <a-icon class="header-notice-icon" type="bell" />
+        <BellOutlined class="header-notice-icon" />
       </a-badge>
     </span>
   </a-popover>
@@ -119,7 +119,7 @@ export default {
       }
     }
   },
-  beforeDestroy () {
+  beforeMount () {
     clearInterval(this.poller)
   },
   created () {

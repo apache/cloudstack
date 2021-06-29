@@ -25,15 +25,17 @@
       @change="changeAccount"
       @focus="fetchData" >
 
-      <a-tooltip placement="bottom" slot="suffixIcon">
-        <template slot="title">
-          <span>{{ $t('label.domain') }}</span>
-        </template>
-        <span style="font-size: 20px; color: #999; margin-top: -5px">
-          <a-icon v-if="!loading" type="block" />
-          <a-icon v-else type="loading" />
-        </span>
-      </a-tooltip>
+      <template #suffixIcon>
+        <a-tooltip placement="bottom">
+          <template #title>
+            <span>{{ $t('label.domain') }}</span>
+          </template>
+          <span style="font-size: 20px; color: #999; margin-top: -5px">
+            <BlockOutlined v-if="!loading" />
+            <LoadingOutlined v-else />
+          </span>
+        </a-tooltip>
+      </template>
 
       <a-select-option v-for="(account, index) in samlAccounts" :key="index">
         {{ `${account.accountName} (${account.domainName})` }}

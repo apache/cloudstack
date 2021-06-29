@@ -22,7 +22,11 @@ export default {
   props: {
     icon: {
       type: String,
-      required: true
+      default: ''
+    },
+    svgIcon: {
+      type: Object,
+      default: {}
     },
     props: {
       type: Object,
@@ -33,7 +37,26 @@ export default {
       default: {}
     }
   },
+  methods: {
+    renderIcon () {
+      return h(resolveComponent(this.icon), this.props, this.event)
+    },
+    renderSvgIcon () {
+      const props = Object.assign({}, this.props)
+      props.width = '1em'
+      props.height = '1em'
+      props.class = 'custom-icon'
+
+      return h('span', { role: 'img', class: 'anticon' }, [
+        h(this.svgIcon, { ...props }, this.event)
+      ])
+    }
+  },
   render () {
-    return h(resolveComponent(this.icon), this.props, this.event)
+    if (this.icon) {
+      return this.renderIcon()
+    }
+
+    return this.renderSvgIcon()
   }
 }

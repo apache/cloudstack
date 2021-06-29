@@ -48,7 +48,7 @@ export default {
   mounted () {
     document.body.classList.add('userLayout')
   },
-  beforeDestroy () {
+  beforeUnmount () {
     document.body.classList.remove('userLayout')
   }
 }
