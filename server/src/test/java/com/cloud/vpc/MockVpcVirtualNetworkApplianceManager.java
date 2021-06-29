@@ -39,8 +39,10 @@ import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.Nic;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
@@ -109,7 +111,7 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      * @see com.cloud.network.VirtualNetworkApplianceService#rebootRouter(long, boolean)
      */
     @Override
-    public VirtualRouter rebootRouter(final long routerId, final boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException {
+    public VirtualRouter rebootRouter(final long routerId, final boolean reprogramNetwork, final boolean forced) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -249,8 +251,8 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
     }
 
     @Override
-    public boolean performRouterHealthChecks(long routerId) {
-        return false;
+    public Pair<Boolean, String> performRouterHealthChecks(long routerId) {
+        return null;
     }
 
     @Override
@@ -279,5 +281,11 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
     public boolean startSite2SiteVpn(DomainRouterVO router) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public <T extends VirtualRouter> void collectNetworkStatistics(T router, Nic nic) {
+        // TODO Auto-generated method stub
+        return;
     }
 }

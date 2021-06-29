@@ -21,7 +21,7 @@
       <div class="form">
         <div class="form__item">
           <div class="form__label">{{ $t('label.sourcecidr') }}</div>
-          <a-input v-model="newRule.cidrlist"></a-input>
+          <a-input v-model="newRule.cidrlist" autoFocus></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.destcidr') }}</div>
@@ -78,7 +78,7 @@
         {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : 'All' }}
       </template>
       <template slot="actions" slot-scope="record">
-        <a-button :disabled="!('deleteEgressFirewallRule' in $store.getters.apis)" shape="circle" type="danger" icon="delete" @click="deleteRule(record)" />
+        <tooltip-button :tooltip="$t('label.delete')" :disabled="!('deleteEgressFirewallRule' in $store.getters.apis)" type="danger" icon="delete" @click="deleteRule(record)" />
       </template>
     </a-table>
     <a-pagination
@@ -102,9 +102,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'EgressRulesTab',
+  components: {
+    TooltipButton
+  },
   props: {
     resource: {
       type: Object,
@@ -156,7 +160,7 @@ export default {
       ]
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   filters: {

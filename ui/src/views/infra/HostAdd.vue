@@ -21,7 +21,7 @@
 
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.zonenamelabel') }}</div>
-        <a-select v-model="zoneId" @change="fetchPods">
+        <a-select v-model="zoneId" @change="fetchPods" autoFocus>
           <a-select-option
             v-for="zone in zonesList"
             :value="zone.id"
@@ -171,7 +171,7 @@ export default {
       }
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {

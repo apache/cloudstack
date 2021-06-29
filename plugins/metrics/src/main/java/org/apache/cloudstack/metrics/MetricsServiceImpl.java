@@ -264,9 +264,6 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             final Double memoryThreshold = AlertManager.MemoryCapacityThreshold.valueIn(clusterId);
             final Float cpuDisableThreshold = DeploymentClusterPlanner.ClusterCPUCapacityDisableThreshold.valueIn(clusterId);
             final Float memoryDisableThreshold = DeploymentClusterPlanner.ClusterMemoryCapacityDisableThreshold.valueIn(clusterId);
-            // Over commit ratios
-            final Double cpuOvercommitRatio = findRatioValue(ApiDBUtils.findClusterDetails(clusterId, "cpuOvercommitRatio"));
-            final Double memoryOvercommitRatio = findRatioValue(ApiDBUtils.findClusterDetails(clusterId, "memoryOvercommitRatio"));
 
             Long upInstances = 0L;
             Long totalInstances = 0L;
@@ -283,11 +280,11 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             }
             metricsResponse.setPowerState(hostResponse.getOutOfBandManagementResponse().getPowerState());
             metricsResponse.setInstances(upInstances, totalInstances);
-            metricsResponse.setCpuTotal(hostResponse.getCpuNumber(), hostResponse.getCpuSpeed(), cpuOvercommitRatio);
+            metricsResponse.setCpuTotal(hostResponse.getCpuNumber(), hostResponse.getCpuSpeed());
             metricsResponse.setCpuUsed(hostResponse.getCpuUsed(), hostResponse.getCpuNumber(), hostResponse.getCpuSpeed());
             metricsResponse.setCpuAllocated(hostResponse.getCpuAllocated(), hostResponse.getCpuNumber(), hostResponse.getCpuSpeed());
             metricsResponse.setLoadAverage(hostResponse.getAverageLoad());
-            metricsResponse.setMemTotal(hostResponse.getMemoryTotal(), memoryOvercommitRatio);
+            metricsResponse.setMemTotal(hostResponse.getMemoryTotal());
             metricsResponse.setMemAllocated(hostResponse.getMemoryAllocated());
             metricsResponse.setMemUsed(hostResponse.getMemoryUsed());
             metricsResponse.setNetworkRead(hostResponse.getNetworkKbsRead());
@@ -295,13 +292,13 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             // CPU thresholds
             metricsResponse.setCpuUsageThreshold(hostResponse.getCpuUsed(), cpuThreshold);
             metricsResponse.setCpuUsageDisableThreshold(hostResponse.getCpuUsed(), cpuDisableThreshold);
-            metricsResponse.setCpuAllocatedThreshold(hostResponse.getCpuAllocated(), cpuOvercommitRatio, cpuThreshold);
-            metricsResponse.setCpuAllocatedDisableThreshold(hostResponse.getCpuAllocated(), cpuOvercommitRatio, cpuDisableThreshold);
+            metricsResponse.setCpuAllocatedThreshold(hostResponse.getCpuAllocated(), cpuThreshold);
+            metricsResponse.setCpuAllocatedDisableThreshold(hostResponse.getCpuAllocated(), cpuDisableThreshold);
             // Memory thresholds
             metricsResponse.setMemoryUsageThreshold(hostResponse.getMemoryUsed(), hostResponse.getMemoryTotal(), memoryThreshold);
             metricsResponse.setMemoryUsageDisableThreshold(hostResponse.getMemoryUsed(), hostResponse.getMemoryTotal(), memoryDisableThreshold);
-            metricsResponse.setMemoryAllocatedThreshold(hostResponse.getMemoryAllocated(), hostResponse.getMemoryTotal(), memoryOvercommitRatio, memoryThreshold);
-            metricsResponse.setMemoryAllocatedDisableThreshold(hostResponse.getMemoryAllocated(), hostResponse.getMemoryTotal(), memoryOvercommitRatio, memoryDisableThreshold);
+            metricsResponse.setMemoryAllocatedThreshold(hostResponse.getMemoryAllocated(), hostResponse.getMemoryTotal(), memoryThreshold);
+            metricsResponse.setMemoryAllocatedDisableThreshold(hostResponse.getMemoryAllocated(), hostResponse.getMemoryTotal(), memoryDisableThreshold);
             metricsResponses.add(metricsResponse);
         }
         return metricsResponses;

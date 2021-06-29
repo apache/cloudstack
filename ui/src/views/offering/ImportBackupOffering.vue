@@ -29,6 +29,7 @@
           </a-tooltip>
         </span>
         <a-input
+          autoFocus
           v-decorator="['name', {
             rules: [{ required: true, message: $t('message.error.required.input') }]
           }]"/>
@@ -128,7 +129,7 @@ export default {
       this.apiParams[param.name] = param
     })
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   inject: ['parentFetchData'],

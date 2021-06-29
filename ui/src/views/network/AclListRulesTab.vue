@@ -82,14 +82,14 @@
                 <div>{{ acl.traffictype }}</div>
               </div>
               <div class="list__col">
-                <div class="list__label">{{ $t('label.reason') }}</div>
+                <div class="list__label">{{ $t('label.description') }}</div>
                 <div>{{ acl.reason }}</div>
               </div>
             </div>
             <div class="list__actions">
-              <a-button shape="circle" icon="tag" @click="() => openTagsModal(acl)"></a-button>
-              <a-button shape="circle" icon="edit" @click="() => openEditRuleModal(acl)"></a-button>
-              <a-button shape="circle" icon="delete" type="danger" :disabled="!('deleteNetworkACL' in $store.getters.apis)" @click="() => handleDeleteRule(acl.id)"></a-button>
+              <tooltip-button :tooltip="$t('label.tags')" icon="tag" @click="() => openTagsModal(acl)" />
+              <tooltip-button :tooltip="$t('label.edit')" icon="edit" @click="() => openEditRuleModal(acl)" />
+              <tooltip-button :tooltip="$t('label.delete')" icon="delete" type="danger" :disabled="!('deleteNetworkACL' in $store.getters.apis)" @click="() => handleDeleteRule(acl.id)" />
             </div>
           </div>
         </transition-group>
@@ -104,7 +104,9 @@
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
             <a-form-item>
-              <a-input v-decorator="['key', { rules: [{ required: true, message: $t('message.specifiy.tag.key')}] }]" />
+              <a-input
+                autoFocus
+                v-decorator="['key', { rules: [{ required: true, message: $t('message.specifiy.tag.key')}] }]" />
             </a-form-item>
           </div>
           <div class="add-tags__input">
@@ -133,7 +135,7 @@
     <a-modal :title="ruleModalTitle" :maskClosable="false" v-model="ruleModalVisible" @ok="handleRuleModalForm">
       <a-form :form="ruleForm" @submit="handleRuleModalForm">
         <a-form-item :label="$t('label.number')">
-          <a-input-number style="width: 100%" v-decorator="['number']" />
+          <a-input-number autoFocus style="width: 100%" v-decorator="['number']" />
         </a-form-item>
         <a-form-item :label="$t('label.cidrlist')">
           <a-input v-decorator="['cidrlist']" />
@@ -182,7 +184,7 @@
             <a-select-option value="egress">{{ $t('label.egress') }}</a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.reason')">
+        <a-form-item :label="$t('label.description')">
           <a-textarea
             v-decorator="['reason']"
             :autosize="{ minRows: 2 }"
@@ -196,11 +198,13 @@
 <script>
 import { api } from '@/api'
 import draggable from 'vuedraggable'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'AclListRulesTab',
   components: {
-    draggable
+    draggable,
+    TooltipButton
   },
   props: {
     resource: {
@@ -227,7 +231,7 @@ export default {
       ruleFormMode: 'edit'
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {

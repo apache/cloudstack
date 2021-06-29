@@ -22,21 +22,40 @@
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item :label="$t('label.name')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.name') }}
+            <a-tooltip :title="createRoleApiParams.name.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-input
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
-            :placeholder="createRoleApiParams.name.description" />
+            :placeholder="createRoleApiParams.name.description"
+            autoFocus />
         </a-form-item>
 
-        <a-form-item :label="$t('label.description')">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.description') }}
+            <a-tooltip :title="createRoleApiParams.description.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-input
             v-decorator="['description']"
             :placeholder="createRoleApiParams.description.description" />
         </a-form-item>
 
-        <a-form-item :label="$t('label.based.on')" v-if="'roleid' in createRoleApiParams">
+        <a-form-item v-if="'roleid' in createRoleApiParams">
+          <span slot="label">
+            {{ $t('label.based.on') }}
+            <a-tooltip :title="$t('label.based.on.role.id.or.type')">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-radio-group
             v-decorator="['using', {
               initialValue: this.createRoleUsing
@@ -52,7 +71,13 @@
           </a-radio-group>
         </a-form-item>
 
-        <a-form-item :label="$t('label.type')" v-if="this.createRoleUsing === 'type'">
+        <a-form-item v-if="this.createRoleUsing === 'type'">
+          <span slot="label">
+            {{ $t('label.type') }}
+            <a-tooltip :title="createRoleApiParams.type.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-select
             v-decorator="['type', {
               rules: [{ required: true, message: $t('message.error.select') }]
@@ -64,7 +89,13 @@
           </a-select>
         </a-form-item>
 
-        <a-form-item :label="$t('label.role')" v-if="this.createRoleUsing === 'role'">
+        <a-form-item v-if="this.createRoleUsing === 'role'">
+          <span slot="label">
+            {{ $t('label.role') }}
+            <a-tooltip :title="createRoleApiParams.roleid.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
           <a-select
             v-decorator="['roleid', {
               rules: [{ required: true, message: $t('message.error.select') }]
@@ -101,7 +132,7 @@ export default {
       loading: false
     }
   },
-  mounted () {
+  created () {
     this.fetchRoles()
   },
   beforeCreate () {

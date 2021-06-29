@@ -617,7 +617,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
-    public HostVO findOneRandomRunningHostByHypervisor(HypervisorType type) {
+    public HostVO findOneRandomRunningHostByHypervisor(HypervisorType type, Long dcId) {
         // TODO Auto-generated method stub
         return null;
     }

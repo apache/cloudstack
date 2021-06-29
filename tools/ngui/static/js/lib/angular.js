@@ -3687,7 +3687,7 @@ function $CompileProvider($provide) {
       COMMENT_DIRECTIVE_REGEXP = /^\s*directive\:\s*([\d\w\-_]+)\s+(.*)$/,
       CLASS_DIRECTIVE_REGEXP = /(([\d\w\-_]+)(?:\:([^;]+))?;?)/,
       MULTI_ROOT_TEMPLATE_ERROR = 'Template must have exactly one root element. was: ',
-      urlSanitizationWhitelist = /^\s*(https?|ftp|mailto|file):/;
+      urlSanitizationAllowlist = /^\s*(https?|ftp|mailto|file):/;
 
 
   /**
@@ -3743,31 +3743,31 @@ function $CompileProvider($provide) {
 
   /**
    * @ngdoc function
-   * @name ng.$compileProvider#urlSanitizationWhitelist
+   * @name ng.$compileProvider#urlSanitizationAllowlist
    * @methodOf ng.$compileProvider
    * @function
    *
    * @description
-   * Retrieves or overrides the default regular expression that is used for whitelisting of safe
+   * Retrieves or overrides the default regular expression that is used for allow listing of safe
    * urls during a[href] sanitization.
    *
    * The sanitization is a security measure aimed at prevent XSS attacks via html links.
    *
    * Any url about to be assigned to a[href] via data-binding is first normalized and turned into an
-   * absolute url. Afterwards the url is matched against the `urlSanitizationWhitelist` regular
+   * absolute url. Afterwards the url is matched against the `urlSanitizationAllowlist` regular
    * expression. If a match is found the original url is written into the dom. Otherwise the
    * absolute url is prefixed with `'unsafe:'` string and only then it is written into the DOM.
    *
-   * @param {RegExp=} regexp New regexp to whitelist urls with.
+   * @param {RegExp=} regexp New regexp to allow list urls with.
    * @returns {RegExp|ng.$compileProvider} Current RegExp if called without value or self for
    *    chaining otherwise.
    */
-  this.urlSanitizationWhitelist = function(regexp) {
+  this.urlSanitizationAllowlist = function(regexp) {
     if (isDefined(regexp)) {
-      urlSanitizationWhitelist = regexp;
+      urlSanitizationAllowlist = regexp;
       return this;
     }
-    return urlSanitizationWhitelist;
+    return urlSanitizationAllowlist;
   };
 
 
@@ -3824,7 +3824,7 @@ function $CompileProvider($provide) {
 
           // href property always returns normalized absolute url, so we can match against that
           normalizedVal = urlSanitizationNode.href;
-          if (!normalizedVal.match(urlSanitizationWhitelist)) {
+          if (!normalizedVal.match(urlSanitizationAllowlist)) {
             this[key] = value = 'unsafe:' + normalizedVal;
           }
         }

@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -623,5 +624,60 @@ public class VirtualMachineManagerImplTest {
         assertTrue(VirtualMachineManagerImpl.matches(tag,three));
         assertTrue(VirtualMachineManagerImpl.matches(tags,three));
         assertTrue(VirtualMachineManagerImpl.matches(others,three));
+    }
+
+    @Test
+    public void isRootVolumeOnLocalStorageTestOnLocal() {
+        prepareAndTestIsRootVolumeOnLocalStorage(ScopeType.HOST, true);
+    }
+
+    @Test
+    public void isRootVolumeOnLocalStorageTestCluster() {
+        prepareAndTestIsRootVolumeOnLocalStorage(ScopeType.CLUSTER, false);
+    }
+
+    @Test
+    public void isRootVolumeOnLocalStorageTestZone() {
+        prepareAndTestIsRootVolumeOnLocalStorage(ScopeType.ZONE, false);
+    }
+
+    private void prepareAndTestIsRootVolumeOnLocalStorage(ScopeType scope, boolean expected) {
+        StoragePoolVO storagePoolVoMock = Mockito.mock(StoragePoolVO.class);
+        Mockito.doReturn(storagePoolVoMock).when(storagePoolDaoMock).findById(Mockito.anyLong());
+        Mockito.doReturn(scope).when(storagePoolVoMock).getScope();
+        List<VolumeVO> mockedVolumes = new ArrayList<>();
+        mockedVolumes.add(volumeVoMock);
+        Mockito.doReturn(mockedVolumes).when(volumeDaoMock).findByInstanceAndType(Mockito.anyLong(), Mockito.any());
+
+        boolean result = virtualMachineManagerImpl.isRootVolumeOnLocalStorage(0l);
+
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void checkIfNewOfferingStorageScopeMatchesStoragePoolTestLocalLocal() {
+        prepareAndRunCheckIfNewOfferingStorageScopeMatchesStoragePool(true, true);
+    }
+
+    @Test
+    public void checkIfNewOfferingStorageScopeMatchesStoragePoolTestSharedShared() {
+        prepareAndRunCheckIfNewOfferingStorageScopeMatchesStoragePool(false, false);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void checkIfNewOfferingStorageScopeMatchesStoragePoolTestLocalShared() {
+        prepareAndRunCheckIfNewOfferingStorageScopeMatchesStoragePool(true, false);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void checkIfNewOfferingStorageScopeMatchesStoragePoolTestSharedLocal() {
+        prepareAndRunCheckIfNewOfferingStorageScopeMatchesStoragePool(false, true);
+    }
+
+    private void prepareAndRunCheckIfNewOfferingStorageScopeMatchesStoragePool(boolean isRootOnLocal, boolean isOfferingUsingLocal) {
+        Mockito.doReturn(isRootOnLocal).when(virtualMachineManagerImpl).isRootVolumeOnLocalStorage(Mockito.anyLong());
+        Mockito.doReturn("vmInstanceMockedToString").when(vmInstanceMock).toString();
+        Mockito.doReturn(isOfferingUsingLocal).when(serviceOfferingMock).isUseLocalStorage();
+        virtualMachineManagerImpl.checkIfNewOfferingStorageScopeMatchesStoragePool(vmInstanceMock, serviceOfferingMock);
     }
 }

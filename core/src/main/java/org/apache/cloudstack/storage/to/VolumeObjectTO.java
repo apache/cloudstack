@@ -43,6 +43,7 @@ public class VolumeObjectTO implements DataTO {
     private String chainInfo;
     private Storage.ImageFormat format;
     private Storage.ProvisioningType provisioningType;
+    private Long poolId;
     private long id;
 
     private Long deviceId;
@@ -89,6 +90,7 @@ public class VolumeObjectTO implements DataTO {
         setId(volume.getId());
         format = volume.getFormat();
         provisioningType = volume.getProvisioningType();
+        poolId = volume.getPoolId();
         bytesReadRate = volume.getBytesReadRate();
         bytesReadRateMax = volume.getBytesReadRateMax();
         bytesReadRateMaxLength = volume.getBytesReadRateMaxLength();
@@ -225,6 +227,14 @@ public class VolumeObjectTO implements DataTO {
 
     public void setProvisioningType(Storage.ProvisioningType provisioningType){
         this.provisioningType = provisioningType;
+    }
+
+    public Long getPoolId(){
+        return poolId;
+    }
+
+    public void setPoolId(Long poolId){
+        this.poolId = poolId;
     }
 
     @Override

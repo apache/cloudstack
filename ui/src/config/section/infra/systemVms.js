@@ -22,7 +22,7 @@ export default {
   docHelp: 'adminguide/systemvm.html',
   permission: ['listSystemVms'],
   columns: ['name', 'state', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'hostname', 'zonename'],
-  details: ['name', 'id', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'gateway', 'hostname', 'zonename', 'created', 'activeviewersessions'],
+  details: ['name', 'id', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'gateway', 'hostname', 'zonename', 'created', 'activeviewersessions', 'isdynamicallyscalable'],
   actions: [
     {
       api: 'startSystemVm',
@@ -47,7 +47,8 @@ export default {
       label: 'label.action.reboot.systemvm',
       message: 'message.action.reboot.systemvm',
       dataView: true,
-      show: (record) => { return record.state === 'Running' }
+      show: (record) => { return record.state === 'Running' },
+      args: ['forced']
     },
     {
       api: 'scaleSystemVm',
@@ -68,6 +69,7 @@ export default {
       api: 'migrateSystemVm',
       icon: 'drag',
       label: 'label.action.migrate.systemvm',
+      message: 'message.migrate.systemvm.confirm',
       dataView: true,
       show: (record, store) => { return record.state === 'Running' && ['Admin'].includes(store.userInfo.roletype) },
       component: () => import('@/views/compute/MigrateWizard'),

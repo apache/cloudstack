@@ -33,6 +33,11 @@
             <router-link :to="{ path: '/volume/' + volume.uuid }">{{ volume.type }} - {{ volume.path }}</router-link> ({{ parseFloat(volume.size / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GB)
           </div>
         </div>
+        <div v-else-if="$route.meta.name === 'computeoffering' && item === 'rootdisksize'">
+          <div>
+            {{ resource.rootdisksize }} GB
+          </div>
+        </div>
         <div v-else-if="['name', 'type'].includes(item)">
           <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(resource[item])">{{ $t(resource[item].toLowerCase()) }}</span>
           <span v-else>{{ resource[item] }}</span>
@@ -43,6 +48,13 @@
         <div v-else>
           {{ resource[item] }}
         </div>
+      </div>
+    </a-list-item>
+    <a-list-item slot="renderItem" slot-scope="item" v-else-if="item === 'ip6address' && ipV6Address && ipV6Address.length > 0">
+      <div>
+        <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
+        <br/>
+        <div>{{ ipV6Address }}</div>
       </div>
     </a-list-item>
     <HostInfo :resource="resource" v-if="$route.meta.name === 'host' && 'listHosts' in $store.getters.apis" />
@@ -82,6 +94,15 @@ export default {
   },
   mounted () {
     this.dedicatedSectionActive = this.dedicatedRoutes.includes(this.$route.meta.name)
+  },
+  computed: {
+    ipV6Address () {
+      if (this.resource.nic && this.resource.nic.length > 0) {
+        return this.resource.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ')
+      }
+
+      return null
+    }
   },
   created () {
     this.dedicatedSectionActive = this.dedicatedRoutes.includes(this.$route.meta.name)

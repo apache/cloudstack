@@ -39,6 +39,10 @@ import com.cloud.vm.VirtualMachineProfile;
  */
 public interface NetworkElement extends Adapter {
 
+    enum Location {
+        SECONDARY, PRIMARY, HOST
+    }
+
     Map<Service, Map<Capability, String>> getCapabilities();
 
     /**

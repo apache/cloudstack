@@ -208,6 +208,7 @@ import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.Volume;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -491,6 +492,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("externaldhcp.vmip.max.retry");
         configValuesForValidation.add("externaldhcp.vmipFetch.threadPool.max");
         configValuesForValidation.add("remote.access.vpn.psk.length");
+        configValuesForValidation.add(StorageManager.STORAGE_POOL_DISK_WAIT.key());
+        configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.key());
+        configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_MAX_CONNECTIONS.key());
         configValuesForValidation.add(KVM_HEARTBEAT_UPDATE_MAX_RETRIES);
         configValuesForValidation.add(KVM_HEARTBEAT_UPDATE_RETRY_SLEEP);
         configValuesForValidation.add(KVM_HEARTBEAT_UPDATE_TIMEOUT);
@@ -1057,7 +1061,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     if (route != null) {
                         final String routeToVerify = route.trim();
                         if (!NetUtils.isValidIp4Cidr(routeToVerify)) {
-                            throw new InvalidParameterValueException("Invalid value for blacklisted route: " + route + ". Valid format is list"
+                            throw new InvalidParameterValueException("Invalid value for route: " + route + " in deny list. Valid format is list"
                                     + " of cidrs separated by coma. Example: 10.1.1.0/24,192.168.0.0/24");
                         }
                     }
@@ -2517,7 +2521,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
-                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId);
+                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled());
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
@@ -2528,7 +2532,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
             Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
             Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-            final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID) {
+            final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID, final boolean dynamicScalingEnabled) {
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
 
@@ -2560,7 +2564,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA,
                 limitResourceUse, volatileVm, displayText, typedProvisioningType, localStorageRequired, false, tags, isSystem, vmType,
-                hostTag, deploymentPlanner);
+                hostTag, deploymentPlanner, dynamicScalingEnabled);
 
         if (Boolean.TRUE.equals(isCustomizedIops) || isCustomizedIops == null) {
                 minIops = null;
@@ -2637,6 +2641,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         continue;
                     }
                 }
+                if (detailEntry.getKey().equalsIgnoreCase(Volume.BANDWIDTH_LIMIT_IN_MBPS) || detailEntry.getKey().equalsIgnoreCase(Volume.IOPS_LIMIT)) {
+                    // Add in disk offering details
+                    continue;
+                }
                 detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntryValue, true));
             }
         }
@@ -2660,6 +2668,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
                 _serviceOfferingDetailsDao.saveDetails(detailsVO);
             }
+
+            if (details != null && !details.isEmpty()) {
+                List<DiskOfferingDetailVO> diskDetailsVO = new ArrayList<DiskOfferingDetailVO>();
+                // Support disk offering details for below parameters
+                if (details.containsKey(Volume.BANDWIDTH_LIMIT_IN_MBPS)) {
+                    diskDetailsVO.add(new DiskOfferingDetailVO(offering.getId(), Volume.BANDWIDTH_LIMIT_IN_MBPS, details.get(Volume.BANDWIDTH_LIMIT_IN_MBPS), false));
+                }
+                if (details.containsKey(Volume.IOPS_LIMIT)) {
+                    diskDetailsVO.add(new DiskOfferingDetailVO(offering.getId(), Volume.IOPS_LIMIT, details.get(Volume.IOPS_LIMIT), false));
+                }
+                if (!diskDetailsVO.isEmpty()) {
+                    diskOfferingDetailsDao.saveDetails(diskDetailsVO);
+                }
+            }
+
             CallContext.current().setEventDetails("Service offering id=" + offering.getId());
             return offering;
         } else {
@@ -2905,7 +2928,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                 Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
                                                 Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
                                                 Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-                                                final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID) {
+                                                final Integer hypervisorSnapshotReserve, String cacheMode, final Map<String, String> details, final Long storagePolicyID) {
         long diskSize = 0;// special case for custom disk offerings
         if (numGibibytes != null && numGibibytes <= 0) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
@@ -3000,6 +3023,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     detailsVO.add(new DiskOfferingDetailVO(offering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
                 }
             }
+            if (details != null && !details.isEmpty()) {
+                // Support disk offering details for below parameters
+                if (details.containsKey(Volume.BANDWIDTH_LIMIT_IN_MBPS)) {
+                    detailsVO.add(new DiskOfferingDetailVO(offering.getId(), Volume.BANDWIDTH_LIMIT_IN_MBPS, details.get(Volume.BANDWIDTH_LIMIT_IN_MBPS), false));
+                }
+                if (details.containsKey(Volume.IOPS_LIMIT)) {
+                    detailsVO.add(new DiskOfferingDetailVO(offering.getId(), Volume.IOPS_LIMIT, details.get(Volume.IOPS_LIMIT), false));
+                }
+            }
             if (storagePolicyID != null) {
                 detailsVO.add(new DiskOfferingDetailVO(offering.getId(), ApiConstants.STORAGE_POLICY, String.valueOf(storagePolicyID), false));
             }
@@ -3024,6 +3056,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String tags = cmd.getTags();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
+        final Map<String, String> details = cmd.getDetails();
         final Long storagePolicyId = cmd.getStoragePolicy();
 
         // check if valid domain
@@ -3100,7 +3133,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops,
                 maxIops, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength,
                 iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength,
-                hypervisorSnapshotReserve, cacheMode, storagePolicyId);
+                hypervisorSnapshotReserve, cacheMode, details, storagePolicyId);
     }
 
     /**
@@ -3772,7 +3805,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (newVlanGateway == null && newVlanNetmask == null) {
             newVlanGateway = vlanGateway;
             newVlanNetmask = vlanNetmask;
-            // this means he is trying to add to the existing subnet.
+            // this means we are trying to add to the existing subnet.
             if (NetUtils.sameSubnet(newStartIP, newVlanGateway, newVlanNetmask)) {
                 if (NetUtils.sameSubnet(newEndIP, newVlanGateway, newVlanNetmask)) {
                     return NetUtils.SupersetOrSubset.sameSubnet;
@@ -3847,7 +3880,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 // this implies the user is trying to add a new subnet
                 // which is not a superset or subset of this subnet.
             } else if (val == NetUtils.SupersetOrSubset.isSubset) {
-                // this means he is trying to add to the same subnet.
+                // this means we are trying to add to the same subnet.
                 throw new InvalidParameterValueException("The subnet you are trying to add is a subset of the existing subnet having gateway " + vlanGateway
                         + " and netmask " + vlanNetmask);
             } else if (val == NetUtils.SupersetOrSubset.sameSubnet) {

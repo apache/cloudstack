@@ -248,8 +248,12 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "need quiesce vm or not when taking snapshot", since = "4.3")
     private boolean needQuiescevm;
 
+    @SerializedName(ApiConstants.SUPPORTS_STORAGE_SNAPSHOT)
+    @Param(description = "true if storage snapshot is supported for the volume, false otherwise", since = "4.16")
+    private boolean supportsStorageSnapshot;
+
     @SerializedName(ApiConstants.PHYSICAL_SIZE)
-    @Param(description = "the bytes alloaated")
+    @Param(description = "the bytes allocated")
     private Long physicalsize;
 
     @SerializedName(ApiConstants.VIRTUAL_SIZE)
@@ -536,6 +540,14 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
 
     public boolean isNeedQuiescevm() {
         return this.needQuiescevm;
+    }
+
+    public void setSupportsStorageSnapshot(boolean supportsStorageSnapshot) {
+        this.supportsStorageSnapshot = supportsStorageSnapshot;
+    }
+
+    public boolean getSupportsStorageSnapshot() {
+        return this.supportsStorageSnapshot;
     }
 
     public String getIsoId() {

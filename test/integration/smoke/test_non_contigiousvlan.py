@@ -53,25 +53,25 @@ class TestUpdatePhysicalNetwork(cloudstackTestCase):
                 phy_network = network
                 break
 
-        self.assert_(phy_network is not None, msg="No network with vlan found")
+        self.assertTrue(phy_network is not None, msg="No network with vlan found")
 
         self.network = phy_network
         self.networkid = phy_network.id
         self.existing_vlan = phy_network.vlan
         vlan1 = self.existing_vlan+","+self.vlan["partial_range"][0]
         updatePhysicalNetworkResponse = self.network.update(self.apiClient, id = self.networkid, vlan = vlan1)
-        self.assert_(updatePhysicalNetworkResponse is not None,
+        self.assertTrue(updatePhysicalNetworkResponse is not None,
             msg="couldn't extend the physical network with vlan %s"%vlan1)
-        self.assert_(isinstance(self.network, PhysicalNetwork))
+        self.assertTrue(isinstance(self.network, PhysicalNetwork))
 
         vlan2 = vlan1+","+self.vlan["partial_range"][1]
         updatePhysicalNetworkResponse2 = self.network.update(self.apiClient, id = self.networkid, vlan = vlan2)
-        self.assert_(updatePhysicalNetworkResponse2 is not None,
+        self.assertTrue(updatePhysicalNetworkResponse2 is not None,
             msg="couldn't extend the physical network with vlan %s"%vlan2)
-        self.assert_(isinstance(self.network, PhysicalNetwork))
+        self.assertTrue(isinstance(self.network, PhysicalNetwork))
 
         vlanranges= updatePhysicalNetworkResponse2.vlan
-        self.assert_(vlanranges is not None,
+        self.assertTrue(vlanranges is not None,
             "No VLAN ranges found on the deployment")
 
 
@@ -86,6 +86,6 @@ class TestUpdatePhysicalNetwork(cloudstackTestCase):
         self.network = phy_networks[0]
         self.networkid = phy_networks[0].id
         updateResponse = self.network.update(self.apiClient, id = self.networkid, vlan=self.existing_vlan)
-        self.assert_(updateResponse.vlan.find(self.vlan["full_range"]) < 0,
+        self.assertTrue(updateResponse.vlan.find(self.vlan["full_range"]) < 0,
             "VLAN was not removed successfully")
 

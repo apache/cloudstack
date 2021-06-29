@@ -32,6 +32,8 @@ public interface StoragePoolHostDao extends GenericDao<StoragePoolHostVO, Long> 
 
     List<StoragePoolHostVO> listByHostStatus(long poolId, Status hostStatus);
 
+    List<Long> findHostsConnectedToPools(List<Long> poolIds);
+
     List<Pair<Long, Integer>> getDatacenterStoragePoolHostInfo(long dcId, boolean sharedOnly);
 
     public void deletePrimaryRecordsForHost(long hostId);

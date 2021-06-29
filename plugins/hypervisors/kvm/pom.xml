@@ -72,6 +72,12 @@
             <artifactId>jna-platform</artifactId>
             <version>${cs.jna.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-storage-volume-scaleio</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
