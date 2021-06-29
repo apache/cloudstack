@@ -233,13 +233,7 @@ public class JavaStorageLayer implements StorageLayer {
         Set<PosixFilePermission> permissions;
         permissions = Files.getPosixFilePermissions(
             Paths.get(file.getAbsolutePath()));
-
-        for (PosixFilePermission permission:permissions) {
-            if (permission.equals(PosixFilePermission.OTHERS_READ)) {
-                return true;
-            }
-        }
-        return false;
+        return permissions.contains(PosixFilePermission.OTHERS_READ);
     }
 
     private List<String> listDirPaths(String path) {
