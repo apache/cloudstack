@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,28 +15,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.dao;
+//
 
-import java.util.List;
+package org.apache.cloudstack.storage.command;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.DiskTO;
 
-import com.cloud.storage.VolumeHostVO;
-import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.fsm.StateDao;
+public class SyncVolumePathAnswer extends Answer {
+    private DiskTO disk;
 
-public interface VolumeHostDao extends GenericDao<VolumeHostVO, Long>,
-        StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
+    public SyncVolumePathAnswer() {
+        super(null);
+    }
 
-    VolumeHostVO findByHostVolume(long hostId, long volumeId);
+    public SyncVolumePathAnswer(DiskTO disk) {
+        super(null);
+        setDisk(disk);
+    }
 
-    VolumeHostVO findByVolumeId(long volumeId);
+    public SyncVolumePathAnswer(String errMsg) {
+        super(null, false, errMsg);
+    }
 
-    List<VolumeHostVO> listBySecStorage(long sserverId);
+    public DiskTO getDisk() {
+        return disk;
+    }
 
-    List<VolumeHostVO> listDestroyed(long hostId);
-
-    VolumeHostVO findVolumeByZone(long zoneId, long volumeId);
+    public void setDisk(DiskTO disk) {
+        this.disk = disk;
+    }
 
 }

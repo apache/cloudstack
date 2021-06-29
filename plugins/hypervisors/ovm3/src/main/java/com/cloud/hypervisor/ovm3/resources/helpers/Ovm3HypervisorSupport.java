@@ -246,8 +246,8 @@ public class Ovm3HypervisorSupport {
             d.put("private.network.device", config.getAgentPrivateNetworkName());
             d.put("guest.network.device", config.getAgentGuestNetworkName());
             d.put("storage.network.device", config.getAgentStorageNetworkName());
-            d.put("ismaster", config.getAgentIsMaster().toString());
-            d.put("hasmaster", config.getAgentHasMaster().toString());
+            d.put("isprimary", config.getAgentIsPrimary().toString());
+            d.put("hasprimary", config.getAgentHasPrimary().toString());
             cmd.setHostDetails(d);
             LOGGER.debug("Add an Ovm3 host " + config.getAgentHostname() + ":"
                     + cmd.getHostDetails());
@@ -571,13 +571,13 @@ public class Ovm3HypervisorSupport {
     }
 
     /**
-     * materCheck
+     * primaryCheck
      *
      * @return
      */
-    public boolean masterCheck() {
+    public boolean primaryCheck() {
         if ("".equals(config.getOvm3PoolVip())) {
-            LOGGER.debug("No cluster vip, not checking for master");
+            LOGGER.debug("No cluster vip, not checking for primary");
             return false;
         }
 
@@ -585,26 +585,26 @@ public class Ovm3HypervisorSupport {
             CloudstackPlugin cSp = new CloudstackPlugin(c);
             if (cSp.dom0HasIp(config.getOvm3PoolVip())) {
                 LOGGER.debug(config.getAgentHostname()
-                        + " is a master, already has vip "
+                        + " is a primary, already has vip "
                         + config.getOvm3PoolVip());
-                config.setAgentIsMaster(true);
+                config.setAgentIsPrimary(true);
             } else if (cSp.ping(config.getOvm3PoolVip())) {
                 LOGGER.debug(config.getAgentHostname()
-                        + " has a master, someone has vip "
+                        + " has a primary, someone has vip "
                         + config.getOvm3PoolVip());
-                config.setAgentHasMaster(true);
+                config.setAgentHasPrimary(true);
             } else {
                 LOGGER.debug(config.getAgentHostname()
-                        + " becomes a master, no one has vip "
+                        + " becomes a primary, no one has vip "
                         + config.getOvm3PoolVip());
-                config.setAgentIsMaster(true);
+                config.setAgentIsPrimary(true);
             }
         } catch (Ovm3ResourceException e) {
             LOGGER.debug(config.getAgentHostname()
-                    + " can't reach master: " + e.getMessage());
-            config.setAgentHasMaster(false);
+                    + " can't reach primary: " + e.getMessage());
+            config.setAgentHasPrimary(false);
         }
-        return config.getAgentIsMaster();
+        return config.getAgentIsPrimary();
     }
 
     /* Check if the host is in ready state for CS */
@@ -614,22 +614,22 @@ public class Ovm3HypervisorSupport {
             Pool pool = new Pool(c);
 
             /* only interesting when doing cluster */
-            if (!host.getIsMaster() && config.getAgentInOvm3Cluster()) {
-                if (pool.getPoolMasterVip().equalsIgnoreCase(c.getIp())) {
+            if (!host.getIsPrimary() && config.getAgentInOvm3Cluster()) {
+                if (pool.getPoolPrimaryVip().equalsIgnoreCase(c.getIp())) {
                     /* check pool state here */
                     return new ReadyAnswer(cmd);
                 } else {
-                    LOGGER.debug("Master IP changes to "
-                            + pool.getPoolMasterVip() + ", it should be "
+                    LOGGER.debug("Primary IP changes to "
+                            + pool.getPoolPrimaryVip() + ", it should be "
                             + c.getIp());
-                    return new ReadyAnswer(cmd, "I am not the master server");
+                    return new ReadyAnswer(cmd, "I am not the primary server");
                 }
-            } else if (host.getIsMaster()) {
-                LOGGER.debug("Master, not clustered "
+            } else if (host.getIsPrimary()) {
+                LOGGER.debug("Primary, not clustered "
                         + config.getAgentHostname());
                 return new ReadyAnswer(cmd);
             } else {
-                LOGGER.debug("No master, not clustered "
+                LOGGER.debug("No primary, not clustered "
                         + config.getAgentHostname());
                 return new ReadyAnswer(cmd);
             }

@@ -35,6 +35,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -78,7 +81,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.org.Grouping;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.TaggedResourceService;
@@ -153,7 +155,9 @@ public class VolumeApiServiceImplTest {
     @Mock
     private StoragePoolTagsDao storagePoolTagsDao;
     @Mock
-    private HypervisorCapabilitiesDao hypervisorCapabilitiesDao;
+    private VMTemplateDao templateDao;
+    @Mock
+    private ServiceOfferingJoinDao serviceOfferingJoinDao;
 
     private DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     private Class<?> _detachCmdClass = detachCmd.getClass();
@@ -1078,5 +1082,53 @@ public class VolumeApiServiceImplTest {
         boolean result = volumeApiServiceImpl.doesTargetStorageSupportDiskOffering(storagePoolMock, diskOfferingVoMock);
 
         Assert.assertTrue(result);
+    }
+
+    @Test
+    public void isNotPossibleToResizeTestAllFormats() {
+        Storage.ImageFormat[] imageFormat = Storage.ImageFormat.values();
+        for (int i = 0; i < imageFormat.length - 1; i++) {
+            if (imageFormat[i] != Storage.ImageFormat.ISO) {
+                prepareAndRunTestOfIsNotPossibleToResize(Type.ROOT, 10l, imageFormat[i], true);
+            } else {
+                prepareAndRunTestOfIsNotPossibleToResize(Type.ROOT, 10l, imageFormat[i], false);
+            }
+        }
+    }
+
+    @Test
+    public void isNotPossibleToResizeTestAllTypes() {
+        Type[] types = Type.values();
+        for (int i = 0; i < types.length - 1; i++) {
+            if (types[i] != Type.ROOT) {
+                prepareAndRunTestOfIsNotPossibleToResize(types[i], 10l, Storage.ImageFormat.QCOW2, false);
+            } else {
+                prepareAndRunTestOfIsNotPossibleToResize(types[i], 10l, Storage.ImageFormat.QCOW2, true);
+            }
+        }
+    }
+
+    @Test
+    public void isNotPossibleToResizeTestNoRootDiskSize() {
+        prepareAndRunTestOfIsNotPossibleToResize(Type.ROOT, 0l, Storage.ImageFormat.QCOW2, false);
+    }
+
+    private void prepareAndRunTestOfIsNotPossibleToResize(Type volumeType, Long rootDisk, Storage.ImageFormat imageFormat, boolean expectedIsNotPossibleToResize) {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        when(volume.getVolumeType()).thenReturn(volumeType);
+
+        when(volume.getTemplateId()).thenReturn(1l);
+        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+
+        ServiceOfferingJoinVO serviceOfferingJoinVO = Mockito.mock(ServiceOfferingJoinVO.class);
+        when(serviceOfferingJoinVO.getRootDiskSize()).thenReturn(rootDisk);
+        when(serviceOfferingJoinDao.findById(Mockito.anyLong())).thenReturn(serviceOfferingJoinVO);
+
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(template.getFormat()).thenReturn(imageFormat);
+        when(templateDao.findByIdIncludingRemoved(Mockito.anyLong())).thenReturn(template);
+
+        boolean result = volumeApiServiceImpl.isNotPossibleToResize(volume, diskOffering);
+        Assert.assertEquals(expectedIsNotPossibleToResize, result);
     }
 }

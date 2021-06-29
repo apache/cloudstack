@@ -18,9 +18,12 @@ package com.cloud.network.dao;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -107,6 +110,9 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
 
     Random _rand = new Random(System.currentTimeMillis());
     long _prefix = 0x2;
+
+    private static final Set<String> VLAN_OR_VXLAN = new HashSet<>(Arrays.asList(BroadcastDomainType.Vlan.toString().toLowerCase(),
+                                                                BroadcastDomainType.Vxlan.toString().toLowerCase()));
 
     public NetworkDaoImpl() {
     }
@@ -803,8 +809,9 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     @Override
     public List<NetworkVO> listByPhysicalNetworkPvlan(long physicalNetworkId, String broadcastUri) {
         final URI searchUri = BroadcastDomainType.fromString(broadcastUri);
-        if (!searchUri.getScheme().equalsIgnoreCase("vlan")) {
-            throw new CloudRuntimeException("VLAN requested but URI is not in the expected format: " + searchUri.toString());
+        if (!VLAN_OR_VXLAN.contains(searchUri.getScheme().toLowerCase())) {
+            throw new CloudRuntimeException(
+                    String.format("Requested URI '%s' is not in the expected format. Expected URI Scheme as 'vlan://VID' or 'vxlan://VID'.", searchUri.toString()));
         }
         final String searchRange = BroadcastDomainType.getValue(searchUri);
         final List<Integer> searchVlans = UriUtils.expandVlanUri(searchRange);

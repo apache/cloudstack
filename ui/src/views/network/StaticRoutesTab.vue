@@ -29,8 +29,8 @@
           <div>{{ route.cidr }}</div>
         </div>
         <div class="actions">
-          <a-button shape="circle" icon="tag" @click="() => openTagsModal(route)"></a-button>
-          <a-button :disabled="!('deleteStaticRoute' in $store.getters.apis)" shape="circle" icon="delete" type="danger" @click="() => handleDelete(route)"></a-button>
+          <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag" @click="() => openTagsModal(route)" />
+          <tooltip-button :tooltip="$t('label.delete')" :disabled="!('deleteStaticRoute' in $store.getters.apis)" icon="delete" type="danger" @click="() => handleDelete(route)" />
         </div>
       </div>
     </div>
@@ -76,9 +76,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'StaticRoutesTab',
+  components: {
+    TooltipButton
+  },
   props: {
     resource: {
       type: Object,

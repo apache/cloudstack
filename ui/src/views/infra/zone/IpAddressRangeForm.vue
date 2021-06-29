@@ -30,7 +30,7 @@
       :pagination="false"
       style="margin-bottom: 24px; width: 100%" >
       <template slot="actions" slot-scope="text, record">
-        <a-button type="danger" shape="circle" icon="delete" @click="onDelete(record.key)" />
+        <tooltip-button :tooltip="$t('label.delete')" type="danger" icon="delete" @click="onDelete(record.key)" />
       </template>
       <template slot="footer">
         <a-form
@@ -141,9 +141,14 @@
   </div>
 </template>
 <script>
+
+import TooltipButton from '@/components/view/TooltipButton'
 import { mixinDevice } from '@/utils/mixin.js'
 
 export default {
+  components: {
+    TooltipButton
+  },
   mixins: [mixinDevice],
   props: {
     traffic: {

@@ -30,22 +30,20 @@
         <span v-else>{{ $t('label.no') }}</span>
       </div>
       <template slot="action" slot-scope="text, record">
-        <span style="margin-right: 5px">
-          <a-button
-            :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
-            icon="copy"
-            shape="circle"
-            :loading="copyLoading"
-            @click="showCopyTemplate(record)" />
-        </span>
-        <span style="margin-right: 5px">
-          <a-button
-            :disabled="!('deleteTemplate' in $store.getters.apis)"
-            type="danger"
-            icon="delete"
-            shape="circle"
-            @click="onShowDeleteModal(record)"/>
-        </span>
+        <tooltip-button
+          style="margin-right: 5px"
+          :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
+          :title="$t('label.action.copy.template')"
+          icon="copy"
+          :loading="copyLoading"
+          @click="showCopyTemplate(record)" />
+        <tooltip-button
+          style="margin-right: 5px"
+          :disabled="!('deleteTemplate' in $store.getters.apis)"
+          :title="$t('label.action.delete.template')"
+          type="danger"
+          icon="delete"
+          @click="onShowDeleteModal(record)"/>
       </template>
     </a-table>
     <a-pagination
@@ -134,9 +132,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'TemplateZones',
+  components: {
+    TooltipButton
+  },
   props: {
     resource: {
       type: Object,

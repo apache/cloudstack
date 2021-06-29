@@ -19,6 +19,7 @@ package com.cloud.storage;
 import java.math.BigDecimal;
 import java.util.List;
 
+import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -123,7 +124,16 @@ public interface StorageManager extends StorageService {
             "Storage",
             "60",
             "Timeout (in secs) for the storage pool client connection timeout (for managed pools). Currently only supported for PowerFlex.",
-            true,
+            false,
+            ConfigKey.Scope.StoragePool,
+            null);
+
+    ConfigKey<Integer> STORAGE_POOL_CLIENT_MAX_CONNECTIONS = new ConfigKey<>(Integer.class,
+            "storage.pool.client.max.connections",
+            "Storage",
+            "100",
+            "Maximum connections for the storage pool client (for managed pools). Currently only supported for PowerFlex.",
+            false,
             ConfigKey.Scope.StoragePool,
             null);
 
@@ -271,5 +281,7 @@ public interface StorageManager extends StorageService {
     DiskTO getDiskWithThrottling(DataTO volTO, Volume.Type volumeType, long deviceId, String path, long offeringId, long diskOfferingId);
 
     boolean isStoragePoolDatastoreClusterParent(StoragePool pool);
+
+    void syncDatastoreClusterStoragePool(long datastoreClusterPoolId, List<ModifyStoragePoolAnswer> childDatastoreAnswerList, long hostId);
 
 }

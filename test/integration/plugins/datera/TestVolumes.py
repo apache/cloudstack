@@ -278,7 +278,7 @@ class TestData():
 
     def _update(self, d, u):
 
-        for k, v in u.iteritems():
+        for k, v in u.items():
             if isinstance(v, collections.Mapping):
                 r = self.update(d.get(k, {}), v)
                 d[k] = r
@@ -497,7 +497,7 @@ class TestVolumes(cloudstackTestCase):
     @classmethod
     def _purge_datera_volumes(cls):
         logger.warn("Deleting all volumes")
-        for ai in cls.dt_client.app_instances.get().values():
+        for ai in list(cls.dt_client.app_instances.get().values()):
             logger.warn(ai)
             if 'CS-T' in ai['name']:
                 ai.set(admin_state="offline")
@@ -989,7 +989,7 @@ class TestVolumes(cloudstackTestCase):
         dt_volume = None
         dt_volumes = self._get_dt_volumes()
 
-        for volume in dt_volumes.values():
+        for volume in list(dt_volumes.values()):
             if volume['name'] == dt_volume_name:
                 dt_volume = volume
                 break

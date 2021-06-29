@@ -28,7 +28,7 @@ from ipmisim.ipmisim import IpmiServerContext, IpmiServer, ThreadedIpmiServer
 import random
 import socket
 import sys
-import thread
+import _thread
 import time
 
 
@@ -173,7 +173,7 @@ class TestHostHA(cloudstackTestCase):
     def checkSyncToState(self, state, interval=5000):
         def checkForStateSync(expectedState):
             response = self.getHost(hostId=self.getHost().id).hostha
-            print("checkForStateSync:: response=%s, expected=%s" % (response, expectedState))
+            print(("checkForStateSync:: response=%s, expected=%s" % (response, expectedState)))
             return response.hastate == expectedState, None
 
         sync_interval = 1 + int(interval) / 1000
@@ -417,7 +417,7 @@ class TestHostHA(cloudstackTestCase):
         mshosts = self.dbclient.execute(
             "select msid from mshost where version='%s' and removed is NULL and state='Up'" % (cloudstackVersion))
         if len(mshosts) > 0:
-            currentMsHosts = map(lambda row: row[0], mshosts)
+            currentMsHosts = [row[0] for row in mshosts]
 
         # Inject fake ms host
         self.dbclient.execute(
@@ -475,7 +475,7 @@ class TestHostHA(cloudstackTestCase):
 
 
     def checkFSMTransition(self, transition, event, haState, prevHaState, hasActiviyCounter, hasRecoveryCounter):
-        print("checkFSMTransition:: transition=%s, event=%s, state=%s" % (transition, event, haState))
+        print(("checkFSMTransition:: transition=%s, event=%s, state=%s" % (transition, event, haState)))
         self.assertEqual(transition.event, event)
         self.assertEqual(transition.hastate, haState)
         self.assertEqual(transition.prevhastate, prevHaState)
@@ -513,7 +513,7 @@ class TestHostHA(cloudstackTestCase):
             if not stateTransition:
                 previousTransition = transition
 
-        print("findFSMTransition:: prev=%s, cur=%s, next=%s, find state=%s" % (previousTransition, stateTransition, nextTransition, state))
+        print(("findFSMTransition:: prev=%s, cur=%s, next=%s, find state=%s" % (previousTransition, stateTransition, nextTransition, state)))
         if stateTransition:
             return True, (previousTransition, stateTransition, nextTransition,)
         return False, (previousTransition, stateTransition, nextTransition,)

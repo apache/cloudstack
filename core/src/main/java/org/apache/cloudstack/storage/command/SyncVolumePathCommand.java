@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,19 +15,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.usage.dao;
+//
+package org.apache.cloudstack.storage.command;
 
-import java.util.List;
+import com.cloud.agent.api.to.DiskTO;
 
-import com.cloud.usage.ExternalPublicIpStatisticsVO;
-import com.cloud.utils.db.GenericDao;
+public class SyncVolumePathCommand extends StorageSubSystemCommand {
 
-public interface ExternalPublicIpStatisticsDao extends GenericDao<ExternalPublicIpStatisticsVO, Long> {
+    private DiskTO disk;
 
-    ExternalPublicIpStatisticsVO lock(long accountId, long zoneId, String publicIpAddress);
+    public SyncVolumePathCommand(final DiskTO disk) {
+        super();
+        this.disk = disk;
+    }
 
-    ExternalPublicIpStatisticsVO findBy(long accountId, long zoneId, String publicIpAddress);
+    public DiskTO getDisk() {
+        return disk;
+    }
 
-    List<ExternalPublicIpStatisticsVO> listBy(long accountId, long zoneId);
+    public void setDisk(final DiskTO disk) {
+        this.disk = disk;
+    }
 
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
+
+    @Override
+    public void setExecuteInSequence(boolean inSeq) {
+
+    }
 }

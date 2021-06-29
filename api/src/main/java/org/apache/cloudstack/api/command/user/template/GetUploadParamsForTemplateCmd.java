@@ -89,6 +89,11 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
     @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "the tag for this template.")
     private String templateTag;
 
+    @Parameter(name=ApiConstants.DEPLOY_AS_IS,
+            type = CommandType.BOOLEAN,
+            description = "(VMware only) true if VM deployments should preserve all the configurations defined for this template", since = "4.15.1")
+    private Boolean deployAsIs;
+
     public String getDisplayText() {
         return displayText;
     }
@@ -153,6 +158,11 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
         return templateTag;
     }
 
+    public boolean isDeployAsIs() {
+        return Hypervisor.HypervisorType.VMware.toString().equalsIgnoreCase(hypervisor) &&
+                Boolean.TRUE.equals(deployAsIs);
+    }
+
     @Override
     public void execute() throws ServerApiException {
         validateRequest();
@@ -173,7 +183,7 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
         if (!hypervisor.equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString()) && osTypeId == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Missing parameter ostypeid");
         }
-        if (hypervisor.equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString()) && osTypeId != null) {
+        if (hypervisor.equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString()) && deployAsIs && osTypeId != null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid parameter ostypeid, not applicable for VMware");
         }
     }

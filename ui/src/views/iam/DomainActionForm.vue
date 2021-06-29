@@ -169,16 +169,12 @@ export default {
       this.fillEditFormFieldValues()
     }
   },
-  inject: ['parentCloseAction', 'parentFetchData', 'parentUpdActionData'],
+  inject: ['parentCloseAction', 'parentFetchData'],
   methods: {
     pollActionCompletion (jobId, action) {
       this.$pollJob({
         jobId,
         successMethod: result => {
-          if (this.action.api === 'deleteDomain') {
-            this.$set(this.resource, 'isDel', true)
-            this.parentUpdActionData(this.resource)
-          }
           this.parentFetchData()
           if (action.response) {
             const description = action.response(result.jobresult)
@@ -249,6 +245,7 @@ export default {
           }
         }
 
+        const resourceName = params.displayname || params.displaytext || params.name || this.resource.name
         let hasJobId = false
         api(this.action.api, params).then(json => {
           for (const obj in json) {
@@ -270,7 +267,18 @@ export default {
             }
           }
           if (!hasJobId) {
-            this.parentUpdActionData(json)
+            var message = this.action.successMessage ? this.$t(this.action.successMessage) : this.$t(this.action.label) +
+              (resourceName ? ' - ' + resourceName : '')
+            var duration = 2
+            if (this.action.additionalMessage) {
+              message = message + ' - ' + this.$t(this.action.successMessage)
+              duration = 5
+            }
+            this.$message.success({
+              content: message,
+              key: this.action.label + resourceName,
+              duration: duration
+            })
             this.parentFetchData()
           }
           this.parentCloseAction()

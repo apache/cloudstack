@@ -36,7 +36,8 @@ from marvin.lib.common import (get_zone,
                                get_builtin_template_info)
 
 #Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.cloudstackAPI import restartNetwork
 from marvin.codes import PASS
 import time

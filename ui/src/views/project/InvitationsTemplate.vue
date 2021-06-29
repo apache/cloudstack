@@ -40,28 +40,20 @@
             <status :text="text ? text : ''" displayText />
           </template>
           <span slot="action" v-if="record.state===stateAllow" slot-scope="text, record" class="account-button-action">
-            <a-tooltip placement="top">
-              <template slot="title">
-                {{ $t('label.accept.project.invitation') }}
-              </template>
-              <a-button
-                type="success"
-                shape="circle"
-                icon="check"
-                size="small"
-                @click="onShowConfirmAcceptInvitation(record)"/>
-            </a-tooltip>
-            <a-tooltip placement="top">
-              <template slot="title">
-                {{ $t('label.decline.invitation') }}
-              </template>
-              <a-button
-                type="danger"
-                shape="circle"
-                icon="close"
-                size="small"
-                @click="onShowConfirmRevokeInvitation(record)"/>
-            </a-tooltip>
+            <tooltip-button
+              tooltipPlacement="top"
+              :tooltip="$t('label.accept.project.invitation')"
+              type="success"
+              icon="check"
+              size="small"
+              @click="onShowConfirmAcceptInvitation(record)"/>
+            <tooltip-button
+              tooltipPlacement="top"
+              :tooltip="$t('label.decline.invitation')"
+              type="danger"
+              icon="close"
+              size="small"
+              @click="onShowConfirmRevokeInvitation(record)"/>
           </span>
         </a-table>
         <a-pagination
@@ -87,11 +79,13 @@
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'InvitationsTemplate',
   components: {
-    Status
+    Status,
+    TooltipButton
   },
   data () {
     return {

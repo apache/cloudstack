@@ -36,29 +36,20 @@
             {{ record }}
           </template>
           <span slot="action" slot-scope="text, record">
-            <a-tooltip placement="top">
-              <template slot="title">
-                {{ $t('label.update.project.role') }}
-              </template>
-              <a-button
-                type="default"
-                shape="circle"
-                icon="edit"
-                size="small"
-                style="margin:10px"
-                @click="openUpdateModal(record)" />
-            </a-tooltip>
-            <a-tooltip placement="top">
-              <template slot="title">
-                {{ $t('label.remove.project.role') }}
-              </template>
-              <a-button
-                type="danger"
-                shape="circle"
-                icon="delete"
-                size="small"
-                @click="deleteProjectRole(record)"/>
-            </a-tooltip>
+            <tooltip-button
+              tooltipPlacement="top"
+              :tooltip="$t('label.update.project.role')"
+              icon="edit"
+              size="small"
+              style="margin:10px"
+              @click="openUpdateModal(record)" />
+            <tooltip-button
+              tooltipPlacement="top"
+              :tooltip="$t('label.remove.project.role')"
+              type="danger"
+              icon="delete"
+              size="small"
+              @click="deleteProjectRole(record)" />
           </span>
         </a-table>
         <a-modal
@@ -82,29 +73,20 @@
               <a-button type="primary" @click="updateProjectRole" :loading="loading">{{ $t('label.ok') }}</a-button>
             </div>
             <span slot="action" slot-scope="text, record">
-              <a-tooltip placement="top">
-                <template slot="title">
-                  {{ $t('label.update.project.role') }}
-                </template>
-                <a-button
-                  type="default"
-                  shape="circle"
-                  icon="edit"
-                  size="small"
-                  style="margin:10px"
-                  @click="openUpdateModal(record)" />
-              </a-tooltip>
-              <a-tooltip placement="top">
-                <template slot="title">
-                  {{ $t('label.remove.project.role') }}
-                </template>
-                <a-button
-                  type="danger"
-                  shape="circle"
-                  icon="delete"
-                  size="small"
-                  @click="deleteProjectRole(record)"/>
-              </a-tooltip>
+              <tooltip-button
+                tooltipPlacement="top"
+                :tooltip="$t('label.update.project.role')"
+                icon="edit"
+                size="small"
+                style="margin:10px"
+                @click="openUpdateModal(record)" />
+              <tooltip-button
+                tooltipPlacement="top"
+                :tooltip="$t('label.remove.project.role')"
+                type="danger"
+                icon="edit"
+                size="small"
+                @click="deleteProjectRole(record)" />
             </span>
           </a-form>
         </a-modal>
@@ -139,6 +121,7 @@
 <script>
 import { api } from '@/api'
 import ProjectRolePermissionTab from '@/views/project/iam/ProjectRolePermissionTab'
+import TooltipButton from '@/components/view/TooltipButton'
 export default {
   name: 'ProjectRoleTab',
   props: {
@@ -148,7 +131,8 @@ export default {
     }
   },
   components: {
-    ProjectRolePermissionTab
+    ProjectRolePermissionTab,
+    TooltipButton
   },
   data () {
     return {

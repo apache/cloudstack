@@ -39,7 +39,7 @@
         <p class="form__label"><span class="required">*</span>{{ $t('label.domain') }}</p>
         <a-select @change="changeDomain" v-model="selectedDomain" :defaultValue="selectedDomain">
           <a-select-option v-for="domain in domains" :key="domain.name" :value="domain.id">
-            {{ domain.path }}
+            {{ domain.path || domain.name || domain.description }}
           </a-select-option>
         </a-select>
       </div>

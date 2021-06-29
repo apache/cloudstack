@@ -871,6 +871,9 @@ export default {
               })
             }
           }
+          if ('successMethod' in action) {
+            action.successMethod(this, result)
+          }
         },
         errorMethod: () => this.fetchData(),
         loadingMessage: `${this.$t(action.label)} - ${resourceName}`,
@@ -962,6 +965,9 @@ export default {
           }
           break
         }
+      }
+      if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
+        this.$store.dispatch('UpdateConfiguration')
       }
       return false
     },

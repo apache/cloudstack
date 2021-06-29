@@ -19,7 +19,9 @@
   <resource-view
     :loading="loading"
     :resource="quotaResource"
-    :tabs="tabs"/>
+    :tabs="tabs"
+    :historyTab="activeTab"
+    @onTabChange="(tab) => { this.activeTab = tab }"/>
 </template>
 
 <script>
@@ -48,7 +50,8 @@ export default {
       loading: false,
       quotaResource: {},
       networkService: null,
-      pattern: 'YYYY-MM-DD'
+      pattern: 'YYYY-MM-DD',
+      activeTab: ''
     }
   },
   created () {

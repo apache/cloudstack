@@ -76,9 +76,7 @@
                       <a-input ref="input" :value="inputKey" @change="e => inputKey = e.target.value" style="width: 50px; text-align: center" :placeholder="$t('label.key')" />
                       <a-input style=" width: 20px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
                       <a-input :value="inputValue" @change="handleValueChange" style="width: 50px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-                      <a-button shape="circle" size="small" @click="inputKey = inputValue = ''">
-                        <a-icon type="close"/>
-                      </a-button>
+                      <tooltip-button :tooltip="$t('label.clear')" icon="close" size="small" @click="inputKey = inputValue = ''" />
                     </a-input-group>
                   </div>
                 </div>
@@ -114,9 +112,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'SearchView',
+  components: {
+    TooltipButton
+  },
   props: {
     searchFilters: {
       type: Array,

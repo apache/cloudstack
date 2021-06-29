@@ -66,8 +66,7 @@
         :loading="loading"
         :tabs="$route.meta.tabs"
         @change-resource="changeResource"
-        @change-tree-store="changeDomainStore"
-        :actionData="actionData"/>
+        @change-tree-store="changeDomainStore"/>
     </div>
 
     <div v-if="showAction">
@@ -106,7 +105,6 @@ export default {
       loading: false,
       selectedRowKeys: [],
       treeData: [],
-      actionData: [],
       treeSelected: {},
       showAction: false,
       action: {},
@@ -154,7 +152,6 @@ export default {
   provide () {
     return {
       parentCloseAction: this.closeAction,
-      parentUpdActionData: this.updateActionData,
       parentFetchData: this.fetchData
     }
   },
@@ -317,9 +314,6 @@ export default {
     },
     closeAction () {
       this.showAction = false
-    },
-    updateActionData (data) {
-      this.actionData.push(data)
     }
   }
 }

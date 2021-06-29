@@ -61,7 +61,7 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
     private String zoneName;
 
     @SerializedName(ApiConstants.SUPPORTS_HA)
-    @Param(description = "whether Kubernetes supported version supports HA, multi-master")
+    @Param(description = "whether Kubernetes supported version supports HA, multi-control nodes")
     private Boolean supportsHA;
 
     @SerializedName(ApiConstants.STATE)

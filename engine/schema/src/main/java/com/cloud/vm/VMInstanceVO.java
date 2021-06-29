@@ -200,7 +200,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name = "backup_external_id")
     protected String backupExternalId;
 
-    @Column(name = "backup_volumes")
+    @Column(name = "backup_volumes", length = 65535)
     protected String backupVolumes;
 
     public VMInstanceVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,
@@ -238,7 +238,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.diskOfferingId = diskOfferingId;
     }
 
-    protected VMInstanceVO() {
+    public VMInstanceVO() {
     }
 
     public Date getRemoved() {
@@ -504,14 +504,9 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.removed = removed;
     }
 
-    transient String toString;
-
     @Override
     public String toString() {
-        if (toString == null) {
-            toString = new StringBuilder("VM[").append(type.toString()).append("|").append(getInstanceName()).append("]").toString();
-        }
-        return toString;
+        return String.format("VM instance {\"id\": \"%s\", \"name\": \"%s\", \"uuid\": \"%s\", \"type\"=\"%s\"}", id, getInstanceName(), uuid, type);
     }
 
     @Override
@@ -549,7 +544,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.dynamicallyScalable = dynamicallyScalable;
     }
 
-    public Boolean isDynamicallyScalable() {
+    public boolean isDynamicallyScalable() {
         return dynamicallyScalable;
     }
 

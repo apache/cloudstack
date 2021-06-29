@@ -56,7 +56,8 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (335, UUID(), 10, 'Ubuntu 20.04 LTS', now());
 INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '8.2.0', 'Ubuntu Focal Fossa 20.04', 330, now(), 0);
 
--------------------------------------------------------------------------------------------------------------
+ALTER TABLE `cloud`.`s2s_customer_gateway` ADD COLUMN `ike_version` varchar(5) NOT NULL DEFAULT 'ike' COMMENT 'one of ike, ikev1, ikev2';
+ALTER TABLE `cloud`.`s2s_customer_gateway` ADD COLUMN `split_connections` int(1) NOT NULL DEFAULT 0;
 
 -- Add support for VMware 7.0
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities` (uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) values (UUID(), 'VMware', '7.0', 1024, 0, 59, 64, 1, 1);
@@ -131,4 +132,3 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_vers
 
 -- Add support for windows2019srvNext_64Guest from VMware 7.0.1.0
 INSERT INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'VMware', '7.0.1.0', 'windows2019srvNext_64Guest', 276, now(), 0);
-

@@ -106,7 +106,8 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
     private org.apache.cloudstack.storage.datastore.api.StoragePool findStoragePool(String url, String username, String password, String storagePoolName) {
         try {
             final int clientTimeout = StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.value();
-            ScaleIOGatewayClient client = ScaleIOGatewayClient.getClient(url, username, password, false, clientTimeout);
+            final int clientMaxConnections = StorageManager.STORAGE_POOL_CLIENT_MAX_CONNECTIONS.value();
+            ScaleIOGatewayClient client = ScaleIOGatewayClient.getClient(url, username, password, false, clientTimeout, clientMaxConnections);
             List<org.apache.cloudstack.storage.datastore.api.StoragePool> storagePools = client.listStoragePools();
             for (org.apache.cloudstack.storage.datastore.api.StoragePool pool : storagePools) {
                 if (pool.getName().equals(storagePoolName)) {
@@ -121,9 +122,9 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
             }
         } catch (NoSuchAlgorithmException | KeyManagementException | URISyntaxException e) {
             LOGGER.error("Failed to add storage pool", e);
-            throw new CloudRuntimeException("Failed to establish connection with PowerFlex Gateway to validate storage pool");
+            throw new CloudRuntimeException("Failed to establish connection with PowerFlex Gateway to find and validate storage pool: " + storagePoolName);
         }
-        throw new CloudRuntimeException("Failed to find the provided storage pool name in discovered PowerFlex storage pools");
+        throw new CloudRuntimeException("Failed to find the provided storage pool name: " + storagePoolName + " in the discovered PowerFlex storage pools");
     }
 
     @SuppressWarnings("unchecked")
