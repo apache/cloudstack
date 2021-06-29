@@ -58,7 +58,7 @@ export default {
     }
   },
   watch: {
-    actions (item) {
+    resource () {
       this.actionsExist = this.doActionsExist()
     }
   },
