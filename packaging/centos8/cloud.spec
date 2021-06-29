@@ -64,9 +64,8 @@ Requires: bzip2
 Requires: gzip
 Requires: unzip
 Requires: /sbin/mount.nfs
-Requires: openssh
+Requires: openssh-clients
 Requires: nfs-utils
-Requires: nfs-client
 Requires: iproute
 Requires: wget
 Requires: mysql
@@ -74,15 +73,14 @@ Requires: sudo
 Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: /usr/bin/ssh-keygen
-# Requires: genisoimage -> renamed to mkisofs
-Requires: mkisofs
+Requires: genisoimage
 Requires: ipmitool
 Requires: %{name}-common = %{_ver}
-# Requires: iptables-services
-Requires: qemu-tools
+Requires: iptables-services
+Requires: qemu-img
 Requires: python3-pip
 Requires: python3-setuptools
-Requires: libgcrypt20
+Requires: libgcrypt > 1.8.3
 Group:     System Environment/Libraries
 %description management
 The CloudStack management server is the central point of coordination,
@@ -98,23 +96,21 @@ The Apache CloudStack files shared between agent and management server
 
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
-Requires: openssh
+Requires: openssh-clients
 Requires: java-11-openjdk
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: ebtables
 Requires: iptables
-Requires: selinux-tools
 Requires: ethtool
 Requires: net-tools
-Requires: net-tools-deprecated
 Requires: iproute
 Requires: ipset
 Requires: perl
-Requires: python3-libvirt-python
+Requires: python3-libvirt
+Requires: qemu-img
 Requires: qemu-kvm
-Requires: libgcrypt20
-Requires: qemu-tools
+Requires: libgcrypt > 1.8.3
 Provides: cloud-agent
 Group: System Environment/Libraries
 %description agent
@@ -396,7 +392,7 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-inte
 
 %pre management
 id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -U -c "CloudStack unprivileged user" \
-     -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud || true
+     -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
 
 rm -rf %{_localstatedir}/cache/cloudstack
 
@@ -641,3 +637,4 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 
 * Fri Oct 5 2012 Hugo Trippaers <hugo@apache.org> 4.1.0
 - new style spec file
+
