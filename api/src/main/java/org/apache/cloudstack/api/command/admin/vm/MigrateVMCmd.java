@@ -152,7 +152,15 @@ public class MigrateVMCmd extends BaseAsyncCmd {
         }
 
         Host destinationHost = null;
-        if (getHostId() != null) {
+        // OfflineMigration performed when this parameter is specified
+        StoragePool destStoragePool = null;
+        if (getStoragePoolId() != null) {
+            destStoragePool = _storageService.getStoragePool(getStoragePoolId());
+            if (destStoragePool == null) {
+                throw new InvalidParameterValueException("Unable to find the storage pool to migrate the VM");
+            }
+            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to storage pool Id: " + getStoragePoolId());
+        } else if (getHostId() != null) {
             destinationHost = _resourceService.getHost(getHostId());
             if (destinationHost == null) {
                 throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId());
@@ -163,16 +171,6 @@ public class MigrateVMCmd extends BaseAsyncCmd {
             CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: " + getHostId());
         } else if (! isAutoSelect()) {
             throw new InvalidParameterValueException("Please specify a host or storage as destination, or pass 'autoselect=true' to automatically select a destination host which do not require storage migration");
-        }
-
-        // OfflineMigration performed when this parameter is specified
-        StoragePool destStoragePool = null;
-        if (getStoragePoolId() != null) {
-            destStoragePool = _storageService.getStoragePool(getStoragePoolId());
-            if (destStoragePool == null) {
-                throw new InvalidParameterValueException("Unable to find the storage pool to migrate the VM");
-            }
-            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to storage pool Id: " + getStoragePoolId());
         }
 
         try {
