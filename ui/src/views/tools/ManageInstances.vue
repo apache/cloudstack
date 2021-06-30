@@ -564,16 +564,20 @@ export default {
       }
       this.$router.push({ query })
     },
-    resetListsPage () {
+    resetLists () {
       this.page.unmanaged = 1
+      this.unmanagedInstances = []
+      this.unmanagedInstancesSelectedRowKeys = []
       this.page.managed = 1
+      this.managedInstances = []
+      this.managedInstancesSelectedRowKeys = []
     },
     onSelectZoneId (value) {
       this.zoneId = value
       this.podId = null
       this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
-      this.resetListsPage()
+      this.resetLists()
       this.form.setFieldsValue({
         clusterid: undefined,
         podid: undefined
@@ -583,7 +587,7 @@ export default {
     },
     onSelectPodId (value) {
       this.podId = value
-      this.resetListsPage()
+      this.resetLists()
       this.form.setFieldsValue({
         clusterid: undefined
       })
@@ -592,7 +596,7 @@ export default {
     },
     onSelectClusterId (value) {
       this.clusterId = value
-      this.resetListsPage()
+      this.resetLists()
       this.updateQuery('clusterid', value)
       this.fetchInstances()
     },
