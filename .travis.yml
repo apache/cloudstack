@@ -52,21 +52,25 @@ env:
              smoke/test_async_job
              smoke/test_backup_recovery_dummy
              smoke/test_create_list_domain_account_project
-             smoke/test_create_network
-             smoke/test_deploy_vgpu_enabled_vm
+             smoke/test_create_network"
+     
+    - TESTS="smoke/test_deploy_vgpu_enabled_vm
              smoke/test_deploy_vm_extra_config_data
              smoke/test_deploy_vm_iso
              smoke/test_deploy_vm_root_resize
              smoke/test_deploy_vm_with_userdata
-             smoke/test_deploy_vms_with_varied_deploymentplanners
-             smoke/test_diagnostics
+             smoke/test_deploy_vms_with_varied_deploymentplanners"
+             
+    - TESTS="smoke/test_diagnostics
              smoke/test_disk_offerings
              smoke/test_dynamicroles
              smoke/test_global_settings
-             smoke/test_guest_vlan_range
-             smoke/test_host_annotations
+             smoke/test_guest_vlan_range"
+    
+    - TESTS="smoke/test_host_annotations
              smoke/test_host_maintenance
              smoke/test_hostha_simulator"
+             
 
     - TESTS="smoke/test_internal_lb
              smoke/test_iso
