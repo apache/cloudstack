@@ -1476,6 +1476,7 @@ def matchResourceCount(apiclient, expectedCount, resourceType,
                               accountid=None, projectid=None):
     """Match the resource count of account/project with the expected
     resource count"""
+    expected = int(expectedCount)  # initialise as int to make sure floats passed are acceptable
     try:
         resourceholderlist = None
         if accountid:
@@ -1489,6 +1490,7 @@ def matchResourceCount(apiclient, expectedCount, resourceType,
             resourceCount = resourceholderlist[0].primarystoragetotal
         elif resourceType == RESOURCE_SECONDARY_STORAGE:
             resourceCount = resourceholderlist[0].secondarystoragetotal
+            expected = expectedCount  # as the exception, an original value is needed here (should be of type float)
         elif resourceType == RESOURCE_CPU:
             resourceCount = resourceholderlist[0].cputotal
         elif resourceType == RESOURCE_MEMORY:
@@ -1507,7 +1509,7 @@ def matchResourceCount(apiclient, expectedCount, resourceType,
             resourceCount = resourceholderlist[0].networktotal
         elif resourceType == RESOURCE_VPC:
             resourceCount = resourceholderlist[0].vpctotal
-        assert str(resourceCount) == str(expectedCount),\
+        assert str(resourceCount) == str(expected),\
                 "Resource count %s should match with the expected resource count %s" %\
                 (resourceCount, expectedCount)
     except Exception as e:
