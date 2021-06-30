@@ -1365,7 +1365,7 @@ export default {
     handleSubmit (e) {
       console.log('wizard submit')
       e.preventDefault()
-      this.form.validateFields(async (err, values) => {
+      this.form.validateFieldsAndScroll(async (err, values) => {
         if (err) {
           if (err.licensesaccepted) {
             this.$notification.error({
@@ -1379,27 +1379,26 @@ export default {
             message: this.$t('message.request.failed'),
             description: this.$t('error.form.message')
           })
-          return
-        }
-
-        if (!values.templateid && !values.isoid) {
-          this.$notification.error({
-            message: this.$t('message.request.failed'),
-            description: this.$t('message.template.iso')
-          })
-          return
-        } else if (values.isoid && (!values.diskofferingid || values.diskofferingid === '0')) {
-          this.$notification.error({
-            message: this.$t('message.request.failed'),
-            description: this.$t('message.step.3.continue')
-          })
-          return
-        }
-        if (!values.computeofferingid) {
-          this.$notification.error({
-            message: this.$t('message.request.failed'),
-            description: this.$t('message.step.2.continue')
-          })
+          if (!values.templateid && !values.isoid) {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.template.iso')
+            })
+            return
+          } else if (values.isoid && (!values.diskofferingid || values.diskofferingid === '0')) {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.step.3.continue')
+            })
+            return
+          }
+          if (!values.computeofferingid) {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.step.2.continue')
+            })
+            return
+          }
           return
         }
 

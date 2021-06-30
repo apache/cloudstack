@@ -22,13 +22,13 @@ export default {
   name: 'compute',
   title: 'label.compute',
   icon: 'cloud',
-  // shortKey: "['c']",
+  shortKey: "['c']",
   children: [
     {
       name: 'vm',
       title: 'label.instances',
       icon: 'desktop',
-      shortKey: ['c', 'i'],
+      shortKey: ['alt', 'i'],
       docHelp: 'adminguide/virtual_machines.html',
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
@@ -79,7 +79,7 @@ export default {
           api: 'deployVirtualMachine',
           icon: 'plus',
           label: 'label.vm.add',
-          shortKey: "['a']",
+          shortKey: "['alt', 'a']",
           docHelp: 'adminguide/virtual_machines.html#creating-vms',
           listView: true,
           component: () => import('@/views/compute/DeployVM.vue')
@@ -403,7 +403,7 @@ export default {
       name: 'kubernetes',
       title: 'label.kubernetes',
       icon: kubernetes,
-      shortKey: "['k']",
+      shortKey: ['alt', 'k'],
       docHelp: 'plugins/cloudstack-kubernetes-service.html',
       permission: ['listKubernetesClusters'],
       columns: () => {
@@ -485,7 +485,7 @@ export default {
       name: 'vmgroup',
       title: 'label.instance.groups',
       icon: 'gold',
-      shortKey: ['c', 'g'],
+      shortKey: ['alt', 'g'],
       docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
       permission: ['listInstanceGroups'],
       columns: ['name', 'account'],
@@ -523,7 +523,7 @@ export default {
       name: 'ssh',
       title: 'label.ssh.key.pairs',
       icon: 'key',
-      shortKey: "['c', 'l']",
+      shortKey: ['alt', 'l'],
       docHelp: 'adminguide/virtual_machines.html#using-ssh-keys-for-authentication',
       permission: ['listSSHKeyPairs'],
       columns: () => {
@@ -575,7 +575,7 @@ export default {
       name: 'affinitygroup',
       title: 'label.affinity.groups',
       icon: 'swap',
-      shortKey: "['c','a']",
+      shortKey: ['alt', 'a'],
       docHelp: 'adminguide/virtual_machines.html#affinity-groups',
       permission: ['listAffinityGroups'],
       columns: () => {

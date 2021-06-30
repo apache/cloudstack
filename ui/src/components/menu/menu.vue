@@ -125,17 +125,29 @@ export default {
       }
       const on = {
         shortkey: () => {
-          console.log('hello')
-          this.$router.push({ path: target })
+          if (menu.path) {
+            this.$router.push({ path: menu.path })
+          }
         }
       }
-      // console.log(typeof (menu.meta.shortKey))
       return (
         <Item vShortkey={menu.meta.shortKey} {...{ key: menu.path, on: on }} >
           <router-link {...{ props }}>
             {this.renderIcon(menu.meta.icon, menu)}
             <span>{this.$t(menu.meta.title)}</span>
-            {this.$store.getters.showshortkeys ? menu.meta.shortKey ? <span class="show-shortkey" >{menu.meta.shortKey}</span> : '' : ''}
+            {
+              this.$store.getters.showshortkeys ? (
+                menu.meta.shortKey ? (
+                  <span class="show-shortkey">
+                    {menu.meta.shortKey[0]} + {menu.meta.shortKey[1]}
+                  </span>
+                ) : (
+                  ''
+                )
+              ) : (
+                ''
+              )
+            }
           </router-link>
         </Item>
       )
@@ -158,7 +170,7 @@ export default {
           <span slot="title">
             {this.renderIcon(menu.meta.icon, menu)}
             <span vShortkey={menu.meta.shortKey} {...{ on: on }}>{this.$t(menu.meta.title)}</span>
-            {this.$store.getters.showshortkeys ? <span>{menu.meta.shortKey}</span> : ''}
+            {this.$store.getters.showshortkeys ? menu.meta.shortKey ? <span class="show-shortkey">{menu.meta.shortKey[2]}</span> : '' : ''}
           </span>
           {itemArr}
         </SubMenu>
@@ -173,9 +185,6 @@ export default {
         click: () => {
           this.handleClickParentMenu(menuItem)
         }
-        // shortkey: () => {
-        //   this.handleClickParentMenu(menuItem)
-        // }
       }
       typeof (icon) === 'object' ? props.component = icon : props.type = icon
       return (
@@ -204,10 +213,6 @@ export default {
         this.selectedKeys = obj.selectedKeys
         this.$emit('select', obj)
       },
-      // shortkey: obj => {
-      //   this.selectedKeys = obj.selectedKeys
-      //   this.$emit('select', obj)
-      // },
       openChange: this.onOpenChange
     }
     const menuTree = menu.map(item => {
@@ -227,12 +232,11 @@ export default {
 </script>
 <style scoped>
 .show-shortkey {
- position: absolute;
- /* bottom: 20px;
- right: 5px; */
- background-color: rgba(0, 0, 0, .90);
- padding: 0px 2px 0px 2px;
- border-radius: 4px;
- color: #e8e8e8;
+  font-size: 10px;
+  background-color: rgba(0, 0, 0, 0.9);
+  padding: 2px 6px 2px 6px;
+  border-radius: 4px;
+  color: #e8e8e8;
+  margin: 5px;
 }
 </style>

@@ -31,6 +31,7 @@ export default {
   name: 'infra',
   title: 'label.infrastructure',
   icon: 'bank',
+  shortKey: ['k'],
   permission: ['listInfrastructure'],
   children: [
     {
