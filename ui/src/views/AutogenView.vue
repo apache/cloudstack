@@ -871,6 +871,9 @@ export default {
               })
             }
           }
+          if ('successMethod' in action) {
+            action.successMethod(this, result)
+          }
         },
         errorMethod: () => this.fetchData(),
         loadingMessage: `${this.$t(action.label)} - ${resourceName}`,

@@ -80,7 +80,7 @@
                         placeholder="="
                         disabled />
                       <a-input :value="inputValue" @change="handleValueChange" style="width: 50px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-                      <tooltip-button icon="close" size="small" @click="inputKey = inputValue = ''" />
+                      <tooltip-button :tooltip="$t('label.clear')" icon="close" size="small" @click="inputKey = inputValue = ''" />
                     </a-input-group>
                   </div>
                 </div>
@@ -116,11 +116,13 @@
 
 <script>
 import { api } from '@/api'
-import TooltipButton from './TooltipButton.vue'
+import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
   name: 'SearchView',
-  components: { TooltipButton },
+  components: {
+    TooltipButton
+  },
   props: {
     searchFilters: {
       type: Array,
