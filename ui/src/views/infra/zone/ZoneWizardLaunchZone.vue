@@ -172,6 +172,14 @@ export default {
     },
     selectedBaremetalProviders () {
       return this.prefillContent.networkOfferingSelected ? this.prefillContent.networkOfferingSelected.selectedBaremetalProviders : []
+    },
+    physicalNetworks () {
+      const tungstenNetworks = this.prefillContent.physicalNetworks.filter(network => network.isolationMethod === 'TF')
+      if (tungstenNetworks && tungstenNetworks.length > 0) {
+        return tungstenNetworks
+      }
+
+      return this.prefillContent.physicalNetworks
     }
   },
   mounted () {
@@ -227,8 +235,8 @@ export default {
       physicalNetworkIndex = this.isAdvancedZone ? physicalNetworkIndex : 0
       let physicalNetwork = []
       let trafficConfig = null
-      if (this.prefillContent.physicalNetworks) {
-        physicalNetwork = this.prefillContent.physicalNetworks[physicalNetworkIndex].traffics.filter(traffic => traffic.type === trafficTypeID)
+      if (this.physicalNetworks) {
+        physicalNetwork = this.physicalNetworks[physicalNetworkIndex].traffics.filter(traffic => traffic.type === trafficTypeID)
         trafficConfig = physicalNetwork.length > 0 ? physicalNetwork[0] : null
       }
       let trafficLabel
@@ -376,13 +384,13 @@ export default {
       params.zoneid = this.stepData.zoneReturned.id
 
       if (this.isBasicZone) {
-        const requestedTrafficTypeCount = this.prefillContent.physicalNetworks[0].traffics.length
+        const requestedTrafficTypeCount = this.physicalNetworks[0].traffics.length
         this.stepData.requestedTrafficTypeCount = requestedTrafficTypeCount
         this.stepData.returnedTrafficTypes = this.stepData.returnedTrafficTypes ? this.stepData.returnedTrafficTypes : []
         this.stepData.physicalNetworkReturned = this.stepData.physicalNetworkReturned ? this.stepData.physicalNetworkReturned : {}
 
-        if (this.prefillContent.physicalNetworks && this.prefillContent.physicalNetworks.length > 0) {
-          params.name = this.prefillContent.physicalNetworks[0].name
+        if (this.physicalNetworks && this.physicalNetworks.length > 0) {
+          params.name = this.physicalNetworks[0].name
         } else {
           params.name = 'PhysicalNetworkInBasicZone'
         }
@@ -408,7 +416,7 @@ export default {
 
           if (!this.stepData.stepMove.includes('Storage')) {
             // addTrafficType Storage
-            const storageEx = this.prefillContent.physicalNetworks[0].traffics.filter(traffic => traffic.type === 'storage')
+            const storageEx = this.physicalNetworks[0].traffics.filter(traffic => traffic.type === 'storage')
             if (storageEx && storageEx.length > 0) {
               const storageTrafficResult = await this.addTrafficType('Storage')
               this.stepData.returnedTrafficTypes.push(storageTrafficResult.jobresult.traffictype)
@@ -438,13 +446,13 @@ export default {
         this.stepData.physicalNetworkItem = this.stepData.physicalNetworkItem ? this.stepData.physicalNetworkItem : {}
         let physicalNetworkReturned = {}
 
-        if (this.stepData.physicalNetworksReturned.length === this.prefillContent.physicalNetworks.length) {
+        if (this.stepData.physicalNetworksReturned.length === this.physicalNetworks.length) {
           await this.stepConfigurePhysicalNetwork()
           return
         }
 
-        for (let index = 0; index < this.prefillContent.physicalNetworks.length; index++) {
-          const physicalNetwork = this.prefillContent.physicalNetworks[index]
+        for (let index = 0; index < this.physicalNetworks.length; index++) {
+          const physicalNetwork = this.physicalNetworks[index]
           params.name = physicalNetwork.name
 
           if (physicalNetwork.isolationMethod) {
@@ -458,6 +466,12 @@ export default {
               this.stepData.physicalNetworkReturned = physicalNetworkReturned
               this.stepData.physicalNetworkItem['createPhysicalNetwork' + index] = physicalNetworkReturned
               this.stepData.stepMove.push('createPhysicalNetwork' + index)
+
+              if (physicalNetwork.isolationMethod === 'TF' &&
+                physicalNetwork.traffics.findIndex(traffic => traffic.type === 'public') > -1) {
+                this.stepData.isTungstenZone = true
+                this.stepData.tungstenPhysicalNetworkId = physicalNetworkReturned.id
+              }
             } else {
               this.stepData.physicalNetworkReturned = this.stepData.physicalNetworkItem['createPhysicalNetwork' + index]
             }
@@ -500,7 +514,7 @@ export default {
                 this.stepData.physicalNetworksReturned.push(physicalNetworkReturned)
               }
 
-              if (this.stepData.physicalNetworksReturned.length === this.prefillContent.physicalNetworks.length) {
+              if (this.stepData.physicalNetworksReturned.length === this.physicalNetworks.length) {
                 await this.stepConfigurePhysicalNetwork()
               }
             }
@@ -935,12 +949,16 @@ export default {
           return
         }
 
-        await this.stepConfigureStorageTraffic()
+        if (this.stepData.isTungstenZone) {
+          await this.stepCreateTungstenPublicNetwork()
+        } else {
+          await this.stepConfigureStorageTraffic()
+        }
       } else if (this.isAdvancedZone && this.sgEnabled) {
         await this.stepConfigureStorageTraffic()
       } else {
-        if (this.prefillContent.physicalNetworks) {
-          const storageExists = this.prefillContent.physicalNetworks[0].traffics.filter(traffic => traffic.type === 'storage')
+        if (this.physicalNetworks) {
+          const storageExists = this.physicalNetworks[0].traffics.filter(traffic => traffic.type === 'storage')
           if (storageExists && storageExists.length > 0) {
             await this.stepConfigureStorageTraffic()
           } else {
@@ -949,9 +967,50 @@ export default {
         }
       }
     },
+    async stepCreateTungstenPublicNetwork () {
+      this.setStepStatus(STATUS_FINISH)
+      this.currentStep++
+      this.addStep('message.create.tungsten.public.network', 'tungsten')
+      if (this.stepData.stepMove.includes('tungsten')) {
+        await this.stepConfigureStorageTraffic()
+        return
+      }
+      try {
+        if (!this.stepData.stepMove.includes('configTungsten')) {
+          const configParams = {}
+          configParams.zoneid = this.stepData.zoneReturned.id
+          configParams.physicalnetworkid = this.stepData.tungstenPhysicalNetworkId
+          await this.configTungstenService(configParams)
+          this.stepData.stepMove.push('configTungsten')
+        }
+        if (!this.stepData.stepMove.includes('createTungstenProvider')) {
+          const providerParams = {}
+          providerParams.zoneid = this.stepData.zoneReturned.id
+          providerParams.tungstenproviderhostname = this.prefillContent.tungstenHostname.value || null
+          providerParams.name = this.prefillContent.tungstenName.value || null
+          providerParams.tungstenproviderport = this.prefillContent.tungstenPort.value || null
+          providerParams.tungstenprovidervrouter = this.prefillContent.tungstenVrouter.value || null
+          providerParams.tungstenprovidervrouterport = this.prefillContent.tungstenVrouterport.value || null
+          await this.createTungstenProvider(providerParams)
+          this.stepData.stepMove.push('createTungstenProvider')
+        }
+        if (!this.stepData.stepMove.includes('createTungstenNetwork')) {
+          const params = {}
+          params.zoneid = this.stepData.zoneReturned.id
+          await this.createTungstenPublicNetwork(params)
+          this.stepData.stepMove.push('createTungstenNetwork')
+        }
+        this.stepData.stepMove.push('tungsten')
+        await this.stepConfigureStorageTraffic()
+      } catch (e) {
+        this.messageError = e
+        this.processStatus = STATUS_FAILED
+        this.setStepStatus(STATUS_FAILED)
+      }
+    },
     async stepConfigureStorageTraffic () {
       let targetNetwork = false
-      this.prefillContent.physicalNetworks.forEach(physicalNetwork => {
+      this.physicalNetworks.forEach(physicalNetwork => {
         const storageEx = physicalNetwork.traffics.filter(traffic => traffic.type === 'storage')
         if (storageEx && storageEx.length > 0) {
           targetNetwork = true
@@ -1077,7 +1136,7 @@ export default {
         }
       } else if (this.isAdvancedZone) {
         const physicalNetworksHavingGuestIncludingVlan = []
-        await this.prefillContent.physicalNetworks.map(async (network) => {
+        await this.physicalNetworks.map(async (network) => {
           if (this.prefillContent.vlanRangeStart) {
             physicalNetworksHavingGuestIncludingVlan.push(network)
           }
@@ -2035,6 +2094,36 @@ export default {
           resolve(result)
         }).catch(error => {
           message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    configTungstenService (args) {
+      return new Promise((resolve, reject) => {
+        api('configTungstenService', {}, 'POST', args).then(json => {
+          resolve()
+        }).catch(error => {
+          const message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    createTungstenProvider (args) {
+      return new Promise((resolve, reject) => {
+        api('createTungstenProvider', {}, 'POST', args).then(json => {
+          resolve()
+        }).catch(error => {
+          const message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    createTungstenPublicNetwork (args) {
+      return new Promise((resolve, reject) => {
+        api('createTungstenPublicNetwork', args).then(json => {
+          resolve()
+        }).catch(error => {
+          const message = error.response.headers['x-description']
           reject(message)
         })
       })
