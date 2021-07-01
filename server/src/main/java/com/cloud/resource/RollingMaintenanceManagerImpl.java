@@ -439,9 +439,9 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
      */
     private boolean isMaintenanceStageAvoided(Host host, Map<Long, String> hostsToAvoidMaintenance, List<HostSkipped> hostsSkipped) {
         if (hostsToAvoidMaintenance.containsKey(host.getId())) {
-            s_logger.debug(String.format("%s is not being put into maintenance, skipping it", host));
             HostSkipped hostSkipped = new HostSkipped(host, hostsToAvoidMaintenance.get(host.getId()));
             hostsSkipped.add(hostSkipped);
+            s_logger.debug(String.format("%s is in avoid maintenance list [hosts skipped: %d], skipping its maintenance.", host, hostsSkipped.size()));
             return true;
         }
         return false;
