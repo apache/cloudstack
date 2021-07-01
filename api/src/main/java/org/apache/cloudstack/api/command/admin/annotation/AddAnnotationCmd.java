@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AnnotationResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.BooleanUtils;
 
 @APICommand(name = AddAnnotationCmd.APINAME, description = "add an annotation.", responseObject = AnnotationResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.11", authorized = {RoleType.Admin})
@@ -70,7 +71,7 @@ public class AddAnnotationCmd extends BaseCmd {
     }
 
     public boolean isAdminsOnly() {
-        return adminsOnly != null && adminsOnly;
+        return BooleanUtils.toBoolean(adminsOnly);
     }
 
     @Override
