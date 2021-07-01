@@ -17,6 +17,7 @@
 package org.apache.cloudstack.annotation;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -59,6 +60,9 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     private AccountDao accountDao;
     @Inject
     private RoleService roleService;
+
+    private static final List<RoleType> adminRoles = Arrays.asList(RoleType.Admin,
+            RoleType.DomainAdmin, RoleType.ResourceAdmin);
 
     @Override
     public ListResponse<AnnotationResponse> searchForAnnotations(ListAnnotationsCmd cmd) {
@@ -135,8 +139,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         if (role == null) {
             throw new CloudRuntimeException("Cannot find role with ID " + roleId);
         }
-        return RoleType.Admin.equals(role.getRoleType()) || RoleType.DomainAdmin.equals(role.getRoleType()) ||
-                RoleType.ResourceAdmin.equals(role.getRoleType());
+        return adminRoles.contains(role.getRoleType());
     }
 
     private List<AnnotationVO> getAnnotationsForApiCmd(ListAnnotationsCmd cmd) {
