@@ -31,7 +31,7 @@
               </div> -->
               <slot name="avatar">
                 <span v-if="resource.icon && resource.icon.base64image || images.template || resourceIcon">
-                  <img :src="getImage(images.template)" height="56px" width="56px" />
+                  <img :src="getImage(images.template)" style="width:56px;height:56px;" />
                 </span>
                 <span v-else>
                   <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" @update-osname="(name) => this.resource.ostypename = name"/>
@@ -806,7 +806,7 @@ export default {
       }
     },
     async templateIcon (id) {
-      if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm'].includes(this.$route?.path?.split('/')[1]) && this.resource?.icon?.base64image) {
+      if (this.showIcon() && this.resource?.icon?.base64image) {
         this.image = this.resource.icon.base64image
       }
       if (id && ['deployVirtualMachine'].includes(this.$route.path.split('/')[2])) {
@@ -844,29 +844,40 @@ export default {
       return this.resource.zoneid
     },
     resourceIcon () {
-      if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm'].includes(this.$route?.path?.split('/')[1]) && this.resource?.icon?.base64image) {
+      if (this.showIcon() && this.resource?.icon?.base64image) {
         return this.resource.icon.base64image
       }
       return null
     }
   },
   mounted () {
-    if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm'].includes(this.$route?.path?.split('/')[1]) && this.resource?.icon?.base64image) {
+    if (this.showIcon() && this.resource?.icon?.base64image) {
       const type = this.getResourceType()
       this.images[type] = this.resource.icon.base64image
     }
     if (this.resource.templateid) {
       this.fetchResourceIcon(this.resource.templateid, 'template')
     }
+    if (this.resource.zoneid) {
+      this.fetchResourceIcon(this.resource.zoneid, 'zone')
+    }
   },
   methods: {
     showUploadModal (show) {
       if (show) {
-        if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm'].includes(this.$route?.path?.split('/')[1])) {
+        if (this.showIcon()) {
           this.showUpload = true
         }
       } else {
         this.showUpload = false
+      }
+    },
+    showIcon () {
+      const resourceType = this.$route?.path?.split('/')[1]
+      if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm', 'domain', 'project', 'vpc', 'guestnetwork'].includes(resourceType)) {
+        return true
+      } else {
+        return false
       }
     },
     getResourceType () {

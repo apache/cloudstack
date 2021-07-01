@@ -30,7 +30,7 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         Volume(true, true),
         Snapshot(true, false),
         Backup(true, false),
-        Network(true, true),
+        Network(true, true, true),
         Nic(false, true),
         LoadBalancer(true, true),
         PortForwardingRule(true, true),
@@ -38,9 +38,9 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         SecurityGroup(true, false),
         SecurityGroupRule(true, false),
         PublicIpAddress(true, true),
-        Project(true, false),
+        Project(true, false, true),
         Account(true, false, true),
-        Vpc(true, true),
+        Vpc(true, true, true),
         NetworkACL(true, true),
         StaticRoute(true, false),
         VMSnapshot(true, false),
@@ -62,7 +62,8 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         SnapshotPolicy(true, true),
         GuestOs(false, true),
         NetworkOffering(false, true),
-        VpcOffering(true, false);
+        VpcOffering(true, false),
+        Domain(false, false, true);
 
 
         ResourceObjectType(boolean resourceTagsSupport, boolean resourceMetadataSupport) {

@@ -32,7 +32,7 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {Network.class, ProjectAccount.class})
-public class NetworkResponse extends BaseResponse implements ControlledEntityResponse {
+public class NetworkResponse extends BaseResponse implements ControlledEntityResponse, SetResourceIconResponse {
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "the id of the network")
@@ -246,6 +246,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @Param(description = "If the network has redundant routers enabled", since = "4.11.1")
     private Boolean redundantRouter;
 
+    @SerializedName(ApiConstants.RESOURCE_ICON)
+    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
+    ResourceIconResponse icon;
+
     public Boolean getDisplayNetwork() {
         return displayNetwork;
     }
@@ -256,6 +260,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public void setName(String name) {
@@ -415,6 +423,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.vpcId = vpcId;
     }
 
+    public String getVpcId() {
+        return vpcId;
+    }
+
     public void setCanUseForDeploy(Boolean canUseForDeploy) {
         this.canUseForDeploy = canUseForDeploy;
     }
@@ -481,5 +493,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     public void setVpcName(String vpcName) {
         this.vpcName = vpcName;
+    }
+
+    @Override
+    public void setResourceIconResponse(ResourceIconResponse icon) {
+        this.icon = icon;
     }
 }

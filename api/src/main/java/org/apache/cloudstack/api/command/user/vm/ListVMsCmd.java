@@ -145,7 +145,7 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     private Boolean haEnabled;
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
-            description = "flag to display the resource image for VMs", since = "4.16.0.0", authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin})
+            description = "flag to display the resource icon for VMs", since = "4.16.0.0")
     private Boolean showIcon;
 
     /////////////////////////////////////////////////////

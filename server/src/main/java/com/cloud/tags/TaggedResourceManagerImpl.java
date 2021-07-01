@@ -19,7 +19,6 @@ package com.cloud.tags;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -35,7 +34,6 @@ import com.cloud.domain.PartOf;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.security.SecurityGroupRuleVO;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.vpc.NetworkACLItemVO;
@@ -158,22 +156,6 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         return new Pair<>(accountId, domainId);
     }
 
-    private void checkResourceAccessible(Long accountId, Long domainId, String exceptionMessage) {
-        Account caller = CallContext.current().getCallingAccount();
-        if (Objects.equals(domainId, -1))
-        {
-            throw new CloudRuntimeException("Invalid DomainId: -1");
-        }
-        if (accountId != null) {
-            _accountMgr.checkAccess(caller, null, false, _accountMgr.getAccount(accountId));
-        } else if (domainId != null && !_accountMgr.isNormalUser(caller.getId())) {
-            //check permissions;
-            _accountMgr.checkAccess(caller, _domainMgr.getDomain(domainId));
-        } else {
-            throw new PermissionDeniedException(exceptionMessage);
-        }
-    }
-
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_TAGS_CREATE, eventDescription = "creating resource tags")
@@ -198,7 +180,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
                         Long domainId = accountDomainPair.second();
                         Long accountId = accountDomainPair.first();
 
-                        checkResourceAccessible(accountId, domainId, "Account '" + caller +
+                        resourceManagerUtil.checkResourceAccessible(accountId, domainId, "Account '" + caller +
                                 "' doesn't have permissions to create tags" + " for resource '" + id + "(" + key + ")'.");
 
                         String value = tags.get(key);

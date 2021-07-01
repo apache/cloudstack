@@ -170,7 +170,7 @@ export default {
       }
 
       this.loading = true
-
+      params.showicon = true
       api('listDomains', params).then(json => {
         const domains = json.listdomainsresponse.domain || []
         this.treeData = this.generateTreeData(domains)

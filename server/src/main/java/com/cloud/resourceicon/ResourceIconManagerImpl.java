@@ -16,11 +16,17 @@
 // under the License.
 package com.cloud.resourceicon;
 
+import com.cloud.domain.PartOf;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.metadata.ResourceMetaDataManagerImpl;
+import com.cloud.network.security.SecurityGroupRuleVO;
+import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.network.vpc.NetworkACLItemVO;
+import com.cloud.network.vpc.NetworkACLVO;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.projects.ProjectVO;
 import com.cloud.resource.icon.dao.ResourceIconDao;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceIconManager;
@@ -28,10 +34,18 @@ import com.cloud.server.ResourceIconManager;
 import com.cloud.server.ResourceManagerUtil;
 import com.cloud.server.ResourceTag;
 import com.cloud.resource.icon.ResourceIconVO;
+import com.cloud.storage.SnapshotPolicyVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.tags.ResourceManagerUtilImpl;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
+import com.cloud.user.AccountVO;
+import com.cloud.user.OwnedBy;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -56,16 +70,81 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
     ResourceManagerUtil resourceManagerUtil;
     @Inject
     ResourceIconDao resourceIconDao;
+    @Inject
+    EntityManager entityMgr;
+    @Inject
+    AccountDao accountDao;
 
+    private Pair<Long, Long> getAccountDomain(long resourceId, ResourceTag.ResourceObjectType resourceType) {
+        Class<?> clazz = ResourceManagerUtilImpl.s_typeMap.get(resourceType);
+
+        Object entity = entityMgr.findById(clazz, resourceId);
+        Long accountId = null;
+        Long domainId = null;
+
+        // if the resource type is a security group rule, get the accountId and domainId from the security group itself
+        if (resourceType == ResourceTag.ResourceObjectType.SecurityGroupRule) {
+            SecurityGroupRuleVO rule = (SecurityGroupRuleVO)entity;
+            Object SecurityGroup = entityMgr.findById(ResourceManagerUtilImpl.s_typeMap.get(ResourceTag.ResourceObjectType.SecurityGroup), rule.getSecurityGroupId());
+
+            accountId = ((SecurityGroupVO)SecurityGroup).getAccountId();
+            domainId = ((SecurityGroupVO)SecurityGroup).getDomainId();
+        }
+
+        if (resourceType == ResourceTag.ResourceObjectType.Account) {
+            AccountVO account = (AccountVO)entity;
+            accountId = account.getId();
+            domainId = account.getDomainId();
+        }
+
+        // if the resource type is network acl, get the accountId and domainId from VPC following: NetworkACLItem -> NetworkACL -> VPC
+        if (resourceType == ResourceTag.ResourceObjectType.NetworkACL) {
+            NetworkACLItemVO aclItem = (NetworkACLItemVO)entity;
+            Object networkACL = entityMgr.findById(ResourceManagerUtilImpl.s_typeMap.get(ResourceTag.ResourceObjectType.NetworkACLList), aclItem.getAclId());
+            Long vpcId = ((NetworkACLVO)networkACL).getVpcId();
+
+            if (vpcId != null && vpcId != 0) {
+                Object vpc = entityMgr.findById(ResourceManagerUtilImpl.s_typeMap.get(ResourceTag.ResourceObjectType.Vpc), vpcId);
+
+                accountId = ((VpcVO)vpc).getAccountId();
+                domainId = ((VpcVO)vpc).getDomainId();
+            }
+        }
+
+        if (resourceType == ResourceTag.ResourceObjectType.Project) {
+            accountId = ((ProjectVO)entity).getProjectAccountId();
+        }
+
+        if (resourceType == ResourceTag.ResourceObjectType.SnapshotPolicy) {
+            accountId = entityMgr.findById(VolumeVO.class, ((SnapshotPolicyVO)entity).getVolumeId()).getAccountId();
+        }
+
+        if (entity instanceof OwnedBy) {
+            accountId = ((OwnedBy)entity).getAccountId();
+        }
+
+        if (entity instanceof PartOf) {
+            domainId = ((PartOf)entity).getDomainId();
+        }
+
+        if (accountId == null) {
+            accountId = Account.ACCOUNT_ID_SYSTEM;
+        }
+
+        if ((domainId == null) || ((accountId != null) && (domainId.longValue() == -1))) {
+            domainId = accountDao.getDomainIdForGivenAccountId(accountId);
+        }
+        return new Pair<>(accountId, domainId);
+    }
 
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_ICON_UPLOAD, eventDescription = "uploading resource icon")
     public boolean uploadResourceIcon(List<String> resourceIds, ResourceTag.ResourceObjectType resourceType, String base64Image) {
         final Account caller = CallContext.current().getCallingAccount();
-        if (!accountService.isAdmin(caller.getId())) {
-            throw new PermissionDeniedException("Current Account: " + caller.getAccountName() + " does not have permission to upload resource icons");
-        }
+//        if (!accountService.isAdmin(caller.getId())) {
+//            throw new PermissionDeniedException("Current Account: " + caller.getAccountName() + " does not have permission to upload resource icons");
+//        }
 
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
@@ -78,10 +157,16 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
                     if (base64Image == null) {
                         throw new InvalidParameterValueException("No icon provided to be uploaded for resource: " + resourceId);
                     }
+
                     long id = resourceManagerUtil.getResourceId(resourceId, resourceType);
                     String resourceUuid = resourceManagerUtil.getUuid(resourceId, resourceType);
                     ResourceIconVO existingResourceIcon = resourceIconDao.findByResourceUuid(resourceUuid, resourceType);
                     ResourceIconVO resourceIcon = null;
+                    Pair<Long, Long> accountDomainPair = getAccountDomain(id, resourceType);
+                    Long domainId = accountDomainPair.second();
+                    Long accountId = accountDomainPair.first();
+                    resourceManagerUtil.checkResourceAccessible(accountId, domainId, String.format("Account ' %s ' doesn't have permissions to upload icon for resource ' %s ", caller, id));
+
                     if (existingResourceIcon == null) {
                         resourceIcon = new ResourceIconVO(id, resourceType, resourceUuid, base64Image);
                     } else {
@@ -105,9 +190,9 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
     @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_ICON_DELETE, eventDescription = "deleting resource icon")
     public boolean deleteResourceIcon(List<String> resourceIds, ResourceTag.ResourceObjectType resourceType) {
         Account caller = CallContext.current().getCallingAccount();
-        if (!accountService.isAdmin(caller.getId())) {
-            throw new PermissionDeniedException("Current Account: " + caller.getAccountName() + " does not have permission to delete resource icons");
-        }
+//        if (!accountService.isAdmin(caller.getId())) {
+//            throw new PermissionDeniedException("Current Account: " + caller.getAccountName() + " does not have permission to delete resource icons");
+//        }
         List<? extends ResourceIcon> resourceIcons = searchResourceIcons(resourceIds, resourceType);
         if (resourceIcons.isEmpty()) {
             s_logger.debug("No resource Icon(s) uploaded for the specified resources");

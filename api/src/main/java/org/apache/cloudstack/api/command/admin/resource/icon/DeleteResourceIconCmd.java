@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import java.util.List;
@@ -34,7 +35,7 @@ import java.util.List;
 @APICommand(name = "deleteResourceIcon", description = "deletes the resource icon from the specified resource(s)",
         responseObject = SuccessResponse.class, since = "4.16.0.0", entityType = {ResourceIcon.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-        authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin})
+        authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User})
 public class DeleteResourceIconCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteResourceIconCmd.class.getName());
 
@@ -93,6 +94,11 @@ public class DeleteResourceIconCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
+        Account account = CallContext.current().getCallingAccount();// Let's give the caller here for event logging.
+        if (account != null) {
+            return account.getAccountId();
+        }
+
         return Account.ACCOUNT_ID_SYSTEM;
     }
 }

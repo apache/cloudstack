@@ -72,8 +72,11 @@
         <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
           <tooltip-button type="dashed" size="small" icon="login" @click="changeProject(record)" />
         </span>
-        <span v-if="['template', 'iso'].includes($route.path.split('/')[1]) && record.icon && record.icon.base64image">
-          <resource-icon :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
+        <span v-if="showIcon() && !['vm'].includes($route.path.split('/')[1])">
+          <resource-icon v-if="showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
+          <os-logo v-else-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
+          <a-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 16px; margin-right: 5px" :type="$route.meta.icon"/>
+          <a-icon v-else style="font-size: 16px; margin-right: 5px" :component="$route.meta.icon" />
         </span>
         <span v-else>
           <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
@@ -457,6 +460,14 @@ export default {
       this.$store.dispatch('ToggleTheme', project.id === undefined ? 'light' : 'dark')
       this.$message.success(this.$t('message.switch.to') + ' ' + project.name)
       this.$router.push({ name: 'dashboard' })
+    },
+    showIcon () {
+      const resourceType = this.$route?.path?.split('/')[1]
+      if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm', 'domain', 'project', 'vpc', 'guestnetwork'].includes(resourceType)) {
+        return true
+      } else {
+        return false
+      }
     },
     saveValue (record) {
       api('updateConfiguration', {

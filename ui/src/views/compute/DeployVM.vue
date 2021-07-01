@@ -51,9 +51,8 @@
                                         height="36px" />
                                       <a-icon v-else :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-40px'}" type="global"/>
                                     </div>
-                                    <a-card-meta title="" :description="zoneItem.name" style="text-align:center; paddingTop: 10px;">
-                                    </a-card-meta>
                                   </a-radio>
+                                  <a-card-meta title="" :description="zoneItem.name" style="text-align:center; paddingTop: 10px;" />
                                 </a-card-grid>
                               </a-col>
                             </a-radio-group>

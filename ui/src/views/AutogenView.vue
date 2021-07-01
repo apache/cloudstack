@@ -414,7 +414,7 @@ export default {
       }
     })
     eventBus.$on('refresh-icon', () => {
-      if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm'].includes(this.$route?.path?.split('/')[1])) {
+      if (this.showIcon) {
         this.fetchData()
       }
     })
@@ -428,6 +428,14 @@ export default {
     })
     eventBus.$on('exec-action', (action, isGroupAction) => {
       this.execAction(action, isGroupAction)
+    })
+    eventBus.$on('supports-icons', () => {
+      const resourceType = this.$route?.path?.split('/')[1]
+      if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm', 'domain', 'project', 'vpc', 'guestnetwork'].includes(resourceType)) {
+        this.showIcon = true
+      } else {
+        this.showIcon = false
+      }
     })
 
     if (this.device === 'desktop') {
@@ -620,8 +628,8 @@ export default {
       params.page = this.page
       params.pagesize = this.pageSize
       this.searchParams = params
-      const resourceType = this.$route?.path?.split('/')[1]
-      if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm'].includes(resourceType)) {
+
+      if (eventBus.$emit('supports-icons')) {
         params.showIcon = true
       }
       api(this.apiName, params).then(json => {

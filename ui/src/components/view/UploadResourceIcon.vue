@@ -153,6 +153,8 @@ export default {
         return 'UserVM'
       } else if (type === 'accountuser') {
         return 'User'
+      } else if (type === 'guestnetwork') {
+        return 'Network'
       } else {
         return type
       }

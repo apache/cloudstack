@@ -341,7 +341,6 @@ export default {
       this.treeViewData = []
       this.loadingSearch = true
       this.$emit('change-tree-store', {})
-
       api(this.apiList, params).then(json => {
         const listDomains = this.getResponseJsonData(json)
         this.treeVerticalData = this.treeVerticalData.concat(listDomains)
@@ -393,11 +392,11 @@ export default {
       // set id to parameter
       params.id = selectedKey
       params.listAll = true
+      params.showicon = true
       params.page = 1
       params.pageSize = 1
 
       this.detailLoading = true
-
       api(apiName, params).then(json => {
         const jsonResponse = this.getResponseJsonData(json)
 

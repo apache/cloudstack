@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.admin.user;
 
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
-import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.log4j.Logger;
 
@@ -57,7 +56,7 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd {
     private String username;
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
-            description = "flag to display the resource image for users", authorized={RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin})
+            description = "flag to display the resource icon for users")
     private Boolean showIcon;
 
     /////////////////////////////////////////////////////

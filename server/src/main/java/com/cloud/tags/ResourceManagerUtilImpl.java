@@ -17,7 +17,9 @@
 package com.cloud.tags;
 
 import com.cloud.dc.DataCenterVO;
+import com.cloud.domain.DomainVO;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.LBHealthCheckPolicyVO;
 import com.cloud.network.as.AutoScaleVmGroupVO;
 import com.cloud.network.as.AutoScaleVmProfileVO;
@@ -50,23 +52,30 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.SnapshotPolicyVO;
 
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.DomainManager;
 import com.cloud.user.UserVO;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.lang.StringUtils;
 
 import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class ResourceManagerUtilImpl implements ResourceManagerUtil {
-    protected static final Map<ResourceTag.ResourceObjectType, Class<?>> s_typeMap = new HashMap<>();
+    public static final Map<ResourceTag.ResourceObjectType, Class<?>> s_typeMap = new HashMap<>();
+
     static {
         s_typeMap.put(ResourceTag.ResourceObjectType.UserVm, UserVmVO.class);
         s_typeMap.put(ResourceTag.ResourceObjectType.Volume, VolumeVO.class);
@@ -105,10 +114,15 @@ public class ResourceManagerUtilImpl implements ResourceManagerUtil {
         s_typeMap.put(ResourceTag.ResourceObjectType.SnapshotPolicy, SnapshotPolicyVO.class);
         s_typeMap.put(ResourceTag.ResourceObjectType.NetworkOffering, NetworkOfferingVO.class);
         s_typeMap.put(ResourceTag.ResourceObjectType.VpcOffering, VpcOfferingVO.class);
+        s_typeMap.put(ResourceTag.ResourceObjectType.Domain, DomainVO.class);
     }
 
     @Inject
     EntityManager entityMgr;
+    @Inject
+    AccountManager accountMgr;
+    @Inject
+    DomainManager domainMgr;
 
     @Override
     public long getResourceId(String resourceId, ResourceTag.ResourceObjectType resourceType) {
@@ -152,5 +166,21 @@ public class ResourceManagerUtilImpl implements ResourceManagerUtil {
             }
         }
         throw new InvalidParameterValueException("Invalid resource type: " + resourceTypeStr);
+    }
+
+    public void checkResourceAccessible(Long accountId, Long domainId, String exceptionMessage) {
+        Account caller = CallContext.current().getCallingAccount();
+        if (Objects.equals(domainId, -1))
+        {
+            throw new CloudRuntimeException("Invalid DomainId: -1");
+        }
+        if (accountId != null) {
+            accountMgr.checkAccess(caller, null, false, accountMgr.getAccount(accountId));
+        } else if (domainId != null && !accountMgr.isNormalUser(caller.getId())) {
+            //check permissions;
+            accountMgr.checkAccess(caller, domainMgr.getDomain(domainId));
+        } else {
+            throw new PermissionDeniedException(exceptionMessage);
+        }
     }
 }
