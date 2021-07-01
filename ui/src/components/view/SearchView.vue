@@ -214,7 +214,7 @@ export default {
         } else if (item === 'tags') {
           type = 'tag'
         }
-	      if (item === 'projectwide') {
+        if (item === 'projectwide') {
           type = 'checkbox'
         }
 
