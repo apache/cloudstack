@@ -590,7 +590,6 @@ ALTER TABLE `cloud`.`kubernetes_cluster` CHANGE master_node_count control_node_c
 
 UPDATE `cloud`.`domain_router` SET redundant_state = 'PRIMARY' WHERE redundant_state = 'MASTER';
 
-<<<<<<< HEAD
 DROP TABLE IF EXISTS `cloud`.`external_bigswitch_vns_devices`;
 DROP TABLE IF EXISTS `cloud`.`template_s3_ref`;
 DROP TABLE IF EXISTS `cloud`.`template_swift_ref`;
