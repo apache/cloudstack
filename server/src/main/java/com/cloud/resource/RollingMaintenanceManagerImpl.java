@@ -468,7 +468,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
             return new Ternary<>(true, false, result.second());
         }
         if (result.third() && !hostsToAvoidMaintenance.containsKey(host.getId())) {
-            s_logger.debug(String.format("%s added to the avoid maintenance set", host));
+            logHostAddedToAvoidMaintenanceSet(host);
             hostsToAvoidMaintenance.put(host.getId(), "Pre-maintenance stage set to avoid maintenance");
         }
         return new Ternary<>(false, false, result.second());
@@ -571,10 +571,14 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         for (Host host : hosts) {
             Ternary<Boolean, String, Boolean> result = performStageOnHost(host, Stage.PreFlight, timeout, payload, forced);
             if (result.third() && !hostsToAvoidMaintenance.containsKey(host.getId())) {
-                s_logger.debug(String.format("%s added to the avoid maintenance set", host));
+                logHostAddedToAvoidMaintenanceSet(host);
                 hostsToAvoidMaintenance.put(host.getId(), "Pre-flight stage set to avoid maintenance");
             }
         }
+    }
+
+    private void logHostAddedToAvoidMaintenanceSet(Host host) {
+        s_logger.debug(String.format("%s added to the avoid maintenance set.", host));
     }
 
     /**

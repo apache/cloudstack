@@ -2482,7 +2482,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 try {
                     _vmMgr.destroy(vm.getUuid(), false);
                 } catch (final Exception e) {
-                    String errorMsg = String.format("There was an error when destroying the VM: %s as a part of hostDelete: %s", vm, host);
+                    String errorMsg = String.format("There was an error when destroying %s as a part of hostDelete for %s", vm, host);
                     s_logger.debug(errorMsg, e);
                     throw new UnableDeleteHostException(errorMsg + "," + e.getMessage());
                 }
@@ -2608,7 +2608,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         final com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(
                 host.getPrivateIpAddress(), 22, username, password);
         if (connection == null) {
-            throw new CloudRuntimeException(String.format("SSH to agent is enabled, but failed to connect to %s via IP address %s.", host, host.getPrivateIpAddress()));
+            throw new CloudRuntimeException(String.format("SSH to agent is enabled, but failed to connect to %s via IP address [%s].", host, host.getPrivateIpAddress()));
         }
         try {
             SSHCmdHelper.SSHCmdResult result = SSHCmdHelper.sshExecuteCmdOneShot(

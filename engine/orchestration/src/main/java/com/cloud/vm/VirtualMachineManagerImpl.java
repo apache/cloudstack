@@ -4480,7 +4480,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     try {
                         _agentMgr.send(srcHostId, new Commands(cleanup(vm.getInstanceName())), null);
                     } catch (final AgentUnavailableException e) {
-                        s_logger.error(String.format("AgentUnavailableException while cleanup on source %s: ", srcHost), e);
+                        s_logger.error(String.format("Unable to cleanup source %s. ", srcHost), e);
                     }
                     cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true);
                     throw new CloudRuntimeException("Unable to complete migration for " + vm);
@@ -4494,9 +4494,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (!migrated) {
                 s_logger.info("Migration was unsuccessful.  Cleaning up: " + vm);
 
-                _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(),
-                        "Unable to migrate vm " + vm.getInstanceName() + " from " + fromHost + " in zone " + dest.getDataCenter().getName() + " and pod " +
-                                dest.getPod().getName(), "Migrate Command failed. Please check logs.");
+                String alertSubject = String.format("Unable to migrate VM [%s] from %s in Zone [%s] and Pod [%s].",
+                        vm.getInstanceName(), fromHost, dest.getDataCenter().getName(), dest.getPod().getName());
+                String alertBody = "Migrate Command failed. Please check logs.";
+                _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(), alertSubject, alertBody);
                 try {
                     _agentMgr.send(dstHostId, new Commands(cleanup(vm.getInstanceName())), null);
                 } catch (final AgentUnavailableException ae) {
