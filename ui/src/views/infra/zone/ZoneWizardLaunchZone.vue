@@ -172,6 +172,14 @@ export default {
     },
     selectedBaremetalProviders () {
       return this.prefillContent.networkOfferingSelected ? this.prefillContent.networkOfferingSelected.selectedBaremetalProviders : []
+    },
+    physicalNetworks () {
+      const tungstenNetworks = this.prefillContent.physicalNetworks.filter(network => network.isolationMethod === 'TF')
+      if (tungstenNetworks && tungstenNetworks.length > 0) {
+        return tungstenNetworks
+      }
+
+      return this.prefillContent.physicalNetworks
     }
   },
   mounted () {
@@ -227,8 +235,8 @@ export default {
       physicalNetworkIndex = this.isAdvancedZone ? physicalNetworkIndex : 0
       let physicalNetwork = []
       let trafficConfig = null
-      if (this.prefillContent.physicalNetworks) {
-        physicalNetwork = this.prefillContent.physicalNetworks[physicalNetworkIndex].traffics.filter(traffic => traffic.type === trafficTypeID)
+      if (this.physicalNetworks) {
+        physicalNetwork = this.physicalNetworks[physicalNetworkIndex].traffics.filter(traffic => traffic.type === trafficTypeID)
         trafficConfig = physicalNetwork.length > 0 ? physicalNetwork[0] : null
       }
       let trafficLabel
@@ -376,13 +384,13 @@ export default {
       params.zoneid = this.stepData.zoneReturned.id
 
       if (this.isBasicZone) {
-        const requestedTrafficTypeCount = this.prefillContent.physicalNetworks[0].traffics.length
+        const requestedTrafficTypeCount = this.physicalNetworks[0].traffics.length
         this.stepData.requestedTrafficTypeCount = requestedTrafficTypeCount
         this.stepData.returnedTrafficTypes = this.stepData.returnedTrafficTypes ? this.stepData.returnedTrafficTypes : []
         this.stepData.physicalNetworkReturned = this.stepData.physicalNetworkReturned ? this.stepData.physicalNetworkReturned : {}
 
-        if (this.prefillContent.physicalNetworks && this.prefillContent.physicalNetworks.length > 0) {
-          params.name = this.prefillContent.physicalNetworks[0].name
+        if (this.physicalNetworks && this.physicalNetworks.length > 0) {
+          params.name = this.physicalNetworks[0].name
         } else {
           params.name = 'PhysicalNetworkInBasicZone'
         }
@@ -408,7 +416,7 @@ export default {
 
           if (!this.stepData.stepMove.includes('Storage')) {
             // addTrafficType Storage
-            const storageEx = this.prefillContent.physicalNetworks[0].traffics.filter(traffic => traffic.type === 'storage')
+            const storageEx = this.physicalNetworks[0].traffics.filter(traffic => traffic.type === 'storage')
             if (storageEx && storageEx.length > 0) {
               const storageTrafficResult = await this.addTrafficType('Storage')
               this.stepData.returnedTrafficTypes.push(storageTrafficResult.jobresult.traffictype)
@@ -438,13 +446,13 @@ export default {
         this.stepData.physicalNetworkItem = this.stepData.physicalNetworkItem ? this.stepData.physicalNetworkItem : {}
         let physicalNetworkReturned = {}
 
-        if (this.stepData.physicalNetworksReturned.length === this.prefillContent.physicalNetworks.length) {
+        if (this.stepData.physicalNetworksReturned.length === this.physicalNetworks.length) {
           await this.stepConfigurePhysicalNetwork()
           return
         }
 
-        for (let index = 0; index < this.prefillContent.physicalNetworks.length; index++) {
-          const physicalNetwork = this.prefillContent.physicalNetworks[index]
+        for (let index = 0; index < this.physicalNetworks.length; index++) {
+          const physicalNetwork = this.physicalNetworks[index]
           params.name = physicalNetwork.name
 
           if (physicalNetwork.isolationMethod) {
@@ -506,7 +514,7 @@ export default {
                 this.stepData.physicalNetworksReturned.push(physicalNetworkReturned)
               }
 
-              if (this.stepData.physicalNetworksReturned.length === this.prefillContent.physicalNetworks.length) {
+              if (this.stepData.physicalNetworksReturned.length === this.physicalNetworks.length) {
                 await this.stepConfigurePhysicalNetwork()
               }
             }
@@ -949,8 +957,8 @@ export default {
       } else if (this.isAdvancedZone && this.sgEnabled) {
         await this.stepConfigureStorageTraffic()
       } else {
-        if (this.prefillContent.physicalNetworks) {
-          const storageExists = this.prefillContent.physicalNetworks[0].traffics.filter(traffic => traffic.type === 'storage')
+        if (this.physicalNetworks) {
+          const storageExists = this.physicalNetworks[0].traffics.filter(traffic => traffic.type === 'storage')
           if (storageExists && storageExists.length > 0) {
             await this.stepConfigureStorageTraffic()
           } else {
@@ -1002,7 +1010,7 @@ export default {
     },
     async stepConfigureStorageTraffic () {
       let targetNetwork = false
-      this.prefillContent.physicalNetworks.forEach(physicalNetwork => {
+      this.physicalNetworks.forEach(physicalNetwork => {
         const storageEx = physicalNetwork.traffics.filter(traffic => traffic.type === 'storage')
         if (storageEx && storageEx.length > 0) {
           targetNetwork = true
@@ -1128,7 +1136,7 @@ export default {
         }
       } else if (this.isAdvancedZone) {
         const physicalNetworksHavingGuestIncludingVlan = []
-        await this.prefillContent.physicalNetworks.map(async (network) => {
+        await this.physicalNetworks.map(async (network) => {
           if (this.prefillContent.vlanRangeStart) {
             physicalNetworksHavingGuestIncludingVlan.push(network)
           }

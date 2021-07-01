@@ -176,8 +176,9 @@ export default {
       let isTungsten = false
       if (!this.prefillContent.physicalNetworks) {
         isTungsten = false
-      } else if (this.prefillContent.physicalNetworks[0].isolationMethod === 'TF') {
-        isTungsten = true
+      } else {
+        const tungstenIdx = this.prefillContent.physicalNetworks.findIndex(network => network.isolationMethod === 'TF')
+        isTungsten = tungstenIdx > -1
       }
       return isTungsten
     },
