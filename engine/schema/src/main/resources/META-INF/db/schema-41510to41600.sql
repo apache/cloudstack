@@ -405,3 +405,17 @@ UPDATE `cloud`.`configuration` SET name='denied.routes', description='Routes tha
 ALTER TABLE `cloud`.`kubernetes_cluster` CHANGE master_node_count control_node_count bigint NOT NULL default '0' COMMENT 'the number of the control nodes deployed for this Kubernetes cluster';
 
 UPDATE `cloud`.`domain_router` SET redundant_state = 'PRIMARY' WHERE redundant_state = 'MASTER';
+
+DROP TABLE IF EXISTS `cloud`.`external_bigswitch_vns_devices`;
+DROP TABLE IF EXISTS `cloud`.`template_s3_ref`;
+DROP TABLE IF EXISTS `cloud`.`template_swift_ref`;
+DROP TABLE IF EXISTS `cloud`.`template_ovf_properties`;
+DROP TABLE IF EXISTS `cloud`.`op_host_upgrade`;
+DROP TABLE IF EXISTS `cloud`.`stack_maid`;
+DROP TABLE IF EXISTS `cloud`.`volume_host_ref`;
+DROP TABLE IF EXISTS `cloud`.`template_host_ref`;
+DROP TABLE IF EXISTS `cloud`.`swift`;
+
+ALTER TABLE `cloud`.`snapshots` DROP FOREIGN KEY `fk_snapshots__s3_id` ;
+ALTER TABLE `cloud`.`snapshots` DROP COLUMN `s3_id` ;
+DROP TABLE IF EXISTS `cloud`.`s3`;
