@@ -1539,7 +1539,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         boolean hasPendingMigrationRetries = false;
         for (VMInstanceVO vmInstanceVO : allVmsOnHost) {
             if (_haMgr.hasPendingMigrationsWork(vmInstanceVO.getId())) {
-                s_logger.info(String.format("Attempting maintenance for %s found pending migration for VM %s.", host, vmInstanceVO));
+                s_logger.info(String.format("Attempting maintenance for %s found pending migration for %s.", host, vmInstanceVO));
                 hasPendingMigrationRetries = true;
                 break;
             }
@@ -2501,16 +2501,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     }
                     for (final VMInstanceVO vm : vms) {
                         if ((! HighAvailabilityManager.ForceHA.value() && !vm.isHaEnabled()) || vm.getState() == State.Stopping) {
-                            s_logger.debug(String.format("Stopping VM: %s as a part of hostDelete: %s",vm, host));
+                            s_logger.debug(String.format("Stopping %s as a part of hostDelete for %s",vm, host));
                             try {
                                 _haMgr.scheduleStop(vm, host.getId(), WorkType.Stop);
                             } catch (final Exception e) {
-                                final String errorMsg = String.format("There was an error stopping the VM: %s as a part of hostDelete: %s", vm, host);
+                                final String errorMsg = String.format("There was an error stopping the %s as a part of hostDelete for %s", vm, host);
                                 s_logger.debug(errorMsg, e);
                                 throw new UnableDeleteHostException(errorMsg + "," + e.getMessage());
                             }
                         } else if ((HighAvailabilityManager.ForceHA.value() || vm.isHaEnabled()) && (vm.getState() == State.Running || vm.getState() == State.Starting)) {
-                            s_logger.debug(String.format("Scheduling restart for VM: %s, state: %s on host: %s.", vm, vm.getState(), host));
+                            s_logger.debug(String.format("Scheduling restart for %s, state: %s on host: %s.", vm, vm.getState(), host));
                             _haMgr.scheduleRestart(vm, false);
                         }
                     }

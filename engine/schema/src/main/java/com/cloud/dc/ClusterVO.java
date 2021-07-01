@@ -199,6 +199,6 @@ public class ClusterVO implements Cluster {
 
     @Override
     public String toString() {
-        return String.format("Cluster [{id: \"%s\", name: \"%s\", uuid: \"%s\"}]", id, name, uuid);
+        return String.format("Cluster {id: \"%s\", name: \"%s\", uuid: \"%s\"}", id, name, uuid);
     }
 }

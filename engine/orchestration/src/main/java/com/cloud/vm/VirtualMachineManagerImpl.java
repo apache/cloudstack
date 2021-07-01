@@ -4486,7 +4486,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throw new CloudRuntimeException("Unable to complete migration for " + vm);
                 }
             } catch (final OperationTimedoutException e) {
-                s_logger.debug(String.format("Error while checking the vm %s on %s", vm, dstHost), e);
+                s_logger.debug(String.format("Error while checking the %s on %s", vm, dstHost), e);
             }
 
             migrated = true;
@@ -4494,7 +4494,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (!migrated) {
                 s_logger.info("Migration was unsuccessful.  Cleaning up: " + vm);
 
-                String alertSubject = String.format("Unable to migrate VM [%s] from %s in Zone [%s] and Pod [%s].",
+                String alertSubject = String.format("Unable to migrate %s from %s in Zone [%s] and Pod [%s].",
                         vm.getInstanceName(), fromHost, dest.getDataCenter().getName(), dest.getPod().getName());
                 String alertBody = "Migrate Command failed. Please check logs.";
                 _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(), alertSubject, alertBody);
