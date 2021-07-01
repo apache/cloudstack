@@ -61,31 +61,6 @@
             <a-icon type="delete" class="traffic-type-action" @click="deleteTraffic(record.key, traffic, $event)"/>
           </a-tag>
         </div>
-        <a-modal
-          :title="$t('label.edit.traffic.type')"
-          :visible="showEditTraffic"
-          :closable="true"
-          :maskClosable="false"
-          :okText="$t('label.ok')"
-          :cancelText="$t('label.cancel')"
-          @ok="updateTrafficLabel(trafficInEdit)"
-          @cancel="cancelEditTraffic"
-          centered
-        >
-          <a-form :form="form">
-            <span class="ant-form-text"> {{ $t('message.edit.traffic.type') }} </span>
-            <a-form-item v-bind="formItemLayout" style="margin-top:16px;" :label="$t('label.traffic.label')">
-              <a-input
-                v-decorator="['trafficLabel', {
-                  rules: [{
-                    required: true,
-                    message: $t('message.error.traffic.label'),
-                  }]
-                }]"
-              />
-            </a-form-item>
-          </a-form>
-        </a-modal>
         <div v-if="isShowAddTraffic(record.traffics)">
           <div class="traffic-select-item" v-if="addingTrafficForKey === record.key">
             <a-select
@@ -102,16 +77,16 @@
                 {{ traffic.toUpperCase() }}
               </a-select-option>
             </a-select>
-            <a-button
-              class="icon-button"
-              shape="circle"
+            <tooltip-button
+              :tooltip="$t('label.add')"
+              buttonClass="icon-button"
               icon="plus"
               size="small"
               @click="trafficAdded" />
-            <a-button
-              class="icon-button"
+            <tooltip-button
+              :tooltip="$t('label.cancel')"
+              buttonClass="icon-button"
               type="danger"
-              shape="circle"
               icon="close"
               size="small"
               @click="() => { addingTrafficForKey = null }" />
@@ -128,7 +103,7 @@
         </div>
       </template>
       <template slot="actions" slot-scope="text, record">
-        <a-button v-if="physicalNetworks.indexOf(record) > 0" type="danger" shape="circle" icon="delete" @click="onDelete(record)" />
+        <tooltip-button :tooltip="$t('label.delete')" v-if="physicalNetworks.indexOf(record) > 0" type="danger" icon="delete" @click="onDelete(record)" />
       </template>
       <template slot="footer" v-if="isAdvancedZone">
         <a-button
@@ -163,11 +138,41 @@
     >
       <span>{{ $t('message.required.traffic.type') }}</span>
     </a-modal>
+    <a-modal
+      :title="$t('label.edit.traffic.type')"
+      :visible="showEditTraffic"
+      :closable="true"
+      :maskClosable="false"
+      :okText="$t('label.ok')"
+      :cancelText="$t('label.cancel')"
+      @ok="updateTrafficLabel(trafficInEdit)"
+      @cancel="cancelEditTraffic"
+      centered
+    >
+      <a-form :form="form">
+        <span class="ant-form-text"> {{ $t('message.edit.traffic.type') }} </span>
+        <a-form-item v-bind="formItemLayout" style="margin-top:16px;" :label="$t('label.traffic.label')">
+          <a-input
+            v-decorator="['trafficLabel', {
+              rules: [{
+                required: true,
+                message: $t('message.error.traffic.label'),
+              }]
+            }]"
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 <script>
 
+import TooltipButton from '@/components/view/TooltipButton'
+
 export default {
+  components: {
+    TooltipButton
+  },
   props: {
     prefillContent: {
       type: Object,

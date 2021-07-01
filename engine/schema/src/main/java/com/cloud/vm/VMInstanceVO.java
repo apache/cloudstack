@@ -200,7 +200,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name = "backup_external_id")
     protected String backupExternalId;
 
-    @Column(name = "backup_volumes")
+    @Column(name = "backup_volumes", length = 65535)
     protected String backupVolumes;
 
     public VMInstanceVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,

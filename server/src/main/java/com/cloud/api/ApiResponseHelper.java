@@ -1450,7 +1450,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
 
-            if (vm.getType() == Type.SecondaryStorageVm || vm.getType() == Type.ConsoleProxy) {
+            if (VirtualMachine.systemVMs.contains(vm.getType())) {
                 Host systemVmHost = ApiDBUtils.findHostByTypeNameAndZoneId(vm.getDataCenterId(), vm.getHostName(),
                         Type.SecondaryStorageVm.equals(vm.getType()) ? Host.Type.SecondaryStorageVM : Host.Type.ConsoleProxy);
                 if (systemVmHost != null) {
@@ -3251,6 +3251,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDpd(result.getDpd());
         response.setEncap(result.getEncap());
         response.setRemoved(result.getRemoved());
+        response.setIkeVersion(result.getIkeVersion());
+        response.setSplitConnections(result.getSplitConnections());
         response.setObjectName("vpncustomergateway");
 
         populateAccount(response, result.getAccountId());
@@ -3290,6 +3292,8 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setEspLifetime(customerGateway.getEspLifetime());
                 response.setDpd(customerGateway.getDpd());
                 response.setEncap(customerGateway.getEncap());
+                response.setIkeVersion(customerGateway.getIkeVersion());
+                response.setSplitConnections(customerGateway.getSplitConnections());
             }
         }
 

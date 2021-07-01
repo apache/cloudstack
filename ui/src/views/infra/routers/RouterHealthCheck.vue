@@ -131,7 +131,7 @@ export default {
       this.updateResource(newItem)
     }
   },
-  mounted () {
+  created () {
     this.updateResource(this.resource)
   },
   methods: {

@@ -65,6 +65,11 @@
             <artifactId>websocket-server</artifactId>
             <version>${cs.jetty.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.java-websocket</groupId>
+            <artifactId>Java-WebSocket</artifactId>
+            <version>1.5.1</version>
+        </dependency>
     </dependencies>
     <build>
         <resources>

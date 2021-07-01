@@ -20,7 +20,10 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.spec.KeySpec;
 
@@ -31,6 +34,8 @@ import javax.crypto.spec.DESKeySpec;
 
 import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.util.RawHTTP;
+import com.cloud.consoleproxy.websocket.WebSocketReverseProxy;
+import org.eclipse.jetty.websocket.api.Session;
 
 public class NoVncClient {
     private static final Logger s_logger = Logger.getLogger(NoVncClient.class);
@@ -38,6 +43,8 @@ public class NoVncClient {
     private Socket socket;
     private DataInputStream is;
     private DataOutputStream os;
+
+    private WebSocketReverseProxy webSocketReverseProxy;
 
     public NoVncClient() {
     }
@@ -60,6 +67,30 @@ public class NoVncClient {
         s_logger.info("Connecting to VNC server " + host + ":" + port + "...");
         socket = new Socket(host, port);
         setStreams();
+    }
+
+    // VNC over WebSocket connection helpers
+    public void connectToWebSocket(String websocketUrl, Session session) throws URISyntaxException {
+        webSocketReverseProxy = new WebSocketReverseProxy(new URI(websocketUrl), session);
+        webSocketReverseProxy.connect();
+    }
+
+    public boolean isVncOverWebSocketConnection() {
+        return webSocketReverseProxy != null;
+    }
+
+    public boolean isVncOverWebSocketConnectionOpen() {
+        return isVncOverWebSocketConnection() && webSocketReverseProxy.isOpen();
+    }
+
+    public boolean isVncOverWebSocketConnectionAlive() {
+        return isVncOverWebSocketConnection() && !webSocketReverseProxy.isClosing() && !webSocketReverseProxy.isClosed();
+    }
+
+    public void proxyMsgOverWebSocketConnection(ByteBuffer msg) {
+        if (isVncOverWebSocketConnection()) {
+            webSocketReverseProxy.proxyMsgFromRemoteSessionToEndpoint(msg);
+        }
     }
 
     private void setStreams() throws IOException {
@@ -213,7 +244,11 @@ public class NoVncClient {
     }
 
     public void write(byte[] b) throws IOException {
-        os.write(b);
+        if (isVncOverWebSocketConnection()) {
+            proxyMsgOverWebSocketConnection(ByteBuffer.wrap(b));
+        } else {
+            os.write(b);
+        }
     }
 
 }

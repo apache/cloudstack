@@ -145,7 +145,7 @@ export default {
         ) : this.projects
     }
   },
-  mounted () {
+  created () {
     this.isImageTypeIso = this.$route.meta.name === 'iso'
     this.fetchData()
   },

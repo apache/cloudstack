@@ -176,22 +176,8 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         // populate owner.
         ApiResponseHelper.populateOwner(volResponse, volume);
 
-        // DiskOfferingVO diskOffering =
-        // ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
         if (volume.getDiskOfferingId() > 0) {
-            boolean isServiceOffering = false;
-            if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
-                isServiceOffering = true;
-            } else {
-                // can't rely on the fact that the volume is the datadisk as it might have been created as a root, and
-                // then detached later
-                long offeringId = volume.getDiskOfferingId();
-                if (ApiDBUtils.findDiskOfferingById(offeringId) == null) {
-                    isServiceOffering = true;
-                }
-            }
-
-            if (isServiceOffering) {
+            if (ApiDBUtils.findServiceOfferingByUuid(volume.getDiskOfferingUuid()) != null) {
                 volResponse.setServiceOfferingId(volume.getDiskOfferingUuid());
                 volResponse.setServiceOfferingName(volume.getDiskOfferingName());
                 volResponse.setServiceOfferingDisplayText(volume.getDiskOfferingDisplayText());

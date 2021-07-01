@@ -234,8 +234,6 @@ export default {
       }
     ]
     this.selectedFilter = this.filters[0].id
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

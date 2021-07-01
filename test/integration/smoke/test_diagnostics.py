@@ -429,11 +429,11 @@ class TestRemoteDiagnostics(cloudstackTestCase):
     @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="true")
     def test_10_traceroute_in_vr(self):
         '''
-        Test Arping command execution in VR
+        Test traceroute command execution in VR
         '''
 
         # Validate the following:
-        # 1. Arping command is executed remotely on VR
+        # 1. Traceroute command is executed remotely on VR
 
         list_router_response = list_routers(
             self.apiclient,
@@ -452,13 +452,13 @@ class TestRemoteDiagnostics(cloudstackTestCase):
         cmd.targetid = router.id
         cmd.ipaddress = '8.8.4.4'
         cmd.type = 'traceroute'
-        cmd.params = "-m 10"
+        cmd.params = "-m 5"
         cmd_response = self.apiclient.runDiagnostics(cmd)
 
         self.assertEqual(
             '0',
             cmd_response.exitcode,
-            'Failed to run remote Arping in VR')
+            'Failed to run remote Traceroute in VR')
 
     @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="true")
     def test_11_traceroute_in_ssvm(self):
@@ -488,7 +488,7 @@ class TestRemoteDiagnostics(cloudstackTestCase):
         cmd.targetid = ssvm.id
         cmd.ipaddress = '8.8.4.4'
         cmd.type = 'traceroute'
-        cmd.params = '-m 10'
+        cmd.params = '-m 5'
         cmd_response = self.apiclient.runDiagnostics(cmd)
 
         self.assertEqual(
@@ -525,7 +525,7 @@ class TestRemoteDiagnostics(cloudstackTestCase):
         cmd.targetid = cpvm.id
         cmd.ipaddress = '8.8.4.4'
         cmd.type = 'traceroute'
-        cmd.params = '-m 10'
+        cmd.params = '-m 5'
         cmd_response = self.apiclient.runDiagnostics(cmd)
 
         self.assertEqual(

@@ -284,7 +284,13 @@ export default {
           label: 'label.action.create.volume',
           dataView: true,
           show: (record) => { return record.state === 'BackedUp' },
-          args: ['snapshotid', 'name'],
+          args: (record, store) => {
+            var fields = ['snapshotid', 'name']
+            if (record.volumetype === 'ROOT') {
+              fields.push('diskofferingid')
+            }
+            return fields
+          },
           mapping: {
             snapshotid: {
               value: (record) => { return record.id }

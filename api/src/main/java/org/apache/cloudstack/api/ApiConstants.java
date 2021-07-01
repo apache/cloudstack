@@ -629,12 +629,14 @@ public class ApiConstants {
     public static final String GUEST_IP = "guestip";
     public static final String REMOVED = "removed";
     public static final String COMPLETED = "completed";
+    public static final String IKE_VERSION = "ikeversion";
     public static final String IKE_POLICY = "ikepolicy";
     public static final String ESP_POLICY = "esppolicy";
     public static final String IKE_LIFETIME = "ikelifetime";
     public static final String ESP_LIFETIME = "esplifetime";
     public static final String DPD = "dpd";
     public static final String FORCE_ENCAP = "forceencap";
+    public static final String SPLIT_CONNECTIONS = "splitconnections";
     public static final String FOR_VPC = "forvpc";
     public static final String SHRINK_OK = "shrinkok";
     public static final String NICIRA_NVP_DEVICE_ID = "nvpdeviceid";

@@ -263,7 +263,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     private final GlobalLock _allocLock = GlobalLock.getInternLock(getAllocLockName());
 
     static final ConfigKey<String> NTPServerConfig = new ConfigKey<String>(String.class, "ntp.server.list", "Advanced", null,
-            "Comma separated list of NTP servers to configure in Secondary storage VM", false, ConfigKey.Scope.Global, null);
+            "Comma separated list of NTP servers to configure in Secondary storage VM", true, ConfigKey.Scope.Global, null);
 
     static final ConfigKey<Integer> MaxNumberOfSsvmsForMigration = new ConfigKey<Integer>("Advanced", Integer.class, "max.ssvm.count", "5",
             "Number of additional SSVMs to handle migration of data objects concurrently", true, ConfigKey.Scope.Global);
@@ -811,6 +811,13 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     public boolean isZoneReady(Map<Long, ZoneHostInfo> zoneHostInfoMap, long dataCenterId) {
+        List <HostVO> hosts = _hostDao.listByDataCenterId(dataCenterId);
+        if (CollectionUtils.isEmpty(hosts)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Zone " + dataCenterId + " has no host available which is enabled and in Up state");
+            }
+            return false;
+        }
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenterId);
         if (zoneHostInfo != null && (zoneHostInfo.getFlags() & RunningHostInfoAgregator.ZoneHostInfo.ROUTING_HOST_MASK) != 0) {
             VMTemplateVO template = _templateDao.findSystemVMReadyTemplate(dataCenterId, HypervisorType.Any);

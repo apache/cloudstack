@@ -37,21 +37,17 @@
         :pagination="false" >
 
         <template slot="action" slot-scope="text, record">
-          <a-tooltip placement="bottom">
-            <template slot="title">
-              {{ $t('label.action.delete.ip.range') }}
-            </template>
-            <a-popconfirm
-              :title="$t('message.confirm.remove.ip.range')"
-              @confirm="removeIpRange(record.id)"
-              :okText="$t('label.yes')"
-              :cancelText="$t('label.no')" >
-              <a-button
-                type="danger"
-                icon="delete"
-                shape="circle" />
-            </a-popconfirm>
-          </a-tooltip>
+          <a-popconfirm
+            :title="$t('message.confirm.remove.ip.range')"
+            @confirm="removeIpRange(record.id)"
+            :okText="$t('label.yes')"
+            :cancelText="$t('label.no')" >
+            <tooltip-button
+              tooltipPlacement="bottom"
+              :tooltip="$t('label.action.delete.ip.range')"
+              type="danger"
+              icon="delete" />
+          </a-popconfirm>
         </template>
 
       </a-table>
@@ -92,10 +88,12 @@
 <script>
 import { api } from '@/api'
 import CreateVlanIpRange from '@/views/network/CreateVlanIpRange'
+import TooltipButton from '@/components/view/TooltipButton'
 export default {
   name: 'GuestIpRanges',
   components: {
-    CreateVlanIpRange
+    CreateVlanIpRange,
+    TooltipButton
   },
   props: {
     resource: {
@@ -147,7 +145,7 @@ export default {
       ]
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   watch: {

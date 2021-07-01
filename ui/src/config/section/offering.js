@@ -150,7 +150,7 @@ export default {
         label: 'label.edit',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
-        args: ['name', 'displaytext']
+        args: ['name', 'displaytext', 'tags']
       }, {
         api: 'updateDiskOffering',
         icon: 'lock',
@@ -174,7 +174,7 @@ export default {
       icon: 'cloud-upload',
       docHelp: 'adminguide/virtual_machines.html#backup-offerings',
       permission: ['listBackupOfferings', 'listInfrastructure'],
-      columns: ['name', 'description', 'zoneid'],
+      columns: ['name', 'description', 'zonename'],
       details: ['name', 'id', 'description', 'externalid', 'zone', 'created'],
       actions: [{
         api: 'importBackupOffering',
@@ -216,7 +216,7 @@ export default {
         label: 'label.edit',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
-        args: ['name', 'displaytext', 'availability'],
+        args: ['name', 'displaytext', 'availability', 'tags'],
         mapping: {
           availability: {
             options: ['Optional', 'Required']

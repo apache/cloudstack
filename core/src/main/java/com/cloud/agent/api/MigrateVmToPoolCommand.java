@@ -18,9 +18,9 @@
 //
 package com.cloud.agent.api;
 
-import com.cloud.agent.api.to.VolumeTO;
-
 import java.util.Collection;
+
+import com.cloud.agent.api.to.VolumeTO;
 
 /**
  * used to tell the agent to migrate a vm to a different primary storage pool.
@@ -32,6 +32,7 @@ public class MigrateVmToPoolCommand extends Command {
     private String vmName;
     private String destinationPool;
     private boolean executeInSequence = false;
+    private String hostGuidInTargetCluster;
 
     protected MigrateVmToPoolCommand() {
     }
@@ -41,13 +42,20 @@ public class MigrateVmToPoolCommand extends Command {
      * @param vmName the name of the VM to migrate
      * @param volumes used to supply feedback on vmware generated names
      * @param destinationPool the primary storage pool to migrate the VM to
+     * @param hostGuidInTargetCluster GUID of host in target cluster when migrating across clusters
      * @param executeInSequence
      */
-    public MigrateVmToPoolCommand(String vmName, Collection<VolumeTO> volumes, String destinationPool, boolean executeInSequence) {
+    public MigrateVmToPoolCommand(String vmName, Collection<VolumeTO> volumes, String destinationPool,
+                                  String hostGuidInTargetCluster, boolean executeInSequence) {
         this.vmName = vmName;
         this.volumes = volumes;
         this.destinationPool = destinationPool;
+        this.hostGuidInTargetCluster = hostGuidInTargetCluster;
         this.executeInSequence = executeInSequence;
+    }
+
+    public MigrateVmToPoolCommand(String vmName, Collection<VolumeTO> volumes, String destinationPool, boolean executeInSequence) {
+        this(vmName, volumes, destinationPool, null, executeInSequence);
     }
 
     public Collection<VolumeTO> getVolumes() {
@@ -60,6 +68,10 @@ public class MigrateVmToPoolCommand extends Command {
 
     public String getVmName() {
         return vmName;
+    }
+
+    public String getHostGuidInTargetCluster() {
+        return hostGuidInTargetCluster;
     }
 
     @Override

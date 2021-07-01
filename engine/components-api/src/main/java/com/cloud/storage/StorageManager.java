@@ -19,6 +19,7 @@ package com.cloud.storage;
 import java.math.BigDecimal;
 import java.util.List;
 
+import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -239,5 +240,7 @@ public interface StorageManager extends StorageService {
     DiskTO getDiskWithThrottling(DataTO volTO, Volume.Type volumeType, long deviceId, String path, long offeringId, long diskOfferingId);
 
     boolean isStoragePoolDatastoreClusterParent(StoragePool pool);
+
+    void syncDatastoreClusterStoragePool(long datastoreClusterPoolId, List<ModifyStoragePoolAnswer> childDatastoreAnswerList, long hostId);
 
 }

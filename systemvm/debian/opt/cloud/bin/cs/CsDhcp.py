@@ -127,6 +127,9 @@ class CsDhcp(CsDataBag):
                 listen_address.append(gateway)
             else:
                 listen_address.append(ip)
+            # Add localized "data-server" records in /etc/hosts for VPC routers
+            if self.config.is_vpc():
+                self.add_host(gateway, "%s data-server" % CsHelper.get_hostname())
             idx += 1
 
         # Listen Address
