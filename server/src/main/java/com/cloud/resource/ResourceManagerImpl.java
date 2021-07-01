@@ -2456,7 +2456,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Deleting Host: %s", host));
+            s_logger.debug(String.format("Deleting %s", host));
         }
 
         final StoragePoolVO storagePool = _storageMgr.findLocalStorageOnHost(host.getId());
