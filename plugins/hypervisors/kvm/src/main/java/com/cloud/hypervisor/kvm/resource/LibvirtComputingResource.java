@@ -261,12 +261,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     private static final String PAE = "pae";
     /**
-     * Libvirt only suport guest cpu mode in versions from 0.9.10.
+     * Libvirt supports guest CPU mode since 0.9.10.
      */
     private static final int MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_MODE = 9010;
+    /**
+     * The CPU tune element provides details of the CPU tunable parameters for the domain.<br>
+     * It is supported since Libvirt 0.9.0
+     */
     private static final int MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_TUNE = 9000;
     /**
-     * Verify if guest is ARM64
+     * Constant that defines ARM64 (aarch64) guest architectures.
      */
     private static final String AARCH64 = "aarch64";
 
@@ -2326,7 +2330,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
-     * Configure created VM from specification, adding the necessary components to VM.
+     * Configures created VM from specification, adding the necessary components to VM.
      */
     private void configureVM(VirtualMachineTO vmTO, LibvirtVMDef vm, Map<String, String> customParams, boolean isUefiEnabled, boolean isSecureBoot, String bootMode,
             Map<String, String> extraConfig, String uuid) {
@@ -2361,7 +2365,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
-     *  Add extra configuration to User VM Domain XML before starting.
+     *  Adds extra configuration to User VM Domain XML before starting.
      */
     private void addExtraConfigsToVM(VirtualMachineTO vmTO, LibvirtVMDef vm, Map<String, String> extraConfig) {
         if (MapUtils.isNotEmpty(extraConfig) && VirtualMachine.Type.User.equals(vmTO.getType())) {
@@ -2371,7 +2375,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
-     * Add devices components to VM.
+     * Adds devices components to VM.
      */
     protected DevicesDef createDevicesDef(VirtualMachineTO vmTO, GuestDef guest, int vcpus, boolean isUefiEnabled) {
         DevicesDef devices = new DevicesDef();
@@ -2410,7 +2414,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /*
-     * Add an explicit USB devices for ARM64
+     * Adds an explicit USB devices for ARM64
      */
     protected void createArm64UsbDef(DevicesDef devices) {
         devices.addDevice(new InputDef(KEYBOARD, USB));
@@ -2423,14 +2427,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
-     * Add the VNC port passwd here, get the passwd from the vmInstance.
+     * Creates a Libvirt Graphic Definition with the VM's password and VNC address.
      */
     protected GraphicDef createGraphicDef(VirtualMachineTO vmTO) {
         return new GraphicDef(VNC, (short)0, true, vmTO.getVncAddr(), vmTO.getVncPassword(), null);
     }
 
     /**
-     * Add a VirtIO channel for the Qemu Guest Agent tools.
+     * Adds a Virtio channel for the Qemu Guest Agent tools.
      */
     protected ChannelDef createChannelDef(VirtualMachineTO vmTO) {
         File virtIoChannel = Paths.get(_qemuSocketsPath.getPath(), vmTO.getName() + "." + _qemuGuestAgentSocketName).toFile();
@@ -2438,7 +2442,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
-     * If we're using virtio scsi, then we need to add a virtual scsi controller.
+     * Creates Virtio SCSI controller. <br>
+     * The respective Virtio SCSI XML definition is generated only if the VM's Disk Bus is of ISCSI.
      */
     protected SCSIDef createSCSIDef(int vcpus) {
         return new SCSIDef((short)0, 0, 0, 9, 0, vcpus);
@@ -2561,7 +2566,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
-     * Create a guest definition from a VM specification.
+     * Creates a guest definition from a VM specification.
      */
     protected GuestDef createGuestFromSpec(VirtualMachineTO vmTO, LibvirtVMDef vm, String uuid, Map<String, String> customParams) {
         GuestDef guest = new GuestDef();
@@ -2611,7 +2616,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
-     * Add extra configurations (if any) as a String component to the domain XML
+     * Adds extra configurations (if any) as a String component to the domain XML
      */
     protected void addExtraConfigComponent(Map<String, String> extraConfig, LibvirtVMDef vm) {
         if (MapUtils.isNotEmpty(extraConfig)) {
