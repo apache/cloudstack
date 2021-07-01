@@ -416,6 +416,6 @@ public class VirtualMachineTO {
 
     @Override
     public String toString() {
-        return String.format("VM {\"id\": %s, \"name\": \"%s\", \"uuid\": \"%s\", \"type\": \"%s\"}", id, name, uuid, type);
+        return String.format("VM {id: \"%s\", name: \"%s\", uuid: \"%s\", type: \"%s\"}", id, name, uuid, type);
     }
 }
