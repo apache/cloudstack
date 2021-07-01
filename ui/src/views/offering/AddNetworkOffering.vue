@@ -73,14 +73,20 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item v-if="guestType !== 'shared'">
-          <tooltip-label slot="label" :title="$t('label.ispersistent')" :tooltip="apiParams.ispersistent.description"/>
-          <a-switch v-decorator="['ispersistent', {initialValue: false}]" />
-        </a-form-item>
-        <a-form-item v-if="guestType !== 'shared'">
-          <tooltip-label slot="label" :title="$t('label.specifyvlan')" :tooltip="apiParams.specifyvlan.description"/>
-          <a-switch v-decorator="['specifyvlan', {initialValue: true}]" :defaultChecked="true" />
-        </a-form-item>
+        <a-row :gutter="12" v-if="guestType !== 'shared'">
+          <a-col :md="12" :lg="12">
+            <a-form-item>
+              <tooltip-label slot="label" :title="$t('label.ispersistent')" :tooltip="apiParams.ispersistent.description"/>
+              <a-switch v-decorator="['ispersistent', {initialValue: false}]" />
+            </a-form-item>
+          </a-col>
+          <a-col :md="12" :lg="12">
+            <a-form-item>
+              <tooltip-label slot="label" :title="$t('label.specifyvlan')" :tooltip="apiParams.specifyvlan.description"/>
+              <a-switch v-decorator="['specifyvlan', {initialValue: true}]" :defaultChecked="true" />
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item v-if="guestType === 'isolated'">
           <tooltip-label slot="label" :title="$t('label.vpc')" :tooltip="apiParams.forvpc.description"/>
           <a-switch v-decorator="['forvpc', {initialValue: forVpc}]" :defaultChecked="forVpc" @change="val => { handleForVpcChange(val) }" />
@@ -251,8 +257,7 @@
             v-decorator="['netscalerservicepackagesdescription', {}]"
             :placeholder="$t('label.service.lb.netscaler.servicepackages.description')"/>
         </a-form-item>
-        <a-form-item v-show="false">
-          <tooltip-label slot="label" :title="$t('label.service.lb.lbisolationdropdown')" :tooltip="apiParams.isolation.description"/>
+        <a-form-item :title="$t('label.service.lb.lbisolationdropdown')" v-show="false">
           <a-radio-group
             v-decorator="['isolation', {
               initialValue: 'dedicated'
@@ -887,7 +892,7 @@ export default {
     width: 80vw;
 
     @media (min-width: 800px) {
-      width: 500px;
+      width: 600px;
     }
   }
   .supported-services-container {

@@ -224,60 +224,84 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.ip4gateway')" :tooltip="apiParams.gateway.description"/>
-            <a-input
-              v-decorator="['ip4gateway', {}]"
-              :placeholder="this.$t('label.ip4gateway')"/>
-          </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.netmask')" :tooltip="apiParams.netmask.description"/>
-            <a-input
-              v-decorator="['netmask', {}]"
-              :placeholder="this.$t('label.netmask')"/>
-          </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
-            <a-input
-              v-decorator="['startipv4', {}]"
-              :placeholder="this.$t('label.startipv4')"/>
-          </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.endipv4')" :tooltip="apiParams.endip.description"/>
-            <a-input
-              v-decorator="['endipv4', {}]"
-              :placeholder="this.$t('label.endipv4')"/>
-          </a-form-item>
+          <a-row :gutter="12">
+            <a-col :md="12" :lg="12">
+              <a-form-item>
+                <tooltip-label slot="label" :title="$t('label.ip4gateway')" :tooltip="apiParams.gateway.description"/>
+                <a-input
+                  v-decorator="['ip4gateway', {}]"
+                  :placeholder="this.$t('label.ip4gateway')"/>
+              </a-form-item>
+            </a-col>
+            <a-col :md="12" :lg="12">
+              <a-form-item>
+                <tooltip-label slot="label" :title="$t('label.netmask')" :tooltip="apiParams.netmask.description"/>
+                <a-input
+                  v-decorator="['netmask', {}]"
+                  :placeholder="this.$t('label.netmask')"/>
+              </a-form-item>
+            </a-col>
+          </a-row>
+          <a-row :gutter="12">
+            <a-col :md="12" :lg="12">
+              <a-form-item>
+                <tooltip-label slot="label" :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
+                <a-input
+                  v-decorator="['startipv4', {}]"
+                  :placeholder="this.$t('label.startipv4')"/>
+              </a-form-item>
+            </a-col>
+            <a-col :md="12" :lg="12">
+              <a-form-item>
+                <tooltip-label slot="label" :title="$t('label.endipv4')" :tooltip="apiParams.endip.description"/>
+                <a-input
+                  v-decorator="['endipv4', {}]"
+                  :placeholder="this.$t('label.endipv4')"/>
+              </a-form-item>
+            </a-col>
+          </a-row>
           <a-form-item v-if="isVirtualRouterForAtLeastOneService">
             <tooltip-label slot="label" :title="$t('label.routerip')" :tooltip="apiParams.routerip.description"/>
             <a-input
               v-decorator="['routerip', {}]"
               :placeholder="this.$t('label.routerip')"/>
           </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.ip6gateway')" :tooltip="apiParams.ip6gateway.description"/>
-            <a-input
-              v-decorator="['ip6gateway', {}]"
-              :placeholder="this.$t('label.ip6gateway')"/>
-          </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.ip6cidr')" :tooltip="apiParams.ip6cidr.description"/>
-            <a-input
-              v-decorator="['ip6cidr', {}]"
-              :placeholder="this.$t('label.ip6cidr')"/>
-          </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.startipv6')" :tooltip="apiParams.startipv6.description"/>
-            <a-input
-              v-decorator="['startipv6', {}]"
-              :placeholder="this.$t('label.startipv6')"/>
-          </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.endipv6')" :tooltip="apiParams.endipv6.description"/>
-            <a-input
-              v-decorator="['endipv6', {}]"
-              :placeholder="this.$t('label.endipv6')"/>
-          </a-form-item>
+          <a-row :gutter="12">
+            <a-col :md="12" :lg="12">
+              <a-form-item>
+                <tooltip-label slot="label" :title="$t('label.ip6gateway')" :tooltip="apiParams.ip6gateway.description"/>
+                <a-input
+                  v-decorator="['ip6gateway', {}]"
+                  :placeholder="this.$t('label.ip6gateway')"/>
+              </a-form-item>
+            </a-col>
+            <a-col :md="12" :lg="12">
+              <a-form-item>
+                <tooltip-label slot="label" :title="$t('label.ip6cidr')" :tooltip="apiParams.ip6cidr.description"/>
+                <a-input
+                  v-decorator="['ip6cidr', {}]"
+                  :placeholder="this.$t('label.ip6cidr')"/>
+              </a-form-item>
+            </a-col>
+          </a-row>
+          <a-row :gutter="12">
+            <a-col :md="12" :lg="12">
+              <a-form-item>
+                <tooltip-label slot="label" :title="$t('label.startipv6')" :tooltip="apiParams.startipv6.description"/>
+                <a-input
+                  v-decorator="['startipv6', {}]"
+                  :placeholder="this.$t('label.startipv6')"/>
+              </a-form-item>
+            </a-col>
+            <a-col :md="12" :lg="12">
+              <a-form-item>
+                <tooltip-label slot="label" :title="$t('label.endipv6')" :tooltip="apiParams.endipv6.description"/>
+                <a-input
+                  v-decorator="['endipv6', {}]"
+                  :placeholder="this.$t('label.endipv6')"/>
+              </a-form-item>
+            </a-col>
+          </a-row>
           <a-form-item v-if="isVirtualRouterForAtLeastOneService">
             <tooltip-label slot="label" :title="$t('label.routeripv6')" :tooltip="apiParams.routeripv6.description"/>
             <a-input
