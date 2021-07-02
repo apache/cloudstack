@@ -20,6 +20,7 @@ export default {
   name: 'offering',
   title: 'label.menu.service.offerings',
   icon: 'shopping',
+  shortKey: ['j'],
   permission: ['listServiceOfferings', 'listDiskOfferings', 'listDomains'],
   children: [
     {
@@ -27,6 +28,7 @@ export default {
       title: 'label.compute.offerings',
       docHelp: 'adminguide/service_offerings.html#compute-and-disk-service-offerings',
       icon: 'cloud',
+      shortKey: ['j'],
       permission: ['listServiceOfferings', 'listDomains'],
       params: { isrecursive: 'true' },
       columns: ['name', 'displaytext', 'cpunumber', 'cpuspeed', 'memory', 'domain', 'zone', 'order'],
@@ -50,6 +52,7 @@ export default {
       actions: [{
         api: 'createServiceOffering',
         icon: 'plus',
+        shortKey: ['a'],
         label: 'label.add.compute.offering',
         docHelp: 'adminguide/service_offerings.html#creating-a-new-compute-offering',
         listView: true,
@@ -83,6 +86,7 @@ export default {
       name: 'systemoffering',
       title: 'label.system.offerings',
       icon: 'setting',
+      shortKey: ['alt', 'j'],
       docHelp: 'adminguide/service_offerings.html#system-service-offerings',
       permission: ['listServiceOfferings', 'listInfrastructure'],
       params: { issystem: 'true', isrecursive: 'true' },
@@ -91,6 +95,7 @@ export default {
       actions: [{
         api: 'createServiceOffering',
         icon: 'plus',
+        shortKey: ['a'],
         label: 'label.add.system.service.offering',
         docHelp: 'adminguide/service_offerings.html#creating-a-new-system-service-offering',
         listView: true,
@@ -119,6 +124,7 @@ export default {
       name: 'diskoffering',
       title: 'label.disk.offerings',
       icon: 'hdd',
+      shortKey: ['alt', 'h'],
       docHelp: 'adminguide/service_offerings.html#compute-and-disk-service-offerings',
       permission: ['listDiskOfferings', 'listDomains'],
       params: { isrecursive: 'true' },
@@ -139,6 +145,7 @@ export default {
       actions: [{
         api: 'createDiskOffering',
         icon: 'plus',
+        shortKey: ['a'],
         label: 'label.add.disk.offering',
         docHelp: 'adminguide/service_offerings.html#creating-a-new-disk-offering',
         listView: true,
@@ -172,6 +179,7 @@ export default {
       name: 'backupoffering',
       title: 'label.backup.offerings',
       icon: 'cloud-upload',
+      shortKey: ['alt', 't'],
       docHelp: 'adminguide/virtual_machines.html#backup-offerings',
       permission: ['listBackupOfferings', 'listInfrastructure'],
       columns: ['name', 'description', 'zonename'],
@@ -179,6 +187,7 @@ export default {
       actions: [{
         api: 'importBackupOffering',
         icon: 'plus',
+        shortKey: ['a'],
         label: 'label.import.backup.offering',
         docHelp: 'adminguide/virtual_machines.html#importing-backup-offerings',
         listView: true,
@@ -197,6 +206,7 @@ export default {
       name: 'networkoffering',
       title: 'label.network.offerings',
       icon: 'wifi',
+      shortKey: ['alt', 'v'],
       docHelp: 'adminguide/networking.html#network-offerings',
       permission: ['listNetworkOfferings', 'listInfrastructure'],
       params: { isrecursive: 'true' },
@@ -205,6 +215,7 @@ export default {
       actions: [{
         api: 'createNetworkOffering',
         icon: 'plus',
+        shortKey: ['a'],
         label: 'label.add.network.offering',
         docHelp: 'adminguide/networking.html#creating-a-new-network-offering',
         listView: true,
@@ -269,6 +280,7 @@ export default {
       name: 'vpcoffering',
       title: 'label.vpc.offerings',
       icon: 'deployment-unit',
+      shortKey: ['alt', 'w'],
       docHelp: 'plugins/nuage-plugin.html?#vpc-offerings',
       permission: ['listVPCOfferings', 'listInfrastructure'],
       params: { isrecursive: 'true' },
@@ -283,6 +295,7 @@ export default {
       actions: [{
         api: 'createVPCOffering',
         icon: 'plus',
+        shortKey: ['a'],
         docHelp: 'plugins/nuage-plugin.html?#optional-create-and-enable-vpc-offering',
         label: 'label.add.vpc.offering',
         listView: true,

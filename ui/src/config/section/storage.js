@@ -21,13 +21,13 @@ export default {
   name: 'storage',
   title: 'label.storage',
   icon: 'database',
-  shortKey: "['s']",
+  shortKey: ['s'],
   children: [
     {
       name: 'volume',
       title: 'label.volumes',
       icon: 'hdd',
-      shortKey: ['alt', 'v'],
+      shortKey: ['s'],
       docHelp: 'adminguide/storage.html#working-with-volumes',
       permission: ['listVolumesMetrics'],
       resourceType: 'Volume',

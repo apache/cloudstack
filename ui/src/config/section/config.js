@@ -19,12 +19,14 @@ export default {
   name: 'config',
   title: 'label.configuration',
   icon: 'setting',
+  shortKey: ['u'],
   permission: ['listConfigurations'],
   children: [
     {
       name: 'globalsetting',
       title: 'label.global.settings',
       icon: 'setting',
+      shortKey: ['alt', 'x'],
       permission: ['listConfigurations'],
       columns: ['name', 'description', 'category', 'value', 'actions']
     },
@@ -32,6 +34,7 @@ export default {
       name: 'ldapsetting',
       title: 'label.ldap.configuration',
       icon: 'team',
+      shortKey: ['alt', 'y'],
       permission: ['listLdapConfigurations'],
       columns: ['hostname', 'port', 'domainid'],
       details: ['hostname', 'port', 'domainid'],
@@ -39,6 +42,7 @@ export default {
         {
           api: 'addLdapConfiguration',
           icon: 'plus',
+          shortKey: ['a'],
           label: 'label.configure.ldap',
           listView: true,
           args: [
@@ -71,6 +75,7 @@ export default {
         {
           api: 'updateHypervisorCapabilities',
           icon: 'edit',
+          shortKey: ['alt', 'z'],
           label: 'label.edit',
           dataView: true,
           args: ['maxguestslimit']

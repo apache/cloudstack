@@ -21,14 +21,14 @@ export default {
   name: 'network',
   title: 'label.network',
   icon: 'wifi',
-  shortKey: "['n']",
+  shortKey: ['n'],
   docHelp: 'adminguide/networking_and_traffic.html#advanced-zone-physical-network-configuration',
   children: [
     {
       name: 'guestnetwork',
       title: 'label.guest.networks',
       icon: 'apartment',
-      shortKey: ['alt', 'n'],
+      shortKey: ['n'],
       permission: ['listNetworks'],
       resourceType: 'Network',
       columns: ['name', 'state', 'type', 'vpcname', 'cidr', 'ip6cidr', 'broadcasturi', 'domain', 'account', 'zonename'],

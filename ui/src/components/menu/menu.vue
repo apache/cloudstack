@@ -130,6 +130,7 @@ export default {
           }
         }
       }
+      // console.log(menu.meta.shortkey.length)
       return (
         <Item vShortkey={menu.meta.shortKey} {...{ key: menu.path, on: on }} >
           <router-link {...{ props }}>
@@ -139,7 +140,7 @@ export default {
               this.$store.getters.showshortkeys ? (
                 menu.meta.shortKey ? (
                   <span class="show-shortkey">
-                    {menu.meta.shortKey[0]} + {menu.meta.shortKey[1]}
+                    {menu.meta.shortKey[0]}{menu.meta.shortKey[1] ? '+' + menu.meta.shortKey[1] : ''}
                   </span>
                 ) : (
                   ''
@@ -170,7 +171,7 @@ export default {
           <span slot="title">
             {this.renderIcon(menu.meta.icon, menu)}
             <span vShortkey={menu.meta.shortKey} {...{ on: on }}>{this.$t(menu.meta.title)}</span>
-            {this.$store.getters.showshortkeys ? menu.meta.shortKey ? <span class="show-shortkey">{menu.meta.shortKey[2]}</span> : '' : ''}
+            {this.$store.getters.showshortkeys ? menu.meta.shortKey ? <span class="show-shortkey">{menu.meta.shortKey[0]}</span> : '' : ''}
           </span>
           {itemArr}
         </SubMenu>

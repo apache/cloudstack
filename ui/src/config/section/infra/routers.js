@@ -19,6 +19,7 @@ export default {
   name: 'router',
   title: 'label.virtual.routers',
   icon: 'fork',
+  shortKey: ['alt', '8'],
   docHelp: 'adminguide/systemvm.html#virtual-router',
   permission: ['listRouters'],
   params: { projectid: '-1' },

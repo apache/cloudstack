@@ -22,13 +22,13 @@ export default {
   name: 'compute',
   title: 'label.compute',
   icon: 'cloud',
-  shortKey: "['c']",
+  shortKey: ['c'],
   children: [
     {
       name: 'vm',
       title: 'label.instances',
       icon: 'desktop',
-      shortKey: ['alt', 'i'],
+      shortKey: ['c'],
       docHelp: 'adminguide/virtual_machines.html',
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
@@ -485,7 +485,7 @@ export default {
       name: 'vmgroup',
       title: 'label.instance.groups',
       icon: 'gold',
-      shortKey: ['alt', 'g'],
+      shortKey: ['alt', 'i'],
       docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
       permission: ['listInstanceGroups'],
       columns: ['name', 'account'],
@@ -575,7 +575,7 @@ export default {
       name: 'affinitygroup',
       title: 'label.affinity.groups',
       icon: 'swap',
-      shortKey: ['alt', 'a'],
+      shortKey: ['alt', 'g'],
       docHelp: 'adminguide/virtual_machines.html#affinity-groups',
       permission: ['listAffinityGroups'],
       columns: () => {

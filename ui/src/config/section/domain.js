@@ -62,6 +62,7 @@ export default {
     {
       api: 'createDomain',
       icon: 'plus',
+      shortKey: ['a'],
       label: 'label.add.domain',
       listView: true,
       dataView: false,
