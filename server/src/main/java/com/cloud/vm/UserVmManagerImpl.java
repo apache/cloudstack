@@ -855,15 +855,40 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Vm " + userVm + " should be stopped to do SSH Key reset");
         }
 
-        SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
-        if (s == null) {
-            throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' does not exist for account " + owner.getAccountName()
-            + " in specified domain id");
+        if (cmd.getName() == null && cmd.getNames() == null) {
+            throw new InvalidParameterValueException("No keypair name given");
+        }
+
+        SSHKeyPairVO s = null;
+        if (cmd.getName() != null) {
+            s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
+        }
+
+        List<SSHKeyPairVO> s_list = null;
+        if (cmd.getNames() != null) {
+            s_list = _sshKeyPairDao.findByNames(owner.getAccountId(), owner.getDomainId(), cmd.getNames());
+        }
+
+        if (s_list == null && s == null) {
+            throw new InvalidParameterValueException("Any key pair with the given names does not exist for account " + owner.getAccountName()
+                    + " in specified domain id");
         }
 
         _accountMgr.checkAccess(caller, null, true, userVm);
 
-        String sshPublicKey = s.getPublicKey();
+        String sshPublicKey = null;
+
+        if (s != null) {
+            sshPublicKey = s.getPublicKey();
+        }
+
+        if (s_list != null) {
+            for (SSHKeyPairVO s_each : s_list) {
+                String publicKey = s_each.getPublicKey();
+                if (sshPublicKey != null) sshPublicKey.concat("/n");
+                sshPublicKey.concat(publicKey);
+            }
+        }
 
         boolean result = resetVMSSHKeyInternal(vmId, sshPublicKey);
 
