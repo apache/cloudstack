@@ -1529,24 +1529,18 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             final KVMPhysicalDisk disk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), volume.getPath());
 
-            String snapshotPath = disk.getPath() + File.separator + snapshotName;
+            String diskPath = disk.getPath();
+            String snapshotPath = diskPath + File.separator + snapshotName;
             if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING && !primaryPool.isExternalSnapshot()) {
 
                 validateAvailableSizeOnPoolToTakeVolumeSnapshot(primaryPool, disk);
 
-                String diskPath = disk.getPath();
-
                 String diskLabel = takeVolumeSnapshot(resource.getDisks(conn, vmName), snapshotName, diskPath, vm);
-
                 snapshotPath = getSnapshotPathInPrimaryStorage(primaryPool.getLocalPath(), snapshotName);
                 String copyResult = copySnapshotToPrimaryStorageDir(primaryPool, diskPath, snapshotPath, volume);
-
                 mergeSnapshotIntoBaseFile(vm, diskLabel, diskPath, snapshotName, volume);
 
-                if (StringUtils.isNotEmpty(copyResult)) {
-                    Files.deleteIfExists(Paths.get(snapshotPath));
-                    throw new CloudRuntimeException(copyResult);
-                }
+                validateCopyResult(copyResult, snapshotPath);
 
                 /*
                  * libvirt on RHEL6 doesn't handle resume event emitted from
@@ -1587,7 +1581,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     } catch (final Exception e) {
                         s_logger.error("A RBD snapshot operation on " + disk.getName() + " failed. The error was: " + e.getMessage());
                     }
-                } else {
+                } else if (primaryPool.getType() == StoragePoolType.CLVM) {
                     /* VM is not running, create a snapshot by ourself */
                     final Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
                     command.add(MANAGE_SNAPSTHOT_CREATE_OPTION, disk.getPath());
@@ -1597,6 +1591,10 @@ public class KVMStorageProcessor implements StorageProcessor {
                         s_logger.debug("Failed to manage snapshot: " + result);
                         return new CreateObjectAnswer("Failed to manage snapshot: " + result);
                     }
+                } else {
+                    snapshotPath = getSnapshotPathInPrimaryStorage(primaryPool.getLocalPath(), snapshotName);
+                    String copyResult = copySnapshotToPrimaryStorageDir(primaryPool, diskPath, snapshotPath, volume);
+                    validateCopyResult(copyResult, snapshotPath);
                 }
             }
 
@@ -1609,6 +1607,15 @@ public class KVMStorageProcessor implements StorageProcessor {
             s_logger.error(errorMsg, ex);
             return new CreateObjectAnswer(errorMsg);
         }
+    }
+
+    protected void validateCopyResult(String copyResult, String snapshotPath) throws CloudRuntimeException, IOException {
+        if (copyResult == null) {
+            return;
+        }
+
+        Files.deleteIfExists(Paths.get(snapshotPath));
+        throw new CloudRuntimeException(copyResult);
     }
 
     /**

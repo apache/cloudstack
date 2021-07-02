@@ -293,4 +293,24 @@ public class KVMStorageProcessorTest {
         Assert.assertFalse(storageProcessorSpy.isAvailablePoolSizeDividedByDiskSizeLesserThanMinRate(10500l, 10000l));
         Assert.assertFalse(storageProcessorSpy.isAvailablePoolSizeDividedByDiskSizeLesserThanMinRate(10501l, 10000l));
     }
+
+    @Test
+    public void validateValidateCopyResultResultIsNullReturn() throws CloudRuntimeException, IOException{
+        storageProcessorSpy.validateCopyResult(null, "");
+    }
+
+    @Test (expected = IOException.class)
+    public void validateValidateCopyResultFailToDeleteThrowIOException() throws CloudRuntimeException, IOException{
+        PowerMockito.mockStatic(Files.class);
+        PowerMockito.when(Files.deleteIfExists(Mockito.any())).thenThrow(new IOException(""));
+        storageProcessorSpy.validateCopyResult("", "");
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    @PrepareForTest(KVMStorageProcessor.class)
+    public void validateValidateCopyResulResultNotNullThrowCloudRuntimeException() throws CloudRuntimeException, IOException{
+        PowerMockito.mockStatic(Files.class);
+        PowerMockito.when(Files.deleteIfExists(Mockito.any())).thenReturn(true);
+        storageProcessorSpy.validateCopyResult("", "");
+    }
 }
