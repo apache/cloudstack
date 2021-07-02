@@ -62,8 +62,8 @@
                     :key="idx"
                     :value="opt.id">{{ $t(opt.name) }}</a-select-option>
                 </a-select>
-                <a-checkbox
-                  v-if="field.type==='checkbox'"
+                <a-switch
+                  v-if="field.type==='switch'"
                   v-decorator="[field.name]" />
                 <a-input
                   v-if="field.type==='input'"
@@ -215,7 +215,7 @@ export default {
           type = 'tag'
         }
         if (item === 'projectwide') {
-          type = 'checkbox'
+          type = 'switch'
         }
 
         this.fields.push({
