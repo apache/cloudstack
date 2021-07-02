@@ -1973,7 +1973,7 @@ export default {
         }
       }
       if (offering && offering.rootdisksize > 0) {
-        this.rootDiskSizeFixed = offering.rootdisksize
+        this.rootDiskSizeFixed = offering.rootdisksize / (1024 * 1024 * 1024.0).toFixed(2)
         this.showRootDiskSizeChanger = false
       }
     }
