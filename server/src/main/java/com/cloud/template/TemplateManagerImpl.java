@@ -1789,12 +1789,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         _accountMgr.checkAccess(caller, null, true, templateOwner);
         String name = cmd.getTemplateName();
         if (name.length() > 32) {
-            name = name.substring(5) + "-QA";
+            name = name.substring(5) + "-QA-Clone";
         }
 
-        int bits = 64; // where to specify
         boolean featured = false;
         boolean isPublic = cmd.isPublic();
+        UserVm curVm = cmd.getTargetVM();
+        long zoneId = curVm.getDataCenterId();
         Long volumeId = _volumeDao.findByInstanceAndType(cmd.getId(), Volume.Type.ROOT).get(0).getId();
         HypervisorType hyperType = null;
         VolumeVO volume = _volumeDao.findById(volumeId);
@@ -1853,8 +1854,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         privateTemplate.setSourceTemplateId(sourceTemplateId);
-
         VMTemplateVO template = _tmpltDao.persist(privateTemplate);
+        // persist this to the template zone area and remember to remove the resource count in the execute phase once in failure or clean up phase
+        VMTemplateZoneVO templateZone = new VMTemplateZoneVO(zoneId, template.getId(), new Date());
+        _tmpltZoneDao.persist(templateZone);
         // Increment the number of templates
         if (template != null) {
             Map<String, String> details = new HashMap<String, String>();
