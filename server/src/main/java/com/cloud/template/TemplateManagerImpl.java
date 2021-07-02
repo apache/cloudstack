@@ -1858,6 +1858,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // persist this to the template zone area and remember to remove the resource count in the execute phase once in failure or clean up phase
         VMTemplateZoneVO templateZone = new VMTemplateZoneVO(zoneId, template.getId(), new Date());
         _tmpltZoneDao.persist(templateZone);
+        TemplateDataStoreVO voRecord = _tmplStoreDao.createTemplateDirectDownloadEntry(template.getId(), template.getSize());
+        _tmplStoreDao.persist(voRecord);
         // Increment the number of templates
         if (template != null) {
             Map<String, String> details = new HashMap<String, String>();
