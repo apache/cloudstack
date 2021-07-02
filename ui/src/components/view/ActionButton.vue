@@ -53,7 +53,7 @@
           </span>
           <a-icon v-if="(typeof action.icon === 'string')" :type="action.icon" />
           <font-awesome-icon v-else :icon="action.icon" />
-          <span class="view-shortkey" v-if="$store.getters.showshortkeys">{{ action.shortKey[2] }}</span>
+          <span class="view-shortkey" v-if="$store.getters.showshortkeys">{{ action.shortKey[0] }}</span>
         </a-button>
       </a-badge>
       <a-button
@@ -74,7 +74,7 @@
         </span>
         <a-icon v-if="(typeof action.icon === 'string')" :type="action.icon" />
         <font-awesome-icon v-else :icon="action.icon" />
-        <span class="view-shortkey" v-if="$store.getters.showshortkeys">{{ action.shortKey[2] }}</span>
+        <span class="view-shortkey" v-if="$store.getters.showshortkeys">{{ action.shortKey[0] }}</span>
       </a-button>
     </a-tooltip>
   </span>

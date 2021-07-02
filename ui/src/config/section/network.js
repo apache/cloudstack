@@ -64,7 +64,7 @@ export default {
         {
           api: 'createNetwork',
           icon: 'plus',
-          shortKey: "['a']",
+          shortKey: ['a'],
           label: 'label.add.network',
           docHelp: 'adminguide/networking_and_traffic.html#configure-guest-traffic-in-an-advanced-zone',
           listView: true,
@@ -153,7 +153,7 @@ export default {
         {
           api: 'createVPC',
           icon: 'plus',
-          shortKey: "['a']",
+          shortKey: ['a'],
           label: 'label.add.vpc',
           docHelp: 'adminguide/networking_and_traffic.html#adding-a-virtual-private-cloud',
           listView: true,
@@ -224,7 +224,7 @@ export default {
         {
           api: 'createSecurityGroup',
           icon: 'plus',
-          shortKey: "['a']",
+          shortKey: ['a'],
           label: 'label.add.security.group',
           docHelp: 'adminguide/networking_and_traffic.html#adding-a-security-group',
           listView: true,
@@ -284,7 +284,7 @@ export default {
         {
           api: 'enableStaticNat',
           icon: 'plus-circle',
-          shortKey: "['a']",
+          shortKey: ['a'],
           label: 'label.action.enable.static.nat',
           docHelp: 'adminguide/networking_and_traffic.html#enabling-or-disabling-static-nat',
           dataView: true,
@@ -338,7 +338,7 @@ export default {
         {
           api: 'createPrivateGateway',
           icon: 'plus',
-          shortKey: "['a']",
+          shortKey: ['a'],
           label: 'label.add.private.gateway',
           docHelp: 'adminguide/networking_and_traffic.html#adding-a-private-gateway-to-a-vpc',
           listView: true,
@@ -422,7 +422,7 @@ export default {
         {
           api: 'createVpnConnection',
           icon: 'plus',
-          shortKey: "['a']",
+          shortKey: ['a'],
           label: 'label.create.vpn.connection',
           docHelp: 'adminguide/networking_and_traffic.html#creating-a-vpn-connection',
           listView: true,
@@ -475,7 +475,7 @@ export default {
         {
           api: 'createNetworkACLList',
           icon: 'plus',
-          shortKey: "['a']",
+          shortKey: ['a'],
           label: 'label.add.acl.list',
           docHelp: 'adminguide/networking_and_traffic.html#creating-acl-lists',
           listView: true,
@@ -518,7 +518,7 @@ export default {
         {
           api: 'createLoadBalancer',
           icon: 'plus',
-          shortKey: "['a']",
+          shortKey: ['a'],
           label: 'label.add.internal.lb',
           docHelp: 'adminguide/networking_and_traffic.html#creating-an-internal-lb-rule',
           listView: true,
@@ -569,7 +569,7 @@ export default {
         {
           api: 'addVpnUser',
           icon: 'plus',
-          shortKey: "['a']",
+          shortKey: ['a'],
           label: 'label.add.vpn.user',
           listView: true,
           args: (record, store) => {
@@ -614,7 +614,7 @@ export default {
         {
           api: 'createVpnCustomerGateway',
           icon: 'plus',
-          shortKey: "['a']",
+          shortKey: ['a'],
           label: 'label.add.vpn.customer.gateway',
           docHelp: 'adminguide/networking_and_traffic.html#creating-and-updating-a-vpn-customer-gateway',
           listView: true,
