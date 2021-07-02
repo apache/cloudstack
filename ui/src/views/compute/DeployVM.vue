@@ -509,6 +509,21 @@
                         v-decorator="['bootintosetup']">
                       </a-switch>
                     </a-form-item>
+                    <a-form-item>
+                      <span slot="label">
+                        {{ $t('label.dynamicscalingenabled') }}
+                        <a-tooltip :title="$t('label.dynamicscalingenabled.tooltip')">
+                          <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                        </a-tooltip>
+                      </span>
+                      <a-form-item>
+                        <a-switch
+                          v-decorator="['dynamicscalingenabled']"
+                          :checked="isDynamicallyScalable() && dynamicscalingenabled"
+                          :disabled="!isDynamicallyScalable()"
+                          @change="val => { dynamicscalingenabled = val }"/>
+                      </a-form-item>
+                    </a-form-item>
                     <a-form-item :label="$t('label.userdata')">
                       <a-textarea
                         v-decorator="['userdata']">
@@ -628,7 +643,6 @@ import _ from 'lodash'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
 import store from '@/store'
 import eventBus from '@/config/eventBus'
-
 import InfoCard from '@/components/view/InfoCard'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
@@ -641,7 +655,6 @@ import NetworkSelection from '@views/compute/wizard/NetworkSelection'
 import NetworkConfiguration from '@views/compute/wizard/NetworkConfiguration'
 import SshKeyPairSelection from '@views/compute/wizard/SshKeyPairSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
-
 export default {
   name: 'Wizard',
   components: {
@@ -675,6 +688,7 @@ export default {
       clusterId: null,
       zoneSelected: false,
       startvm: true,
+      dynamicscalingenabled: true,
       vm: {
         name: null,
         zoneid: null,
@@ -710,7 +724,8 @@ export default {
         groups: [],
         keyboards: [],
         bootTypes: [],
-        bootModes: []
+        bootModes: [],
+        dynamicScalingVmConfig: false
       },
       rowCount: {},
       loading: {
@@ -758,7 +773,7 @@ export default {
         'sharedexecutable'
       ],
       initDataConfig: {},
-      defaultNetwork: '',
+      defaultnetworkid: '',
       networkConfig: [],
       dataNetworkCreated: [],
       tabList: [
@@ -892,6 +907,13 @@ export default {
             type: 'Routing'
           },
           field: 'hostid'
+        },
+        dynamicScalingVmConfig: {
+          list: 'listConfigurations',
+          options: {
+            zoneid: _.get(this.zone, 'id'),
+            name: 'enable.dynamic.scale.vm'
+          }
         }
       }
     },
@@ -970,6 +992,9 @@ export default {
     },
     showSecurityGroupSection () {
       return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
+    },
+    dynamicScalingVmConfigValue () {
+      return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
     }
   },
   watch: {
@@ -987,7 +1012,6 @@ export default {
           break
         }
       }
-
       this.iso = ''
       for (const key in this.options.isos) {
         var iso = _.find(_.get(this.options.isos[key], 'iso', []), (option) => option.id === instanceConfig.isoid)
@@ -996,57 +1020,48 @@ export default {
           break
         }
       }
-
       if (instanceConfig.hypervisor) {
         var hypervisorItem = _.find(this.options.hypervisors, (option) => option.name === instanceConfig.hypervisor)
         this.hypervisor = hypervisorItem ? hypervisorItem.name : null
       }
-
       this.serviceOffering = _.find(this.options.serviceOfferings, (option) => option.id === instanceConfig.computeofferingid)
       this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
       this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
       this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
       this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
       this.sshKeyPair = _.find(this.options.sshKeyPairs, (option) => option.name === instanceConfig.keypair)
-
       if (this.zone) {
         this.vm.zoneid = this.zone.id
         this.vm.zonename = this.zone.name
       }
-
       const pod = _.find(this.options.pods, (option) => option.id === instanceConfig.podid)
       if (pod) {
         this.vm.podid = pod.id
         this.vm.podname = pod.name
       }
-
       const cluster = _.find(this.options.clusters, (option) => option.id === instanceConfig.clusterid)
       if (cluster) {
         this.vm.clusterid = cluster.id
         this.vm.clustername = cluster.name
       }
-
       const host = _.find(this.options.hosts, (option) => option.id === instanceConfig.hostid)
       if (host) {
         this.vm.hostid = host.id
         this.vm.hostname = host.name
       }
-
       if (this.diskSize) {
         this.vm.disksizetotalgb = this.diskSize
       }
-
       if (this.networks) {
         this.vm.networks = this.networks
+        this.vm.defaultnetworkid = this.defaultnetworkid
       }
-
       if (this.template) {
         this.vm.templateid = this.template.id
         this.vm.templatename = this.template.displaytext
         this.vm.ostypeid = this.template.ostypeid
         this.vm.ostypename = this.template.ostypename
       }
-
       if (this.iso) {
         this.vm.templateid = this.iso.id
         this.vm.templatename = this.iso.displaytext
@@ -1056,7 +1071,6 @@ export default {
           this.vm.hypervisor = this.hypervisor
         }
       }
-
       if (this.serviceOffering) {
         this.vm.serviceofferingid = this.serviceOffering.id
         this.vm.serviceofferingname = this.serviceOffering.displaytext
@@ -1070,7 +1084,6 @@ export default {
           this.vm.memory = this.serviceOffering.memory
         }
       }
-
       if (!this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {
         this.vm.diskofferingid = ''
         this.vm.diskofferingname = ''
@@ -1080,10 +1093,19 @@ export default {
         this.vm.diskofferingname = this.diskOffering.displaytext
         this.vm.diskofferingsize = this.diskOffering.disksize
       }
-
       if (this.affinityGroups) {
         this.vm.affinitygroup = this.affinityGroups
       }
+    }
+  },
+  serviceOffering (oldValue, newValue) {
+    if (oldValue && newValue && oldValue.id !== newValue.id) {
+      this.dynamicscalingenabled = this.isDynamicallyScalable()
+    }
+  },
+  template (oldValue, newValue) {
+    if (oldValue && newValue && oldValue.id !== newValue.id) {
+      this.dynamicscalingenabled = this.isDynamicallyScalable()
     }
   },
   created () {
@@ -1110,11 +1132,11 @@ export default {
     this.form.getFieldDecorator('multidiskoffering', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('affinitygroupids', { initialValue: [], preserve: true })
     this.form.getFieldDecorator('networkids', { initialValue: [], preserve: true })
+    this.form.getFieldDecorator('defaultnetworkid', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('keypair', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('cpunumber', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('cpuSpeed', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('memory', { initialValue: undefined, preserve: true })
-
     this.dataPreFill = this.preFillContent && Object.keys(this.preFillContent).length > 0 ? this.preFillContent : {}
     this.fetchData()
   },
@@ -1170,7 +1192,6 @@ export default {
           }
         })
       }
-
       this.fetchBootTypes()
       this.fetchBootModes()
       this.fetchInstaceGroups()
@@ -1178,6 +1199,9 @@ export default {
         ['name', 'keyboard', 'boottype', 'bootmode', 'userdata'].forEach(this.fillValue)
         this.instanceConfig = this.form.getFieldsValue() // ToDo: maybe initialize with some other defaults
       })
+    },
+    isDynamicallyScalable () {
+      return this.serviceOffering && this.serviceOffering.dynamicscalingenabled && this.template && this.template.isdynamicallyscalable && this.dynamicScalingVmConfigValue
     },
     async fetchDataByZone (zoneId) {
       this.fillValue('zoneid')
@@ -1194,7 +1218,6 @@ export default {
     },
     fetchBootTypes () {
       const bootTypes = []
-
       bootTypes.push({
         id: 'BIOS',
         description: 'BIOS'
@@ -1203,13 +1226,11 @@ export default {
         id: 'UEFI',
         description: 'UEFI'
       })
-
       this.options.bootTypes = bootTypes
       this.$forceUpdate()
     },
     fetchBootModes (bootType) {
       const bootModes = []
-
       if (bootType === 'UEFI') {
         bootModes.push({
           id: 'LEGACY',
@@ -1225,7 +1246,6 @@ export default {
           description: 'LEGACY'
         })
       }
-
       this.options.bootModes = bootModes
       this.$forceUpdate()
     },
@@ -1337,7 +1357,10 @@ export default {
       })
     },
     updateDefaultNetworks (id) {
-      this.defaultNetwork = id
+      this.defaultnetworkid = id
+      this.form.setFieldsValue({
+        defaultnetworkid: id
+      })
     },
     updateNetworkConfig (networks) {
       this.networkConfig = networks
@@ -1365,7 +1388,7 @@ export default {
     handleSubmit (e) {
       console.log('wizard submit')
       e.preventDefault()
-      this.form.validateFieldsAndScroll(async (err, values) => {
+      this.form.validateFields(async (err, values) => {
         if (err) {
           if (err.licensesaccepted) {
             this.$notification.error({
@@ -1374,38 +1397,34 @@ export default {
             })
             return
           }
-
           this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('error.form.message')
           })
-          if (!values.templateid && !values.isoid) {
-            this.$notification.error({
-              message: this.$t('message.request.failed'),
-              description: this.$t('message.template.iso')
-            })
-            return
-          } else if (values.isoid && (!values.diskofferingid || values.diskofferingid === '0')) {
-            this.$notification.error({
-              message: this.$t('message.request.failed'),
-              description: this.$t('message.step.3.continue')
-            })
-            return
-          }
-          if (!values.computeofferingid) {
-            this.$notification.error({
-              message: this.$t('message.request.failed'),
-              description: this.$t('message.step.2.continue')
-            })
-            return
-          }
           return
         }
-
+        if (!values.templateid && !values.isoid) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('message.template.iso')
+          })
+          return
+        } else if (values.isoid && (!values.diskofferingid || values.diskofferingid === '0')) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('message.step.3.continue')
+          })
+          return
+        }
+        if (!values.computeofferingid) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('message.step.2.continue')
+          })
+          return
+        }
         this.loading.deploy = true
-
         let networkIds = []
-
         const deployVmData = {}
         // step 1 : select zone
         deployVmData.zoneid = values.zoneid
@@ -1415,6 +1434,7 @@ export default {
         deployVmData.keyboard = values.keyboard
         deployVmData.boottype = values.boottype
         deployVmData.bootmode = values.bootmode
+        deployVmData.dynamicscalingenabled = values.dynamicscalingenabled
         if (values.userdata && values.userdata.length > 0) {
           deployVmData.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
         }
@@ -1432,9 +1452,7 @@ export default {
         if (values.hypervisor && values.hypervisor.length > 0) {
           deployVmData.hypervisor = values.hypervisor
         }
-
         deployVmData.startvm = values.startvm
-
         // step 3: select service offering
         deployVmData.serviceofferingid = values.computeofferingid
         if (this.serviceOffering && this.serviceOffering.iscustomized) {
@@ -1486,9 +1504,9 @@ export default {
             networkIds = values.networkids
             if (networkIds.length > 0) {
               for (let i = 0; i < networkIds.length; i++) {
-                if (networkIds[i] === this.defaultNetwork) {
+                if (networkIds[i] === this.defaultnetworkid) {
                   const ipToNetwork = {
-                    networkid: this.defaultNetwork
+                    networkid: this.defaultnetworkid
                   }
                   arrNetwork.unshift(ipToNetwork)
                 } else {
@@ -1542,11 +1560,9 @@ export default {
         if ('bootintosetup' in values) {
           deployVmData.bootintosetup = values.bootintosetup
         }
-
         const title = this.$t('label.launch.vm')
         const description = values.name || ''
         const password = this.$t('label.password')
-
         api('deployVirtualMachine', deployVmData).then(response => {
           const jobId = response.deployvirtualmachineresponse.jobid
           if (jobId) {
@@ -1637,17 +1653,14 @@ export default {
             }
             param.opts = response
             this.options[name] = response
-
             if (name === 'hypervisors') {
               this.hypervisor = response[0] && response[0].name ? response[0].name : null
             }
-
             this.$forceUpdate()
             if (param.field) {
               this.fillValue(param.field)
             }
           })
-
           if (name === 'zones') {
             let zoneid = ''
             if (this.$route.query.zoneid) {
@@ -1677,7 +1690,6 @@ export default {
       args.zoneid = _.get(this.zone, 'id')
       args.templatefilter = templateFilter
       args.details = 'all'
-
       return new Promise((resolve, reject) => {
         api('listTemplates', args).then((response) => {
           resolve(response)
@@ -1696,7 +1708,6 @@ export default {
       args.zoneid = _.get(this.zone, 'id')
       args.isoFilter = isoFilter
       args.bootable = true
-
       return new Promise((resolve, reject) => {
         api('listIsos', args).then((response) => {
           resolve(response)
@@ -1782,13 +1793,11 @@ export default {
     },
     onSelectPodId (value) {
       this.podId = value
-
       this.fetchOptions(this.params.clusters, 'clusters')
       this.fetchOptions(this.params.hosts, 'hosts')
     },
     onSelectClusterId (value) {
       this.clusterId = value
-
       this.fetchOptions(this.params.hosts, 'hosts')
     },
     handleSearchFilter (name, options) {
@@ -1806,7 +1815,6 @@ export default {
         .replace(/&amp;/g, '&')
         .replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')
-
       return reversedValue
     },
     fetchTemplateNics (template) {
@@ -1965,49 +1973,41 @@ export default {
         }
       }
       if (offering && offering.rootdisksize > 0) {
-        this.rootDiskSizeFixed = offering.rootdisksize / (1024 * 1024 * 1024.0).toFixed(2)
+        this.rootDiskSizeFixed = offering.rootdisksize
         this.showRootDiskSizeChanger = false
       }
     }
   }
 }
 </script>
-
 <style lang="less" scoped>
   .card-footer {
     text-align: right;
     margin-top: 2rem;
-
     button + button {
       margin-left: 8px;
     }
   }
-
   .ant-list-item-meta-avatar {
     font-size: 1rem;
   }
-
   .ant-collapse {
     margin: 2rem 0;
   }
 </style>
-
 <style lang="less">
   @import url('../../style/index');
-
   .ant-table-selection-column {
     // Fix for the table header if the row selection use radio buttons instead of checkboxes
     > div:empty {
       width: 16px;
     }
   }
-
   .ant-collapse-borderless > .ant-collapse-item {
     border: 1px solid @border-color-split;
     border-radius: @border-radius-base !important;
     margin: 0 0 1.2rem;
   }
-
   .vm-info-card {
     .ant-card-body {
       min-height: 250px;
@@ -2015,11 +2015,9 @@ export default {
       overflow-y: auto;
       scroll-behavior: smooth;
     }
-
     .resource-detail-item__label {
       font-weight: normal;
     }
-
     .resource-detail-item__details, .resource-detail-item {
       a {
         color: rgba(0, 0, 0, 0.65);
@@ -2028,7 +2026,6 @@ export default {
       }
     }
   }
-
   .form-item-hidden {
     display: none;
   }
