@@ -5599,7 +5599,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String ipv6Address = null;
         String macAddress = null;
 //        IpAddresses addr = new IpAddresses(ipAddress.getVmIp(), null, macAddress);
-        IpAddresses addr = new IpAddresses("127.20.0.183", ipv6Address, macAddress);
+        IpAddresses addr = new IpAddresses("60.147.41.98", ipv6Address, macAddress);
         long serviceOfferingId = curVm.getServiceOfferingId();
         ServiceOffering serviceOffering = _serviceOfferingDao.findById(curVm.getId(), serviceOfferingId);
         List<SecurityGroupVO> securityGroupList = _securityGroupMgr.getSecurityGroupsForVm(curVm.getId());
