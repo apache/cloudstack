@@ -430,7 +430,7 @@ export default {
         fields.push('zonename')
         return fields
       },
-      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'size', 'masternodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename'],
+      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'size', 'controlnodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename'],
       tabs: [{
         name: 'k8s',
         component: () => import('@/views/compute/KubernetesServiceTab.vue')
