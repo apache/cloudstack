@@ -880,12 +880,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (s != null) {
             sshPublicKey = s.getPublicKey();
+            s_logger.info("the public key for single ssh is " + sshPublicKey);
         }
 
         if (s_list != null) {
             for (SSHKeyPairVO s_each : s_list) {
                 String publicKey = s_each.getPublicKey();
-                if (sshPublicKey != null) sshPublicKey.concat("/n");
+                if (sshPublicKey != null) {
+                    sshPublicKey.concat("/n");
+                    s_logger.info("the public key for keypair name" + s_each.getName() + "is " + sshPublicKey);
+                }
+                else s_logger.error("ssh key with the given name " + s_each.getName() + "does not exist");
                 sshPublicKey.concat(publicKey);
             }
         }
