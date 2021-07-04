@@ -133,7 +133,7 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
         Optional<UserVm> result;
         try {
             CallContext.current().setEventDetails("Vm Id for full clone: " + getEntityId());
-//            _templateService.createPrivateTemplate(this);
+            _templateService.createPrivateTemplate(this);
             result = _userVmService.cloneVirtualMachine(this);
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
