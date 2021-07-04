@@ -1818,7 +1818,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 finalTmpProduct = _tmpltDao.findById(templateId);
                 TemplateDataStoreVO srcTmpltStore = _tmplStoreDao.findByStoreTemplate(store.getId(), templateId);
                 UsageEventVO usageEvent =
-                        new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, finalTmpProduct.getAccountId(), zoneId, finalTmpProduct.getId(), privateTemplate.getName(), null,
+                        new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, finalTmpProduct.getAccountId(), zoneId, finalTmpProduct.getId(), finalTmpProduct.getName(), null,
                                 finalTmpProduct.getSourceTemplateId(), srcTmpltStore.getPhysicalSize(), finalTmpProduct.getSize());
                 _usageEventDao.persist(usageEvent);
             } catch (InterruptedException e) {
