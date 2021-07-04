@@ -5599,7 +5599,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String ipv6Address = null;
         String macAddress = null;
 //        IpAddresses addr = new IpAddresses(ipAddress.getVmIp(), null, macAddress);
-        IpAddresses addr = new IpAddresses("60.147.41.98", ipv6Address, macAddress);
+        IpAddresses addr = new IpAddresses("60.147.41.99", ipv6Address, macAddress);
         long serviceOfferingId = curVm.getServiceOfferingId();
         ServiceOffering serviceOffering = _serviceOfferingDao.findById(curVm.getId(), serviceOfferingId);
         List<SecurityGroupVO> securityGroupList = _securityGroupMgr.getSecurityGroupsForVm(curVm.getId());
@@ -5620,16 +5620,36 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (template == null) {
             throw new CloudRuntimeException("the temporary template is not created, server error, contact your sys admin");
         }
-        List<Long> networkIds = null;
+        List<Long> networkIds = _networkModel.listNetworksUsedByVm(curVm.getId());
         String group = null;
         InstanceGroupVO groupVo = getGroupForVm(cmd.getId());
         if (groupVo != null) {
             group = groupVo.getName();
         }
-        UserVm vmResult = createBasicSecurityGroupVirtualMachine(dataCenter, serviceOffering, template, securityGroupIdList, curAccount, hostName, displayName, diskOfferingId,
-                size , group , hypervisorType, cmd.getHttpMethod(), userData , sshKeyPair , ipToNetoworkMap, addr, isDisplayVM , keyboard , null,
-                curVm.getDetails() == null ? new HashMap<>() : curVm.getDetails(), cmd.getCustomId(), new HashMap<>(),
-                null, new HashMap<>(), dynamicScalingEnabled);
+        UserVm vmResult = null;
+        List<Long> affinityGroupIdList = _affinityGroupDao.findByAccountAndNames(curAccount.getId(), curAccount.getAccountName())
+                                        .stream().
+                                        mapToLong(AffinityGroupVO::getId).
+                                        boxed().
+                                        collect(Collectors.toList());
+        if (dataCenter.getNetworkType() == NetworkType.Basic) {
+            vmResult = createBasicSecurityGroupVirtualMachine(dataCenter, serviceOffering, template, securityGroupIdList, curAccount, hostName, displayName, diskOfferingId,
+                    size, group, hypervisorType, cmd.getHttpMethod(), userData, sshKeyPair, ipToNetoworkMap, addr, isDisplayVM, keyboard, affinityGroupIdList,
+                    curVm.getDetails() == null ? new HashMap<>() : curVm.getDetails(), cmd.getCustomId(), new HashMap<>(),
+                    null, new HashMap<>(), dynamicScalingEnabled);
+        } else {
+            if (dataCenter.isSecurityGroupEnabled()) {
+                vmResult = createAdvancedSecurityGroupVirtualMachine(dataCenter, serviceOffering, template, networkIds, securityGroupIdList, curAccount, hostName,
+                        displayName, diskOfferingId, size, group, hypervisorType, cmd.getHttpMethod(), userData, sshKeyPair, ipToNetoworkMap, addr, isDisplayVM, keyboard,
+                        affinityGroupIdList, curVm.getDetails() == null ? new HashMap<>() : curVm.getDetails(), cmd.getCustomId(), new HashMap<>(),
+                        null, new HashMap<>(), dynamicScalingEnabled);
+            } else {
+                vmResult = createAdvancedVirtualMachine(dataCenter, serviceOffering, template, networkIds, curAccount, hostName, displayName, diskOfferingId, size, group,
+                        hypervisorType, cmd.getHttpMethod(), userData, sshKeyPair, ipToNetoworkMap, addr, isDisplayVM, keyboard, affinityGroupIdList, curVm.getDetails() == null ? new HashMap<>() : curVm.getDetails(),
+                        cmd.getCustomId(), new HashMap<>(), null, new HashMap<>(), dynamicScalingEnabled);
+            }
+        }
+
         return vmResult;
     }
 

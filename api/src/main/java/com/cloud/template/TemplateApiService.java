@@ -105,7 +105,7 @@ public interface TemplateApiService {
      * */
     VirtualMachineTemplate createPrivateTemplateRecord(CloneVMCmd cmd, Account templateOwner) throws ResourceAllocationException;
 
-    VirtualMachineTemplate createPrivateTemplateRecord(CloneVMCmd cmd) throws CloudRuntimeException;
+    VirtualMachineTemplate createPrivateTemplate(CloneVMCmd cmd) throws CloudRuntimeException;
 
     VirtualMachineTemplate createPrivateTemplateRecord(CreateTemplateCmd cmd, Account templateOwner) throws ResourceAllocationException;
 

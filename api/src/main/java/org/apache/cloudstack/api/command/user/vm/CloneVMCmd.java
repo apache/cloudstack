@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 //import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import java.util.Optional;
@@ -131,8 +132,8 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
     public void execute() {
         Optional<UserVm> result;
         try {
-//            CallContext.current().setEventDetails("Vm Id for full clone: " + getId());
-//            VirtualMachineTemplate template = _templateService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
+            CallContext.current().setEventDetails("Vm Id for full clone: " + getEntityId());
+//            _templateService.createPrivateTemplate(this);
             result = _userVmService.cloneVirtualMachine(this);
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);

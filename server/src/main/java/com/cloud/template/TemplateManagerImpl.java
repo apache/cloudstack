@@ -1783,6 +1783,85 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating actual private template", create = true)
+    public VirtualMachineTemplate createPrivateTemplate(CloneVMCmd cmd) throws CloudRuntimeException {
+        UserVm curVm = cmd.getTargetVM();
+        long templateId = cmd.getTemporaryTemlateId();
+        final Long accountId = curVm.getAccountId();
+        Account caller = CallContext.current().getCallingAccount();
+        List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(cmd.getId(), Volume.Type.ROOT);
+        VolumeVO targetVolume = volumes.get(0);
+        long volumeId = targetVolume.getId();
+        VMTemplateVO finalTmpProduct = null;
+        try {
+            TemplateInfo cloneTempalateInfp = _tmplFactory.getTemplate(templateId, DataStoreRole.Image);
+            long zoneId = curVm.getDataCenterId();
+            AsyncCallFuture<TemplateApiResult> future = null;
+            VolumeInfo vInfo = _volFactory.getVolume(volumeId);
+            DataStore store = _dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
+            future = _tmpltSvr.createTemplateFromVolumeAsync(vInfo, cloneTempalateInfp, store);
+            CommandResult result = null;
+            try {
+                result = future.get();
+
+                if (result.isFailed()) {
+                    finalTmpProduct = null;
+                    s_logger.debug("Failed to create template: " + result.getResult());
+                    throw new CloudRuntimeException("Failed to create template: " + result.getResult());
+                }
+                if (_dataStoreMgr.isRegionStore(store)) {
+                    _tmpltSvr.associateTemplateToZone(templateId, null);
+                } else {
+                    // Already done in the record to db step
+                }
+                finalTmpProduct = _tmpltDao.findById(templateId);
+                TemplateDataStoreVO srcTmpltStore = _tmplStoreDao.findByStoreTemplate(store.getId(), templateId);
+                UsageEventVO usageEvent =
+                        new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, finalTmpProduct.getAccountId(), zoneId, finalTmpProduct.getId(), privateTemplate.getName(), null,
+                                finalTmpProduct.getSourceTemplateId(), srcTmpltStore.getPhysicalSize(), finalTmpProduct.getSize());
+                _usageEventDao.persist(usageEvent);
+            } catch (InterruptedException e) {
+                s_logger.debug("Failed to create template for id: " + templateId, e);
+                throw new CloudRuntimeException("Failed to create template" , e);
+            } catch (ExecutionException e) {
+                s_logger.debug("Failed to create template for id: " + templateId, e);
+                throw new CloudRuntimeException("Failed to create template ", e);
+            }
+
+        } finally {
+            if (finalTmpProduct == null) {
+                final VolumeVO volumeFinal = targetVolume;
+                final SnapshotVO snapshotFinal = null;
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        // template_store_ref entries should have been removed using our
+                        // DataObject.processEvent command in case of failure, but clean
+                        // it up here to avoid
+                        // some leftovers which will cause removing template from
+                        // vm_template table fail.
+                        _tmplStoreDao.deletePrimaryRecordsForTemplate(templateId);
+                        // Remove the template_zone_ref record
+                        _tmpltZoneDao.deletePrimaryRecordsForTemplate(templateId);
+                        // Remove the template record
+                        _tmpltDao.expunge(templateId);
+
+                        // decrement resource count
+                        if (accountId != null) {
+                            _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.template);
+                            _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.secondary_storage, new Long(volumeFinal != null ? volumeFinal.getSize()
+                                    : snapshotFinal.getSize()));
+                        }
+                    }
+                });
+
+            }
+        }
+        return null;
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template from clone", create = true)
     public VMTemplateVO createPrivateTemplateRecord(CloneVMCmd cmd, Account templateOwner) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
@@ -1902,11 +1981,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         } else {
             throw new CloudRuntimeException("Failed to create a template");
         }
-    }
-
-    @Override
-    public VirtualMachineTemplate createPrivateTemplateRecord(CloneVMCmd cmd) throws CloudRuntimeException {
-        return null;
     }
 
     @Override
