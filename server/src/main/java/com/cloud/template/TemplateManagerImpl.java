@@ -1787,7 +1787,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating actual private template", create = true)
     public VirtualMachineTemplate createPrivateTemplate(CloneVMCmd cmd) throws CloudRuntimeException {
         UserVm curVm = cmd.getTargetVM();
-        long templateId = cmd.getTemplateId();
+        long templateId = Long.parseLong(cmd.getEntityUuid());
         final Long accountId = curVm.getAccountId();
         Account caller = CallContext.current().getCallingAccount();
         List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(cmd.getId(), Volume.Type.ROOT);

@@ -23,8 +23,6 @@ public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
 
     private String uuid;
 
-    private Long templateId;
-
     public abstract void create() throws ResourceAllocationException;
 
     public Long getEntityId() {
@@ -49,13 +47,5 @@ public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
 
     public String getCreateEventDescription() {
         return null;
-    }
-
-    public Long getTemplateId() {
-        return templateId;
-    }
-
-    public void setTemplateId(Long id) {
-        this.templateId = id;
     }
 }
