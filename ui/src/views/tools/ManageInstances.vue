@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-row :gutter="12">
+  <a-row :gutter="12" v-if="isPageAllowed">
     <a-col :md="24">
       <a-card class="breadcrumb-card">
         <a-col :md="24" style="display: flex">
@@ -369,12 +369,21 @@ export default {
     this.form = this.$form.createForm(this)
   },
   created () {
-    console.log('---------------created', this.$route.query)
     this.page.unmanaged = parseInt(this.$route.query.unmanagedpage || 1)
     this.page.managed = parseInt(this.$route.query.managedpage || 1)
     this.fetchData()
   },
   computed: {
+    isPageAllowed () {
+      if (this.$route.meta.permission) {
+        for (var apiName of this.$route.meta.permission) {
+          if (!(apiName in this.$store.getters.apis)) {
+            return false
+          }
+        }
+      }
+      return true
+    },
     params () {
       return {
         zones: {
@@ -553,7 +562,6 @@ export default {
     },
     updateQuery (field, value) {
       const query = Object.assign({}, this.$route.query)
-      console.log(field, value, query[field])
       if (query[field] === value + '') {
         return
       }
@@ -611,7 +619,7 @@ export default {
         clusterid: this.clusterId
       }
       const query = Object.assign({}, this.$route.query)
-      this.page.unmanaged = page || query.unmanagedpage || this.page.unmanaged
+      this.page.unmanaged = page || parseInt(query.unmanagedpage) || this.page.unmanaged
       this.updateQuery('unmanagedpage', this.page.unmanaged)
       params.page = this.page.unmanaged
       this.pageSize.unmanaged = pageSize || this.pageSize.unmanaged
@@ -646,7 +654,7 @@ export default {
         clusterid: this.clusterId
       }
       const query = Object.assign({}, this.$route.query)
-      this.page.managed = page || query.managedpage || this.page.managed
+      this.page.managed = page || parseInt(query.managedpage) || this.page.managed
       this.updateQuery('managedpage', this.page.managed)
       params.page = this.page.managed
       this.pageSize.managed = pageSize || this.pageSize.managed
