@@ -95,6 +95,7 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "failed to create a template to db");
             }
             s_logger.info("The template id recorded is: " + template.getId());
+            setTemplateId(template.getId());
             setTemporaryTemlateId(template.getId());
             UserVm vmRecord = _userVmService.recordVirtualMachineToDB(this);
             if (vmRecord == null) {
@@ -133,7 +134,7 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
         Optional<UserVm> result;
         try {
             CallContext.current().setEventDetails("Vm Id for full clone: " + getEntityId());
-            s_logger.info("creating actual template id: " + getTemporaryTemlateId());
+            s_logger.info("creating actual template id: " + getTemplateId());
             s_logger.info("starting actual VM id: " + getEntityId());
             _templateService.createPrivateTemplate(this);
             result = _userVmService.cloneVirtualMachine(this);
