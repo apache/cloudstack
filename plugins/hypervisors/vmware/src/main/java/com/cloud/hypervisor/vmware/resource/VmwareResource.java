@@ -7475,7 +7475,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 } else {
                     String msg = String.format("Successfully migrated VM: %s with its storage to target datastore(s)", vmName);
                     if (targetHyperHost != null) {
-                        msg += String.format(" from host %s to %s", sourceHyperHost.getHyperHostName(), targetHyperHost.getHyperHostName());
+                        msg = String.format("% from host %s to %s", msg, sourceHyperHost.getHyperHostName(), targetHyperHost.getHyperHostName());
                     }
                     s_logger.debug(msg);
                 }
