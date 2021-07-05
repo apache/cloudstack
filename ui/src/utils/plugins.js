@@ -185,3 +185,33 @@ export const configUtilPlugin = {
     }
   }
 }
+
+export const showIconPlugin = {
+  install (Vue) {
+    Vue.prototype.$showIcon = function () {
+      const resourceType = this.$route.path.split('/')[1]
+      if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm', 'domain', 'project', 'vpc', 'guestnetwork'].includes(resourceType)) {
+        return true
+      } else {
+        return false
+      }
+    }
+  }
+}
+
+export const resourceTypePlugin = {
+  install (Vue) {
+    Vue.prototype.$getResourceType = function () {
+      const type = this.$route.path.split('/')[1]
+      if (type === 'vm') {
+        return 'UserVM'
+      } else if (type === 'accountuser') {
+        return 'User'
+      } else if (type === 'guestnetwork') {
+        return 'Network'
+      } else {
+        return type
+      }
+    }
+  }
+}

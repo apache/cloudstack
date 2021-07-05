@@ -106,7 +106,10 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd {
         for (UserResponse userResponse : response) {
             ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.User, userResponse.getObjectId());
             if (resourceIcon == null) {
-                continue;
+                resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Account, userResponse.getAccountId());
+                if (resourceIcon == null) {
+                    continue;
+                }
             }
             ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
             userResponse.setResourceIconResponse(iconResponse);

@@ -31,7 +31,7 @@
                   <div style="margin-top: 15px">
                     <span>{{ $t('message.select.a.zone') }}</span><br/>
                     <a-form-item :label="this.$t('label.zoneid')">
-                      <div v-if="zones.length <= 12">
+                      <div v-if="zones.length <= 8">
                         <a-row type="flex" :gutter="5" justify="start">
                           <div v-for="(zoneItem, idx) in zones" :key="idx">
                             <a-radio-group
@@ -67,11 +67,16 @@
                         showSearch
                         optionFilterProp="children"
                         :filterOption="filterOption"
-                        :options="zoneSelectOptions"
                         @change="onSelectZoneId"
                         :loading="loading.zones"
                         autoFocus
-                      ></a-select>
+                      >
+                        <a-select-option v-for="zone1 in zones" :key="zone1.id">
+                          <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="1x" style="margin-right: 5px"/>
+                          <a-icon v-else style="margin-right: 5px" type="global" />
+                          {{ zone1.name }}
+                        </a-select-option>
+                      </a-select>
                     </a-form-item>
                     <a-form-item
                       v-if="!isNormalAndDomainUser"
@@ -674,6 +679,7 @@ import store from '@/store'
 import eventBus from '@/config/eventBus'
 
 import InfoCard from '@/components/view/InfoCard'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
 import DiskOfferingSelection from '@views/compute/wizard/DiskOfferingSelection'
@@ -700,7 +706,8 @@ export default {
     InfoCard,
     ComputeOfferingSelection,
     ComputeSelection,
-    SecurityGroupSelection
+    SecurityGroupSelection,
+    ResourceIcon
   },
   props: {
     visible: {

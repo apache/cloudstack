@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.resource.icon;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
 import com.cloud.user.Account;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -31,7 +32,8 @@ import java.util.List;
 
 @APICommand(name = "listResourceIcon", description = "Lists the resource icon for the specified resource(s)",
         responseObject = ResourceIconResponse.class, since = "4.16.0.0", entityType = {ResourceIcon.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User})
 public class ListResourceIconCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ListResourceIconCmd.class.getName());
 

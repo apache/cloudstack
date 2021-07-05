@@ -26,14 +26,15 @@
               @click="showUploadModal(true)"
               v-clipboard:copy="name" >
               <upload-resource-icon v-if="'uploadResourceIcon' in $store.getters.apis" :visible="showUpload" :resource="resource" @handle-close="showUpload(false)"/>
-              <!-- <div class="ant-upload-preview" >
-                <a-icon type="cloud-upload-o" class="upload-icon"/>
-              </div> -->
+              <div class="ant-upload-preview" v-if="$showIcon()">
+                <a-icon type="camera" class="upload-icon"/>
+              </div>
               <slot name="avatar">
                 <span v-if="resource.icon && resource.icon.base64image || images.template || resourceIcon">
-                  <img :src="getImage(images.template)" style="width:56px;height:56px;" />
+                  <!-- <img :src="getImage(images.template)" style="width:56px;height:56px;" /> -->
+                  <resource-icon :image="getImage(images.template)" size="4x" style="margin-right: 5px"/>
                 </span>
-                <span v-else>
+                <span v-else> {{ resource.ostypename }}
                   <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" @update-osname="(name) => this.resource.ostypename = name"/>
                   <a-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :type="$route.meta.icon"/>
                   <a-icon v-else style="font-size: 36px" :component="$route.meta.icon" />
@@ -806,10 +807,10 @@ export default {
       }
     },
     async templateIcon (id) {
-      if (this.showIcon() && this.resource?.icon?.base64image) {
+      if (this.$showIcon() && this.resource?.icon?.base64image) {
         this.image = this.resource.icon.base64image
       }
-      if (id && ['deployVirtualMachine'].includes(this.$route.path.split('/')[2])) {
+      if (['deployVirtualMachine'].includes(this.$route.path.split('/')[2])) {
         await this.fetchResourceIcon(id, 'template')
       }
       return this.image
@@ -844,15 +845,15 @@ export default {
       return this.resource.zoneid
     },
     resourceIcon () {
-      if (this.showIcon() && this.resource?.icon?.base64image) {
+      if (this.$showIcon() && this.resource?.icon?.base64image) {
         return this.resource.icon.base64image
       }
       return null
     }
   },
   mounted () {
-    if (this.showIcon() && this.resource?.icon?.base64image) {
-      const type = this.getResourceType()
+    if (this.$showIcon() && this.resource?.icon?.base64image) {
+      const type = this.$getResourceType()
       this.images[type] = this.resource.icon.base64image
     }
     if (this.resource.templateid) {
@@ -865,33 +866,16 @@ export default {
   methods: {
     showUploadModal (show) {
       if (show) {
-        if (this.showIcon()) {
+        if (this.$showIcon()) {
           this.showUpload = true
         }
       } else {
         this.showUpload = false
       }
     },
-    showIcon () {
-      const resourceType = this.$route?.path?.split('/')[1]
-      if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm', 'domain', 'project', 'vpc', 'guestnetwork'].includes(resourceType)) {
-        return true
-      } else {
-        return false
-      }
-    },
-    getResourceType () {
-      const type = this.$route.path.split('/')[1]
-      if (type === 'vm') {
-        return 'UserVM'
-      } else if (type === 'accountuser') {
-        return 'User'
-      } else {
-        return type
-      }
-    },
     getImage (image) {
-      return 'data:image/png;charset=utf-8;base64, ' + (image || this.resource?.icon?.base64image)
+      // 'data:image/png;charset=utf-8;base64, ' +
+      return (image || this.resource?.icon?.base64image)
     },
     fetchResourceIcon (resourceid, type) {
       if (resourceid) {
@@ -904,11 +888,15 @@ export default {
             if (response?.[0]) {
               this.images[type] = response[0].base64image
               resolve(this.images)
+            } else {
+              this.images[type] = ''
             }
           }).catch(error => {
             reject(error)
           })
         })
+      } else {
+        this.images.type = ''
       }
     },
     setData () {
@@ -1191,8 +1179,9 @@ export default {
 
 .upload-icon {
   position: absolute;
-  top: 10px;
-  left: 60px;
+  top: 70px;
+  opacity: 0.75;
+  left: 70px;
   font-size: 0.75em;
   padding: 0.25rem;
   background: rgba(247, 245, 245, 0.767);

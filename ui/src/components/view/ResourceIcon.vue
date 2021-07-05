@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <img :src="getImg()" :height="size === '4x' ? '56px' : '16px'" :width="size === '4x' ? '56px' : '16px'" />
+  <img :src="getImg()" :height="getDimensions()" :width="getDimensions()" />
 </template>
 <script>
 export default {
@@ -37,6 +37,18 @@ export default {
   methods: {
     getImg () {
       return 'data:image/png;charset=utf-8;base64, ' + this.image
+    },
+    getDimensions () {
+      switch (this.size) {
+        case '4x':
+          return '56px'
+        case '2x':
+          return '24px'
+        case '1x':
+          return '16px'
+        default:
+          return '16px'
+      }
     }
   }
 }

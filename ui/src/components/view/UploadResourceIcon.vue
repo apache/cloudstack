@@ -68,7 +68,7 @@
         <a-button type="primary" @click="uploadIcon('blob')"> {{ $t('label.upload') }} </a-button>
       </a-col>
       <a-col :xs="{span: 2, offset: 4}" :md="2">
-        <a-button v-if="resource.icon && resource.icon.resourcetype.toLowerCase() === getResourceType().toLowerCase()" type="danger" @click="deleteIcon('blob')"> {{ $t('label.delete') }} </a-button>
+        <a-button v-if="resource.icon && resource.icon.resourcetype.toLowerCase() === $getResourceType().toLowerCase()" type="danger" @click="deleteIcon('blob')"> {{ $t('label.delete') }} </a-button>
       </a-col>
     </a-row>
   </a-modal>
@@ -147,21 +147,9 @@ export default {
       num = num || 1
       this.$refs.cropper.changeScale(num)
     },
-    getResourceType () {
-      const type = this.$route.path.split('/')[1]
-      if (type === 'vm') {
-        return 'UserVM'
-      } else if (type === 'accountuser') {
-        return 'User'
-      } else if (type === 'guestnetwork') {
-        return 'Network'
-      } else {
-        return type
-      }
-    },
     uploadIcon () {
       var base64Canvas = ''
-      const resourceType = this.getResourceType()
+      const resourceType = this.$getResourceType()
       const resourceid = this.resource.id
       if (this.options.img) {
         const width = 52
@@ -196,10 +184,13 @@ export default {
       }).finally(() => {
         this.handleClose()
         eventBus.$emit('refresh-icon')
+        if (['user', 'account'].includes(resourceType.toLowerCase())) {
+          eventBus.$emit('refresh-header')
+        }
       })
     },
     deleteIcon () {
-      const resourceType = this.getResourceType()
+      const resourceType = this.$getResourceType()
       const resourceid = this.resource.id
       api('deleteResourceIcon', {
         resourcetype: resourceType,
@@ -220,6 +211,9 @@ export default {
       }).finally(() => {
         this.handleClose()
         eventBus.$emit('refresh-icon')
+        if (['user', 'account'].includes(resourceType.toLowerCase())) {
+          eventBus.$emit('refresh-header')
+        }
       })
     }
   }
