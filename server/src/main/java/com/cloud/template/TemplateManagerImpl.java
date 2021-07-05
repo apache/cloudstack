@@ -1787,7 +1787,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating actual private template", create = true)
     public VirtualMachineTemplate createPrivateTemplate(CloneVMCmd cmd) throws CloudRuntimeException {
         UserVm curVm = cmd.getTargetVM();
-        long templateId = Long.parseLong(cmd.getEntityUuid());
+        long templateId = cmd.getTemporaryTemlateId();
         final Long accountId = curVm.getAccountId();
         Account caller = CallContext.current().getCallingAccount();
         List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(cmd.getId(), Volume.Type.ROOT);
@@ -1814,6 +1814,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     _tmpltSvr.associateTemplateToZone(templateId, null);
                 } else {
                     // Already done in the record to db step
+                    VMTemplateZoneVO templateZone = new VMTemplateZoneVO(zoneId, templateId, new Date());
+                    _tmpltZoneDao.persist(templateZone);
                 }
                 s_logger.info("successfully created the template with Id: " + templateId);
                 finalTmpProduct = _tmpltDao.findById(templateId);
@@ -1937,10 +1939,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         privateTemplate.setSourceTemplateId(sourceTemplateId);
         VMTemplateVO template = _tmpltDao.persist(privateTemplate);
         // persist this to the template zone area and remember to remove the resource count in the execute phase once in failure or clean up phase
-        VMTemplateZoneVO templateZone = new VMTemplateZoneVO(zoneId, template.getId(), new Date());
-        _tmpltZoneDao.persist(templateZone);
-        TemplateDataStoreVO voRecord = _tmplStoreDao.createTemplateDirectDownloadEntry(template.getId(), template.getSize());
-        _tmplStoreDao.persist(voRecord);
+//        VMTemplateZoneVO templateZone = new VMTemplateZoneVO(zoneId, template.getId(), new Date());
+//        _tmpltZoneDao.persist(templateZone);
+//        TemplateDataStoreVO voRecord = _tmplStoreDao.createTemplateDirectDownloadEntry(template.getId(), template.getSize());
+//        voRecord.setDataStoreId(2);
+//        _tmplStoreDao.persist(voRecord);
         // Increment the number of templates
         if (template != null) {
             Map<String, String> details = new HashMap<String, String>();

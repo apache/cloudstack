@@ -96,12 +96,13 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
             }
             s_logger.info("The template id recorded is: " + template.getId());
             setTemporaryTemlateId(template.getId());
+            _templateService.createPrivateTemplate(this);
             UserVm vmRecord = _userVmService.recordVirtualMachineToDB(this);
             if (vmRecord == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "unable to record a new VM to db!");
             }
             setEntityId(vmRecord.getId());
-            setEntityUuid(String.valueOf(template.getId()));
+            setEntityUuid(vmRecord.getUuid());
         } catch (ResourceUnavailableException | InsufficientCapacityException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
@@ -133,9 +134,7 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
         Optional<UserVm> result;
         try {
             CallContext.current().setEventDetails("Vm Id for full clone: " + getEntityId());
-            s_logger.info("creating actual template id: " + Long.parseLong(getEntityUuid()));
             s_logger.info("starting actual VM id: " + getEntityId());
-            _templateService.createPrivateTemplate(this);
             result = _userVmService.cloneVirtualMachine(this);
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
