@@ -1807,7 +1807,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
                 if (result.isFailed()) {
                     finalTmpProduct = null;
-                    s_logger.debug("Failed to create template: " + result.getResult());
+                    s_logger.warn("Failed to create template: " + result.getResult());
                     throw new CloudRuntimeException("Failed to create template: " + result.getResult());
                 }
                 if (_dataStoreMgr.isRegionStore(store)) {
@@ -1815,6 +1815,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 } else {
                     // Already done in the record to db step
                 }
+                s_logger.info("successfully created the template with Id: " + templateId);
                 finalTmpProduct = _tmpltDao.findById(templateId);
                 TemplateDataStoreVO srcTmpltStore = _tmplStoreDao.findByStoreTemplate(store.getId(), templateId);
                 UsageEventVO usageEvent =
@@ -1830,6 +1831,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
 
         } finally {
+            finalTmpProduct = _tmpltDao.findById(templateId);
             if (finalTmpProduct == null) {
                 final VolumeVO volumeFinal = targetVolume;
                 final SnapshotVO snapshotFinal = null;

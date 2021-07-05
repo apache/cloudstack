@@ -133,7 +133,7 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
         Optional<UserVm> result;
         try {
             CallContext.current().setEventDetails("Vm Id for full clone: " + getEntityId());
-            s_logger.info("creating actual template id: " + getEntityUuid());
+            s_logger.info("creating actual template id: " + Long.parseLong(getEntityUuid()));
             s_logger.info("starting actual VM id: " + getEntityId());
             _templateService.createPrivateTemplate(this);
             result = _userVmService.cloneVirtualMachine(this);
