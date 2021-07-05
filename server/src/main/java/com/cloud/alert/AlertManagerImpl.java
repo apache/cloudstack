@@ -712,6 +712,11 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             return;
         }
 
+        if (recipients == null) {
+            s_logger.warn(String.format("No recipients set in 'alert.email.addresses', skipping sending alert with subject: %s and content: %s", subject, content));
+            return;
+        }
+
         SMTPMailProperties mailProps = new SMTPMailProperties();
         mailProps.setSender(new MailAddress(senderAddress));
         mailProps.setSubject(subject);

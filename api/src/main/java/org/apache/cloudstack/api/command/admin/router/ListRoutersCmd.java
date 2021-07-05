@@ -81,6 +81,10 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     @Parameter(name = ApiConstants.VERSION, type = CommandType.STRING, description = "list virtual router elements by version")
     private String version;
 
+    @Parameter(name = ApiConstants.HEALTHCHECK_FAILED, type = CommandType.BOOLEAN, since = "4.16",
+            description = "if this parameter is passed, list only routers by health check results")
+    private Boolean healthCheckFailed;
+
     @Parameter(name = ApiConstants.FETCH_ROUTER_HEALTH_CHECK_RESULTS, type = CommandType.BOOLEAN, since = "4.14",
             description = "if true is passed for this parameter, also fetch last executed health check results for the router. Default is false")
     private Boolean fetchHealthCheckResults;
@@ -135,6 +139,10 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
 
     public String getRole() {
         return Role.VIRTUAL_ROUTER.toString();
+    }
+
+    public Boolean isHealthCheckFailed() {
+        return healthCheckFailed;
     }
 
     public boolean shouldFetchHealthCheckResults() {

@@ -179,9 +179,13 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         ServiceOffering offering = _serviceOfferingDao.findById(vmProfile.getId(), vmProfile.getServiceOfferingId());
         VirtualMachine vm = vmProfile.getVirtualMachine();
         HostVO host = hostDao.findById(vm.getHostId());
+        boolean divideMemoryByOverprovisioning = true;
+        boolean divideCpuByOverprovisioning = true;
 
-        boolean divideMemoryByOverprovisioning = VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor.valueIn(host.getClusterId());
-        boolean divideCpuByOverprovisioning = VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor.valueIn(host.getClusterId());
+        if (host != null) {
+            divideMemoryByOverprovisioning = VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor.valueIn(host.getClusterId());
+            divideCpuByOverprovisioning = VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor.valueIn(host.getClusterId());
+        }
 
         Long minMemory = (long)(offering.getRamSize() / (divideMemoryByOverprovisioning ? vmProfile.getMemoryOvercommitRatio() : 1));
         int minspeed = (int)(offering.getSpeed() / (divideCpuByOverprovisioning ? vmProfile.getCpuOvercommitRatio() : 1));
