@@ -319,7 +319,6 @@ class TestDomainsVpcOfferings(cloudstackTestCase):
     @attr(
         tags=[
             "advanced",
-            "basic",
             "eip",
             "sg",
             "advancedns",
