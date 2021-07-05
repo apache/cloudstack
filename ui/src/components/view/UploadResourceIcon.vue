@@ -45,8 +45,8 @@
           <span v-if="previews.url">
             <img :src="previews.url" :style="previews.img"/>
           </span>
-          <span v-else>
-            <img :src="preview.url" :style="preview.img"/>
+          <span v-else-if="defaultImage">
+            <img :src="'data:image/png;charset=utf-8;base64, ' + defaultImage" style="height: 52px;width: 52px;marginLeft: 65px;marginTop: 55px"/>
           </span>
         </div>
       </a-col>
@@ -96,6 +96,15 @@ export default {
       return this.previews
     }
   },
+  watch: {
+    resource: function (oldVal, newVal) {
+      if (oldVal === newVal) return
+      this.defaultImage = this.resource?.icon?.base64image || ''
+    },
+    preview () {
+      return this.previews
+    }
+  },
   data () {
     return {
       id: null,
@@ -109,7 +118,8 @@ export default {
         autoCropHeight: 200,
         fixedBox: true
       },
-      previews: {}
+      previews: {},
+      defaultImage: ''
     }
   },
   methods: {
@@ -123,12 +133,12 @@ export default {
         this.previews = data
       } else {
         if (this.resource?.icon?.base64image) {
-          this.previews.url = 'data:image/png;charset=utf-8;base64, ' + this.resource.icon.base64image || ''
+          this.previews.url = 'data:image/png;charset=utf-8;base64, ' + (this.defaultImage || this.resource.icon.base64image || '')
           this.previews.img = {
             height: '52px',
             width: '52px',
             marginLeft: '65px',
-            marginTop: '50px'
+            marginTop: '55px'
           }
         } else {
           this.previews = {}

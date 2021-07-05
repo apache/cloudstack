@@ -31,10 +31,9 @@
               </div>
               <slot name="avatar">
                 <span v-if="resource.icon && resource.icon.base64image || images.template || resourceIcon">
-                  <!-- <img :src="getImage(images.template)" style="width:56px;height:56px;" /> -->
                   <resource-icon :image="getImage(images.template)" size="4x" style="margin-right: 5px"/>
                 </span>
-                <span v-else> {{ resource.ostypename }}
+                <span v-else>
                   <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" @update-osname="(name) => this.resource.ostypename = name"/>
                   <a-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :type="$route.meta.icon"/>
                   <a-icon v-else style="font-size: 36px" :component="$route.meta.icon" />
@@ -132,7 +131,7 @@
           <div class="resource-detail-item__label">{{ $t('label.ostypename') }}</div>
           <div class="resource-detail-item__details">
             <span v-if="resource.icon && resource.icon.base64image || images.template">
-              <img :src="getImage(images.template)" height="16px" width="16px" />
+              <resource-icon :image="getImage(images.template)" size="1x" style="margin-right: 5px"/>
             </span>
             <os-logo v-else :osId="resource.ostypeid" :osName="resource.ostypename" size="lg" style="margin-left: -1px" />
             <span style="margin-left: 8px">{{ resource.ostypename }}</span>
@@ -510,7 +509,7 @@
           <div class="resource-detail-item__label">{{ $t('label.zone') }}</div>
           <div class="resource-detail-item__details">
             <span v-if="images.zone">
-              <img :src="getImage(images.zone)" height="16px" width="16px" style="marginRight: 10px"/>
+              <resource-icon :image="getImage(images.zone)" size="1x" style="margin-right: 5px"/>
             </span>
             <a-icon v-else type="global" />
             <router-link v-if="$router.resolve('/zone/' + resource.zoneid).route.name !== '404'" :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
@@ -874,7 +873,6 @@ export default {
       }
     },
     getImage (image) {
-      // 'data:image/png;charset=utf-8;base64, ' +
       return (image || this.resource?.icon?.base64image)
     },
     fetchResourceIcon (resourceid, type) {
