@@ -4599,7 +4599,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long clusterId = null;
         Long hostId = curVm.getHostId();
         Map<VirtualMachineProfile.Param, Object> additonalParams =  new HashMap<>();
-        Map<Long, DiskOffering> diskOfferingMap = null;
+        Map<Long, DiskOffering> diskOfferingMap = new HashMap<>();
         if (MapUtils.isNotEmpty(curVm.getDetails()) && curVm.getDetails().containsKey(ApiConstants.BootType.UEFI.toString())) {
             Map<String, String> map = curVm.getDetails();
             additonalParams.put(VirtualMachineProfile.Param.UefiFlag, "Yes");
