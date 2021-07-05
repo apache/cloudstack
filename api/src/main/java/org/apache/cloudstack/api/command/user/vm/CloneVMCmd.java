@@ -95,11 +95,11 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "failed to create a template to db");
             }
             s_logger.info("The template id recorded is: " + template.getId());
+            setTemporaryTemlateId(template.getId());
             UserVm vmRecord = _userVmService.recordVirtualMachineToDB(this);
             if (vmRecord == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "unable to record a new VM to db!");
             }
-            setTemporaryTemlateId(template.getId());
             setEntityId(vmRecord.getId());
             setEntityUuid(String.valueOf(template.getId()));
         } catch (ResourceUnavailableException | InsufficientCapacityException e) {
