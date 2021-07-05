@@ -101,9 +101,9 @@ public class KubernetesClusterResponse extends BaseResponse implements Controlle
     @Param(description = "keypair details")
     private String keypair;
 
-    @Deprecated
+    @Deprecated(since = "4.16")
     @SerializedName(ApiConstants.MASTER_NODES)
-    @Param(description = "the master nodes count for the Kubernetes cluster")
+    @Param(description = "the master nodes count for the Kubernetes cluster. This parameter is deprecated, please use 'controlnodes' parameter.")
     private Long masterNodes;
 
     @SerializedName(ApiConstants.CONTROL_NODES)
