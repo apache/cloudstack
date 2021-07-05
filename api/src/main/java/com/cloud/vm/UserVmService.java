@@ -94,7 +94,7 @@ public interface UserVmService {
      *           - the command specifying vmId to be cloned
      * @return the VM if cloneVM operation is successful
      * */
-    Optional<UserVm> cloneVirtualMachine(CloneVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException;
+    Optional<UserVm> cloneVirtualMachine(CloneVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     void checkCloneCondition(CloneVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException, ResourceAllocationException;
 

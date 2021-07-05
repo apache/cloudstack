@@ -143,12 +143,12 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
-//        catch (ResourceAllocationException ex) {
-//            s_logger.warn("Exception: ", ex);
-//            throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
-//        }
+        catch (ResourceAllocationException | InsufficientCapacityException ex) {
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
+        }
         result.ifPresentOrElse((userVm)-> {
-            UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", userVm).get(0);
+            UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result.get()).get(0);
             response.setResponseName("test_clone");
             setResponseObject(response);
         }, ()-> {
