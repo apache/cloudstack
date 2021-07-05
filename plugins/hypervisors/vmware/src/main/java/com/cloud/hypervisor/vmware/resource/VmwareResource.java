@@ -7443,8 +7443,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 mgr.prepareSecondaryStorageStore(secStoreUrl, secStoreId);
                 ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnSpecificHost(secStoreUrl, targetHyperHost);
                 if (morSecDs == null) {
-                    String msg = String.format("Failed to prepare secondary storage on host, secondary store url: %s", secStoreUrl);
-                    throw new Exception(msg);
+                    throw new Exception(String.format("Failed to prepare secondary storage on host, secondary store url: %s", secStoreUrl));
                 }
             }
 
