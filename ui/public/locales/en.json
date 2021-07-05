@@ -3324,6 +3324,8 @@
 "state.expunging": "Expunging",
 "state.migrating": "Migrating",
 "state.pending": "Pending",
+"state.readonly": "Read-Only",
+"state.readwrite": "Read-Write",
 "state.running": "Running",
 "state.starting": "Starting",
 "state.stopped": "Stopped",
