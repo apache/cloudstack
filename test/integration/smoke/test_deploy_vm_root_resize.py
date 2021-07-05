@@ -207,6 +207,7 @@ class TestDeployVmRootSize(cloudstackTestCase):
         # 3. Rejects non-supported hypervisor types
         """
         try:
+            print(f'Self template is {self.template}')
             newrootsize = (self.template.size >> 30) + 2
             if (self.hypervisor.lower() == 'kvm' or self.hypervisor.lower() == 'xenserver'
                     or self.hypervisor.lower() == 'vmware' or self.hypervisor.lower() == 'simulator'):
@@ -314,7 +315,7 @@ class TestDeployVmRootSize(cloudstackTestCase):
 
                 self.assertEqual(success, True, "Check if unsupported hypervisor %s fails appropriately" % self.hypervisor)
         except Exception as ex:
-            print(ex)
+            print(f'Error is {ex}')
 
     @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="false")
     def test_01_deploy_vm_root_resize(self):
@@ -361,6 +362,7 @@ class TestDeployVmRootSize(cloudstackTestCase):
         """Test proper failure to deploy virtual machine with rootdisksize less than template size
         """
         try:
+            print(f'Self template is {self.template}')
             newrootsize = (self.template.size >> 30) - 1
             success=False
             self.assertEqual(newrootsize > 0, True, "Provided template is less than 1G in size, cannot run test")
@@ -398,7 +400,7 @@ class TestDeployVmRootSize(cloudstackTestCase):
             else:
                 self.debug("test 02 does not support hypervisor type " + self.hypervisor)
         except Exception as ex:
-            print(ex)
+            print(f'Error is {ex}')
 
 
 
