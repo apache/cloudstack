@@ -28,13 +28,23 @@
         <a-list style="min-width: 200px; max-width: 300px">
           <a-list-item>
             <a-list-item-meta :title="$t('label.notifications')">
-              <template #avatar><a-avatar :style="{backgroundColor: '#6887d0', verticalAlign: 'middle'}" icon="notification"/></template>
+              <template #avatar>
+                <a-avatar :style="{ backgroundColor: '#6887d0', verticalAlign: 'middle' }">
+                  <template #icon><notification-outlined /></template>
+                </a-avatar>
+              </template>
               <template #description><a-button size="small" @click="clearJobs">{{ $t('label.clear.list') }}</a-button></template>
             </a-list-item-meta>
           </a-list-item>
           <a-list-item v-for="(job, index) in jobs" :key="index">
             <a-list-item-meta :title="job.title" :description="job.description">
-              <template #avatar><a-avatar :style="notificationAvatar[job.status].style" :icon="notificationAvatar[job.status].icon"/></template>
+              <template #avatar>
+                <a-avatar :style="notificationAvatar[job.status].style">
+                  <template #icon>
+                    <render-icon :icon="notificationAvatar[job.status].icon" />
+                  </template>
+                </a-avatar>
+              </template>
             </a-list-item-meta>
           </a-list-item>
         </a-list>
@@ -51,9 +61,11 @@
 <script>
 import { api } from '@/api'
 import store from '@/store'
+import RenderIcon from '@/utils/renderIcon'
 
 export default {
   name: 'HeaderNotice',
+  components: { RenderIcon },
   data () {
     return {
       loading: false,
@@ -61,9 +73,9 @@ export default {
       jobs: [],
       poller: null,
       notificationAvatar: {
-        done: { icon: 'check-circle', style: 'backgroundColor:#87d068' },
-        progress: { icon: 'loading', style: 'backgroundColor:#ffbf00' },
-        failed: { icon: 'close-circle', style: 'backgroundColor:#f56a00' }
+        done: { icon: 'check-circle-outlined', style: { backgroundColor: '#87d068' } },
+        progress: { icon: 'loading-outlined', style: { backgroundColor: '#ffbf00' } },
+        failed: { icon: 'close-circle-outlined', style: { backgroundColor: '#f56a00' } }
       }
     }
   },
