@@ -881,7 +881,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
             if (state != State.Stopped) {
-                String msg = String.format("Cannot start VM: %s in %s state", vm, state);
+                String msg = String.format("Cannot start %s in %s state", vm, state);
                 s_logger.warn(msg);
                 throw new CloudRuntimeException(msg);
             }
