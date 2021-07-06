@@ -72,6 +72,12 @@ export default {
           case 'Error':
             state = this.$t('state.error')
             break
+          case 'ReadOnly':
+            state = this.$t('state.readonly')
+            break
+          case 'ReadWrite':
+            state = this.$t('state.readwrite')
+            break
           case 'InProgress':
             state = this.$t('state.inprogress')
             break
@@ -110,7 +116,6 @@ export default {
         case 'Error':
         case 'False':
         case 'Stopped':
-        case 'ReadOnly':
         case 'failed':
           status = 'error'
           break
@@ -132,6 +137,7 @@ export default {
         case 'Created':
         case 'Maintenance':
         case 'Pending':
+        case 'ReadOnly':
           status = 'warning'
           break
       }
