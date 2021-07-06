@@ -17,12 +17,11 @@
 
 <template>
   <a-form
+    :ref="formRef"
     id="formLogin"
     class="user-layout-login"
-    ref="formLogin"
-    :form="form"
-    @submit="handleSubmit"
-  >
+    :model="form"
+    :rules="rules">
     <a-tabs
       :activeKey="customActiveKey"
       size="large"
@@ -31,62 +30,60 @@
       :animated="false"
     >
       <a-tab-pane key="cs">
-        <span slot="tab">
-          <a-icon type="safety" />
-          {{ $t('label.login.portal') }}
-        </span>
-        <a-form-item>
+        <template #tab>
+          <span>
+            <SafetyOutlined />
+            {{ $t('label.login.portal') }}
+          </span>
+        </template>
+        <a-form-item ref="username" name="username">
           <a-input
             size="large"
             type="text"
             autoFocus
             :placeholder="$t('label.username')"
-            v-decorator="[
-              'username',
-              {rules: [{ required: true, message: $t('message.error.username') }, { validator: handleUsernameOrEmail }], validateTrigger: 'change'}
-            ]"
+            v-model:value="form.username"
           >
-            <a-icon slot="prefix" type="user" :style="{ color: 'rgba(0,0,0,.25)' }"/>
+            <template #prefix>
+              <UserOutlined :style="{ color: 'rgba(0,0,0,.25)' }" />
+            </template>
           </a-input>
         </a-form-item>
-
-        <a-form-item>
+        <a-form-item ref="password" name="password">
           <a-input-password
             size="large"
             type="password"
             autocomplete="false"
             :placeholder="$t('label.password')"
-            v-decorator="[
-              'password',
-              {rules: [{ required: true, message: $t('message.error.password') }], validateTrigger: 'blur'}
-            ]"
+            v-model:value="form.password"
           >
-            <a-icon slot="prefix" type="lock" :style="{ color: 'rgba(0,0,0,.25)' }"/>
+            <template #prefix>
+              <LockOutlined :style="{ color: 'rgba(0,0,0,.25)' }" />
+            </template>
           </a-input-password>
         </a-form-item>
-
-        <a-form-item>
+        <a-form-item ref="domain" name="domain">
           <a-input
             size="large"
             type="text"
             :placeholder="$t('label.domain')"
-            v-decorator="[
-              'domain',
-              {rules: [{ required: false, message: $t('message.error.domain') }], validateTrigger: 'change'}
-            ]"
+            v-model:value="form.domain"
           >
-            <a-icon slot="prefix" type="block" :style="{ color: 'rgba(0,0,0,.25)' }"/>
+            <template #prefix>
+              <BlockOutlined :style="{ color: 'rgba(0,0,0,.25)' }" />
+            </template>
           </a-input>
         </a-form-item>
-
       </a-tab-pane>
       <a-tab-pane key="saml" :disabled="idps.length === 0">
-        <span slot="tab">
-          <a-icon type="audit" />
-          {{ $t('label.login.single.signon') }}
-        </span>
+        <template #tab>
+          <span>
+            <AuditOutlined />
+            {{ $t('label.login.single.signon') }}
+          </span>
+        </template>
         <a-form-item>
-          <a-select v-decorator="['idp', { initialValue: selectedIdp } ]">
+          <a-select v-model:value="form.idp">
             <a-select-option v-for="(idp, idx) in idps" :key="idx" :value="idp.id">
               {{ idp.orgName }}
             </a-select-option>
@@ -99,10 +96,11 @@
       <a-button
         size="large"
         type="primary"
-        htmlType="submit"
+        html-type="submit"
         class="login-button"
         :loading="state.loginBtn"
         :disabled="state.loginBtn"
+        @click="handleSubmit"
       >{{ $t('label.login') }}</a-button>
     </a-form-item>
     <translation-menu/>
@@ -110,6 +108,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { mapActions } from 'vuex'
 import TranslationMenu from '@/components/header/TranslationMenu'
@@ -121,11 +120,9 @@ export default {
   data () {
     return {
       idps: [],
-      selectedIdp: '',
       customActiveKey: 'cs',
       loginBtn: false,
       loginType: 0,
-      form: this.$form.createForm(this),
       state: {
         time: 60,
         loginBtn: false,
@@ -133,8 +130,47 @@ export default {
       }
     }
   },
+  beforeCreate () {
+    this.formRef = ref()
+    this.form = reactive({
+      username: '',
+      password: '',
+      domain: '',
+      idp: ''
+    })
+  },
   created () {
     this.fetchData()
+  },
+  computed: {
+    rules () {
+      let rules = {}
+
+      if (this.customActiveKey === 'cs') {
+        rules = reactive({
+          username: [
+            {
+              required: true,
+              message: this.$t('message.error.username'),
+              trigger: 'change'
+            },
+            {
+              validator: this.handleUsernameOrEmail,
+              trigger: 'change'
+            }
+          ],
+          password: [
+            {
+              required: true,
+              message: this.$t('message.error.password'),
+              trigger: 'change'
+            }
+          ]
+        })
+      }
+
+      return rules
+    }
   },
   methods: {
     ...mapActions(['Login', 'Logout']),
@@ -142,12 +178,12 @@ export default {
       api('listIdps').then(response => {
         if (response) {
           this.idps = response.listidpsresponse.idp || []
-          this.selectedIdp = this.idps[0].id || ''
+          this.form.idp = this.idps[0].id || ''
         }
       })
     },
     // handler
-    handleUsernameOrEmail (rule, value, callback) {
+    async handleUsernameOrEmail (rule, value) {
       const { state } = this
       const regex = /^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+((\.[a-zA-Z0-9_-]{2,3}){1,2})$/
       if (regex.test(value)) {
@@ -155,54 +191,39 @@ export default {
       } else {
         state.loginType = 1
       }
-      callback()
+      return Promise.resolve()
     },
     handleTabClick (key) {
       this.customActiveKey = key
       // this.form.resetFields()
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      const {
-        form: { validateFields },
-        state,
-        customActiveKey,
-        Login
-      } = this
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        this.state.loginBtn = true
 
-      state.loginBtn = true
-
-      const validateFieldsKey = customActiveKey === 'cs' ? ['username', 'password', 'domain'] : ['idp']
-
-      validateFields(validateFieldsKey, { force: true }, (err, values) => {
-        if (!err) {
-          if (customActiveKey === 'cs') {
-            const loginParams = { ...values }
-            delete loginParams.username
-            loginParams[!state.loginType ? 'email' : 'username'] = values.username
-            loginParams.password = values.password
-            loginParams.domain = values.domain
-            if (!loginParams.domain) {
-              loginParams.domain = '/'
-            }
-            Login(loginParams)
-              .then((res) => this.loginSuccess(res))
-              .catch(err => {
-                this.requestFailed(err)
-                state.loginBtn = false
-              })
-          } else if (customActiveKey === 'saml') {
-            state.loginBtn = false
-            var samlUrl = this.$config.apiBase + '?command=samlSso'
-            if (values.idp) {
-              samlUrl += ('&idpid=' + values.idp)
-            }
-            window.location.href = samlUrl
+        const values = toRaw(this.form)
+        if (this.customActiveKey === 'cs') {
+          const loginParams = { ...values }
+          delete loginParams.username
+          loginParams[!this.state.loginType ? 'email' : 'username'] = values.username
+          loginParams.password = values.password
+          loginParams.domain = values.domain
+          if (!loginParams.domain) {
+            loginParams.domain = '/'
           }
-        } else {
-          setTimeout(() => {
-            state.loginBtn = false
-          }, 600)
+          this.Login(loginParams)
+            .then((res) => this.loginSuccess(res))
+            .catch(err => {
+              this.requestFailed(err)
+              this.state.loginBtn = false
+            })
+        } else if (this.customActiveKey === 'saml') {
+          this.state.loginBtn = false
+          var samlUrl = this.$config.apiBase + '?command=samlSso'
+          if (values.idp) {
+            samlUrl += ('&idpid=' + values.idp)
+          }
+          window.location.href = samlUrl
         }
       })
     },

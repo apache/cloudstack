@@ -138,8 +138,17 @@ a {
   }
 }
 
-.kubernet-icon path {
-  color: @navigation-text-color;
+.ant-menu-item .anticon .custom-icon {
+  fill: @navigation-text-color;
+}
+
+.ant-menu-item a {
+  .anticon .custom-icon {
+    transition: fill 0.3s ease-out;
+  }
+  &:hover .anticon .custom-icon {
+    fill: @primary-color;
+  }
 }
 
 .ant-menu-item:hover,

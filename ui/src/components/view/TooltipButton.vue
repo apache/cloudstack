@@ -17,31 +17,47 @@
 
 <template>
   <a-tooltip arrowPointAtCenter :placement="tooltipPlacement">
-    <template slot="title" v-if="tooltip">
+    <template #title v-if="tooltip">
       {{ tooltip }}
     </template>
     <a-button
+      v-if="copyResource"
       shape="circle"
       :size="size"
       :type="type"
       :disabled="disabled"
-      :icon="icon"
+      :class="buttonClass"
+      :loading="loading"
+      @click="handleClicked()"
+      v-clipboard:copy="copyResource" >
+      <template #icon v-if="icon"><render-icon :icon="icon" /></template>
+      <template v-if="iconType && iconTwoToneColor">
+        <render-icon :icon="iconType" :props="{ theme: 'twoTone', twoToneColor: iconTwoToneColor }" />
+      </template>
+    </a-button>
+    <a-button
+      v-else
+      shape="circle"
+      :size="size"
+      :type="type"
+      :disabled="disabled"
       :class="buttonClass"
       :loading="loading"
       @click="handleClicked()" >
-      <a-icon
-        v-if="iconType && iconTwoToneColor"
-        :type="iconType"
-        theme="twoTone"
-        :twoToneColor="iconTwoToneColor" />
+      <template #icon v-if="icon"><render-icon :icon="icon" /></template>
+      <template v-if="iconType && iconTwoToneColor">
+        <render-icon :icon="iconType" :props="{ theme: 'twoTone', twoToneColor: iconTwoToneColor }" />
+      </template>
     </a-button>
   </a-tooltip>
 </template>
 
 <script>
+import RenderIcon from '@/utils/renderIcon'
 
 export default {
   name: 'TooltipButton',
+  components: { RenderIcon },
   props: {
     tooltip: {
       type: String,
@@ -82,10 +98,10 @@ export default {
     loading: {
       type: Boolean,
       default: false
-    }
-  },
-  data () {
-    return {
+    },
+    copyResource: {
+      type: String,
+      default: ''
     }
   },
   methods: {

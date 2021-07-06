@@ -17,14 +17,15 @@
 
 <template>
   <resource-layout>
-    <div slot="left">
+    <template #left>
       <slot name="info-card">
         <info-card :resource="resource" :loading="loading" />
       </slot>
-    </div>
-    <a-spin :spinning="loading" slot="right">
+    </template>
+    <template #right>
       <a-card
         class="spin-content"
+        :loading="loading"
         :bordered="true"
         style="width:100%">
         <component
@@ -39,16 +40,17 @@
           :animated="false"
           :activeKey="activeTab || tabs[0].name"
           @change="onTabChange" >
-          <a-tab-pane
-            v-for="tab in tabs"
-            :tab="$t('label.' + tab.name)"
-            :key="tab.name"
-            v-if="showTab(tab)">
-            <component :is="tab.component" :resource="resource" :loading="loading" :tab="activeTab" />
-          </a-tab-pane>
+          <template v-for="tab in tabs" :key="tab.name">
+            <a-tab-pane
+              :key="tab.name"
+              :tab="$t('label.' + tab.name)"
+              v-if="showTab(tab)">
+              <keep-alive><component :is="tab.component" :resource="resource" :loading="loading" :tab="activeTab" /></keep-alive>
+            </a-tab-pane>
+          </template>
         </a-tabs>
       </a-card>
-    </a-spin>
+    </template>
   </resource-layout>
 </template>
 
@@ -98,7 +100,6 @@ export default {
   },
   watch: {
     resource: function (newItem, oldItem) {
-      this.resource = newItem
       if (newItem.id === oldItem.id) return
 
       if (this.resource.associatednetworkid) {

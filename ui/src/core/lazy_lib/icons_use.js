@@ -97,7 +97,8 @@ import {
   CodeOutlined,
   FolderAddOutlined,
   CaretRightOutlined,
-  CloseOutlined
+  CloseOutlined,
+  NotificationOutlined
 } from '@ant-design/icons-vue'
 
 import { library } from '@fortawesome/fontawesome-svg-core'
@@ -195,5 +196,6 @@ export default {
     app.component('FolderAddOutlined', FolderAddOutlined)
     app.component('CaretRightOutlined', CaretRightOutlined)
     app.component('CloseOutlined', CloseOutlined)
+    app.component('NotificationOutlined', NotificationOutlined)
   }
 }

@@ -18,7 +18,6 @@
 <template>
   <a-tooltip placement="bottom" :title="$t(getTooltip(text))">
     <a-badge
-      style="display: inline-flex"
       :title="text"
       :color="getStatusColor(text)"
       :status="getBadgeStatus(text)"
@@ -165,7 +164,7 @@ export default {
 </script>
 
 <style scoped>
-/deep/ .ant-badge-status-dot {
+:deep(.ant-badge-status-dot) {
   width: 12px;
   height: 12px;
   margin-top: 5px;
