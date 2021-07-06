@@ -188,7 +188,7 @@ for full help
         sys.exit(1)
 
     def setupDBSchema(self):
-        if not self.rootuser:
+        if not self.options.createschema and not self.rootuser:
             self.info("No mysql root user specified, will not create Cloud DB schema\n", None)
             return
 
@@ -219,13 +219,17 @@ for full help
                     ""),
             )
 
-        for f in ["create-database","create-schema", "create-database-premium","create-schema-premium"]:
+        scriptsToRun = ["create-database","create-schema", "create-database-premium","create-schema-premium"]
+        if self.options.createschema:
+            scriptsToRun = ["create-schema", "create-schema-premium"]
+
+        for f in scriptsToRun:
             p = os.path.join(self.dbFilesPath,"%s.sql"%f)
             if not os.path.exists(p): continue
             text = open(p).read()
             for t, r in replacements: text = text.replace(t,r)
             self.info("Applying %s"%p)
-            self.runMysql(text, p, True)
+            self.runMysql(text, p, self.rootuser != None)
             self.info(None, True)
 
         if self.serversetup:
@@ -248,21 +252,21 @@ for full help
             p = os.path.join(self.dbFilesPath, 'server-setup.sql')
             text = open(p).read()
             self.info("Applying %s"%p)
-            self.runMysql(text, p, True)
+            self.runMysql(text, p, self.rootuser != None)
             self.info(None, True)
 
         for f in ["templates"]:
             p = os.path.join(self.dbFilesPath,"%s.sql"%f)
             text = open(p).read()
             self.info("Applying %s"%p)
-            self.runMysql(text, p, True)
+            self.runMysql(text, p, self.rootuser != None)
             self.info(None, True)
 
         p = os.path.join(self.dbFilesPath,"schema-level.sql")
         if os.path.isfile(p):
             text = open(p).read()
             self.info("Applying %s"%p)
-            self.runMysql(text, p, True)
+            self.runMysql(text, p, self.rootuser != None)
             self.info(None, True)
 
     def prepareDBFiles(self):
@@ -576,7 +580,11 @@ for example:
         self.parser.add_option("-j", "--encryption-jar-path", action="store", dest="encryptionJarPath", help="The path to the jasypt library to be used to encrypt the values in db.properties")
         self.parser.add_option("-n", "--encryption-key-file", action="store", dest="encryptionKeyFile", help="The name of the file in which encryption key to be generated")
         self.parser.add_option("-b", "--mysql-bin-path", action="store", dest="mysqlbinpath", help="The mysql installed bin path")
-
+        self.parser.add_option("-s", "--create-schema-only", action="store_true", dest="createschema", default=False,
+                          help="Creates the db schema without having to pass root credentials - "\
+                               "Please note: The databases and user has to be configured manually prior to running this script when using this flag. "\
+                               "If a management server has already upgraded the database and you intend to reinitialise the database, "\
+                               "the cloud and cloud_usage databases will need to be recreated manually prior to running this script.")
         (self.options, self.args) = self.parser.parse_args()
         parseCasualCredit()
         parseOtherOptions()
