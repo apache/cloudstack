@@ -29,7 +29,6 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
@@ -62,7 +61,6 @@ public class DefaultHostListener implements HypervisorHostListener {
     StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject
     StorageManager storageManager;
-    StoragePoolTagsDao storagePoolTagsDao;
     @Inject
     StorageService storageService;
 
