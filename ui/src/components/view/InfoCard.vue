@@ -31,7 +31,7 @@
               </div>
               <slot name="avatar">
                 <span v-if="resource.icon && resource.icon.base64image || images.template || resourceIcon">
-                  <resource-icon :image="getImage(images.template)" size="4x" style="margin-right: 5px"/>
+                  <resource-icon :image="getImage(resource.icon && resource.icon.base64image || images.template || resourceIcon)" size="4x" style="margin-right: 5px"/>
                 </span>
                 <span v-else>
                   <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" @update-osname="(name) => this.resource.ostypename = name"/>
@@ -340,7 +340,10 @@
         <div class="resource-detail-item" v-if="resource.projectid || resource.projectname">
           <div class="resource-detail-item__label">{{ $t('label.project') }}</div>
           <div class="resource-detail-item__details">
-            <a-icon type="project" />
+            <span v-if="images.project">
+              <resource-icon :image="getImage(images.project)" size="1x" style="margin-right: 5px"/>
+            </span>
+            <a-icon v-else type="project" />
             <router-link v-if="resource.projectid" :to="{ path: '/project/' + resource.projectid }">{{ resource.project || resource.projectname || resource.projectid }}</router-link>
             <router-link v-else :to="{ path: '/project', query: { name: resource.projectname }}">{{ resource.projectname }}</router-link>
           </div>
@@ -404,7 +407,10 @@
         <div class="resource-detail-item" v-if="resource.vpcid">
           <div class="resource-detail-item__label">{{ $t('label.vpcname') }}</div>
           <div class="resource-detail-item__details">
-            <a-icon type="deployment-unit" />
+            <span v-if="images.vpc">
+              <resource-icon :image="getImage(images.vpc)" size="1x" style="margin-right: 5px"/>
+            </span>
+            <a-icon v-else type="deployment-unit" />
             <router-link :to="{ path: '/vpc/' + resource.vpcid }">{{ resource.vpcname || resource.vpcid }}</router-link>
           </div>
         </div>
@@ -534,7 +540,10 @@
         <div class="resource-detail-item" v-if="resource.account && !resource.account.startsWith('PrjAcct-')">
           <div class="resource-detail-item__label">{{ $t('label.account') }}</div>
           <div class="resource-detail-item__details">
-            <a-icon type="user" />
+            <span v-if="images.account">
+              <resource-icon :image="getImage(images.account)" size="1x" style="margin-right: 5px"/>
+            </span>
+            <a-icon v-else type="user" />
             <router-link v-if="$store.getters.userInfo.roletype !== 'User'" :to="{ path: '/account', query: { name: resource.account, domainid: resource.domainid } }">{{ resource.account }}</router-link>
             <span v-else>{{ resource.account }}</span>
           </div>
@@ -550,8 +559,9 @@
         <div class="resource-detail-item" v-if="resource.domainid">
           <div class="resource-detail-item__label">{{ $t('label.domain') }}</div>
           <div class="resource-detail-item__details">
-            <a-icon type="block" />
-            <router-link v-if="$store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + resource.domainid }">{{ resource.domain || resource.domainid }}</router-link>
+            <resource-icon v-if="images.domain" :image="getImage(images.domain)" size="1x" style="margin-right: 5px"/>
+            <a-icon v-else type="block" />
+            <router-link v-if="$store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + resource.domainid +'?tab=details' }">{{ resource.domain || resource.domainid }}</router-link>
             <span v-else>{{ resource.domain || resource.domainid }}</span>
           </div>
         </div>
@@ -765,7 +775,11 @@ export default {
       showUpload: false,
       images: {
         zone: '',
-        template: ''
+        template: '',
+        domain: '',
+        account: '',
+        project: '',
+        vpc: ''
       }
     }
   },
@@ -804,26 +818,18 @@ export default {
       if ('apikey' in this.resource) {
         this.getUserKeys()
       }
+      this.getIcons()
     },
-    async templateIcon (id) {
-      if (this.$showIcon() && this.resource?.icon?.base64image) {
-        this.image = this.resource.icon.base64image
-      }
-      if (['deployVirtualMachine'].includes(this.$route.path.split('/')[2])) {
-        await this.fetchResourceIcon(id, 'template')
-      }
-      return this.image
-    },
-    async zoneIcon (id) {
-      await this.fetchResourceIcon(id, 'zone')
-      return this.images.zone
+    async templateIcon () {
+      this.getIcons()
     }
   },
-  created () {
+  async created () {
     this.setData()
     eventBus.$on('handle-close', (showModal) => {
       this.showUploadModal(showModal)
     })
+    await this.getIcons()
   },
   computed: {
     name () {
@@ -840,9 +846,6 @@ export default {
     templateIcon () {
       return this.resource.templateid
     },
-    zoneIcon () {
-      return this.resource.zoneid
-    },
     resourceIcon () {
       if (this.$showIcon() && this.resource?.icon?.base64image) {
         return this.resource.icon.base64image
@@ -850,17 +853,8 @@ export default {
       return null
     }
   },
-  mounted () {
-    if (this.$showIcon() && this.resource?.icon?.base64image) {
-      const type = this.$getResourceType()
-      this.images[type] = this.resource.icon.base64image
-    }
-    if (this.resource.templateid) {
-      this.fetchResourceIcon(this.resource.templateid, 'template')
-    }
-    if (this.resource.zoneid) {
-      this.fetchResourceIcon(this.resource.zoneid, 'zone')
-    }
+  async mounted () {
+    this.getIcons()
   },
   methods: {
     showUploadModal (show) {
@@ -874,6 +868,40 @@ export default {
     },
     getImage (image) {
       return (image || this.resource?.icon?.base64image)
+    },
+    async getIcons () {
+      if (this.resource.templateid) {
+        await this.fetchResourceIcon(this.resource.templateid, 'template')
+      }
+      if (this.resource.zoneid) {
+        await this.fetchResourceIcon(this.resource.zoneid, 'zone')
+      }
+      if (this.resource.domainid) {
+        await this.fetchResourceIcon(this.resource.domainid, 'domain')
+      }
+      if (this.resource.account) {
+        await this.fetchAccount()
+      }
+      if (this.resource.projectid) {
+        await this.fetchResourceIcon(this.resource.projectid, 'project')
+      }
+      if (this.resource.vpcid) {
+        await this.fetchResourceIcon(this.resource.vpcid, 'vpc')
+      }
+    },
+    fetchAccount () {
+      return new Promise((resolve, reject) => {
+        api('listAccounts', {
+          name: this.resource.account,
+          domainid: this.resource.domainid,
+          showicon: true
+        }).then(async json => {
+          const response = json?.listaccountsresponse?.account || []
+          if (response?.[0]?.icon) {
+            this.images.account = response[0].icon.base64image
+          }
+        })
+      })
     },
     fetchResourceIcon (resourceid, type) {
       if (resourceid) {

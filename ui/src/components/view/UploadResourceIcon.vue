@@ -90,18 +90,13 @@ export default {
       required: true
     }
   },
-  computed: {
-    preview: function (data) {
-      this.realTime(data)
-      return this.previews
-    }
-  },
   watch: {
     resource: function (oldVal, newVal) {
       if (oldVal === newVal) return
       this.defaultImage = this.resource?.icon?.base64image || ''
     },
-    preview () {
+    preview: function (data) {
+      this.realTime(data)
       return this.previews
     }
   },
