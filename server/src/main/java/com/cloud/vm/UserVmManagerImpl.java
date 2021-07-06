@@ -888,7 +888,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 String publicKey = s_each.getPublicKey();
                 if (publicKey != null) {
                     if (sshPublicKey != null) {
-                        sshPublicKey = sshPublicKey + "/n"
+                        sshPublicKey = sshPublicKey + "/n";
                     }
                     sshPublicKey = sshPublicKey + publicKey;
                     s_logger.info("the public key for keypair name " + s_each.getName() + " is " + sshPublicKey);
