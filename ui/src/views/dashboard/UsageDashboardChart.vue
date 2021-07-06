@@ -44,13 +44,9 @@
 </template>
 
 <script>
-import ChartCard from '@/components/widgets/ChartCard'
 
 export default {
   name: 'UsageDashboardChart',
-  components: {
-    ChartCard
-  },
   props: {
     stats: {
       type: Array,

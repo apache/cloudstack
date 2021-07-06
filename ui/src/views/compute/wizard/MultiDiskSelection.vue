@@ -26,12 +26,12 @@
       :rowSelection="rowSelection"
       :scroll="{ y: 225 }" >
 
-      <span slot="offering" slot-scope="text, record">
+      <template #offering="text, record">
         <a-select
           autoFocus
           v-if="validOfferings[record.id] && validOfferings[record.id].length > 0"
           @change="updateOffering($event, record.id)"
-          :defaultValue="validOfferings[record.id][0].id">
+          :value="validOfferings[record.id][0].id">
           <a-select-option v-for="offering in validOfferings[record.id]" :key="offering.id">
             {{ offering.displaytext }}
           </a-select-option>
@@ -39,7 +39,7 @@
         <span v-else>
           {{ $t('label.no.matching.offering') }}
         </span>
-      </span>
+      </template>
     </a-table>
   </div>
 </template>
@@ -107,12 +107,10 @@ export default {
   },
   watch: {
     items (newData, oldData) {
-      this.items = newData
       this.selectedRowKeys = []
       this.fetchDiskOfferings()
     },
     zoneId (newData) {
-      this.zoneId = newData
       this.fetchDiskOfferings()
     }
   },

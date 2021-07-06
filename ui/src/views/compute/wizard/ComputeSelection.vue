@@ -29,14 +29,14 @@
                 <a-slider
                   :min="minCpu"
                   :max="maxCpu"
-                  v-model="cpuNumberInputValue"
+                  v-model:value="cpuNumberInputValue"
                   @change="($event) => updateComputeCpuNumber($event)"
                 />
               </a-col>
               <a-col :md="4" :lg="4">
                 <a-input-number
                   :autoFocus="isConstrained"
-                  v-model="cpuNumberInputValue"
+                  v-model:value="cpuNumberInputValue"
                   @change="($event) => updateComputeCpuNumber($event)"
                 />
               </a-col>
@@ -50,7 +50,7 @@
             :help="errors.cpuspeed.message">
             <a-input-number
               :autoFocus="!isConstrained"
-              v-model="cpuSpeedInputValue"
+              v-model:value="cpuSpeedInputValue"
               @change="($event) => updateComputeCpuSpeed($event)"
             />
           </a-form-item>
@@ -65,13 +65,13 @@
                 <a-slider
                   :min="minMemory"
                   :max="maxMemory"
-                  v-model="memoryInputValue"
+                  v-model:value="memoryInputValue"
                   @change="($event) => updateComputeMemory($event)"
                 />
               </a-col>
               <a-col :md="4" :lg="4">
                 <a-input-number
-                  v-model="memoryInputValue"
+                  v-model:value="memoryInputValue"
                   @change="($event) => updateComputeMemory($event)"
                 />
               </a-col>

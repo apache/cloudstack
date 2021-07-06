@@ -189,8 +189,12 @@
       </a>
     </template>
 
-    <template v-for="(value, name) in thresholdMapping" :slot="name" slot-scope="text, record" href="javascript:;">
-      <span :key="name">
+    <template
+      v-for="(value, name) in thresholdMapping"
+      :key="name"
+      #[name]="{ text, record }"
+      href="javascript:;">
+      <span>
         <span v-if="record[value.disable]" class="alert-disable-threshold">
           {{ text }}
         </span>
@@ -240,11 +244,11 @@
         <span v-else>{{ text }}</span>
       </template>
     </template>
-    <template #domain="{ text, record }" href="javascript:;">
+    <template #domain="{ text, record }">
       <router-link v-if="record.domainid && !record.domainid.toString().includes(',') && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </template>
-    <template #domainpath="{ text, record }" href="javascript:;">
+    <template #domainpath="{ text, record }">
       <router-link v-if="record.domainid && !record.domainid.includes(',') && $router.resolve('/domain/' + record.domainid).name !== '404'" :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </template>
@@ -314,7 +318,7 @@
         {{ text }}
       </div>
     </template>
-    <template #actions="{ text, record }">
+    <template #actions="{ record }">
       <tooltip-button
         :tooltip="$t('label.edit')"
         :disabled="!('updateConfiguration' in $store.getters.apis)"
@@ -335,7 +339,7 @@
         iconType="CheckCircleTwoTone"
         iconTwoToneColor="#52c41a" />
     </template>
-    <template #tariffActions="{ text, record }">
+    <template #tariffActions="{ record }">
       <tooltip-button
         :tooltip="$t('label.edit')"
         v-if="editableValueKey !== record.key"

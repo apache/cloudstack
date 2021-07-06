@@ -20,26 +20,44 @@
     <a-spin :spinning="loading" v-if="!isSubmitted">
       <p v-html="$t('message.desc.create.ssh.key.pair')"></p>
       <a-form
-        :form="form"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item :label="$t('label.name')">
+        <a-form-item>
+          <template #label :title="apiParams.name.description">
+            {{ $t('label.name') }}
+            <a-tooltip>
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </template>
           <a-input
-            v-decorator="['name', {
-              rules: [{ required: true, message: $t('message.error.name') }]
-            }]"
+            v-model:value="form.name"
             :placeholder="apiParams.name.description"
             autoFocus />
         </a-form-item>
-        <a-form-item :label="$t('label.publickey')">
+        <a-form-item>
+          <template #label :title="apiParams.publickey.description">
+            {{ $t('label.publickey') }}
+            <a-tooltip>
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </template>
           <a-input
-            v-decorator="['publickey', {}]"
+            v-model:value="form.publickey"
             :placeholder="apiParams.publickey.description"/>
         </a-form-item>
-        <a-form-item :label="$t('label.domainid')" v-if="this.isAdminOrDomainAdmin()">
+        <a-form-item v-if="this.isAdminOrDomainAdmin()">
+          <template #label :title="apiParams.domainid.description">
+            {{ $t('label.domainid') }}
+            <a-tooltip>
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </template>
           <a-select
             id="domain-selection"
-            v-decorator="['domainid', {}]"
+            v-model:value="form.domainid"
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
@@ -53,9 +71,15 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.account')" v-if="this.isAdminOrDomainAdmin() && !this.isObjectEmpty(this.selectedDomain) && this.selectedDomain.id !== null">
+        <a-form-item v-if="this.isAdminOrDomainAdmin() && !this.isObjectEmpty(this.selectedDomain) && this.selectedDomain.id !== null">
+          <template #label :title="apiParams.account.description">
+            {{ $t('label.account') }}
+            <a-tooltip>
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </template>
           <a-input
-            v-decorator="['account', {}]"
+            v-model:value="form.account"
             :placeholder="apiParams.account.description"/>
         </a-form-item>
 
@@ -77,6 +101,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -93,7 +118,7 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
+    this.initForm()
     this.apiConfig = this.$store.getters.apis.createSSHKeyPair || {}
     this.apiParams = {}
     this.apiConfig.params.forEach(param => {
@@ -116,6 +141,18 @@ export default {
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        name: undefined,
+        publickey: undefined,
+        domainid: undefined,
+        account: undefined
+      })
+      this.rules = reactive({
+        name: [{ required: true, message: this.$t('message.error.name') }]
+      })
+    },
     fetchData () {
       if (this.isAdminOrDomainAdmin()) {
         this.fetchDomainData()
@@ -152,12 +189,9 @@ export default {
     handleDomainChanged (domain) {
       this.selectedDomain = domain
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         const params = {
           name: values.name

@@ -231,7 +231,7 @@ export function asyncRouterMap () {
       {
         path: '/exception',
         name: 'exception',
-        component: RouteView,
+        component: shallowRef(RouteView),
         hidden: true,
         redirect: '/exception/404',
         meta: { title: 'Exception', icon: 'warning' },

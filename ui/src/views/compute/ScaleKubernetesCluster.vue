@@ -19,45 +19,37 @@
   <div class="form-layout">
     <a-spin :spinning="loading">
       <a-alert type="warning">
-        <span slot="message" v-html="$t('message.kubernetes.cluster.scale')" />
+        <template #message>{{ $t('message.kubernetes.cluster.scale') }}</template>
       </a-alert>
       <br />
       <a-form
-        :form="form"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <span slot="label">
+          <template #label>
             {{ $t('label.cks.cluster.size') }}
             <a-tooltip :title="apiParams.size.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input
-            v-decorator="['size', {
-              initialValue: originalSize,
-              rules: [{
-                validator: (rule, value, callback) => {
-                  if (value && (isNaN(value) || value <= 0)) {
-                    callback(this.$t('message.error.number'))
-                  }
-                  callback()
-                }
-              }]
-            }]"
+            v-model:value="form.size"
             :placeholder="apiParams.size.description"
             autoFocus />
         </a-form-item>
         <a-form-item>
-          <span slot="label">
+          <template #label>
             {{ $t('label.serviceofferingid') }}
             <a-tooltip :title="apiParams.serviceofferingid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-select
             id="offering-selection"
-            v-decorator="['serviceofferingid', {}]"
+            v-model:value="form.serviceofferingid"
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
@@ -81,6 +73,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -101,7 +94,7 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
+    this.initForm()
     this.apiConfig = this.$store.getters.apis.scaleKubernetesCluster || {}
     this.apiParams = {}
     this.apiConfig.params.forEach(param => {
@@ -110,9 +103,29 @@ export default {
   },
   created () {
     this.originalSize = !this.isObjectEmpty(this.resource) ? this.resource.size : 1
+    this.form.size = this.originalSize
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        size: undefined,
+        serviceofferingid: undefined
+      })
+      this.rules = reactive({
+        size: [
+          {
+            validator: async (rule, value) => {
+              if (value && (isNaN(value) || value <= 0)) {
+                return Promise.reject(this.$t('message.validate.number'))
+              }
+              return Promise.resolve()
+            }
+          }
+        ]
+      })
+    },
     fetchData () {
       this.fetchKubernetesVersionData()
     },
@@ -168,12 +181,9 @@ export default {
         }
       })
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         const params = {
           id: this.resource.id

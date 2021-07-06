@@ -26,9 +26,9 @@
         <DetailsTab :resource="resource" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.iso')" key="cdrom" v-if="vm.isoid">
-        <a-icon type="usb" />
+        <usb-outlined />
         <router-link :to="{ path: '/iso/' + vm.isoid }">{{ vm.isoname }}</router-link> <br/>
-        <a-icon type="barcode"/> {{ vm.isoid }}
+        <barcode-outlined /> {{ vm.isoid }}
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.volumes')" key="volumes" v-if="'listVolumes' in $store.getters.apis">
         <a-table
@@ -39,8 +39,8 @@
           :rowKey="item => item.id"
           :pagination="false"
         >
-          <template slot="name" slot-scope="text, item">
-            <a-icon type="hdd" />
+          <template #name="text, item">
+            <hdd-outlined />
             <router-link :to="{ path: '/volume/' + item.id }">
               {{ text }}
             </router-link>
@@ -48,10 +48,10 @@
               {{ item.provisioningtype }}
             </a-tag>
           </template>
-          <template slot="state" slot-scope="text">
+          <template #state="text">
             <status :text="text ? text : ''" />{{ text }}
           </template>
-          <template slot="size" slot-scope="text, item">
+          <template #size="text, item">
             {{ parseFloat(item.size / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GB
           </template>
         </a-table>
@@ -63,10 +63,10 @@
           @click="showAddModal"
           :loading="loadingNic"
           :disabled="!('addNicToVirtualMachine' in $store.getters.apis)">
-          <a-icon type="plus"></a-icon> {{ $t('label.network.addvm') }}
+          <template #icon><plus-outlined /></template> {{ $t('label.network.addvm') }}
         </a-button>
         <NicsTable :resource="vm" :loading="loading">
-          <span slot="actions" slot-scope="record">
+          <template #actions="record">
             <a-popconfirm
               :title="$t('label.set.default.nic')"
               @confirm="setAsDefault(record.nic)"
@@ -78,20 +78,20 @@
                 tooltipPlacement="bottom"
                 :tooltip="$t('label.set.default.nic')"
                 :disabled="!('updateDefaultNicForVirtualMachine' in $store.getters.apis)"
-                icon="check-square" />
+                icon="check-square-outlined" />
             </a-popconfirm>
             <tooltip-button
               v-if="record.nic.type !== 'L2'"
               tooltipPlacement="bottom"
               :tooltip="$t('label.change.ip.addess')"
-              icon="swap"
+              icon="swap-outlined"
               :disabled="!('updateVmNicIp' in $store.getters.apis)"
               @click="onChangeIPAddress(record)" />
             <tooltip-button
               v-if="record.nic.type !== 'L2'"
               tooltipPlacement="bottom"
               :tooltip="$t('label.edit.secondary.ips')"
-              icon="environment"
+              icon="environment-outlined"
               :disabled="(!('addIpToNic' in $store.getters.apis) && !('addIpToNic' in $store.getters.apis))"
               @click="onAcquireSecondaryIPAddress(record)" />
             <a-popconfirm
@@ -106,9 +106,9 @@
                 :tooltip="$t('label.action.delete.nic')"
                 :disabled="!('removeNicFromVirtualMachine' in $store.getters.apis)"
                 type="danger"
-                icon="delete" />
+                icon="delete-outlined" />
             </a-popconfirm>
-          </span>
+          </template>
         </NicsTable>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.vm.snapshots')" key="vmsnapshots" v-if="'listVMSnapshot' in $store.getters.apis">
@@ -160,7 +160,7 @@
           </a-select-option>
         </a-select>
         <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
-        <a-input v-model="addNetworkData.ip"></a-input>
+        <a-input v-model:value="addNetworkData.ip"></a-input>
       </div>
     </a-modal>
 
@@ -180,7 +180,7 @@
         <a-select
           showSearch
           v-if="editNicResource.type==='Shared'"
-          v-model="editIpAddressValue"
+          v-model:value="editIpAddressValue"
           :loading="listIps.loading"
           :autoFocus="editNicResource.type==='Shared'">
           <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
@@ -189,7 +189,7 @@
         </a-select>
         <a-input
           v-else
-          v-model="editIpAddressValue"
+          v-model:value="editIpAddressValue"
           :autoFocus="editNicResource.type!=='Shared'"></a-input>
       </div>
     </a-modal>
@@ -211,7 +211,7 @@
         <a-select
           showSearch
           v-if="editNicResource.type==='Shared'"
-          v-model="newSecondaryIp"
+          v-model:value="newSecondaryIp"
           :loading="listIps.loading">
           <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
             {{ ip.ipaddress }}
@@ -220,7 +220,7 @@
         <a-input
           v-else
           :placeholder="$t('label.new.secondaryip.description')"
-          v-model="newSecondaryIp"></a-input>
+          v-model:value="newSecondaryIp"></a-input>
       </div>
 
       <div style="margin-top: 10px; display: flex; justify-content:flex-end;">
@@ -241,7 +241,7 @@
               tooltipPlacement="top"
               :tooltip="$t('label.action.release.ip')"
               type="danger"
-              icon="delete" />
+              icon="delete-outlined" />
             {{ ip.ipaddress }}
           </a-popconfirm>
         </a-list-item>
@@ -798,7 +798,7 @@ export default {
   min-width: 50vw;
 }
 
-/deep/ .ant-list-item {
+:deep(.ant-list-item) {
   padding-top: 12px;
   padding-bottom: 12px;
 }

@@ -18,33 +18,37 @@
   <div class="form-layout">
     <a-spin :spinning="loading">
       <a-form
-        :form="form"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
         layout="vertical">
-        <a-form-item :label="$t('label.iso.name')">
+        <a-form-item :label="$t('label.iso.name')" ref="id" name="id">
           <a-select
             :loading="loading"
-            v-decorator="['id', {
-              initialValue: this.selectedIso,
-              rules: [{ required: true, message: `${this.$t('label.required')}`}]
-            }]"
+            v-model:value="form.id"
             autoFocus>
             <a-select-option v-for="iso in isos" :key="iso.id">
               {{ iso.displaytext || iso.name }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.forced')" v-if="resource && resource.hypervisor === 'VMware'">
-          <a-switch v-decorator="['forced']" :auto-focus="true" />
+        <a-form-item
+          :label="$t('label.forced')"
+          v-if="resource && resource.hypervisor === 'VMware'"
+          ref="forced"
+          name="forced">
+          <a-switch v-model:checked="form.forced" :auto-focus="true" />
         </a-form-item>
       </a-form>
       <div :span="24" class="action-button">
-        <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+        <a-button :loading="loading" type="primary" htmlType="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-spin>
   </div>
 </template>
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import _ from 'lodash'
 
@@ -60,17 +64,26 @@ export default {
   data () {
     return {
       loading: false,
-      selectedIso: '',
       isos: []
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
+    this.formRef = ref()
+    this.form = reactive({})
+    this.rules = reactive({})
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.form.id = undefined
+      this.form.forced = false
+      this.rules = {
+        id: [{ required: true, message: `${this.$t('label.required')}` }]
+      }
+    },
     fetchData () {
       const isoFiters = ['featured', 'community', 'selfexecutable']
       this.loading = true
@@ -81,7 +94,7 @@ export default {
       Promise.all(promises).then(() => {
         this.isos = _.uniqBy(this.isos, 'id')
         if (this.isos.length > 0) {
-          this.selectedIso = this.isos[0].id
+          this.form.id = this.isos[0].id
         }
       }).catch((error) => {
         console.log(error)
@@ -109,12 +122,9 @@ export default {
     closeAction () {
       this.$emit('close-action')
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {
           id: values.id,
           virtualmachineid: this.resource.id
