@@ -179,15 +179,13 @@ public class KvmHaAgentClient {
 
     @Nullable
     private HttpGet prepareHttpRequestForUrl(String url) {
-        HttpGet httpReq = null;
         try {
             URIBuilder builder = new URIBuilder(url);
-            httpReq = new HttpGet(builder.build());
+            return new HttpGet(builder.build());
         } catch (URISyntaxException e) {
             LOGGER.error(String.format("Failed to create URI for GET request [URL: %s] due to exception.", url), e);
             return null;
         }
-        return httpReq;
     }
 
     /**

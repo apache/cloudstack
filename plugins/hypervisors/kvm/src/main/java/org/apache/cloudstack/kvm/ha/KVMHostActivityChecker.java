@@ -117,12 +117,12 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     }
 
     private boolean isHealthViaNfs(Host r) {
-        boolean isHealthy = true;
-        if (isHostServedByNfsPool(r)) {
-            isHealthy = isAgentActive(r);
-            if (!isHealthy) {
-                LOG.warn(String.format("NFS storage health check failed for %s. It seems that a storage does not have activity.", r.toString()));
-            }
+        if (!isHostServedByNfsPool(r)) {
+            return true;
+        }
+        boolean isHealthy = isAgentActive(r);
+        if (!isHealthy) {
+            LOG.warn(String.format("NFS storage health check failed for %s. It seems that a storage does not have activity.", r));
         }
         return isHealthy;
     }
