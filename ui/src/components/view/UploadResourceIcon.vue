@@ -75,7 +75,7 @@
 </template>
 <script>
 import { api } from '@/api'
-import eventBus from '../../config/eventBus'
+import eventBus from '@/config/eventBus'
 
 export default {
   name: 'UploadResourceIcon',
@@ -192,6 +192,9 @@ export default {
         if (['user', 'account'].includes(resourceType.toLowerCase())) {
           eventBus.$emit('refresh-header')
         }
+        if (['domain'].includes(this.$route.path.split('/')[1])) {
+          eventBus.$emit('refresh-domain-icon')
+        }
       })
     },
     deleteIcon () {
@@ -218,6 +221,9 @@ export default {
         eventBus.$emit('refresh-icon')
         if (['user', 'account'].includes(resourceType.toLowerCase())) {
           eventBus.$emit('refresh-header')
+        }
+        if (['domain'].includes(this.$route.path.split('/')[1])) {
+          eventBus.$emit('refresh-domain-icon')
         }
       })
     }

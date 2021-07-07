@@ -784,6 +784,9 @@ export default {
     }
   },
   watch: {
+    $route: function () {
+      this.getIcons()
+    },
     resource: function (newItem, oldItem) {
       this.resource = newItem
       this.resourceType = this.$route.meta.resourceType

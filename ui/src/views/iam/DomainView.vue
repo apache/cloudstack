@@ -88,6 +88,7 @@ import ActionButton from '@/components/view/ActionButton'
 import TreeView from '@/components/view/TreeView'
 import DomainActionForm from '@/views/iam/DomainActionForm'
 import ResourceView from '@/components/view/ResourceView'
+import eventBus from '@/config/eventBus'
 
 export default {
   name: 'DomainView',
@@ -136,6 +137,11 @@ export default {
   created () {
     this.domainStore = store.getters.domainStore
     this.fetchData()
+    eventBus.$on('refresh-domain-icon', () => {
+      if (this.$showIcon()) {
+        this.fetchData()
+      }
+    })
   },
   watch: {
     '$route' (to, from) {
