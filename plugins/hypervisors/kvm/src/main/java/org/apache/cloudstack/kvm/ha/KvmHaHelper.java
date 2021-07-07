@@ -129,13 +129,9 @@ public class KvmHaHelper {
      */
     public boolean isKvmHealthyCheckViaLibvirt(Host host) {
         boolean isKvmHaAgentHealthy = isKvmHaAgentHealthy(host);
-
-        if (!isKvmHaAgentHealthy) {
-            if (isClusteProblematic(host) || isHostAgentReachableByNeighbour(host)) {
-                return true;
-            }
+        if (!isKvmHaAgentHealthy && (isClusteProblematic(host) || isHostAgentReachableByNeighbour(host))) {
+            return true;
         }
-
         return isKvmHaAgentHealthy;
     }
 
