@@ -1951,11 +1951,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         Long nextTemplateId = _tmpltDao.getNextInSequence(Long.class, "id");
         s_logger.info("Creating snapshot for the tempalte creation");
-        SnapshotVO snapshot = (SnapshotVO) volumeService.allocSnapshot(volumeId, null, curVm.getDisplayName() + "-Clone-" + nextTemplateId, Snapshot.LocationType.PRIMARY);
+        SnapshotVO snapshot = (SnapshotVO) volumeService.allocSnapshot(volumeId, null, curVm.getDisplayName() + "-Clone-" + nextTemplateId, null);
         if (snapshot == null) {
             throw new CloudRuntimeException("Unable to create a snapshot during the template creation recording");
         }
-        Snapshot snapshotEntity = volumeService.takeSnapshot(volumeId, null, snapshot.getId(), caller, false, Snapshot.LocationType.PRIMARY, false, new HashMap<>());
+        Snapshot snapshotEntity = volumeService.takeSnapshot(volumeId, null, snapshot.getId(), caller, false, null, false, new HashMap<>());
         if (snapshotEntity == null) {
             throw new CloudRuntimeException("Error when creating the snapshot entity");
         }
