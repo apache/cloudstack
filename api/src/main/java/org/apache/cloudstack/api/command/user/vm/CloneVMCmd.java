@@ -6,6 +6,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.storage.Snapshot;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
@@ -52,6 +53,8 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
 
     private Long temporaryTemlateId;
 
+    private Long temporarySnapShotId;
+
     public String getAccountName() {
         return accountName;
     }
@@ -82,6 +85,15 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
         return this.temporaryTemlateId;
     }
 
+    public void setTemporarySnapShotId(Long snapshotId) {
+        this.temporarySnapShotId = snapshotId;
+    }
+
+    public Long getTemporarySnapShotId() {
+        return temporarySnapShotId;
+    }
+
+
     public void setTemporaryTemlateId(long tempId) {
         this.temporaryTemlateId = tempId;
     }
@@ -90,7 +102,7 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
     public void create() throws ResourceAllocationException {
         try {
             _userVmService.checkCloneCondition(this);
-            VirtualMachineTemplate template = _templateService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
+            VirtualMachineTemplate template = _templateService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()), _volumeService);
             if (template == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "failed to create a template to db");
             }

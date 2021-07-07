@@ -4524,9 +4524,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("the VM doesn't exist or not registered in management server!");
         }
         UserVmVO vmStatus = _vmDao.findById(cmd.getId());
-        if (vmStatus.state != State.Shutdown && vmStatus.state != State.Stopped) {
-            throw new CloudRuntimeException("You should clone an instance that's shutdown!");
-        }
+//        if (vmStatus.state != State.Shutdown && vmStatus.state != State.Stopped) {
+//            throw new CloudRuntimeException("You should clone an instance that's shutdown!");
+//        }
         if (vmStatus.getHypervisorType() != HypervisorType.KVM && vmStatus.getHypervisorType() != HypervisorType.Simulator) {
             throw new CloudRuntimeException("The clone operation is only supported on KVM and Simulator!");
         }

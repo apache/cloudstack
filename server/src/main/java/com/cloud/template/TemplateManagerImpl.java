@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.*;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
@@ -143,29 +144,9 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.ImageStoreUploadMonitorImpl;
-import com.cloud.storage.LaunchPermissionVO;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.TemplateProfile;
-import com.cloud.storage.Upload;
-import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VMTemplateZoneVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.SnapshotDao;
@@ -1788,19 +1769,50 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     public VirtualMachineTemplate createPrivateTemplate(CloneVMCmd cmd) throws CloudRuntimeException {
         UserVm curVm = cmd.getTargetVM();
         long templateId = cmd.getTemporaryTemlateId();
+        long snapshotId = cmd.getTemporarySnapShotId();
         final Long accountId = curVm.getAccountId();
         Account caller = CallContext.current().getCallingAccount();
         List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(cmd.getId(), Volume.Type.ROOT);
         VolumeVO targetVolume = volumes.get(0);
         long volumeId = targetVolume.getId();
         VMTemplateVO finalTmpProduct = null;
+        SnapshotVO snapshot = null;
         try {
             TemplateInfo cloneTempalateInfp = _tmplFactory.getTemplate(templateId, DataStoreRole.Image);
             long zoneId = curVm.getDataCenterId();
             AsyncCallFuture<TemplateApiResult> future = null;
             VolumeInfo vInfo = _volFactory.getVolume(volumeId);
             DataStore store = _dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
-            future = _tmpltSvr.createTemplateFromVolumeAsync(vInfo, cloneTempalateInfp, store);
+            snapshot = _snapshotDao.findById(snapshotId);
+//            future = _tmpltSvr.createTemplateFromVolumeAsync(vInfo, cloneTempalateInfp, store);
+            // create template from snapshot
+            DataStoreRole dataStoreRole = ApiResponseHelper.getDataStoreRole(snapshot, _snapshotStoreDao, _dataStoreMgr);
+            SnapshotInfo snapInfo = _snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
+            if (dataStoreRole == DataStoreRole.Image) {
+                if (snapInfo == null) {
+                    snapInfo = _snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+                    if(snapInfo == null) {
+                        throw new CloudRuntimeException("Cannot find snapshot "+snapshotId);
+                    }
+                    // We need to copy the snapshot onto secondary.
+                    SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.BACKUP);
+                    snapshotStrategy.backupSnapshot(snapInfo);
+
+                    // Attempt to grab it again.
+                    snapInfo = _snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
+                    if(snapInfo == null) {
+                        throw new CloudRuntimeException("Cannot find snapshot " + snapshotId + " on secondary and could not create backup");
+                    }
+                }
+                _accountMgr.checkAccess(caller, null, true, snapInfo);
+                DataStore snapStore = snapInfo.getDataStore();
+
+                if (snapStore != null) {
+                    store = snapStore; // pick snapshot image store to create template
+                }
+            }
+            future = _tmpltSvr.createTemplateFromSnapshotAsync(snapInfo, cloneTempalateInfp, store);
+            // wait for the result to converge
             CommandResult result = null;
             try {
                 result = future.get();
@@ -1836,7 +1848,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             finalTmpProduct = _tmpltDao.findById(templateId);
             if (finalTmpProduct == null) {
                 final VolumeVO volumeFinal = targetVolume;
-                final SnapshotVO snapshotFinal = null;
+                final SnapshotVO snapshotFinal = snapshot;
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
                     public void doInTransactionWithoutResult(TransactionStatus status) {
@@ -1867,7 +1879,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template from clone", create = true)
-    public VMTemplateVO createPrivateTemplateRecord(CloneVMCmd cmd, Account templateOwner) throws ResourceAllocationException {
+    public VMTemplateVO createPrivateTemplateRecord(CloneVMCmd cmd, Account templateOwner, VolumeApiService volumeService) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, templateOwner);
         String name = cmd.getTemplateName();
@@ -1883,21 +1895,22 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         HypervisorType hyperType = null;
         VolumeVO volume = _volumeDao.findById(volumeId);
         if (volume == null) {
-            throw new InvalidParameterValueException("Failed to create private template record, unable to find volume " + volumeId);
+            throw new InvalidParameterValueException("Failed to create private template record, unable to find root volume " + volumeId);
         }
+
         // check permissions
         _accountMgr.checkAccess(caller, null, true, volume);
 
         // If private template is created from Volume, check that the volume
         // will not be active when the private template is
         // created
-        if (!_volumeMgr.volumeInactive(volume)) {
-            String msg = "Unable to create private template for volume: " + volume.getName() + "; volume is attached to a non-stopped VM, please stop the VM first";
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info(msg);
-            }
-            throw new CloudRuntimeException(msg);
-        }
+//        if (!_volumeMgr.volumeInactive(volume)) {
+//            String msg = "Unable to create private template for volume: " + volume.getName() + "; volume is attached to a non-stopped VM, please stop the VM first";
+//            if (s_logger.isInfoEnabled()) {
+//                s_logger.info(msg);
+//            }
+//            throw new CloudRuntimeException(msg);
+//        }
 
         hyperType = _volumeDao.getHypervisorType(volumeId);
         if (HypervisorType.LXC.equals(hyperType)) {
@@ -1913,7 +1926,23 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("GuestOS with ID: " + guestOSId + " does not exist.");
         }
 
+        // get snapshot from this step
+
+
         Long nextTemplateId = _tmpltDao.getNextInSequence(Long.class, "id");
+        s_logger.info("Creating snapshot for the tempalte creation");
+        SnapshotVO snapshot = (SnapshotVO) volumeService.allocSnapshot(volumeId, null, curVm.getDisplayName() + "-Clone-" + nextTemplateId, Snapshot.LocationType.PRIMARY);
+        if (snapshot == null) {
+            throw new CloudRuntimeException("Unable to create a snapshot during the template creation recording");
+        }
+        Snapshot snapshotEntity = volumeService.takeSnapshot(volumeId, null, snapshot.getId(), caller, false, Snapshot.LocationType.PRIMARY, false, new HashMap<>());
+        if (snapshotEntity == null) {
+            throw new CloudRuntimeException("Error when creating the snapshot entity");
+        }
+        if (snapshotEntity.getState() != Snapshot.State.BackedUp) {
+            throw new CloudRuntimeException("Async backup of snapshot happens during the clone for snapshot id: " + snapshot.getId());
+        }
+        cmd.setTemporarySnapShotId(snapshot.getId());
         String description = ""; // TODO: add this to clone parameter in the future
         boolean isExtractable = false;
         Long sourceTemplateId = null;
@@ -1978,7 +2007,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
             _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.template);
             _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.secondary_storage,
-                    volume.getSize());
+                    snapshot.getSize());
         }
 
         if (template != null) {
