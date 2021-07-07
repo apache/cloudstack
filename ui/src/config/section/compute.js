@@ -403,7 +403,7 @@ export default {
       name: 'kubernetes',
       title: 'label.kubernetes',
       icon: kubernetes,
-      shortKey: ['alt', 'k'],
+      shortKey: ['shift', 'k'],
       docHelp: 'plugins/cloudstack-kubernetes-service.html',
       permission: ['listKubernetesClusters'],
       columns: () => {
@@ -485,7 +485,7 @@ export default {
       name: 'vmgroup',
       title: 'label.instance.groups',
       icon: 'gold',
-      shortKey: ['alt', 'i'],
+      shortKey: ['shift', 'i'],
       docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
       permission: ['listInstanceGroups'],
       columns: ['name', 'account'],
@@ -523,7 +523,7 @@ export default {
       name: 'ssh',
       title: 'label.ssh.key.pairs',
       icon: 'key',
-      shortKey: ['alt', 'l'],
+      shortKey: ['shift', 'l'],
       docHelp: 'adminguide/virtual_machines.html#using-ssh-keys-for-authentication',
       permission: ['listSSHKeyPairs'],
       columns: () => {
@@ -575,7 +575,7 @@ export default {
       name: 'affinitygroup',
       title: 'label.affinity.groups',
       icon: 'swap',
-      shortKey: ['alt', 'g'],
+      shortKey: ['shift', 'g'],
       docHelp: 'adminguide/virtual_machines.html#affinity-groups',
       permission: ['listAffinityGroups'],
       columns: () => {
