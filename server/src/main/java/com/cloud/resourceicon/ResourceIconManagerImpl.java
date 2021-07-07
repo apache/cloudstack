@@ -142,9 +142,6 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
     @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_ICON_UPLOAD, eventDescription = "uploading resource icon")
     public boolean uploadResourceIcon(List<String> resourceIds, ResourceTag.ResourceObjectType resourceType, String base64Image) {
         final Account caller = CallContext.current().getCallingAccount();
-//        if (!accountService.isAdmin(caller.getId())) {
-//            throw new PermissionDeniedException("Current Account: " + caller.getAccountName() + " does not have permission to upload resource icons");
-//        }
 
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
@@ -190,9 +187,6 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
     @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_ICON_DELETE, eventDescription = "deleting resource icon")
     public boolean deleteResourceIcon(List<String> resourceIds, ResourceTag.ResourceObjectType resourceType) {
         Account caller = CallContext.current().getCallingAccount();
-//        if (!accountService.isAdmin(caller.getId())) {
-//            throw new PermissionDeniedException("Current Account: " + caller.getAccountName() + " does not have permission to delete resource icons");
-//        }
         List<? extends ResourceIcon> resourceIcons = searchResourceIcons(resourceIds, resourceType);
         if (resourceIcons.isEmpty()) {
             s_logger.debug("No resource Icon(s) uploaded for the specified resources");
@@ -202,6 +196,12 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 for (ResourceIcon resourceIcon : resourceIcons) {
+                    String resourceId = resourceIcon.getResourceUuid();
+                    long id = resourceManagerUtil.getResourceId(resourceId, resourceType);
+                    Pair<Long, Long> accountDomainPair = getAccountDomain(id, resourceType);
+                    Long domainId = accountDomainPair.second();
+                    Long accountId = accountDomainPair.first();
+                    resourceManagerUtil.checkResourceAccessible(accountId, domainId, String.format("Account ' %s ' doesn't have permissions to upload icon for resource ' %s ", caller, id));
                     resourceIconDao.remove(resourceIcon.getId());
                     s_logger.debug("Removed icon for resources (" +
                             String.join(", ", resourceIds) + ")");

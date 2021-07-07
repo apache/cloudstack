@@ -919,6 +919,7 @@ export default {
               resolve(this.images)
             } else {
               this.images[type] = ''
+              resolve(this.images)
             }
           }).catch(error => {
             reject(error)
