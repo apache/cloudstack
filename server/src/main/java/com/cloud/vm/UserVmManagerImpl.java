@@ -5612,10 +5612,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         long callingUserId = CallContext.current().getCallingUserId();
         Account callerAccount = CallContext.current().getCallingAccount();
 //        IpAddress ipAddress = _ipAddrMgr.assignPublicIpAddress(zoneId, curVm.getPodIdToDeployIn(), callerAccount, VlanType.DirectAttached, )
-        IpAddress ipAddress = _ipAddrMgr.allocateIp(curAccount, false, callerAccount, callingUserId, dataCenter, true, null);
+//        IpAddress ipAddress = _ipAddrMgr.allocateIp(curAccount, false, callerAccount, callingUserId, dataCenter, true, null);
         String ipv6Address = null;
         String macAddress = null;
-        IpAddresses addr = new IpAddresses(ipAddress.getVmIp(), ipv6Address, macAddress);
+        IpAddresses addr = new IpAddresses(null, ipv6Address, macAddress);
 //        IpAddresses addr = new IpAddresses("172.20.0.98", ipv6Address, macAddress);
         long serviceOfferingId = curVm.getServiceOfferingId();
         ServiceOffering serviceOffering = _serviceOfferingDao.findById(curVm.getId(), serviceOfferingId);
