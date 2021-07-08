@@ -634,7 +634,7 @@ class TestKubernetesCluster(cloudstackTestCase):
             retries = retries - 1
         return False
 
-    def getValidKubernetesCluster(self, size=1, master_nodes=1, version={}):
+    def getValidKubernetesCluster(self, size=1, control_nodes=1, version={}):
         cluster = k8s_cluster
 
         # Does a cluster already exist ?
@@ -642,10 +642,10 @@ class TestKubernetesCluster(cloudstackTestCase):
             if not version:
                 version = self.kubernetes_version_1_16_0
             self.debug("No existing cluster available, k8s_cluster: %s" % cluster)
-            return self.createNewKubernetesCluster(version, size, master_nodes)
+            return self.createNewKubernetesCluster(version, size, control_nodes)
 
         # Is the existing cluster what is needed ?
-        valid = cluster.size == size and cluster.masternodes == master_nodes
+        valid = cluster.size == size and cluster.controlnodes == control_nodes
         if version:
             # Check the version only if specified
             valid = valid and cluster.kubernetesversionid == version.id
@@ -658,7 +658,7 @@ class TestKubernetesCluster(cloudstackTestCase):
             if cluster == None:
                 # Looks like the cluster disappeared !
                 self.debug("Existing cluster, k8s_cluster ID: %s not returned by list API" % cluster_id)
-                return self.createNewKubernetesCluster(version, size, master_nodes)
+                return self.createNewKubernetesCluster(version, size, control_nodes)
 
         if valid:
             try:
@@ -674,14 +674,14 @@ class TestKubernetesCluster(cloudstackTestCase):
             self.deleteKubernetesClusterAndVerify(cluster.id, False, True)
 
         self.debug("No valid cluster, need to deploy a new one")
-        return self.createNewKubernetesCluster(version, size, master_nodes)
+        return self.createNewKubernetesCluster(version, size, control_nodes)
 
-    def createNewKubernetesCluster(self, version, size, master_nodes) :
+    def createNewKubernetesCluster(self, version, size, control_nodes) :
         name = 'testcluster-' + random_gen()
         self.debug("Creating for Kubernetes cluster with name %s" % name)
         try:
-            cluster = self.createKubernetesCluster(name, version.id, size, master_nodes)
-            self.verifyKubernetesCluster(cluster, name, version.id, size, master_nodes)
+            cluster = self.createKubernetesCluster(name, version.id, size, control_nodes)
+            self.verifyKubernetesCluster(cluster, name, version.id, size, control_nodes)
         except Exception as ex:
             self.fail("Kubernetes cluster deployment failed: %s" % ex)
         except AssertionError as err:
