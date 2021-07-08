@@ -188,7 +188,7 @@ for full help
         sys.exit(1)
 
     def setupDBSchema(self):
-        if not self.options.createschema and not self.rootuser:
+        if not self.options.schemaonly and not self.rootuser:
             self.info("No mysql root user specified, will not create Cloud DB schema\n", None)
             return
 
@@ -220,7 +220,7 @@ for full help
             )
 
         scriptsToRun = ["create-database","create-schema", "create-database-premium","create-schema-premium"]
-        if self.options.createschema:
+        if self.options.schemaonly:
             scriptsToRun = ["create-schema", "create-schema-premium"]
 
         for f in scriptsToRun:
@@ -580,7 +580,7 @@ for example:
         self.parser.add_option("-j", "--encryption-jar-path", action="store", dest="encryptionJarPath", help="The path to the jasypt library to be used to encrypt the values in db.properties")
         self.parser.add_option("-n", "--encryption-key-file", action="store", dest="encryptionKeyFile", help="The name of the file in which encryption key to be generated")
         self.parser.add_option("-b", "--mysql-bin-path", action="store", dest="mysqlbinpath", help="The mysql installed bin path")
-        self.parser.add_option("-s", "--create-schema-only", action="store_true", dest="createschema", default=False,
+        self.parser.add_option("-s", "--schema-only", action="store_true", dest="schemaonly", default=False,
                           help="Creates the db schema without having to pass root credentials - "\
                                "Please note: The databases and user has to be configured manually prior to running this script when using this flag. "\
                                "If a management server has already upgraded the database and you intend to reinitialise the database, "\
