@@ -5665,7 +5665,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         cmd.getCustomId(), new HashMap<>(), null, new HashMap<>(), dynamicScalingEnabled);
             }
         }
-
         return vmResult;
     }
 

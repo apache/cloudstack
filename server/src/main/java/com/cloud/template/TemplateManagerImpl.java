@@ -1979,7 +1979,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateVO privateTemplate = null;
         privateTemplate = new VMTemplateVO(nextTemplateId, name, ImageFormat.RAW, isPublic, featured, isExtractable,
                 TemplateType.USER, null, true, 64, templateOwner.getId(), null, description,
-                true, guestOS.getId(), true, hyperType, null, new HashMap<>(){{put("template to be cleared", "yes");}}, false, false, false, false);
+                false, guestOS.getId(), true, hyperType, null, new HashMap<>(){{put("template to be cleared", "yes");}}, false, false, false, false);
         List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
         if (!CollectionUtils.isEmpty(stores)) {
             privateTemplate.setCrossZones(true);
