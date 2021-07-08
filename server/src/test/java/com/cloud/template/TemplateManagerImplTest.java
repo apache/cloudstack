@@ -118,6 +118,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
+import org.apache.cloudstack.snapshot.SnapshotHelper;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.nullable;
@@ -703,6 +705,16 @@ public class TemplateManagerImplTest {
         @Bean
         public HypervisorGuruManager hypervisorGuruManager() {
             return Mockito.mock(HypervisorGuruManager.class);
+        }
+
+        @Bean
+        public SnapshotHelper snapshotHelper() {
+            return Mockito.mock(SnapshotHelper.class);
+        }
+
+        @Bean
+        public SnapshotService snapshotService() {
+            return Mockito.mock(SnapshotService.class);
         }
 
         public static class Library implements TypeFilter {
