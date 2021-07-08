@@ -30,8 +30,8 @@
                 <a-icon type="camera" class="upload-icon"/>
               </div>
               <slot name="avatar">
-                <span v-if="resource.icon && resource.icon.base64image || images.template || resourceIcon">
-                  <resource-icon :image="getImage(resource.icon && resource.icon.base64image || images.template || resourceIcon)" size="4x" style="margin-right: 5px"/>
+                <span v-if="resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon">
+                  <resource-icon :image="getImage(resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon)" size="4x" style="margin-right: 5px"/>
                 </span>
                 <span v-else>
                   <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" @update-osname="(name) => this.resource.ostypename = name"/>
@@ -130,8 +130,8 @@
         <div class="resource-detail-item" v-if="resource.ostypename && resource.ostypeid">
           <div class="resource-detail-item__label">{{ $t('label.ostypename') }}</div>
           <div class="resource-detail-item__details">
-            <span v-if="resource.icon && resource.icon.base64image || images.template">
-              <resource-icon :image="getImage(images.template)" size="1x" style="margin-right: 5px"/>
+            <span v-if="resource.icon && resource.icon.base64image || images.template || images.iso">
+              <resource-icon :image="getImage(images.template || images.iso)" size="1x" style="margin-right: 5px"/>
             </span>
             <os-logo v-else :osId="resource.ostypeid" :osName="resource.ostypename" size="lg" style="margin-left: -1px" />
             <span style="margin-left: 8px">{{ resource.ostypename }}</span>
@@ -776,6 +776,7 @@ export default {
       images: {
         zone: '',
         template: '',
+        iso: '',
         domain: '',
         account: '',
         project: '',
@@ -875,6 +876,9 @@ export default {
     async getIcons () {
       if (this.resource.templateid) {
         await this.fetchResourceIcon(this.resource.templateid, 'template')
+      }
+      if (this.resource.isoid) {
+        await this.fetchResourceIcon(this.resource.isoid, 'iso')
       }
       if (this.resource.zoneid) {
         await this.fetchResourceIcon(this.resource.zoneid, 'zone')

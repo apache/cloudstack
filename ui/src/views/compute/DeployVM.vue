@@ -1126,6 +1126,7 @@ export default {
       }
 
       if (this.iso) {
+        this.vm.isoid = this.iso.id
         this.vm.templateid = this.iso.id
         this.vm.templatename = this.iso.displaytext
         this.vm.ostypeid = this.iso.ostypeid
@@ -1810,6 +1811,7 @@ export default {
       args.zoneid = _.get(this.zone, 'id')
       args.isoFilter = isoFilter
       args.bootable = true
+      args.showicon = 'true'
 
       return new Promise((resolve, reject) => {
         api('listIsos', args).then((response) => {
