@@ -5608,7 +5608,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         long callingUserId = CallContext.current().getCallingUserId();
         Account callerAccount = CallContext.current().getCallingAccount();
 //        IpAddress ipAddress = _ipAddrMgr.assignPublicIpAddress(zoneId, curVm.getPodIdToDeployIn(), callerAccount, VlanType.DirectAttached, )
-        IpAddress ipAddress = _ipAddrMgr.allocateIp(curAccount, false, callerAccount, callingUserId, dataCenter, null, null);
+        IpAddress ipAddress = _ipAddrMgr.allocateIp(curAccount, false, callerAccount, callingUserId, dataCenter, true, null);
         String ipv6Address = null;
         String macAddress = null;
         IpAddresses addr = new IpAddresses(ipAddress.getVmIp(), ipv6Address, macAddress);
