@@ -52,10 +52,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 //import com.cloud.network.IpAddress;
-import com.cloud.network.IpAddressManager;
-import com.cloud.network.Network;
-import com.cloud.network.NetworkModel;
-import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.*;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -5610,11 +5607,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Account curAccount = _accountDao.findById(curVm.getAccountId());
         long callingUserId = CallContext.current().getCallingUserId();
         Account callerAccount = CallContext.current().getCallingAccount();
-//        IpAddress ipAddress = _ipAddrMgr.allocateIp(curAccount, curAccount.getId() == Account.ACCOUNT_ID_SYSTEM, callerAccount, callingUserId, dataCenter, null, null);
+//        IpAddress ipAddress = _ipAddrMgr.assignPublicIpAddress(zoneId, curVm.getPodIdToDeployIn(), callerAccount, VlanType.DirectAttached, )
+        IpAddress ipAddress = _ipAddrMgr.allocateIp(curAccount, false, callerAccount, callingUserId, dataCenter, null, null);
         String ipv6Address = null;
         String macAddress = null;
-//        IpAddresses addr = new IpAddresses(ipAddress.getVmIp(), null, macAddress);
-        IpAddresses addr = new IpAddresses("172.20.0.98", ipv6Address, macAddress);
+        IpAddresses addr = new IpAddresses(ipAddress.getVmIp(), ipv6Address, macAddress);
+//        IpAddresses addr = new IpAddresses("172.20.0.98", ipv6Address, macAddress);
         long serviceOfferingId = curVm.getServiceOfferingId();
         ServiceOffering serviceOffering = _serviceOfferingDao.findById(curVm.getId(), serviceOfferingId);
         List<SecurityGroupVO> securityGroupList = _securityGroupMgr.getSecurityGroupsForVm(curVm.getId());
