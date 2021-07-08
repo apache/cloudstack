@@ -139,6 +139,7 @@ class Distribution:
             if version.find("SUSE") != -1:
                 self.distro = "SUSE"
             else:
+                distributor = version.split("=")[1].replace('"', '').strip()
                 raise UnknownSystemException(distributor)
         else:
             raise UnknownSystemException
