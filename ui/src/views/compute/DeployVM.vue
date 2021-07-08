@@ -600,14 +600,27 @@
               </a-step>
             </a-steps>
             <div class="card-footer">
+              <a-form-item>
+                <a-switch
+                  class="form-item-hidden"
+                  v-decorator="['stayonpage']"
+                ></a-switch>
+              </a-form-item>
               <!-- ToDo extract as component -->
               <a-button @click="() => this.$router.back()" :disabled="loading.deploy">
                 {{ this.$t('label.cancel') }}
               </a-button>
-              <a-button type="primary" @click="handleSubmit" :loading="loading.deploy">
+              <a-dropdown-button style="margin-left: 10px" type="primary" @click="handleSubmit" :loading="loading.deploy">
                 <a-icon type="rocket" />
                 {{ this.$t('label.launch.vm') }}
-              </a-button>
+                <a-icon slot="icon" type="down" />
+                <a-menu type="primary" slot="overlay" @click="handleSubmitAndStay" theme="dark">
+                  <a-menu-item type="primary" key="1">
+                    <a-icon type="rocket" />
+                    {{ $t('label.launch.vm.and.stay') }}
+                  </a-menu-item>
+                </a-menu>
+              </a-dropdown-button>
             </div>
           </a-form>
         </a-card>
@@ -1362,6 +1375,15 @@ export default {
     getText (option) {
       return _.get(option, 'displaytext', _.get(option, 'name'))
     },
+    handleSubmitAndStay (e) {
+      this.form.setFieldsValue({
+        stayonpage: true
+      })
+      this.handleSubmit(e.domEvent)
+      this.form.setFieldsValue({
+        stayonpage: false
+      })
+    },
     handleSubmit (e) {
       console.log('wizard submit')
       e.preventDefault()
@@ -1585,9 +1607,12 @@ export default {
           new Promise(resolve => setTimeout(resolve, 3000)).then(() => {
             eventBus.$emit('vm-refresh-data')
           })
-          this.$router.back()
+          if (!values.stayonpage) {
+            this.$router.back()
+          }
         }).catch(error => {
           this.$notifyError(error)
+        }).finally(() => {
           this.loading.deploy = false
         })
       })
