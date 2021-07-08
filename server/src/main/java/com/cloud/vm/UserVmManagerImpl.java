@@ -52,7 +52,11 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 //import com.cloud.network.IpAddress;
-import com.cloud.network.*;
+import com.cloud.network.IpAddress;
+import com.cloud.network.IpAddressManager;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
