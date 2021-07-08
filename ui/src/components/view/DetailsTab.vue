@@ -35,7 +35,7 @@
         </div>
         <div v-else-if="$route.meta.name === 'computeoffering' && item === 'rootdisksize'">
           <div>
-            {{ parseFloat( resource.rootdisksize / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GB
+            {{ resource.rootdisksize }} GB
           </div>
         </div>
         <div v-else-if="['name', 'type'].includes(item)">

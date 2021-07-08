@@ -161,7 +161,7 @@ public class IvsVifDriver extends VifDriverBase {
 
     private String createVnetBr(String vNetId, String pifKey, String protocol) throws InternalErrorException {
         String nic = _pifs.get(pifKey);
-        if (nic == null) {
+        if (nic == null || protocol.equals(Networks.BroadcastDomainType.Vxlan.scheme())) {
             // if not found in bridge map, maybe traffic label refers to pif already?
             File pif = new File("/sys/class/net/" + pifKey);
             if (pif.isDirectory()) {

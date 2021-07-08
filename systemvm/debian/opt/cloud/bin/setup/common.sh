@@ -567,14 +567,12 @@ setup_ntp() {
     if [ -f $NTP_CONF_FILE ]
     then
         IFS=',' read -a server_list <<< "$NTP_SERVER_LIST"
+        sed -i "/^server /d" $NTP_CONF_FILE
         for (( iterator=${#server_list[@]}-1 ; iterator>=0 ; iterator-- ))
         do
             server=$(echo ${server_list[iterator]} | tr -d '\r')
             PATTERN="server $server"
-            if grep -q "^$PATTERN$" $NTP_CONF_FILE ; then
-                sed -i "/^$PATTERN$/d" $NTP_CONF_FILE
-            fi
-            sed -i "0,/^server/s//$PATTERN\nserver/" $NTP_CONF_FILE
+            sed -i "0,/^#server/s//$PATTERN\n#server/" $NTP_CONF_FILE
         done
         systemctl enable ntp
     else

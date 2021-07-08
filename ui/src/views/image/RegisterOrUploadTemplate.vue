@@ -175,7 +175,8 @@
                     }
                   ]
                 }]"
-                :placeholder="apiParams.format.description">
+                :placeholder="apiParams.format.description"
+                @change="val => { selectedFormat = val }">
                 <a-select-option v-for="opt in format.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
@@ -209,7 +210,7 @@
           </a-form-item>
         </a-row>
 
-        <a-form-item :label="$t('label.deployasis')" v-if="hyperVMWShow">
+        <a-form-item :label="$t('label.deployasis')" v-if="selectedFormat === 'OVA'">
           <a-switch
             v-decorator="['deployasis', {
               initialValue: false,
@@ -388,6 +389,7 @@ export default {
       hyperKVMShow: false,
       hyperXenServerShow: false,
       hyperVMWShow: false,
+      selectedFormat: '',
       deployasis: false,
       zoneError: '',
       zoneErrorMessage: '',

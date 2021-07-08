@@ -23,20 +23,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Timer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import javax.inject.Inject;
-import javax.mail.Authenticator;
-import javax.mail.Message.RecipientType;
 import javax.mail.MessagingException;
-import javax.mail.PasswordAuthentication;
-import javax.mail.SendFailedException;
-import javax.mail.Session;
-import javax.mail.URLName;
-import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -78,13 +70,15 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
-import com.sun.mail.smtp.SMTPMessage;
-import com.sun.mail.smtp.SMTPSSLTransport;
-import com.sun.mail.smtp.SMTPTransport;
+import java.util.HashSet;
+import java.util.Set;
+import org.apache.cloudstack.utils.mailing.MailAddress;
+import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
+import org.apache.cloudstack.utils.mailing.SMTPMailSender;
+import org.apache.commons.lang3.math.NumberUtils;
 
 public class AlertManagerImpl extends ManagerBase implements AlertManager, Configurable {
     private static final Logger s_logger = Logger.getLogger(AlertManagerImpl.class.getName());
@@ -94,7 +88,6 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     private static final DecimalFormat DfPct = new DecimalFormat("###.##");
     private static final DecimalFormat DfWhole = new DecimalFormat("########");
 
-    private EmailAlert _emailAlert;
     @Inject
     private AlertDao _alertDao;
     @Inject
@@ -138,6 +131,10 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     private final ExecutorService _executor;
 
+    protected SMTPMailSender mailSender;
+    protected String[] recipients = null;
+    protected String senderAddress = null;
+
     public AlertManagerImpl() {
         _executor = Executors.newCachedThreadPool(new NamedThreadFactory("Email-Alerts-Sender"));
     }
@@ -148,27 +145,23 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
         // set up the email system for alerts
         String emailAddressList = configs.get("alert.email.addresses");
-        String[] emailAddresses = null;
         if (emailAddressList != null) {
-            emailAddresses = emailAddressList.split(",");
+            recipients = emailAddressList.split(",");
         }
 
-        String smtpHost = configs.get("alert.smtp.host");
-        int smtpPort = NumbersUtil.parseInt(configs.get("alert.smtp.port"), 25);
-        String useAuthStr = configs.get("alert.smtp.useAuth");
-        boolean useAuth = ((useAuthStr == null) ? false : Boolean.parseBoolean(useAuthStr));
-        String smtpUsername = configs.get("alert.smtp.username");
-        String smtpPassword = configs.get("alert.smtp.password");
-        String emailSender = configs.get("alert.email.sender");
-        String smtpDebugStr = configs.get("alert.smtp.debug");
-        int smtpTimeout = NumbersUtil.parseInt(configs.get("alert.smtp.timeout"), 30000);
-        int smtpConnectionTimeout = NumbersUtil.parseInt(configs.get("alert.smtp.connectiontimeout"), 30000);
-        boolean smtpDebug = false;
-        if (smtpDebugStr != null) {
-            smtpDebug = Boolean.parseBoolean(smtpDebugStr);
-        }
+        senderAddress = configs.get("alert.email.sender");
 
-        _emailAlert = new EmailAlert(emailAddresses, smtpHost, smtpPort, smtpConnectionTimeout, smtpTimeout, useAuth, smtpUsername, smtpPassword, emailSender, smtpDebug);
+        String namespace = "alert.smtp";
+        String timeoutConfig = String.format("%s.timeout", namespace);
+        String connectionTimeoutConfig = String.format("%s.connectiontimeout", namespace);
+
+        int smtpTimeout = NumberUtils.toInt(configs.get(timeoutConfig), 30000);
+        int smtpConnectionTimeout = NumberUtils.toInt(configs.get(connectionTimeoutConfig), 30000);
+
+        configs.put(timeoutConfig, String.valueOf(smtpTimeout));
+        configs.put(connectionTimeoutConfig, String.valueOf(smtpConnectionTimeout));
+
+        mailSender = new SMTPMailSender(configs, namespace);
 
         String publicIPCapacityThreshold = _configDao.getValue(Config.PublicIpCapacityThreshold.key());
         String privateIPCapacityThreshold = _configDao.getValue(Config.PrivateIpCapacityThreshold.key());
@@ -231,9 +224,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     @Override
     public void clearAlert(AlertType alertType, long dataCenterId, long podId) {
         try {
-            if (_emailAlert != null) {
-                _emailAlert.clearAlert(alertType.getType(), dataCenterId, podId);
-            }
+            clearAlert(alertType.getType(), dataCenterId, podId);
         } catch (Exception ex) {
             s_logger.error("Problem clearing email alert", ex);
         }
@@ -248,8 +239,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         // TODO:  queue up these messages and send them as one set of issues once a certain number of issues is reached?  If that's the case,
         //         shouldn't we have a type/severity as part of the API so that severe errors get sent right away?
         try {
-            if (_emailAlert != null) {
-                _emailAlert.sendAlert(alertType, dataCenterId, podId, null, subject, body);
+            if (mailSender != null) {
+                sendAlert(alertType, dataCenterId, podId, null, subject, body);
             } else {
                 s_logger.warn("AlertType:: " + alertType + " | dataCenterId:: " + dataCenterId + " | podId:: " + podId +
                         " | message:: " + subject + " | body:: " + body);
@@ -441,8 +432,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
         recalculateCapacity();
 
-        // abort if we can't possibly send an alert...
-        if (_emailAlert == null) {
+        if (mailSender == null) {
             return;
         }
 
@@ -642,7 +632,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 s_logger.debug(msgSubject);
                 s_logger.debug(msgContent);
             }
-            _emailAlert.sendAlert(alertType, dc.getId(), podId, clusterId, msgSubject, msgContent);
+            sendAlert(alertType, dc.getId(), podId, clusterId, msgSubject, msgContent);
         } catch (Exception ex) {
             s_logger.error("Exception in CapacityChecker", ex);
         }
@@ -679,170 +669,78 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     }
 
-    class EmailAlert {
-        private Session _smtpSession;
-        private InternetAddress[] _recipientList;
-        private final String _smtpHost;
-        private int _smtpPort = -1;
-        private boolean _smtpUseAuth = false;
-        private final String _smtpUsername;
-        private final String _smtpPassword;
-        private final String _emailSender;
-        private int _smtpTimeout;
-        private int _smtpConnectionTimeout;
-
-        public EmailAlert(String[] recipientList, String smtpHost, int smtpPort, int smtpConnectionTimeout, int smtpTimeout, boolean smtpUseAuth,
-                final String smtpUsername,
-                final String smtpPassword, String emailSender, boolean smtpDebug) {
-            if (recipientList != null) {
-                _recipientList = new InternetAddress[recipientList.length];
-                for (int i = 0; i < recipientList.length; i++) {
-                    try {
-                        _recipientList[i] = new InternetAddress(recipientList[i], recipientList[i]);
-                    } catch (Exception ex) {
-                        s_logger.error("Exception creating address for: " + recipientList[i], ex);
-                    }
-                }
-            }
-
-            _smtpHost = smtpHost;
-            _smtpPort = smtpPort;
-            _smtpUseAuth = smtpUseAuth;
-            _smtpUsername = smtpUsername;
-            _smtpPassword = smtpPassword;
-            _emailSender = emailSender;
-            _smtpTimeout = smtpTimeout;
-            _smtpConnectionTimeout = smtpConnectionTimeout;
-
-            if (_smtpHost != null) {
-                Properties smtpProps = new Properties();
-                smtpProps.put("mail.smtp.host", smtpHost);
-                smtpProps.put("mail.smtp.port", smtpPort);
-                smtpProps.put("mail.smtp.auth", "" + smtpUseAuth);
-                smtpProps.put("mail.smtp.timeout", _smtpTimeout);
-                smtpProps.put("mail.smtp.connectiontimeout", _smtpConnectionTimeout);
-
-                if (smtpUsername != null) {
-                    smtpProps.put("mail.smtp.user", smtpUsername);
-                }
-
-                smtpProps.put("mail.smtps.host", smtpHost);
-                smtpProps.put("mail.smtps.port", smtpPort);
-                smtpProps.put("mail.smtps.auth", "" + smtpUseAuth);
-                smtpProps.put("mail.smtps.timeout", _smtpTimeout);
-                smtpProps.put("mail.smtps.connectiontimeout", _smtpConnectionTimeout);
-
-                if (smtpUsername != null) {
-                    smtpProps.put("mail.smtps.user", smtpUsername);
-                }
-
-                if ((smtpUsername != null) && (smtpPassword != null)) {
-                    _smtpSession = Session.getInstance(smtpProps, new Authenticator() {
-                        @Override
-                        protected PasswordAuthentication getPasswordAuthentication() {
-                            return new PasswordAuthentication(smtpUsername, smtpPassword);
-                        }
-                    });
-                } else {
-                    _smtpSession = Session.getInstance(smtpProps);
-                }
-                _smtpSession.setDebug(smtpDebug);
-            } else {
-                _smtpSession = null;
+    public void clearAlert(short alertType, long dataCenterId, Long podId) {
+        if (alertType != -1) {
+            AlertVO alert = _alertDao.getLastAlert(alertType, dataCenterId, podId, null);
+            if (alert != null) {
+                AlertVO updatedAlert = _alertDao.createForUpdate();
+                updatedAlert.setResolved(new Date());
+                _alertDao.update(alert.getId(), updatedAlert);
             }
         }
+    }
 
-        // TODO:  make sure this handles SSL transport (useAuth is true) and regular
-        public void sendAlert(AlertType alertType, long dataCenterId, Long podId, Long clusterId, String subject, String content) throws MessagingException,
-        UnsupportedEncodingException {
-            s_logger.warn("AlertType:: " + alertType + " | dataCenterId:: " + dataCenterId + " | podId:: " +
-                    podId + " | clusterId:: " + clusterId + " | message:: " + subject);
-            AlertVO alert = null;
-            if ((alertType != AlertManager.AlertType.ALERT_TYPE_HOST) &&
-                    (alertType != AlertManager.AlertType.ALERT_TYPE_USERVM) &&
-                    (alertType != AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER) &&
-                    (alertType != AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY) &&
-                    (alertType != AlertManager.AlertType.ALERT_TYPE_SSVM) &&
-                    (alertType != AlertManager.AlertType.ALERT_TYPE_STORAGE_MISC) &&
-                    (alertType != AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE) &&
-                    (alertType != AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED) &&
-                    (alertType != AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED) &&
-                    (alertType != AlertManager.AlertType.ALERT_TYPE_OOBM_AUTH_ERROR) &&
-                    (alertType != AlertManager.AlertType.ALERT_TYPE_HA_ACTION) &&
-                    (alertType != AlertManager.AlertType.ALERT_TYPE_CA_CERT) &&
-                    (alertType != AlertManager.AlertType.ALERT_TYPE_VM_SNAPSHOT)) {
-                alert = _alertDao.getLastAlert(alertType.getType(), dataCenterId, podId, clusterId);
-            }
+    public void sendAlert(AlertType alertType, long dataCenterId, Long podId, Long clusterId, String subject, String content)
+            throws MessagingException, UnsupportedEncodingException {
+        s_logger.warn(String.format("alertType=[%s] dataCenterId=[%s] podId=[%s] clusterId=[%s] message=[%s].", alertType, dataCenterId, podId, clusterId, subject));
+        AlertVO alert = null;
+        if ((alertType != AlertManager.AlertType.ALERT_TYPE_HOST) && (alertType != AlertManager.AlertType.ALERT_TYPE_USERVM)
+                && (alertType != AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER) && (alertType != AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY)
+                && (alertType != AlertManager.AlertType.ALERT_TYPE_SSVM) && (alertType != AlertManager.AlertType.ALERT_TYPE_STORAGE_MISC)
+                && (alertType != AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE) && (alertType != AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED)
+                && (alertType != AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED) && (alertType != AlertManager.AlertType.ALERT_TYPE_OOBM_AUTH_ERROR)
+                && (alertType != AlertManager.AlertType.ALERT_TYPE_HA_ACTION) && (alertType != AlertManager.AlertType.ALERT_TYPE_CA_CERT)) {
+            alert = _alertDao.getLastAlert(alertType.getType(), dataCenterId, podId, clusterId);
+        }
 
-            if (alert == null) {
-                // set up a new alert
-                AlertVO newAlert = new AlertVO();
-                newAlert.setType(alertType.getType());
-                newAlert.setSubject(subject);
-                newAlert.setContent(content);
-                newAlert.setClusterId(clusterId);
-                newAlert.setPodId(podId);
-                newAlert.setDataCenterId(dataCenterId);
-                newAlert.setSentCount(1); // Initialize sent count to 1 since we are now sending an alert.
-                newAlert.setLastSent(new Date());
-                newAlert.setName(alertType.getName());
-                _alertDao.persist(newAlert);
-            } else {
-                if (s_logger.isDebugEnabled()) {
+        if (alert == null) {
+            AlertVO newAlert = new AlertVO();
+            newAlert.setType(alertType.getType());
+            newAlert.setSubject(subject);
+            newAlert.setContent(content);
+            newAlert.setClusterId(clusterId);
+            newAlert.setPodId(podId);
+            newAlert.setDataCenterId(dataCenterId);
+            newAlert.setSentCount(1);
+            newAlert.setLastSent(new Date());
+            newAlert.setName(alertType.getName());
+            _alertDao.persist(newAlert);
+        } else {
+            if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Have already sent: " + alert.getSentCount() + " emails for alert type '" + alertType + "' -- skipping send email");
                 }
-                return;
-            }
-
-            if (_smtpSession != null) {
-                SMTPMessage msg = new SMTPMessage(_smtpSession);
-                msg.setSender(new InternetAddress(_emailSender, _emailSender));
-                msg.setFrom(new InternetAddress(_emailSender, _emailSender));
-                for (InternetAddress address : _recipientList) {
-                    msg.addRecipient(RecipientType.TO, address);
-                }
-                msg.setSubject(subject);
-                msg.setSentDate(new Date());
-                msg.setContent(content, "text/plain");
-                msg.saveChanges();
-
-                SMTPTransport smtpTrans = null;
-                if (_smtpUseAuth) {
-                    smtpTrans = new SMTPSSLTransport(_smtpSession, new URLName("smtp", _smtpHost, _smtpPort, null, _smtpUsername, _smtpPassword));
-                } else {
-                    smtpTrans = new SMTPTransport(_smtpSession, new URLName("smtp", _smtpHost, _smtpPort, null, _smtpUsername, _smtpPassword));
-                }
-                sendMessage(smtpTrans, msg);
-            }
+            return;
         }
 
-        private void sendMessage(final SMTPTransport smtpTrans, final SMTPMessage msg) {
-            _executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        smtpTrans.connect();
-                        smtpTrans.sendMessage(msg, msg.getAllRecipients());
-                        smtpTrans.close();
-                    } catch (SendFailedException e) {
-                        s_logger.error(" Failed to send email alert " + e);
-                    } catch (MessagingException e) {
-                        s_logger.error(" Failed to send email alert " + e);
-                    }
-                }
-            });
+        if (recipients == null) {
+            s_logger.warn(String.format("No recipients set in 'alert.email.addresses', skipping sending alert with subject: %s and content: %s", subject, content));
+            return;
         }
 
-        public void clearAlert(short alertType, long dataCenterId, Long podId) {
-            if (alertType != -1) {
-                AlertVO alert = _alertDao.getLastAlert(alertType, dataCenterId, podId, null);
-                if (alert != null) {
-                    AlertVO updatedAlert = _alertDao.createForUpdate();
-                    updatedAlert.setResolved(new Date());
-                    _alertDao.update(alert.getId(), updatedAlert);
-                }
-            }
+        SMTPMailProperties mailProps = new SMTPMailProperties();
+        mailProps.setSender(new MailAddress(senderAddress));
+        mailProps.setSubject(subject);
+        mailProps.setContent(content);
+        mailProps.setContentType("text/plain");
+
+        Set<MailAddress> addresses = new HashSet<>();
+        for (String recipient : recipients) {
+            addresses.add(new MailAddress(recipient));
         }
+
+        mailProps.setRecipients(addresses);
+
+        sendMessage(mailProps);
+
+    }
+
+    private void sendMessage(SMTPMailProperties mailProps) {
+        _executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                mailSender.sendMail(mailProps);
+            }
+        });
     }
 
     private static String formatPercent(double percentage) {

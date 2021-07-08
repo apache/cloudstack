@@ -72,7 +72,6 @@ import com.cloud.agent.api.to.S3TO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
@@ -701,31 +700,31 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         return 0;
     }
 
-    public static VMTemplateHostVO.Status convertStatus(Status tds) {
+    public static VMTemplateStorageResourceAssoc.Status convertStatus(Status tds) {
         switch (tds) {
         case ABORTED:
-            return VMTemplateHostVO.Status.NOT_DOWNLOADED;
+            return VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED;
         case DOWNLOAD_FINISHED:
-            return VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS;
+            return VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS;
         case IN_PROGRESS:
-            return VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS;
+            return VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS;
         case NOT_STARTED:
-            return VMTemplateHostVO.Status.NOT_DOWNLOADED;
+            return VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED;
         case RECOVERABLE_ERROR:
-            return VMTemplateHostVO.Status.NOT_DOWNLOADED;
+            return VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED;
         case UNKNOWN:
-            return VMTemplateHostVO.Status.UNKNOWN;
+            return VMTemplateStorageResourceAssoc.Status.UNKNOWN;
         case UNRECOVERABLE_ERROR:
-            return VMTemplateHostVO.Status.DOWNLOAD_ERROR;
+            return VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR;
         case POST_DOWNLOAD_FINISHED:
-            return VMTemplateHostVO.Status.DOWNLOADED;
+            return VMTemplateStorageResourceAssoc.Status.DOWNLOADED;
         default:
-            return VMTemplateHostVO.Status.UNKNOWN;
+            return VMTemplateStorageResourceAssoc.Status.UNKNOWN;
         }
     }
 
     @Override
-    public com.cloud.storage.VMTemplateHostVO.Status getDownloadStatus2(String jobId) {
+    public com.cloud.storage.VMTemplateStorageResourceAssoc.Status getDownloadStatus2(String jobId) {
         return convertStatus(getDownloadStatus(jobId));
     }
 
