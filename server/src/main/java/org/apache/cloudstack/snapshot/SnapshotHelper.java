@@ -25,11 +25,13 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.SnapshotDao;
 
 import static com.cloud.storage.snapshot.SnapshotManager.BackupSnapshotAfterTakingSnapshot;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -45,12 +47,14 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.log4j.Logger;
 
@@ -75,7 +79,13 @@ public class SnapshotHelper {
     @Inject
     protected SnapshotDao snapshotDao;
 
+    @Inject
+    protected PrimaryDataStoreDao primaryDataStoreDao;
+
     protected boolean backupSnapshotAfterTakingSnapshot = BackupSnapshotAfterTakingSnapshot.value();
+
+    protected final Set<StoragePoolType> storagePoolTypesToValidateWithBackupSnapshotAfterTakingSnapshot = new HashSet<>(Arrays.asList(StoragePoolType.RBD,
+            StoragePoolType.PowerFlex));
 
      /**
      * If the snapshot is a backup from a KVM snapshot that should be kept only in primary storage, expunges it from secondary storage.
@@ -165,11 +175,15 @@ public class SnapshotHelper {
             return DataStoreRole.Image;
         }
 
-        if (snapshot.getHypervisorType() == HypervisorType.KVM && !backupSnapshotAfterTakingSnapshot) {
+        long storagePoolId = snapshotStore.getDataStoreId();
+
+        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(storagePoolId);
+        if ((storagePoolTypesToValidateWithBackupSnapshotAfterTakingSnapshot.contains(storagePoolVO.getPoolType()) || snapshot.getHypervisorType() == HypervisorType.KVM)
+                && !backupSnapshotAfterTakingSnapshot) {
             return DataStoreRole.Primary;
         }
 
-        DataStore dataStore = dataStorageManager.getDataStore(snapshotStore.getDataStoreId(), DataStoreRole.Primary);
+        DataStore dataStore = dataStorageManager.getDataStore(storagePoolId, DataStoreRole.Primary);
 
         if (dataStore == null) {
             return DataStoreRole.Image;
@@ -177,11 +191,7 @@ public class SnapshotHelper {
 
         Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
 
-        if (MapUtils.isEmpty(mapCapabilities)) {
-            return DataStoreRole.Image;
-        }
-
-        if (BooleanUtils.toBoolean(mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString()))) {
+        if (MapUtils.isNotEmpty(mapCapabilities) && BooleanUtils.toBoolean(mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString()))) {
             return DataStoreRole.Primary;
         }
 
@@ -214,9 +224,9 @@ public class SnapshotHelper {
     protected void throwCloudRuntimeExceptionOfSnapshotsOnlyInPrimaryStorage(VolumeVO volumeVo, Set<Long> snapshotIdsOnlyInPrimaryStorage) throws CloudRuntimeException {
         List<SnapshotVO> snapshots = snapshotDao.listByIds(snapshotIdsOnlyInPrimaryStorage.toArray());
 
-        String message = String.format("%s is a KVM volume and has snapshots only in primary storage. Snapshots [%s].%s", volumeVo, ReflectionToStringBuilderUtils
-                .reflectOnlySelectedFields(snapshots, ToStringStyle.JSON_STYLE, ",", "uuid", "name"), backupSnapshotAfterTakingSnapshot ? "" : " Consider excluding them to migrate"
-                        + " the volume to another storage.");
+        String message = String.format("%s is a KVM volume and has snapshots only in primary storage. Snapshots [%s].%s", volumeVo,
+                snapshots.stream().map(snapshot -> new ToStringBuilder(snapshot, ToStringStyle.JSON_STYLE).append("uuid", snapshot.getUuid()).append("name", snapshot.getName())
+                        .build()).collect(Collectors.joining(", ")), backupSnapshotAfterTakingSnapshot ? "" : " Consider excluding them to migrate the volume to another storage.");
 
         logger.error(message);
         throw new CloudRuntimeException(message);

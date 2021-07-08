@@ -24,6 +24,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Arrays;
 
 import org.apache.cloudstack.storage.command.RevertSnapshotCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -46,6 +49,7 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -60,6 +64,9 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
     private static final String CLIENT_MOUNT_TIMEOUT = "client_mount_timeout";
     private static final String RADOS_CONNECTION_TIMEOUT = "30";
 
+    protected Set<StoragePoolType> storagePoolTypesThatSupportRevertSnapshot = new HashSet<>(Arrays.asList(StoragePoolType.RBD, StoragePoolType.Filesystem,
+            StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint));
+
     @Override
     public Answer execute(final RevertSnapshotCommand command, final LibvirtComputingResource libvirtComputingResource) {
         SnapshotObjectTO snapshotOnPrimaryStorage = command.getDataOnPrimaryStorage();
@@ -67,7 +74,7 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
         VolumeObjectTO volume = snapshot.getVolume();
         PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volume.getDataStore();
         DataStoreTO snapshotImageStore = snapshot.getDataStore();
-        if (!(snapshotImageStore instanceof NfsTO) && primaryStore.getPoolType() != StoragePoolType.RBD) {
+        if (!(snapshotImageStore instanceof NfsTO) && !storagePoolTypesThatSupportRevertSnapshot.contains(primaryStore.getPoolType())) {
             return new Answer(command, false,
                     String.format("Revert snapshot does not support storage pool of type [%s]. Revert snapshot is supported by storage pools of type 'NFS' or 'RBD'",
                             primaryStore.getPoolType()));
@@ -104,7 +111,11 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
                 rbd.close(image);
                 rados.ioCtxDestroy(io);
             } else {
-                KVMStoragePool secondaryStoragePool = storagePoolMgr.getStoragePoolByURI(((NfsTO)snapshotImageStore).getUrl());
+                KVMStoragePool secondaryStoragePool = null;
+                if (snapshotImageStore != null && DataStoreRole.Primary != snapshotImageStore.getRole()) {
+                    storagePoolMgr.getStoragePoolByURI(snapshotImageStore.getUrl());
+                }
+
                 if (primaryPool.getType() == StoragePoolType.CLVM) {
                     Script cmd = new Script(libvirtComputingResource.manageSnapshotPath(), libvirtComputingResource.getCmdsTimeout(), s_logger);
                     cmd.add("-v", getFullPathAccordingToStorage(secondaryStoragePool, snapshotRelPath));
@@ -172,6 +183,11 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
 
         if (Files.exists(Paths.get(snapshotPath))) {
             return new Pair<>(snapshotPath, snapshotOnPrimaryStorage);
+        }
+
+        if (kvmStoragePoolSecondary == null) {
+            throw new CloudRuntimeException(String.format("Snapshot [%s] does not exists on secondary storage, unable to revert volume [%s] to it.",
+                    snapshotOnSecondaryStorage, snapshotOnSecondaryStorage.getVolume()));
         }
 
         s_logger.trace(String.format("Snapshot [%s] does not exists on primary storage [%s], searching snapshot [%s] on secondary storage [%s].", snapshotOnPrimaryStorage,

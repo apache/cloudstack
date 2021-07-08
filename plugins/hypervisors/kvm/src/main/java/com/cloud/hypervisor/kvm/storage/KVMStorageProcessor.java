@@ -70,7 +70,6 @@ import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -130,9 +129,10 @@ import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class KVMStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(KVMStorageProcessor.class);
@@ -1765,8 +1765,10 @@ public class KVMStorageProcessor implements StorageProcessor {
      */
     protected void validateAvailableSizeOnPoolToTakeVolumeSnapshot(KVMStoragePool primaryPool, KVMPhysicalDisk disk) {
         long availablePoolSize = primaryPool.getAvailable();
-        String poolDescription = ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(primaryPool, "name", "localPath", "uuid");
-        String diskDescription = ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(disk, "name", "path", "size");
+        String poolDescription = new ToStringBuilder(primaryPool, ToStringStyle.JSON_STYLE).append("uuid", primaryPool.getUuid()).append("localPath", primaryPool.getLocalPath())
+                .toString();
+        String diskDescription = new ToStringBuilder(disk, ToStringStyle.JSON_STYLE).append("name", disk.getName()).append("path", disk.getPath()).append("size", disk.getSize())
+                .toString();
 
         if (isAvailablePoolSizeDividedByDiskSizeLesserThanMinRate(availablePoolSize, disk.getSize())) {
             throw new CloudRuntimeException(String.format("Pool [%s] available size [%s] must be at least once more of disk [%s] size, plus 5%%. Not taking snapshot.", poolDescription, availablePoolSize,

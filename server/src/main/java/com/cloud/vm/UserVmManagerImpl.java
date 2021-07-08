@@ -110,11 +110,12 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -6389,7 +6390,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     snapshotHelper.isKvmVolumeSnapshotsOnlyInPrimaryStorage(volume, hypervisorType);
                 } catch (CloudRuntimeException ex) {
                     throw new CloudRuntimeException(String.format("Unable to migrate %s to the destination storage pool [%s] due to [%s]", volume,
-                            ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(pool, "uuid", "name"), ex.getMessage()), ex);
+                            new ToStringBuilder(pool, ToStringStyle.JSON_STYLE).append("uuid", pool.getUuid()).append("name", pool.getName()).toString(), ex.getMessage()), ex);
                 }
 
                 if (hypervisorType.equals(HypervisorType.VMware)) {

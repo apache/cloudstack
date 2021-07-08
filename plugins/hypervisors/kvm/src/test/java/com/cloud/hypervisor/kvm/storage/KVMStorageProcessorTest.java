@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Set;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -151,11 +150,7 @@ public class KVMStorageProcessorTest {
     }
 
     @Test (expected = CloudRuntimeException.class)
-    @PrepareForTest (ReflectionToStringBuilderUtils.class)
     public void validateValidateAvailableSizeOnPoolToTakeVolumeSnapshotAvailabeSizeLessThanMinRateThrowCloudRuntimeException(){
-        PowerMockito.spy(ReflectionToStringBuilderUtils.class);
-        PowerMockito.when(ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(Mockito.any(), Mockito.any())).thenReturn("");
-
         KVMPhysicalDisk kvmPhysicalDiskMock = Mockito.mock(KVMPhysicalDisk.class);
 
         Mockito.doReturn(104l).when(kvmStoragePoolMock).getAvailable();
@@ -165,11 +160,7 @@ public class KVMStorageProcessorTest {
     }
 
     @Test
-    @PrepareForTest (ReflectionToStringBuilderUtils.class)
     public void validateValidateAvailableSizeOnPoolToTakeVolumeSnapshotAvailabeSizeEqualOrHigherThanMinRateDoNothing(){
-        PowerMockito.spy(ReflectionToStringBuilderUtils.class);
-        PowerMockito.when(ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(Mockito.any(), Mockito.any())).thenReturn("");
-
         KVMPhysicalDisk kvmPhysicalDiskMock = Mockito.mock(KVMPhysicalDisk.class);
 
         Mockito.doReturn(105l, 106l).when(kvmStoragePoolMock).getAvailable();

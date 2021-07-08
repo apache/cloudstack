@@ -89,10 +89,11 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -2383,7 +2384,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             snapshotHelper.isKvmVolumeSnapshotsOnlyInPrimaryStorage(vol, _volsDao.getHypervisorType(vol.getId()));
         } catch (CloudRuntimeException ex) {
             throw new CloudRuntimeException(String.format("Unable to migrate %s to the destination storage pool [%s] due to [%s]", vol,
-                    ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(destPool, "uuid", "name"), ex.getMessage()), ex);
+                    new ToStringBuilder(destPool, ToStringStyle.JSON_STYLE).append("uuid", destPool.getUuid()).append("name", destPool.getName()).toString(), ex.getMessage()), ex);
         }
 
         String poolUuid =  destPool.getUuid();
