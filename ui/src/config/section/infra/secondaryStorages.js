@@ -25,7 +25,10 @@ export default {
   columns: () => {
     var fields = ['name', 'url', 'protocol', 'scope', 'zonename']
     if (store.getters.apis.listImageStores.params.filter(x => x.name === 'readonly').length > 0) {
-      fields.push('readonly')
+      fields.push({
+        field: 'readonly',
+        customTitle: 'access'
+      })
     }
     return fields
   },
