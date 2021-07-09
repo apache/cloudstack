@@ -58,11 +58,9 @@ export default {
           fields.push('hostname')
           fields.push('zonename')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
-          fields.splice(2, 0, 'displayname')
           fields.push('account')
           fields.push('zonename')
         } else {
-          fields.splice(2, 0, 'displayname')
           fields.push('zonename')
         }
         return fields
@@ -146,6 +144,17 @@ export default {
           mapping: {
             virtualmachineid: {
               value: (record) => { return record.id }
+            }
+          },
+          successMethod: (obj, result) => {
+            const vm = result.jobresult.virtualmachine || {}
+            if (result.jobstatus === 1 && vm.password) {
+              const name = vm.displayname || vm.name || vm.id
+              obj.$notification.success({
+                message: `${obj.$t('label.reinstall.vm')}: ` + name,
+                description: `${obj.$t('label.password.reset.confirm')}: ` + vm.password,
+                duration: 0
+              })
             }
           }
         },
@@ -287,6 +296,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#how-to-dynamically-scale-cpu-and-ram',
           dataView: true,
           show: (record) => { return ['Stopped'].includes(record.state) || (['Running'].includes(record.state) && record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') },
+          disabled: (record) => { return !record.isdynamicallyscalable },
           popup: true,
           component: () => import('@/views/compute/ScaleVM.vue')
         },
@@ -340,6 +350,17 @@ export default {
             domainid: {
               value: (record) => { return record.domainid }
             }
+          },
+          successMethod: (obj, result) => {
+            const vm = result.jobresult.virtualmachine || {}
+            if (result.jobstatus === 1 && vm.password) {
+              const name = vm.displayname || vm.name || vm.id
+              obj.$notification.success({
+                message: `${obj.$t('label.reset.ssh.key.pair.on.vm')}: ` + name,
+                description: `${obj.$t('label.password.reset.confirm')}: ` + vm.password,
+                duration: 0
+              })
+            }
           }
         },
         {
@@ -371,7 +392,7 @@ export default {
           api: 'expungeVirtualMachine',
           icon: 'delete',
           label: 'label.action.expunge.instance',
-          message: 'message.action.expunge.instance',
+          message: (record) => { return record.backupofferingid ? 'message.action.expunge.instance.with.backups' : 'message.action.expunge.instance' },
           docHelp: 'adminguide/virtual_machines.html#deleting-vms',
           dataView: true,
           show: (record, store) => { return ['Destroyed', 'Expunging'].includes(record.state) && store.features.allowuserexpungerecovervm }
@@ -409,7 +430,7 @@ export default {
         fields.push('zonename')
         return fields
       },
-      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'size', 'masternodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename'],
+      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'size', 'controlnodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename'],
       tabs: [{
         name: 'k8s',
         component: () => import('@/views/compute/KubernetesServiceTab.vue')

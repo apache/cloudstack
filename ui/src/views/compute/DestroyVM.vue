@@ -17,7 +17,7 @@
 
 <template>
   <div class="form-layout">
-    <a-alert type="warning" v-html="$t('message.action.destroy.instance')" /><br/>
+    <a-alert type="warning" v-html="resource.backupofferingid ? $t('message.action.destroy.instance.with.backups') : $t('message.action.destroy.instance')" /><br/>
     <a-spin :spinning="loading">
       <a-form
         :form="form"

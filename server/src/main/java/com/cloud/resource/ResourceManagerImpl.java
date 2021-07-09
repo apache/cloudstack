@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.resource;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.SET_HOST_DOWN_TO_MAINTENANCE;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -191,9 +193,6 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
-
-
-import static com.cloud.configuration.ConfigurationManagerImpl.SET_HOST_DOWN_TO_MAINTENANCE;
 
 @Component
 public class ResourceManagerImpl extends ManagerBase implements ResourceManager, ResourceService, Manager {
@@ -1249,6 +1248,19 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return _hostDao.updateResourceState(currentState, event, nextState, host);
     }
 
+    private void handleVmForLastHostOrWithVGpu(final HostVO host, final VMInstanceVO vm) {
+        // Migration is not supported for VGPU Vms so stop them.
+        // for the last host in this cluster, destroy SSVM/CPVM and stop all other VMs
+        if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())
+                || VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
+            s_logger.error(String.format("Maintenance: VM is of type %s. Destroying VM %s (ID: %s) immediately instead of migration.", vm.getType().toString(), vm.getInstanceName(), vm.getUuid()));
+            _haMgr.scheduleDestroy(vm, host.getId());
+            return;
+        }
+        s_logger.error(String.format("Maintenance: No hosts available for migrations. Scheduling shutdown for VM %s instead of migration.", vm.getUuid()));
+        _haMgr.scheduleStop(vm, host.getId(), WorkType.ForceStop);
+    }
+
     private boolean doMaintain(final long hostId) {
         final HostVO host = _hostDao.findById(hostId);
         s_logger.info("Maintenance: attempting maintenance of host " + host.getUuid());
@@ -1286,10 +1298,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             for (final VMInstanceVO vm : vms) {
                 if (hosts == null || hosts.isEmpty() || !answer.getMigrate()
                         || _serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.vgpuType.toString()) != null) {
-                    // Migration is not supported for VGPU Vms so stop them.
-                    // for the last host in this cluster, stop all the VMs
-                    s_logger.error("Maintenance: No hosts available for migrations. Scheduling shutdown instead of migrations.");
-                    _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
+                    handleVmForLastHostOrWithVGpu(host, vm);
                 } else if (HypervisorType.LXC.equals(host.getHypervisorType()) && VirtualMachine.Type.User.equals(vm.getType())){
                     //Migration is not supported for LXC Vms. Schedule restart instead.
                     _haMgr.scheduleRestart(vm, false);
@@ -1505,7 +1514,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      * on a host. We need to track the various VM states on each run and accordingly transit to the
      * appropriate state.
      *
-     * We change states as follws -
+     * We change states as follows -
      * 1. If there are no VMs in running, migrating, starting, stopping, error, unknown states we can move
      *    to maintenance state. Note that there cannot be incoming migrations as the API Call prepare for
      *    maintenance checks incoming migrations before starting.
@@ -2449,34 +2458,32 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             s_logger.debug("Deleting Host: " + host.getId() + " Guid:" + host.getGuid());
         }
 
-        if (forceDestroyStorage) {
+        final StoragePoolVO storagePool = _storageMgr.findLocalStorageOnHost(host.getId());
+        if (forceDestroyStorage && storagePool != null) {
             // put local storage into mainenance mode, will set all the VMs on
             // this local storage into stopped state
-            final StoragePoolVO storagePool = _storageMgr.findLocalStorageOnHost(host.getId());
-            if (storagePool != null) {
-                if (storagePool.getStatus() == StoragePoolStatus.Up || storagePool.getStatus() == StoragePoolStatus.ErrorInMaintenance) {
-                    try {
-                        final StoragePool pool = _storageSvr.preparePrimaryStorageForMaintenance(storagePool.getId());
-                        if (pool == null) {
-                            s_logger.debug("Failed to set primary storage into maintenance mode");
+            if (storagePool.getStatus() == StoragePoolStatus.Up || storagePool.getStatus() == StoragePoolStatus.ErrorInMaintenance) {
+                try {
+                    final StoragePool pool = _storageSvr.preparePrimaryStorageForMaintenance(storagePool.getId());
+                    if (pool == null) {
+                        s_logger.debug("Failed to set primary storage into maintenance mode");
 
-                            throw new UnableDeleteHostException("Failed to set primary storage into maintenance mode");
-                        }
-                    } catch (final Exception e) {
-                        s_logger.debug("Failed to set primary storage into maintenance mode, due to: " + e.toString());
-                        throw new UnableDeleteHostException("Failed to set primary storage into maintenance mode, due to: " + e.toString());
+                        throw new UnableDeleteHostException("Failed to set primary storage into maintenance mode");
                     }
+                } catch (final Exception e) {
+                    s_logger.debug("Failed to set primary storage into maintenance mode, due to: " + e.toString());
+                    throw new UnableDeleteHostException("Failed to set primary storage into maintenance mode, due to: " + e.toString());
                 }
+            }
 
-                final List<VMInstanceVO> vmsOnLocalStorage = _storageMgr.listByStoragePool(storagePool.getId());
-                for (final VMInstanceVO vm : vmsOnLocalStorage) {
-                    try {
-                        _vmMgr.destroy(vm.getUuid(), false);
-                    } catch (final Exception e) {
-                        final String errorMsg = "There was an error Destory the vm: " + vm + " as a part of hostDelete id=" + host.getId();
-                        s_logger.debug(errorMsg, e);
-                        throw new UnableDeleteHostException(errorMsg + "," + e.getMessage());
-                    }
+            final List<VMInstanceVO> vmsOnLocalStorage = _storageMgr.listByStoragePool(storagePool.getId());
+            for (final VMInstanceVO vm : vmsOnLocalStorage) {
+                try {
+                    _vmMgr.destroy(vm.getUuid(), false);
+                } catch (final Exception e) {
+                    final String errorMsg = "There was an error Destory the vm: " + vm + " as a part of hostDelete id=" + host.getId();
+                    s_logger.debug(errorMsg, e);
+                    throw new UnableDeleteHostException(errorMsg + "," + e.getMessage());
                 }
             }
         } else {
@@ -2486,17 +2493,22 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 if (isForced) {
                     // Stop HA disabled vms and HA enabled vms in Stopping state
                     // Restart HA enabled vms
+                    try {
+                        resourceStateTransitTo(host, ResourceState.Event.DeleteHost, host.getId());
+                    } catch (final NoTransitionException e) {
+                        s_logger.debug("Cannot transmit host " + host.getId() + " to Disabled state", e);
+                    }
                     for (final VMInstanceVO vm : vms) {
-                        if (!vm.isHaEnabled() || vm.getState() == State.Stopping) {
+                        if ((! HighAvailabilityManager.ForceHA.value() && !vm.isHaEnabled()) || vm.getState() == State.Stopping) {
                             s_logger.debug("Stopping vm: " + vm + " as a part of deleteHost id=" + host.getId());
                             try {
-                                _vmMgr.advanceStop(vm.getUuid(), false);
+                                _haMgr.scheduleStop(vm, host.getId(), WorkType.Stop);
                             } catch (final Exception e) {
                                 final String errorMsg = "There was an error stopping the vm: " + vm + " as a part of hostDelete id=" + host.getId();
                                 s_logger.debug(errorMsg, e);
                                 throw new UnableDeleteHostException(errorMsg + "," + e.getMessage());
                             }
-                        } else if (vm.isHaEnabled() && (vm.getState() == State.Running || vm.getState() == State.Starting)) {
+                        } else if ((HighAvailabilityManager.ForceHA.value() || vm.isHaEnabled()) && (vm.getState() == State.Running || vm.getState() == State.Starting)) {
                             s_logger.debug("Scheduling restart for vm: " + vm + " " + vm.getState() + " on the host id=" + host.getId());
                             _haMgr.scheduleRestart(vm, false);
                         }

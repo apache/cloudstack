@@ -69,8 +69,8 @@ public class KubernetesClusterVO implements KubernetesCluster {
     @Column(name = "account_id")
     private long accountId;
 
-    @Column(name = "master_node_count")
-    private long masterNodeCount;
+    @Column(name = "control_node_count")
+    private long controlNodeCount;
 
     @Column(name = "node_count")
     private long nodeCount;
@@ -202,12 +202,12 @@ public class KubernetesClusterVO implements KubernetesCluster {
     }
 
     @Override
-    public long getMasterNodeCount() {
-        return masterNodeCount;
+    public long getControlNodeCount() {
+        return controlNodeCount;
     }
 
-    public void setMasterNodeCount(long masterNodeCount) {
-        this.masterNodeCount = masterNodeCount;
+    public void setControlNodeCount(long controlNodeCount) {
+        this.controlNodeCount = controlNodeCount;
     }
 
     @Override
@@ -221,7 +221,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
 
     @Override
     public long getTotalNodeCount() {
-        return this.masterNodeCount + this.nodeCount;
+        return this.controlNodeCount + this.nodeCount;
     }
 
     @Override
@@ -308,7 +308,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
     }
 
     public KubernetesClusterVO(String name, String description, long zoneId, long kubernetesVersionId, long serviceOfferingId, long templateId,
-                               long networkId, long domainId, long accountId, long masterNodeCount, long nodeCount, State state,
+                               long networkId, long domainId, long accountId, long controlNodeCount, long nodeCount, State state,
                                String keyPair, long cores, long memory, Long nodeRootDiskSize, String endpoint) {
         this.uuid = UUID.randomUUID().toString();
         this.name = name;
@@ -320,7 +320,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
         this.networkId = networkId;
         this.domainId = domainId;
         this.accountId = accountId;
-        this.masterNodeCount = masterNodeCount;
+        this.controlNodeCount = controlNodeCount;
         this.nodeCount = nodeCount;
         this.state = state;
         this.keyPair = keyPair;

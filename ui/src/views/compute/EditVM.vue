@@ -72,7 +72,8 @@
         </span>
         <a-switch
           :default-checked="resource.isdynamicallyscalable"
-          v-decorator="['isdynamicallyscalable']" />
+          v-decorator="['isdynamicallyscalable']"
+          :disabled="!canDynamicScalingEnabled()" />
       </a-form-item>
       <a-form-item>
         <span slot="label">
@@ -125,6 +126,9 @@ export default {
   },
   data () {
     return {
+      serviceOffering: {},
+      template: {},
+      dynamicScalingVmConfig: false,
       loading: false,
       osTypes: {
         loading: false,
@@ -151,6 +155,44 @@ export default {
     fetchData () {
       this.fetchOsTypes()
       this.fetchInstaceGroups()
+      this.fetchServiceOfferingData()
+      this.fetchTemplateData()
+      this.fetchDynamicScalingVmConfig()
+    },
+    fetchServiceOfferingData () {
+      const params = {}
+      params.id = this.resource.serviceofferingid
+      params.isrecursive = true
+      var apiName = 'listServiceOfferings'
+      api(apiName, params).then(json => {
+        const offerings = json.listserviceofferingsresponse.serviceoffering
+        this.serviceOffering = offerings[0]
+      })
+    },
+    fetchTemplateData () {
+      const params = {}
+      console.log('templateid ' + this.resource.templateid)
+      params.id = this.resource.templateid
+      params.isrecursive = true
+      params.templatefilter = 'all'
+      var apiName = 'listTemplates'
+      api(apiName, params).then(json => {
+        const templateResponses = json.listtemplatesresponse.template
+        this.template = templateResponses[0]
+      })
+    },
+    fetchDynamicScalingVmConfig () {
+      const params = {}
+      params.name = 'enable.dynamic.scale.vm'
+      params.zoneid = this.resource.zoneid
+      var apiName = 'listConfigurations'
+      api(apiName, params).then(json => {
+        const configResponse = json.listconfigurationsresponse.configuration
+        this.dynamicScalingVmConfig = configResponse[0]?.value === 'true'
+      })
+    },
+    canDynamicScalingEnabled () {
+      return this.template.isdynamicallyscalable && this.serviceOffering.dynamicscalingenabled && this.dynamicScalingVmConfig
     },
     fetchOsTypes () {
       this.osTypes.loading = true

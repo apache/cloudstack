@@ -2086,9 +2086,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
 
                 VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(diskInfoBuilder, vol, hyperHost, context);
-                controllerKey = getDiskController(matchingExistingDisk, vol, vmSpec, ideControllerKey, scsiControllerKey);
-                String diskController = getDiskController(vmMo, matchingExistingDisk, vol, controllerInfo);
-
+                String diskController = getDiskController(vmMo, matchingExistingDisk, vol, controllerInfo, deployAsIs);
                 if (DiskControllerType.getType(diskController) == DiskControllerType.osdefault) {
                     diskController = vmMo.getRecommendedDiskController(null);
                 }
@@ -3298,47 +3296,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return null;
     }
 
-    private int getDiskController(VirtualMachineDiskInfo matchingExistingDisk, DiskTO vol, VirtualMachineTO vmSpec, int ideControllerKey, int scsiControllerKey) {
-
-        int controllerKey;
-        if (matchingExistingDisk != null) {
-            s_logger.info("Chose disk controller based on existing information: " + matchingExistingDisk.getDiskDeviceBusName());
-            if (matchingExistingDisk.getDiskDeviceBusName().startsWith("ide"))
-                return ideControllerKey;
-            else
-                return scsiControllerKey;
-        }
-
-        if (vol.getType() == Volume.Type.ROOT) {
-            Map<String, String> vmDetails = vmSpec.getDetails();
-            if (vmDetails != null && vmDetails.get(VmDetailConstants.ROOT_DISK_CONTROLLER) != null) {
-                if (vmDetails.get(VmDetailConstants.ROOT_DISK_CONTROLLER).equalsIgnoreCase("scsi")) {
-                    s_logger.info("Chose disk controller for vol " + vol.getType() + " -> scsi, based on root disk controller settings: "
-                            + vmDetails.get(VmDetailConstants.ROOT_DISK_CONTROLLER));
-                    controllerKey = scsiControllerKey;
-                } else {
-                    s_logger.info("Chose disk controller for vol " + vol.getType() + " -> ide, based on root disk controller settings: "
-                            + vmDetails.get(VmDetailConstants.ROOT_DISK_CONTROLLER));
-                    controllerKey = ideControllerKey;
-                }
-            } else {
-                s_logger.info("Chose disk controller for vol " + vol.getType() + " -> scsi. due to null root disk controller setting");
-                controllerKey = scsiControllerKey;
-            }
-
-        } else {
-            // DATA volume always use SCSI device
-            s_logger.info("Chose disk controller for vol " + vol.getType() + " -> scsi");
-            controllerKey = scsiControllerKey;
-        }
-
-        return controllerKey;
-    }
-
-    private String getDiskController(VirtualMachineMO vmMo, VirtualMachineDiskInfo matchingExistingDisk, DiskTO vol, Pair<String, String> controllerInfo) throws Exception {
-        int controllerKey;
+    private String getDiskController(VirtualMachineMO vmMo, VirtualMachineDiskInfo matchingExistingDisk, DiskTO vol, Pair<String, String> controllerInfo, boolean deployAsIs) throws Exception {
         DiskControllerType controllerType = DiskControllerType.none;
-        if (matchingExistingDisk != null) {
+        if (deployAsIs && matchingExistingDisk != null) {
             String currentBusName = matchingExistingDisk.getDiskDeviceBusName();
             if (currentBusName != null) {
                 s_logger.info("Chose disk controller based on existing information: " + currentBusName);
@@ -4905,7 +4865,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
             }
             VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
-            String chainInfo = _gson.toJson(diskInfoBuilder.getDiskInfoByBackingFileBaseName(volumePath, poolTo.getUuid().replace("-", "")));
+            String chainInfo = _gson.toJson(diskInfoBuilder.getDiskInfoByBackingFileBaseName(volumePath, targetDsMo.getName()));
             MigrateVolumeAnswer answer = new MigrateVolumeAnswer(cmd, true, null, volumePath);
             answer.setVolumeChainInfo(chainInfo);
             return answer;
@@ -5048,12 +5008,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     answer.setLocalDatastoreName(morDatastore.getValue());
 
                     childDsMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, uuid);
-                    HypervisorHostHelper.createBaseFolderInDatastore(childDsMo, hyperHost);
+                    HypervisorHostHelper.createBaseFolderInDatastore(childDsMo, hyperHost.getHyperHostDatacenter());
 
                     childDatastoresModifyStoragePoolAnswers.add(answer);
                 }
             } else {
-                HypervisorHostHelper.createBaseFolderInDatastore(dsMo, hyperHost);
+                HypervisorHostHelper.createBaseFolderInDatastore(dsMo, hyperHost.getHyperHostDatacenter());
 
                 DatastoreSummary summary = dsMo.getDatastoreSummary();
                 capacity = summary.getCapacity();
@@ -5987,6 +5947,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         poolUuid = UUID.randomUUID().toString();
                         dsMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, poolUuid);
                     }
+
+                    HypervisorHostHelper.createBaseFolder(dsMo, hyperHost, StoragePoolType.VMFS);
 
                     DatastoreSummary dsSummary = dsMo.getDatastoreSummary();
                     String address = hostMo.getHostName();
@@ -7539,8 +7501,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             VolumeObjectTO newVol = new VolumeObjectTO();
                             newVol.setDataStoreUuid(entry.second().getUuid());
                             String newPath = vmMo.getVmdkFileBaseName(disk);
-                            String poolName = entry.second().getUuid().replace("-", "");
-                            VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(newPath, poolName);
+                            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(targetHyperHost, entry.second().getUuid());
+                            DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDs);
+                            VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(newPath, dsMo.getName());
                             newVol.setId(volumeId);
                             newVol.setPath(newPath);
                             newVol.setChainInfo(_gson.toJson(diskInfo));

@@ -25,9 +25,9 @@ import logging
 from optparse import OptionParser
 
 parser = OptionParser()
-parser.add_option("-m", "--master",
-                  action="store_true", default=False, dest="master",
-                  help="Set router master")
+parser.add_option("-p", "--primary",
+                  action="store_true", default=False, dest="primary",
+                  help="Set router primary")
 parser.add_option("-b", "--backup",
                   action="store_true", default=False, dest="backup",
                   help="Set router backup")
@@ -42,15 +42,15 @@ logging.basicConfig(filename=config.get_logger(),
                     format=config.get_format())
 config.cmdline()
 cl = CsCmdLine("cmdline", config)
-# Update the configuration to set state as backup and let keepalived decide who the real Master is!
-cl.set_master_state(False)
+# Update the configuration to set state as backup and let keepalived decide who the real Primary is!
+cl.set_primary_state(False)
 cl.save()
 
 config.set_address()
 red = CsRedundant(config)
 
-if options.master:
-    red.set_master()
+if options.primary:
+    red.set_primary()
 
 if options.backup:
     red.set_backup()

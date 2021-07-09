@@ -31,6 +31,20 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.StringUtils;
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.fsm.StateMachine2;
+
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
@@ -50,9 +64,6 @@ import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -84,7 +95,6 @@ import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.gpu.GPU;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -97,7 +107,6 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceManager;
-import com.cloud.resource.ResourceState;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -107,31 +116,26 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
-import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -144,11 +148,13 @@ import com.cloud.vm.dao.VMInstanceDao;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class DeploymentPlanningManagerImpl extends ManagerBase implements DeploymentPlanningManager, Manager, Listener,
-StateListener<State, VirtualMachine.Event, VirtualMachine> {
+StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     private static final Logger s_logger = Logger.getLogger(DeploymentPlanningManagerImpl.class);
     @Inject
     AgentManager _agentMgr;
+    @Inject
+    private AccountDao accountDao;
     @Inject
     protected UserVmDao _vmDao;
     @Inject
@@ -177,6 +183,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
     @Inject
     private VMTemplateDao templateDao;
 
+    private static final long ADMIN_ACCOUNT_ROLE_ID = 1l;
     private static final long INITIAL_RESERVATION_RELEASE_CHECKER_DELAY = 30L * 1000L; // thirty seconds expressed in milliseconds
     protected long _nodeId = -1;
 
@@ -283,6 +290,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
             s_logger.debug("Is ROOT volume READY (pool already allocated)?: " + (plan.getPoolId() != null ? "Yes" : "No"));
         }
 
+        avoidDisabledResources(vmProfile, dc, avoids);
+
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
         String uefiFlag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.UefiFlag);
 
@@ -311,17 +320,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 }
 
                 Pod pod = _podDao.findById(host.getPodId());
-                // check if the cluster or the pod is disabled
-                if (pod.getAllocationState() != Grouping.AllocationState.Enabled) {
-                    s_logger.warn("The Pod containing this host is in disabled state, PodId= " + pod.getId());
-                    return null;
-                }
 
                 Cluster cluster = _clusterDao.findById(host.getClusterId());
-                if (cluster.getAllocationState() != Grouping.AllocationState.Enabled) {
-                    s_logger.warn("The Cluster containing this host is in disabled state, PodId= " + cluster.getId());
-                    return null;
-                }
 
                 boolean displayStorage = getDisplayStorageFromVmProfile(vmProfile);
                 if (vm.getHypervisorType() == HypervisorType.BareMetal) {
@@ -422,8 +422,15 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     s_logger.debug("The last host of this VM does not have required GPU devices available");
                 }
             } else {
-                if (host.getStatus() == Status.Up && host.getResourceState() == ResourceState.Enabled) {
-                    if (checkVmProfileAndHost(vmProfile, host)) {
+                if (host.getStatus() == Status.Up) {
+                    boolean hostTagsMatch = true;
+                    if(offering.getHostTag() != null){
+                        _hostDao.loadHostTags(host);
+                        if (!(host.getHostTags() != null && host.getHostTags().contains(offering.getHostTag()))) {
+                            hostTagsMatch = false;
+                        }
+                    }
+                    if (hostTagsMatch) {
                         long cluster_id = host.getClusterId();
                         ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id,
                                 "cpuOvercommitRatio");
@@ -571,6 +578,86 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
      */
     private boolean getDisplayStorageFromVmProfile(VirtualMachineProfile vmProfile) {
         return vmProfile == null || vmProfile.getTemplate() == null || !vmProfile.getTemplate().isDeployAsIs();
+    }
+
+        /**
+         * Adds disabled resources (Data centers, Pods, Clusters, and hosts) to exclude list (avoid) in case of disabled state.
+         */
+        public void avoidDisabledResources(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
+            if (vmProfile.getType().isUsedBySystem() && isRouterDeployableInDisabledResources()) {
+                return;
+            }
+
+            VMInstanceVO vm = _vmInstanceDao.findById(vmProfile.getId());
+            AccountVO owner = accountDao.findById(vm.getAccountId());
+            boolean isOwnerRoleIdAdmin = false;
+
+            if (owner != null && owner.getRoleId() != null && owner.getRoleId() == ADMIN_ACCOUNT_ROLE_ID) {
+                isOwnerRoleIdAdmin = true;
+            }
+
+            if (isOwnerRoleIdAdmin && isAdminVmDeployableInDisabledResources()) {
+                return;
+            }
+
+            avoidDisabledDataCenters(dc, avoids);
+            avoidDisabledPods(dc, avoids);
+            avoidDisabledClusters(dc, avoids);
+            avoidDisabledHosts(dc, avoids);
+        }
+
+    /**
+     * Returns the value of the ConfigKey 'allow.router.on.disabled.resources'.
+     * @note this method allows mocking and testing with the respective ConfigKey parameter.
+     */
+    protected boolean isRouterDeployableInDisabledResources() {
+        return allowRouterOnDisabledResource.value();
+    }
+
+    /**
+     * Returns the value of the ConfigKey 'allow.admin.vm.on.disabled.resources'.
+     * @note this method allows mocking and testing with the respective ConfigKey parameter.
+     */
+    protected boolean isAdminVmDeployableInDisabledResources() {
+        return allowAdminVmOnDisabledResource.value();
+    }
+
+    /**
+     * Adds disabled Hosts to the ExcludeList in order to avoid them at the deployment planner.
+     */
+    protected void avoidDisabledHosts(DataCenter dc, ExcludeList avoids) {
+        List<HostVO> disabledHosts = _hostDao.listDisabledByDataCenterId(dc.getId());
+        for (HostVO host : disabledHosts) {
+            avoids.addHost(host.getId());
+        }
+    }
+
+    /**
+     * Adds disabled Clusters to the ExcludeList in order to avoid them at the deployment planner.
+     */
+    protected void avoidDisabledClusters(DataCenter dc, ExcludeList avoids) {
+        List<Long> pods = _podDao.listAllPods(dc.getId());
+        for (Long podId : pods) {
+            List<Long> disabledClusters = _clusterDao.listDisabledClusters(dc.getId(), podId);
+            avoids.addClusterList(disabledClusters);
+        }
+    }
+
+    /**
+     * Adds disabled Pods to the ExcludeList in order to avoid them at the deployment planner.
+     */
+    protected void avoidDisabledPods(DataCenter dc, ExcludeList avoids) {
+        List<Long> disabledPods = _podDao.listDisabledPods(dc.getId());
+        avoids.addPodList(disabledPods);
+    }
+
+    /**
+     * Adds disabled Data Centers (Zones) to the ExcludeList in order to avoid them at the deployment planner.
+     */
+    protected void avoidDisabledDataCenters(DataCenter dc, ExcludeList avoids) {
+        if (dc.getAllocationState() == Grouping.AllocationState.Disabled) {
+            avoids.addDataCenter(dc.getId());
+        }
     }
 
     @Override
@@ -1092,11 +1179,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
         for (Long clusterId : clusterList) {
             ClusterVO clusterVO = _clusterDao.findById(clusterId);
 
-            if (clusterVO.getAllocationState() == Grouping.AllocationState.Disabled && !plan.isMigrationPlan()) {
-                s_logger.debug("Cannot deploy in disabled cluster " + clusterId + ", skipping this cluster");
-                avoid.addCluster(clusterVO.getId());
-            }
-
             if (clusterVO.getHypervisorType() != vmProfile.getHypervisorType()) {
                 s_logger.debug("Cluster: " + clusterId + " has HyperVisorType that does not match the VM, skipping this cluster");
                 avoid.addCluster(clusterVO.getId());
@@ -1110,7 +1192,9 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     new DataCenterDeployment(plan.getDataCenterId(), clusterVO.getPodId(), clusterVO.getId(), null, plan.getPoolId(), null, plan.getReservationContext());
 
             Pod pod = _podDao.findById(clusterVO.getPodId());
-            if (pod.getAllocationState() == Grouping.AllocationState.Enabled ) {
+            if (CollectionUtils.isNotEmpty(avoid.getPodsToAvoid()) && avoid.getPodsToAvoid().contains(pod.getId())) {
+                s_logger.debug("The cluster is in a disabled pod : " + pod.getId());
+            } else {
                 // find suitable hosts under this cluster, need as many hosts as we
                 // get.
                 List<Host> suitableHosts = findSuitableHosts(vmProfile, potentialPlan, avoid, HostAllocator.RETURN_UPTO_ALL);
@@ -1150,9 +1234,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 } else {
                     s_logger.debug("No suitable hosts found under this Cluster: " + clusterId);
                 }
-            }
-            else {
-                s_logger.debug("The cluster is in a disabled pod : " + pod.getId());
             }
 
             if (canAvoidCluster(clusterVO, avoid, plannerAvoidOutput, vmProfile)) {
@@ -1738,5 +1819,15 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
         _reservationDao.expunge(sc);
       }
       return true;
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {allowRouterOnDisabledResource, allowAdminVmOnDisabledResource};
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return DeploymentPlanningManager.class.getSimpleName();
     }
 }

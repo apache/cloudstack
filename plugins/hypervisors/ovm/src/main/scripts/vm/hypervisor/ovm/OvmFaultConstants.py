@@ -41,7 +41,7 @@ errCode = {
        "OvmDispatch.InvaildFunction":OvmDispatcherStub+3,
        "OvmVm.reboot":OvmDispatcherStub+4,
         
-       "OvmHost.registerAsMaster":OvmHostErrCodeStub+1,
+       "OvmHost.registerAsPrimary":OvmHostErrCodeStub+1,
        "OvmHost.registerAsVmServer":OvmHostErrCodeStub+2,
        "OvmHost.ping":OvmHostErrCodeStub+3,
        "OvmHost.getDetails":OvmHostErrCodeStub+4,

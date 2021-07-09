@@ -522,7 +522,7 @@ class VirtualMachine:
                method='GET', hypervisor=None, customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None,
                rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
-               properties=None, nicnetworklist=None, bootmode=None, boottype=None):
+               properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -614,6 +614,9 @@ class VirtualMachine:
 
         if "dhcpoptionsnetworklist" in services:
             cmd.dhcpoptionsnetworklist = services["dhcpoptionsnetworklist"]
+
+        if dynamicscalingenabled is not None:
+            cmd.dynamicscalingenabled = dynamicscalingenabled
 
         cmd.details = [{}]
 
@@ -869,7 +872,7 @@ class VirtualMachine:
         if hostid:
             cmd.hostid = hostid
         if migrateto:
-            migrateto = []
+            cmd.migrateto = []
             for volume, pool in list(migrateto.items()):
                 cmd.migrateto.append({
                     'volume': volume,
@@ -1476,16 +1479,12 @@ class Template:
 
     @classmethod
     def create_from_volume(cls, apiclient, volume, services,
-                           random_name=True):
+                           random_name=True, projectid=None):
         """Create Template from volume"""
         # Create template from Volume ID
         cmd = createTemplate.createTemplateCmd()
 
-        Template._set_command(apiclient, cmd, services, random_name)
-
-        cmd.volumeid = volume.id
-
-        return Template(apiclient.createTemplate(cmd).__dict__)
+        return Template._set_command(apiclient, cmd, services, random_name, projectid = projectid, volume = volume)
 
     @classmethod
     def create_from_snapshot(cls, apiclient, snapshot, services, account=None,
@@ -1494,14 +1493,10 @@ class Template:
         # Create template from Snapshot ID
         cmd = createTemplate.createTemplateCmd()
 
-        Template._set_command(apiclient, cmd, services, random_name)
-
-        cmd.snapshotid = snapshot.id
-
-        return Template(apiclient.createTemplate(cmd).__dict__)
+        return Template._set_command(apiclient, cmd, services, random_name, snapshot = snapshot, projectid = projectid)
 
     @classmethod
-    def _set_command(cls, apiclient, cmd, services, random_name=True):
+    def _set_command(cls, apiclient, cmd, services, random_name=True, snapshot=None, volume=None, projectid=None):
         cmd.displaytext = services["displaytext"]
         cmd.name = "-".join([
             services["name"],
@@ -1528,12 +1523,12 @@ class Template:
             raise Exception(
                 "Unable to find Ostype is required for creating template")
 
-        cmd.snapshotid = snapshot.id
+        if volume:
+            cmd.volumeid = volume.id
 
-        if account:
-            cmd.account = account
-        if domainid:
-            cmd.domainid = domainid
+        if snapshot:
+            cmd.snapshotid = snapshot.id
+
         if projectid:
             cmd.projectid = projectid
 
@@ -2300,6 +2295,9 @@ class ServiceOffering:
 
         if "offerha" in services:
             cmd.offerha = services["offerha"]
+
+        if "dynamicscalingenabled" in services:
+            cmd.dynamicscalingenabled = services["dynamicscalingenabled"]
 
         # Service Offering private to that domain
         if domainid:

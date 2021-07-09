@@ -23,14 +23,18 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -227,6 +231,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Inject
     private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
+    private ServiceOfferingJoinDao serviceOfferingJoinDao;
+    @Inject
     private UserVmDao _userVmDao;
     @Inject
     private UserVmDetailsDao userVmDetailsDao;
@@ -301,6 +307,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private long _maxVolumeSizeInGb;
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
+
+    private static final Set<Volume.State> STATES_VOLUME_CANNOT_BE_DESTROYED = new HashSet<>(Arrays.asList(Volume.State.Destroy, Volume.State.Expunging, Volume.State.Expunged, Volume.State.Allocated));
 
     protected VolumeApiServiceImpl() {
         _volStateMachine = Volume.State.getStateMachine();
@@ -966,20 +974,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // if we are to use the existing disk offering
-        ImageFormat format = null;
         if (newDiskOffering == null) {
-            Long templateId = volume.getTemplateId();
-            if (templateId != null) {
-                VMTemplateVO template = _templateDao.findById(templateId);
-                format = template.getFormat();
-            }
-
-            if (volume.getVolumeType().equals(Volume.Type.ROOT) && diskOffering.getDiskSize() > 0 && format != null && format != ImageFormat.ISO) {
-                throw new InvalidParameterValueException(
-                        "Failed to resize Root volume. The service offering of this Volume has been configured with a root disk size; "
-                                + "on such case a Root Volume can only be resized when changing to another Service Offering with a Root disk size. "
-                                + "For more details please check out the Official Resizing Volumes documentation.");
-            }
             newSize = cmd.getSize();
             newHypervisorSnapshotReserve = volume.getHypervisorSnapshotReserve();
 
@@ -988,6 +983,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (!diskOffering.isCustomized() && !volume.getVolumeType().equals(Volume.Type.ROOT)) {
                     throw new InvalidParameterValueException("To change a volume's size without providing a new disk offering, its current disk offering must be "
                             + "customizable or it must be a root volume (if providing a disk offering, make sure it is different from the current disk offering).");
+                }
+
+                if (isNotPossibleToResize(volume, diskOffering)) {
+                    throw new InvalidParameterValueException(
+                            "Failed to resize Root volume. The service offering of this Volume has been configured with a root disk size; "
+                                    + "on such case a Root Volume can only be resized when changing to another Service Offering with a Root disk size. "
+                                    + "For more details please check out the Official Resizing Volumes documentation.");
                 }
 
                 // convert from bytes to GiB
@@ -1213,9 +1215,30 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 shrinkOk);
     }
 
+    /**
+     * A volume should not be resized if it covers ALL the following scenarios: <br>
+     * 1 - Root volume <br>
+     * 2 - && Current Disk Offering enforces a root disk size (in this case one can resize only by changing the Service Offering)
+     */
+    protected boolean isNotPossibleToResize(VolumeVO volume, DiskOfferingVO diskOffering) {
+        Long templateId = volume.getTemplateId();
+        ImageFormat format = null;
+        if (templateId != null) {
+            VMTemplateVO template = _templateDao.findByIdIncludingRemoved(templateId);
+            format = template.getFormat();
+        }
+        boolean isNotIso = format != null && format != ImageFormat.ISO;
+        boolean isRoot = Volume.Type.ROOT.equals(volume.getVolumeType());
+
+        ServiceOfferingJoinVO serviceOfferingView = serviceOfferingJoinDao.findById(diskOffering.getId());
+        boolean isOfferingEnforcingRootDiskSize = serviceOfferingView != null && serviceOfferingView.getRootDiskSize() > 0;
+
+        return isOfferingEnforcingRootDiskSize && isRoot && isNotIso;
+    }
+
     private void checkIfVolumeIsRootAndVmIsRunning(Long newSize, VolumeVO volume, VMInstanceVO vmInstanceVO) {
         if (!volume.getSize().equals(newSize) && volume.getVolumeType().equals(Volume.Type.ROOT) && !State.Stopped.equals(vmInstanceVO.getState())) {
-            throw new InvalidParameterValueException(String.format("Cannot resize ROOT volume [%s] when VM is not on Stopped State. VM %s is in state %.", volume.getName(), vmInstanceVO
+            throw new InvalidParameterValueException(String.format("Cannot resize ROOT volume [%s] when VM is not on Stopped State. VM %s is in state %s", volume.getName(), vmInstanceVO
                     .getInstanceName(), vmInstanceVO.getState()));
         }
     }
@@ -1432,13 +1455,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * <ul>
      *  <li> {@value Volume.State#Destroy};
      *  <li> {@value Volume.State#Expunging};
-     *  <li> {@value Volume.State#Expunged}.
+     *  <li> {@value Volume.State#Expunged};
+     *  <li> {@value Volume.State#Allocated}.
      * </ul>
      *
      * The volume is destroyed via {@link VolumeService#destroyVolume(long)} method.
      */
     protected void destroyVolumeIfPossible(VolumeVO volume) {
-        if (volume.getState() != Volume.State.Destroy && volume.getState() != Volume.State.Expunging && volume.getState() != Volume.State.Expunged && volume.getState() != Volume.State.Allocated && volume.getState() != Volume.State.Uploaded) {
+        if (!STATES_VOLUME_CANNOT_BE_DESTROYED.contains(volume.getState())) {
             volService.destroyVolume(volume.getId());
         }
     }
@@ -1485,6 +1509,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
+    private void removeVolume(long volumeId) {
+        final VolumeVO volume = _volsDao.findById(volumeId);
+        if (volume != null) {
+            _volsDao.remove(volumeId);
+        }
+    }
+
     protected boolean stateTransitTo(Volume vol, Volume.Event event) throws NoTransitionException {
         return _volStateMachine.transitTo(vol, event, null, _volsDao);
     }
@@ -1526,6 +1557,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
+        removeVolume(volume.getId());
         return volume;
     }
 
@@ -1621,6 +1653,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (destPrimaryStorage != null && (volumeToAttach.getState() == Volume.State.Allocated || volumeOnSecondary)) {
             try {
+                if (volumeOnSecondary && destPrimaryStorage.getPoolType() == Storage.StoragePoolType.PowerFlex) {
+                    throw new InvalidParameterValueException("Cannot attach uploaded volume, this operation is unsupported on storage pool type " + destPrimaryStorage.getPoolType());
+                }
                 newVolumeOnPrimaryStorage = _volumeMgr.createVolumeOnPrimaryStorage(vm, volumeToAttach, rootDiskHyperType, destPrimaryStorage);
             } catch (NoTransitionException e) {
                 s_logger.debug("Failed to create volume on primary storage", e);

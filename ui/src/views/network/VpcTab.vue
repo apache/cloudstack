@@ -176,7 +176,7 @@
               <a-form-item :label="$t('label.aclid')">
                 <a-select v-decorator="['acl']">
                   <a-select-option v-for="item in networkAcls" :key="item.id" :value="item.id">
-                    {{ item.name }}
+                    <strong>{{ item.name }}</strong> ({{ item.description }})
                   </a-select-option>
                 </a-select>
               </a-form-item>

@@ -532,6 +532,15 @@
           </span>
           <a-switch v-decorator="['offerha', {initialValue: false}]" />
         </a-form-item>
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.dynamicscalingenabled') }}
+            <a-tooltip :title="apiParams.dynamicscalingenabled.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
+          <a-switch v-decorator="['dynamicscalingenabled', {initialValue: dynamicscalingenabled}]" :checked="dynamicscalingenabled" @change="val => { dynamicscalingenabled = val }"/>
+        </a-form-item>
         <a-form-item v-if="this.isAdmin()">
           <span slot="label">
             {{ $t('label.hosttags') }}
@@ -797,7 +806,8 @@ export default {
       ],
       vGpuVisible: false,
       vGpuTypes: [],
-      loading: false
+      loading: false,
+      dynamicscalingenabled: true
     }
   },
   beforeCreate () {
@@ -959,7 +969,8 @@ export default {
           cachemode: values.cachemode,
           customized: values.offeringtype !== 'fixed',
           offerha: values.offerha === true,
-          limitcpuuse: values.limitcpuuse === true
+          limitcpuuse: values.limitcpuuse === true,
+          dynamicscalingenabled: values.dynamicscalingenabled
         }
 
         // custom fields (begin)

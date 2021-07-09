@@ -308,7 +308,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         LOGGER.debug("configure " + name + " with params: " + params);
-        /* check if we're master or not and if we can connect */
+        /* check if we're primary or not and if we can connect */
         try {
             configuration = new Ovm3Configuration(params);
             if (!configuration.getIsTest()) {
@@ -320,7 +320,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             if (!configuration.getIsTest()) {
                 hypervisorsupport.setupServer(configuration.getAgentSshKeyFileName());
             }
-            hypervisorsupport.masterCheck();
+            hypervisorsupport.primaryCheck();
         } catch (Exception e) {
             throw new CloudRuntimeException("Base checks failed for " + configuration.getAgentHostname(), e);
         }

@@ -175,7 +175,7 @@ export const configUtilPlugin = {
       if (docHelp && docHelpMappings &&
         docHelpMappings.constructor === Object && Object.keys(docHelpMappings).length > 0) {
         for (var key in docHelpMappings) {
-          if (docHelp.includes(key)) {
+          if (docHelp.includes(key) && docHelp !== docHelpMappings[key]) {
             docHelp = docHelp.replace(key, docHelpMappings[key])
             break
           }
