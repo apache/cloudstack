@@ -22,19 +22,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -57,6 +46,7 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.storage.*;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -68,6 +58,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.VmDiskStatisticsVO;
+import com.cloud.utils.db.*;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -125,15 +116,13 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.*;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.owasp.esapi.util.CollectionsUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -273,26 +262,9 @@ import com.cloud.server.ResourceTag;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.GuestOSCategoryVO;
-import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.ScopeType;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VMTemplateZoneVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeApiService;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -319,16 +291,6 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.crypt.RSAHelper;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionCallbackWithException;
-import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
-import com.cloud.utils.db.TransactionStatus;
-import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -4590,11 +4552,101 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _resourceLimitMgr.checkResourceLimit(activeOwner, ResourceType.primary_storage, totalSize);
     }
 
+    private VolumeVO saveDataDiskVolumeFromSnapShot(final Account owner, final Boolean displayVolume, final Long zoneId, final Long diskOfferingId,
+                                                    final Storage.ProvisioningType provisioningType, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume, final String volumeName, final String uuid, final Map<String, String> details) {
+        return Transaction.execute((TransactionCallback<VolumeVO>) status -> {
+            VolumeVO volume = new VolumeVO(volumeName, -1, -1, -1, -1, new Long(-1), null, null, provisioningType, 0, Volume.Type.DATADISK);
+            volume.setPoolId(null);
+            volume.setUuid(uuid);
+            volume.setDataCenterId(zoneId);
+            volume.setPodId(null);
+            volume.setAccountId(owner.getId());
+            volume.setDomainId(owner.getDomainId());
+            volume.setDiskOfferingId(diskOfferingId);
+            volume.setSize(size);
+            volume.setMinIops(minIops);
+            volume.setMaxIops(maxIops);
+            volume.setInstanceId(null);
+            volume.setUpdated(new Date());
+            volume.setDisplayVolume(displayVolume);
+            if (parentVolume != null) {
+                volume.setTemplateId(parentVolume.getTemplateId());
+                volume.setFormat(parentVolume.getFormat());
+            } else {
+                volume.setTemplateId(null);
+            }
+
+            volume = _volsDao.persist(volume);
+            CallContext.current().setEventDetails("Volume Id: " + volume.getUuid());
+
+            // Increment resource count during allocation; if actual creation fails,
+            // decrement it
+            _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume, displayVolume);
+            _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, displayVolume, new Long(volume.getSize()));
+            return volume;
+        });
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_CLONE, eventDescription = "clone vm", async = true)
-    public Optional<UserVm> cloneVirtualMachine(CloneVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException, CloudRuntimeException, InsufficientCapacityException, ResourceAllocationException {
+    public Optional<UserVm> cloneVirtualMachine(CloneVMCmd cmd, VolumeApiService volumeService) throws ResourceUnavailableException, ConcurrentOperationException, CloudRuntimeException, InsufficientCapacityException, ResourceAllocationException {
         long vmId = cmd.getEntityId();
         UserVmVO curVm = _vmDao.findById(vmId);
+        // create and attach data disk
+        long targetClonedVmId = cmd.getId();
+        Account caller = CallContext.current().getCallingAccount();
+        List<VolumeVO> dataDisks = _volsDao.findByInstanceAndType(targetClonedVmId, Volume.Type.DATADISK);
+        List<Snapshot> createdSnapshots = new ArrayList<>();
+        List<VolumeVO> createdVolumes = new ArrayList<>();
+        long zoneId = cmd.getTargetVM().getDataCenterId();
+        s_logger.info("Trying to attach data disk before starting the VM...");
+        if (dataDisks.size() > 0) {
+            VolumeVO newDatadisk = null;
+            try {
+                for (VolumeVO dataDisk : dataDisks) {
+                    long diskId = dataDisk.getId();
+                    SnapshotVO dataSnapShot = (SnapshotVO) volumeService.allocSnapshot(diskId, Snapshot.MANUAL_POLICY_ID, "DataDisk-Clone" + dataDisk.getName(), null);
+                    if (dataSnapShot == null) {
+                        throw new CloudRuntimeException("Unable to allocate snapshot of data disk: " + dataDisk.getId() + " name: " + dataDisk.getName());
+                    }
+                    createdSnapshots.add(dataSnapShot);
+                    SnapshotVO snapshotEntity = (SnapshotVO) volumeService.takeSnapshot(diskId, Snapshot.MANUAL_POLICY_ID, dataSnapShot.getId(), caller, false, null, false, new HashMap<>());
+                    if (snapshotEntity == null) {
+                        throw new CloudRuntimeException("Error when creating the snapshot entity");
+                    }
+                    if (snapshotEntity.getState() != Snapshot.State.BackedUp) {
+                        throw new CloudRuntimeException("Async backup of snapshot happens during the clone for snapshot id: " + dataSnapShot.getId());
+                    }
+                    long diskOfferingId = snapshotEntity.getDiskOfferingId();
+                    DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
+                    Long minIops = snapshotEntity.getMinIops();
+                    Long maxIops = snapshotEntity.getMaxIops();
+                    Long size = snapshotEntity.getSize();
+                    Storage.ProvisioningType provisioningType = diskOffering.getProvisioningType();
+                    DataCenterVO dataCenter = _dcDao.findById(zoneId);
+                    String volumeName = snapshotEntity.getName() + "-DataDisk-Volume";
+                    VolumeVO parentVolume = _volsDao.findByIdIncludingRemoved(snapshotEntity.getVolumeId());
+                    newDatadisk = saveDataDiskVolumeFromSnapShot(caller, false, zoneId,
+                            diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, volumeName, _uuidMgr.generateUuid(Volume.class, null), new HashMap<>());
+                    VolumeVO volumeEntity = (VolumeVO) volumeService.cloneDataVolume(cmd, snapshotEntity.getId(), newDatadisk);
+                    createdVolumes.add(volumeEntity);
+                }
+                for (VolumeVO createdVol : createdVolumes) {
+                    ((VolumeApiServiceImpl) volumeService).attachVolumeToVM(vmId, createdVol.getId(), createdVol.getDeviceId());
+                }
+            } catch (CloudRuntimeException e){
+                // clear the created disks
+                s_logger.warn("data disk process failed during clone, clearing the temporary resources...");
+                if (newDatadisk != null) {
+                    _resourceLimitMgr.decrementResourceCount(caller.getId(), ResourceType.volume, false);
+                    _resourceLimitMgr.decrementResourceCount(caller.getId(), ResourceType.primary_storage, false, new Long(newDatadisk.getSize()));
+                }
+                throw new CloudRuntimeException(e.getMessage());
+            } finally {
+                // clear the temporary data snapshots
+            }
+        }
+        // start the VM if successfull
         Long podId = curVm.getPodIdToDeployIn();
         Long clusterId = null;
         Long hostId = curVm.getHostId();

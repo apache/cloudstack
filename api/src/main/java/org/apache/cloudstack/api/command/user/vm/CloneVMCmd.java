@@ -146,7 +146,7 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
         try {
             CallContext.current().setEventDetails("Vm Id for full clone: " + getEntityId());
             s_logger.info("starting actual VM id: " + getEntityId());
-            result = _userVmService.cloneVirtualMachine(this);
+            result = _userVmService.cloneVirtualMachine(this, _volumeService);
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());

@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.cloud.storage.VolumeApiService;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
@@ -94,7 +95,7 @@ public interface UserVmService {
      *           - the command specifying vmId to be cloned
      * @return the VM if cloneVM operation is successful
      * */
-    Optional<UserVm> cloneVirtualMachine(CloneVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
+    Optional<UserVm> cloneVirtualMachine(CloneVMCmd cmd, VolumeApiService volumeService) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     void checkCloneCondition(CloneVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException, ResourceAllocationException;
 

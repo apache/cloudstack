@@ -21,6 +21,8 @@ package com.cloud.storage;
 import java.net.MalformedURLException;
 import java.util.Map;
 
+import com.cloud.exception.StorageUnavailableException;
+import org.apache.cloudstack.api.command.user.vm.CloneVMCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -91,6 +93,8 @@ public interface VolumeApiService {
     Volume attachVolumeToVM(AttachVolumeCmd command);
 
     Volume detachVolumeViaDestroyVM(long vmId, long volumeId);
+
+    Volume cloneDataVolume(CloneVMCmd cmd, long snapshotId, Volume volume) throws StorageUnavailableException;
 
     Volume detachVolumeFromVM(DetachVolumeCmd cmd);
 

@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.command.user.vm.CloneVMCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -898,6 +899,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, cmd.getDisplayVolume(), new Long(volume.getSize()));
             }
         }
+    }
+
+    @Override
+    public Volume cloneDataVolume(CloneVMCmd cmd, long snapshotId, Volume volume) throws StorageUnavailableException {
+        long vmId = cmd.getEntityId();
+        return createVolumeFromSnapshot((VolumeVO) volume, snapshotId, vmId);
     }
 
     protected VolumeVO createVolumeFromSnapshot(VolumeVO volume, long snapshotId, Long vmId) throws StorageUnavailableException {
