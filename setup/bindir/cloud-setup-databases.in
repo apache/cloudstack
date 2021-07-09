@@ -565,6 +565,10 @@ for example:
                           help="If enabled, print the commands it will run as they run")
         self.parser.add_option("-d", "--deploy-as", action="store", type="string", dest="rootcreds", default="",
                           help="Colon-separated user name and password of a MySQL user with administrative privileges")
+        self.parser.add_option("-s", "--schema-only", action="store_true", dest="schemaonly", default=False,
+                          help="Creates the db schema without having to pass root credentials - " \
+                               "Please note: The databases (cloud, cloud_usage) and user (cloud) has to be configured manually" \
+                               "prior to running this script when using this flag.")
         self.parser.add_option("-a", "--auto", action="store", type="string", dest="serversetup", default="",
                           help="Path to an XML file describing an automated unattended cloud setup")
         self.parser.add_option("-e", "--encrypt-type", action="store", type="string", dest="encryptiontype", default="file",
@@ -582,11 +586,6 @@ for example:
         self.parser.add_option("-j", "--encryption-jar-path", action="store", dest="encryptionJarPath", help="The path to the jasypt library to be used to encrypt the values in db.properties")
         self.parser.add_option("-n", "--encryption-key-file", action="store", dest="encryptionKeyFile", help="The name of the file in which encryption key to be generated")
         self.parser.add_option("-b", "--mysql-bin-path", action="store", dest="mysqlbinpath", help="The mysql installed bin path")
-        self.parser.add_option("-s", "--schema-only", action="store_true", dest="schemaonly", default=False,
-                          help="Creates the db schema without having to pass root credentials - "\
-                               "Please note: The databases and user has to be configured manually prior to running this script when using this flag. "\
-                               "If a management server has already upgraded the database and you intend to reinitialise the database, "\
-                               "the cloud and cloud_usage databases will need to be recreated manually prior to running this script.")
         (self.options, self.args) = self.parser.parse_args()
         parseCasualCredit()
         parseOtherOptions()
