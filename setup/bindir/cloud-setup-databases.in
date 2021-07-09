@@ -188,9 +188,6 @@ for full help
         sys.exit(1)
 
     def setupDBSchema(self):
-        if self.options.schemaonly and self.rootuser != None:
-                    self.info("--schema-only and --deploy-as cannot be passed together\n", None)
-                    return
         if not self.options.schemaonly and not self.rootuser:
             self.info("No mysql root user specified, will not create Cloud DB schema\n", None)
             return
@@ -521,6 +518,8 @@ for example:
             self.info("Mysql server port:%s"%self.port, True)
 
         def validateParameters():
+            if self.options.schemaonly and self.rootuser != None:
+                self.errorAndExit("--schema-only and --deploy-as cannot be passed together\n")
             if self.encryptiontype != 'file' and self.encryptiontype != 'web':
                 self.errorAndExit('Wrong encryption type %s, --encrypt-type can only be "file" or "web'%self.encryptiontype)
 
