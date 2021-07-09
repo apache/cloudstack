@@ -291,7 +291,13 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         for (UserVmResponse vmResponse : response) {
             ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.UserVm, vmResponse.getId());
             if (resourceIcon == null) {
-                resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Template, vmResponse.getTemplateId());
+                ResourceTag.ResourceObjectType type = ResourceTag.ResourceObjectType.Template;
+                String uuid = vmResponse.getTemplateId();
+                if (vmResponse.getIsoId() != null) {
+                    uuid = vmResponse.getIsoId();
+                    type = ResourceTag.ResourceObjectType.ISO;
+                }
+                resourceIcon = resourceIconManager.getByResourceTypeAndUuid(type, uuid);
                 if (resourceIcon == null) {
                     continue;
                 }

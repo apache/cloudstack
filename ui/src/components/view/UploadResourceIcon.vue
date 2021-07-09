@@ -177,7 +177,7 @@ export default {
         if (json?.uploadresourceiconresponse?.success) {
           this.$notification.success({
             message: this.$t('label.upload.icon'),
-            description: `${this.$t('message.success.upload.icon')} ${resourceType} :` + this.resource.name || resourceid
+            description: `${this.$t('message.success.upload.icon')} ${resourceType}: ` + this.resource.name || resourceid
           })
         }
       }).catch((error) => {
@@ -207,7 +207,7 @@ export default {
         if (json?.deleteresourceiconresponse?.success) {
           this.$notification.success({
             message: this.$t('label.delete.icon'),
-            description: `${this.$t('message.success.delete.icon')} ${resourceType} :` + this.resource.name || this.resourceid
+            description: `${this.$t('message.success.delete.icon')} ${resourceType}: ` + this.resource.name || this.resourceid
           })
         }
       }).catch((error) => {
