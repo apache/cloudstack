@@ -136,10 +136,10 @@ class Distribution:
                 raise UnknownSystemException(distributor)
         elif os.path.exists("/etc/os-release"):
             version = open("/etc/os-release").readline()
-            if version.find("SUSE") != -1:
+            distributor = version.split("=")[1].replace('"', '').strip()
+            if "SUSE" in distributor or "SLES" in distributor:
                 self.distro = "SUSE"
             else:
-                distributor = version.split("=")[1].replace('"', '').strip()
                 raise UnknownSystemException(distributor)
         else:
             raise UnknownSystemException
