@@ -202,7 +202,7 @@ public class LibvirtComputingResourceTest {
     @Mock
     LibvirtVMDef vmDef;
 
-    private final static long HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IOURING = 6030000;
+    private final static long HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IOURING = 6003000;
     private final static long HYPERVISOR_QEMU_VERSION_SUPPORTS_IOURING = 5000000;
 
     String hyperVisorType = "kvm";

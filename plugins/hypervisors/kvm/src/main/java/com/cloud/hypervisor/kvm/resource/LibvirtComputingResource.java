@@ -253,7 +253,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected static final String DEFAULT_OVS_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.OvsVifDriver";
     protected static final String DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.BridgeVifDriver";
-    private final static long HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING = 6030000;
+    private final static long HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING = 6003000;
     private final static long HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING = 5000000;
 
     protected HypervisorType _hypervisorType;
