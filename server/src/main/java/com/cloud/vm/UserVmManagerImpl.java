@@ -4671,7 +4671,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     DataCenterVO dataCenter = _dcDao.findById(zoneId);
                     String volumeName = snapshotEntity.getName() + "-DataDisk-Volume";
                     VolumeVO parentVolume = _volsDao.findByIdIncludingRemoved(snapshotEntity.getVolumeId());
-                    newDatadisk = saveDataDiskVolumeFromSnapShot(caller, false, zoneId,
+                    newDatadisk = saveDataDiskVolumeFromSnapShot(caller, true, zoneId,
                             diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, volumeName, _uuidMgr.generateUuid(Volume.class, null), new HashMap<>());
                     VolumeVO volumeEntity = (VolumeVO) volumeService.cloneDataVolume(cmd, snapshotEntity.getId(), newDatadisk);
                     createdVolumes.add(volumeEntity);
