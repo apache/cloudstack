@@ -4678,7 +4678,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     createdVolumes.add(volumeEntity);
                 }
                 for (VolumeVO createdVol : createdVolumes) {
-                    ((VolumeApiServiceImpl) volumeService).attachVolumeToVM(vmId, createdVol.getId(), createdVol.getDeviceId());
+//                    ((VolumeApiServiceImpl) volumeService).attachVolumeToVM(vmId, createdVol.getId(), createdVol.getDeviceId());
+                    volumeService.attachVolumeToVm(cmd, createdVol.getId(), createdVol.getDeviceId());
                 }
             } catch (CloudRuntimeException e){
                 // clear the created disks

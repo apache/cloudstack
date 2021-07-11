@@ -105,6 +105,8 @@ public interface VolumeApiService {
 
     Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume, String customId, long owner, String chainInfo);
 
+    Volume attachVolumeToVm(CloneVMCmd cmd, Long volumeId, Long deviceId);
+
     /**
      * Extracts the volume to a particular location.
      *

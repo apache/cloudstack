@@ -1670,6 +1670,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return newVol;
     }
 
+    @Override
+    public Volume attachVolumeToVm(CloneVMCmd cmd, Long volumeId, Long deviceId) {
+        return attachVolumeToVM(cmd.getEntityId(), volumeId, deviceId);
+    }
+
     public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId) {
         Account caller = CallContext.current().getCallingAccount();
 
