@@ -108,6 +108,7 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
             s_logger.info("The template id recorded is: " + template.getId());
             setTemporaryTemlateId(template.getId());
             _templateService.createPrivateTemplate(this);
+            _snapshotService.deleteSnapshot(getTemporarySnapShotId());
             UserVm vmRecord = _userVmService.recordVirtualMachineToDB(this);
             if (vmRecord == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "unable to record a new VM to db!");
@@ -146,7 +147,7 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
         try {
             CallContext.current().setEventDetails("Vm Id for full clone: " + getEntityId());
             s_logger.info("starting actual VM id: " + getEntityId());
-            result = _userVmService.cloneVirtualMachine(this, _volumeService);
+            result = _userVmService.cloneVirtualMachine(this, _volumeService, _snapshotService);
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
@@ -160,7 +161,7 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
         }
         result.ifPresentOrElse((userVm)-> {
             UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result.get()).get(0);
-            response.setResponseName("test_clone");
+            response.setResponseName("full_clone");
             setResponseObject(response);
         }, ()-> {
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, "failed to clone VM: " + getId());

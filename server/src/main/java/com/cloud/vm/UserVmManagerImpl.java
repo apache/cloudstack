@@ -74,6 +74,7 @@ import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.snapshot.SnapshotApiService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -4634,7 +4635,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_CLONE, eventDescription = "clone vm", async = true)
-    public Optional<UserVm> cloneVirtualMachine(CloneVMCmd cmd, VolumeApiService volumeService) throws ResourceUnavailableException, ConcurrentOperationException, CloudRuntimeException, InsufficientCapacityException, ResourceAllocationException {
+    public Optional<UserVm> cloneVirtualMachine(CloneVMCmd cmd, VolumeApiService volumeService, SnapshotApiService snapshotService) throws ResourceUnavailableException, ConcurrentOperationException, CloudRuntimeException, InsufficientCapacityException, ResourceAllocationException {
         long vmId = cmd.getEntityId();
         UserVmVO curVm = _vmDao.findById(vmId);
         // create and attach data disk
@@ -4676,22 +4677,34 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     VolumeVO volumeEntity = (VolumeVO) volumeService.cloneDataVolume(cmd, snapshotEntity.getId(), newDatadisk);
                     createdVolumes.add(volumeEntity);
                 }
-                for (VolumeVO createdVol : createdVolumes) {
-//                    ((VolumeApiServiceImpl) volumeService).attachVolumeToVM(vmId, createdVol.getId(), createdVol.getDeviceId());
-                    volumeService.attachVolumeToVm(cmd, createdVol.getId(), createdVol.getDeviceId());
-                }
             } catch (CloudRuntimeException e){
-                // clear the created disks
                 s_logger.warn("data disk process failed during clone, clearing the temporary resources...");
+                for (VolumeVO dataDiskToClear : createdVolumes) {
+                    volumeService.destroyVolume(dataDiskToClear.getId(), caller, true, false);
+                }
+                // clear the created disks
                 if (newDatadisk != null) {
-                    _resourceLimitMgr.decrementResourceCount(caller.getId(), ResourceType.volume, false);
-                    _resourceLimitMgr.decrementResourceCount(caller.getId(), ResourceType.primary_storage, false, new Long(newDatadisk.getSize()));
+                    volumeService.destroyVolume(newDatadisk.getId(), caller, true, false);
                 }
                 throw new CloudRuntimeException(e.getMessage());
             } finally {
                 // clear the temporary data snapshots
+                for (Snapshot snapshotLeftOver : createdSnapshots) {
+                    snapshotService.deleteSnapshot(snapshotLeftOver.getId());
+                }
             }
         }
+
+        for (VolumeVO createdVol : createdVolumes) {
+            try {
+                volumeService.attachVolumeToVm(cmd, createdVol.getId(), createdVol.getDeviceId());
+            } catch (CloudRuntimeException e) {
+                s_logger.warn("data disk: " + createdVol.getId() + " attachment to VM " + vmId + " failed due to" + e.getMessage());
+                s_logger.info("Clearing the data disk: " + createdVol.getId());
+                volumeService.destroyVolume(createdVol.getId(), caller, true, true);
+            }
+        }
+
         // start the VM if successfull
         Long podId = curVm.getPodIdToDeployIn();
         Long clusterId = null;
