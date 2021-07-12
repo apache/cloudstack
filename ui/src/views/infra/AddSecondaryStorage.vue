@@ -52,8 +52,11 @@
               <a-select-option
                 :value="zone.id"
                 v-for="(zone) in zones"
-                :key="zone.id"
-              >{{ zone.name }}</a-select-option>
+                :key="zone.id">
+                <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="global" style="margin-right: 5px" />
+                {{ zone.name }}
+              </a-select-option>
             </a-select>
           </a-form-item>
           <a-form-item :label="$t('label.server')">
@@ -159,6 +162,7 @@
 </template>
 <script>
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'AddSecondryStorage',
@@ -167,6 +171,9 @@ export default {
       type: Object,
       required: true
     }
+  },
+  components: {
+    ResourceIcon
   },
   inject: ['parentFetchData'],
   data () {
@@ -192,7 +199,7 @@ export default {
       this.$parent.$parent.close()
     },
     listZones () {
-      api('listZones').then(json => {
+      api('listZones', { showicon: true }).then(json => {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           if (this.zones.length > 0) {

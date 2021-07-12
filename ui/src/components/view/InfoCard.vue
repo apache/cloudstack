@@ -30,7 +30,7 @@
                 <a-icon type="camera" class="upload-icon"/>
               </div>
               <slot name="avatar">
-                <span v-if="resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon">
+                <span v-if="(resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon) && !['router', 'systemvm'].includes($route.path.split('/')[1])">
                   <resource-icon :image="getImage(resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon)" size="4x" style="margin-right: 5px"/>
                 </span>
                 <span v-else>
@@ -780,7 +780,8 @@ export default {
         domain: '',
         account: '',
         project: '',
-        vpc: ''
+        vpc: '',
+        network: ''
       }
     }
   },
@@ -874,6 +875,16 @@ export default {
       return (image || this.resource?.icon?.base64image)
     },
     async getIcons () {
+      this.images = {
+        zone: '',
+        template: '',
+        iso: '',
+        domain: '',
+        account: '',
+        project: '',
+        vpc: '',
+        network: ''
+      }
       if (this.resource.templateid) {
         await this.fetchResourceIcon(this.resource.templateid, 'template')
       }
@@ -894,6 +905,9 @@ export default {
       }
       if (this.resource.vpcid) {
         await this.fetchResourceIcon(this.resource.vpcid, 'vpc')
+      }
+      if (this.resource.networkid) {
+        await this.fetchResourceIcon(this.resource.networkid, 'network')
       }
     },
     fetchAccount () {

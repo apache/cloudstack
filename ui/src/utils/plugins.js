@@ -188,8 +188,11 @@ export const configUtilPlugin = {
 
 export const showIconPlugin = {
   install (Vue) {
-    Vue.prototype.$showIcon = function () {
-      const resourceType = this.$route.path.split('/')[1]
+    Vue.prototype.$showIcon = function (resource) {
+      var resourceType = this.$route.path.split('/')[1]
+      if (resource) {
+        resourceType = resource
+      }
       if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm', 'domain', 'project', 'vpc', 'guestnetwork'].includes(resourceType)) {
         return true
       } else {

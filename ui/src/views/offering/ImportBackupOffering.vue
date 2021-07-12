@@ -62,6 +62,8 @@
           :loading="zones.loading"
           @change="onChangeZone">
           <a-select-option v-for="zone in zones.opts" :key="zone.name">
+            <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+            <a-icon v-else type="global" style="margin-right: 5px"/>
             {{ zone.name }}
           </a-select-option>
         </a-select>
@@ -105,6 +107,7 @@
 
 <script>
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'ImportBackupOffering',
@@ -120,6 +123,9 @@ export default {
         opts: []
       }
     }
+  },
+  components: {
+    ResourceIcon
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
@@ -139,7 +145,7 @@ export default {
     },
     fetchZone () {
       this.zones.loading = true
-      api('listZones', { available: true }).then(json => {
+      api('listZones', { available: true, showicon: true }).then(json => {
         this.zones.opts = json.listzonesresponse.zone || []
         this.$forceUpdate()
       }).catch(error => {

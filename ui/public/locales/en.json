@@ -3293,6 +3293,7 @@
 "message.volume.state.uploadinprogress": "Volume upload is in progress",
 "message.volume.state.uploadop": "The volume upload operation is in progress or in short the volume is on secondary storage",
 "message.waiting.for.builtin.templates.to.load": "Waiting for builtin templates to load...",
+"message.warn.filetype": "jpg, jpeg, png, bmp and svg are the only supported image formats",
 "message.xstools61plus.update.failed": "Failed to update Original XS Version is 6.1+ field. Error:",
 "message.you.must.have.at.least.one.physical.network": "You must have at least one physical network",
 "message.your.cloudstack.is.ready": "Your CloudStack is ready!",

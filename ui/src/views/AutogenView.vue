@@ -230,6 +230,38 @@
                 >
                   <a-select-option key="">{{ }}</a-select-option>
                   <a-select-option v-for="opt in field.opts" :key="opt.id">
+                    <span>
+                      <span v-if="(field.name.startsWith('template') || field.name.startsWith('iso'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <os-logo v-else :osId="opt.ostypeid" :osName="opt.ostypename" size="lg" style="margin-left: -1px" />
+                      </span>
+                      <span v-if="(field.name.startsWith('zone'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="global" style="margin-right: 5px" />
+                      </span>
+                      <span v-if="(field.name.startsWith('project'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="project" style="margin-right: 5px" />
+                      </span>
+                      <span v-if="(field.name.startsWith('account') || field.name.startsWith('user'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="user" style="margin-right: 5px"/>
+                      </span>
+                      <span v-if="(field.name.startsWith('network'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="apartment" style="margin-right: 5px"/>
+                      </span>
+                    </span>
                     {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
                   </a-select-option>
                 </a-select>
@@ -352,6 +384,8 @@ import ListView from '@/components/view/ListView'
 import ResourceView from '@/components/view/ResourceView'
 import ActionButton from '@/components/view/ActionButton'
 import SearchView from '@/components/view/SearchView'
+import OsLogo from '@/components/widgets/OsLogo'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'Resource',
@@ -362,7 +396,9 @@ export default {
     ListView,
     Status,
     ActionButton,
-    SearchView
+    SearchView,
+    OsLogo,
+    ResourceIcon
   },
   mixins: [mixinDevice],
   provide: function () {
@@ -813,6 +849,10 @@ export default {
       var extractedParamName = paramName.replace('ids', '').replace('id', '').toLowerCase()
       var params = { listall: true }
       const possibleName = 'list' + extractedParamName + 's'
+      var showIcon = false
+      if (this.$showIcon(extractedParamName)) {
+        showIcon = true
+      }
       var possibleApi
       if (this.currentAction.mapping && param.name in this.currentAction.mapping && this.currentAction.mapping[param.name].api) {
         possibleApi = this.currentAction.mapping[param.name].api
@@ -843,6 +883,9 @@ export default {
         params.isofilter = 'executable'
       } else if (possibleApi === 'listHosts') {
         params.type = 'routing'
+      }
+      if (showIcon) {
+        params.showicon = true
       }
       api(possibleApi, params).then(json => {
         param.loading = false

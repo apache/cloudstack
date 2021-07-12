@@ -101,6 +101,14 @@
       <span v-else>{{ text }}</span>
     </template>
     <a slot="displayname" slot-scope="text, record" href="javascript:;">
+      <span v-if="['vm'].includes($route.path.split('/')[1])">
+        <span v-if="record.icon && record.icon.base64image">
+          <resource-icon :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
+        </span>
+        <span v-else>
+          <os-logo :osId="record.ostypeid" :osName="record.ostypename" size="lg" style="margin-right: 5px" />
+        </span>
+      </span>
       <QuickView
         style="margin-left: 5px"
         :actions="actions"

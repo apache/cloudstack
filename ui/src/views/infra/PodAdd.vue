@@ -30,6 +30,8 @@
             v-for="zone in zonesList"
             :value="zone.id"
             :key="zone.id">
+            <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+            <a-icon v-else type="global" style="margin-right: 5px" />
             {{ zone.name }}
           </a-select-option>
         </a-select>
@@ -112,11 +114,13 @@
 <script>
 import { api } from '@/api'
 import DedicateDomain from '../../components/view/DedicateDomain'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'ClusterAdd',
   components: {
-    DedicateDomain
+    DedicateDomain,
+    ResourceIcon
   },
   props: {
     resource: {
@@ -156,7 +160,7 @@ export default {
     },
     fetchZones () {
       this.loading = true
-      api('listZones').then(response => {
+      api('listZones', { showicon: true }).then(response => {
         this.zonesList = response.listzonesresponse.zone || []
         this.zoneId = this.zonesList[0].id
         this.params = this.$store.getters.apis.createPod.params

@@ -16,62 +16,90 @@
 // under the License.
 
 <template>
-  <a-modal
-    :title="$t('label.upload.resource.icon')"
-    :visible="visible"
-    :maskClosable="true"
-    :confirmLoading="confirmLoading"
-    :width="800"
-    :footer="null"
-    @cancel="handleClose">
-    <a-row>
-      <a-col :xs="24" :md="12" :style="{height: '350px'}">
-        <vue-cropper
-          ref="cropper"
-          :img="options.img"
-          :outputSize="1"
-          outputType="png"
-          :info="true"
-          :autoCrop="options.autoCrop"
-          :autoCropWidth="options.autoCropWidth"
-          :autoCropHeight="options.autoCropHeight"
-          :fixedBox="options.fixedBox"
-          @realTime="realTime"
-        >
-        </vue-cropper>
-      </a-col>
-      <a-col :xs="24" :md="12" :style="{height: '350px'}">
-        <div class="avatar-upload-preview">
-          <span v-if="previews.url">
-            <img :src="previews.url" :style="previews.img"/>
-          </span>
-          <span v-else-if="defaultImage">
-            <img :src="'data:image/png;charset=utf-8;base64, ' + defaultImage" style="height: 52px;width: 52px;marginLeft: 65px;marginTop: 55px"/>
-          </span>
-        </div>
-      </a-col>
-    </a-row>
-    <br>
-    <a-row>
-      <a-col :xs="2" :md="2">
-        <a-upload name="file" :beforeUpload="beforeUpload" :showUploadList="false">
-          <a-button><a-icon type="upload" />{{ $t('label.upload.resource.icon') }} </a-button>
-        </a-upload>
-      </a-col>
-      <a-col :xs="{span: 2, offset: 5}" :md="1">
-        <a-button icon="plus" @click="changeScale(5)"/>
-      </a-col>
-      <a-col :xs="{span: 1, offset: 0}" :md="2">
-        <a-button icon="minus" @click="changeScale(-5)"/>
-      </a-col>
-      <a-col :xs="{span: 1, offset: 4}" :md="2">
-        <a-button type="primary" @click="uploadIcon('blob')"> {{ $t('label.upload') }} </a-button>
-      </a-col>
-      <a-col :xs="{span: 2, offset: 4}" :md="2">
-        <a-button v-if="resource.icon && resource.icon.resourcetype.toLowerCase() === $getResourceType().toLowerCase()" type="danger" @click="deleteIcon('blob')"> {{ $t('label.delete') }} </a-button>
-      </a-col>
-    </a-row>
-  </a-modal>
+  <div>
+    <a-modal
+      :title="$t('label.upload.resource.icon')"
+      :visible="visible"
+      :maskClosable="true"
+      :confirmLoading="confirmLoading"
+      :width="800"
+      :footer="null"
+      @cancel="handleClose">
+      <a-row>
+        <a-col :xs="24" :md="12" :style="{height: '350px'}">
+          <vue-cropper
+            ref="cropper"
+            :img="options.img"
+            :outputSize="1"
+            outputType="png"
+            :info="true"
+            :autoCrop="options.autoCrop"
+            :autoCropWidth="options.autoCropWidth"
+            :autoCropHeight="options.autoCropHeight"
+            :fixedBox="options.fixedBox"
+            @realTime="realTime"
+          >
+          </vue-cropper>
+        </a-col>
+        <a-col :xs="24" :md="12" :style="{height: '350px'}">
+          <div class="avatar-upload-preview">
+            <span v-if="previews.url">
+              <img :src="previews.url" :style="previews.img"/>
+            </span>
+            <span v-else-if="defaultImage">
+              <img :src="'data:image/png;charset=utf-8;base64, ' + defaultImage" style="height: 52px;width: 52px;marginLeft: 65px;marginTop: 55px"/>
+            </span>
+          </div>
+        </a-col>
+      </a-row>
+      <br>
+      <a-row>
+        <a-col :xs="2" :md="2">
+          <a-upload name="file" :beforeUpload="beforeUpload" :showUploadList="false">
+            <a-button><a-icon type="upload" />{{ $t('label.upload.resource.icon') }} </a-button>
+          </a-upload>
+        </a-col>
+        <a-col :xs="{span: 2, offset: 4}" :md="1">
+          <a-button icon="plus" @click="changeScale(5)"/>
+        </a-col>
+        <a-col :xs="{span: 1, offset: 0}" :md="2">
+          <a-button icon="minus" @click="changeScale(-5)"/>
+        </a-col>
+        <a-col :lg="{span: 1, offset: 0}" :md="2">
+          <a-button icon="undo" @click="rotateLeft"/>
+        </a-col>
+        <a-col :lg="{span: 1, offset: 0}" :md="2">
+          <a-button icon="redo" @click="rotateRight"/>
+        </a-col>
+        <a-col :xs="{span: 1, offset: 3}" :md="1">
+          <a-button type="primary" @click="uploadIcon('blob')"> {{ $t('label.upload') }} </a-button>
+        </a-col>
+        <a-col :xs="{span: 2, offset: 5}" :md="2">
+          <a-button v-if="resource.icon && resource.icon.resourcetype.toLowerCase() === $getResourceType().toLowerCase()" type="danger" @click="deleteIcon('blob')"> {{ $t('label.delete') }} </a-button>
+        </a-col>
+      </a-row>
+    </a-modal>
+    <a-modal
+      :visible="showAlert"
+      :footer="null"
+      style="top: 20px;"
+      centered
+      width="auto"
+      :maskClosable="false">
+      <span slot="title">
+        {{ $t('label.warning') }}
+      </span>
+      <a-alert type="warning">
+        <span slot="message" v-html="$t('message.warn.filetype')" />
+      </a-alert>
+      <a-divider style="margin-top: 0;"></a-divider>
+      <div :span="24" class="action-button">
+        <a-button key="submit" type="primary" @click="handleOk" style="textAlign: right">
+          {{ $t('label.ok') }}
+        </a-button>
+      </div>
+    </a-modal>
+  </div>
 </template>
 <script>
 import { api } from '@/api'
@@ -114,7 +142,9 @@ export default {
         fixedBox: true
       },
       previews: {},
-      defaultImage: ''
+      defaultImage: '',
+      showAlert: false,
+      croppedImage: ''
     }
   },
   methods: {
@@ -140,7 +170,14 @@ export default {
         }
       }
     },
+    handleOk () {
+      this.showAlert = false
+      this.options.img = ''
+    },
     beforeUpload (file) {
+      if (!/\.(svg|jpg|jpeg|png|bmp|SVG|JPG|PNG)$/.test(file.name)) {
+        this.showAlert = true
+      }
       const reader = new FileReader()
       reader.readAsDataURL(file)
       reader.onload = () => {
@@ -152,22 +189,43 @@ export default {
       num = num || 1
       this.$refs.cropper.changeScale(num)
     },
-    uploadIcon () {
+    rotateLeft () {
+      this.$refs.cropper.rotateLeft()
+    },
+    rotateRight () {
+      this.$refs.cropper.rotateRight()
+    },
+    getResourceIcon () {
+      return new Promise((resolve, reject) => {
+        this.$refs.cropper.getCropData((data) => {
+          resolve(data)
+          return data
+        })
+      })
+    },
+    getNewImage (img) {
+      return new Promise((resolve, reject) => {
+        img.onload = function () {
+          var canvas = document.createElement('canvas')
+          var ctx = canvas.getContext('2d')
+          ctx.imageSmoothingQuality = 'high'
+          canvas.height = 52
+          canvas.width = 52
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+          var base64Canvas = canvas.toDataURL('image/png', 1).split(';base64,')[1]
+          resolve(base64Canvas)
+          return base64Canvas
+        }
+      })
+    },
+    async uploadIcon () {
       var base64Canvas = ''
       const resourceType = this.$getResourceType()
       const resourceid = this.resource.id
       if (this.options.img) {
-        const width = 52
-        const height = 52
-        var newImage = document.createElement('img')
-        newImage.src = this.options.img
-        var canvas = document.createElement('canvas')
-        var ctx = canvas.getContext('2d')
-        ctx.imageSmoothingQuality = 'high'
-        canvas.height = height
-        canvas.width = width
-        ctx.drawImage(newImage, 0, 0, width, height)
-        base64Canvas = canvas.toDataURL('image/png', 1).split(';base64,')[1]
+        var newImage = new Image()
+        newImage.src = await this.getResourceIcon()
+        base64Canvas = await this.getNewImage(newImage)
       }
       api('uploadResourceIcon', {}, 'POST', {
         resourceids: resourceid,
@@ -243,6 +301,14 @@ export default {
     img {
       width: 100%;
       height: 100%;
+    }
+  }
+  .action-button {
+    text-align: right;
+    margin-top: 20px;
+
+    button {
+      margin-right: 5px;
     }
   }
 </style>

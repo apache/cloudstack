@@ -76,6 +76,8 @@
               ]
             }]">
             <a-select-option :value="zone.id" v-for="zone in zones" :key="zone.id">
+              <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="global" style="margin-right: 5px"/>
               {{ zone.name || zone.description }}
             </a-select-option>
           </a-select>
@@ -126,9 +128,13 @@
 <script>
 import { api } from '@/api'
 import { axios } from '../../utils/request'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'UploadLocalVolume',
+  components: {
+    ResourceIcon
+  },
   data () {
     return {
       fileList: [],
@@ -153,7 +159,7 @@ export default {
   },
   methods: {
     listZones () {
-      api('listZones').then(json => {
+      api('listZones', { showicon: true }).then(json => {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           if (this.zones.length > 0) {
