@@ -27,5 +27,5 @@ import java.util.List;
 public interface AnnotationDao extends GenericDao<AnnotationVO, Long> {
     List<AnnotationVO> listByEntityType(String entityType, String userUuid, boolean isCallerAdmin, String annotationFilter, String callingUserUuid);
     List<AnnotationVO> listByEntity(String entityType, String entityUuid, String userUuid, boolean isCallerAdmin, String annotationFilter, String callingUserUuid);
-    List<AnnotationVO> listAllAnnotations(String userUuid, boolean isCallerAdmin);
+    List<AnnotationVO> listAllAnnotations(String userUuid, boolean isCallerAdmin, String annotationFilter);
 }

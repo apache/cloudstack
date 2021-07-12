@@ -24,6 +24,7 @@ export default {
   permission: ['listAnnotations'],
   columns: ['created', 'annotation', 'entityid', 'entitytype', 'username', 'adminsonly'],
   searchFilters: ['annotation', 'username', 'keyword'],
+  params: () => { return { annotationfilter: 'self' } },
   filters: () => {
     const filters = ['self']
     if (['Admin'].includes(store.getters.userInfo.roletype)) {

@@ -425,7 +425,7 @@ export default {
       return ['vm', 'alert', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot',
         'vmsnapshot', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
-        'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes'
+        'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment'
       ].includes(this.$route.name)
     },
     fetchColumns () {
@@ -601,6 +601,10 @@ export default {
 
 /deep/ .dark-row {
   background-color: #f9f9f9;
+}
+
+/deep/ .ant-table-tbody>tr>td, .ant-table-thead>tr>th {
+  overflow-wrap: anywhere;
 }
 </style>
 

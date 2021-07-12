@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
+import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 /**
@@ -145,7 +146,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     private List<AnnotationVO> getAnnotationsForApiCmd(ListAnnotationsCmd cmd) {
         List<AnnotationVO> annotations;
         String userUuid = cmd.getUserUuid();
-        String annotationFilter = isNotBlank(cmd.getAnnotationFilter()) ? cmd.getAnnotationFilter() : "self";
+        String annotationFilter = isNotBlank(cmd.getAnnotationFilter()) ? cmd.getAnnotationFilter() : "all";
         boolean isCallerAdmin = isCallingUserAdmin();
         if (!isCallerAdmin && annotationFilter.equalsIgnoreCase("all")) {
             throw new CloudRuntimeException("Only admins can filter all the annotations");
@@ -187,7 +188,10 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
             if(LOGGER.isDebugEnabled()) {
                 LOGGER.debug("getting all annotations");
             }
-            annotations = annotationDao.listAllAnnotations(userUuid, isCallerAdmin);
+            if ("self".equalsIgnoreCase(annotationFilter) && isBlank(userUuid)) {
+                userUuid = callingUserUuid;
+            }
+            annotations = annotationDao.listAllAnnotations(userUuid, isCallerAdmin, annotationFilter);
         }
         return annotations;
     }
