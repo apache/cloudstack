@@ -54,6 +54,7 @@ class TestMaxSecondaryStorageLimits(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cloudstackTestClient.getZoneForTests())
         cls.services["mode"] = cls.zone.networktype
+        cls._cleanup = []
 
         cls.template = get_template(
                             cls.api_client,
@@ -65,17 +66,12 @@ class TestMaxSecondaryStorageLimits(cloudstackTestCase):
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.services["volume"]["zoneid"] = cls.zone.id
         cls.service_offering = ServiceOffering.create(cls.api_client, cls.services["service_offering"])
-        cls._cleanup = [cls.service_offering]
+        cls._cleanup.append(cls.service_offering)
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestMaxSecondaryStorageLimits, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -84,12 +80,7 @@ class TestMaxSecondaryStorageLimits(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestMaxSecondaryStorageLimits, self).tearDown()
 
     def registerTemplate(self, inProject=False):
         """Register and download template by default in the account/domain,
@@ -107,6 +98,7 @@ class TestMaxSecondaryStorageLimits(cloudstackTestCase):
                                      account=self.child_do_admin.name if not inProject else None,
                                      domainid=self.child_do_admin.domainid if not inProject else None,
                                      projectid=self.project.id if inProject else None)
+            self.cleanup.append(template)
 
             template.download(self.apiclient)
 
@@ -127,9 +119,11 @@ class TestMaxSecondaryStorageLimits(cloudstackTestCase):
         try:
             self.child_domain = Domain.create(self.apiclient,services=self.services["domain"],
                                           parentdomainid=self.domain.id)
+            self.cleanup.append(self.child_domain)
 
             self.child_do_admin = Account.create(self.apiclient, self.services["account"], admin=True,
                                              domainid=self.child_domain.id)
+            self.cleanup.append(self.child_do_admin)
 
             self.userapiclient = self.testClient.getUserApiClient(
                                     UserName=self.child_do_admin.name,
@@ -139,13 +133,8 @@ class TestMaxSecondaryStorageLimits(cloudstackTestCase):
             self.project = Project.create(self.apiclient, self.services["project"],
                                       account=self.child_do_admin.name,
                                       domainid=self.child_do_admin.domainid)
-
-            # Cleanup created project at end of test
             self.cleanup.append(self.project)
 
-            # Cleanup accounts created
-            self.cleanup.append(self.child_do_admin)
-            self.cleanup.append(self.child_domain)
         except Exception as e:
             return [FAIL, e]
         return [PASS, None]
@@ -156,16 +145,16 @@ class TestMaxSecondaryStorageLimits(cloudstackTestCase):
             # Update resource limits for account
             if accountLimit is not None:
                 Resources.updateLimit(self.apiclient, resourcetype=11,
-                                max=accountLimit, account=self.child_do_admin.name,
+                                max=int(accountLimit), account=self.child_do_admin.name,
                                 domainid=self.child_do_admin.domainid)
 
             if projectLimit is not None:
                 Resources.updateLimit(self.apiclient, resourcetype=11,
-                                              max=projectLimit, projectid=self.project.id)
+                                              max=int(projectLimit), projectid=self.project.id)
 
             if domainLimit is not None:
                 Resources.updateLimit(self.apiclient, resourcetype=11,
-                                              max=domainLimit, domainid=self.child_domain.id)
+                                              max=int(domainLimit), domainid=self.child_domain.id)
         except Exception as e:
             return [FAIL, e]
         return [PASS, None]
