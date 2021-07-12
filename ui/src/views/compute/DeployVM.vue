@@ -107,7 +107,7 @@
                         <span>
                           {{ $t('label.override.rootdisk.size') }}
                           <a-switch
-                            :checked="showRootDiskSizeChanger && rootDiskSizeFixed > 0"
+                            :default-checked="showRootDiskSizeChanger && rootDiskSizeFixed > 0"
                             :disabled="rootDiskSizeFixed > 0 || template.deployasis"
                             @change="val => { this.showRootDiskSizeChanger = val }"
                             style="margin-left: 10px;"/>
@@ -260,6 +260,7 @@
                       :loading="loading.diskOfferings"
                       :preFillContent="dataPreFill"
                       :isIsoSelected="tabKey==='isoid'"
+                      @on-selected-disk-size="onSelectDiskSize"
                       @select-disk-offering-item="($event) => updateDiskOffering($event)"
                       @handle-search-filter="($event) => handleSearchFilter('diskOfferings', $event)"
                     ></disk-offering-selection>
@@ -267,7 +268,10 @@
                       v-if="diskOffering && diskOffering.iscustomized"
                       input-decorator="size"
                       :preFillContent="dataPreFill"
-                      @update-disk-size="updateFieldValue" />
+                      :diskSelected="diskSelected"
+                      @handler-error="handlerError"
+                      @update-disk-size="updateFieldValue"
+                      @update-disk-otps="updateDiskOTPS"/>
                     <a-form-item class="form-item-hidden">
                       <a-input v-decorator="['size']"/>
                     </a-form-item>
@@ -789,7 +793,11 @@ export default {
       showDetails: false,
       showRootDiskSizeChanger: false,
       securitygroupids: [],
-      rootDiskSizeFixed: 0
+      rootDiskSizeFixed: 0,
+      error: false,
+      diskSelected: {},
+      minIops: 0,
+      maxIops: 0
     }
   },
   computed: {
@@ -983,6 +991,9 @@ export default {
     },
     showSecurityGroupSection () {
       return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
+    },
+    isCustomizedDiskIOps () {
+      return this.diskSelected?.iscustomizediops || false
     }
   },
   watch: {
@@ -1424,6 +1435,13 @@ export default {
           })
           return
         }
+        if (this.error) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('error.form.message')
+          })
+          return
+        }
 
         this.loading.deploy = true
 
@@ -1491,6 +1509,10 @@ export default {
           if (values.size) {
             deployVmData.size = values.size
           }
+        }
+        if (this.isCustomizedDiskIOps) {
+          deployVmData['details[0].minIops'] = this.minIops
+          deployVmData['details[0].maxIops'] = this.maxIops
         }
         // step 5: select an affinity group
         deployVmData.affinitygroupids = (values.affinitygroupids || []).join(',')
@@ -1994,6 +2016,15 @@ export default {
         this.rootDiskSizeFixed = offering.rootdisksize
         this.showRootDiskSizeChanger = false
       }
+    },
+    handlerError (error) {
+      this.error = error
+    },
+    onSelectDiskSize (rowSelected) {
+      this.diskSelected = rowSelected
+    },
+    updateDiskOTPS (input, value) {
+      this[input] = value
     }
   }
 }

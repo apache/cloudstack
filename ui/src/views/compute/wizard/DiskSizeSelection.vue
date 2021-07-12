@@ -16,11 +16,11 @@
 // under the License.
 
 <template>
-  <a-form-item
-    :label="inputDecorator === 'rootdisksize' ? $t('label.root.disk.size') : $t('label.disksize')"
-    class="form-item">
-    <a-row :gutter="12">
-      <a-col :md="4" :lg="4">
+  <a-row :span="24" style="{ marginTop: '20px' }">
+    <a-col :span="isCustomizedDiskIOps ? 8 : 24">
+      <a-form-item
+        :label="inputDecorator === 'rootdisksize' ? $t('label.root.disk.size') : $t('label.disksize')"
+        class="form-item">
         <span style="display: inline-flex">
           <a-input-number
             autoFocus
@@ -29,10 +29,22 @@
           />
           <span style="padding-top: 6px; margin-left: 5px">GB</span>
         </span>
-      </a-col>
-    </a-row>
-    <p v-if="error" style="color: red"> {{ $t(error) }} </p>
-  </a-form-item>
+        <p v-if="error" style="color: red"> {{ $t(error) }} </p>
+      </a-form-item>
+    </a-col>
+    <a-col :span="8" v-if="isCustomizedDiskIOps">
+      <a-form-item :label="$t('label.miniops')">
+        <a-input-number v-model="minIOps" @change="updateDiskIOps" />
+        <p v-if="errorMinIOps" style="color: red"> {{ $t(errorMinIOps) }} </p>
+      </a-form-item>
+    </a-col>
+    <a-col :span="8" v-if="isCustomizedDiskIOps">
+      <a-form-item :label="$t('label.maxiops')">
+        <a-input-number v-model="maxIOps" @change="updateDiskIOps" />
+        <p v-if="errorMaxIOps" style="color: red"> {{ $t(errorMaxIOps) }} </p>
+      </a-form-item>
+    </a-col>
+  </a-row>
 </template>
 
 <script>
@@ -50,6 +62,10 @@ export default {
     minDiskSize: {
       type: Number,
       default: 0
+    },
+    diskSelected: {
+      type: Object,
+      default: () => {}
     }
   },
   watch: {
@@ -60,10 +76,19 @@ export default {
       }
     }
   },
+  computed: {
+    isCustomizedDiskIOps () {
+      return this.diskSelected?.iscustomizediops || false
+    }
+  },
   data () {
     return {
       inputValue: 0,
-      error: false
+      error: false,
+      minIOps: null,
+      maxIOps: null,
+      errorMinIOps: false,
+      errorMaxIOps: false
     }
   },
   mounted () {
@@ -87,6 +112,34 @@ export default {
       }
       this.error = false
       this.$emit('update-disk-size', this.inputDecorator, value)
+    },
+    updateDiskIOps () {
+      let flag = true
+      this.errorMinIOps = false
+      this.errorMaxIOps = false
+      if (this.minIOps < 0) {
+        this.errorMinIOps = `${this.$t('message.error.limit.value')} 0`
+        flag = false
+      }
+      if (this.maxIOps < 0) {
+        this.errorMaxIOps = `${this.$t('message.error.limit.value')} 0`
+        flag = false
+      }
+
+      if (!flag) {
+        this.$emit('handler-error', true)
+        return
+      }
+
+      if (this.minIOps > this.maxIOps) {
+        this.errorMinIOps = this.$t('message.error.valid.iops.range')
+        this.errorMaxIOps = this.$t('message.error.valid.iops.range')
+        this.$emit('handler-error', true)
+        return
+      }
+      this.$emit('update-disk-otps', 'minIops', this.minIOps)
+      this.$emit('update-disk-otps', 'maxIops', this.maxIOps)
+      this.$emit('handler-error', false)
     }
   }
 }
