@@ -33,5 +33,19 @@ export default {
     return filters
   },
   actions: [
+    {
+      api: 'removeAnnotation',
+      icon: 'delete',
+      label: 'label.remove.annotation',
+      message: 'message.remove.annotation',
+      dataView: false,
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+      // show: (record, store) => {
+      //   return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
+      //     !(record.domain === 'ROOT' && record.name === 'admin' && record.accounttype === 1)
+      // }
+    }
   ]
 }

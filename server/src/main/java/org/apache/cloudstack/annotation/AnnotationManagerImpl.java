@@ -153,6 +153,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         }
         UserVO callingUser = getCallingUserFromContext();
         String callingUserUuid = callingUser.getUuid();
+        String keyword = cmd.getKeyword();
 
         if(cmd.getUuid() != null) {
             annotations = new ArrayList<>();
@@ -179,10 +180,10 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
                     LOGGER.debug("getting annotations for entity: " + uuid);
                 }
                 annotations = annotationDao.listByEntity(type, cmd.getEntityUuid(), userUuid, isCallerAdmin,
-                        annotationFilter, callingUserUuid);
+                        annotationFilter, callingUserUuid, keyword);
             } else {
                 annotations = annotationDao.listByEntityType(type, userUuid, isCallerAdmin,
-                        annotationFilter, callingUserUuid);
+                        annotationFilter, callingUserUuid, keyword);
             }
         } else {
             if(LOGGER.isDebugEnabled()) {
@@ -191,7 +192,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
             if ("self".equalsIgnoreCase(annotationFilter) && isBlank(userUuid)) {
                 userUuid = callingUserUuid;
             }
-            annotations = annotationDao.listAllAnnotations(userUuid, isCallerAdmin, annotationFilter);
+            annotations = annotationDao.listAllAnnotations(userUuid, isCallerAdmin, annotationFilter, keyword);
         }
         return annotations;
     }
