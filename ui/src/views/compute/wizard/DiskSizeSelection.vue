@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-row :span="24" style="{ marginTop: '20px' }">
+  <a-row :span="24" :style="{ marginTop: '20px' }">
     <a-col :span="isCustomizedDiskIOps ? 8 : 24">
       <a-form-item
         :label="inputDecorator === 'rootdisksize' ? $t('label.root.disk.size') : $t('label.disksize')"
