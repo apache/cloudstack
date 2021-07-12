@@ -117,6 +117,7 @@
                           v-show="showRootDiskSizeChanger"
                           input-decorator="rootdisksize"
                           :preFillContent="dataPreFill"
+                          :isCustomized="true"
                           :minDiskSize="dataPreFill.minrootdisksize"
                           @update-disk-size="updateFieldValue"
                           style="margin-top: 10px;"/>
@@ -265,10 +266,11 @@
                       @handle-search-filter="($event) => handleSearchFilter('diskOfferings', $event)"
                     ></disk-offering-selection>
                     <disk-size-selection
-                      v-if="diskOffering && diskOffering.iscustomized"
+                      v-if="diskOffering && (diskOffering.iscustomized || diskOffering.iscustomizediops)"
                       input-decorator="size"
                       :preFillContent="dataPreFill"
                       :diskSelected="diskSelected"
+                      :isCustomized="diskOffering.iscustomized"
                       @handler-error="handlerError"
                       @update-disk-size="updateFieldValue"
                       @update-disk-otps="updateDiskOTPS"/>
