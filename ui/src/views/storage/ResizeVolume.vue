@@ -94,7 +94,7 @@ export default {
       })
     },
     handleSubmit (e) {
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }

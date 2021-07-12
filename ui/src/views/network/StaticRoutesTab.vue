@@ -245,7 +245,7 @@ export default {
       this.tagsLoading = true
 
       e.preventDefault()
-      this.newTagsForm.validateFields((err, values) => {
+      this.newTagsForm.validateFieldsAndScroll((err, values) => {
         if (err) {
           this.tagsLoading = false
           return

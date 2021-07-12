@@ -349,7 +349,7 @@ export default {
       this.tagsLoading = true
 
       e.preventDefault()
-      this.newTagsForm.validateFields((err, values) => {
+      this.newTagsForm.validateFieldsAndScroll((err, values) => {
         if (err) {
           this.tagsLoading = false
           return
@@ -438,7 +438,7 @@ export default {
     },
     handleEditRule (e) {
       e.preventDefault()
-      this.ruleForm.validateFields((err, values) => {
+      this.ruleForm.validateFieldsAndScroll((err, values) => {
         if (err) return
 
         this.fetchLoading = true
@@ -533,7 +533,7 @@ export default {
     },
     handleAddRule (e) {
       e.preventDefault()
-      this.ruleForm.validateFields((err, values) => {
+      this.ruleForm.validateFieldsAndScroll((err, values) => {
         if (err) return
 
         this.fetchLoading = true

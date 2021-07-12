@@ -164,7 +164,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       const {
-        form: { validateFields },
+        form: { validateFieldsAndScroll },
         state,
         customActiveKey,
         Login
@@ -172,9 +172,9 @@ export default {
 
       state.loginBtn = true
 
-      const validateFieldsKey = customActiveKey === 'cs' ? ['username', 'password', 'domain'] : ['idp']
+      const validateFieldsAndScrollKey = customActiveKey === 'cs' ? ['username', 'password', 'domain'] : ['idp']
 
-      validateFields(validateFieldsKey, { force: true }, (err, values) => {
+      validateFieldsAndScroll(validateFieldsAndScrollKey, { force: true }, (err, values) => {
         if (!err) {
           if (customActiveKey === 'cs') {
             const loginParams = { ...values }

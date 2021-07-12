@@ -570,7 +570,7 @@ export default {
     handleAddNetworkSubmit () {
       this.fetchLoading = true
 
-      this.form.validateFields((errors, values) => {
+      this.form.validateFieldsAndScroll((errors, values) => {
         if (errors) {
           this.fetchLoading = false
           return
@@ -611,7 +611,7 @@ export default {
     handleAddInternalLBSubmit () {
       this.fetchLoading = true
       this.modalLoading = true
-      this.form.validateFields((errors, values) => {
+      this.form.validateFieldsAndScroll((errors, values) => {
         if (errors) {
           this.fetchLoading = false
           return

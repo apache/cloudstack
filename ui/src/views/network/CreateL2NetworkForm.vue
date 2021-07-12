@@ -402,7 +402,7 @@ export default {
       this.selectedNetworkOffering = networkOffering
     },
     handleSubmit (e) {
-      this.form.validateFields((error, values) => {
+      this.form.validateFieldsAndScroll((error, values) => {
         if (error) {
           return
         }

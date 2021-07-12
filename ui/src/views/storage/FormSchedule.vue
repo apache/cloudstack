@@ -331,7 +331,7 @@ export default {
     handleDeleteTag (tag) {
     },
     handleSubmit (e) {
-      this.form.validateFields((error, values) => {
+      this.form.validateFieldsAndScroll((error, values) => {
         if (error) {
           return
         }

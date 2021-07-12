@@ -1410,7 +1410,7 @@ export default {
     handleSubmit (e) {
       console.log('wizard submit')
       e.preventDefault()
-      this.form.validateFields(async (err, values) => {
+      this.form.validateFieldsAndScrollAndScroll(async (err, values) => {
         if (err) {
           if (err.licensesaccepted) {
             this.$notification.error({
