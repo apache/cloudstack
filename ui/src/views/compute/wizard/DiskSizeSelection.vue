@@ -33,13 +33,13 @@
       </a-form-item>
     </a-col>
     <a-col :span="8" v-if="isCustomizedDiskIOps">
-      <a-form-item :label="$t('label.miniops')">
+      <a-form-item :label="$t('label.diskiopsmin')">
         <a-input-number v-model="minIOps" @change="updateDiskIOps" />
         <p v-if="errorMinIOps" style="color: red"> {{ $t(errorMinIOps) }} </p>
       </a-form-item>
     </a-col>
     <a-col :span="8" v-if="isCustomizedDiskIOps">
-      <a-form-item :label="$t('label.maxiops')">
+      <a-form-item :label="$t('label.diskiopsmax')">
         <a-input-number v-model="maxIOps" @change="updateDiskIOps" />
         <p v-if="errorMaxIOps" style="color: red"> {{ $t(errorMaxIOps) }} </p>
       </a-form-item>
@@ -141,8 +141,8 @@ export default {
         this.$emit('handler-error', true)
         return
       }
-      this.$emit('update-disk-otps', 'minIops', this.minIOps)
-      this.$emit('update-disk-otps', 'maxIops', this.maxIOps)
+      this.$emit('update-iops-value', 'diskIOpsMin', this.minIOps)
+      this.$emit('update-iops-value', 'diskIOpsMax', this.maxIOps)
       this.$emit('handler-error', false)
     }
   }

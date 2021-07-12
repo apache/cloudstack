@@ -203,7 +203,7 @@
                       @handle-search-filter="($event) => handleSearchFilter('serviceOfferings', $event)"
                     ></compute-offering-selection>
                     <compute-selection
-                      v-if="serviceOffering && serviceOffering.iscustomized"
+                      v-if="serviceOffering && (serviceOffering.iscustomized || serviceOffering.iscustomizediops)"
                       cpunumber-input-decorator="cpunumber"
                       cpuspeed-input-decorator="cpuspeed"
                       memory-input-decorator="memory"
@@ -214,6 +214,10 @@
                       :maxCpu="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.maxcpunumber*1 : Number.MAX_SAFE_INTEGER"
                       :minMemory="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.minmemory*1 : 0"
                       :maxMemory="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.maxmemory*1 : Number.MAX_SAFE_INTEGER"
+                      :isCustomized="serviceOffering.iscustomized"
+                      :isCustomizedIOps="'iscustomizediops' in serviceOffering && serviceOffering.iscustomizediops"
+                      @handler-error="handlerError"
+                      @update-iops-value="updateIOPSValue"
                       @update-compute-cpunumber="updateFieldValue"
                       @update-compute-cpuspeed="updateFieldValue"
                       @update-compute-memory="updateFieldValue" />
@@ -273,7 +277,7 @@
                       :isCustomized="diskOffering.iscustomized"
                       @handler-error="handlerError"
                       @update-disk-size="updateFieldValue"
-                      @update-disk-otps="updateDiskOTPS"/>
+                      @update-iops-value="updateIOPSValue"/>
                     <a-form-item class="form-item-hidden">
                       <a-input v-decorator="['size']"/>
                     </a-form-item>
@@ -798,8 +802,10 @@ export default {
       rootDiskSizeFixed: 0,
       error: false,
       diskSelected: {},
-      minIops: 0,
-      maxIops: 0
+      diskIOpsMin: 0,
+      diskIOpsMax: 0,
+      minIOPs: 0,
+      maxIOPs: 0
     }
   },
   computed: {
@@ -994,8 +1000,11 @@ export default {
     showSecurityGroupSection () {
       return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
     },
-    isCustomizedDiskIOps () {
+    isCustomizedDiskIOPS () {
       return this.diskSelected?.iscustomizediops || false
+    },
+    isCustomizedIOPS () {
+      return this.serviceOffering?.iscustomizediops || false
     }
   },
   watch: {
@@ -1494,6 +1503,10 @@ export default {
         if (this.selectedTemplateConfiguration) {
           deployVmData['details[0].configurationId'] = this.selectedTemplateConfiguration.id
         }
+        if (this.isCustomizedIOPS) {
+          deployVmData['details[0].minIops'] = this.minIOPs
+          deployVmData['details[0].maxIops'] = this.maxIOPs
+        }
         // step 4: select disk offering
         if (!this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {
           if (values.multidiskoffering) {
@@ -1512,9 +1525,9 @@ export default {
             deployVmData.size = values.size
           }
         }
-        if (this.isCustomizedDiskIOps) {
-          deployVmData['details[0].minIops'] = this.minIops
-          deployVmData['details[0].maxIops'] = this.maxIops
+        if (this.isCustomizedDiskIOPS) {
+          deployVmData['details[0].minIopsDo'] = this.diskIOpsMin
+          deployVmData['details[0].maxIopsDo'] = this.diskIOpsMax
         }
         // step 5: select an affinity group
         deployVmData.affinitygroupids = (values.affinitygroupids || []).join(',')
@@ -2025,7 +2038,7 @@ export default {
     onSelectDiskSize (rowSelected) {
       this.diskSelected = rowSelected
     },
-    updateDiskOTPS (input, value) {
+    updateIOPSValue (input, value) {
       this[input] = value
     }
   }
