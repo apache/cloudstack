@@ -158,7 +158,7 @@ export default {
       }
       this.loadingAnnotations = true
       this.notes = []
-      api('listAnnotations', { entityid: this.resource.id, entitytype: this.annotationType }).then(json => {
+      api('listAnnotations', { entityid: this.resource.id, entitytype: this.annotationType, annotationfilter: 'self' }).then(json => {
         if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
           this.notes = json.listannotationsresponse.annotation
         }

@@ -79,8 +79,8 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
     }
 
     @Override
-    public List<AnnotationVO> listAllAnnotations(String userUuid, boolean isCallerAdmin) {
-        if (StringUtils.isBlank(userUuid)) {
+    public List<AnnotationVO> listAllAnnotations(String userUuid, boolean isCallerAdmin, String annotationFilter) {
+        if (StringUtils.isBlank(userUuid) || "all".equalsIgnoreCase(annotationFilter)) {
             return listAll(new Filter(AnnotationVO.class, "created", false, null, null));
         }
         SearchCriteria<AnnotationVO> sc = AnnotationSearchBuilder.create();
