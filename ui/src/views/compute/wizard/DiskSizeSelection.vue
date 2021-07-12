@@ -17,7 +17,7 @@
 
 <template>
   <a-row :span="24" :style="{ marginTop: '20px' }">
-    <a-col :span="isCustomizedDiskIOps ? 8 : 24">
+    <a-col :span="isCustomizedDiskIOps ? 8 : 24" v-if="isCustomized">
       <a-form-item
         :label="inputDecorator === 'rootdisksize' ? $t('label.root.disk.size') : $t('label.disksize')"
         class="form-item">
@@ -66,6 +66,10 @@ export default {
     diskSelected: {
       type: Object,
       default: () => {}
+    },
+    isCustomized: {
+      type: Boolean,
+      default: false
     }
   },
   watch: {
