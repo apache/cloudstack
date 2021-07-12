@@ -39,6 +39,8 @@
         <p class="form__label"><span class="required">*</span>{{ $t('label.domain') }}</p>
         <a-select @change="changeDomain" v-model="selectedDomain" :defaultValue="selectedDomain">
           <a-select-option v-for="domain in domains" :key="domain.name" :value="domain.id">
+            <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
+            <a-icon v-else type="block" style="margin-right: 5px" />
             {{ domain.path || domain.name || domain.description }}
           </a-select-option>
         </a-select>
@@ -49,6 +51,8 @@
           <p class="form__label"><span class="required">*</span>{{ $t('label.account') }}</p>
           <a-select @change="changeAccount" v-model="selectedAccount">
             <a-select-option v-for="account in accounts" :key="account.name" :value="account.name">
+              <resource-icon v-if="account && account.icon" :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="team" style="margin-right: 5px" />
               {{ account.name }}
             </a-select-option>
           </a-select>
@@ -61,6 +65,8 @@
           <p class="form__label"><span class="required">*</span>{{ $t('label.project') }}</p>
           <a-select @change="changeProject" v-model="selectedProject">
             <a-select-option v-for="project in projects" :key="project.id" :value="project.id">
+              <resource-icon v-if="project && project.icon" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="project" style="margin-right: 5px" />
               {{ project.name }}
             </a-select-option>
           </a-select>
@@ -72,6 +78,8 @@
         <p class="form__label">{{ $t('label.network') }}</p>
         <a-select v-model="selectedNetwork">
           <a-select-option v-for="network in networks" :key="network.id" :value="network.id">
+            <resource-icon v-if="network && network.icon" :image="network.icon.base64image" size="1x" style="margin-right: 5px"/>
+            <a-icon v-else type="apartment" style="margin-right: 5px" />
             {{ network.name ? network.name : '-' }}
           </a-select-option>
         </a-select>
@@ -93,6 +101,7 @@
 
 <script>
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'AssignInstance',
@@ -101,6 +110,9 @@ export default {
       type: Object,
       required: true
     }
+  },
+  components: {
+    ResourceIcon
   },
   inject: ['parentFetchData'],
   data () {
@@ -128,6 +140,7 @@ export default {
       api('listDomains', {
         response: 'json',
         listAll: true,
+        showicon: true,
         details: 'min'
       }).then(response => {
         this.domains = response.listdomainsresponse.domain
@@ -145,6 +158,7 @@ export default {
       api('listAccounts', {
         response: 'json',
         domainId: this.selectedDomain,
+        showicon: true,
         state: 'Enabled',
         isrecursive: false
       }).then(response => {
@@ -161,6 +175,7 @@ export default {
         response: 'json',
         domainId: this.selectedDomain,
         state: 'Active',
+        showicon: true,
         details: 'min',
         isrecursive: false
       }).then(response => {
@@ -178,6 +193,7 @@ export default {
         domainId: this.selectedDomain,
         listAll: true,
         isrecursive: false,
+        showicon: true,
         account: this.selectedAccount,
         projectid: this.selectedProject
       }).then(response => {

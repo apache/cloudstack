@@ -92,7 +92,11 @@
                 rules: [{ required: true, message: `${$t('label.required')}` }]
               }]"
             >
-              <a-select-option v-for="domain in domains" :key="domain.id" :value="domain.id">{{ domain.path || domain.name || domain.description }}</a-select-option>
+              <a-select-option v-for="domain in domains" :key="domain.id" :value="domain.id">
+                <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="block" style="margin-right: 5px" />
+                {{ domain.path || domain.name || domain.description }}
+              </a-select-option>
             </a-select>
           </a-form-item>
 
@@ -106,6 +110,8 @@
                 v-for="account in accounts"
                 :key="account.id"
                 :value="account.name">
+                <resource-icon v-if="account && account.icon" :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="team" style="margin-right: 5px" />
                 {{ account.name }}
               </a-select-option>
             </a-select>
@@ -121,6 +127,8 @@
                 v-for="project in projects"
                 :key="project.id"
                 :value="project.id">
+                <resource-icon v-if="project && project.icon" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="project" style="margin-right: 5px" />
                 {{ project.name }}
               </a-select-option>
             </a-select>
@@ -135,11 +143,13 @@
 <script>
 import { api } from '@/api'
 import TooltipButton from '@/components/view/TooltipButton'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'DedicatedVLANTab',
   components: {
-    TooltipButton
+    TooltipButton,
+    ResourceIcon
   },
   props: {
     resource: {
@@ -223,6 +233,7 @@ export default {
     fetchDomains () {
       api('listDomains', {
         details: 'min',
+        showicon: true,
         listAll: true
       }).then(response => {
         this.domains = response.listdomainsresponse.domain || []
@@ -247,6 +258,7 @@ export default {
       api('listAccounts', {
         domainid: e,
         details: 'min',
+        showicon: true,
         listAll: true
       }).then(response => {
         this.accounts = response.listaccountsresponse.account
@@ -270,6 +282,7 @@ export default {
       this.formLoading = true
       api('listProjects', {
         domainid: e,
+        showicon: true,
         details: 'min'
       }).then(response => {
         this.projects = response.listprojectsresponse.project
