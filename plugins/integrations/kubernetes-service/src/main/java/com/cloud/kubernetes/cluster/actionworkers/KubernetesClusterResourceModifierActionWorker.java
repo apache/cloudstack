@@ -142,8 +142,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     private String getKubernetesNodeConfig(final String joinIp, final boolean ejectIso) throws IOException {
         String k8sNodeConfig = readResourceFile("/conf/k8s-node.yml");
         final String sshPubKey = "{{ k8s.ssh.pub.key }}";
-        final String joinIpKey = "{{ k8s_master.join_ip }}";
-        final String clusterTokenKey = "{{ k8s_master.cluster.token }}";
+        final String joinIpKey = "{{ k8s_control_node.join_ip }}";
+        final String clusterTokenKey = "{{ k8s_control_node.cluster.token }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
