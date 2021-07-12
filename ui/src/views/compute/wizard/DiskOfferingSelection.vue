@@ -243,8 +243,13 @@ export default {
       return {
         on: {
           click: () => {
+            const rowSelected = this.items.filter(item => item.id === record.key)
+            if (rowSelected && rowSelected.length > 0) {
+              this.diskSelected = rowSelected[0]
+            }
             this.selectedRowKeys = [record.key]
             this.$emit('select-disk-offering-item', record.key)
+            this.$emit('on-selected-disk-size', this.diskSelected)
           }
         }
       }
