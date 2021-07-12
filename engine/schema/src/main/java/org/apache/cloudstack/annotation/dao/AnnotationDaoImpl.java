@@ -40,6 +40,7 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
         AnnotationSearchBuilder.and("entityUuid", AnnotationSearchBuilder.entity().getEntityUuid(), SearchCriteria.Op.EQ);
         AnnotationSearchBuilder.and("userUuid", AnnotationSearchBuilder.entity().getUserUuid(), SearchCriteria.Op.EQ);
         AnnotationSearchBuilder.and("adminsOnly", AnnotationSearchBuilder.entity().getUserUuid(), SearchCriteria.Op.EQ);
+        AnnotationSearchBuilder.and("annotation", AnnotationSearchBuilder.entity().getAnnotation(), SearchCriteria.Op.LIKE);
         AnnotationSearchBuilder.done();
     }
 
@@ -48,7 +49,7 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
         return listBy(sc, filter);
     }
 
-    @Override public List<AnnotationVO> listByEntityType(String entityType, String userUuid, boolean isCallerAdmin, String annotationFilter, String callingUserUuid) {
+    @Override public List<AnnotationVO> listByEntityType(String entityType, String userUuid, boolean isCallerAdmin, String annotationFilter, String callingUserUuid, String keyword) {
         SearchCriteria<AnnotationVO> sc = AnnotationSearchBuilder.create();
         sc.addAnd("entityType", SearchCriteria.Op.EQ, entityType);
         if (StringUtils.isNotBlank(userUuid)) {
@@ -57,11 +58,14 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
         if (!isCallerAdmin) {
             sc.addAnd("adminsOnly", SearchCriteria.Op.EQ, false);
         }
+        if (StringUtils.isNotBlank(keyword)) {
+            sc.setParameters("annotation", "%" + keyword + "%");
+        }
         return listAnnotationsOrderedByCreatedDate(sc);
     }
 
     @Override public List<AnnotationVO> listByEntity(String entityType, String entityUuid, String userUuid,
-                                                     boolean isCallerAdmin, String annotationFilter, String callingUserUuid) {
+                                                     boolean isCallerAdmin, String annotationFilter, String callingUserUuid, String keyword) {
         SearchCriteria<AnnotationVO> sc = AnnotationSearchBuilder.create();
         sc.addAnd("entityType", SearchCriteria.Op.EQ, entityType);
         sc.addAnd("entityUuid", SearchCriteria.Op.EQ, entityUuid);
@@ -75,11 +79,14 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
         if (!isCallerAdmin) {
             sc.addAnd("adminsOnly", SearchCriteria.Op.EQ, false);
         }
+        if (StringUtils.isNotBlank(keyword)) {
+            sc.setParameters("annotation", "%" + keyword + "%");
+        }
         return listAnnotationsOrderedByCreatedDate(sc);
     }
 
     @Override
-    public List<AnnotationVO> listAllAnnotations(String userUuid, boolean isCallerAdmin, String annotationFilter) {
+    public List<AnnotationVO> listAllAnnotations(String userUuid, boolean isCallerAdmin, String annotationFilter, String keyword) {
         if (StringUtils.isBlank(userUuid) || "all".equalsIgnoreCase(annotationFilter)) {
             return listAll(new Filter(AnnotationVO.class, "created", false, null, null));
         }
@@ -87,6 +94,9 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
         sc.addAnd("userUuid", SearchCriteria.Op.EQ, userUuid);
         if (!isCallerAdmin) {
             sc.addAnd("adminsOnly", SearchCriteria.Op.EQ, false);
+        }
+        if (StringUtils.isNotBlank(keyword)) {
+            sc.setParameters("annotation", "%" + keyword + "%");
         }
         return listAnnotationsOrderedByCreatedDate(sc);
     }

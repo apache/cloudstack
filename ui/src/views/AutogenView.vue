@@ -811,6 +811,18 @@ export default {
           })
         }
 
+        if (this.apiName === 'listAnnotations' && this.items.length > 0) {
+          this.columns.map(col => {
+            if (col.title === 'label.entityid') {
+              col.title = this.$t('label.annotation.entity.id')
+            } else if (col.title === 'label.entitytype') {
+              col.title = this.$t('label.annotation.entity.type')
+            } else if (col.title === 'label.adminsonly') {
+              col.title = this.$t('label.annotation.admins.only')
+            }
+          })
+        }
+
         for (let idx = 0; idx < this.items.length; idx++) {
           this.items[idx].key = idx
           for (const key in customRender) {
