@@ -567,8 +567,9 @@ for example:
                           help="Colon-separated user name and password of a MySQL user with administrative privileges")
         self.parser.add_option("-s", "--schema-only", action="store_true", dest="schemaonly", default=False,
                           help="Creates the db schema without having to pass root credentials - " \
-                               "Please note: The databases (cloud, cloud_usage) and user (cloud) has to be configured manually" \
-                               "prior to running this script when using this flag.")
+                               "Please note: The databases (cloud, cloud_usage) and user (cloud) has to be configured " \
+                               "manually prior to running this script when using this flag.")
+
         self.parser.add_option("-a", "--auto", action="store", type="string", dest="serversetup", default="",
                           help="Path to an XML file describing an automated unattended cloud setup")
         self.parser.add_option("-e", "--encrypt-type", action="store", type="string", dest="encryptiontype", default="file",
