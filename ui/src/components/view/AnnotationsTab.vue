@@ -85,9 +85,13 @@ export default {
       type: Object,
       required: true
     },
-    loading: {
-      type: Boolean,
-      default: false
+    items: {
+      type: Array,
+      default: () => []
+    },
+    anType: {
+      type: String,
+      required: true
     }
   },
   inject: ['parentFetchData'],
@@ -98,34 +102,7 @@ export default {
       annotation: '',
       annotationType: '',
       annotationAdminsOnly: false,
-      showNotesInput: false,
-
-      annotationColumns: [
-        {
-          title: this.$t('label.created'),
-          dataIndex: 'created'
-        },
-        {
-          title: this.$t('label.username'),
-          dataIndex: 'username'
-        },
-        {
-          title: this.$t('label.annotation'),
-          dataIndex: 'annotation'
-        },
-        {
-          title: this.$t('label.annotation.entity.id'),
-          dataIndex: 'entityid'
-        },
-        {
-          title: this.$t('label.annotation.entity.type'),
-          dataIndex: 'entitytype'
-        },
-        {
-          title: this.$t('label.actions'),
-          detaIndex: ''
-        }
-      ]
+      showNotesInput: false
     }
   },
   watch: {
@@ -133,7 +110,18 @@ export default {
       this.resource = newItem
       this.resourceType = this.$route.meta.resourceType
       this.annotationType = ''
+      this.setAnnotationTypeFromResourceType()
 
+      if (this.annotationType) {
+        this.getAnnotations()
+      }
+    }
+  },
+  created () {
+    this.fetchData()
+  },
+  methods: {
+    setAnnotationTypeFromResourceType () {
       switch (this.resourceType) {
         case 'UserVm':
           this.annotationType = 'VM'
@@ -145,20 +133,19 @@ export default {
           this.annotationType = 'HOST'
           break
       }
-
-      if (this.annotationType) {
-        this.getAnnotations()
-      }
-    }
-  },
-  methods: {
+    },
+    fetchData () {
+      this.resourceType = this.$route.meta.resourceType
+      this.setAnnotationTypeFromResourceType()
+      this.notes = this.items
+    },
     getAnnotations () {
       if (!('listAnnotations' in this.$store.getters.apis)) {
         return
       }
       this.loadingAnnotations = true
       this.notes = []
-      api('listAnnotations', { entityid: this.resource.id, entitytype: this.annotationType, annotationfilter: 'self' }).then(json => {
+      api('listAnnotations', { entityid: this.resource.id, entitytype: this.annotationType, annotationfilter: 'all' }).then(json => {
         if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
           this.notes = json.listannotationsresponse.annotation
         }

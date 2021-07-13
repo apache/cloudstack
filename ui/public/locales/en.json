@@ -349,7 +349,7 @@
 "label.add.new.tier": "Add new tier",
 "label.add.nfs.secondary.staging.store": "Add NFS Secondary Staging Store",
 "label.add.niciranvp.device": "Add Nvp Controller",
-"label.add.note": "Add Note",
+"label.add.note": "Add Comment",
 "label.add.opendaylight.device": "Add OpenDaylight Controller",
 "label.add.pa.device": "Add Palo Alto device",
 "label.add.physical.network": "Add Physical Network",
