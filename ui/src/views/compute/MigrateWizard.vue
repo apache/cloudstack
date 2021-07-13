@@ -107,7 +107,7 @@ export default {
         },
         {
           title: this.$t('label.suitability'),
-          scopedSlots: { customRender: 'suitability' }
+          slots: { customRender: 'suitability' }
         },
         {
           title: this.$t('label.cpuused'),
@@ -115,15 +115,15 @@ export default {
         },
         {
           title: this.$t('label.memoryallocated'),
-          scopedSlots: { customRender: 'memoryallocatedpercentage' }
+          slots: { customRender: 'memoryallocatedpercentage' }
         },
         {
           title: this.$t('label.memused'),
-          scopedSlots: { customRender: 'memused' }
+          slots: { customRender: 'memused' }
         },
         {
           title: this.$t('label.select'),
-          scopedSlots: { customRender: 'select' }
+          slots: { customRender: 'select' }
         }
       ]
     }

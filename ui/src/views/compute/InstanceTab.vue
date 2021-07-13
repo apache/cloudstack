@@ -311,12 +311,12 @@ export default {
         {
           title: this.$t('label.name'),
           dataIndex: 'name',
-          scopedSlots: { customRender: 'name' }
+          slots: { customRender: 'name' }
         },
         {
           title: this.$t('label.state'),
           dataIndex: 'state',
-          scopedSlots: { customRender: 'state' }
+          slots: { customRender: 'state' }
         },
         {
           title: this.$t('label.type'),
@@ -325,7 +325,7 @@ export default {
         {
           title: this.$t('label.size'),
           dataIndex: 'size',
-          scopedSlots: { customRender: 'size' }
+          slots: { customRender: 'size' }
         }
       ],
       editNicResource: {},

@@ -103,7 +103,11 @@ import {
   FullscreenOutlined,
   CloudDownloadOutlined,
   CheckOutlined,
-  MedicineBoxOutlined
+  MedicineBoxOutlined,
+  ApartmentOutlined,
+  FireOutlined,
+  MinusCircleOutlined,
+  BarsOutlined
 } from '@ant-design/icons-vue'
 
 import { library } from '@fortawesome/fontawesome-svg-core'
@@ -207,5 +211,9 @@ export default {
     app.component('CloudDownloadOutlined', CloudDownloadOutlined)
     app.component('CheckOutlined', CheckOutlined)
     app.component('MedicineBoxOutlined', MedicineBoxOutlined)
+    app.component('ApartmentOutlined', ApartmentOutlined)
+    app.component('FireOutlined', FireOutlined)
+    app.component('MinusCircleOutlined', MinusCircleOutlined)
+    app.component('BarsOutlined', BarsOutlined)
   }
 }

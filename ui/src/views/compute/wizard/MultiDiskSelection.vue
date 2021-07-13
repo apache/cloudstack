@@ -69,7 +69,7 @@ export default {
         {
           dataIndex: 'offering',
           title: this.$t('label.data.disk.offering'),
-          scopedSlots: { customRender: 'offering' }
+          slots: { customRender: 'offering' }
         }
       ],
       loading: false,

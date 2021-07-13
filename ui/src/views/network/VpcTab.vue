@@ -34,10 +34,10 @@
       <a-tab-pane :tab="$t('label.network.acl.lists')" key="acl" v-if="'listNetworkACLLists' in $store.getters.apis">
         <a-button
           type="dashed"
-          icon="plus"
           style="width: 100%"
           :disabled="!('createNetworkACLList' in $store.getters.apis)"
           @click="() => handleOpenModals('networkAcl')">
+          <template #icon><plus-circle /></template>
           {{ $t('label.add.network.acl.list') }}
         </a-button>
         <a-table
@@ -48,7 +48,7 @@
           :rowKey="item => item.id"
           :pagination="false"
         >
-          <template slot="name" slot-scope="text, item">
+          <template #name="{ text, item }">
             <router-link :to="{ path: '/acllist/' + item.id }">
               {{ text }}
             </router-link>
@@ -65,7 +65,7 @@
           @change="changePage"
           @showSizeChange="changePageSize"
           showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
+          <template #buildOptionText="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
           </template>
         </a-pagination>
@@ -74,14 +74,18 @@
           :title="$t('label.add.acl.list')"
           :maskClosable="false"
           @ok="handleNetworkAclFormSubmit">
-          <a-form @submit.prevent="handleNetworkAclFormSubmit" :form="networkAclForm">
-            <a-form-item :label="$t('label.add.list.name')">
+          <a-form
+            @submit.prevent="handleNetworkAclFormSubmit"
+            :ref="networkRef"
+            :model="networkAclForm"
+            :rules="networkRules">
+            <a-form-item :label="$t('label.add.list.name')" ref="name" name="name">
               <a-input
-                v-decorator="['name', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+                v-model:value="networkAclForm.name"
                 autoFocus></a-input>
             </a-form-item>
-            <a-form-item :label="$t('label.description')">
-              <a-input v-decorator="['description', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
+            <a-form-item :label="$t('label.description')"  ref="description" name="description">
+              <a-input v-model:value="networkAclForm.description" />
             </a-form-item>
           </a-form>
         </a-modal>
@@ -89,10 +93,12 @@
       <a-tab-pane :tab="$t('label.private.gateway')" key="pgw" v-if="'listPrivateGateways' in $store.getters.apis">
         <a-button
           type="dashed"
-          icon="plus"
           style="width: 100%"
           :disabled="!('createPrivateGateway' in $store.getters.apis)"
-          @click="() => handleOpenModals('privateGateways')">{{ $t('label.add.private.gateway') }}</a-button>
+          @click="() => handleOpenModals('privateGateways')">
+          <template #icon><plus-circle /></template>
+          {{ $t('label.add.private.gateway') }}
+        </a-button>
         <a-table
           class="table"
           size="small"
@@ -101,10 +107,10 @@
           :rowKey="item => item.id"
           :pagination="false"
         >
-          <template slot="ipaddress" slot-scope="text, item">
+          <template #ipaddress="{ text, item }">
             <router-link :to="{ path: '/privategw/' + item.id }">{{ text }}</router-link>
           </template>
-          <template slot="state" slot-scope="text, item">
+          <template #state="{ item }">
             <status :text="item.state" displayText></status>
           </template>
         </a-table>
@@ -119,7 +125,7 @@
           @change="changePage"
           @showSizeChange="changePageSize"
           showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
+          <template #buildOptionText="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
           </template>
         </a-pagination>
@@ -131,50 +137,56 @@
           @ok="handleGatewayFormSubmit">
           <a-spin :spinning="modals.gatewayLoading">
             <p>{{ $t('message.add.new.gateway.to.vpc') }}</p>
-            <a-form @submit.prevent="handleGatewayFormSubmit" :form="gatewayForm">
-              <a-form-item :label="$t('label.physicalnetworkid')">
-                <a-select v-decorator="['physicalnetwork']" autoFocus>
+            <a-form
+              @submit.prevent="handleGatewayFormSubmit"
+              :ref="gatewayRef"
+              :model="gatewayForm"
+              :rules="gatewayRules">
+              <a-form-item :label="$t('label.physicalnetworkid')" ref="physicalnetwork" name="physicalnetwork">
+                <a-select v-model:value="gatewayForm.physicalnetwork" autoFocus>
                   <a-select-option v-for="item in physicalnetworks" :key="item.id" :value="item.id">
                     {{ item.name }}
                   </a-select-option>
                 </a-select>
               </a-form-item>
-              <a-form-item :label="$t('label.vlan')" :required="true">
+              <a-form-item :label="$t('label.vlan')" :required="true" ref="vlan" name="vlan">
                 <a-input
                   :placeholder="placeholders.vlan"
-                  v-decorator="['vlan', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+                  v-model:value="gatewayForm.vlan"
                 ></a-input>
               </a-form-item>
               <a-form-item
+                ref="bypassvlanoverlapcheck"
+                name="bypassvlanoverlapcheck"
                 :label="$t('label.bypassvlanoverlapcheck')"
                 v-if="$store.getters.apis.createPrivateGateway && $store.getters.apis.createPrivateGateway.params.filter(x => x.name === 'bypassvlanoverlapcheck').length > 0" >
                 <a-checkbox
-                  v-decorator="['bypassvlanoverlapcheck']"
+                  v-model:checked="gatewayForm.bypassvlanoverlapcheck"
                 ></a-checkbox>
               </a-form-item>
-              <a-form-item :label="$t('label.publicip')" :required="true">
+              <a-form-item :label="$t('label.publicip')" :required="true" ref="ipaddress" name="ipaddress">
                 <a-input
                   :placeholder="placeholders.ipaddress"
-                  v-decorator="['ipaddress', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+                  v-model:value="gatewayForm.name"
                 ></a-input>
               </a-form-item>
-              <a-form-item :label="$t('label.gateway')" :required="true">
+              <a-form-item :label="$t('label.gateway')" :required="true" ref="gateway" name="gateway">
                 <a-input
                   :placeholder="placeholders.gateway"
-                  v-decorator="['gateway', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+                  v-model:value="gatewayForm.gateway"
                 ></a-input>
               </a-form-item>
-              <a-form-item :label="$t('label.netmask')" :required="true">
+              <a-form-item :label="$t('label.netmask')" :required="true" ref="netmask" name="netmask">
                 <a-input
                   :placeholder="placeholders.netmask"
-                  v-decorator="['netmask', {rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+                  v-model:value="gatewayForm.netmask"
                 ></a-input>
               </a-form-item>
-              <a-form-item :label="$t('label.sourcenat')">
-                <a-checkbox v-decorator="['nat']"></a-checkbox>
+              <a-form-item :label="$t('label.sourcenat')" ref="nat" name="nat">
+                <a-checkbox v-model:checked="gatewayForm.nat"></a-checkbox>
               </a-form-item>
-              <a-form-item :label="$t('label.aclid')">
-                <a-select v-decorator="['acl']">
+              <a-form-item :label="$t('label.aclid')" ref="acl" name="acl">
+                <a-select v-model:value="gatewayForm.acl">
                   <a-select-option v-for="item in networkAcls" :key="item.id" :value="item.id">
                     <strong>{{ item.name }}</strong> ({{ item.description }})
                   </a-select-option>
@@ -188,10 +200,10 @@
         <a-button
           v-if="vpnGateways.length === 0"
           type="dashed"
-          icon="plus"
           style="width: 100%"
           :disabled="!('createVpnGateway' in $store.getters.apis)"
           @click="handleCreateVpnGateway">
+          <template #icon><plus-circle /></template>
           {{ $t('label.create.site.vpn.gateway') }}
         </a-button>
         <a-list class="list">
@@ -212,10 +224,10 @@
       <a-tab-pane :tab="$t('label.vpn.connection')" key="vpnc" v-if="'listVpnConnections' in $store.getters.apis">
         <a-button
           type="dashed"
-          icon="plus"
           style="width: 100%"
           :disabled="!('createVpnConnection' in $store.getters.apis)"
           @click="handleOpenModals('vpnConnection')">
+          <template #icon><plus-circle /></template>
           {{ $t('label.create.site.vpn.connection') }}
         </a-button>
         <a-table
@@ -225,12 +237,12 @@
           :dataSource="vpnConnections"
           :pagination="false"
           :rowKey="record => record.id">
-          <a slot="publicip" slot-scope="text, record" href="javascript:;">
+          <template #publicip="text, record">
             <router-link :to="{ path: '/s2svpnconn/' + record.id }">
               {{ text }}
             </router-link>
-          </a>
-          <template slot="state" slot-scope="text">
+          </template>
+          <template #state="text">
             <status :text="text ? text : ''" displayText />
           </template>
         </a-table>
@@ -245,7 +257,7 @@
           @change="changePage"
           @showSizeChange="changePageSize"
           showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
+          <template #buildOptionText="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
           </template>
         </a-pagination>
@@ -255,16 +267,20 @@
           :maskClosable="false"
           @ok="handleVpnConnectionFormSubmit">
           <a-spin :spinning="modals.vpnConnectionLoading">
-            <a-form @submit.prevent="handleVpnConnectionFormSubmit" :form="vpnConnectionForm">
-              <a-form-item :label="$t('label.vpncustomergatewayid')">
-                <a-select v-decorator="['vpncustomergateway']" autoFocus>
+            <a-form
+              @submit.prevent="handleVpnConnectionFormSubmit"
+              :ref="vpnRef"
+              :model="vpnConnectionForm"
+              :rules="vpnRules">
+              <a-form-item :label="$t('label.vpncustomergatewayid')" ref="vpncustomergateway" name="vpncustomergateway">
+                <a-select v-model:value="vpnConnectionForm.vpncustomergateway" autoFocus>
                   <a-select-option v-for="item in vpncustomergateways" :key="item.id" :value="item.id">
                     {{ item.name }}
                   </a-select-option>
                 </a-select>
               </a-form-item>
-              <a-form-item :label="$t('label.passive')">
-                <a-checkbox v-decorator="['passive']"></a-checkbox>
+              <a-form-item :label="$t('label.passive')" ref="passive" name="passive">
+                <a-checkbox v-model:value="vpnConnectionForm.passive"></a-checkbox>
               </a-form-item>
             </a-form>
           </a-spin>
@@ -278,6 +294,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import DetailsTab from '@/components/view/DetailsTab'
@@ -332,12 +349,12 @@ export default {
         {
           title: this.$t('label.ip'),
           dataIndex: 'ipaddress',
-          scopedSlots: { customRender: 'ipaddress' }
+          slots: { customRender: 'ipaddress' }
         },
         {
           title: this.$t('label.state'),
           dataIndex: 'state',
-          scopedSlots: { customRender: 'state' }
+          slots: { customRender: 'state' }
         },
         {
           title: this.$t('label.gateway'),
@@ -356,12 +373,12 @@ export default {
         {
           title: this.$t('label.ip'),
           dataIndex: 'publicip',
-          scopedSlots: { customRender: 'publicip' }
+          slots: { customRender: 'publicip' }
         },
         {
           title: this.$t('label.state'),
           dataIndex: 'state',
-          scopedSlots: { customRender: 'state' }
+          slots: { customRender: 'state' }
         },
         {
           title: this.$t('label.gateway'),
@@ -376,7 +393,7 @@ export default {
         {
           title: this.$t('label.name'),
           dataIndex: 'name',
-          scopedSlots: { customRender: 'name' }
+          slots: { customRender: 'name' }
         },
         {
           title: this.$t('label.description'),
@@ -393,11 +410,6 @@ export default {
       currentTab: 'details'
     }
   },
-  beforeCreate () {
-    this.gatewayForm = this.$form.createForm(this)
-    this.vpnConnectionForm = this.$form.createForm(this)
-    this.networkAclForm = this.$form.createForm(this)
-  },
   watch: {
     loading (newData, oldData) {
       if (!newData && this.resource.id) {
@@ -409,10 +421,30 @@ export default {
     }
   },
   created () {
+    this.initForm()
     this.handleFetchData()
     this.setCurrentTab()
   },
   methods: {
+    initForm () {
+      this.gatewayRef = ref()
+      this.vpnRef = ref()
+      this.networkRef = ref()
+      this.gatewayForm = reactive({})
+      this.vpnConnectionForm = reactive({})
+      this.networkAclForm = reactive({})
+      this.gatewayRules = reactive({
+        vlan: [{ required: true, message: this.$t('label.required') }],
+        ipaddress: [{ required: true, message: this.$t('label.required') }],
+        gateway: [{ required: true, message: this.$t('label.required') }],
+        netmask: [{ required: true, message: this.$t('label.required') }]
+      })
+      this.vpnRules = reactive({})
+      this.networkRules = reactive({
+        name: [{ required: true, message: this.$t('label.required') }],
+        description: [{ required: true, message: this.$t('label.required') }]
+      })
+    },
     setCurrentTab () {
       this.currentTab = this.$route.query.tab ? this.$route.query.tab : 'details'
     },
@@ -505,9 +537,7 @@ export default {
         this.networkAcls = json.listnetworkacllistsresponse.networkacllist
         this.itemCounts.networkAcls = json.listnetworkacllistsresponse.count
         if (this.modals.gateway === true) {
-          this.$nextTick(() => {
-            this.gatewayForm.setFieldsValue({ acl: this.networkAcls[0].id })
-          })
+          this.gatewayForm.acl = this.networkAcls[0].id
         }
       }).catch(error => {
         this.$notifyError(error)
@@ -520,9 +550,7 @@ export default {
       api('listPhysicalNetworks', { zoneid: this.resource.zoneid }).then(json => {
         this.physicalnetworks = json.listphysicalnetworksresponse.physicalnetwork
         if (this.modals.gateway === true) {
-          this.$nextTick(() => {
-            this.gatewayForm.setFieldsValue({ physicalnetwork: this.physicalnetworks[0].id })
-          })
+          this.gatewayForm.physicalnetwork = this.physicalnetworks[0].id
         }
       }).catch(error => {
         this.$notifyError(error)
@@ -535,9 +563,7 @@ export default {
       api('listVpnCustomerGateways', { listAll: true }).then(json => {
         this.vpncustomergateways = json.listvpncustomergatewaysresponse.vpncustomergateway
         if (this.modals.vpnConnection === true) {
-          this.$nextTick(() => {
-            this.vpnConnectionForm.setFieldsValue({ vpncustomergateway: this.vpncustomergateways[0].id })
-          })
+          this.vpnConnectionForm.vpncustomergateway = this.vpncustomergateways[0].id
         }
       }).catch(error => {
         this.$notifyError(error)
@@ -549,32 +575,28 @@ export default {
       switch (e) {
         case 'privateGateways':
           this.modals.gateway = true
-          this.gatewayForm.resetFields()
+          this.gatewayRef.value.resetFields()
           this.fetchAclList()
           this.fetchPhysicalNetworks()
           break
         case 'vpnConnection':
           this.modals.vpnConnection = true
-          this.vpnConnectionForm.resetFields()
+          this.vpnRef.value.resetFields()
           this.fetchVpnCustomerGateways()
           this.fetchVpnGateways()
           break
         case 'networkAcl':
           this.modals.networkAcl = true
-          this.networkAclForm.resetFields()
+          this.networkRef.value.resetFields()
           break
       }
     },
     handleGatewayFormSubmit () {
       this.modals.gatewayLoading = true
 
-      this.gatewayForm.validateFields(errors => {
-        if (errors) {
-          this.modals.gatewayLoading = false
-          return
-        }
+      this.gatewayRef.value.validate().then(() => {
+        const data = toRaw(this.gatewayForm)
 
-        const data = this.gatewayForm.getFieldsValue()
         const params = {
           sourcenatsupported: data.nat,
           physicalnetworkid: data.physicalnetwork,
@@ -620,17 +642,14 @@ export default {
           this.modals.gateway = false
           this.handleFetchData()
         })
-      })
+      }).catch(() => { this.modals.gatewayLoading = false })
     },
     handleVpnConnectionFormSubmit () {
       this.fetchLoading = true
       this.modals.vpnConnection = false
 
-      this.vpnConnectionForm.validateFields((errors, values) => {
-        if (errors) {
-          this.fetchLoading = false
-          return
-        }
+      this.vpnRef.value.validate().then(() => {
+        const values = toRaw(this.vpnConnectionForm)
 
         api('createVpnConnection', {
           s2svpngatewayid: this.vpnGateways[0].id,
@@ -666,16 +685,14 @@ export default {
           this.fetchVpnConnections()
           this.fetchLoading = false
         })
-      })
+      }).catch(() => { this.fetchLoading = false })
     },
     handleNetworkAclFormSubmit () {
       this.fetchLoading = true
       this.modals.networkAcl = false
 
-      this.networkAclForm.validateFields((errors, values) => {
-        if (errors) {
-          this.fetchLoading = false
-        }
+      this.networkRef.value.validate().then(() => {
+        const values = toRaw(this.networkAclForm)
 
         api('createNetworkACLList', {
           name: values.name,
@@ -708,7 +725,7 @@ export default {
           this.fetchLoading = false
           this.fetchAclList()
         })
-      })
+      }).catch(() => { this.fetchLoading = false })
     },
     handleCreateVpnGateway () {
       this.fetchLoading = true

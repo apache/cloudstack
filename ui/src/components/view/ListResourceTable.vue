@@ -193,7 +193,7 @@ export default {
         columns.push({
           dataIndex: col,
           title: this.$t('label.' + col),
-          scopedSlots: { customRender: col }
+          slots: { customRender: col }
         })
       }
       return columns

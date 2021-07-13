@@ -109,28 +109,28 @@ export default {
           title: '',
           dataIndex: 'icon',
           width: 30,
-          scopedSlots: { customRender: 'icon' }
+          slots: { customRender: 'icon' }
         },
         {
           title: this.$t('label.time'),
           dataIndex: 'schedule',
-          scopedSlots: { customRender: 'time' }
+          slots: { customRender: 'time' }
         },
         {
           title: '',
           dataIndex: 'interval',
-          scopedSlots: { customRender: 'interval' }
+          slots: { customRender: 'interval' }
         },
         {
           title: this.$t('label.timezone'),
           dataIndex: 'timezone',
-          scopedSlots: { customRender: 'timezone' }
+          slots: { customRender: 'timezone' }
         },
         {
           title: this.$t('label.action'),
           dataIndex: 'action',
           width: 80,
-          scopedSlots: { customRender: 'action' }
+          slots: { customRender: 'action' }
         }
       ]
     }

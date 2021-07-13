@@ -555,7 +555,10 @@
           <router-link
             v-if="$router.resolve('/' + item.name).name !== '404'"
             :to="{ path: '/' + item.name + '?' + item.param + '=' + (item.value ? resource[item.value] : item.param === 'account' ? resource.name + '&domainid=' + resource.domainid : resource.id) }">
-            <a-button style="margin-right: 10px" :icon="$router.resolve('/' + item.name).meta.icon" >
+            <a-button style="margin-right: 10px">
+              <template #icon>
+                <render-icon :icon="$router.resolve('/' + item.name).meta.icon" />
+              </template>
               {{ $t('label.view') + ' ' + $t(item.title) }}
             </a-button>
           </router-link>

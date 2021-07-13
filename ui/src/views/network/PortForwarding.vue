@@ -24,7 +24,7 @@
           <a-input-group class="form__item__input-container" compact>
             <a-input
               autoFocus
-              v-model="newRule.privateport"
+              v-model:value="newRule.privateport"
               :placeholder="$t('label.start')"
               style="border-right: 0; width: 60px; margin-right: 0;"></a-input>
             <a-input
@@ -33,7 +33,7 @@
               style="width: 30px; border-left: 0; border-right: 0; pointer-events: none; backgroundColor: #fff; text-align:
               center; margin-right: 0;"></a-input>
             <a-input
-              v-model="newRule.privateendport"
+              v-model:value="newRule.privateendport"
               :placeholder="$t('label.end')"
               style="border-left: 0; width: 60px; text-align: right; margin-right: 0;"></a-input>
           </a-input-group>
@@ -42,7 +42,7 @@
           <div class="form__label">{{ $t('label.publicport') }}</div>
           <a-input-group class="form__item__input-container" compact>
             <a-input
-              v-model="newRule.publicport"
+              v-model:value="newRule.publicport"
               :placeholder="$t('label.start')"
               style="border-right: 0; width: 60px; margin-right: 0;"></a-input>
             <a-input
@@ -51,14 +51,14 @@
               style="width: 30px; border-left: 0; border-right: 0; pointer-events: none; backgroundColor: #fff;
               text-align: center; margin-right: 0;"></a-input>
             <a-input
-              v-model="newRule.publicendport"
+              v-model:value="newRule.publicendport"
               :placeholder="$t('label.end')"
               style="border-left: 0; width: 60px; text-align: right; margin-right: 0;"></a-input>
           </a-input-group>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.protocol') }}</div>
-          <a-select v-model="newRule.protocol" style="width: 100%;">
+          <a-select v-model:value="newRule.protocol" style="width: 100%;">
             <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
             <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
           </a-select>
@@ -80,22 +80,22 @@
       :dataSource="portForwardRules"
       :pagination="false"
       :rowKey="record => record.id">
-      <template slot="privateport" slot-scope="record">
+      <template #privateport="{record}">
         {{ record.privateport }} - {{ record.privateendport }}
       </template>
-      <template slot="publicport" slot-scope="record">
+      <template #publicport="{record}">
         {{ record.publicport }} - {{ record.publicendport }}
       </template>
-      <template slot="protocol" slot-scope="record">
-        {{ record.protocol | capitalise }}
+      <template #protocol="{record}">
+        {{ capitalise(record.protocol) }}
       </template>
-      <template slot="vm" slot-scope="record">
+      <template #vm="{record}">
         <div><a-icon type="desktop"/>
           <router-link
             :to="{ path: '/vm/' + record.virtualmachineid }">
             {{ record.virtualmachinename }}</router-link> ({{ record.vmguestip }})</div>
       </template>
-      <template slot="actions" slot-scope="record">
+      <template #actions="{record}">
         <div class="actions">
           <tooltip-button :tooltip="$t('label.tags')" icon="tag" buttonClass="rule-action" @click="() => openTagsModal(record.id)" />
           <tooltip-button
@@ -119,7 +119,7 @@
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
@@ -205,7 +205,7 @@
           :pagination="false"
           :rowKey="record => record.id"
           :scroll="{ y: 300 }">
-          <div slot="name" slot-scope="text, record">
+          <template #name="{text, record}">
             <span>
               {{ text }}
             </span>
@@ -219,15 +219,15 @@
                 {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
               </a-select-option>
             </a-select>
-          </div>
+          </template>
 
-          <div slot="state" slot-scope="text">
+          <template #state="{text}">
             <status :text="text ? text : ''" displayText></status>
-          </div>
+          </template>
 
-          <div slot="action" slot-scope="text, record" style="text-align: center">
+          <template #action="{record}" style="text-align: center">
             <a-radio :value="record.id" @change="e => fetchNics(e)" />
-          </div>
+          </template>
         </a-table>
         <a-pagination
           class="pagination"
@@ -240,7 +240,7 @@
           @change="handleChangePage"
           @showSizeChange="handleChangePageSize"
           showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
+          <template #buildOptionText="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
           </template>
         </a-pagination>
@@ -300,15 +300,15 @@ export default {
       columns: [
         {
           title: this.$t('label.privateport'),
-          scopedSlots: { customRender: 'privateport' }
+          slots: { customRender: 'privateport' }
         },
         {
           title: this.$t('label.publicport'),
-          scopedSlots: { customRender: 'publicport' }
+          slots: { customRender: 'publicport' }
         },
         {
           title: this.$t('label.protocol'),
-          scopedSlots: { customRender: 'protocol' }
+          slots: { customRender: 'protocol' }
         },
         {
           title: this.$t('label.state'),
@@ -316,11 +316,11 @@ export default {
         },
         {
           title: this.$t('label.vm'),
-          scopedSlots: { customRender: 'vm' }
+          slots: { customRender: 'vm' }
         },
         {
           title: this.$t('label.action'),
-          scopedSlots: { customRender: 'actions' }
+          slots: { customRender: 'actions' }
         }
       ],
       tiers: {
@@ -331,13 +331,13 @@ export default {
         {
           title: this.$t('label.name'),
           dataIndex: 'name',
-          scopedSlots: { customRender: 'name' },
+          slots: { customRender: 'name' },
           width: 210
         },
         {
           title: this.$t('label.state'),
           dataIndex: 'state',
-          scopedSlots: { customRender: 'state' }
+          slots: { customRender: 'state' }
         },
         {
           title: this.$t('label.displayname'),
@@ -359,7 +359,7 @@ export default {
         {
           title: this.$t('label.select'),
           dataIndex: 'action',
-          scopedSlots: { customRender: 'action' },
+          slots: { customRender: 'action' },
           width: 80
         }
       ],
@@ -377,14 +377,7 @@ export default {
       if (!newItem || !newItem.id) {
         return
       }
-      this.resource = newItem
       this.fetchData()
-    }
-  },
-  filters: {
-    capitalise: val => {
-      if (val === 'all') return this.$t('label.all')
-      return val.toUpperCase()
     }
   },
   methods: {
@@ -655,6 +648,10 @@ export default {
     onSearch (value) {
       this.searchQuery = value
       this.fetchVirtualMachines()
+    },
+    capitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
     }
   }
 }

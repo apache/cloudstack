@@ -28,12 +28,13 @@
         :loading="loading"
         :bordered="true"
         style="width:100%">
-        <component
-          v-if="tabs.length === 1"
-          :is="tabs[0].component"
-          :resource="resource"
-          :loading="loading"
-          :tab="tabs[0].name" />
+        <keep-alive v-if="tabs.length === 1">
+          <component
+            :is="tabs[0].component"
+            :resource="resource"
+            :loading="loading"
+            :tab="tabs[0].name" />
+        </keep-alive>
         <a-tabs
           v-else
           style="width: 100%"

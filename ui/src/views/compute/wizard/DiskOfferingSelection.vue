@@ -110,15 +110,13 @@ export default {
         },
         {
           dataIndex: 'disksize',
-          slots: { title: 'diskSizeTitle' },
           width: '30%',
-          scopedSlots: { customRender: 'diskSize' }
+          slots: { customRender: 'diskSize', title: 'diskSizeTitle' }
         },
         {
           dataIndex: 'iops',
-          slots: { title: 'iopsTitle' },
           width: '30%',
-          scopedSlots: { customRender: 'iops' }
+          slots: { customRender: 'iops', title: 'iopsTitle' }
         }
       ],
       selectedRowKeys: ['0'],

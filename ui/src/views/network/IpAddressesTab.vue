@@ -21,19 +21,19 @@
       <a-button
         :disabled="!('associateIpAddress' in $store.getters.apis) || resource.type === 'Shared'"
         type="dashed"
-        icon="plus"
         style="width: 100%; margin-bottom: 15px"
         @click="onShowAcquireIp">
+        <template #icon><plus-outlined /></template>
         {{ $t('label.acquire.new.ip') }}
       </a-button>
       <div v-if="$route.path.startsWith('/vpc')">
-        Select Tier:
+        {{ $t('label.select.tier"') + ':' }}
         <a-select
           autoFocus
           style="width: 40%; margin-left: 15px;margin-bottom: 15px"
           :loading="fetchLoading"
           defaultActiveFirstOption
-          :value="vpcTier"
+          v-model:value="vpcTier"
           @change="handleTierSelect"
         >
           <a-select-option key="all" value="">
@@ -51,27 +51,27 @@
         :dataSource="ips"
         :rowKey="item => item.id"
         :pagination="false" >
-        <template slot="ipaddress" slot-scope="text, record">
+        <template #ipaddress="{ text, record }">
           <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/publicip/' + record.id }" >{{ text }} </router-link>
           <div v-else>{{ text }}</div>
           <a-tag v-if="record.issourcenat === true">source-nat</a-tag>
         </template>
 
-        <template slot="state" slot-scope="text, record">
+        <template #state="{ record }">
           <status :text="record.state" displayText />
         </template>
 
-        <template slot="virtualmachineid" slot-scope="text, record">
+        <template #virtualmachineid="{ record }">
           <a-icon type="desktop" v-if="record.virtualmachineid" />
           <router-link :to="{ path: '/vm/' + record.virtualmachineid }" > {{ record.virtualmachinename || record.virtualmachineid }} </router-link>
         </template>
 
-        <template slot="associatednetworkname" slot-scope="text, record">
+        <template #associatednetworkname="{ record }">
           <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/guestnetwork/' + record.associatednetworkid }" > {{ record.associatednetworkname || record.associatednetworkid }} </router-link>
           <div v-else>{{ record.networkname }}</div>
         </template>
 
-        <template slot="action" slot-scope="text, record">
+        <template #action="{ record }">
           <tooltip-button
             v-if="record.issourcenat !== true && record.forvirtualnetwork === true"
             :tooltip="$t('label.action.release.ip')"
@@ -93,7 +93,7 @@
         @change="changePage"
         @showSizeChange="changePageSize"
         showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>
@@ -116,7 +116,7 @@
             autoFocus
             style="width: 100%;"
             showSearch
-            v-model="acquireIp">
+            v-model:value="acquireIp">
             <a-select-option
               v-for="ip in listPublicIpAddress"
               :key="ip.ipaddress">{{ ip.ipaddress }}</a-select-option>
@@ -163,26 +163,26 @@ export default {
         {
           title: this.$t('label.ipaddress'),
           dataIndex: 'ipaddress',
-          scopedSlots: { customRender: 'ipaddress' }
+          slots: { customRender: 'ipaddress' }
         },
         {
           title: this.$t('label.state'),
           dataIndex: 'state',
-          scopedSlots: { customRender: 'state' }
+          slots: { customRender: 'state' }
         },
         {
           title: this.$t('label.vm'),
           dataIndex: 'virtualmachineid',
-          scopedSlots: { customRender: 'virtualmachineid' }
+          slots: { customRender: 'virtualmachineid' }
         },
         {
           title: this.$t('label.network'),
           dataIndex: 'associatednetworkname',
-          scopedSlots: { customRender: 'associatednetworkname' }
+          slots: { customRender: 'associatednetworkname' }
         },
         {
           title: '',
-          scopedSlots: { customRender: 'action' }
+          slots: { customRender: 'action' }
         }
       ],
       showAcquireIp: false,

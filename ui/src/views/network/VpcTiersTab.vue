@@ -19,10 +19,12 @@
   <a-spin :spinning="fetchLoading">
     <a-button
       type="dashed"
-      icon="plus"
       style="width: 100%;margin-bottom: 20px;"
       :disabled="!('createNetwork' in $store.getters.apis)"
-      @click="handleOpenModal">{{ $t('label.add.network') }}</a-button>
+      @click="handleOpenModal">
+      <template #icon><plus-outlined /></template>
+      {{ $t('label.add.network') }}
+    </a-button>
     <a-list class="list">
       <a-list-item v-for="(network, idx) in networks" :key="idx" class="list__item">
         <div class="list__item-outer-container">
@@ -58,16 +60,16 @@
             </div>
           </div>
           <a-collapse :bordered="false" style="margin-left: -18px">
-            <template v-slot:expandIcon="props">
-              <a-icon type="caret-right" :rotate="props.isActive ? 90 : 0" />
+            <template #expandIcon="{ props }">
+              <caret-right-outlined :rotate="props.isActive ? 90 : 0" />
             </template>
             <a-collapse-panel :header="$t('label.instances')" key="vm" :style="customStyle">
               <a-button
-                icon="plus"
                 type="dashed"
                 style="margin-bottom: 15px; width: 100%"
                 :disabled="!('deployVirtualMachine' in $store.getters.apis)"
                 @click="$router.push({ path: '/action/deployVirtualMachine?networkid=' + network.id + '&zoneid=' + network.zoneid })">
+                <template #icon><plus-outlined /></template>
                 {{ $t('label.vm.add') }}
               </a-button>
               <a-table
@@ -78,15 +80,15 @@
                 :rowKey="item => item.id"
                 :pagination="false"
                 :loading="fetchLoading">
-                <template slot="name" slot-scope="text, item">
+                <template #name="{ item }">
                   <router-link
                     :to="{ path: '/vm/'+item.id}">{{ item.name }}
                   </router-link>
                 </template>
-                <template slot="state" slot-scope="text, item">
+                <template #state="{ item }">
                   <status :text="item.state" displayText></status>
                 </template>
-                <template slot="ip" slot-scope="text, item">
+                <template #ip="{ item }">
                   <div v-for="nic in item.nic" :key="nic.id">
                     {{ nic.networkid === network.id ? nic.ipaddress : '' }}
                   </div>
@@ -104,18 +106,18 @@
                 @change="changePage"
                 @showSizeChange="changePageSize"
                 showSizeChanger>
-                <template slot="buildOptionText" slot-scope="props">
+                <template #buildOptionText="props">
                   <span>{{ props.value }} / {{ $t('label.page') }}</span>
                 </template>
               </a-pagination>
             </a-collapse-panel>
             <a-collapse-panel :header="$t('label.internal.lb')" key="ilb" :style="customStyle" :disabled="!showIlb(network)" >
               <a-button
-                icon="plus"
                 type="dashed"
                 style="margin-bottom: 15px; width: 100%"
                 :disabled="!('createLoadBalancer' in $store.getters.apis)"
                 @click="handleAddInternalLB(network.id)">
+                <template #icon><plus-outlined /></template>
                 {{ $t('label.add.internal.lb') }}
               </a-button>
               <a-table
@@ -126,7 +128,7 @@
                 :rowKey="item => item.id"
                 :pagination="false"
                 :loading="fetchLoading">
-                <template slot="name" slot-scope="text, item">
+                <template #name="{ item }">
                   <router-link
                     :to="{ path: '/ilb/'+item.id}">{{ item.name }}
                   </router-link>
@@ -144,7 +146,7 @@
                 @change="changePage"
                 @showSizeChange="changePageSize"
                 showSizeChanger>
-                <template slot="buildOptionText" slot-scope="props">
+                <template #buildOptionText="props">
                   <span>{{ props.value }} / {{ $t('label.page') }}</span>
                 </template>
               </a-pagination>
@@ -160,38 +162,40 @@
       :maskClosable="false"
       @ok="handleAddNetworkSubmit">
       <a-spin :spinning="modalLoading">
-        <a-form @submit.prevent="handleAddNetworkSubmit" :form="form">
-          <a-form-item :label="$t('label.name')">
+        <a-form
+          @submit.prevent="handleAddNetworkSubmit"
+          :ref="createNetworkRef"
+          :model="createNetworkForm"
+          :rules="createNetworkRules">
+          <a-form-item ref="name" name="name" :label="$t('label.name')">
             <a-input
               :placeholder="$t('label.unique.name.tier')"
-              v-decorator="['name',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+              v-model:value="createNetworkForm.name"
               autoFocus></a-input>
           </a-form-item>
-          <a-form-item :label="$t('label.networkofferingid')">
-            <a-select
-              v-decorator="['networkOffering',{rules: [{ required: true, message: `${$t('label.required')}` }]}]">
+          <a-form-item ref="networkOffering" name="networkOffering" :label="$t('label.networkofferingid')">
+            <a-select v-model:value="createNetworkForm.networkOffering">
               <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id">
                 {{ item.displaytext || item.name || item.description }}
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item :label="$t('label.gateway')">
+          <a-form-item ref="gateway" name="gateway" :label="$t('label.gateway')">
             <a-input
               :placeholder="$t('label.create.network.gateway.description')"
-              v-decorator="['gateway',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
+              v-model:value="createNetworkForm.gateway"></a-input>
           </a-form-item>
-          <a-form-item :label="$t('label.netmask')">
+          <a-form-item ref="netmask" name="netmask" :label="$t('label.netmask')">
             <a-input
               :placeholder="$t('label.create.network.netmask.description')"
-              v-decorator="['netmask',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"></a-input>
+              v-model:value="createNetworkForm.netmask"></a-input>
           </a-form-item>
-          <a-form-item :label="$t('label.externalid')">
-            <a-input
-              v-decorator="['externalId']"></a-input>
+          <a-form-item ref="externalId" name="externalId" :label="$t('label.externalid')">
+            <a-input v-model:value="createNetworkForm.externalId"/>
           </a-form-item>
-          <a-form-item :label="$t('label.aclid')">
+          <a-form-item ref="acl" name="acl" :label="$t('label.aclid')">
             <a-select
-              v-decorator="['acl',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"
+              v-model:value="createNetworkForm.acl"
               @change="val => { this.handleNetworkAclChange(val) }">
               <a-select-option v-for="item in networkAclList" :key="item.id" :value="item.id">
                 <strong>{{ item.name }}</strong> ({{ item.description }})
@@ -199,10 +203,10 @@
             </a-select>
           </a-form-item>
           <a-alert v-if="this.selectedNetworkAcl.name==='default_allow'" type="warning" show-icon>
-            <span slot="message" v-html="$t('message.network.acl.default.allow')" />
+            <template #message><div v-html="$t('message.network.acl.default.allow')"/></template>
           </a-alert>
           <a-alert v-else-if="this.selectedNetworkAcl.name==='default_deny'" type="warning" show-icon>
-            <span slot="message" v-html="$t('message.network.acl.default.deny')" />
+            <template #message><div v-html="$t('message.network.acl.default.deny')"/></template>
           </a-alert>
         </a-form>
       </a-spin>
@@ -214,39 +218,35 @@
       :maskClosable="false"
       @ok="handleAddInternalLBSubmit">
       <a-spin :spinning="modalLoading">
-        <a-form @submit.prevent="handleAddInternalLBSubmit" :form="form">
-          <a-form-item :label="$t('label.name')">
+        <a-form
+          @submit.prevent="handleAddInternalLBSubmit"
+          :ref="internalLbRef"
+          :form="internalLbForm"
+          :rules="internalLbRules">
+          <a-form-item ref="name" name="name" :label="$t('label.name')">
             <a-input
               autoFocus
               :placeholder="$t('label.internallb.name.description')"
-              v-decorator="['name', { rules: [{ required: true, message: $t('message.error.internallb.name')}] }]"/>
+              v-model:value="internalLbForm.name"/>
           </a-form-item>
-          <a-form-item :label="$t('label.description')">
+          <a-form-item ref="description" name="description" :label="$t('label.description')">
             <a-input
               :placeholder="$t('label.internallb.description')"
-              v-decorator="['description']"/>
+              v-model:value="internalLbForm.description"/>
           </a-form-item>
-          <a-form-item :label="$t('label.sourceipaddress')">
+          <a-form-item ref="sourceIP" name="sourceIP" :label="$t('label.sourceipaddress')">
             <a-input
               :placeholder="$t('label.internallb.sourceip.description')"
-              v-decorator="['sourceIP']"/>
+              v-model:value="internalLbForm.sourceIP"/>
           </a-form-item>
-          <a-form-item :label="$t('label.sourceport')">
-            <a-input
-              v-decorator="['sourcePort', { rules: [{ required: true, message: $t('message.error.internallb.source.port')}] }]"/>
+          <a-form-item ref="sourcePort" name="sourcePort" :label="$t('label.sourceport')">
+            <a-input v-model:value="internalLbForm.sourcePort"/>
           </a-form-item>
-          <a-form-item :label="$t('label.instanceport')">
-            <a-input
-              v-decorator="['instancePort', { rules: [{ required: true, message: $t('message.error.internallb.instance.port')}] }]"/>
+          <a-form-item ref="instancePort" name="instancePort" :label="$t('label.instanceport')">
+            <a-input v-model:value="internalLbForm.instancePort"/>
           </a-form-item>
-          <a-form-item :label="$t('label.algorithm')">
-            <a-select
-              v-decorator="[
-                'algorithm',
-                {
-                  initialValue: 'Source',
-                  rules: [{ required: true, message: `${$t('label.required')}`}]
-                }]">
+          <a-form-item ref="algorithm" name="algorithm" :label="$t('label.algorithm')">
+            <a-select v-model:value="internalLbForm.algorithm">
               <a-select-option v-for="(key, idx) in Object.keys(algorithms)" :key="idx" :value="algorithms[key]">
                 {{ key }}
               </a-select-option>
@@ -259,6 +259,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
 
@@ -302,7 +303,7 @@ export default {
         {
           title: this.$t('label.name'),
           dataIndex: 'name',
-          scopedSlots: { customRender: 'name' }
+          slots: { customRender: 'name' }
         },
         {
           title: this.$t('label.sourceipaddress'),
@@ -321,7 +322,7 @@ export default {
         {
           title: this.$t('label.ip'),
           dataIndex: 'ipaddress',
-          scopedSlots: { customRender: 'ipaddress' }
+          slots: { customRender: 'ipaddress' }
         },
         {
           title: this.$t('label.state'),
@@ -340,7 +341,7 @@ export default {
         {
           title: this.$t('label.ips'),
           dataIndex: 'ipaddress',
-          scopedSlots: { customRender: 'ipaddress' }
+          slots: { customRender: 'ipaddress' }
         },
         {
           title: this.$t('label.zoneid'),
@@ -359,16 +360,16 @@ export default {
         {
           title: this.$t('label.name'),
           dataIndex: 'name',
-          scopedSlots: { customRender: 'name' }
+          slots: { customRender: 'name' }
         },
         {
           title: this.$t('label.state'),
           dataIndex: 'state',
-          scopedSlots: { customRender: 'state' }
+          slots: { customRender: 'state' }
         },
         {
           title: this.$t('label.ip'),
-          scopedSlots: { customRender: 'ip' }
+          slots: { customRender: 'ip' }
         }
       ],
       customStyle: 'margin-bottom: -10px; border-bottom-style: none',
@@ -389,6 +390,7 @@ export default {
     }
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   watch: {
@@ -398,10 +400,26 @@ export default {
       }
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   methods: {
+    initForm () {
+      this.createNetworkRef = ref()
+      this.internalLbRef = ref()
+      this.createNetworkForm = reactive({})
+      this.internalLbForm = reactive({ algorithm: 'Source' })
+      this.createNetworkRules = reactive({
+        name: [{ required: true, message: this.$t('label.required') }],
+        networkOffering: [{ required: true, message: this.$t('label.required') }],
+        gateway: [{ required: true, message: this.$t('label.required') }],
+        netmask: [{ required: true, message: this.$t('label.required') }],
+        acl: [{ required: true, message: this.$t('label.required') }]
+      })
+      this.internalLbRules = reactive({
+        name: [{ required: true, message: this.$t('message.error.internallb.name') }],
+        sourcePort: [{ required: true, message: this.$t('message.error.internallb.source.port') }],
+        instancePort: [{ required: true, message: this.$t('message.error.internallb.instance.port') }],
+        algorithm: [{ required: true, message: this.$t('label.required') }]
+      })
+    },
     showIlb (network) {
       return network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value === 'Internal').length > 0)).length > 0 || false
     },
@@ -482,11 +500,7 @@ export default {
           }
           this.networkOfferings = filteredOfferings
         }
-        this.$nextTick(function () {
-          this.form.setFieldsValue({
-            networkOffering: this.networkOfferings[0].id
-          })
-        })
+        this.createNetworkForm.networkOffering = this.networkOfferings[0].id
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -535,24 +549,19 @@ export default {
       this.$emit('close-action')
     },
     handleOpenModal () {
-      this.form = this.$form.createForm(this)
       this.fetchNetworkAclList()
       this.fetchNetworkOfferings()
       this.showCreateNetworkModal = true
     },
     handleAddInternalLB (id) {
-      this.form = this.$form.createForm(this)
       this.showAddInternalLB = true
       this.networkid = id
     },
     handleAddNetworkSubmit () {
       this.fetchLoading = true
 
-      this.form.validateFields((errors, values) => {
-        if (errors) {
-          this.fetchLoading = false
-          return
-        }
+      this.createNetworkRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         this.showCreateNetworkModal = false
         api('createNetwork', {
@@ -578,16 +587,14 @@ export default {
           this.fetchData()
           this.fetchLoading = false
         })
-      })
+      }).catch(() => { this.fetchLoading = false })
     },
     handleAddInternalLBSubmit () {
       this.fetchLoading = true
       this.modalLoading = true
-      this.form.validateFields((errors, values) => {
-        if (errors) {
-          this.fetchLoading = false
-          return
-        }
+      this.internalLbRef.value.validate().then(() => {
+        const values = toRaw(this.form)
+
         api('createLoadBalancer', {
           name: values.name,
           sourceport: values.sourcePort,
@@ -628,7 +635,7 @@ export default {
           this.showAddInternalLB = false
           this.fetchData()
         })
-      })
+      }).catch(() => { this.fetchLoading = true })
     },
     changePage (page, pageSize) {
       this.page = page

@@ -175,12 +175,12 @@ export default {
       {
         title: this.$t('label.name'),
         dataIndex: 'name',
-        scopedSlots: { customRender: 'name' }
+        slots: { customRender: 'name' }
       },
       {
         title: this.$t('label.state'),
         dataIndex: 'state',
-        scopedSlots: { customRender: 'state' }
+        slots: { customRender: 'state' }
       },
       {
         title: this.$t('label.instancename'),
@@ -193,7 +193,7 @@ export default {
       {
         title: this.$t('label.ssh.port'),
         dataIndex: 'port',
-        scopedSlots: { customRender: 'port' }
+        slots: { customRender: 'port' }
       },
       {
         title: this.$t('label.zonename'),

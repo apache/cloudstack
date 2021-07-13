@@ -21,36 +21,36 @@
       <div class="form">
         <div class="form__item">
           <div class="form__label">{{ $t('label.sourcecidr') }}</div>
-          <a-input v-model="newRule.cidrlist" autoFocus></a-input>
+          <a-input v-model:value="newRule.cidrlist" autoFocus></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.destcidr') }}</div>
-          <a-input v-model="newRule.destcidrlist"></a-input>
+          <a-input v-model:value="newRule.destcidrlist"></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.protocol') }}</div>
-          <a-select v-model="newRule.protocol" style="width: 100%;" @change="resetRulePorts">
-            <a-select-option value="tcp">{{ $t('label.tcp') | capitalise }}</a-select-option>
-            <a-select-option value="udp">{{ $t('label.udp') | capitalise }}</a-select-option>
-            <a-select-option value="icmp">{{ $t('label.icmp') | capitalise }}</a-select-option>
+          <a-select v-model:value="newRule.protocol" style="width: 100%;" @change="resetRulePorts">
+            <a-select-option value="tcp">{{ capitalise($t('label.tcp'))  }}</a-select-option>
+            <a-select-option value="udp">{{ capitalise($t('label.udp')) }}</a-select-option>
+            <a-select-option value="icmp">{{ capitalise($t('label.icmp')) }}</a-select-option>
             <a-select-option value="all">{{ $t('label.all') }}</a-select-option>
           </a-select>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
           <div class="form__label">{{ $t('label.startport') }}</div>
-          <a-input v-model="newRule.startport"></a-input>
+          <a-input v-model:value="newRule.startport"></a-input>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
           <div class="form__label">{{ $t('label.endport') }}</div>
-          <a-input v-model="newRule.endport"></a-input>
+          <a-input v-model:value="newRule.endport"></a-input>
         </div>
         <div v-show="newRule.protocol === 'icmp'" class="form__item">
           <div class="form__label">{{ $t('label.icmptype') }}</div>
-          <a-input v-model="newRule.icmptype"></a-input>
+          <a-input v-model:value="newRule.icmptype"></a-input>
         </div>
         <div v-show="newRule.protocol === 'icmp'" class="form__item">
           <div class="form__label">{{ $t('label.icmpcode') }}</div>
-          <a-input v-model="newRule.icmpcode"></a-input>
+          <a-input v-model:value="newRule.icmpcode"></a-input>
         </div>
         <div class="form__item">
           <a-button :disabled="!('createEgressFirewallRule' in $store.getters.apis)" type="primary" icon="plus" @click="addRule">{{ $t('label.add') }}</a-button>
@@ -68,16 +68,16 @@
       :dataSource="egressRules"
       :pagination="false"
       :rowKey="record => record.id">
-      <template slot="protocol" slot-scope="record">
-        {{ record.protocol | capitalise }}
+      <template #protocol="{ record }">
+        {{ capitalise(record.protocol) }}
       </template>
-      <template slot="startport" slot-scope="record">
+      <template #startport="{ record }">
         {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : 'All' }}
       </template>
-      <template slot="endport" slot-scope="record">
+      <template #endport="{ record }">
         {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : 'All' }}
       </template>
-      <template slot="actions" slot-scope="record">
+      <template #actions="{ record }">
         <tooltip-button :tooltip="$t('label.delete')" :disabled="!('deleteEgressFirewallRule' in $store.getters.apis)" type="danger" icon="delete" @click="deleteRule(record)" />
       </template>
     </a-table>
@@ -92,7 +92,7 @@
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
@@ -143,19 +143,19 @@ export default {
         },
         {
           title: this.$t('label.protocol'),
-          scopedSlots: { customRender: 'protocol' }
+          slots: { customRender: 'protocol' }
         },
         {
           title: this.$t('label.icmptype.start.port'),
-          scopedSlots: { customRender: 'startport' }
+          slots: { customRender: 'startport' }
         },
         {
           title: this.$t('label.icmpcode.end.port'),
-          scopedSlots: { customRender: 'endport' }
+          slots: { customRender: 'endport' }
         },
         {
           title: this.$t('label.action'),
-          scopedSlots: { customRender: 'actions' }
+          slots: { customRender: 'actions' }
         }
       ]
     }
@@ -163,18 +163,11 @@ export default {
   created () {
     this.fetchData()
   },
-  filters: {
-    capitalise: val => {
-      if (val === 'all') return this.$t('label.all')
-      return val.toUpperCase()
-    }
-  },
   watch: {
     resource: function (newItem, oldItem) {
       if (!newItem || !newItem.id) {
         return
       }
-      this.resource = newItem
       this.fetchData()
     }
   },
@@ -261,6 +254,10 @@ export default {
       this.page = currentPage
       this.pageSize = pageSize
       this.fetchData()
+    },
+    capitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
     }
   }
 }
