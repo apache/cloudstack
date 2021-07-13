@@ -31,7 +31,6 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;

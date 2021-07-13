@@ -208,7 +208,6 @@ import org.apache.cloudstack.api.command.admin.storage.UpdateCloudToUseObjectSto
 import org.apache.cloudstack.api.command.admin.storage.UpdateImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStorageCapabilitiesCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
-import org.apache.cloudstack.api.command.admin.storage.SyncStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;

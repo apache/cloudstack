@@ -129,7 +129,6 @@ import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
 import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
-import com.vmware.vim25.VirtualDiskType;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VmConfigInfo;
 import com.vmware.vim25.VmfsDatastoreExpandSpec;
