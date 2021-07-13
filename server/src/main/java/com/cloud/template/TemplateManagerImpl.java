@@ -1302,10 +1302,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         Command cmd = null;
         if (attach) {
-            cmd = new AttachCommand(disk, vmName);
+            cmd = new AttachCommand(disk, vmName, vmTO.getDetails());
             ((AttachCommand)cmd).setForced(forced);
         } else {
-            cmd = new DettachCommand(disk, vmName);
+            cmd = new DettachCommand(disk, vmName, vmTO.getDetails());
             ((DettachCommand)cmd).setForced(forced);
         }
         Answer a = _agentMgr.easySend(vm.getHostId(), cmd);

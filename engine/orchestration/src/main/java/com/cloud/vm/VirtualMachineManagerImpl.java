@@ -2307,6 +2307,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             VolumeVO volume = _volsDao.findById(result.getId());
             volume.setPath(result.getPath());
             volume.setPoolId(destPool.getId());
+            if (result.getChainInfo() != null) {
+                volume.setChainInfo(result.getChainInfo());
+            }
             _volsDao.update(volume.getId(), volume);
         }
     }

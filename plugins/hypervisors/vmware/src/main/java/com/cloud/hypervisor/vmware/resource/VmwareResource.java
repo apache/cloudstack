@@ -4429,7 +4429,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 } else {
                     s_logger.debug("Successfully consolidated disks of VM " + vmMo.getVmName() + ".");
                 }
-                return createAnswerForCmd(vmMo, poolUuid, cmd, volumeDeviceKey);
+                DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDs);
+                return createAnswerForCmd(vmMo, dsMo, cmd, volumeDeviceKey);
             } else {
                 return new Answer(cmd, false, "failed to changes data store for VM" + vmMo.getVmName());
             }
@@ -4440,7 +4441,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    Answer createAnswerForCmd(VirtualMachineMO vmMo, String poolUuid, Command cmd, Map<Integer, Long> volumeDeviceKey) throws Exception {
+    Answer createAnswerForCmd(VirtualMachineMO vmMo, DatastoreMO dsMo, Command cmd, Map<Integer, Long> volumeDeviceKey) throws Exception {
         List<VolumeObjectTO> volumeToList = new ArrayList<>();
         VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
         VirtualDisk[] disks = vmMo.getAllDiskDevice();
@@ -4458,7 +4459,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             for (VirtualDisk disk : disks) {
                 VolumeObjectTO newVol = new VolumeObjectTO();
                 String newPath = vmMo.getVmdkFileBaseName(disk);
-                VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(newPath, poolUuid);
+                VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(newPath, dsMo.getName());
                 newVol.setId(volumeDeviceKey.get(disk.getKey()));
                 newVol.setPath(newPath);
                 newVol.setChainInfo(_gson.toJson(diskInfo));
@@ -4804,8 +4805,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     if (volumeDeviceKey.get(volumeId) == disk.getKey()) {
                         VolumeObjectTO newVol = new VolumeObjectTO();
                         String newPath = vmMo.getVmdkFileBaseName(disk);
-                        String poolName = entry.second().getUuid().replace("-", "");
-                        VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(newPath, poolName);
+                        ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(tgtHyperHost, entry.second().getUuid());
+                        DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDs);
+                        VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(newPath, dsMo.getName());
                         newVol.setId(volumeId);
                         newVol.setPath(newPath);
                         newVol.setChainInfo(_gson.toJson(diskInfo));
@@ -5100,7 +5102,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
             }
             VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
-            String chainInfo = _gson.toJson(diskInfoBuilder.getDiskInfoByBackingFileBaseName(volumePath, poolTo.getUuid().replace("-", "")));
+            String chainInfo = _gson.toJson(diskInfoBuilder.getDiskInfoByBackingFileBaseName(volumePath, targetDsMo.getName()));
             MigrateVolumeAnswer answer = new MigrateVolumeAnswer(cmd, true, null, volumePath);
             answer.setVolumeChainInfo(chainInfo);
             return answer;

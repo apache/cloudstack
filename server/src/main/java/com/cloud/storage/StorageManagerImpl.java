@@ -1745,7 +1745,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 } else {
                     // This is to find datastores which are removed from datastore cluster.
                     // The final set childDatastoreUUIDs contains the UUIDs of child datastores which needs to be removed from datastore cluster
-                    childDatastoreUUIDs.remove(childStoragePoolInfo.getUuid());
+                    childDatastoreUUIDs.remove(dataStoreVO.getUuid());
                 }
             } else {
                 dataStoreVO = createChildDatastoreVO(datastoreClusterPool, childDataStoreAnswer);
