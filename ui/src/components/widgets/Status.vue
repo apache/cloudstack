@@ -18,6 +18,7 @@
 <template>
   <a-tooltip placement="bottom" :title="$t(getTooltip(text))">
     <a-badge
+      :style="{ display: 'flex' }"
       :title="text"
       :color="getStatusColor(text)"
       :status="getBadgeStatus(text)"

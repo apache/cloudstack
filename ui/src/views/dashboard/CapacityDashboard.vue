@@ -61,7 +61,7 @@
               </div>
             </router-link>
             <template #footer>
-              <center>{{ displayData(stat.name, stat.capacityused) }} / {{ displayData(stat.name, stat.capacitytotal) }}</center>
+              <div class="center">{{ displayData(stat.name, stat.capacityused) }} / {{ displayData(stat.name, stat.capacitytotal) }}</div>
             </template>
           </chart-card>
         </a-col>
@@ -304,5 +304,10 @@ export default {
     padding-left: 3px;
     white-space: normal;
   }
+}
+
+.center {
+  display: block;
+  text-align: center;
 }
 </style>

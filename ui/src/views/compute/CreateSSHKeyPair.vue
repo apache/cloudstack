@@ -48,7 +48,7 @@
             v-model:value="form.publickey"
             :placeholder="apiParams.publickey.description"/>
         </a-form-item>
-        <a-form-item v-if="this.isAdminOrDomainAdmin()">
+        <a-form-item v-if="isAdminOrDomainAdmin()">
           <template #label :title="apiParams.domainid.description">
             {{ $t('label.domainid') }}
             <a-tooltip>
@@ -59,19 +59,19 @@
             id="domain-selection"
             v-model:value="form.domainid"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
             :placeholder="apiParams.domainid.description"
-            @change="val => { this.handleDomainChanged(this.domains[val]) }">
-            <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
+            @change="val => { handleDomainChanged(domains[val]) }">
+            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
               {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item v-if="this.isAdminOrDomainAdmin() && !this.isObjectEmpty(this.selectedDomain) && this.selectedDomain.id !== null">
+        <a-form-item v-if="isAdminOrDomainAdmin() && !isObjectEmpty(selectedDomain) && selectedDomain.id !== null">
           <template #label :title="apiParams.account.description">
             {{ $t('label.account') }}
             <a-tooltip>
@@ -84,8 +84,8 @@
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -93,8 +93,8 @@
       <p v-html="$t('message.desc.created.ssh.key.pair')"></p>
       <div :span="24" class="action-button">
         <a-button @click="notifyCopied" v-clipboard:copy="hiddenElement.innerHTML" type="primary">{{ $t('label.copy.clipboard') }}</a-button>
-        <a-button @click="downloadKey" type="primary">{{ this.$t('label.download') }}</a-button>
-        <a-button @click="closeAction">{{ this.$t('label.close') }}</a-button>
+        <a-button @click="downloadKey" type="primary">{{ $t('label.download') }}</a-button>
+        <a-button @click="closeAction">{{ $t('label.close') }}</a-button>
       </div>
     </div>
   </div>
@@ -118,7 +118,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.initForm()
     this.apiConfig = this.$store.getters.apis.createSSHKeyPair || {}
     this.apiParams = {}
     this.apiConfig.params.forEach(param => {
@@ -132,6 +131,7 @@ export default {
     })
   },
   created () {
+    this.initForm()
     this.domains = [
       {
         id: null,
@@ -179,9 +179,7 @@ export default {
       }).finally(() => {
         this.domainLoading = false
         if (this.arrayHasItems(this.domains)) {
-          this.form.setFieldsValue({
-            domainid: 0
-          })
+          this.form.domainid = 0
           this.handleDomainChanged(this.domains[0])
         }
       })

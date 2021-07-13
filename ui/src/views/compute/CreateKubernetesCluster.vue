@@ -28,7 +28,7 @@
           <template #label>
             {{ $t('label.name') }}
             <a-tooltip :title="apiParams.name.description">
-              <info-circle style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
           <a-input
@@ -40,7 +40,7 @@
           <template #label>
             {{ $t('label.description') }}
             <a-tooltip :title="apiParams.description.description">
-              <info-circle style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
           <a-input
@@ -51,21 +51,21 @@
           <template #label>
             {{ $t('label.zoneid') }}
             <a-tooltip :title="apiParams.zoneid.description">
-              <info-circle style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
           <a-select
             id="zone-selection"
             v-model:value="form.zoneid"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description"
-            @change="val => { this.handleZoneChange(this.zones[val]) }">
-            <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
+            @change="val => { handleZoneChange(zones[val]) }">
+            <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -74,21 +74,21 @@
           <template #label>
             {{ $t('label.kubernetesversionid') }}
             <a-tooltip :title="apiParams.kubernetesversionid.description">
-              <info-circle style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
           <a-select
             id="version-selection"
             v-model:value="form.kubernetesversionid"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="kubernetesVersionLoading"
             :placeholder="apiParams.kubernetesversionid.description"
-            @change="val => { this.handleKubernetesVersionChange(this.kubernetesVersions[val]) }">
-            <a-select-option v-for="(opt, optIndex) in this.kubernetesVersions" :key="optIndex">
+            @change="val => { handleKubernetesVersionChange(kubernetesVersions[val]) }">
+            <a-select-option v-for="(opt, optIndex) in kubernetesVersions" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -97,20 +97,20 @@
           <template #label>
             {{ $t('label.serviceofferingid') }}
             <a-tooltip :title="apiParams.serviceofferingid.description">
-              <info-circle style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
           <a-select
             id="offering-selection"
             v-model:value="form.serviceofferingid"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="serviceOfferingLoading"
             :placeholder="apiParams.serviceofferingid.description">
-            <a-select-option v-for="(opt, optIndex) in this.serviceOfferings" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in serviceOfferings" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -119,7 +119,7 @@
           <template #label>
             {{ $t('label.noderootdisksize') }}
             <a-tooltip :title="apiParams.noderootdisksize.description">
-              <info-circle style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
           <a-input
@@ -130,29 +130,29 @@
           <template #label>
             {{ $t('label.networkid') }}
             <a-tooltip :title="apiParams.networkid.description">
-              <info-circle style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
           <a-select
             id="network-selection"
             v-model:value="form.networkid"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="networkLoading"
             :placeholder="apiParams.networkid.description">
-            <a-select-option v-for="(opt, optIndex) in this.networks" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in networks" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item v-if="this.selectedKubernetesVersion != null && this.selectedKubernetesVersion != undefined && this.selectedKubernetesVersion.supportsha === true">
+        <a-form-item v-if="selectedKubernetesVersion != null && selectedKubernetesVersion != undefined && selectedKubernetesVersion.supportsha === true">
           <template #label>
             {{ $t('label.haenable') }}
-            <a-tooltip :title="apiParams.haenable.description">
-              <info-circle style="color: rgba(0,0,0,.45)" />
+            <a-tooltip :title="apiParams.haenable?.description || ''">
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
           <a-switch v-model:cheked="form.haenable" />
@@ -161,7 +161,7 @@
           <template #label>
             {{ $t('label.masternodes') }}
             <a-tooltip :title="apiParams.masternodes.description">
-              <info-circle style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
           <a-input
@@ -172,7 +172,7 @@
           <template #label>
             {{ $t('label.externalloadbalanceripaddress') }}
             <a-tooltip :title="apiParams.externalloadbalanceripaddress.description">
-              <info-circle style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
           <a-input
@@ -183,7 +183,7 @@
           <template #label>
             {{ $t('label.cks.cluster.size') }}
             <a-tooltip :title="apiParams.size.description">
-              <info-circle style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
           <a-input
@@ -194,20 +194,20 @@
           <template #label>
             {{ $t('label.keypair') }}
             <a-tooltip :title="apiParams.keypair.description">
-              <info-circle style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
           <a-select
             id="keypair-selection"
             v-model:value="form.keypair"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="keyPairLoading"
             :placeholder="apiParams.keypair.description">
-            <a-select-option v-for="(opt, optIndex) in this.keyPairs" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in keyPairs" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -217,7 +217,7 @@
             <template #label>
               {{ $t('label.private.registry') }}
               <a-tooltip :title="apiParams.keprivateregistryypair.description">
-                <info-circle style="color: rgba(0,0,0,.45)" />
+                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
               </a-tooltip>
             </template>
             <a-switch v-model:checked="form.privateregistry" />
@@ -227,7 +227,7 @@
               <template #label>
                 {{ $t('label.username') }}
                 <a-tooltip :title="apiParams.dockerregistryusername.description">
-                  <info-circle style="color: rgba(0,0,0,.45)" />
+                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
                 </a-tooltip>
               </template>
               <a-input
@@ -238,7 +238,7 @@
               <template #label>
                 {{ $t('label.password') }}
                 <a-tooltip :title="apiParams.dockerregistrypassword.description">
-                  <info-circle style="color: rgba(0,0,0,.45)" />
+                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
                 </a-tooltip>
               </template>
               <a-input-password
@@ -249,7 +249,7 @@
               <template #label>
                 {{ $t('label.url') }}
                 <a-tooltip :title="apiParams.dockerregistryurl.description">
-                  <info-circle style="color: rgba(0,0,0,.45)" />
+                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
                 </a-tooltip>
               </template>
               <a-input
@@ -260,7 +260,7 @@
               <template #label>
                 {{ $t('label.email') }}
                 <a-tooltip :title="apiParams.dockerregistryemail.description">
-                  <info-circle style="color: rgba(0,0,0,.45)" />
+                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
                 </a-tooltip>
               </template>
               <a-input
@@ -270,8 +270,8 @@
           </div>
         </div>
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -304,7 +304,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.initForm()
     this.apiConfig = this.$store.getters.apis.createKubernetesCluster || {}
     this.apiParams = {}
     this.apiConfig.params.forEach(param => {
@@ -312,6 +311,7 @@ export default {
     })
   },
   created () {
+    this.initForm()
     this.networks = [
       {
         id: null,
@@ -413,9 +413,7 @@ export default {
       }).finally(() => {
         this.zoneLoading = false
         if (this.arrayHasItems(this.zones)) {
-          this.form.setFieldsValue({
-            zoneid: 0
-          })
+          this.form.zoneid = 0
           this.handleZoneChange(this.zones[0])
         }
       })
@@ -443,9 +441,7 @@ export default {
       }).finally(() => {
         this.kubernetesVersionLoading = false
         if (this.arrayHasItems(this.kubernetesVersions)) {
-          this.form.setFieldsValue({
-            kubernetesversionid: 0
-          })
+          this.form.kubernetesversionid = 0
           this.handleKubernetesVersionChange(this.kubernetesVersions[0])
         }
       })
@@ -477,9 +473,7 @@ export default {
       }).finally(() => {
         this.serviceOfferingLoading = false
         if (this.arrayHasItems(this.serviceOfferings)) {
-          this.form.setFieldsValue({
-            serviceofferingid: 0
-          })
+          this.form.serviceofferingid = 0
         }
       })
     },
@@ -494,9 +488,7 @@ export default {
       }).finally(() => {
         this.networkLoading = false
         if (this.arrayHasItems(this.networks)) {
-          this.form.setFieldsValue({
-            networkid: 0
-          })
+          this.form.networkid = 0
         }
       })
     },
@@ -516,9 +508,7 @@ export default {
       }).finally(() => {
         this.keyPairLoading = false
         if (this.arrayHasItems(this.keyPairs)) {
-          this.form.setFieldsValue({
-            keypair: 0
-          })
+          this.form.keypair = 0
         }
       })
     },

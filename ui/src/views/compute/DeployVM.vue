@@ -562,12 +562,14 @@
                 <rocket-outlined />
                 {{ this.$t('label.launch.vm') }}
                 <template #icon><down-outlined /></template>
-                <a-menu type="primary" slot="overlay" @click="handleSubmitAndStay" theme="dark">
-                  <a-menu-item type="primary" key="1">
-                    <rocket-outlined />
-                    {{ $t('label.launch.vm.and.stay') }}
-                  </a-menu-item>
-                </a-menu>
+                <template #overlay>
+                  <a-menu type="primary" @click="handleSubmitAndStay" theme="dark">
+                    <a-menu-item type="primary" key="1">
+                      <rocket-outlined />
+                      {{ $t('label.launch.vm.and.stay') }}
+                    </a-menu-item>
+                  </a-menu>
+                </template>
               </a-dropdown-button>
             </div>
           </a-form>
