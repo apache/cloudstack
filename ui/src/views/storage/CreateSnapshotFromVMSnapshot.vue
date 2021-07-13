@@ -17,20 +17,16 @@
 
 <template>
   <a-spin :spinning="loading">
-    <a-form class="form" :form="form" @submit="handleSubmit" layout="vertical">
-      <a-form-item :label="$t('label.name')">
+    <a-form class="form" :ref="formRef" :form="form" :rules="rules" layout="vertical">
+      <a-form-item :label="$t('label.name')" name="name" ref="name">
         <a-input
           autoFocus
-          v-decorator="['name', {
-            rules: [{ required: true, message: $t('message.error.name') }]
-          }]"
+          v-model:value="form.name"
           :placeholder="$t('label.snapshot.name')"/>
       </a-form-item>
-      <a-form-item :label="$t('label.volume')">
+      <a-form-item :label="$t('label.volume')" name="volumeid" ref="volumeid">
         <a-select
-          v-decorator="['volumeid', {
-            initialValue: selectedVolumeId,
-            rules: [{ required: true, message: $t('message.error.select') }]}]"
+          v-model:value="form.volumeid"
           :loading="loading"
           @change="id => (volumes.filter(x => x.id === id))"
         >
@@ -51,6 +47,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -64,17 +61,25 @@ export default {
   data () {
     return {
       volumes: [],
-      selectedVolumeId: '',
       loading: false
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        name: undefined,
+        volumeid: undefined
+      })
+      this.rules = reactive({
+        name: [{ required: true, message: this.$t('message.error.name') }],
+        volumeid: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
     fetchData () {
       this.loading = true
       api('listVolumes', {
@@ -82,16 +87,14 @@ export default {
         listall: true
       }).then(json => {
         this.volumes = json.listvolumesresponse.volume || []
-        this.selectedVolumeId = this.volumes[0].id || ''
+        this.form.volumeid = this.volumes[0].id || ''
       }).finally(() => {
         this.loading = false
       })
     },
-    handleSubmit (e) {
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         api('createSnapshotFromVMSnapshot', {
           name: values.name,

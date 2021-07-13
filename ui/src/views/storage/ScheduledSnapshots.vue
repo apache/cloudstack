@@ -24,7 +24,7 @@
       :rowKey="record => record.id"
       :pagination="false"
       :loading="loading">
-      <div slot="icon" slot-scope="text, record">
+      <template #icon="{ record }">
         <label class="interval-icon">
           <span v-if="record.intervaltype===0">
             <a-icon type="clock-circle" />
@@ -39,37 +39,39 @@
             <a-icon type="calendar" />
           </span>
         </label>
-      </div>
-      <div slot="time" slot-scope="text, record">
+      </template>
+      <template #time="{ record }">
         <label class="interval-content">
           <span v-if="record.intervaltype===0">{{ record.schedule + $t('label.min.past.hour') }}</span>
           <span v-else>{{ record.schedule.split(':')[1] + ':' + record.schedule.split(':')[0] }}</span>
         </label>
-      </div>
-      <div slot="interval" slot-scope="text, record">
+      </template>
+      <template #interval="{ record }">
         <span v-if="record.intervaltype===2">
           {{ `${$t('label.every')} ${$t(listDayOfWeek[record.schedule.split(':')[2] - 1])}` }}
         </span>
         <span v-else-if="record.intervaltype===3">
           {{ `${$t('label.day')} ${record.schedule.split(':')[2]} ${$t('label.of.month')}` }}
         </span>
-      </div>
-      <div slot="timezone" slot-scope="text, record">
+      </template>
+      <template #timezone="{ record }">
         <label>{{ getTimeZone(record.timezone) }}</label>
-      </div>
-      <div slot="tags" slot-scope="text, record">
+      </template>
+      <template #tags="{ record }">
         <a-tag v-for="(tag, index) in record.tags" :key="index">{{ tag.key + '=' + tag.value }}</a-tag>
-      </div>
-      <div slot="action" class="account-button-action" slot-scope="text, record">
-        <tooltip-button
-          tooltipPlacement="top"
-          :tooltip="$t('label.delete')"
-          type="danger"
-          icon="close"
-          size="small"
-          :loading="actionLoading"
-          @click="handleClickDelete(record)" />
-      </div>
+      </template>
+      <template #action="{ record }">
+        <div class="account-button-action">
+          <tooltip-button
+            tooltipPlacement="top"
+            :tooltip="$t('label.delete')"
+            type="danger"
+            icon="close-outlined"
+            size="small"
+            :loading="actionLoading"
+            @onClick="handleClickDelete(record)" />
+        </div>
+      </template>
     </a-table>
   </div>
 </template>

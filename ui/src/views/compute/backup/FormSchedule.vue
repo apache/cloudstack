@@ -266,11 +266,8 @@ export default {
       })
     },
     resetForm () {
-      this.form.time = undefined
-      this.form.timezone = undefined
-      this.form.timeSelect = undefined
-      this.form['day-of-week'] = undefined
-      this.form['day-of-month'] = undefined
+      this.formRef.value.resetFields()
+      this.form.intervaltype = 'hourly'
       this.tags = []
     },
     closeAction () {

@@ -18,105 +18,87 @@
 <template>
   <div class="form-layout">
     <span v-if="uploadPercentage > 0">
-      <a-icon type="loading" />
+      <loading-outlined />
       {{ $t('message.upload.file.processing') }}
       <a-progress :percent="uploadPercentage" />
     </span>
     <a-spin :spinning="loading" v-else>
       <a-form
-        :form="form"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item :label="$t('label.templatefileupload')">
+        <a-form-item :label="$t('label.templatefileupload')" ref="file" name="file">
           <a-upload-dragger
             :multiple="false"
             :fileList="fileList"
             :remove="handleRemove"
             :beforeUpload="beforeUpload"
-            v-decorator="['file', {
-              rules: [{ required: true, message: `${this.$t('message.error.required.input')}`}]
-            }]">
+            v-model:value="form.file">
             <p class="ant-upload-drag-icon">
-              <a-icon type="cloud-upload" />
+              <cloud-upload-outlined />
             </p>
             <p class="ant-upload-text" v-if="fileList.length === 0">
               {{ $t('label.volume.volumefileupload.description') }}
             </p>
           </a-upload-dragger>
         </a-form-item>
-        <a-form-item>
-          <span slot="label">
+        <a-form-item ref="name" name="name">
+          <template #label>
             {{ $t('label.name') }}
             <a-tooltip :title="apiParams.name.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input
-            v-decorator="['name', {
-              rules: [{ required: true, message: $t('message.error.volume.name') }]
-            }]"
+            v-model:value="form.name"
             :placeholder="$t('label.volumename')"
             autoFocus />
         </a-form-item>
-        <a-form-item>
-          <span slot="label">
+        <a-form-item ref="zoneId" name="zoneId">
+          <template #label>
             {{ $t('label.zone') }}
             <a-tooltip :title="apiParams.zoneid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-select
-            v-decorator="['zoneId', {
-              initialValue: zoneSelected,
-              rules: [
-                {
-                  required: true,
-                  message: `${this.$t('message.error.select')}`
-                }
-              ]
-            }]">
+            v-model:value="form.zoneId">
             <a-select-option :value="zone.id" v-for="zone in zones" :key="zone.id">
               {{ zone.name || zone.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
-          <span slot="label">
+        <a-form-item ref="format" name="format">
+          <template #label>
             {{ $t('label.format') }}
             <a-tooltip :title="apiParams.format.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-select
-            v-decorator="['format', {
-              initialValue: formats[0],
-              rules: [
-                {
-                  required: false,
-                  message: `${this.$t('message.error.select')}`
-                }
-              ]
-            }]">
+            v-model:value="form.format">
             <a-select-option v-for="format in formats" :key="format">
               {{ format }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
-          <span slot="label">
+        <a-form-item ref="checksum" name="checksum">
+          <template #label>
             {{ $t('label.volumechecksum') }}
             <a-tooltip :title="apiParams.checksum.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input
-            v-decorator="['checksum']"
+            v-model:value="form.checksum"
             :placeholder="$t('label.volumechecksum.description')"
           />
         </a-form-item>
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -124,6 +106,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { axios } from '../../utils/request'
 
@@ -134,30 +117,44 @@ export default {
       fileList: [],
       zones: [],
       formats: ['RAW', 'VHD', 'VHDX', 'OVA', 'QCOW2'],
-      zoneSelected: '',
       uploadParams: null,
       loading: false,
       uploadPercentage: 0
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = {}
-    var apiConfig = this.$store.getters.apis.getUploadParamsForVolume || {}
+    const apiConfig = this.$store.getters.apis.getUploadParamsForVolume || {}
     apiConfig.params.forEach(param => {
       this.apiParams[param.name] = param
     })
   },
   created () {
+    this.initForm()
     this.listZones()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        file: undefined,
+        name: undefined,
+        zoneId: undefined,
+        format: 'RAW',
+        checksum: undefined
+      })
+      this.rules = reactive({
+        file: [{ required: true, message: this.$t('message.error.required.input') }],
+        name: [{ required: true, message: this.$t('message.error.volume.name') }],
+        zoneId: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
     listZones () {
       api('listZones').then(json => {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           if (this.zones.length > 0) {
-            this.zoneSelected = this.zones[0].id
+            this.form.zoneId = this.zones[0].id
           }
         }
       })
@@ -172,12 +169,9 @@ export default {
       this.fileList = [...this.fileList, file]
       return false
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         for (const key in values) {
           const input = values[key]
