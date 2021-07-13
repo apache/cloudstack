@@ -229,7 +229,8 @@ export default {
 
       const params = {
         listAll: true,
-        id: treeNode.eventKey
+        id: treeNode.eventKey,
+        showicon: true
       }
 
       return new Promise(resolve => {

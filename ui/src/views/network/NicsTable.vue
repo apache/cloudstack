@@ -123,9 +123,6 @@ export default {
   },
   watch: {
     resource: function (newItem, oldItem) {
-      // if (!newItem || !newItem.id || newItem.id === oldItem.id) {
-      //   return
-      // }
       this.resource = newItem
       this.fetchNetworks()
     }
@@ -134,6 +131,9 @@ export default {
     this.fetchNetworks()
   },
   created () {
+    this.fetchNetworks()
+  },
+  computed () {
     this.fetchNetworks()
   },
   methods: {

@@ -261,6 +261,12 @@
                         </span>
                         <a-icon v-else type="apartment" style="margin-right: 5px"/>
                       </span>
+                      <span v-if="(field.name.startsWith('domain'))">
+                        <span v-if="opt.icon">
+                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                        </span>
+                        <a-icon v-else type="block" style="margin-right: 5px"/>
+                      </span>
                     </span>
                     {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
                   </a-select-option>
