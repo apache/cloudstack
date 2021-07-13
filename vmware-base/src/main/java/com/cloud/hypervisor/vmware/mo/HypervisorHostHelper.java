@@ -1416,10 +1416,10 @@ public class HypervisorHostHelper {
             return false;
         }
 
-        if (secPolicyInSpec != null && securityPolicy != null
+        if (secPolicyInSpec != null
                 && ((securityPolicy.isAllowPromiscuous() != null && !securityPolicy.isAllowPromiscuous().equals(secPolicyInSpec.isAllowPromiscuous()))
                     || (securityPolicy.isForgedTransmits() != null && !securityPolicy.isForgedTransmits().equals(secPolicyInSpec.isForgedTransmits()))
-                    || (securityPolicy.isMacChanges() != null && securityPolicy.isMacChanges().equals(secPolicyInSpec.isMacChanges())))) {
+                    || (securityPolicy.isMacChanges() != null && !securityPolicy.isMacChanges().equals(secPolicyInSpec.isMacChanges())))) {
             return false;
         }
 
