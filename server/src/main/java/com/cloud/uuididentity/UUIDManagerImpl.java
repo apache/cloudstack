@@ -119,9 +119,9 @@ public class UUIDManagerImpl implements UUIDManager {
         }
         Identity identity = (Identity) this._entityMgr.findById(entityType, customId);
         if (identity == null) {
-            throw new InvalidParameterValueException(String.format("Unable to find UUID for id %s of type %s",
+            throw new InvalidParameterValueException(String.format("Unable to find UUID for id [%s] of type [%s]",
                                                                    customId,
-                                                                   (entityType == null ? "<unknown type>" ? entityType.getSimpleName())));
+                                                                   (entityType == null ? "<unknown>" ? entityType.getSimpleName())));
         }
         return identity.getUuid();
 
