@@ -926,16 +926,21 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         newDiskOffering.setUniqueName("Cloud.Com-" + name);
         // leaving the above reference to cloud.com in as it is an identifyer and has no real world relevance
         newDiskOffering.setSystemUse(isSystemUse);
-        newDiskOffering = _diskOfferingDao.persistDeafultDiskOffering(newDiskOffering);
+        newDiskOffering = _diskOfferingDao.persistDefaultDiskOffering(newDiskOffering);
         return newDiskOffering;
     }
 
     private ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText,
             ProvisioningType provisioningType, boolean localStorageRequired, boolean offerHA, String tags) {
         tags = cleanupTags(tags);
+        DiskOfferingVO diskOfferingVO = new DiskOfferingVO(name, displayText, provisioningType, false, tags, false, false, false, true);
+        diskOfferingVO.setUniqueName("Cloud.Com-" + name);
+        diskOfferingVO = _diskOfferingDao.persistDefaultDiskOffering(diskOfferingVO);
+
         ServiceOfferingVO offering =
                 new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, offerHA, displayText, provisioningType, localStorageRequired, false, tags, false, null, false);
         offering.setUniqueName("Cloud.Com-" + name);
+        offering.setDiskOfferingId(diskOfferingVO.getId());
         // leaving the above reference to cloud.com in as it is an identifyer and has no real world relevance
         offering = _serviceOfferingDao.persistSystemServiceOffering(offering);
         return offering;

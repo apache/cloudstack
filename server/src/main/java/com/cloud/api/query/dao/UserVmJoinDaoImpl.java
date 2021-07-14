@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.DiskOfferingVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -172,8 +173,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setServiceOfferingName(userVm.getServiceOfferingName());
         }
         if (details.contains(VMDetails.all) || details.contains(VMDetails.diskoff)) {
-            userVmResponse.setDiskOfferingId(userVm.getDiskOfferingUuid());
-            userVmResponse.setDiskOfferingName(userVm.getDiskOfferingName());
+            DiskOfferingVO diskOfferingVO = ApiDBUtils.findDiskOfferingById(userVm.getDiskOfferingId());
+            if (diskOfferingVO != null) {
+                userVmResponse.setDiskOfferingId(userVm.getDiskOfferingUuid());
+                userVmResponse.setDiskOfferingName(userVm.getDiskOfferingName());
+            }
         }
         if (details.contains(VMDetails.all) || details.contains(VMDetails.backoff)) {
             userVmResponse.setBackupOfferingId(userVm.getBackupOfferingUuid());

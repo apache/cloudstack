@@ -213,7 +213,7 @@ public class VolumeApiServiceImplTest {
             VolumeVO volumeOfRunningVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 1L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             when(volumeDaoMock.findById(1L)).thenReturn(volumeOfRunningVm);
 
-            UserVmVO runningVm = new UserVmVO(1L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO runningVm = new UserVmVO(1L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm");
             runningVm.setState(State.Running);
             runningVm.setDataCenterId(1L);
             when(userVmDaoMock.findById(1L)).thenReturn(runningVm);
@@ -223,13 +223,13 @@ public class VolumeApiServiceImplTest {
             volumeOfStoppedVm.setPoolId(1L);
             when(volumeDaoMock.findById(2L)).thenReturn(volumeOfStoppedVm);
 
-            UserVmVO stoppedVm = new UserVmVO(2L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO stoppedVm = new UserVmVO(2L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm");
             stoppedVm.setState(State.Stopped);
             stoppedVm.setDataCenterId(1L);
             when(userVmDaoMock.findById(2L)).thenReturn(stoppedVm);
 
             // volume of hyperV vm id=3
-            UserVmVO hyperVVm = new UserVmVO(3L, "vm", "vm", 1, HypervisorType.Hyperv, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO hyperVVm = new UserVmVO(3L, "vm", "vm", 1, HypervisorType.Hyperv, 1L, false, false, 1L, 1L, 1, 1L, null, "vm");
             hyperVVm.setState(State.Stopped);
             hyperVVm.setDataCenterId(1L);
             when(userVmDaoMock.findById(3L)).thenReturn(hyperVVm);
@@ -285,7 +285,7 @@ public class VolumeApiServiceImplTest {
             when(volumeDaoMock.findById(7L)).thenReturn(managedVolume1);
 
             // vm having root volume
-            UserVmVO vmHavingRootVolume = new UserVmVO(4L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO vmHavingRootVolume = new UserVmVO(4L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm");
             vmHavingRootVolume.setState(State.Stopped);
             vmHavingRootVolume.setDataCenterId(1L);
             when(userVmDaoMock.findById(4L)).thenReturn(vmHavingRootVolume);

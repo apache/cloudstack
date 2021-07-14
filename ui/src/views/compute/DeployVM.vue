@@ -229,6 +229,60 @@
                         <a-input v-decorator="['memory']"/>
                       </a-form-item>
                     </span>
+                    <span>
+                      {{ $t('label.override.root.diskoffering') }}
+                      <a-switch
+                        v-decorator="['this.showOverrideDiskOfferingOption']"
+                        :checked="serviceOffering && !serviceOffering.diskofferingstrictness && this.showOverrideDiskOfferingOption"
+                        :disabled="serviceOffering && serviceOffering.diskofferingstrictness"
+                        @change="val => { this.showOverrideDiskOfferingOption = val }"
+                        style="margin-left: 10px;"/>
+                    </span>
+                    <span v-if="serviceOffering && !serviceOffering.diskofferingstrictness && this.showOverrideDiskOfferingOption">
+                      <a-step
+                        :status="zoneSelected ? 'process' : 'wait'"
+                        v-if="!template.deployasis && template.childtemplates && template.childtemplates.length > 0" >
+                        <template slot="description">
+                          <div v-if="zoneSelected">
+                            <multi-disk-selection
+                              :items="template.childtemplates"
+                              :diskOfferings="options.diskOfferings"
+                              :zoneId="zoneId"
+                              @select-multi-disk-offering="updateMultiDiskOffering($event)" />
+                          </div>
+                        </template>
+                      </a-step>
+                      <a-step
+                        v-else
+                        :status="zoneSelected ? 'process' : 'wait'">
+                        <template slot="description">
+                          <div v-if="zoneSelected">
+                            <disk-offering-selection
+                              :items="options.diskOfferings"
+                              :row-count="rowCount.diskOfferings"
+                              :zoneId="zoneId"
+                              :value="overrideDiskOffering ? overrideDiskOffering.id : ''"
+                              :loading="loading.diskOfferings"
+                              :preFillContent="dataPreFill"
+                              :isIsoSelected="tabKey==='isoid'"
+                              :isRootDiskOffering="true"
+                              @select-disk-offering-item="($event) => updateOverrideDiskOffering($event)"
+                              @handle-search-filter="($event) => handleSearchFilter('diskOfferings', $event)"
+                            ></disk-offering-selection>
+                            <disk-size-selection
+                              v-if="overrideDiskOffering && overrideDiskOffering.iscustomized"
+                              input-decorator="rootdisksize"
+                              :preFillContent="dataPreFill"
+                              :minDiskSize="dataPreFill.minrootdisksize"
+                              @update-disk-size="updateFieldValue"
+                              style="margin-top: 10px;"/>
+                            <a-form-item class="form-item-hidden">
+                              <a-input v-decorator="['rootdisksize']"/>
+                            </a-form-item>
+                          </div>
+                        </template>
+                      </a-step>
+                    </span>
                   </div>
                 </template>
               </a-step>
@@ -775,6 +829,7 @@ export default {
       networksAdd: [],
       zone: {},
       sshKeyPair: {},
+      overrideDiskOffering: {},
       templateFilter: [
         'featured',
         'community',
@@ -805,6 +860,7 @@ export default {
       dataPreFill: {},
       showDetails: false,
       showRootDiskSizeChanger: false,
+      showOverrideDiskOfferingOption: false,
       securitygroupids: [],
       rootDiskSizeFixed: 0
     }
@@ -1043,7 +1099,14 @@ export default {
       }
 
       this.serviceOffering = _.find(this.options.serviceOfferings, (option) => option.id === instanceConfig.computeofferingid)
-      this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
+      if (iso && this.serviceOffering.diskofferingid) {
+        this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === this.serviceOffering.diskofferingid)
+      } else {
+        this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
+      }
+      if (instanceConfig.overridediskofferingid) {
+        this.overrideDiskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.overridediskofferingid)
+      }
       this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
       this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
       this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
@@ -1158,6 +1221,7 @@ export default {
     })
     this.form.getFieldDecorator('computeofferingid', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('diskofferingid', { initialValue: undefined, preserve: true })
+    this.form.getFieldDecorator('overridediskofferingid', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('multidiskoffering', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('affinitygroupids', { initialValue: [], preserve: true })
     this.form.getFieldDecorator('networkids', { initialValue: [], preserve: true })
@@ -1376,6 +1440,17 @@ export default {
         diskofferingid: id
       })
     },
+    updateOverrideDiskOffering (id) {
+      if (id === '0') {
+        this.form.setFieldsValue({
+          overridediskofferingid: undefined
+        })
+        return
+      }
+      this.form.setFieldsValue({
+        overridediskofferingid: id
+      })
+    },
     updateMultiDiskOffering (value) {
       this.form.setFieldsValue({
         multidiskoffering: value
@@ -1493,7 +1568,7 @@ export default {
         } else {
           deployVmData.templateid = values.isoid
         }
-        if (this.showRootDiskSizeChanger && values.rootdisksize && values.rootdisksize > 0) {
+        if (values.rootdisksize && values.rootdisksize > 0) {
           deployVmData.rootdisksize = values.rootdisksize
         } else if (this.rootDiskSizeFixed > 0) {
           deployVmData.rootdisksize = this.rootDiskSizeFixed
@@ -1519,6 +1594,9 @@ export default {
         }
         if (this.selectedTemplateConfiguration) {
           deployVmData['details[0].configurationId'] = this.selectedTemplateConfiguration.id
+        }
+        if (!this.serviceOffering.diskofferingstrictness && values.overridediskofferingid) {
+          deployVmData.overridediskofferingid = values.overridediskofferingid
         }
         // step 4: select disk offering
         if (!this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {

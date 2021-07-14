@@ -1029,7 +1029,7 @@ public class ApiDBUtils {
 
     public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
         DiskOfferingVO off = s_diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
-        if (off.getType() == DiskOfferingVO.Type.Disk) {
+        if (!off.isComputeOnly()) {
             return off;
         }
         return null;

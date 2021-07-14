@@ -932,6 +932,7 @@ public class DatabaseConfig {
         } else {
             useLocalStorage = false;
         }
+        DiskOfferingVO diskOfferingVO = new DiskOfferingVO(name, displayText, provisioningType, false, null, false, false, false, true);
 
         ServiceOfferingVO serviceOffering =
             new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText,
@@ -939,23 +940,30 @@ public class DatabaseConfig {
 
         Long bytesReadRate = Long.parseLong(_currentObjectParams.get("bytesReadRate"));
         if ((bytesReadRate != null) && (bytesReadRate > 0))
-            serviceOffering.setBytesReadRate(bytesReadRate);
+            diskOfferingVO.setBytesReadRate(bytesReadRate);
         Long bytesWriteRate = Long.parseLong(_currentObjectParams.get("bytesWriteRate"));
         if ((bytesWriteRate != null) && (bytesWriteRate > 0))
-            serviceOffering.setBytesWriteRate(bytesWriteRate);
+            diskOfferingVO.setBytesWriteRate(bytesWriteRate);
         Long iopsReadRate = Long.parseLong(_currentObjectParams.get("iopsReadRate"));
         if ((iopsReadRate != null) && (iopsReadRate > 0))
-            serviceOffering.setIopsReadRate(iopsReadRate);
+            diskOfferingVO.setIopsReadRate(iopsReadRate);
         Long iopsWriteRate = Long.parseLong(_currentObjectParams.get("iopsWriteRate"));
         if ((iopsWriteRate != null) && (iopsWriteRate > 0))
-            serviceOffering.setIopsWriteRate(iopsWriteRate);
+            diskOfferingVO.setIopsWriteRate(iopsWriteRate);
 
-        ServiceOfferingDaoImpl dao = ComponentContext.inject(ServiceOfferingDaoImpl.class);
+        DiskOfferingDaoImpl DiskOfferinDao = ComponentContext.inject(DiskOfferingDaoImpl.class);
         try {
-            dao.persist(serviceOffering);
+            DiskOfferinDao.persist(diskOfferingVO);
+        } catch (Exception e) {
+            s_logger.error("error creating disk offering", e);
+        }
+
+        serviceOffering.setDiskOfferingId(diskOfferingVO.getId());
+        ServiceOfferingDaoImpl serviceOfferingDao = ComponentContext.inject(ServiceOfferingDaoImpl.class);
+        try {
+            serviceOfferingDao.persist(serviceOffering);
         } catch (Exception e) {
             s_logger.error("error creating service offering", e);
-
         }
         /*
         String insertSql = "INSERT INTO `cloud`.`service_offering` (id, name, cpu, ram_size, speed, nw_rate, mc_rate, created, ha_enabled, mirrored, display_text, guest_ip_type, use_local_storage) " +

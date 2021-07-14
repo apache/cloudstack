@@ -23,6 +23,8 @@ import java.util.Map;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 
@@ -89,6 +91,7 @@ public class RouterDeploymentDefinition {
     protected VirtualRouterProviderDao vrProviderDao;
     protected NetworkOfferingDao networkOfferingDao;
     protected ServiceOfferingDao serviceOfferingDao;
+    protected DiskOfferingDao diskOfferingDao;
     protected IpAddressManager ipAddrMgr;
     protected VMInstanceDao vmDao;
     protected HostPodDao podDao;
@@ -405,8 +408,9 @@ public class RouterDeploymentDefinition {
         logger.debug("Verifying router service offering with uuid : " + offeringUuid);
         ServiceOfferingVO serviceOffering = serviceOfferingDao.findByUuid(offeringUuid);
         if (serviceOffering != null && serviceOffering.isSystemUse()) {
+            DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
             boolean isLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId());
-            if (isLocalStorage == serviceOffering.isUseLocalStorage()) {
+            if (isLocalStorage == diskOffering.isUseLocalStorage()) {
                 logger.debug(String.format("Service offering %s (uuid: %s) will be used on virtual router", serviceOffering.getName(), serviceOffering.getUuid()));
                 serviceOfferingId = serviceOffering.getId();
             }

@@ -323,8 +323,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
 
     long getServiceOfferingId();
 
-    Long getDiskOfferingId();
-
     Long getBackupOfferingId();
 
     String getBackupExternalId();

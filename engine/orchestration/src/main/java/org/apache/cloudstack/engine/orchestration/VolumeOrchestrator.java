@@ -586,7 +586,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         DiskProfile dskCh = null;
         if (volume.getVolumeType() == Type.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
-            dskCh = createDiskCharacteristics(volume, template, dc, offering);
+            dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
             storageMgr.setDiskProfileThrottling(dskCh, offering, diskOffering);
         } else {
             dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
@@ -845,7 +845,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
             Long offeringId = null;
 
-            if (offering.getType() == DiskOffering.Type.Disk) {
+            if (!offering.isComputeOnly()) {
                 offeringId = offering.getId();
             }
 

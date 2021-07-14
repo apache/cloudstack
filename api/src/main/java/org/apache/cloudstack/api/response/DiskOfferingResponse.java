@@ -155,6 +155,10 @@ public class DiskOfferingResponse extends BaseResponse {
     @Param(description = "the vsphere storage policy tagged to the disk offering in case of VMware", since = "4.15")
     private String vsphereStoragePolicy;
 
+    @SerializedName("disksizestrictness")
+    @Param(description = "To allow or disallow the resize operation on the disks created from this disk offering, if the flag is true then resize is not allowed", since = "4.16")
+    private Boolean diskSizeStrictness;
+
     public Boolean getDisplayOffering() {
         return displayOffering;
     }
@@ -362,5 +366,13 @@ public class DiskOfferingResponse extends BaseResponse {
 
     public void setVsphereStoragePolicy(String vsphereStoragePolicy) {
         this.vsphereStoragePolicy = vsphereStoragePolicy;
+    }
+
+    public Boolean getDiskSizeStrictness() {
+        return diskSizeStrictness;
+    }
+
+    public void setDiskSizeStrictness(Boolean diskSizeStrictness) {
+        this.diskSizeStrictness = diskSizeStrictness;
     }
 }

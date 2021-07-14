@@ -174,9 +174,6 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     @Transient
     List<String> networkIds;
 
-    @Column(name = "disk_offering_id")
-    protected Long diskOfferingId;
-
     @Column(name = "display_vm", updatable = true, nullable = false)
     protected boolean display = true;
 
@@ -196,7 +193,7 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     private VMReservationVO vmReservation;
 
     public VMEntityVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,
-            long domainId, long accountId, boolean haEnabled, Long diskOfferingId) {
+            long domainId, long accountId, boolean haEnabled) {
         this.id = id;
         hostName = name != null ? name : uuid;
         if (vmTemplateId != null) {
@@ -213,12 +210,11 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
         this.serviceOfferingId = serviceOfferingId;
         this.hypervisorType = hypervisorType;
         limitCpuUse = false;
-        this.diskOfferingId = diskOfferingId;
     }
 
     public VMEntityVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,
             long domainId, long accountId, boolean haEnabled, boolean limitResourceUse) {
-        this(id, serviceOfferingId, name, instanceName, type, vmTemplateId, hypervisorType, guestOSId, domainId, accountId, haEnabled, null);
+        this(id, serviceOfferingId, name, instanceName, type, vmTemplateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         limitCpuUse = limitResourceUse;
     }
 
@@ -539,11 +535,6 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
 
     public void setNetworkIds(List<String> networkIds) {
         this.networkIds = networkIds;
-    }
-
-    @Override
-    public Long getDiskOfferingId() {
-        return diskOfferingId;
     }
 
     public VMReservationVO getVmReservation() {

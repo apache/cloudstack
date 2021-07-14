@@ -97,6 +97,10 @@ export default {
     isIsoSelected: {
       type: Boolean,
       default: false
+    },
+    isRootDiskOffering: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -201,7 +205,7 @@ export default {
   methods: {
     initDataItem () {
       this.dataItems = []
-      if (this.options.page === 1 && !this.isIsoSelected) {
+      if (this.options.page === 1 && !this.isIsoSelected && !this.isRootDiskOffering) {
         this.dataItems.push({
           id: '0',
           name: this.$t('label.noselect'),

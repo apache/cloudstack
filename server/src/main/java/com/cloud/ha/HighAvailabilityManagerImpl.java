@@ -276,7 +276,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
         for (VMInstanceVO vm : reorderedVMList) {
             ServiceOfferingVO vmOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
-            if (vmOffering.isUseLocalStorage()) {
+            if (_itMgr.isRootVolumeOnLocalStorage(vm.getId())) {
                 if (s_logger.isDebugEnabled()){
                     s_logger.debug("Skipping HA on vm " + vm + ", because it uses local storage. Its fate is tied to the host.");
                 }

@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.offering.DiskOffering;
-import com.cloud.offering.DiskOffering.Type;
 import com.cloud.storage.Storage;
 import com.cloud.utils.db.GenericDao;
 
@@ -122,8 +121,8 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     @Column(name = "cache_mode")
     String cacheMode;
 
-    @Column(name = "type")
-    Type type;
+    @Column(name = "compute_only")
+    boolean computeOnly;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
@@ -161,6 +160,9 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
 
     @Column(name = "vsphere_storage_policy")
     String vsphereStoragePolicy;
+
+    @Column(name = "disk_size_strictness")
+    boolean diskSizeStrictness;
 
     public DiskOfferingJoinVO() {
     }
@@ -247,8 +249,8 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
         return sortKey;
     }
 
-    public Type getType() {
-        return type;
+    public boolean isComputeOnly() {
+        return computeOnly;
     }
 
     public Long getBytesReadRate() {
@@ -349,5 +351,9 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
 
     public String getVsphereStoragePolicy() {
         return vsphereStoragePolicy;
+    }
+
+    public boolean getDiskSizeStrictness() {
+        return diskSizeStrictness;
     }
 }

@@ -240,7 +240,7 @@ public class ManagementServerMock {
         long id = _userVmDao.getNextInSequence(Long.class, "id");
         UserVmVO vm =
             new UserVmVO(id, name, name, tmpl.getId(), HypervisorType.XenServer, tmpl.getGuestOSId(), false, false, _zone.getDomainId(), Account.ACCOUNT_ID_SYSTEM,
-                    1, small.getId(), null, name, null);
+                    1, small.getId(), null, name);
         vm.setState(com.cloud.vm.VirtualMachine.State.Running);
         vm.setHostId(_hostId);
         vm.setDataCenterId(network.getDataCenterId());

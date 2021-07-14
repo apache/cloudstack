@@ -208,16 +208,17 @@ import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePoolTagVO;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate.State;
@@ -355,6 +356,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private ServiceOfferingDao _srvOfferingDao;
+
+    @Inject
+    private DiskOfferingDao _diskOfferingDao;
 
     @Inject
     private DataCenterJoinDao _dcJoinDao;
@@ -2788,7 +2792,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         Filter searchFilter = new Filter(DiskOfferingJoinVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<DiskOfferingJoinVO> sc = _diskOfferingJoinDao.createSearchCriteria();
-        sc.addAnd("type", Op.EQ, DiskOfferingVO.Type.Disk);
+        sc.addAnd("computeOnly", Op.EQ, false);
 
         Account account = CallContext.current().getCallingAccount();
         Object name = cmd.getDiskOfferingName();
@@ -2912,7 +2916,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (currentVmOffering == null) {
             return offerings;
         }
-        List<String> currentTagsList = StringUtils.csvTagsToList(currentVmOffering.getTags());
+        DiskOfferingVO diskOfferingVO = _diskOfferingDao.findById(currentVmOffering.getDiskOfferingId());
+        List<String> currentTagsList = StringUtils.csvTagsToList(diskOfferingVO.getTags());
 
         // New service offering should have all the tags of the current service offering.
         List<ServiceOfferingJoinVO> filteredOfferings = new ArrayList<>();

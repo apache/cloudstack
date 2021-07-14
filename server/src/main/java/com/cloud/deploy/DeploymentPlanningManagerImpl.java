@@ -17,7 +17,6 @@
 package com.cloud.deploy;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -112,7 +111,6 @@ import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.ScopeType;
-import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -1638,10 +1636,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(toBeCreated.getDiskOfferingId());
 
-            if (vmProfile.getTemplate().getFormat() == Storage.ImageFormat.ISO && vmProfile.getServiceOffering().getTagsArray().length != 0) {
-                diskOffering.setTagsArray(Arrays.asList(vmProfile.getServiceOffering().getTagsArray()));
-            }
-
             DiskProfile diskProfile = new DiskProfile(toBeCreated, diskOffering, vmProfile.getHypervisorType());
             boolean useLocalStorage = false;
             if (vmProfile.getType() != VirtualMachine.Type.User) {
@@ -1654,19 +1648,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 }
             } else {
                 useLocalStorage = diskOffering.isUseLocalStorage();
-
-                // TODO: this is a hacking fix for the problem of deploy
-                // ISO-based VM on local storage
-                // when deploying VM based on ISO, we have a service offering
-                // and an additional disk offering, use-local storage flag is
-                // actually
-                // saved in service offering, override the flag from service
-                // offering when it is a ROOT disk
-                if (!useLocalStorage && vmProfile.getServiceOffering().isUseLocalStorage()) {
-                    if (toBeCreated.getVolumeType() == Volume.Type.ROOT) {
-                        useLocalStorage = true;
-                    }
-                }
             }
             diskProfile.setUseLocalStorage(useLocalStorage);
 

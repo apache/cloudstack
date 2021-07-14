@@ -23,6 +23,6 @@ import com.cloud.vm.UserVmVO;
 public class ServiceVirtualMachine extends UserVmVO {
     public ServiceVirtualMachine(long id, String instanceName, String name, long templateId, long serviceOfferingId, HypervisorType hypervisorType, long guestOSId,
                                  long dataCenterId, long domainId, long accountId, long userId, boolean haEnabled) {
-        super(id, instanceName, name, templateId, hypervisorType, guestOSId, false, false, domainId, accountId, userId, serviceOfferingId, null, name, null);
+        super(id, instanceName, name, templateId, hypervisorType, guestOSId, false, false, domainId, accountId, userId, serviceOfferingId, null, name);
     }
 }

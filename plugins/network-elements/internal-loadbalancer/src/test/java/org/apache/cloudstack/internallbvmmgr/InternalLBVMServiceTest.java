@@ -251,7 +251,7 @@ public class InternalLBVMServiceTest extends TestCase {
         final ServiceOfferingVO voToReturn = vo;
         final Class<?> c = voToReturn.getClass();
         try {
-            final Field f = c.getSuperclass().getDeclaredField("id");
+            final Field f = c.getDeclaredField("id");
             f.setAccessible(true);
             f.setLong(voToReturn, id);
         } catch (final NoSuchFieldException ex) {

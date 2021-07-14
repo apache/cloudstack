@@ -21,6 +21,7 @@ import java.util.Map;
 
 import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
+import com.cloud.storage.DiskOfferingVO;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.log4j.Logger;
@@ -133,7 +134,13 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
 
         long rootDiskSizeInGb = (long) offering.getRootDiskSize() / GB_TO_BYTES;
         offeringResponse.setRootDiskSize(rootDiskSizeInGb);
-
+        offeringResponse.setDiskOfferingStrictness(offering.getDiskOfferingStrictness());
+        DiskOfferingVO diskOfferingVO = ApiDBUtils.findDiskOfferingById(offering.getDiskOfferingId());
+        if (diskOfferingVO != null) {
+            offeringResponse.setDiskOfferingId(offering.getDiskOfferingUuid());
+            offeringResponse.setDiskOfferingName(offering.getDiskOfferingName());
+            offeringResponse.setDiskOfferingDisplayText(offering.getDiskOfferingDisplayText());
+        }
         return offeringResponse;
     }
 

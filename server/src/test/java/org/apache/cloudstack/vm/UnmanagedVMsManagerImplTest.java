@@ -262,13 +262,13 @@ public class UnmanagedVMsManagerImplTest {
         when(templateDao.findByName(Mockito.anyString())).thenReturn(template);
         ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
         when(serviceOffering.getId()).thenReturn(1L);
-        when(serviceOffering.getTags()).thenReturn("");
         when(serviceOffering.isDynamic()).thenReturn(false);
         when(serviceOffering.getCpu()).thenReturn(instance.getCpuCores());
         when(serviceOffering.getRamSize()).thenReturn(instance.getMemory());
         when(serviceOffering.getSpeed()).thenReturn(instance.getCpuSpeed());
         when(serviceOfferingDao.findById(Mockito.anyLong())).thenReturn(serviceOffering);
         DiskOfferingVO diskOfferingVO = Mockito.mock(DiskOfferingVO.class);
+        when(diskOfferingVO.getTags()).thenReturn("");
         when(diskOfferingVO.isCustomized()).thenReturn(false);
         when(diskOfferingVO.getDiskSize()).thenReturn(Long.MAX_VALUE);
         when(diskOfferingDao.findById(Mockito.anyLong())).thenReturn(diskOfferingVO);
