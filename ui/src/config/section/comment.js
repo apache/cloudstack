@@ -22,7 +22,13 @@ export default {
   icon: 'message',
   docHelp: 'adminguide/events.html',
   permission: ['listAnnotations'],
-  columns: ['created', 'annotation', 'entityid', 'entitytype', 'username', 'adminsonly'],
+  columns: () => {
+    const cols = ['created', 'annotation', 'entityid', 'entitytype', 'username']
+    if (['Admin'].includes(store.getters.userInfo.roletype)) {
+      cols.push('adminsonly')
+    }
+    return cols
+  },
   searchFilters: ['annotation', 'username', 'keyword'],
   params: () => { return { annotationfilter: 'self' } },
   filters: () => {

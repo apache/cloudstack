@@ -39,6 +39,7 @@ import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.command.admin.annotation.AddAnnotationCmd;
 import org.apache.cloudstack.api.command.admin.annotation.ListAnnotationsCmd;
 import org.apache.cloudstack.api.command.admin.annotation.RemoveAnnotationCmd;
+import org.apache.cloudstack.api.command.admin.annotation.UpdateAnnotationVisibilityCmd;
 import org.apache.cloudstack.api.response.AnnotationResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -103,6 +104,23 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
             throw new CloudRuntimeException("Only administrators or entity owner users can delete annotations, cannot remove annotation: " + uuid);
         }
 
+        return createAnnotationResponse(annotation);
+    }
+
+    @Override
+    public AnnotationResponse updateAnnotationVisibility(UpdateAnnotationVisibilityCmd cmd) {
+        String uuid = cmd.getUuid();
+        Boolean adminsOnly = cmd.getAdminsOnly();
+        AnnotationVO annotation = annotationDao.findByUuid(uuid);
+        if (annotation != null && isCallingUserAdmin()) {
+            if(LOGGER.isDebugEnabled()) {
+                LOGGER.debug("updating annotation visibility: " + uuid);
+            }
+            annotation.setAdminsOnly(adminsOnly);
+            annotationDao.update(annotation.getId(), annotation);
+        } else {
+            throw new CloudRuntimeException("Cannot update visibility for annotation: " + uuid);
+        }
         return createAnnotationResponse(annotation);
     }
 
@@ -235,6 +253,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         cmdList.add(AddAnnotationCmd.class);
         cmdList.add(ListAnnotationsCmd.class);
         cmdList.add(RemoveAnnotationCmd.class);
+        cmdList.add(UpdateAnnotationVisibilityCmd.class);
         return cmdList;
     }
 }
