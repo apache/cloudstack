@@ -271,37 +271,39 @@
     <template #sent="{ text }">
       {{ $toLocaleDate(text) }}
     </template>
-    <template #order="{ text, record }" class="shift-btns">
-      <a-tooltip :name="text" placement="top">
-        <template #title>{{ $t('label.move.to.top') }}</template>
-        <a-button
-          shape="round"
-          @click="moveItemTop(record)"
-          class="shift-btn">
-          <DoubleLeftOutlined class="shift-btn shift-btn--rotated" />
-        </a-button>
-      </a-tooltip>
-      <a-tooltip placement="top">
-        <template #title>{{ $t('label.move.to.bottom') }}</template>
-        <a-button
-          shape="round"
-          @click="moveItemBottom(record)"
-          class="shift-btn">
-          <DoubleRightOutlined class="shift-btn shift-btn--rotated" />
-        </a-button>
-      </a-tooltip>
-      <a-tooltip placement="top">
-        <template #title>{{ $t('label.move.up.row') }}</template>
-        <a-button shape="round" @click="moveItemUp(record)" class="shift-btn">
-          <CaretUpOutlined class="shift-btn" />
-        </a-button>
-      </a-tooltip>
-      <a-tooltip placement="top">
-        <template #title>{{ $t('label.move.down.row') }}</template>
-        <a-button shape="round" @click="moveItemDown(record)" class="shift-btn">
-          <CaretDownOutlined class="shift-btn" />
-        </a-button>
-      </a-tooltip>
+    <template #order="{ text, record }">
+      <div class="shift-btns">
+        <a-tooltip :name="text" placement="top">
+          <template #title>{{ $t('label.move.to.top') }}</template>
+          <a-button
+            shape="round"
+            @click="moveItemTop(record)"
+            class="shift-btn">
+            <DoubleLeftOutlined class="shift-btn shift-btn--rotated" />
+          </a-button>
+        </a-tooltip>
+        <a-tooltip placement="top">
+          <template #title>{{ $t('label.move.to.bottom') }}</template>
+          <a-button
+            shape="round"
+            @click="moveItemBottom(record)"
+            class="shift-btn">
+            <DoubleRightOutlined class="shift-btn shift-btn--rotated" />
+          </a-button>
+        </a-tooltip>
+        <a-tooltip placement="top">
+          <template #title>{{ $t('label.move.up.row') }}</template>
+          <a-button shape="round" @click="moveItemUp(record)" class="shift-btn">
+            <CaretUpOutlined class="shift-btn" />
+          </a-button>
+        </a-tooltip>
+        <a-tooltip placement="top">
+          <template #title>{{ $t('label.move.down.row') }}</template>
+          <a-button shape="round" @click="moveItemDown(record)" class="shift-btn">
+            <CaretDownOutlined class="shift-btn" />
+          </a-button>
+        </a-tooltip>
+      </div>
     </template>
 
     <template #value="{ text, record }">

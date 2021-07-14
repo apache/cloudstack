@@ -25,25 +25,25 @@
       :dataSource="dataSource"
       :pagination="false"
       :rowKey="record => record.zoneid">
-      <div slot="isready" slot-scope="text, record">
+      <template #isready="{ record }">
         <span v-if="record.isready">{{ $t('label.yes') }}</span>
         <span v-else>{{ $t('label.no') }}</span>
-      </div>
-      <template slot="action" slot-scope="text, record">
+      </template>
+      <template #action="{ record }">
         <tooltip-button
           style="margin-right: 5px"
           :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
           :title="$t('label.action.copy.template')"
-          icon="copy"
+          icon="copy-outlined"
           :loading="copyLoading"
-          @click="showCopyTemplate(record)" />
+          @onClick="showCopyTemplate(record)" />
         <tooltip-button
           style="margin-right: 5px"
           :disabled="!('deleteTemplate' in $store.getters.apis)"
           :title="$t('label.action.delete.template')"
           type="danger"
-          icon="delete"
-          @click="onShowDeleteModal(record)"/>
+          icon="delete-outlined"
+          @onClick="onShowDeleteModal(record)"/>
       </template>
     </a-table>
     <a-pagination
@@ -57,7 +57,7 @@
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
@@ -77,26 +77,20 @@
       centered>
       <a-spin :spinning="copyLoading">
         <a-form
-          :form="form"
-          @submit="handleCopyTemplateSubmit"
+          :ref="formRef"
+          :model="form"
+          :rules="rules"
           layout="vertical">
-          <a-form-item :label="$t('label.zoneid')">
+          <a-form-item ref="zoneid" name="zoneid" :label="$t('label.zoneid')">
             <a-select
               id="zone-selection"
               mode="multiple"
               :placeholder="$t('label.select.zones')"
-              v-decorator="['zoneid', {
-                rules: [
-                  {
-                    required: true,
-                    message: `${this.$t('message.error.select')}`
-                  }
-                ]
-              }]"
+              v-model:value="form.zoneid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="zoneLoading"
               autoFocus>
@@ -121,16 +115,19 @@
       :confirmLoading="deleteLoading"
       centered>
       <a-spin :spinning="deleteLoading">
-        <a-alert :message="$t('message.action.delete.template')" type="warning" />
-        <a-form-item :label="$t('label.isforced')" style="margin-bottom: 0;">
-          <a-switch v-model="forcedDelete"></a-switch>
-        </a-form-item>
+        <a-form layout="vertical">
+          <a-alert :message="$t('message.action.delete.template')" type="warning" />
+          <a-form-item ref="forcedDelete" name="forcedDelete" :label="$t('label.isforced')" style="margin-bottom: 0;">
+            <a-switch v-model:checked="forcedDelete"></a-switch>
+          </a-form-item>
+        </a-form>
       </a-spin>
     </a-modal>
   </div>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipButton from '@/components/view/TooltipButton'
 
@@ -168,7 +165,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiConfigParams = (this.$store.getters.apis.copyTemplate && this.$store.getters.apis.copyTemplate.params) || []
     this.apiParams = {}
     this.apiConfigParams.forEach(param => {
@@ -188,7 +184,7 @@ export default {
       {
         title: this.$t('label.isready'),
         dataIndex: 'isready',
-        scopedSlots: { customRender: 'isready' }
+        slots: { customRender: 'isready' }
       }
     ]
     if (this.isActionPermitted()) {
@@ -197,7 +193,7 @@ export default {
         dataIndex: 'action',
         fixed: 'right',
         width: 100,
-        scopedSlots: { customRender: 'action' }
+        slots: { customRender: 'action' }
       })
     }
 
@@ -206,6 +202,7 @@ export default {
       (userInfo.account !== this.resource.account || userInfo.domain !== this.resource.domain)) {
       this.columns = this.columns.filter(col => { return col.dataIndex !== 'status' })
     }
+    this.initForm()
     this.fetchData()
   },
   watch: {
@@ -216,6 +213,13 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        zoneid: [{ type: 'array', required: true, message: this.$t('message.error.select') }]
+      })
+    },
     fetchData () {
       const params = {}
       params.id = this.resource.id
@@ -305,9 +309,7 @@ export default {
     },
     showCopyTemplate (record) {
       this.currentRecord = record
-      this.form.setFieldsValue({
-        zoneid: []
-      })
+      this.form.zoneid = []
       this.fetchZoneData()
       this.showCopyActionForm = true
     },
@@ -321,12 +323,9 @@ export default {
       this.showCopyActionForm = false
       this.showDeleteTemplate = false
     },
-    handleCopyTemplateSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    handleCopyTemplateSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {
           id: this.currentRecord.id,
           sourcezoneid: this.currentRecord.zoneid,

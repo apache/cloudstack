@@ -18,13 +18,13 @@
 <template>
   <div class="form">
     <div v-if="loading" class="loading">
-      <a-icon type="loading"></a-icon>
+      <loading-outlined />
     </div>
 
     <div class="form__item">
       <p class="form__label">{{ $t('label.operation') }}</p>
       <a-select
-        v-model="selectedOperation"
+        v-model:value="selectedOperation"
         :defaultValue="$t('label.add')"
         @change="fetchData"
         autoFocus>
@@ -40,7 +40,7 @@
           <span class="required">*</span>
           {{ $t('label.sharewith') }}
         </p>
-        <a-select v-model="selectedShareWith" :defaultValue="$t('label.account')" @change="fetchData">
+        <a-select v-model:value="selectedShareWith" :defaultValue="$t('label.account')" @change="fetchData">
           <a-select-option :value="$t('label.account')">{{ $t('label.account') }}</a-select-option>
           <a-select-option :value="$t('label.project')">{{ $t('label.project') }}</a-select-option>
         </a-select>
@@ -55,7 +55,7 @@
             <a-select
               mode="multiple"
               placeholder="Select Accounts"
-              :value="selectedAccounts"
+              v-model:value="selectedAccounts"
               @change="handleChange"
               style="width: 100%">
               <a-select-option v-for="account in accountsList" :key="account.name">
@@ -64,7 +64,7 @@
             </a-select>
           </div>
           <div v-else>
-            <a-input v-model="selectedAccountsList" :placeholder="$t('label.comma.separated.list.description')"></a-input>
+            <a-input v-model:value="selectedAccountsList" :placeholder="$t('label.comma.separated.list.description')"></a-input>
           </div>
         </div>
       </template>
@@ -77,7 +77,7 @@
           <a-select
             mode="multiple"
             :placeholder="$t('label.select.projects')"
-            :value="selectedProjects"
+            v-model:value="selectedProjects"
             @change="handleChange"
             style="width: 100%">
             <a-select-option v-for="project in projectsList" :key="project.name">

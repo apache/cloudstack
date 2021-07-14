@@ -16,98 +16,102 @@
 // under the License.
 
 import {
-  SafetyOutlined,
-  UserOutlined,
-  LockOutlined,
-  BlockOutlined,
-  AuditOutlined,
-  TranslationOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  LogoutOutlined,
-  QuestionCircleOutlined,
-  ClockCircleOutlined,
-  ProjectOutlined,
-  LoadingOutlined,
-  BellOutlined,
-  GithubOutlined,
-  DashboardOutlined,
-  TeamOutlined,
-  ScheduleOutlined,
-  FlagOutlined,
-  DesktopOutlined,
-  BankOutlined,
-  ReadOutlined,
-  FilterOutlined,
-  HomeOutlined,
-  UserAddOutlined,
-  SyncOutlined,
-  EditOutlined,
-  PlusOutlined,
-  MoreOutlined,
-  SafetyCertificateOutlined,
-  DeleteOutlined,
-  PauseCircleOutlined,
-  AppstoreOutlined,
-  CalendarOutlined,
-  RocketOutlined,
-  BulbOutlined,
-  IdcardOutlined,
-  GlobalOutlined,
-  ClusterOutlined,
-  DeploymentUnitOutlined,
-  GatewayOutlined,
-  WifiOutlined,
-  DatabaseOutlined,
-  HddOutlined,
-  BarcodeOutlined,
-  CloudUploadOutlined,
-  CloudOutlined,
-  PictureOutlined,
-  SwapOutlined,
-  KeyOutlined,
-  GoldOutlined,
-  EnvironmentOutlined,
+  ApartmentOutlined,
   ApiOutlined,
-  ArrowUpOutlined,
+  AppstoreOutlined,
   ArrowDownOutlined,
-  ReloadOutlined,
+  ArrowUpOutlined,
+  ArrowsAltOutlined,
+  AuditOutlined,
+  BankOutlined,
+  BarcodeOutlined,
+  BarsOutlined,
+  BellOutlined,
+  BlockOutlined,
+  BuildOutlined,
+  BulbOutlined,
+  CalendarOutlined,
+  CameraOutlined,
+  CaretDownOutlined,
+  CaretRightOutlined,
+  CaretUpOutlined,
   CheckCircleOutlined,
+  CheckCircleTwoTone,
+  CheckOutlined,
+  ClockCircleOutlined,
   CloseCircleOutlined,
   CloseCircleTwoTone,
-  CheckCircleTwoTone,
+  CloseOutlined,
+  CloudDownloadOutlined,
+  CloudOutlined,
+  CloudUploadOutlined,
+  ClusterOutlined,
+  CodeOutlined,
+  CopyOutlined,
+  DashboardOutlined,
+  DatabaseOutlined,
+  DeleteOutlined,
+  DeploymentUnitOutlined,
+  DesktopOutlined,
   DoubleLeftOutlined,
   DoubleRightOutlined,
-  CaretUpOutlined,
-  CaretDownOutlined,
-  ShareAltOutlined,
-  FilterTwoTone,
-  SearchOutlined,
-  StopOutlined,
-  InfoCircleOutlined,
-  FolderOutlined,
-  LinkOutlined,
-  InboxOutlined,
   DragOutlined,
-  ArrowsAltOutlined,
-  ScissorOutlined,
-  CameraOutlined,
-  PoweroffOutlined,
-  PaperClipOutlined,
-  CodeOutlined,
-  FolderAddOutlined,
-  CaretRightOutlined,
-  CloseOutlined,
-  NotificationOutlined,
-  BuildOutlined,
-  FullscreenOutlined,
-  CloudDownloadOutlined,
-  CheckOutlined,
-  MedicineBoxOutlined,
-  ApartmentOutlined,
+  EditOutlined,
+  EnvironmentOutlined,
+  FilterOutlined,
+  FilterTwoTone,
   FireOutlined,
+  FlagOutlined,
+  FolderAddOutlined,
+  FolderOutlined,
+  FullscreenOutlined,
+  GatewayOutlined,
+  GithubOutlined,
+  GlobalOutlined,
+  GoldOutlined,
+  HddOutlined,
+  HomeOutlined,
+  IdcardOutlined,
+  InboxOutlined,
+  InfoCircleOutlined,
+  KeyOutlined,
+  LinkOutlined,
+  LoadingOutlined,
+  LockOutlined,
+  LogoutOutlined,
+  MedicineBoxOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
   MinusCircleOutlined,
-  BarsOutlined
+  MoreOutlined,
+  NotificationOutlined,
+  PaperClipOutlined,
+  PauseCircleOutlined,
+  PictureOutlined,
+  PlusOutlined,
+  PoweroffOutlined,
+  ProjectOutlined,
+  QuestionCircleOutlined,
+  ReadOutlined,
+  ReconciliationOutlined,
+  ReloadOutlined,
+  RocketOutlined,
+  SafetyCertificateOutlined,
+  SafetyOutlined,
+  SaveOutlined,
+  ScheduleOutlined,
+  ScissorOutlined,
+  SearchOutlined,
+  ShareAltOutlined,
+  StopOutlined,
+  SwapOutlined,
+  SyncOutlined,
+  TeamOutlined,
+  TranslationOutlined,
+  UsbOutlined,
+  UserAddOutlined,
+  UserOutlined,
+  WifiOutlined
 } from '@ant-design/icons-vue'
 
 import { library } from '@fortawesome/fontawesome-svg-core'
@@ -123,97 +127,101 @@ export default {
   install: (app) => {
     app.component('font-awesome-icon', FontAwesomeIcon)
 
-    app.component('SafetyOutlined', SafetyOutlined)
-    app.component('UserOutlined', UserOutlined)
-    app.component('LockOutlined', LockOutlined)
-    app.component('BlockOutlined', BlockOutlined)
-    app.component('AuditOutlined', AuditOutlined)
-    app.component('TranslationOutlined', TranslationOutlined)
-    app.component('MenuFoldOutlined', MenuFoldOutlined)
-    app.component('MenuUnfoldOutlined', MenuUnfoldOutlined)
-    app.component('LogoutOutlined', LogoutOutlined)
-    app.component('QuestionCircleOutlined', QuestionCircleOutlined)
-    app.component('ClockCircleOutlined', ClockCircleOutlined)
-    app.component('ProjectOutlined', ProjectOutlined)
-    app.component('LoadingOutlined', LoadingOutlined)
-    app.component('BellOutlined', BellOutlined)
-    app.component('GithubOutlined', GithubOutlined)
-    app.component('DashboardOutlined', DashboardOutlined)
-    app.component('TeamOutlined', TeamOutlined)
-    app.component('ScheduleOutlined', ScheduleOutlined)
-    app.component('FlagOutlined', FlagOutlined)
-    app.component('DesktopOutlined', DesktopOutlined)
-    app.component('BankOutlined', BankOutlined)
-    app.component('ReadOutlined', ReadOutlined)
-    app.component('FilterOutlined', FilterOutlined)
-    app.component('HomeOutlined', HomeOutlined)
-    app.component('UserAddOutlined', UserAddOutlined)
-    app.component('SyncOutlined', SyncOutlined)
-    app.component('EditOutlined', EditOutlined)
-    app.component('PlusOutlined', PlusOutlined)
-    app.component('MoreOutlined', MoreOutlined)
-    app.component('SafetyCertificateOutlined', SafetyCertificateOutlined)
-    app.component('DeleteOutlined', DeleteOutlined)
-    app.component('PauseCircleOutlined', PauseCircleOutlined)
+    app.component('ApartmentOutlined', ApartmentOutlined)
+    app.component('ApiOutlined', ApiOutlined)
     app.component('AppstoreOutlined', AppstoreOutlined)
+    app.component('ArrowDownOutlined', ArrowDownOutlined)
+    app.component('ArrowUpOutlined', ArrowUpOutlined)
+    app.component('ArrowsAltOutlined', ArrowsAltOutlined)
+    app.component('AuditOutlined', AuditOutlined)
+    app.component('BankOutlined', BankOutlined)
+    app.component('BarcodeOutlined', BarcodeOutlined)
+    app.component('BarsOutlined', BarsOutlined)
+    app.component('BellOutlined', BellOutlined)
+    app.component('BlockOutlined', BlockOutlined)
+    app.component('BuildOutlined', BuildOutlined)
     app.component('BulbOutlined', BulbOutlined)
     app.component('CalendarOutlined', CalendarOutlined)
-    app.component('RocketOutlined', RocketOutlined)
-    app.component('IdcardOutlined', IdcardOutlined)
-    app.component('GlobalOutlined', GlobalOutlined)
-    app.component('ClusterOutlined', ClusterOutlined)
-    app.component('DeploymentUnitOutlined', DeploymentUnitOutlined)
-    app.component('GatewayOutlined', GatewayOutlined)
-    app.component('WifiOutlined', WifiOutlined)
-    app.component('DatabaseOutlined', DatabaseOutlined)
-    app.component('HddOutlined', HddOutlined)
-    app.component('BarcodeOutlined', BarcodeOutlined)
-    app.component('CloudUploadOutlined', CloudUploadOutlined)
-    app.component('CloudOutlined', CloudOutlined)
-    app.component('PictureOutlined', PictureOutlined)
-    app.component('SwapOutlined', SwapOutlined)
-    app.component('KeyOutlined', KeyOutlined)
-    app.component('GoldOutlined', GoldOutlined)
-    app.component('EnvironmentOutlined', EnvironmentOutlined)
-    app.component('ApiOutlined', ApiOutlined)
-    app.component('ArrowUpOutlined', ArrowUpOutlined)
-    app.component('ArrowDownOutlined', ArrowDownOutlined)
-    app.component('ReloadOutlined', ReloadOutlined)
+    app.component('CameraOutlined', CameraOutlined)
+    app.component('CaretDownOutlined', CaretDownOutlined)
+    app.component('CaretRightOutlined', CaretRightOutlined)
+    app.component('CaretUpOutlined', CaretUpOutlined)
     app.component('CheckCircleOutlined', CheckCircleOutlined)
+    app.component('CheckCircleTwoTone', CheckCircleTwoTone)
+    app.component('CheckOutlined', CheckOutlined)
+    app.component('ClockCircleOutlined', ClockCircleOutlined)
     app.component('CloseCircleOutlined', CloseCircleOutlined)
     app.component('CloseCircleTwoTone', CloseCircleTwoTone)
-    app.component('CheckCircleTwoTone', CheckCircleTwoTone)
+    app.component('CloseOutlined', CloseOutlined)
+    app.component('CloudDownloadOutlined', CloudDownloadOutlined)
+    app.component('CloudOutlined', CloudOutlined)
+    app.component('CloudUploadOutlined', CloudUploadOutlined)
+    app.component('ClusterOutlined', ClusterOutlined)
+    app.component('CodeOutlined', CodeOutlined)
+    app.component('CopyOutlined', CopyOutlined)
+    app.component('DashboardOutlined', DashboardOutlined)
+    app.component('DatabaseOutlined', DatabaseOutlined)
+    app.component('DeleteOutlined', DeleteOutlined)
+    app.component('DeploymentUnitOutlined', DeploymentUnitOutlined)
+    app.component('DesktopOutlined', DesktopOutlined)
     app.component('DoubleLeftOutlined', DoubleLeftOutlined)
     app.component('DoubleRightOutlined', DoubleRightOutlined)
-    app.component('CaretUpOutlined', CaretUpOutlined)
-    app.component('CaretDownOutlined', CaretDownOutlined)
-    app.component('ShareAltOutlined', ShareAltOutlined)
-    app.component('FilterTwoTone', FilterTwoTone)
-    app.component('SearchOutlined', SearchOutlined)
-    app.component('StopOutlined', StopOutlined)
-    app.component('InfoCircleOutlined', InfoCircleOutlined)
-    app.component('FolderOutlined', FolderOutlined)
-    app.component('LinkOutlined', LinkOutlined)
-    app.component('InboxOutlined', InboxOutlined)
     app.component('DragOutlined', DragOutlined)
-    app.component('ArrowsAltOutlined', ArrowsAltOutlined)
-    app.component('ScissorOutlined', ScissorOutlined)
-    app.component('CameraOutlined', CameraOutlined)
-    app.component('PoweroffOutlined', PoweroffOutlined)
-    app.component('PaperClipOutlined', PaperClipOutlined)
-    app.component('CodeOutlined', CodeOutlined)
-    app.component('FolderAddOutlined', FolderAddOutlined)
-    app.component('CaretRightOutlined', CaretRightOutlined)
-    app.component('CloseOutlined', CloseOutlined)
-    app.component('NotificationOutlined', NotificationOutlined)
-    app.component('BuildOutlined', BuildOutlined)
-    app.component('FullscreenOutlined', FullscreenOutlined)
-    app.component('CloudDownloadOutlined', CloudDownloadOutlined)
-    app.component('CheckOutlined', CheckOutlined)
-    app.component('MedicineBoxOutlined', MedicineBoxOutlined)
-    app.component('ApartmentOutlined', ApartmentOutlined)
+    app.component('EditOutlined', EditOutlined)
+    app.component('EnvironmentOutlined', EnvironmentOutlined)
+    app.component('FilterOutlined', FilterOutlined)
+    app.component('FilterTwoTone', FilterTwoTone)
     app.component('FireOutlined', FireOutlined)
+    app.component('FlagOutlined', FlagOutlined)
+    app.component('FolderAddOutlined', FolderAddOutlined)
+    app.component('FolderOutlined', FolderOutlined)
+    app.component('FullscreenOutlined', FullscreenOutlined)
+    app.component('GatewayOutlined', GatewayOutlined)
+    app.component('GithubOutlined', GithubOutlined)
+    app.component('GlobalOutlined', GlobalOutlined)
+    app.component('GoldOutlined', GoldOutlined)
+    app.component('HddOutlined', HddOutlined)
+    app.component('HomeOutlined', HomeOutlined)
+    app.component('IdcardOutlined', IdcardOutlined)
+    app.component('InboxOutlined', InboxOutlined)
+    app.component('InfoCircleOutlined', InfoCircleOutlined)
+    app.component('KeyOutlined', KeyOutlined)
+    app.component('LinkOutlined', LinkOutlined)
+    app.component('LoadingOutlined', LoadingOutlined)
+    app.component('LockOutlined', LockOutlined)
+    app.component('LogoutOutlined', LogoutOutlined)
+    app.component('MedicineBoxOutlined', MedicineBoxOutlined)
+    app.component('MenuFoldOutlined', MenuFoldOutlined)
+    app.component('MenuUnfoldOutlined', MenuUnfoldOutlined)
     app.component('MinusCircleOutlined', MinusCircleOutlined)
-    app.component('BarsOutlined', BarsOutlined)
+    app.component('MoreOutlined', MoreOutlined)
+    app.component('NotificationOutlined', NotificationOutlined)
+    app.component('PaperClipOutlined', PaperClipOutlined)
+    app.component('PauseCircleOutlined', PauseCircleOutlined)
+    app.component('PictureOutlined', PictureOutlined)
+    app.component('PlusOutlined', PlusOutlined)
+    app.component('PoweroffOutlined', PoweroffOutlined)
+    app.component('ProjectOutlined', ProjectOutlined)
+    app.component('QuestionCircleOutlined', QuestionCircleOutlined)
+    app.component('ReadOutlined', ReadOutlined)
+    app.component('ReconciliationOutlined', ReconciliationOutlined)
+    app.component('ReloadOutlined', ReloadOutlined)
+    app.component('RocketOutlined', RocketOutlined)
+    app.component('SafetyCertificateOutlined', SafetyCertificateOutlined)
+    app.component('SafetyOutlined', SafetyOutlined)
+    app.component('SaveOutlined', SaveOutlined)
+    app.component('ScheduleOutlined', ScheduleOutlined)
+    app.component('ScissorOutlined', ScissorOutlined)
+    app.component('SearchOutlined', SearchOutlined)
+    app.component('ShareAltOutlined', ShareAltOutlined)
+    app.component('StopOutlined', StopOutlined)
+    app.component('SwapOutlined', SwapOutlined)
+    app.component('SyncOutlined', SyncOutlined)
+    app.component('TeamOutlined', TeamOutlined)
+    app.component('TranslationOutlined', TranslationOutlined)
+    app.component('UsbOutlined', UsbOutlined)
+    app.component('UserAddOutlined', UserAddOutlined)
+    app.component('UserOutlined', UserOutlined)
+    app.component('WifiOutlined', WifiOutlined)
   }
 }
