@@ -538,6 +538,7 @@
 "label.character": "Character",
 "label.chassis": "Chassis",
 "label.checksum": "Checksum",
+"label.choose.resource.icon": "Choose Icon",
 "label.choose.saml.indentity": "Choose SAML identity provider",
 "label.cidr": "CIDR",
 "label.cidr.account": "CIDR or Account/Security Group",

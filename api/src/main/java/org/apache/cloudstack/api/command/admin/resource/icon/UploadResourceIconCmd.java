@@ -33,6 +33,11 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import java.awt.image.BufferedImage;
+
+import javax.imageio.ImageIO;
+import java.io.ByteArrayInputStream;
+import java.util.Base64;
 import java.util.List;
 
 
@@ -41,7 +46,7 @@ import java.util.List;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User})
 public class UploadResourceIconCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UploadResourceIconCmd.class.getName());
+    public static final Logger LOGGER = Logger.getLogger(UploadResourceIconCmd.class.getName());
 
     private static final String s_name = "uploadresourceiconresponse";
 
@@ -89,6 +94,9 @@ public class UploadResourceIconCmd extends BaseCmd {
     @Override
     public void execute()  {
         try {
+            if (!imageValidator(getImage())) {
+                throw new InvalidParameterValueException("Invalid image uploaded");
+            }
             boolean result = resourceIconManager.uploadResourceIcon(getResourceIds(), getResourceType(), getImage());
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
@@ -101,6 +109,23 @@ public class UploadResourceIconCmd extends BaseCmd {
         }
     }
 
+    private boolean imageValidator (String base64Image) {
+        BufferedImage image = null;
+        byte[] imageByte;
+        try {
+            imageByte = Base64.getDecoder().decode(base64Image);
+            ByteArrayInputStream bis = new ByteArrayInputStream(imageByte);
+            image = ImageIO.read(bis);
+            bis.close();
+            if (image == null) {
+                return false;
+            }
+        } catch (Exception e) {
+            LOGGER.warn("Data uploaded not a valid image");
+            return false;
+        }
+        return true;
+    }
     @Override
     public String getCommandName() {
         return s_name;

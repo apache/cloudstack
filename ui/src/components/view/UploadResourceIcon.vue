@@ -56,7 +56,7 @@
       <a-row>
         <a-col :xs="2" :md="2">
           <a-upload name="file" :beforeUpload="beforeUpload" :showUploadList="false">
-            <a-button><a-icon type="upload" />{{ $t('label.upload.resource.icon') }} </a-button>
+            <a-button><a-icon type="upload" />{{ $t('label.choose.resource.icon') }} </a-button>
           </a-upload>
         </a-col>
         <a-col :xs="{span: 2, offset: 4}" :md="1">
