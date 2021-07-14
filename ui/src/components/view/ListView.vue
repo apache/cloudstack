@@ -110,8 +110,8 @@
       <router-link :to="{ path: '/host' + '/' + record.entityid }" v-else-if="'HOST' === record.entitytype">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </span>
-    <span slot="adminsonly" slot-scope="text, record" href="javascript:;">
-      <a-checkbox :checked="record.adminsonly" v-if="['Admin'].includes($store.getters.userInfo.roletype)" @change="e => updateAdminsOnly(e, index)" />
+    <span slot="adminsonly" v-if="['Admin'].includes($store.getters.userInfo.roletype)" slot-scope="text, record" href="javascript:;">
+      <a-checkbox :checked="record.adminsonly" :value="record.id" v-if="record.userid === $store.getters.userInfo.id" @change="e => updateAdminsOnly(e)" />
       <a-checkbox :checked="record.adminsonly" disabled v-else />
     </span>
     <span slot="ipaddress" slot-scope="text, record" href="javascript:;">
@@ -594,23 +594,15 @@ export default {
 
       return record.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ') || text
     },
-    updateAdminsOnly (e, index) {
-      api('listNics', {
-        virtualmachineid: e.target.value,
-        networkid: this.resource.networkid
-      }).then(response => {
-        if (!response.listnicsresponse.nic[0]) return
-        const newItem = []
-        newItem.push(response.listnicsresponse.nic[0].ipaddress)
-        if (response.listnicsresponse.nic[0].secondaryip) {
-          newItem.push(...response.listnicsresponse.nic[0].secondaryip.map(ip => ip.ipaddress))
-        }
-        this.nics[index] = newItem
-        this.iLb.vmguestip[index] = this.nics[index][0]
-        this.addVmModalNicLoading = false
-      }).catch(error => {
-        this.$notifyError(error)
-        this.closeModal()
+    updateAdminsOnly (e) {
+      api('updateAnnotationVisibility', {
+        id: e.target.value,
+        adminsonly: e.target.checked
+      }).finally(() => {
+        const data = this.items
+        const index = data.findIndex(item => item.id === e.target.value)
+        const elem = data[index]
+        elem.adminsonly = e.target.checked
       })
     }
   }

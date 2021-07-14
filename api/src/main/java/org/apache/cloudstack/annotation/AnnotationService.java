@@ -19,6 +19,7 @@ package org.apache.cloudstack.annotation;
 import org.apache.cloudstack.api.command.admin.annotation.AddAnnotationCmd;
 import org.apache.cloudstack.api.command.admin.annotation.ListAnnotationsCmd;
 import org.apache.cloudstack.api.command.admin.annotation.RemoveAnnotationCmd;
+import org.apache.cloudstack.api.command.admin.annotation.UpdateAnnotationVisibilityCmd;
 import org.apache.cloudstack.api.response.AnnotationResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
@@ -29,6 +30,8 @@ public interface AnnotationService {
     AnnotationResponse addAnnotation(String text, EntityType type, String uuid, boolean adminsOnly);
 
     AnnotationResponse removeAnnotation(RemoveAnnotationCmd removeAnnotationCmd);
+
+    AnnotationResponse updateAnnotationVisibility(UpdateAnnotationVisibilityCmd cmd);
 
     enum EntityType {
         HOST("host"), DOMAIN("domain"), VM("vm_instance");
