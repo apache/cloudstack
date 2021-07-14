@@ -231,7 +231,7 @@
       <span v-else>{{ text }}</span>
     </span>
     <a slot="readonly" slot-scope="text, record">
-      <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" />
+      <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" displayText />
     </a>
     <span slot="created" slot-scope="text">
       {{ $toLocaleDate(text) }}
