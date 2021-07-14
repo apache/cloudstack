@@ -51,6 +51,37 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>com.googlecode.maven-download-plugin</groupId>
+                <artifactId>download-maven-plugin</artifactId>
+                <version>1.6.3</version>
+                <executions>
+                    <execution>
+			<id>download-tgz</id>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                            <configuration>
+                                <url>http://10.0.34.6/cloudstack-patches-debian-10.tgz</url>
+                                <outputFileName>cloudstack-patches-debian-10.tgz</outputFileName>
+                                <outputDirectory>${basedir}/dist/systemvm-patches</outputDirectory>
+                                <skipCache>true</skipCache>
+                            </configuration>
+                    </execution>
+                    <execution>
+                        <id>download-tgz-sha512sum</id>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                            <configuration>
+                                <url>http://10.0.34.6/cloudstack-patches-debian-10.tgz.sha512sum</url>
+                                <outputFileName>cloudstack-patches-debian-10.tgz.sha512sum</outputFileName>
+                                <outputDirectory>${basedir}/dist/systemvm-patches</outputDirectory>
+                                <skipCache>true</skipCache>
+                            </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
                     <finalName>agent</finalName>
@@ -160,6 +191,7 @@
                         <argument>systemvm.iso</argument>
                         <argument>agent.zip</argument>
                         <argument>cloud-scripts.tgz</argument>
+                        <argument>systemvm-patches</argument>
                     </arguments>
                 </configuration>
             </plugin>
