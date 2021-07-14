@@ -19,8 +19,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>cloud-plugin-storage-volume-cloudbyte</artifactId>
-    <name>Apache CloudStack Plugin - Storage Volume CloudByte Provider</name>
+    <artifactId>cloud-plugin-storage-volume-linstor</artifactId>
+    <name>Apache CloudStack Plugin - Storage Volume Linstor provider</name>
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack-plugins</artifactId>
@@ -30,27 +30,13 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-storage-volume-default</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-engine-storage-volume</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.core</groupId>
-            <artifactId>jersey-client</artifactId>
-            <version>${cs.jersey-client.version}</version>
+            <groupId>com.linbit.linstor.api</groupId>
+            <artifactId>java-linstor</artifactId>
+            <version>${cs.java-linstor.version}</version>
         </dependency>
     </dependencies>
     <build>
