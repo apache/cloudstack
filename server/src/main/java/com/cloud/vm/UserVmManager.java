@@ -57,6 +57,8 @@ public interface UserVmManager extends UserVmService {
 
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
+    public  static  final String CKS_NODE = "cksnode";
+
     /**
      * @param hostId get all of the virtual machines that belong to one host.
      * @return collection of VirtualMachine.

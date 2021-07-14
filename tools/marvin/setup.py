@@ -58,6 +58,7 @@ setup(name="Marvin",
           "pytz",
           "retries",
           "PyCrypt",
+          "kubernetes",
           "urllib3"
       ],
       py_modules=['marvin.marvinPlugin'],

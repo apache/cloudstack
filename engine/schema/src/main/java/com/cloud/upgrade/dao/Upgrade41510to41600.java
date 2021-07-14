@@ -64,6 +64,7 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public void performDataMigration(Connection conn) {
+        updateVMwareSystemvVMTemplateField(conn, "systemvm-vmware-4.16.0");
     }
 
     @Override
@@ -125,23 +126,23 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
         final Map<Hypervisor.HypervisorType, String> newTemplateUrl = new HashMap<Hypervisor.HypervisorType, String>() {
             {
-                put(Hypervisor.HypervisorType.KVM, "https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-kvm.qcow2.bz2");
-                put(Hypervisor.HypervisorType.VMware, "https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-vmware.ova");
-                put(Hypervisor.HypervisorType.XenServer, "https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-xen.vhd.bz2");
-                put(Hypervisor.HypervisorType.Hyperv, "https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-hyperv.vhd.zip");
-                put(Hypervisor.HypervisorType.LXC, "https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-kvm.qcow2.bz2");
-                put(Hypervisor.HypervisorType.Ovm3, "https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-ovm.raw.bz2");
+                put(Hypervisor.HypervisorType.KVM, "http://sl-sb-repo.sofia.shapeblue.com/systemvmtemplate/custom/cks-debian/systemvmtemplate-kvm.qcow2.bz2");
+                put(Hypervisor.HypervisorType.VMware, "http://sl-sb-repo.sofia.shapeblue.com/systemvmtemplate/custom/cks-debian/systemvmtemplate-vmware.ova");
+                put(Hypervisor.HypervisorType.XenServer, "http://sl-sb-repo.sofia.shapeblue.com/systemvmtemplate/custom/cks-debian/systemvmtemplate-xen.vhd.bz2");
+                put(Hypervisor.HypervisorType.Hyperv, "http://sl-sb-repo.sofia.shapeblue.com/systemvmtemplate/custom/cks-debian/systemvmtemplate-hyperv.vhd.zip");
+                put(Hypervisor.HypervisorType.LXC, "http://sl-sb-repo.sofia.shapeblue.com/systemvmtemplate/custom/cks-debian/systemvmtemplate-kvm.qcow2.bz2");
+                put(Hypervisor.HypervisorType.Ovm3, "http://sl-sb-repo.sofia.shapeblue.com/systemvmtemplate/custom/cks-debian/systemvmtemplate-ovm.raw.bz2");
             }
         };
 
         final Map<Hypervisor.HypervisorType, String> newTemplateChecksum = new HashMap<Hypervisor.HypervisorType, String>() {
             {
-                put(Hypervisor.HypervisorType.KVM, "81b3e48bb934784a13555a43c5ef5ffb");
-                put(Hypervisor.HypervisorType.XenServer, "1b178a5dbdbe090555515340144c6017");
-                put(Hypervisor.HypervisorType.VMware, "e6a88e518c57d6f36c096c4204c3417f");
-                put(Hypervisor.HypervisorType.Hyperv, "5c94da45337cf3e1910dcbe084d4b9ad");
-                put(Hypervisor.HypervisorType.LXC, "81b3e48bb934784a13555a43c5ef5ffb");
-                put(Hypervisor.HypervisorType.Ovm3, "875c5c65455fc06c4a012394410db375");
+                put(Hypervisor.HypervisorType.KVM, "810b13ad9c095f3a69cfd8285f720507");
+                put(Hypervisor.HypervisorType.XenServer, "30a93ca4c80e929cfc8b806d6751a396");
+                put(Hypervisor.HypervisorType.VMware, "31d386e8abf5234dbbe1cae048bab700");
+                put(Hypervisor.HypervisorType.Hyperv, "474e4d4126cea4a0f55e925bace3457f");
+                put(Hypervisor.HypervisorType.LXC, "810b13ad9c095f3a69cfd8285f720507");
+                put(Hypervisor.HypervisorType.Ovm3, "6c06ec7c6c4b18ab7475d87a75b1edf1");
             }
         };
 
@@ -169,6 +170,7 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
                         LOG.error("updateSystemVmTemplates:Exception while updating template with id " + templateId + " to be marked as 'system': " + e.getMessage());
                         throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating template with id " + templateId + " to be marked as 'system'", e);
                     }
+
                     // update template ID of system Vms
                     try (PreparedStatement update_templ_id_pstmt = conn
                             .prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = ? and removed is NULL");) {
@@ -233,6 +235,16 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
             }
         }
         LOG.debug("Updating System Vm Template IDs Complete");
+    }
+
+    private void updateVMwareSystemvVMTemplateField(final Connection conn, String templateName) {
+        try (PreparedStatement update_templ_vmware_pstmt = conn
+                .prepareStatement("UPDATE `cloud`.`vm_template` SET deploy_as_is = 1 WHERE name = '"+ templateName +"' AND removed is null order by id desc limit 1");) {
+            update_templ_vmware_pstmt.executeUpdate();
+        } catch (final SQLException e) {
+            LOG.error("updateSystemVmTemplates:Exception while updating 'deploy_as_is' for VMWare hypervisor type : " + e.getMessage());
+            throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating deploy_as_is for VMware hypervisor type ", e);
+        }
     }
 
     @Override

@@ -21,6 +21,7 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -34,6 +35,7 @@ public class KubernetesClusterVmMapDaoImpl extends GenericDaoBase<KubernetesClus
     public KubernetesClusterVmMapDaoImpl() {
         clusterIdSearch = createSearchBuilder();
         clusterIdSearch.and("clusterId", clusterIdSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        clusterIdSearch.and("vmIdsIN", clusterIdSearch.entity().getVmId(), SearchCriteria.Op.IN);
         clusterIdSearch.done();
     }
 
@@ -41,6 +43,15 @@ public class KubernetesClusterVmMapDaoImpl extends GenericDaoBase<KubernetesClus
     public List<KubernetesClusterVmMapVO> listByClusterId(long clusterId) {
         SearchCriteria<KubernetesClusterVmMapVO> sc = clusterIdSearch.create();
         sc.setParameters("clusterId", clusterId);
-        return listBy(sc, null);
+        Filter filter = new Filter(KubernetesClusterVmMapVO.class, "id", Boolean.TRUE, null, null);
+        return listBy(sc, filter);
+    }
+
+    @Override
+    public List<KubernetesClusterVmMapVO> listByClusterIdAndVmIdsIn(long clusterId, List<Long> vmIds) {
+        SearchCriteria<KubernetesClusterVmMapVO> sc = clusterIdSearch.create();
+        sc.setParameters("clusterId", clusterId);
+        sc.setParameters("vmIdsIN", vmIds.toArray());
+        return listBy(sc);
     }
 }

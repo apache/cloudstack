@@ -543,7 +543,7 @@ setup_system_rfc1918_internal() {
   public_ip=`getPublicIp`
   echo "$public_ip" | grep -E "^((127\.)|(10\.)|(172\.1[6-9]\.)|(172\.2[0-9]\.)|(172\.3[0-1]\.)|(192\.168\.))"
   if [ "$?" == "0" ]; then
-     log_it "Not setting up route of RFC1918 space to $LOCAL_GW befause $public_ip is RFC1918."
+     log_it "Not setting up route of RFC1918 space to $LOCAL_GW because $public_ip is RFC1918."
   else
      log_it "Setting up route of RFC1918 space to $LOCAL_GW"
      # Setup general route for RFC 1918 space, as otherwise it will be sent to

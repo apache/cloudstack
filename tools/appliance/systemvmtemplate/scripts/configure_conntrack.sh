@@ -34,8 +34,6 @@ function load_conntrack_modules() {
   grep nf_conntrack_ipv4 /etc/modules && return
 
   cat >> /etc/modules << EOF
-nf_conntrack_ipv4
-nf_conntrack_ipv6
 nf_conntrack
 nf_conntrack_ftp
 nf_conntrack_pptp

@@ -17,7 +17,9 @@
 
 package com.cloud.kubernetes.cluster.actionworkers;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,6 +30,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.ca.CAManager;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.collections.CollectionUtils;
@@ -35,8 +38,10 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
@@ -55,6 +60,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.template.TemplateApiService;
 import com.cloud.template.VirtualMachineTemplate;
@@ -70,7 +76,9 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.UserVmService;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.common.base.Strings;
 
@@ -114,6 +122,10 @@ public class KubernetesClusterActionWorker {
     protected UserVmService userVmService;
     @Inject
     protected VlanDao vlanDao;
+    @Inject
+    protected VirtualMachineManager itMgr;
+    @Inject
+    protected LaunchPermissionDao launchPermissionDao;
 
     protected KubernetesClusterDao kubernetesClusterDao;
     protected KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
@@ -127,17 +139,31 @@ public class KubernetesClusterActionWorker {
     protected String publicIpAddress;
     protected int sshPort;
 
+    protected final String autoscaleScriptFilename = "autoscale-kube-cluster";
+    protected final String deploySecretsScriptFilename = "deploy-cloudstack-secret";
+    protected File autoscaleScriptFile;
+    protected File deploySecretsScriptFile;
+    protected KubernetesClusterManagerImpl manager;
+
+    protected String[] keys;
+
     protected KubernetesClusterActionWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         this.kubernetesCluster = kubernetesCluster;
         this.kubernetesClusterDao = clusterManager.kubernetesClusterDao;
         this.kubernetesClusterDetailsDao = clusterManager.kubernetesClusterDetailsDao;
         this.kubernetesClusterVmMapDao = clusterManager.kubernetesClusterVmMapDao;
         this.kubernetesSupportedVersionDao = clusterManager.kubernetesSupportedVersionDao;
+        this.manager = clusterManager;
     }
 
     protected void init() {
         this.owner = accountDao.findById(kubernetesCluster.getAccountId());
-        this.clusterTemplate = templateDao.findById(kubernetesCluster.getTemplateId());
+        long zoneId = this.kubernetesCluster.getZoneId();
+        long templateId = this.kubernetesCluster.getTemplateId();
+        DataCenterVO dataCenterVO = dataCenterDao.findById(zoneId);
+        VMTemplateVO template = templateDao.findById(templateId);
+        Hypervisor.HypervisorType type = template.getHypervisorType();
+        this.clusterTemplate = manager.getKubernetesServiceTemplate(dataCenterVO, type);
         this.sshKeyFile = getManagementServerSshPublicKeyFile();
     }
 
@@ -178,7 +204,7 @@ public class KubernetesClusterActionWorker {
     }
 
     protected void logTransitStateDetachIsoAndThrow(final Level logLevel, final String message, final KubernetesCluster kubernetesCluster,
-                                                    final List<UserVm> clusterVMs, final KubernetesCluster.Event event, final Exception e) throws CloudRuntimeException {
+        final List<UserVm> clusterVMs, final KubernetesCluster.Event event, final Exception e) throws CloudRuntimeException {
         logMessage(logLevel, message, e);
         stateTransitTo(kubernetesCluster.getId(), event);
         detachIsoKubernetesVMs(clusterVMs);
@@ -188,11 +214,19 @@ public class KubernetesClusterActionWorker {
         throw new CloudRuntimeException(message, e);
     }
 
+    protected void deleteTemplateLaunchPermission() {
+        if (clusterTemplate != null && owner != null) {
+            LOGGER.info("Revoking launch permission for systemVM template");
+            launchPermissionDao.removePermissions(clusterTemplate.getId(), Collections.singletonList(owner.getId()));
+        }
+    }
+
     protected void logTransitStateAndThrow(final Level logLevel, final String message, final Long kubernetesClusterId, final KubernetesCluster.Event event, final Exception e) throws CloudRuntimeException {
         logMessage(logLevel, message, e);
         if (kubernetesClusterId != null && event != null) {
             stateTransitTo(kubernetesClusterId, event);
         }
+        deleteTemplateLaunchPermission();
         if (e == null) {
             throw new CloudRuntimeException(message);
         }
@@ -220,11 +254,11 @@ public class KubernetesClusterActionWorker {
         return new File(keyFile);
     }
 
-    protected KubernetesClusterVmMapVO addKubernetesClusterVm(final long kubernetesClusterId, final long vmId) {
+    protected KubernetesClusterVmMapVO addKubernetesClusterVm(final long kubernetesClusterId, final long vmId, boolean isMaster) {
         return Transaction.execute(new TransactionCallback<KubernetesClusterVmMapVO>() {
             @Override
             public KubernetesClusterVmMapVO doInTransaction(TransactionStatus status) {
-                KubernetesClusterVmMapVO newClusterVmMap = new KubernetesClusterVmMapVO(kubernetesClusterId, vmId);
+                KubernetesClusterVmMapVO newClusterVmMap = new KubernetesClusterVmMapVO(kubernetesClusterId, vmId, isMaster);
                 kubernetesClusterVmMapDao.persist(newClusterVmMap);
                 return newClusterVmMap;
             }
@@ -295,6 +329,7 @@ public class KubernetesClusterActionWorker {
     }
 
     protected void attachIsoKubernetesVMs(List<UserVm> clusterVMs, final KubernetesSupportedVersion kubernetesSupportedVersion) throws CloudRuntimeException {
+        //final long startTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterStartTimeout.value() * 1000;
         KubernetesSupportedVersion version = kubernetesSupportedVersion;
         if (kubernetesSupportedVersion == null) {
             version = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
@@ -317,6 +352,7 @@ public class KubernetesClusterActionWorker {
         if (!iso.getState().equals(VirtualMachineTemplate.State.Active)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Unable to attach ISO to Kubernetes cluster : %s. Binaries ISO not active.",  kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent);
         }
+
         for (UserVm vm : clusterVMs) {
             try {
                 templateService.attachIso(iso.getId(), vm.getId(), true);
@@ -353,10 +389,11 @@ public class KubernetesClusterActionWorker {
 
     protected List<KubernetesClusterVmMapVO> getKubernetesClusterVMMaps() {
         List<KubernetesClusterVmMapVO> clusterVMs = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
-        if (!CollectionUtils.isEmpty(clusterVMs)) {
-            clusterVMs.sort((t1, t2) -> (int)((t1.getId() - t2.getId())/Math.abs(t1.getId() - t2.getId())));
-        }
         return clusterVMs;
+    }
+
+    protected List<KubernetesClusterVmMapVO> getKubernetesClusterVMMapsForNodes(List<Long> nodeIds) {
+        return kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(kubernetesCluster.getId(), nodeIds);
     }
 
     protected List<UserVm> getKubernetesClusterVMs() {
@@ -379,5 +416,60 @@ public class KubernetesClusterActionWorker {
                 kubernetesCluster.getName(), kubernetesCluster.getState().toString(), e.toString()), nte);
             return false;
         }
+    }
+
+    protected boolean createCloudStackSecret(String[] keys) {
+        File pkFile = getManagementServerSshPublicKeyFile();
+        Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+        publicIpAddress = publicIpSshPort.first();
+        sshPort = publicIpSshPort.second();
+
+        try {
+            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                pkFile, null, String.format("sudo /opt/bin/deploy-cloudstack-secret -u '%s' -k '%s' -s '%s'",
+                    ApiServiceConfiguration.ApiServletPath.value(), keys[0], keys[1]),
+                    10000, 10000, 60000);
+            return result.first();
+        } catch (Exception e) {
+            String msg = String.format("Failed to add cloudstack-secret to Kubernetes cluster: %s", kubernetesCluster.getName());
+            LOGGER.warn(msg, e);
+        }
+        return false;
+    }
+
+    protected File retrieveScriptFile(String filename) {
+        File file = null;
+        try {
+            String data = readResourceFile("/script/" + filename);
+            file = File.createTempFile(filename, ".sh");
+            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+            writer.write(data);
+            writer.close();
+        } catch (IOException e) {
+            logAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster %s, unable to prepare upgrade script %s", kubernetesCluster.getName(), filename), e);
+        }
+        return file;
+    }
+
+    protected void retrieveScriptFiles() {
+        autoscaleScriptFile = retrieveScriptFile(autoscaleScriptFilename);
+        deploySecretsScriptFile = retrieveScriptFile(deploySecretsScriptFilename);
+    }
+
+    protected void copyAutoscalerScripts(String nodeAddress, final int sshPort) throws Exception {
+        SshHelper.scpTo(nodeAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+                "~/", autoscaleScriptFile.getAbsolutePath(), "0755");
+        SshHelper.scpTo(nodeAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+                "~/", deploySecretsScriptFile.getAbsolutePath(), "0755");
+        String cmdStr = String.format("sudo mv ~/%s /opt/bin/%s", autoscaleScriptFile.getName(), autoscaleScriptFilename);
+        SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+            cmdStr, 10000, 10000, 10 * 60 * 1000);
+        cmdStr = String.format("sudo mv ~/%s /opt/bin/%s", deploySecretsScriptFile.getName(), deploySecretsScriptFilename);
+        SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+            cmdStr, 10000, 10000, 10 * 60 * 1000);
+    }
+
+    public void setKeys(String[] keys) {
+        this.keys = keys;
     }
 }

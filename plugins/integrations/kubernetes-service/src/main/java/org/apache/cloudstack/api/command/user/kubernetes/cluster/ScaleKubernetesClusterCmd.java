@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
+import java.util.List;
+
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -30,6 +32,7 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
@@ -58,18 +61,37 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true,
-            entityType = KubernetesClusterResponse.class,
-            description = "the ID of the Kubernetes cluster")
+        entityType = KubernetesClusterResponse.class,
+        description = "the ID of the Kubernetes cluster")
     private Long id;
 
     @ACL(accessType = SecurityChecker.AccessType.UseEntry)
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class,
-            description = "the ID of the service offering for the virtual machines in the cluster.")
+        description = "the ID of the service offering for the virtual machines in the cluster.")
     private Long serviceOfferingId;
 
     @Parameter(name=ApiConstants.SIZE, type = CommandType.LONG,
-            description = "number of Kubernetes cluster nodes")
+        description = "number of Kubernetes cluster nodes")
     private Long clusterSize;
+
+    @Parameter(name = ApiConstants.NODE_IDS,
+        type = CommandType.LIST,
+        collectionType = CommandType.UUID,
+        entityType = UserVmResponse.class,
+        description = "the IDs of the nodes to be removed")
+    private List<Long> nodeIds;
+
+    @Parameter(name=ApiConstants.AUTOSCALING_ENABLED, type = CommandType.BOOLEAN,
+        description = "Whether autoscaling is enabled for the cluster")
+    private Boolean isAutoscalingEnabled;
+
+    @Parameter(name=ApiConstants.MIN_SIZE, type = CommandType.LONG,
+        description = "Minimum number of worker nodes in the cluster")
+    private Long minSize;
+
+    @Parameter(name=ApiConstants.MAX_SIZE, type = CommandType.LONG,
+        description = "Maximum number of worker nodes in the cluster")
+    private Long maxSize;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -85,6 +107,22 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
 
     public Long getClusterSize() {
         return clusterSize;
+    }
+
+    public List<Long> getNodeIds() {
+        return nodeIds;
+    }
+
+    public Boolean isAutoscalingEnabled() {
+        return isAutoscalingEnabled;
+    }
+
+    public Long getMinSize() {
+        return minSize;
+    }
+
+    public Long getMaxSize() {
+        return maxSize;
     }
 
     @Override

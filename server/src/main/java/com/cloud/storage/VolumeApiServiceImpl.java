@@ -2810,7 +2810,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (volume.getTemplateId() != null) {
             VMTemplateVO template = _templateDao.findById(volume.getTemplateId());
-            if (template != null && template.getTemplateType() == Storage.TemplateType.SYSTEM) {
+            Long instanceId = volume.getInstanceId();
+            UserVmVO userVmVO = null;
+            if (instanceId != null) {
+                userVmVO = _userVmDao.findById(instanceId);
+            }
+            if (template != null && template.getTemplateType() == Storage.TemplateType.SYSTEM && (userVmVO == null || !UserVmManager.CKS_NODE.equals(userVmVO.getUserVmType()))) {
                 throw new InvalidParameterValueException("VolumeId: " + volumeId + " is for System VM , Creating snapshot against System VM volumes is not supported");
             }
         }
@@ -2867,7 +2872,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (volume.getTemplateId() != null) {
             VMTemplateVO template = _templateDao.findById(volume.getTemplateId());
-            if (template != null && template.getTemplateType() == Storage.TemplateType.SYSTEM) {
+            Long instanceId = volume.getInstanceId();
+            UserVmVO userVmVO = null;
+            if (instanceId != null) {
+                userVmVO = _userVmDao.findById(instanceId);
+            }
+            if (template != null && template.getTemplateType() == Storage.TemplateType.SYSTEM && (userVmVO == null || !UserVmManager.CKS_NODE.equals(userVmVO.getUserVmType()))) {
                 throw new InvalidParameterValueException("VolumeId: " + volumeId + " is for System VM , Creating snapshot against System VM volumes is not supported");
             }
         }

@@ -49,7 +49,7 @@ public class KubernetesClusterUtil {
                                                        String user, File sshKeyFile, String nodeName) throws Exception {
         Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port,
                 user, sshKeyFile, null,
-                String.format("sudo kubectl get nodes | awk '{if ($1 == \"%s\" && $2 == \"Ready\") print $1}'", nodeName.toLowerCase()),
+                String.format("sudo /opt/bin/kubectl get nodes | awk '{if ($1 == \"%s\" && $2 == \"Ready\") print $1}'", nodeName.toLowerCase()),
                 10000, 10000, 20000);
         if (result.first() && nodeName.equals(result.second().trim())) {
             return true;
@@ -110,7 +110,7 @@ public class KubernetesClusterUtil {
             Pair<Boolean, String> result = null;
             try {
                 result = SshHelper.sshExecute(ipAddress, port, user, sshKeyFile, null,
-                        String.format("sudo kubectl uncordon %s", hostName),
+                        String.format("sudo /opt/bin/kubectl uncordon %s", hostName),
                         10000, 10000, 30000);
                 if (result.first()) {
                     return true;
@@ -133,9 +133,9 @@ public class KubernetesClusterUtil {
                                                                  final int port, final String user, final File sshKeyFile,
                                                                  final String namespace, String serviceName) {
         try {
-            String cmd = "sudo kubectl get pods --all-namespaces";
+            String cmd = "sudo /opt/bin/kubectl get pods --all-namespaces";
             if (!Strings.isNullOrEmpty(namespace)) {
-                cmd = String.format("sudo kubectl get pods --namespace=%s", namespace);
+                cmd = String.format("sudo /opt/bin/kubectl get pods --namespace=%s", namespace);
             }
             Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port, user,
                     sshKeyFile, null, cmd,
@@ -211,7 +211,7 @@ public class KubernetesClusterUtil {
                                                           final int port, final String user, final File sshKeyFile) throws Exception {
         Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port,
                 user, sshKeyFile, null,
-                "sudo kubectl get nodes | awk '{if ($2 == \"Ready\") print $1}' | wc -l",
+                "sudo /opt/bin/kubectl get nodes | awk '{if ($2 == \"Ready\") print $1}' | wc -l",
                 10000, 10000, 20000);
         if (result.first()) {
             return Integer.parseInt(result.second().trim().replace("\"", ""));
