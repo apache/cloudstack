@@ -198,7 +198,7 @@
           </a-form-item>
           <div v-if="usePrivateRegistry">
             <a-form-item>
-              <tooltip-label slot="label" :title="$t('label.dockerregistryusername')" :tooltip="apiParams.dockerregistryusername.description"/>
+              <tooltip-label slot="label" :title="$t('label.username')" :tooltip="apiParams.dockerregistryusername.description"/>
               <a-input
                 v-decorator="['dockerregistryusername', {
                   rules: [{ required: true, message: $t('label.required') }]
@@ -206,7 +206,7 @@
                 :placeholder="apiParams.dockerregistryusername.description"/>
             </a-form-item>
             <a-form-item>
-              <tooltip-label slot="label" :title="$t('label.dockerregistrypassword')" :tooltip="apiParams.dockerregistrypassword.description"/>
+              <tooltip-label slot="label" :title="$t('label.password')" :tooltip="apiParams.dockerregistrypassword.description"/>
               <a-input-password
                 v-decorator="['dockerregistrypassword', {
                   rules: [{ required: true, message: $t('label.required') }]
@@ -214,7 +214,7 @@
                 :placeholder="apiParams.dockerregistrypassword.description"/>
             </a-form-item>
             <a-form-item>
-              <tooltip-label slot="label" :title="$t('label.dockerregistryurl')" :tooltip="apiParams.dockerregistryurl.description"/>
+              <tooltip-label slot="label" :title="$t('label.url')" :tooltip="apiParams.dockerregistryurl.description"/>
               <a-input
                 v-decorator="['dockerregistryurl', {
                   rules: [{ required: true, message: $t('label.required') }]
@@ -222,7 +222,7 @@
                 :placeholder="apiParams.dockerregistryurl.description"/>
             </a-form-item>
             <a-form-item>
-              <tooltip-label slot="label" :title="$t('label.dockerregistryemail')" :tooltip="apiParams.dockerregistryemail.description"/>
+              <tooltip-label slot="label" :title="$t('label.email')" :tooltip="apiParams.dockerregistryemail.description"/>
               <a-input
                 v-decorator="['dockerregistryemail', {
                   rules: [{ required: true, message: $t('label.required') }]
