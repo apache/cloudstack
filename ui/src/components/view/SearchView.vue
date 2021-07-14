@@ -112,9 +112,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'SearchView',
+  components: {
+    TooltipButton
+  },
   props: {
     searchFilters: {
       type: Array,
