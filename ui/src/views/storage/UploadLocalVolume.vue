@@ -88,7 +88,7 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.volumechecksum')" :tooltip="apiParams.volumechecksum.description"/>
+          <tooltip-label slot="label" :title="$t('label.volumechecksum')" :tooltip="apiParams.checksum.description"/>
           <a-input
             v-decorator="['checksum']"
             :placeholder="$t('label.volumechecksum.description')"
