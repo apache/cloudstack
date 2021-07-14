@@ -62,6 +62,8 @@
             }]"
             @change="val => changeZone(val)">
             <a-select-option v-for="zone in zones" :key="zone.id">
+              <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="global" style="margin-right: 5px" />
               {{ zone.name }}
             </a-select-option>
           </a-select>
@@ -126,8 +128,13 @@
 </template>
 <script>
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
+
 export default {
   name: 'CreateVpc',
+  components: {
+    ResourceIcon
+  },
   data () {
     return {
       loading: false,
@@ -156,7 +163,7 @@ export default {
     },
     fetchZones () {
       this.loadingZone = true
-      api('listZones', { listAll: true }).then((response) => {
+      api('listZones', { listAll: true, showicon: true }).then((response) => {
         const listZones = response.listzonesresponse.zone || []
         this.zones = listZones.filter(zone => !zone.securitygroupsenabled)
         this.selectedZone = ''

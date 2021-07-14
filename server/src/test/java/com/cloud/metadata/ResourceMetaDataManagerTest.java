@@ -27,6 +27,7 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.server.ResourceManagerUtil;
 import org.apache.commons.collections.map.HashedMap;
 import org.junit.Before;
 import org.mockito.Mock;
@@ -49,6 +50,8 @@ public class ResourceMetaDataManagerTest {
     NicDetailsDao _nicDetailDao;
     @Mock
     TaggedResourceService _taggedResourceMgr;
+    @Mock
+    ResourceManagerUtil resourceManagerUtil;
 
     @Before
     public void setup() {
@@ -70,7 +73,7 @@ public class ResourceMetaDataManagerTest {
     public void testResourceDetails() throws ResourceAllocationException {
 
         //when(_resourceMetaDataMgr.getResourceId(anyString(), eq(ResourceTag.TaggedResourceType.Volume))).thenReturn(1L);
-        doReturn(1L).when(_taggedResourceMgr).getResourceId(anyString(), eq(ResourceTag.ResourceObjectType.Volume));
+        doReturn(1L).when(resourceManagerUtil).getResourceId(anyString(), eq(ResourceTag.ResourceObjectType.Volume));
         //           _volumeDetailDao.removeDetails(id, key);
 
         doNothing().when(_volumeDetailDao).removeDetail(anyLong(), anyString());
@@ -82,7 +85,7 @@ public class ResourceMetaDataManagerTest {
     // Test adding details
     public void testAddResourceDetails() throws ResourceAllocationException {
 
-        doReturn(1L).when(_taggedResourceMgr).getResourceId("1", ResourceTag.ResourceObjectType.Volume);
+        doReturn(1L).when(resourceManagerUtil).getResourceId("1", ResourceTag.ResourceObjectType.Volume);
         //           _volumeDetailDao.removeDetails(id, key);
 
         doNothing().when(_volumeDetailDao).removeDetail(anyLong(), anyString());

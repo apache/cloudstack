@@ -28,6 +28,8 @@
             :value="zoneSelected.name"
             @change="changeZone">
             <a-select-option v-for="(zone, index) in zones" :key="index">
+              <resource-icon v-if="zone.icon && zone.icon.base64image" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else style="margin-right: 5px" type="global" />
               {{ zone.name }}
             </a-select-option>
           </a-select>
@@ -124,11 +126,13 @@
 import { api } from '@/api'
 
 import ChartCard from '@/components/widgets/ChartCard'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'CapacityDashboard',
   components: {
-    ChartCard
+    ChartCard,
+    ResourceIcon
   },
   data () {
     return {
@@ -242,7 +246,7 @@ export default {
       return 'blue'
     },
     listZones () {
-      api('listZones').then(json => {
+      api('listZones', { showicon: true }).then(json => {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           if (this.zones.length > 0) {

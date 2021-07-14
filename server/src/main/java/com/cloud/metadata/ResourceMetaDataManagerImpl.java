@@ -24,6 +24,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
+import com.cloud.server.ResourceManagerUtil;
 import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.AutoScaleVmGroupDetailsDao;
@@ -127,6 +128,8 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     GuestOsDetailsDao _guestOsDetailsDao;
     @Inject
     NetworkOfferingDetailsDao _networkOfferingDetailsDao;
+    @Inject
+    ResourceManagerUtil resourceManagerUtil;
 
     private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> s_daoMap = new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
 
@@ -189,7 +192,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
                     }
 
                     DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
-                    newDetailDaoHelper.addDetail(_taggedResourceMgr.getResourceId(resourceId, resourceType), key, value, forDisplay);
+                    newDetailDaoHelper.addDetail(resourceManagerUtil.getResourceId(resourceId, resourceType), key, value, forDisplay);
                 }
 
                 return true;
@@ -201,7 +204,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_DETAILS_DELETE, eventDescription = "deleting resource meta data")
     public boolean deleteResourceMetaData(String resourceId, ResourceObjectType resourceType, String key) {
-        long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
+        long id = resourceManagerUtil.getResourceId(resourceId, resourceType);
 
         DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
         if (key != null) {

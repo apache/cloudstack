@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.server.ResourceIcon;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import com.cloud.resource.RollingMaintenanceManager;
 import org.apache.cloudstack.api.response.RollingMaintenanceResponse;
@@ -270,7 +272,7 @@ public interface ResponseGenerator {
 
     PodResponse createPodResponse(Pod pod, Boolean showCapacities);
 
-    ZoneResponse createZoneResponse(ResponseView view, DataCenter dataCenter, Boolean showCapacities);
+    ZoneResponse createZoneResponse(ResponseView view, DataCenter dataCenter, Boolean showCapacities, Boolean showResourceIcon);
 
     VolumeResponse createVolumeResponse(ResponseView view, Volume volume);
 
@@ -486,5 +488,7 @@ public interface ResponseGenerator {
     List<RouterHealthCheckResultResponse> createHealthCheckResponse(VirtualMachine router, List<RouterHealthCheckResult> healthCheckResults);
 
     RollingMaintenanceResponse createRollingMaintenanceResponse(Boolean success, String details, List<RollingMaintenanceManager.HostUpdated> hostsUpdated, List<RollingMaintenanceManager.HostSkipped> hostsSkipped);
+
+    ResourceIconResponse createResourceIconResponse(ResourceIcon resourceIcon);
 
 }

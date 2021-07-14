@@ -29,7 +29,7 @@ import com.cloud.serializer.Param;
 import com.cloud.user.User;
 
 @EntityReference(value = User.class)
-public class UserResponse extends BaseResponse {
+public class UserResponse extends BaseResponse implements SetResourceIconResponse {
     @SerializedName("id")
     @Param(description = "the user ID")
     private String id;
@@ -114,6 +114,10 @@ public class UserResponse extends BaseResponse {
     @SerializedName(ApiConstants.IS_DEFAULT)
     @Param(description = "true if user is default, false otherwise", since = "4.2.0")
     private Boolean isDefault;
+
+    @SerializedName(ApiConstants.RESOURCE_ICON)
+    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
+    ResourceIconResponse icon;
 
     @Override
     public String getObjectId() {
@@ -274,5 +278,10 @@ public class UserResponse extends BaseResponse {
         if (this.userSource.equals(User.Source.UNKNOWN.toString().toLowerCase())) {
             this.userSource = User.Source.NATIVE.toString().toLowerCase();
         }
+    }
+
+    @Override
+    public void setResourceIconResponse(ResourceIconResponse icon) {
+        this.icon = icon;
     }
 }

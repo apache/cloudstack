@@ -49,6 +49,8 @@
             v-for="(zone, index) in zones"
             :value="zone.id"
             :key="index">
+            <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+            <a-icon v-else type="global" style="margin-right: 5px"/>
             {{ zone.name }}
           </a-select-option>
         </a-select>
@@ -99,9 +101,13 @@
 
 <script>
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'CreateVolume',
+  components: {
+    ResourceIcon
+  },
   data () {
     return {
       zones: [],
@@ -126,7 +132,7 @@ export default {
   methods: {
     fetchData () {
       this.loading = true
-      api('listZones').then(json => {
+      api('listZones', { showicon: true }).then(json => {
         this.zones = json.listzonesresponse.zone || []
         this.selectedZoneId = this.zones[0].id || ''
         this.fetchDiskOfferings(this.selectedZoneId)

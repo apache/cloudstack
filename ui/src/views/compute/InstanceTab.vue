@@ -156,6 +156,8 @@
             v-for="network in addNetworkData.allNetworks"
             :key="network.id"
             :value="network.id">
+            <resource-icon v-if="network.icon" :image="network.icon.base64image" size="1x" style="margin-right: 5px"/>
+            <a-icon v-else type="apartment" style="margin-right: 5px" />
             {{ network.name }}
           </a-select-option>
         </a-select>
@@ -262,6 +264,7 @@ import DetailSettings from '@/components/view/DetailSettings'
 import NicsTable from '@/views/network/NicsTable'
 import ListResourceTable from '@/components/view/ListResourceTable'
 import TooltipButton from '@/components/view/TooltipButton'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'InstanceTab',
@@ -272,7 +275,8 @@ export default {
     NicsTable,
     Status,
     ListResourceTable,
-    TooltipButton
+    TooltipButton,
+    ResourceIcon
   },
   mixins: [mixinDevice],
   props: {
@@ -385,6 +389,7 @@ export default {
     listNetworks () {
       api('listNetworks', {
         listAll: 'true',
+        showicon: true,
         zoneid: this.vm.zoneid
       }).then(response => {
         this.addNetworkData.allNetworks = response.listnetworksresponse.network.filter(network => !this.vm.nic.map(nic => nic.networkid).includes(network.id))

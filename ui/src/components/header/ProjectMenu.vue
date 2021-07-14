@@ -39,6 +39,8 @@
       </a-tooltip>
 
       <a-select-option v-for="(project, index) in projects" :key="index">
+        <resource-icon v-if="project.icon && project.icon.base64image" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
+        <a-icon v-else style="margin-right: 5px" type="project" />
         {{ project.displaytext || project.name }}
       </a-select-option>
     </a-select>
@@ -49,9 +51,13 @@
 import store from '@/store'
 import { api } from '@/api'
 import _ from 'lodash'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'ProjectMenu',
+  components: {
+    ResourceIcon
+  },
   data () {
     return {
       projects: [],
@@ -70,7 +76,7 @@ export default {
       const projects = []
       const getNextPage = () => {
         this.loading = true
-        api('listProjects', { listAll: true, details: 'min', page: page, pageSize: 500 }).then(json => {
+        api('listProjects', { listAll: true, details: 'min', page: page, pageSize: 500, showIcon: true }).then(json => {
           if (json && json.listprojectsresponse && json.listprojectsresponse.project) {
             projects.push(...json.listprojectsresponse.project)
           }

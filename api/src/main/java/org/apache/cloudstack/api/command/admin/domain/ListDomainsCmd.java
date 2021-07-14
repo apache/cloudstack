@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import com.cloud.server.ResourceIcon;
+import com.cloud.server.ResourceTag;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -66,6 +69,10 @@ public class ListDomainsCmd extends BaseListCmd implements UserCmd {
                description = "comma separated list of domain details requested, value can be a list of [ all, resource, min]")
     private List<String> viewDetails;
 
+    @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
+            description = "flag to display the resource icon for domains")
+    private Boolean showIcon;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -105,6 +112,10 @@ public class ListDomainsCmd extends BaseListCmd implements UserCmd {
         return dv;
     }
 
+    public Boolean getShowIcon() {
+        return showIcon != null ? showIcon : false;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -119,5 +130,19 @@ public class ListDomainsCmd extends BaseListCmd implements UserCmd {
         ListResponse<DomainResponse> response = _queryService.searchForDomains(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
+        if (response != null && response.getCount() > 0 && getShowIcon()) {
+            updateDomainResponse(response.getResponses());
+        }
+    }
+
+    private void updateDomainResponse(List<DomainResponse> response) {
+        for (DomainResponse domainResponse : response) {
+            ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Domain, domainResponse.getId());
+            if (resourceIcon == null) {
+                continue;
+            }
+            ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
+            domainResponse.setResourceIconResponse(iconResponse);
+        }
     }
 }

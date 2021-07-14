@@ -489,6 +489,10 @@ public class EventTypes {
     public static final String EVENT_TAGS_CREATE = "CREATE_TAGS";
     public static final String EVENT_TAGS_DELETE = "DELETE_TAGS";
 
+    // resource icon related events
+    public static final String EVENT_RESOURCE_ICON_UPLOAD = "UPLOAD.RESOURCE.ICON";
+    public static final String EVENT_RESOURCE_ICON_DELETE = "DELETE.RESOURCE.ICON";
+
     // meta data related events
     public static final String EVENT_RESOURCE_DETAILS_CREATE = "CREATE_RESOURCE_DETAILS";
     public static final String EVENT_RESOURCE_DETAILS_DELETE = "DELETE_RESOURCE_DETAILS";

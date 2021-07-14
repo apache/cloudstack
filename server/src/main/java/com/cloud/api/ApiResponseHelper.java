@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.server.ResourceIcon;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -111,6 +112,7 @@ import org.apache.cloudstack.api.response.ProviderResponse;
 import org.apache.cloudstack.api.response.RegionResponse;
 import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
 import org.apache.cloudstack.api.response.ResourceCountResponse;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.RollingMaintenanceHostSkippedResponse;
@@ -1134,9 +1136,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public ZoneResponse createZoneResponse(ResponseView view, DataCenter dataCenter, Boolean showCapacities) {
+    public ZoneResponse createZoneResponse(ResponseView view, DataCenter dataCenter, Boolean showCapacities, Boolean showResourceIcon) {
         DataCenterJoinVO vOffering = ApiDBUtils.newDataCenterView(dataCenter);
-        return ApiDBUtils.newDataCenterResponse(view, vOffering, showCapacities);
+        return ApiDBUtils.newDataCenterResponse(view, vOffering, showCapacities, showResourceIcon);
     }
 
     public static List<CapacityResponse> getDataCenterCapacityResponse(Long zoneId) {
@@ -4408,5 +4410,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setSkippedHosts(skipped);
         response.setObjectName("rollingmaintenance");
         return response;
+    }
+
+    @Override
+    public ResourceIconResponse createResourceIconResponse(ResourceIcon resourceIcon) {
+        return  ApiDBUtils.newResourceIconResponse(resourceIcon);
     }
 }

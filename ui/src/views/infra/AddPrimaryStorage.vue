@@ -62,6 +62,8 @@
             v-decorator="['zone', { initialValue: this.zoneSelected, rules: [{ required: true, message: `${$t('label.required')}`}] }]"
             @change="val => changeZone(val)">
             <a-select-option :value="zone.id" v-for="(zone) in zones" :key="zone.id">
+              <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="global" style="margin-right: 5px" />
               {{ zone.name }}
             </a-select-option>
           </a-select>
@@ -338,6 +340,7 @@
 <script>
 import { api } from '@/api'
 import _ from 'lodash'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'AddPrimaryStorage',
@@ -346,6 +349,9 @@ export default {
       type: Object,
       required: true
     }
+  },
+  components: {
+    ResourceIcon
   },
   inject: ['parentFetchData'],
   data () {
@@ -392,7 +398,7 @@ export default {
     },
     getInfraData () {
       this.loading = true
-      api('listZones').then(json => {
+      api('listZones', { showicon: true }).then(json => {
         this.zones = json.listzonesresponse.zone || []
         this.changeZone(this.zones[0] ? this.zones[0].id : '')
       }).finally(() => {

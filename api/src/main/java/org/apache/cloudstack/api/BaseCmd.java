@@ -29,6 +29,11 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import com.cloud.server.ManagementService;
+import com.cloud.server.ResourceIconManager;
+import com.cloud.server.ResourceManagerUtil;
+import com.cloud.server.ResourceMetaDataService;
+import com.cloud.server.TaggedResourceService;
 import org.apache.cloudstack.acl.ProjectRoleService;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
@@ -67,9 +72,6 @@ import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.network.vpn.Site2SiteVpnService;
 import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceService;
-import com.cloud.server.ManagementService;
-import com.cloud.server.ResourceMetaDataService;
-import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.DataStoreProviderApiService;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.VolumeApiService;
@@ -164,6 +166,8 @@ public abstract class BaseCmd {
     @Inject
     public TaggedResourceService _taggedResourceService;
     @Inject
+    public ResourceManagerUtil resourceManagerUtil;
+    @Inject
     public ResourceMetaDataService _resourceMetaDataService;
     @Inject
     public VpcService _vpcService;
@@ -201,6 +205,8 @@ public abstract class BaseCmd {
     public UUIDManager _uuidMgr;
     @Inject
     public AnnotationService annotationService;
+    @Inject
+    public ResourceIconManager resourceIconManager;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException, NetworkRuleConflictException;

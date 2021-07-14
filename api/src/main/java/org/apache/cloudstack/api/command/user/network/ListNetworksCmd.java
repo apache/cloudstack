@@ -19,7 +19,10 @@ package org.apache.cloudstack.api.command.user.network;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cloud.server.ResourceIcon;
+import com.cloud.server.ResourceTag;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -92,6 +95,10 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
 
     @Parameter(name = ApiConstants.NETWORK_OFFERING_ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, description = "list networks by network offering ID")
     private Long networkOfferingId;
+
+    @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
+            description = "flag to display the resource icon for networks")
+    private Boolean showIcon;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -166,6 +173,11 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
         }
         return super.getDisplay();
     }
+
+    public Boolean getShowIcon() {
+        return showIcon != null ? showIcon : false;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -186,5 +198,22 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
         response.setResponses(networkResponses, networks.second());
         response.setResponseName(getCommandName());
         setResponseObject(response);
+        if (response != null && response.getCount() > 0 && getShowIcon()) {
+            updateNetworkResponse(response.getResponses());
+        }
+    }
+
+    private void updateNetworkResponse(List<NetworkResponse> response) {
+        for (NetworkResponse networkResponse : response) {
+            ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Network, networkResponse.getId());
+            if (resourceIcon == null) {
+                resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Vpc, networkResponse.getVpcId());
+                if (resourceIcon == null) {
+                    continue;
+                }
+            }
+            ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
+            networkResponse.setResourceIconResponse(iconResponse);
+        }
     }
 }

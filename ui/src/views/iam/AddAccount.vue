@@ -145,6 +145,8 @@
               rules: [{ required: true, message: $t('message.error.select') }] }]"
             :placeholder="apiParams.domainid.description">
             <a-select-option v-for="domain in domainsList" :key="domain.id">
+              <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <a-icon v-else type="block" style="margin-right: 5px"/>
               {{ domain.path || domain.name || domain.description }}
             </a-select-option>
           </a-select>
@@ -220,6 +222,7 @@
 import { api } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'AddAccountForm',
@@ -240,6 +243,9 @@ export default {
       idps: [],
       selectedIdp: ''
     }
+  },
+  components: {
+    ResourceIcon
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
@@ -298,6 +304,7 @@ export default {
       this.domainLoading = true
       api('listDomains', {
         listAll: true,
+        showicon: true,
         details: 'min'
       }).then(response => {
         this.domainsList = response.listdomainsresponse.domain || []

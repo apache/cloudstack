@@ -34,7 +34,7 @@ import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = VirtualMachineTemplate.class)
 @SuppressWarnings("unused")
-public class TemplateResponse extends BaseResponseWithTagInformation implements ControlledViewEntityResponse {
+public class TemplateResponse extends BaseResponseWithTagInformation implements ControlledViewEntityResponse, SetResourceIconResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the template ID")
     private String id;
@@ -222,6 +222,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @SerializedName(ApiConstants.URL)
     @Param(description = "the URL which the template/iso is registered from")
     private String url;
+
+    @SerializedName(ApiConstants.RESOURCE_ICON)
+    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
+    ResourceIconResponse icon;
 
     public TemplateResponse() {
         tags = new LinkedHashSet<>();
@@ -457,5 +461,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    @Override
+    public void setResourceIconResponse(ResourceIconResponse icon) {
+        this.icon = icon;
     }
 }

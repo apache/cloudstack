@@ -75,6 +75,8 @@
               :placeholder="this.$t('label.zoneid')"
               @change="val => { this.handleZoneChange(this.zones[val]) }">
               <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else type="global" style="margin-right: 5px" />
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
@@ -207,6 +209,8 @@
               :placeholder="this.$t('label.domainid')"
               @change="val => { this.handleDomainChange(this.domains[val]) }">
               <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
+                <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else-if="optIndex !== 0" type="block" style="margin-right: 5px" />
                 {{ opt.path || opt.name || opt.description }}
               </a-select-option>
             </a-select>
@@ -256,6 +260,8 @@
               :placeholder="this.$t('label.projectid')"
               @change="val => { this.handleProjectChange(this.projects[val]) }">
               <a-select-option v-for="(opt, optIndex) in this.projects" :key="optIndex">
+                <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <a-icon v-else-if="optIndex !== 0" type="project" style="margin-right: 5px" />
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
@@ -440,6 +446,7 @@
 
 <script>
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'CreateGuestNetworkForm',
@@ -460,6 +467,9 @@ export default {
       type: Object,
       default: () => { return {} }
     }
+  },
+  components: {
+    ResourceIcon
   },
   data () {
     return {
@@ -546,6 +556,7 @@ export default {
           params.id = this.resource.zoneid
         }
         params.listAll = true
+        params.showicon = true
         this.zoneLoading = true
         api('listZones', params).then(json => {
           for (const i in json.listzonesresponse.zone) {
@@ -725,6 +736,7 @@ export default {
       } else {
         params.listall = true
       }
+      params.showicon = true
       this.domainLoading = true
       api('listDomains', params).then(json => {
         const listDomains = json.listdomainsresponse.domain
@@ -747,6 +759,7 @@ export default {
       this.projects = []
       const params = {}
       params.listall = true
+      params.showicon = true
       params.details = 'min'
       this.projectLoading = true
       api('listProjects', params).then(json => {
