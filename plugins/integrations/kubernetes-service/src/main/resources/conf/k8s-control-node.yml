@@ -29,17 +29,17 @@ write-files:
   - path: /etc/kubernetes/pki/cloudstack/ca.crt
     permissions: '0644'
     content: |
-      {{ k8s_master.ca.crt }}
+      {{ k8s_control_node.ca.crt }}
 
   - path: /etc/kubernetes/pki/cloudstack/apiserver.crt
     permissions: '0644'
     content: |
-      {{ k8s_master.apiserver.crt }}
+      {{ k8s_control_node.apiserver.crt }}
 
   - path: /etc/kubernetes/pki/cloudstack/apiserver.key
     permissions: '0600'
     content: |
-      {{ k8s_master.apiserver.key }}
+      {{ k8s_control_node.apiserver.key }}
 
   - path: /opt/bin/setup-kube-system
     permissions: 0700
@@ -204,7 +204,7 @@ write-files:
         fi
         retval=0
         set +e
-        kubeadm init --token {{ k8s_master.cluster.token }} --token-ttl 0 {{ k8s_master.cluster.initargs }}
+        kubeadm init --token {{ k8s_control_node.cluster.token }} --token-ttl 0 {{ k8s_control_node.cluster.initargs }}
         retval=$?
         set -e
         if [ $retval -eq 0 ]; then

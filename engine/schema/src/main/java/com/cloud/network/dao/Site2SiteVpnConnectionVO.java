@@ -35,7 +35,7 @@ import com.cloud.utils.db.GenericDao;
 
 
 @Entity
-@Table(name = ("s2s_vpn_connection"))
+@Table(name = "s2s_vpn_connection")
 public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

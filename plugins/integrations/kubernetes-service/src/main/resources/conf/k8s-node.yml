@@ -196,7 +196,7 @@ write-files:
       if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
         export PATH=$PATH:/opt/bin
       fi
-      kubeadm join {{ k8s_master.join_ip }}:6443 --token {{ k8s_master.cluster.token }} --discovery-token-unsafe-skip-ca-verification
+      kubeadm join {{ k8s_control_node.join_ip }}:6443 --token {{ k8s_control_node.cluster.token }} --discovery-token-unsafe-skip-ca-verification
 
       sudo touch /home/core/success
       echo "true" > /home/core/success
@@ -229,7 +229,7 @@ coreos:
         Type=simple
         StartLimitInterval=0
         Restart=on-failure
-        ExecStartPre=/usr/bin/curl -k https://{{ k8s_master.join_ip }}:6443/version
+        ExecStartPre=/usr/bin/curl -k https://{{ k8s_control_node.join_ip }}:6443/version
         ExecStart=/opt/bin/deploy-kube-system
 
   update:

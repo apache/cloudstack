@@ -89,8 +89,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return kubernetesClusterVersion;
     }
 
-    private Pair<String, Map<Long, Network.IpAddresses>> getKubernetesControlIpAddresses(final DataCenter zone, final Network network, final Account account) throws InsufficientAddressCapacityException {
-        String controlIp = null;
+    private Pair<String, Map<Long, Network.IpAddresses>> getKubernetesControlNodeIpAddresses(final DataCenter zone, final Network network, final Account account) throws InsufficientAddressCapacityException {
+        String controlNodeIp = null;
         Map<Long, Network.IpAddresses> requestedIps = null;
         if (Network.GuestType.Shared.equals(network.getGuestType())) {
             List<Long> vlanIds = new ArrayList<>();
@@ -100,16 +100,16 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             }
             PublicIp ip = ipAddressManager.getAvailablePublicIpAddressFromVlans(zone.getId(), null, account, Vlan.VlanType.DirectAttached, vlanIds,network.getId(), null, false);
             if (ip != null) {
-                controlIp = ip.getAddress().toString();
+                controlNodeIp = ip.getAddress().toString();
             }
             requestedIps = new HashMap<>();
             Ip ipAddress = ip.getAddress();
             boolean isIp6 = ipAddress.isIp6();
             requestedIps.put(network.getId(), new Network.IpAddresses(ipAddress.isIp4() ? ip.getAddress().addr() : null, null));
         } else {
-            controlIp = ipAddressManager.acquireGuestIpAddress(networkDao.findById(kubernetesCluster.getNetworkId()), null);
+            controlNodeIp = ipAddressManager.acquireGuestIpAddress(networkDao.findById(kubernetesCluster.getNetworkId()), null);
         }
-        return new Pair<>(controlIp, requestedIps);
+        return new Pair<>(controlNodeIp, requestedIps);
     }
 
     private boolean isKubernetesVersionSupportsHA() {
@@ -127,20 +127,20 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return haSupported;
     }
 
-    private String getKubernetesControlConfig(final String controlIp, final String serverIp,
-                                              final String hostName, final boolean haSupported,
-                                              final boolean ejectIso) throws IOException {
-        String k8sControlConfig = readResourceFile("/conf/k8s-control-node.yml");
-        final String apiServerCert = "{{ k8s_master.apiserver.crt }}";
-        final String apiServerKey = "{{ k8s_master.apiserver.key }}";
-        final String caCert = "{{ k8s_master.ca.crt }}";
+    private String getKubernetesControlNodeConfig(final String controlNodeIp, final String serverIp,
+                                                  final String hostName, final boolean haSupported,
+                                                  final boolean ejectIso) throws IOException {
+        String k8sControlNodeConfig = readResourceFile("/conf/k8s-control-node.yml");
+        final String apiServerCert = "{{ k8s_control_node.apiserver.crt }}";
+        final String apiServerKey = "{{ k8s_control_node.apiserver.key }}";
+        final String caCert = "{{ k8s_control_node.ca.crt }}";
         final String sshPubKey = "{{ k8s.ssh.pub.key }}";
-        final String clusterToken = "{{ k8s_master.cluster.token }}";
-        final String clusterInitArgsKey = "{{ k8s_master.cluster.initargs }}";
+        final String clusterToken = "{{ k8s_control_node.cluster.token }}";
+        final String clusterInitArgsKey = "{{ k8s_control_node.cluster.initargs }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
         final List<String> addresses = new ArrayList<>();
-        addresses.add(controlIp);
-        if (!serverIp.equals(controlIp)) {
+        addresses.add(controlNodeIp);
+        if (!serverIp.equals(controlNodeIp)) {
             addresses.add(serverIp);
         }
         final Certificate certificate = caManager.issueCertificate(null, Arrays.asList(hostName, "kubernetes",
@@ -149,9 +149,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String tlsClientCert = CertUtils.x509CertificateToPem(certificate.getClientCertificate());
         final String tlsPrivateKey = CertUtils.privateKeyToPem(certificate.getPrivateKey());
         final String tlsCaCert = CertUtils.x509CertificatesToPem(certificate.getCaCertificates());
-        k8sControlConfig = k8sControlConfig.replace(apiServerCert, tlsClientCert.replace("\n", "\n      "));
-        k8sControlConfig = k8sControlConfig.replace(apiServerKey, tlsPrivateKey.replace("\n", "\n      "));
-        k8sControlConfig = k8sControlConfig.replace(caCert, tlsCaCert.replace("\n", "\n      "));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(apiServerCert, tlsClientCert.replace("\n", "\n      "));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(apiServerKey, tlsPrivateKey.replace("\n", "\n      "));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(caCert, tlsCaCert.replace("\n", "\n      "));
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (!Strings.isNullOrEmpty(sshKeyPair)) {
@@ -160,8 +160,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 pubKey += "\n  - \"" + sshkp.getPublicKey() + "\"";
             }
         }
-        k8sControlConfig = k8sControlConfig.replace(sshPubKey, pubKey);
-        k8sControlConfig = k8sControlConfig.replace(clusterToken, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(sshPubKey, pubKey);
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterToken, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
         String initArgs = "";
         if (haSupported) {
             initArgs = String.format("--control-plane-endpoint %s:%d --upload-certs --certificate-key %s ",
@@ -171,9 +171,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         initArgs += String.format("--apiserver-cert-extra-sans=%s", serverIp);
         initArgs += String.format(" --kubernetes-version=%s", getKubernetesClusterVersion().getSemanticVersion());
-        k8sControlConfig = k8sControlConfig.replace(clusterInitArgsKey, initArgs);
-        k8sControlConfig = k8sControlConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
-        return k8sControlConfig;
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterInitArgsKey, initArgs);
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
+        return k8sControlNodeConfig;
     }
 
     private UserVm createKubernetesControlNode(final Network network, String serverIp) throws ManagementServerException,
@@ -183,13 +183,13 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         ServiceOffering serviceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
         List<Long> networkIds = new ArrayList<Long>();
         networkIds.add(kubernetesCluster.getNetworkId());
-        Pair<String, Map<Long, Network.IpAddresses>> ipAddresses = getKubernetesControlIpAddresses(zone, network, owner);
-        String controlIp = ipAddresses.first();
+        Pair<String, Map<Long, Network.IpAddresses>> ipAddresses = getKubernetesControlNodeIpAddresses(zone, network, owner);
+        String controlNodeIp = ipAddresses.first();
         Map<Long, Network.IpAddresses> requestedIps = ipAddresses.second();
         if (Network.GuestType.Shared.equals(network.getGuestType()) && Strings.isNullOrEmpty(serverIp)) {
-            serverIp = controlIp;
+            serverIp = controlNodeIp;
         }
-        Network.IpAddresses addrs = new Network.IpAddresses(controlIp, null);
+        Network.IpAddresses addrs = new Network.IpAddresses(controlNodeIp, null);
         long rootDiskSize = kubernetesCluster.getNodeRootDiskSize();
         Map<String, String> customParameterMap = new HashMap<String, String>();
         if (rootDiskSize > 0) {
@@ -201,13 +201,13 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         hostName = getKubernetesClusterNodeAvailableName(hostName);
         boolean haSupported = isKubernetesVersionSupportsHA();
-        String k8sControlConfig = null;
+        String k8sControlNodeConfig = null;
         try {
-            k8sControlConfig = getKubernetesControlConfig(controlIp, serverIp, hostName, haSupported, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()));
+            k8sControlNodeConfig = getKubernetesControlNodeConfig(controlNodeIp, serverIp, hostName, haSupported, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()));
         } catch (IOException e) {
-            logAndThrow(Level.ERROR, "Failed to read Kubernetes control configuration file", e);
+            logAndThrow(Level.ERROR, "Failed to read Kubernetes control node configuration file", e);
         }
-        String base64UserData = Base64.encodeBase64String(k8sControlConfig.getBytes(StringUtils.getPreferredCharset()));
+        String base64UserData = Base64.encodeBase64String(k8sControlNodeConfig.getBytes(StringUtils.getPreferredCharset()));
         controlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
@@ -218,12 +218,12 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return controlVm;
     }
 
-    private String getKubernetesAdditionalControlConfig(final String joinIp, final boolean ejectIso) throws IOException {
-        String k8sControlConfig = readResourceFile("/conf/k8s-control-node-add.yml");
-        final String joinIpKey = "{{ k8s_master.join_ip }}";
-        final String clusterTokenKey = "{{ k8s_master.cluster.token }}";
+    private String getKubernetesAdditionalControlNodeConfig(final String joinIp, final boolean ejectIso) throws IOException {
+        String k8sControlNodeConfig = readResourceFile("/conf/k8s-control-node-add.yml");
+        final String joinIpKey = "{{ k8s_control_node.join_ip }}";
+        final String clusterTokenKey = "{{ k8s_control_node.cluster.token }}";
         final String sshPubKey = "{{ k8s.ssh.pub.key }}";
-        final String clusterHACertificateKey = "{{ k8s_master.cluster.ha.certificate.key }}";
+        final String clusterHACertificateKey = "{{ k8s_control_node.cluster.ha.certificate.key }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
@@ -233,12 +233,12 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 pubKey += "\n  - \"" + sshkp.getPublicKey() + "\"";
             }
         }
-        k8sControlConfig = k8sControlConfig.replace(sshPubKey, pubKey);
-        k8sControlConfig = k8sControlConfig.replace(joinIpKey, joinIp);
-        k8sControlConfig = k8sControlConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
-        k8sControlConfig = k8sControlConfig.replace(clusterHACertificateKey, KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
-        k8sControlConfig = k8sControlConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
-        return k8sControlConfig;
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(sshPubKey, pubKey);
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(joinIpKey, joinIp);
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterHACertificateKey, KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
+        return k8sControlNodeConfig;
     }
 
     private UserVm createKubernetesAdditionalControlNode(final String joinIp, final int additionalControlNodeInstance) throws ManagementServerException,
@@ -255,13 +255,13 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
         }
         String hostName = getKubernetesClusterNodeAvailableName(String.format("%s-control-%d", kubernetesClusterNodeNamePrefix, additionalControlNodeInstance + 1));
-        String k8sControlConfig = null;
+        String k8sControlNodeConfig = null;
         try {
-            k8sControlConfig = getKubernetesAdditionalControlConfig(joinIp, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()));
+            k8sControlNodeConfig = getKubernetesAdditionalControlNodeConfig(joinIp, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()));
         } catch (IOException e) {
             logAndThrow(Level.ERROR, "Failed to read Kubernetes control configuration file", e);
         }
-        String base64UserData = Base64.encodeBase64String(k8sControlConfig.getBytes(StringUtils.getPreferredCharset()));
+        String base64UserData = Base64.encodeBase64String(k8sControlNodeConfig.getBytes(StringUtils.getPreferredCharset()));
         additionalControlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
                 Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
