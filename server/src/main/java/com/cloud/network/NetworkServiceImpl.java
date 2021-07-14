@@ -1645,7 +1645,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         // set project information
-        boolean skipProjectNetworks = true;
+        boolean displayProjectNetworksOnly = false;
         if (projectId != null) {
             if (projectId.longValue() == -1) {
                 if (!_accountMgr.isAdmin(caller.getId())) {
@@ -1669,7 +1669,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     permittedAccounts.add(caller.getId());
                 }
             }
-            skipProjectNetworks = false;
+            displayProjectNetworksOnly = true;
         }
 
         if (domainId != null) {
@@ -1736,28 +1736,28 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (!permittedAccounts.isEmpty()) {
                 //get account level networks
                 networksToReturn.addAll(listAccountSpecificNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
-                        aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, permittedAccounts));
+                        aclType, displayProjectNetworksOnly, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, permittedAccounts));
                 //get domain level networks
                 if (domainId != null) {
                     networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
-                            aclType, true, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, domainId, false));
+                            aclType, false, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, domainId, false));
                 }
             } else {
                 //add account specific networks
                 networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
-                        aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, path, isRecursive));
+                        aclType, displayProjectNetworksOnly, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, path, isRecursive));
                 //add domain specific networks of domain + parent domains
                 networksToReturn.addAll(listDomainSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
-                        aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, path, isRecursive));
+                        aclType, displayProjectNetworksOnly, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, path, isRecursive));
                 //add networks of subdomains
                 if (domainId == null) {
                     networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
-                            aclType, true, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, caller.getDomainId(), true));
+                            aclType, false, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter, caller.getDomainId(), true));
                 }
             }
         } else {
             networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
-                    null, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter);
+                    null, displayProjectNetworksOnly, restartRequired, specifyIpRanges, vpcId, tags, display), searchFilter);
         }
 
         if (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !networksToReturn.isEmpty()) {
@@ -1806,7 +1806,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id,
             Boolean isSystem, Long zoneId, String guestIpType, String trafficType, Long physicalNetworkId,
-            Long networkOfferingId, String aclType, boolean skipProjectNetworks, Boolean restartRequired,
+            Long networkOfferingId, String aclType, boolean displayProjectNetworksOnly, Boolean restartRequired,
             Boolean specifyIpRanges, Long vpcId, Map<String, String> tags, Boolean display) {
 
         SearchCriteria<NetworkVO> sc = sb.create();
@@ -1849,9 +1849,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             sc.addAnd("physicalNetworkId", SearchCriteria.Op.EQ, physicalNetworkId);
         }
 
-        if (skipProjectNetworks) {
-            sc.setJoinParameters("accountSearch", "typeNEQ", Account.ACCOUNT_TYPE_PROJECT);
-        } else {
+        if (displayProjectNetworksOnly) {
             sc.setJoinParameters("accountSearch", "typeEQ", Account.ACCOUNT_TYPE_PROJECT);
         }
 

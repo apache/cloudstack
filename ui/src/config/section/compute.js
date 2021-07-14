@@ -54,10 +54,12 @@ export default {
 
         if (store.getters.userInfo.roletype === 'Admin') {
           fields.splice(2, 0, 'instancename')
+          fields.push('domain')
           fields.push('account')
           fields.push('hostname')
           fields.push('zonename')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
+          fields.push('domain')
           fields.push('account')
           fields.push('zonename')
         } else {
