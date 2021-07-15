@@ -859,14 +859,22 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("No keypair name given");
         }
 
+        String keypairnames = null;
         SSHKeyPairVO s = null;
         if (cmd.getName() != null) {
             s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
+            keypairnames = keypairnames + cmd.getName();
         }
 
         List<SSHKeyPairVO> s_list = null;
         if (cmd.getNames() != null) {
             s_list = _sshKeyPairDao.findByNames(owner.getAccountId(), owner.getDomainId(), cmd.getNames());
+            for (String keypairname : cmd.getNames()) {
+                if (keypairnames != null) {
+                    keypairnames = keypairnames + ", ";
+                }
+                keypairnames = keypairnames + keypairname;
+            }
         }
 
         if (s_list == null && s == null) {
@@ -886,18 +894,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (s_list != null) {
             for (SSHKeyPairVO s_each : s_list) {
                 String publicKey = s_each.getPublicKey();
-                if (publicKey != null) {
-                    if (sshPublicKey != null) {
-                        sshPublicKey = sshPublicKey + "/n";
-                    }
-                    sshPublicKey = sshPublicKey + publicKey;
-                    s_logger.info("the public key for keypair name " + s_each.getName() + " is " + sshPublicKey);
-                }
-                else s_logger.error("ssh key with the given name " + s_each.getName() + " does not exist");
+                sshPublicKey = sshPublicKey + "/n";
+                sshPublicKey = sshPublicKey + publicKey;
+                s_logger.info("the public key for keypair name " + s_each.getName() + " is " + sshPublicKey);
             }
         }
 
-        boolean result = resetVMSSHKeyInternal(vmId, sshPublicKey);
+        boolean result = resetVMSSHKeyInternal(vmId, sshPublicKey, keypairnames);
 
         if (!result) {
             throw new CloudRuntimeException("Failed to reset SSH Key for the virtual machine ");
@@ -915,7 +918,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _vmDao.saveDetails(userVmVo);
     }
 
-    private boolean resetVMSSHKeyInternal(Long vmId, String sshPublicKey) throws ResourceUnavailableException, InsufficientCapacityException {
+    private boolean resetVMSSHKeyInternal(Long vmId, String sshPublicKey, String keypairnames) throws ResourceUnavailableException, InsufficientCapacityException {
         Long userId = CallContext.current().getCallingUserId();
         VMInstanceVO vmInstance = _vmDao.findById(vmId);
 
@@ -947,6 +950,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             _vmDao.loadDetails(userVm);
             userVm.setDetail(VmDetailConstants.SSH_PUBLIC_KEY, sshPublicKey);
             _vmDao.saveDetails(userVm);
+
+            userVmDetailsDao.addDetail(vmId, ApiConstants.SSH_KEYPAIRS, keypairnames, true);
 
             if (vmInstance.getState() == State.Stopped) {
                 s_logger.debug("Vm " + vmInstance + " is stopped, not rebooting it as a part of SSH Key reset");
