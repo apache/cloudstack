@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.cloud.storage.VolumeApiService;
+import com.cloud.storage.snapshot.SnapshotApiService;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
@@ -94,9 +96,9 @@ public interface UserVmService {
      *           - the command specifying vmId to be cloned
      * @return the VM if cloneVM operation is successful
      * */
-    Optional<UserVm> cloneVirtualMachine(CloneVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException;
+    Optional<UserVm> cloneVirtualMachine(CloneVMCmd cmd, VolumeApiService volumeService, SnapshotApiService snapshotService) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
-    void checkCloneCondition(CloneVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException;
+    void checkCloneCondition(CloneVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException, ResourceAllocationException;
 
     /**
      * Resets the password of a virtual machine.
@@ -441,6 +443,9 @@ public interface UserVmService {
 
     UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
         StorageUnavailableException, ResourceAllocationException;
+
+    UserVm recordVirtualMachineToDB(CloneVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
+            StorageUnavailableException, ResourceAllocationException;
 
     UserVm getUserVm(long vmId);
 

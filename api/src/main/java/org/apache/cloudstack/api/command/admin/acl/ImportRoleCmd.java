@@ -30,7 +30,6 @@ import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.Rule;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
@@ -56,7 +55,7 @@ public class ImportRoleCmd extends RoleCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true,
-            description = "Creates a role with this unique name", validations = {ApiArgValidator.NotNullOrEmpty})
+            description = "Creates a role with this unique name")
     private String roleName;
 
     @Parameter(name = ApiConstants.RULES, type = CommandType.MAP, required = true,

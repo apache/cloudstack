@@ -14,19 +14,39 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.usage.dao;
 
-import java.util.List;
+<template>
+  <span>
+    {{ title }}
+    <a-tooltip v-if="tooltip" :title="tooltip" :placement="tooltipPlacement">
+      <a-icon type="info-circle" class="tooltip-icon" />
+    </a-tooltip>
+  </span>
+</template>
 
-import com.cloud.usage.ExternalPublicIpStatisticsVO;
-import com.cloud.utils.db.GenericDao;
+<script>
 
-public interface ExternalPublicIpStatisticsDao extends GenericDao<ExternalPublicIpStatisticsVO, Long> {
-
-    ExternalPublicIpStatisticsVO lock(long accountId, long zoneId, String publicIpAddress);
-
-    ExternalPublicIpStatisticsVO findBy(long accountId, long zoneId, String publicIpAddress);
-
-    List<ExternalPublicIpStatisticsVO> listBy(long accountId, long zoneId);
-
+export default {
+  name: 'TooltipLabel',
+  props: {
+    title: {
+      type: String,
+      default: ''
+    },
+    tooltip: {
+      type: String,
+      default: null
+    },
+    tooltipPlacement: {
+      type: String,
+      default: 'top'
+    }
+  }
 }
+</script>
+
+<style scoped lang="scss">
+  .tooltip-icon {
+    color: rgba(0,0,0,.45);
+  }
+</style>

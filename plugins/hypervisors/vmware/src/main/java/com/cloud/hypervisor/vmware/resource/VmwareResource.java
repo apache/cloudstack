@@ -4865,7 +4865,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
             }
             VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
-            String chainInfo = _gson.toJson(diskInfoBuilder.getDiskInfoByBackingFileBaseName(volumePath, poolTo.getUuid().replace("-", "")));
+            String chainInfo = _gson.toJson(diskInfoBuilder.getDiskInfoByBackingFileBaseName(volumePath, targetDsMo.getName()));
             MigrateVolumeAnswer answer = new MigrateVolumeAnswer(cmd, true, null, volumePath);
             answer.setVolumeChainInfo(chainInfo);
             return answer;
@@ -7337,7 +7337,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (targetHyperHost != null) {
                 ManagedObjectReference morTargetHostDc = targetHyperHost.getHyperHostDatacenter();
                 if (!morSourceHostDc.getValue().equalsIgnoreCase(morTargetHostDc.getValue())) {
-                    String msg = "VM " + vmName + " cannot be migrated between different datacenter";
+                    String msg = String.format("VM: %s cannot be migrated between different datacenter", vmName);
                     throw new CloudRuntimeException(msg);
                 }
             }
@@ -7345,12 +7345,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // find VM through source host (VM is not at the target host yet)
             vmMo = sourceHyperHost.findVmOnHyperHost(vmName);
             if (vmMo == null) {
-                String msg = "VM " + vmName + " does not exist on host: " + sourceHyperHost.getHyperHostName();
+                String msg = String.format("VM: %s does not exist on host: %s", vmName, sourceHyperHost.getHyperHostName());
                 s_logger.warn(msg);
                 // find VM through source host (VM is not at the target host yet)
                 vmMo = dcMo.findVm(vmName);
                 if (vmMo == null) {
-                    msg = "VM " + vmName + " does not exist on datacenter: " + dcMo.getName();
+                    msg = String.format("VM: %s does not exist on datacenter: %s", vmName, dcMo.getName());
                     s_logger.error(msg);
                     throw new Exception(msg);
                 }
@@ -7364,11 +7364,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (StringUtils.isNotBlank(poolUuid)) {
                 VmwareHypervisorHost dsHost = targetHyperHost == null ? sourceHyperHost : targetHyperHost;
                 ManagedObjectReference morDatastore = null;
-                String msg;
                 morDatastore = getTargetDatastoreMOReference(poolUuid, dsHost);
                 if (morDatastore == null) {
-                    msg = "Unable to find the target datastore: " + poolUuid + " on host: " + dsHost.getHyperHostName() +
-                            " to execute migration";
+                    String msg = String.format("Unable to find the target datastore: %s on host: %s to execute migration", poolUuid, dsHost.getHyperHostName());
                     s_logger.error(msg);
                     throw new CloudRuntimeException(msg);
                 }
@@ -7384,7 +7382,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     }
                     ManagedObjectReference morVolumeDatastore = getTargetDatastoreMOReference(filerTo.getUuid(), dsHost);
                     if (morVolumeDatastore == null) {
-                        String msg = "Unable to find the target datastore: " + filerTo.getUuid() + " in datacenter: " + dcMo.getName() + " to execute migration";
+                        String msg = String.format("Unable to find the target datastore: %s in datacenter: %s to execute migration", filerTo.getUuid(), dcMo.getName());
                         s_logger.error(msg);
                         throw new CloudRuntimeException(msg);
                     }
@@ -7445,8 +7443,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 mgr.prepareSecondaryStorageStore(secStoreUrl, secStoreId);
                 ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnSpecificHost(secStoreUrl, targetHyperHost);
                 if (morSecDs == null) {
-                    String msg = "Failed to prepare secondary storage on host, secondary store url: " + secStoreUrl;
-                    throw new Exception(msg);
+                    throw new Exception(String.format("Failed to prepare secondary storage on host, secondary store url: %s", secStoreUrl));
                 }
             }
 
@@ -7455,7 +7452,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (!vmMo.changeDatastore(relocateSpec)) {
                     throw new Exception("Change datastore operation failed during storage migration");
                 } else {
-                    s_logger.debug("Successfully migrated storage of VM " + vmName + " to target datastore(s)");
+                    s_logger.debug(String.format("Successfully migrated storage of VM: %s to target datastore(s)", vmName));
                 }
                 // Migrate VM to target host.
                 if (targetHyperHost != null) {
@@ -7463,7 +7460,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     if (!vmMo.migrate(morPool, targetHyperHost.getMor())) {
                         throw new Exception("VM migration to target host failed during storage migration");
                     } else {
-                        s_logger.debug("Successfully migrated VM " + vmName + " from " + sourceHyperHost.getHyperHostName() + " to " + targetHyperHost.getHyperHostName());
+                        s_logger.debug(String.format("Successfully migrated VM: %s from host %s to %s", vmName , sourceHyperHost.getHyperHostName(), targetHyperHost.getHyperHostName()));
                     }
                 }
             } else {
@@ -7475,9 +7472,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (!vmMo.changeDatastore(relocateSpec)) {
                     throw new Exception("Change datastore operation failed during storage migration");
                 } else {
-                    s_logger.debug("Successfully migrated VM " + vmName +
-                            (hostInTargetCluster != null ? " from " + sourceHyperHost.getHyperHostName() + " to " + targetHyperHost.getHyperHostName() + " and " : " with ") +
-                            "its storage to target datastore(s)");
+                    String msg = String.format("Successfully migrated VM: %s with its storage to target datastore(s)", vmName);
+                    if (targetHyperHost != null) {
+                        msg = String.format("% from host %s to %s", msg, sourceHyperHost.getHyperHostName(), targetHyperHost.getHyperHostName());
+                    }
+                    s_logger.debug(msg);
                 }
             }
 
@@ -7486,7 +7485,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (!vmMo.consolidateVmDisks()) {
                 s_logger.warn("VM disk consolidation failed after storage migration. Yet proceeding with VM migration.");
             } else {
-                s_logger.debug("Successfully consolidated disks of VM " + vmName + ".");
+                s_logger.debug(String.format("Successfully consolidated disks of VM: %s", vmName));
             }
 
             if (MapUtils.isNotEmpty(volumeDeviceKey)) {
@@ -7501,8 +7500,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             VolumeObjectTO newVol = new VolumeObjectTO();
                             newVol.setDataStoreUuid(entry.second().getUuid());
                             String newPath = vmMo.getVmdkFileBaseName(disk);
-                            String poolName = entry.second().getUuid().replace("-", "");
-                            VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(newPath, poolName);
+                            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(targetHyperHost != null ? targetHyperHost : sourceHyperHost, entry.second().getUuid());
+                            DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDs);
+                            VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(newPath, dsMo.getName());
                             newVol.setId(volumeId);
                             newVol.setPath(newPath);
                             newVol.setChainInfo(_gson.toJson(diskInfo));

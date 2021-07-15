@@ -121,7 +121,7 @@
 <script>
 import { api } from '@/api'
 import ProjectRolePermissionTab from '@/views/project/iam/ProjectRolePermissionTab'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 export default {
   name: 'ProjectRoleTab',
   props: {

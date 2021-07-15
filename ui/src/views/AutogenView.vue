@@ -159,12 +159,7 @@
               :v-bind="field.name"
               v-if="!(currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].value)"
             >
-              <span slot="label">
-                {{ $t('label.' + field.name) }}
-                <a-tooltip :title="field.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </span>
+              <tooltip-label slot="label" :title="$t('label.' + field.name)" :tooltip="field.description"/>
 
               <span v-if="field.type==='boolean'">
                 <a-switch
@@ -352,6 +347,7 @@ import ListView from '@/components/view/ListView'
 import ResourceView from '@/components/view/ResourceView'
 import ActionButton from '@/components/view/ActionButton'
 import SearchView from '@/components/view/SearchView'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'Resource',
@@ -362,7 +358,8 @@ export default {
     ListView,
     Status,
     ActionButton,
-    SearchView
+    SearchView,
+    TooltipLabel
   },
   mixins: [mixinDevice],
   provide: function () {
@@ -583,13 +580,21 @@ export default {
 
       const customRender = {}
       for (var columnKey of this.columnKeys) {
-        var key = columnKey
+        let key = columnKey
+        let title = columnKey
         if (typeof columnKey === 'object') {
-          key = Object.keys(columnKey)[0]
-          customRender[key] = columnKey[key]
+          if ('customTitle' in columnKey && 'field' in columnKey) {
+            key = columnKey.field
+            title = columnKey.customTitle
+            customRender[key] = columnKey[key]
+          } else {
+            key = Object.keys(columnKey)[0]
+            title = Object.keys(columnKey)[0]
+            customRender[key] = columnKey[key]
+          }
         }
         this.columns.push({
-          title: this.$t('label.' + String(key).toLowerCase()),
+          title: this.$t('label.' + String(title).toLowerCase()),
           dataIndex: key,
           scopedSlots: { customRender: key },
           sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
@@ -870,6 +875,9 @@ export default {
                 duration: 0
               })
             }
+          }
+          if ('successMethod' in action) {
+            action.successMethod(this, result)
           }
         },
         errorMethod: () => this.fetchData(),

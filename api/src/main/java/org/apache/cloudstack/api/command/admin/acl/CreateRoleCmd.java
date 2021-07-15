@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.response.RoleResponse;
 import org.apache.cloudstack.context.CallContext;
 
@@ -42,7 +41,7 @@ public class CreateRoleCmd extends RoleCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true,
-            description = "Creates a role with this unique name", validations = {ApiArgValidator.NotNullOrEmpty})
+            description = "Creates a role with this unique name")
     private String roleName;
 
     @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class,

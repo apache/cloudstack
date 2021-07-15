@@ -48,5 +48,4 @@ public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
     public String getCreateEventDescription() {
         return null;
     }
-
 }

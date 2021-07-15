@@ -1292,7 +1292,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         boolean canMigrateWithStorage = false;
 
         if (VirtualMachine.Type.User.equals(vm.getType()) || HypervisorType.VMware.equals(vm.getHypervisorType())) {
-            canMigrateWithStorage = Boolean.TRUE.equals(_hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion));
+            canMigrateWithStorage = _hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion);
         }
 
         // Check if the vm is using any disks on local storage.
@@ -1346,11 +1346,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                                 // source volume.
                                 iterator.remove();
                             } else {
-                                boolean hostSupportsStorageMigration = false;
-                                if ((srcHostVersion != null && srcHostVersion.equals(hostVersion)) ||
-                                        Boolean.TRUE.equals(_hypervisorCapabilitiesDao.isStorageMotionSupported(host.getHypervisorType(), hostVersion))) {
-                                    hostSupportsStorageMigration = true;
-                                }
+                                boolean hostSupportsStorageMigration = (srcHostVersion != null && srcHostVersion.equals(hostVersion)) ||
+                                        _hypervisorCapabilitiesDao.isStorageMotionSupported(host.getHypervisorType(), hostVersion);
                                 if (hostSupportsStorageMigration && hasSuitablePoolsForVolume(volume, host, vmProfile)) {
                                     requiresStorageMotion.put(host, true);
                                 } else {
@@ -4235,26 +4232,23 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    public String getVMPassword(final GetVMPasswordCmd cmd) {
-        final Account caller = getCaller();
+    public String getVMPassword(GetVMPasswordCmd cmd) {
+        Account caller = getCaller();
+        long vmId = cmd.getId();
+        UserVmVO vm = _userVmDao.findById(vmId);
 
-        final UserVmVO vm = _userVmDao.findById(cmd.getId());
         if (vm == null) {
-            final InvalidParameterValueException ex = new InvalidParameterValueException("No VM with specified id found.");
-            ex.addProxyObject(cmd.getId().toString(), "vmId");
-            throw ex;
+            throw new InvalidParameterValueException(String.format("No VM found with id [%s].", vmId));
         }
 
-        // make permission check
         _accountMgr.checkAccess(caller, null, true, vm);
 
         _userVmDao.loadDetails(vm);
-        final String password = vm.getDetail("Encrypted.Password");
-        if (password == null || password.equals("")) {
-            final InvalidParameterValueException ex = new InvalidParameterValueException(
-                    "No password for VM with specified id found. " + "If VM is created from password enabled template and SSH keypair is assigned to VM then only password can be retrieved.");
-            ex.addProxyObject(vm.getUuid(), "vmId");
-            throw ex;
+        String password = vm.getDetail("Encrypted.Password");
+
+        if (StringUtils.isEmpty(password)) {
+            throw new InvalidParameterValueException(String.format("No password found for VM with id [%s]. When the VM's SSH keypair is changed, the current encrypted password is "
+              + "removed due to incosistency in the encryptation, as the new SSH keypair is different from which the password was encrypted. To get a new password, it must be reseted.", vmId));
         }
 
         return password;
