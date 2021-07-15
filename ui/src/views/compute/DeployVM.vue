@@ -162,12 +162,7 @@
                 <template slot="description">
                   <div v-if="zoneSelected">
                     <a-form-item v-if="zoneSelected && templateConfigurationExists">
-                      <span slot="label">
-                        {{ $t('label.configuration') }}
-                        <a-tooltip :title="$t('message.ovf.configurations')">
-                          <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                        </a-tooltip>
-                      </span>
+                      <tooltip-label slot="label" :title="$t('label.configuration')" :tooltip="$t('message.ovf.configurations')"/>
                       <a-select
                         showSearch
                         optionFilterProp="children"
@@ -285,12 +280,7 @@
                         v-for="(nic, nicIndex) in templateNics"
                         :key="nicIndex"
                         :v-bind="nic.name" >
-                        <span slot="label">
-                          {{ nic.elementName + ' - ' + nic.name }}
-                          <a-tooltip :title="nic.networkDescription">
-                            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                          </a-tooltip>
-                        </span>
+                        <tooltip-label slot="label" :title="nic.elementName + ' - ' + nic.name" :tooltip="nic.networkDescription"/>
                         <a-select
                           showSearch
                           optionFilterProp="children"
@@ -377,12 +367,7 @@
                         v-for="(property, propertyIndex) in props"
                         :key="propertyIndex"
                         :v-bind="property.key" >
-                        <span slot="label" style="text-transform: capitalize">
-                          {{ property.label }}
-                          <a-tooltip :title="property.description">
-                            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                          </a-tooltip>
-                        </span>
+                        <tooltip-label slot="label" style="text-transform: capitalize" :title="property.label" :tooltip="property.description"/>
 
                         <span v-if="property.type && property.type==='boolean'">
                           <a-switch
@@ -510,12 +495,7 @@
                       </a-switch>
                     </a-form-item>
                     <a-form-item>
-                      <span slot="label">
-                        {{ $t('label.dynamicscalingenabled') }}
-                        <a-tooltip :title="$t('label.dynamicscalingenabled.tooltip')">
-                          <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                        </a-tooltip>
-                      </span>
+                      <tooltip-label slot="label" :title="$t('label.dynamicscalingenabled')" :tooltip="$t('label.dynamicscalingenabled.tooltip')"/>
                       <a-form-item>
                         <a-switch
                           v-decorator="['dynamicscalingenabled']"
@@ -585,9 +565,7 @@
                         v-for="(license, licenseIndex) in templateLicenses"
                         :key="licenseIndex"
                         :v-bind="license.id">
-                        <span slot="label" style="text-transform: capitalize">
-                          {{ 'Agreement ' + (licenseIndex+1) + ': ' + license.name }}
-                        </span>
+                        <tooltip-label slot="label" style="text-transform: capitalize" :title="$t('label.agreement' + ' ' + (licenseIndex+1) + ': ' + license.name)"/>
                         <a-textarea
                           :value="license.text"
                           :auto-size="{ minRows: 3, maxRows: 8 }"
@@ -669,6 +647,7 @@ import NetworkSelection from '@views/compute/wizard/NetworkSelection'
 import NetworkConfiguration from '@views/compute/wizard/NetworkConfiguration'
 import SshKeyPairSelection from '@views/compute/wizard/SshKeyPairSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'Wizard',
@@ -684,7 +663,8 @@ export default {
     InfoCard,
     ComputeOfferingSelection,
     ComputeSelection,
-    SecurityGroupSelection
+    SecurityGroupSelection,
+    TooltipLabel
   },
   props: {
     visible: {
