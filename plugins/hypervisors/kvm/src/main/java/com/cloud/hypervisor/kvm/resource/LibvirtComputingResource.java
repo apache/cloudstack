@@ -253,6 +253,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected static final String DEFAULT_OVS_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.OvsVifDriver";
     protected static final String DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.BridgeVifDriver";
+    private final static long HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING = 6003000;
+    private final static long HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING = 5000000;
 
     protected HypervisorType _hypervisorType;
     protected String _hypervisorURI;
@@ -306,6 +308,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String _agentHooksVmOnStopScript = "libvirt-vm-state-change.groovy";
     protected String _agentHooksVmOnStopMethod = "onStop";
 
+    private static final String CONFIG_DRIVE_ISO_DISK_LABEL = "hdd";
+    private static final int CONFIG_DRIVE_ISO_DEVICE_ID = 4;
 
     protected File _qemuSocketsPath;
     private final String _qemuGuestAgentSocketName = "org.qemu.guest_agent.0";
@@ -341,6 +345,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected CPUStat _cpuStat = new CPUStat();
     protected MemStat _memStat = new MemStat(_dom0MinMem, _dom0OvercommitMem);
     private final LibvirtUtilitiesHelper libvirtUtilitiesHelper = new LibvirtUtilitiesHelper();
+
+    protected long getHypervisorLibvirtVersion() {
+        return _hypervisorLibvirtVersion;
+    }
+
+    protected long getHypervisorQemuVersion() {
+        return _hypervisorQemuVersion;
+    }
 
     @Override
     public ExecutionResult executeInVR(final String routerIp, final String script, final String args) {
@@ -2613,6 +2625,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.setDiscard(DiscardType.UNMAP);
                 }
 
+                setDiskIoDriver(disk);
+
                 if (pool.getType() == StoragePoolType.RBD) {
                     /*
                             For RBD pools we use the secret mechanism in libvirt.
@@ -2713,6 +2727,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return storagePool.getPhysicalDisk(data.getPath());
     }
 
+    /**
+     * Set Disk IO Driver, if supported by the Libvirt/Qemu version.
+     * IO Driver works for:
+     * (i) Qemu >= 5.0;
+     * (ii) Libvirt >= 6.3.0
+     */
+    protected void setDiskIoDriver(DiskDef disk) {
+        if (getHypervisorLibvirtVersion() >= HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING && getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING) {
+            disk.setIoDriver(DiskDef.IoDriver.IOURING);
+        }
+    }
+
     private KVMPhysicalDisk getPhysicalDiskFromNfsStore(String dataStoreUrl, DataTO data) {
         final String volPath = dataStoreUrl + File.separator + data.getPath();
         final int index = volPath.lastIndexOf("/");
@@ -2791,6 +2817,32 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected KVMStoragePoolManager getPoolManager() {
         return _storagePoolMgr;
+    }
+
+    public void detachAndAttachConfigDriveISO(final Connect conn, final String vmName) {
+        // detach and re-attach configdrive ISO
+        List<DiskDef> disks = getDisks(conn, vmName);
+        DiskDef configdrive = null;
+        for (DiskDef disk : disks) {
+            if (disk.getDeviceType() == DiskDef.DeviceType.CDROM && disk.getDiskLabel() == CONFIG_DRIVE_ISO_DISK_LABEL) {
+                configdrive = disk;
+            }
+        }
+        if (configdrive != null) {
+            try {
+                String result = attachOrDetachISO(conn, vmName, configdrive.getDiskPath(), false, CONFIG_DRIVE_ISO_DEVICE_ID);
+                if (result != null) {
+                    s_logger.warn("Detach ConfigDrive ISO with result: " + result);
+                }
+                result = attachOrDetachISO(conn, vmName, configdrive.getDiskPath(), true, CONFIG_DRIVE_ISO_DEVICE_ID);
+                if (result != null) {
+                    s_logger.warn("Attach ConfigDrive ISO with result: " + result);
+                }
+            } catch (final LibvirtException | InternalErrorException | URISyntaxException e) {
+                final String msg = "Detach and attach ConfigDrive ISO failed due to " + e.toString();
+                s_logger.warn(msg, e);
+            }
+        }
     }
 
     public synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, final Integer diskSeq) throws LibvirtException, URISyntaxException,

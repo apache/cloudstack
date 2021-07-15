@@ -24,12 +24,7 @@
           layout="vertical"
           @submit="handleSubmit">
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.name') }}
-              <a-tooltip :title="apiParams.name.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
             <a-input
               v-decorator="['name', {
                 rules: [{ required: true, message: $t('message.error.name') }]
@@ -38,12 +33,7 @@
               autoFocus/>
           </a-form-item>
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.displaytext') }}
-              <a-tooltip :title="apiParams.displaytext.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
             <a-input
               v-decorator="['displaytext', {
                 rules: [{ required: true, message: $t('message.error.display.text') }]
@@ -51,12 +41,7 @@
               :placeholder="this.$t('label.displaytext')"/>
           </a-form-item>
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.zoneid') }}
-              <a-tooltip :title="apiParams.zoneid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
             <a-select
               v-decorator="['zoneid', {
                 rules: [
@@ -80,12 +65,7 @@
             </a-select>
           </a-form-item>
           <a-form-item v-if="this.isAdminOrDomainAdmin()">
-            <span slot="label">
-              {{ $t('label.domain') }}
-              <a-tooltip :title="apiParams.domainid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
             <a-select
               v-decorator="['domainid', {}]"
               showSearch
@@ -102,12 +82,7 @@
             </a-select>
           </a-form-item>
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.networkofferingid') }}
-              <a-tooltip :title="apiParams.networkofferingid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
             <a-select
               v-decorator="['networkofferingid', {
                 rules: [
@@ -131,12 +106,7 @@
             </a-select>
           </a-form-item>
           <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan">
-            <span slot="label">
-              {{ $t('label.vlan') }}
-              <a-tooltip :title="apiParams.vlan.description" v-if="'vlan' in apiParams">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.vlan')" :tooltip="apiParams.vlan ? apiParams.vlan.description : null"/>
             <a-input
               v-decorator="['vlanid', {
                 rules: [{ required: true, message: $t('message.please.enter.value') }]
@@ -144,21 +114,11 @@
               :placeholder="this.$t('label.vlanid')"/>
           </a-form-item>
           <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan">
-            <span slot="label">
-              {{ $t('label.bypassvlanoverlapcheck') }}
-              <a-tooltip :title="apiParams.bypassvlanoverlapcheck.description" v-if="'bypassvlanoverlapcheck' in apiParams">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.bypassvlanoverlapcheck')" :tooltip="apiParams.bypassvlanoverlapcheck ? apiParams.bypassvlanoverlapcheck.description : null"/>
             <a-switch v-decorator="['bypassvlanoverlapcheck']" />
           </a-form-item>
           <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan">
-            <span slot="label">
-              {{ $t('label.isolatedpvlantype') }}
-              <a-tooltip :title="apiParams.isolatedpvlantype.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.isolatedpvlantype')" :tooltip="apiParams.isolatedpvlantype.description"/>
             <a-radio-group
               v-decorator="['isolatedpvlantype', {
                 initialValue: this.isolatePvlanType
@@ -180,23 +140,13 @@
             </a-radio-group>
           </a-form-item>
           <a-form-item v-if="this.isolatePvlanType=='community' || this.isolatePvlanType=='isolated'">
-            <span slot="label">
-              {{ $t('label.isolatedpvlanid') }}
-              <a-tooltip :title="apiParams.isolatedpvlan.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.isolatedpvlanid')" :tooltip="apiParams.isolatedpvlan.description"/>
             <a-input
               v-decorator="['isolatedpvlan', {}]"
               :placeholder="this.$t('label.isolatedpvlanid')"/>
           </a-form-item>
           <a-form-item v-if="this.accountVisible">
-            <span slot="label">
-              {{ $t('label.account') }}
-              <a-tooltip :title="apiParams.account.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.account.description"/>
             <a-input
               v-decorator="['account']"
               :placeholder="this.$t('label.account')"/>
@@ -222,9 +172,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateL2NetworkForm',
+  components: {
+    TooltipLabel
+  },
   props: {
     loading: {
       type: Boolean,
@@ -262,11 +216,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.createNetwork || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('createNetwork')
   },
   created () {
     this.domains = [
