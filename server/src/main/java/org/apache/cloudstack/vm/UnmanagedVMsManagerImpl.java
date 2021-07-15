@@ -615,7 +615,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                         !networkBroadcastUri.equals(String.format("vlan://%d", nic.getVlan())))) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VLAN of network(ID: %s) %s is found different from the VLAN of nic(ID: %s) vlan://%d during VM import", network.getUuid(), networkBroadcastUri, nic.getNicId(), nic.getVlan()));
         }
-        String pvLanType = nic.getPvlanType() == null ? "" : new String(nic.getPvlanType().toLowerCase().charAt(0));
+        String pvLanType = nic.getPvlanType() == null ? "" : nic.getPvlanType().toLowerCase().substring(0, 1);
         if (nic.getVlan() != null && nic.getVlan() != 0 && nic.getPvlan() != null && nic.getPvlan() != 0 &&
                 (Strings.isNullOrEmpty(network.getBroadcastUri().toString()) ||
                         !networkBroadcastUri.equals(String.format("pvlan://%d-%s%d", nic.getVlan(), pvLanType, nic.getPvlan())))) {
