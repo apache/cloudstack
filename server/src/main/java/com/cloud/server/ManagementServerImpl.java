@@ -468,6 +468,7 @@ import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
 import org.apache.cloudstack.api.command.user.vm.AddIpToVmNicCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
+import org.apache.cloudstack.api.command.user.vm.CloneVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
 import org.apache.cloudstack.api.command.user.vm.GetVMPasswordCmd;
@@ -3236,6 +3237,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ExpungeVMCmd.class);
         cmdList.add(GetVMPasswordCmd.class);
         cmdList.add(ListVMsCmd.class);
+        cmdList.add(CloneVMCmd.class);
         cmdList.add(ScaleVMCmd.class);
         cmdList.add(RebootVMCmd.class);
         cmdList.add(RemoveNicFromVMCmd.class);

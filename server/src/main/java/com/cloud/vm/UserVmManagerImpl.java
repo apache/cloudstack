@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,7 +50,53 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-
+//import com.cloud.network.IpAddress;
+//import com.cloud.network.IpAddress;
+import com.cloud.network.IpAddressManager;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VMTemplateZoneVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.snapshot.SnapshotApiService;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountService;
+import com.cloud.user.AccountVO;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.user.SSHKeyPair;
+import com.cloud.user.SSHKeyPairVO;
+import com.cloud.user.User;
+import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.UserVO;
+import com.cloud.user.VmDiskStatisticsVO;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
+import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.db.UUIDManager;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -64,6 +111,7 @@ import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
+import org.apache.cloudstack.api.command.user.vm.CloneVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
 import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
@@ -213,14 +261,10 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
-import com.cloud.network.IpAddressManager;
-import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -258,26 +302,9 @@ import com.cloud.server.ResourceTag;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.GuestOSCategoryVO;
-import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.ScopeType;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VMTemplateZoneVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeApiService;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -290,16 +317,6 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateApiService;
 import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountService;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.SSHKeyPair;
-import com.cloud.user.SSHKeyPairVO;
-import com.cloud.user.User;
-import com.cloud.user.UserStatisticsVO;
-import com.cloud.user.UserVO;
-import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
@@ -314,16 +331,6 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.crypt.RSAHelper;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionCallbackWithException;
-import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
-import com.cloud.utils.db.TransactionStatus;
-import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -4497,6 +4504,221 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
+    public void checkCloneCondition(CloneVMCmd cmd) throws InvalidParameterValueException, ResourceUnavailableException, CloudRuntimeException, ResourceAllocationException {
+
+        if (cmd.getAccountName() != null && cmd.getDomainId() == null) {
+            throw new InvalidParameterValueException("You must input the domainId together with the account name");
+        }
+
+        final DomainVO domain = cmd.getDomainId() == null ? null : _domainDao.findById(cmd.getDomainId());
+        final Account account = cmd.getAccountName() == null ? null : _accountService.getActiveAccountByName(cmd.getAccountName(), cmd.getDomainId());
+        if (domain  != null && account != null) {
+            if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                throw new InvalidParameterValueException("Invalid user type: project to clone the VM");
+            }
+            if (account.getState() != Account.State.enabled) {
+                throw new InvalidParameterValueException("User is not enabled to clone this VM");
+            }
+        }
+        UserVm curVm = cmd.getTargetVM();
+        if (curVm == null) {
+            throw new CloudRuntimeException("the VM doesn't exist or not registered in management server!");
+        }
+        UserVmVO vmStatus = _vmDao.findById(cmd.getId());
+//        if (vmStatus.state != State.Shutdown && vmStatus.state != State.Stopped) {
+//            throw new CloudRuntimeException("You should clone an instance that's shutdown!");
+//        }
+        if (vmStatus.getHypervisorType() != HypervisorType.KVM && vmStatus.getHypervisorType() != HypervisorType.Simulator) {
+            throw new CloudRuntimeException("The clone operation is only supported on KVM and Simulator!");
+        }
+        String kvmEnabled = _configDao.getValue("kvm.snapshot.enabled");
+        if (kvmEnabled == null || !kvmEnabled.equalsIgnoreCase("true")) {
+            throw new CloudRuntimeException("Clone VM is not supported, as snapshots are disabled");
+        }
+        Long accountId = curVm.getAccountId();
+        Account vmOwner = _accountDao.findById(accountId);
+        if (vmOwner == null) {
+            throw new CloudRuntimeException("This VM doesn't have an owner account, please assign one to it");
+        }
+        List<VolumeVO> volumes = _volsDao.findByInstanceAndType(cmd.getId(), Volume.Type.ROOT);
+        if (CollectionUtils.isEmpty(volumes)) {
+            throw new CloudRuntimeException("The VM to copy does not have a Volume attached!");
+        }
+        // verify that the VM doesn't expire
+        Map<String, String> details = curVm.getDetails();
+        verifyDetails(details);
+//        Account activeOwner = _accountDao.findById(cmd.getEntityOwnerId());
+        long zoneId = curVm.getDataCenterId();
+        DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Unable to find a zone in the current VM by zone id=" + zoneId);
+        }
+        // service offering check
+        long serviceOfferingId = curVm.getServiceOfferingId();
+        ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
+        if (serviceOffering == null) {
+            throw new InvalidParameterValueException("Service offering Id for this VM: " + serviceOfferingId + " doesn't exist now");
+        }
+        if (!serviceOffering.isDynamic() && details != null) {
+            for(String detail: details.keySet()) {
+                if(detail.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) || detail.equalsIgnoreCase(VmDetailConstants.CPU_SPEED) || detail.equalsIgnoreCase(VmDetailConstants.MEMORY)) {
+                    throw new InvalidParameterValueException("cpuNumber or cpuSpeed or memory should not be specified for static service offering");
+                }
+            }
+        }
+        // disk offering check
+        VolumeVO rootDisk = volumes.get(0);
+        Long diskOfferingID = rootDisk.getDiskOfferingId();
+        DiskOfferingVO diskOffering =null;
+        if (diskOfferingID != null) {
+            diskOffering = _diskOfferingDao.findById(diskOfferingID);
+            if (diskOffering == null) {
+                throw new CloudRuntimeException("Unable to find disk offering " + diskOfferingID);
+            }
+        }
+        if (!zone.isLocalStorageEnabled()) {
+            if (serviceOffering.isUseLocalStorage()) {
+                throw new CloudRuntimeException("Zone is not configured to use local storage now but this service offering " + serviceOffering.getName() + " uses it");
+            }
+            if (diskOffering != null && diskOffering.isUseLocalStorage()) {
+                throw new CloudRuntimeException("Zone is not configured to use local storage but disk offering " + diskOffering.getName() + " uses it");
+            }
+        }
+        // resource limit checks & account check
+        AccountVO activeOwner = _accountDao.findById(cmd.getEntityOwnerId());
+        List<VolumeVO> totalVolumes = _volsDao.findByInstance(cmd.getId());
+        _resourceLimitMgr.checkResourceLimit(activeOwner, ResourceType.volume, totalVolumes.size());
+        Long totalSize = 0L;
+        for (VolumeVO volumeToCheck : totalVolumes) {
+            totalSize += volumeToCheck.getSize();
+        }
+        _resourceLimitMgr.checkResourceLimit(activeOwner, ResourceType.primary_storage, totalSize);
+    }
+
+    private VolumeVO saveDataDiskVolumeFromSnapShot(final Account owner, final Boolean displayVolume, final Long zoneId, final Long diskOfferingId,
+                                                    final Storage.ProvisioningType provisioningType, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume, final String volumeName, final String uuid, final Map<String, String> details) {
+        return Transaction.execute((TransactionCallback<VolumeVO>) status -> {
+            VolumeVO volume = new VolumeVO(volumeName, -1, -1, -1, -1, new Long(-1), null, null, provisioningType, 0, Volume.Type.DATADISK);
+            volume.setPoolId(null);
+            volume.setUuid(uuid);
+            volume.setDataCenterId(zoneId);
+            volume.setPodId(null);
+            volume.setAccountId(owner.getId());
+            volume.setDomainId(owner.getDomainId());
+            volume.setDiskOfferingId(diskOfferingId);
+            volume.setSize(size);
+            volume.setMinIops(minIops);
+            volume.setMaxIops(maxIops);
+            volume.setInstanceId(null);
+            volume.setUpdated(new Date());
+            volume.setDisplayVolume(displayVolume);
+            if (parentVolume != null) {
+                volume.setTemplateId(parentVolume.getTemplateId());
+                volume.setFormat(parentVolume.getFormat());
+            } else {
+                volume.setTemplateId(null);
+            }
+
+            volume = _volsDao.persist(volume);
+            CallContext.current().setEventDetails("Volume Id: " + volume.getUuid());
+
+            // Increment resource count during allocation; if actual creation fails,
+            // decrement it
+            _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume, displayVolume);
+            _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, displayVolume, new Long(volume.getSize()));
+            return volume;
+        });
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_CLONE, eventDescription = "clone vm", async = true)
+    public Optional<UserVm> cloneVirtualMachine(CloneVMCmd cmd, VolumeApiService volumeService, SnapshotApiService snapshotService) throws ResourceUnavailableException, ConcurrentOperationException, CloudRuntimeException, InsufficientCapacityException, ResourceAllocationException {
+        long vmId = cmd.getEntityId();
+        UserVmVO curVm = _vmDao.findById(vmId);
+        // create and attach data disk
+        long targetClonedVmId = cmd.getId();
+        Account caller = CallContext.current().getCallingAccount();
+        List<VolumeVO> dataDisks = _volsDao.findByInstanceAndType(targetClonedVmId, Volume.Type.DATADISK);
+        List<Snapshot> createdSnapshots = new ArrayList<>();
+        List<VolumeVO> createdVolumes = new ArrayList<>();
+        long zoneId = cmd.getTargetVM().getDataCenterId();
+        s_logger.info("Trying to attach data disk before starting the VM...");
+        if (dataDisks.size() > 0) {
+            VolumeVO newDatadisk = null;
+            try {
+                for (VolumeVO dataDisk : dataDisks) {
+                    long diskId = dataDisk.getId();
+                    SnapshotVO dataSnapShot = (SnapshotVO) volumeService.allocSnapshot(diskId, Snapshot.MANUAL_POLICY_ID, "DataDisk-Clone" + dataDisk.getName(), null);
+                    if (dataSnapShot == null) {
+                        throw new CloudRuntimeException("Unable to allocate snapshot of data disk: " + dataDisk.getId() + " name: " + dataDisk.getName());
+                    }
+                    createdSnapshots.add(dataSnapShot);
+                    SnapshotVO snapshotEntity = (SnapshotVO) volumeService.takeSnapshot(diskId, Snapshot.MANUAL_POLICY_ID, dataSnapShot.getId(), caller, false, null, false, new HashMap<>());
+                    if (snapshotEntity == null) {
+                        throw new CloudRuntimeException("Error when creating the snapshot entity");
+                    }
+                    if (snapshotEntity.getState() != Snapshot.State.BackedUp) {
+                        throw new CloudRuntimeException("Async backup of snapshot happens during the clone for snapshot id: " + dataSnapShot.getId());
+                    }
+                    long diskOfferingId = snapshotEntity.getDiskOfferingId();
+                    DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
+                    Long minIops = snapshotEntity.getMinIops();
+                    Long maxIops = snapshotEntity.getMaxIops();
+                    Long size = snapshotEntity.getSize();
+                    Storage.ProvisioningType provisioningType = diskOffering.getProvisioningType();
+                    DataCenterVO dataCenter = _dcDao.findById(zoneId);
+                    String volumeName = snapshotEntity.getName() + "-DataDisk-Volume";
+                    VolumeVO parentVolume = _volsDao.findByIdIncludingRemoved(snapshotEntity.getVolumeId());
+                    newDatadisk = saveDataDiskVolumeFromSnapShot(caller, true, zoneId,
+                            diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, volumeName, _uuidMgr.generateUuid(Volume.class, null), new HashMap<>());
+                    VolumeVO volumeEntity = (VolumeVO) volumeService.cloneDataVolume(cmd, snapshotEntity.getId(), newDatadisk);
+                    createdVolumes.add(volumeEntity);
+                }
+            } catch (CloudRuntimeException e){
+                s_logger.warn("data disk process failed during clone, clearing the temporary resources...");
+                for (VolumeVO dataDiskToClear : createdVolumes) {
+                    volumeService.destroyVolume(dataDiskToClear.getId(), caller, true, false);
+                }
+                // clear the created disks
+                if (newDatadisk != null) {
+                    volumeService.destroyVolume(newDatadisk.getId(), caller, true, false);
+                }
+                throw new CloudRuntimeException(e.getMessage());
+            } finally {
+                // clear the temporary data snapshots
+                for (Snapshot snapshotLeftOver : createdSnapshots) {
+                    snapshotService.deleteSnapshot(snapshotLeftOver.getId());
+                }
+            }
+        }
+
+        for (VolumeVO createdVol : createdVolumes) {
+            try {
+                volumeService.attachVolumeToVm(cmd, createdVol.getId(), createdVol.getDeviceId());
+            } catch (CloudRuntimeException e) {
+                s_logger.warn("data disk: " + createdVol.getId() + " attachment to VM " + vmId + " failed due to" + e.getMessage());
+                s_logger.info("Clearing the data disk: " + createdVol.getId());
+                volumeService.destroyVolume(createdVol.getId(), caller, true, true);
+            }
+        }
+
+        // start the VM if successfull
+        Long podId = curVm.getPodIdToDeployIn();
+        Long clusterId = null;
+        Long hostId = curVm.getHostId();
+        Map<VirtualMachineProfile.Param, Object> additonalParams =  new HashMap<>();
+        Map<Long, DiskOffering> diskOfferingMap = new HashMap<>();
+        if (MapUtils.isNotEmpty(curVm.getDetails()) && curVm.getDetails().containsKey(ApiConstants.BootType.UEFI.toString())) {
+            Map<String, String> map = curVm.getDetails();
+            additonalParams.put(VirtualMachineProfile.Param.UefiFlag, "Yes");
+            additonalParams.put(VirtualMachineProfile.Param.BootType, ApiConstants.BootType.UEFI.toString());
+            additonalParams.put(VirtualMachineProfile.Param.BootMode, map.get(ApiConstants.BootType.UEFI.toString()));
+        }
+
+        return Optional.of(startVirtualMachine(vmId, podId, clusterId, hostId, diskOfferingMap, additonalParams, null));
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "starting Vm", async = true)
     public UserVm startVirtualMachine(DeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException {
         long vmId = cmd.getEntityId();
@@ -5479,6 +5701,79 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return vm;
+    }
+
+    @Override
+    public UserVm recordVirtualMachineToDB(CloneVMCmd cmd) throws ConcurrentOperationException, ResourceAllocationException, InsufficientCapacityException, ResourceUnavailableException {
+        //network configurations and check, then create the template
+        UserVm curVm = cmd.getTargetVM();
+        // check if host is available
+        Long hostId = curVm.getHostId();
+        getDestinationHost(hostId, true);
+        Long zoneId = curVm.getDataCenterId();
+        DataCenter dataCenter = _entityMgr.findById(DataCenter.class, zoneId);
+        Map<String, String> vmProperties = curVm.getDetails() != null ? curVm.getDetails() : new HashMap<>();
+        String keyboard = vmProperties.get(VmDetailConstants.KEYBOARD);
+        HypervisorType hypervisorType = curVm.getHypervisorType();
+        Account curAccount = _accountDao.findById(curVm.getAccountId());
+        long callingUserId = CallContext.current().getCallingUserId();
+        Account callerAccount = CallContext.current().getCallingAccount();
+//        IpAddress ipAddress = _ipAddrMgr.assignPublicIpAddress(zoneId, curVm.getPodIdToDeployIn(), callerAccount, VlanType.DirectAttached, )
+//        IpAddress ipAddress = _ipAddrMgr.allocateIp(curAccount, false, callerAccount, callingUserId, dataCenter, true, null);
+        String ipv6Address = null;
+        String macAddress = null;
+        IpAddresses addr = new IpAddresses(null, ipv6Address, macAddress);
+//        IpAddresses addr = new IpAddresses("172.20.0.98", ipv6Address, macAddress);
+        long serviceOfferingId = curVm.getServiceOfferingId();
+        ServiceOffering serviceOffering = _serviceOfferingDao.findById(curVm.getId(), serviceOfferingId);
+        List<SecurityGroupVO> securityGroupList = _securityGroupMgr.getSecurityGroupsForVm(curVm.getId());
+        List<Long> securityGroupIdList = securityGroupList.stream().map(SecurityGroupVO::getId).collect(Collectors.toList());
+        String uuidName = _uuidMgr.generateUuid(UserVm.class, null);
+        String hostName = generateHostName(uuidName);
+        String displayName = hostName + "-Clone";
+        Long diskOfferingId = curVm.getDiskOfferingId();
+        Long size = null; // mutual exclusive with disk offering id
+        HTTPMethod httpMethod = cmd.getHttpMethod();
+        String userData = curVm.getUserData();
+        String sshKeyPair = null;
+        Map<Long, IpAddresses> ipToNetoworkMap = null; // Since we've specified Ip
+        boolean isDisplayVM = curVm.isDisplayVm();
+        boolean dynamicScalingEnabled = curVm.isDynamicallyScalable();
+        Long templateId = cmd.getTemporaryTemlateId();
+        VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
+        if (template == null) {
+            throw new CloudRuntimeException("the temporary template is not created, server error, contact your sys admin");
+        }
+        List<Long> networkIds = _networkModel.listNetworksUsedByVm(curVm.getId());
+        String group = null;
+        InstanceGroupVO groupVo = getGroupForVm(cmd.getId());
+        if (groupVo != null) {
+            group = groupVo.getName();
+        }
+        UserVm vmResult = null;
+        List<Long> affinityGroupIdList = _affinityGroupDao.findByAccountAndNames(curAccount.getId(), curAccount.getAccountName())
+                                        .stream().
+                                        mapToLong(AffinityGroupVO::getId).
+                                        boxed().
+                                        collect(Collectors.toList());
+        if (dataCenter.getNetworkType() == NetworkType.Basic) {
+            vmResult = createBasicSecurityGroupVirtualMachine(dataCenter, serviceOffering, template, securityGroupIdList, curAccount, hostName, displayName, diskOfferingId,
+                    size, group, hypervisorType, cmd.getHttpMethod(), userData, sshKeyPair, ipToNetoworkMap, addr, isDisplayVM, keyboard, affinityGroupIdList,
+                    curVm.getDetails() == null ? new HashMap<>() : curVm.getDetails(), cmd.getCustomId(), new HashMap<>(),
+                    null, new HashMap<>(), dynamicScalingEnabled);
+        } else {
+            if (dataCenter.isSecurityGroupEnabled()) {
+                vmResult = createAdvancedSecurityGroupVirtualMachine(dataCenter, serviceOffering, template, networkIds, securityGroupIdList, curAccount, hostName,
+                        displayName, diskOfferingId, size, group, hypervisorType, cmd.getHttpMethod(), userData, sshKeyPair, ipToNetoworkMap, addr, isDisplayVM, keyboard,
+                        affinityGroupIdList, curVm.getDetails() == null ? new HashMap<>() : curVm.getDetails(), cmd.getCustomId(), new HashMap<>(),
+                        null, new HashMap<>(), dynamicScalingEnabled);
+            } else {
+                vmResult = createAdvancedVirtualMachine(dataCenter, serviceOffering, template, networkIds, curAccount, hostName, displayName, diskOfferingId, size, group,
+                        hypervisorType, cmd.getHttpMethod(), userData, sshKeyPair, ipToNetoworkMap, addr, isDisplayVM, keyboard, affinityGroupIdList, curVm.getDetails() == null ? new HashMap<>() : curVm.getDetails(),
+                        cmd.getCustomId(), new HashMap<>(), null, new HashMap<>(), dynamicScalingEnabled);
+            }
+        }
+        return vmResult;
     }
 
     /**

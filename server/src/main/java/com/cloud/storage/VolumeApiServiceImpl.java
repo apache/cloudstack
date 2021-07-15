@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.command.user.vm.CloneVMCmd;
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
@@ -908,6 +909,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
+    @Override
+    public Volume cloneDataVolume(CloneVMCmd cmd, long snapshotId, Volume volume) throws StorageUnavailableException {
+        long vmId = cmd.getEntityId();
+        return createVolumeFromSnapshot((VolumeVO) volume, snapshotId, vmId);
+    }
+
     protected VolumeVO createVolumeFromSnapshot(VolumeVO volume, long snapshotId, Long vmId) throws StorageUnavailableException {
         VolumeInfo createdVolume = null;
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
@@ -1696,6 +1703,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
         newVol = sendAttachVolumeCommand(vm, newVol, deviceId);
         return newVol;
+    }
+
+    @Override
+    public Volume attachVolumeToVm(CloneVMCmd cmd, Long volumeId, Long deviceId) {
+        return attachVolumeToVM(cmd.getEntityId(), volumeId, deviceId);
     }
 
     public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId) {

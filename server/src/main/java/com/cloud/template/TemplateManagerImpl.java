@@ -33,6 +33,26 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.ImageStoreUploadMonitorImpl;
+import com.cloud.storage.LaunchPermissionVO;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.TemplateProfile;
+import com.cloud.storage.Upload;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VMTemplateZoneVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
+import com.cloud.storage.VolumeVO;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
@@ -54,6 +74,7 @@ import org.apache.cloudstack.api.command.user.template.ListTemplatePermissionsCm
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
+import org.apache.cloudstack.api.command.user.vm.CloneVMCmd;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -142,28 +163,9 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.ImageStoreUploadMonitorImpl;
-import com.cloud.storage.LaunchPermissionVO;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.TemplateProfile;
-import com.cloud.storage.Upload;
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VMTemplateZoneVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.SnapshotDao;
@@ -1737,6 +1739,260 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         if (privateTemplate != null) {
             return privateTemplate;
+        } else {
+            throw new CloudRuntimeException("Failed to create a template");
+        }
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating actual private template", create = true)
+    public VirtualMachineTemplate createPrivateTemplate(CloneVMCmd cmd) throws CloudRuntimeException {
+        UserVm curVm = cmd.getTargetVM();
+        long templateId = cmd.getTemporaryTemlateId();
+        long snapshotId = cmd.getTemporarySnapShotId();
+        final Long accountId = curVm.getAccountId();
+        Account caller = CallContext.current().getCallingAccount();
+        List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(cmd.getId(), Volume.Type.ROOT);
+        VolumeVO targetVolume = volumes.get(0);
+        long volumeId = targetVolume.getId();
+        VMTemplateVO finalTmpProduct = null;
+        SnapshotVO snapshot = null;
+        try {
+            TemplateInfo cloneTempalateInfp = _tmplFactory.getTemplate(templateId, DataStoreRole.Image);
+            long zoneId = curVm.getDataCenterId();
+            AsyncCallFuture<TemplateApiResult> future = null;
+            VolumeInfo vInfo = _volFactory.getVolume(volumeId);
+            DataStore store = _dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
+            snapshot = _snapshotDao.findById(snapshotId);
+//            future = _tmpltSvr.createTemplateFromVolumeAsync(vInfo, cloneTempalateInfp, store);
+            // create template from snapshot
+            DataStoreRole dataStoreRole = ApiResponseHelper.getDataStoreRole(snapshot, _snapshotStoreDao, _dataStoreMgr);
+            SnapshotInfo snapInfo = _snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
+            if (dataStoreRole == DataStoreRole.Image) {
+                if (snapInfo == null) {
+                    snapInfo = _snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+                    if(snapInfo == null) {
+                        throw new CloudRuntimeException("Cannot find snapshot "+snapshotId);
+                    }
+                    // We need to copy the snapshot onto secondary.
+                    SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.BACKUP);
+                    snapshotStrategy.backupSnapshot(snapInfo);
+
+                    // Attempt to grab it again.
+                    snapInfo = _snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
+                    if(snapInfo == null) {
+                        throw new CloudRuntimeException("Cannot find snapshot " + snapshotId + " on secondary and could not create backup");
+                    }
+                }
+                _accountMgr.checkAccess(caller, null, true, snapInfo);
+                DataStore snapStore = snapInfo.getDataStore();
+
+                if (snapStore != null) {
+                    store = snapStore; // pick snapshot image store to create template
+                }
+            }
+            future = _tmpltSvr.createTemplateFromSnapshotAsync(snapInfo, cloneTempalateInfp, store);
+            // wait for the result to converge
+            CommandResult result = null;
+            try {
+                result = future.get();
+
+                if (result.isFailed()) {
+                    finalTmpProduct = null;
+                    s_logger.warn("Failed to create template: " + result.getResult());
+                    throw new CloudRuntimeException("Failed to create template: " + result.getResult());
+                }
+                if (_dataStoreMgr.isRegionStore(store)) {
+                    _tmpltSvr.associateTemplateToZone(templateId, null);
+                } else {
+                    // Already done in the record to db step
+                    VMTemplateZoneVO templateZone = new VMTemplateZoneVO(zoneId, templateId, new Date());
+                    _tmpltZoneDao.persist(templateZone);
+                }
+                s_logger.info("successfully created the template with Id: " + templateId);
+                finalTmpProduct = _tmpltDao.findById(templateId);
+                TemplateDataStoreVO srcTmpltStore = _tmplStoreDao.findByStoreTemplate(store.getId(), templateId);
+                UsageEventVO usageEvent =
+                        new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, finalTmpProduct.getAccountId(), zoneId, finalTmpProduct.getId(), finalTmpProduct.getName(), null,
+                                finalTmpProduct.getSourceTemplateId(), srcTmpltStore.getPhysicalSize(), finalTmpProduct.getSize());
+                _usageEventDao.persist(usageEvent);
+            } catch (InterruptedException e) {
+                s_logger.debug("Failed to create template for id: " + templateId, e);
+                throw new CloudRuntimeException("Failed to create template" , e);
+            } catch (ExecutionException e) {
+                s_logger.debug("Failed to create template for id: " + templateId, e);
+                throw new CloudRuntimeException("Failed to create template ", e);
+            }
+
+        } finally {
+            finalTmpProduct = _tmpltDao.findById(templateId);
+            if (finalTmpProduct == null) {
+                final VolumeVO volumeFinal = targetVolume;
+                final SnapshotVO snapshotFinal = snapshot;
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        // template_store_ref entries should have been removed using our
+                        // DataObject.processEvent command in case of failure, but clean
+                        // it up here to avoid
+                        // some leftovers which will cause removing template from
+                        // vm_template table fail.
+                        _tmplStoreDao.deletePrimaryRecordsForTemplate(templateId);
+                        // Remove the template_zone_ref record
+                        _tmpltZoneDao.deletePrimaryRecordsForTemplate(templateId);
+                        // Remove the template record
+                        _tmpltDao.expunge(templateId);
+
+                        // decrement resource count
+                        if (accountId != null) {
+                            _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.template);
+                            _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.secondary_storage, new Long(volumeFinal != null ? volumeFinal.getSize()
+                                    : snapshotFinal.getSize()));
+                        }
+                    }
+                });
+
+            }
+        }
+        return null;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template from clone", create = true)
+    public VMTemplateVO createPrivateTemplateRecord(CloneVMCmd cmd, Account templateOwner, VolumeApiService volumeService) throws ResourceAllocationException {
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, templateOwner);
+        String name = cmd.getTemplateName();
+        if (name.length() > 32) {
+            name = name.substring(5) + "-QA-Clone";
+        }
+
+        boolean featured = false;
+        boolean isPublic = cmd.isPublic();
+        UserVm curVm = cmd.getTargetVM();
+        long zoneId = curVm.getDataCenterId();
+        Long volumeId = _volumeDao.findByInstanceAndType(cmd.getId(), Volume.Type.ROOT).get(0).getId();
+        HypervisorType hyperType = null;
+        VolumeVO volume = _volumeDao.findById(volumeId);
+        if (volume == null) {
+            throw new InvalidParameterValueException("Failed to create private template record, unable to find root volume " + volumeId);
+        }
+
+        // check permissions
+        _accountMgr.checkAccess(caller, null, true, volume);
+
+        // If private template is created from Volume, check that the volume
+        // will not be active when the private template is
+        // created
+//        if (!_volumeMgr.volumeInactive(volume)) {
+//            String msg = "Unable to create private template for volume: " + volume.getName() + "; volume is attached to a non-stopped VM, please stop the VM first";
+//            if (s_logger.isInfoEnabled()) {
+//                s_logger.info(msg);
+//            }
+//            throw new CloudRuntimeException(msg);
+//        }
+
+        hyperType = _volumeDao.getHypervisorType(volumeId);
+        if (HypervisorType.LXC.equals(hyperType)) {
+            throw new InvalidParameterValueException("Template creation is not supported for LXC volume: " + volumeId);
+        }
+
+        _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.template);
+        _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.secondary_storage, volume.getSize());
+
+        Long guestOSId = cmd.getTargetVM().getGuestOSId();
+        GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
+        if (guestOS == null) {
+            throw new InvalidParameterValueException("GuestOS with ID: " + guestOSId + " does not exist.");
+        }
+
+        // get snapshot from this step
+
+
+        Long nextTemplateId = _tmpltDao.getNextInSequence(Long.class, "id");
+        s_logger.info("Creating snapshot for the tempalte creation");
+        SnapshotVO snapshot = (SnapshotVO) volumeService.allocSnapshot(volumeId, Snapshot.MANUAL_POLICY_ID, curVm.getDisplayName() + "-Clone-" + nextTemplateId, null);
+        if (snapshot == null) {
+            throw new CloudRuntimeException("Unable to create a snapshot during the template creation recording");
+        }
+        Snapshot snapshotEntity = volumeService.takeSnapshot(volumeId, Snapshot.MANUAL_POLICY_ID, snapshot.getId(), caller, false, null, false, new HashMap<>());
+        if (snapshotEntity == null) {
+            throw new CloudRuntimeException("Error when creating the snapshot entity");
+        }
+        if (snapshotEntity.getState() != Snapshot.State.BackedUp) {
+            throw new CloudRuntimeException("Async backup of snapshot happens during the clone for snapshot id: " + snapshot.getId());
+        }
+        cmd.setTemporarySnapShotId(snapshot.getId());
+        String description = ""; // TODO: add this to clone parameter in the future
+        boolean isExtractable = false;
+        Long sourceTemplateId = null;
+        if (volume != null) {
+            VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
+            isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
+            if (volume.getIsoId() != null && volume.getIsoId() != 0) {
+                sourceTemplateId = volume.getIsoId();
+            } else if (volume.getTemplateId() != null) {
+                sourceTemplateId = volume.getTemplateId();
+            }
+        }
+
+        VMTemplateVO privateTemplate = null;
+        privateTemplate = new VMTemplateVO(nextTemplateId, name, ImageFormat.RAW, isPublic, featured, isExtractable,
+                TemplateType.USER, null, true, 64, templateOwner.getId(), null, description,
+                false, guestOS.getId(), true, hyperType, null, new HashMap<>(){{put("template to be cleared", "yes");}}, false, false, false, false);
+        List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
+        if (!CollectionUtils.isEmpty(stores)) {
+            privateTemplate.setCrossZones(true);
+        }
+
+        privateTemplate.setSourceTemplateId(sourceTemplateId);
+        VMTemplateVO template = _tmpltDao.persist(privateTemplate);
+        // persist this to the template zone area and remember to remove the resource count in the execute phase once in failure or clean up phase
+//        VMTemplateZoneVO templateZone = new VMTemplateZoneVO(zoneId, template.getId(), new Date());
+//        _tmpltZoneDao.persist(templateZone);
+//        TemplateDataStoreVO voRecord = _tmplStoreDao.createTemplateDirectDownloadEntry(template.getId(), template.getSize());
+//        voRecord.setDataStoreId(2);
+//        _tmplStoreDao.persist(voRecord);
+        // Increment the number of templates
+        if (template != null) {
+            Map<String, String> details = new HashMap<String, String>();
+
+            if (sourceTemplateId != null) {
+                VMTemplateVO sourceTemplate = _tmpltDao.findById(sourceTemplateId);
+                if (sourceTemplate != null && sourceTemplate.getDetails() != null) {
+                    details.putAll(sourceTemplate.getDetails());
+                }
+            }
+
+            if (volume != null) {
+                Long vmId = volume.getInstanceId();
+                if (vmId != null) {
+                    UserVmVO userVm = _userVmDao.findById(vmId);
+                    if (userVm != null) {
+                        _userVmDao.loadDetails(userVm);
+                        Map<String, String> vmDetails = userVm.getDetails();
+                        vmDetails = vmDetails.entrySet()
+                                .stream()
+                                .filter(map -> map.getValue() != null)
+                                .collect(Collectors.toMap(map -> map.getKey(), map -> map.getValue()));
+                        details.putAll(vmDetails);
+                    }
+                }
+            }
+
+            if (!details.isEmpty()) {
+                privateTemplate.setDetails(details);
+                _tmpltDao.saveDetails(privateTemplate);
+            }
+
+            _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.template);
+            _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.secondary_storage,
+                    snapshot.getSize());
+        }
+
+        if (template != null) {
+            return template;
         } else {
             throw new CloudRuntimeException("Failed to create a template");
         }
