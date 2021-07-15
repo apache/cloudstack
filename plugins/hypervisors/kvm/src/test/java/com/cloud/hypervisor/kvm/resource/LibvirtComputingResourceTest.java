@@ -202,6 +202,9 @@ public class LibvirtComputingResourceTest {
     @Mock
     LibvirtVMDef vmDef;
 
+    private final static long HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IOURING = 6003000;
+    private final static long HYPERVISOR_QEMU_VERSION_SUPPORTS_IOURING = 5000000;
+
     String hyperVisorType = "kvm";
     Random random = new Random();
     final String memInfo = "MemTotal:        5830236 kB\n" +
@@ -5208,5 +5211,38 @@ public class LibvirtComputingResourceTest {
         extraConfig.put("extraconfig-3", "value3");
         libvirtComputingResource.addExtraConfigComponent(extraConfig, vmDef);
         Mockito.verify(vmDef, times(1)).addComp(any());
+    }
+
+    @Test
+    public void setDiskIoDriverTestIoUring() {
+        DiskDef diskDef = configureAndTestSetDiskIoDriverTest(HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IOURING, HYPERVISOR_QEMU_VERSION_SUPPORTS_IOURING);
+        Assert.assertEquals(DiskDef.IoDriver.IOURING, diskDef.getIoDriver());
+    }
+
+    @Test
+    public void setDiskIoDriverTestLibvirtSupportsIoUring() {
+        DiskDef diskDef = configureAndTestSetDiskIoDriverTest(123l, HYPERVISOR_QEMU_VERSION_SUPPORTS_IOURING);
+        Assert.assertNotEquals(DiskDef.IoDriver.IOURING, diskDef.getIoDriver());
+    }
+
+    @Test
+    public void setDiskIoDriverTestQemuSupportsIoUring() {
+        DiskDef diskDef = configureAndTestSetDiskIoDriverTest(HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IOURING, 123l);
+        Assert.assertNotEquals(DiskDef.IoDriver.IOURING, diskDef.getIoDriver());
+    }
+
+    @Test
+    public void setDiskIoDriverTestNoSupportToIoUring() {
+        DiskDef diskDef = configureAndTestSetDiskIoDriverTest(123l, 123l);
+        Assert.assertNotEquals(DiskDef.IoDriver.IOURING, diskDef.getIoDriver());
+    }
+
+    private DiskDef configureAndTestSetDiskIoDriverTest(long hypervisorLibvirtVersion, long hypervisorQemuVersion) {
+        DiskDef diskDef = new DiskDef();
+        LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(new LibvirtComputingResource());
+        Mockito.when(libvirtComputingResourceSpy.getHypervisorLibvirtVersion()).thenReturn(hypervisorLibvirtVersion);
+        Mockito.when(libvirtComputingResourceSpy.getHypervisorQemuVersion()).thenReturn(hypervisorQemuVersion);
+        libvirtComputingResourceSpy.setDiskIoDriver(diskDef);
+        return diskDef;
     }
 }

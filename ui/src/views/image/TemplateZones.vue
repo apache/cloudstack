@@ -132,7 +132,7 @@
 
 <script>
 import { api } from '@/api'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'TemplateZones',
@@ -169,11 +169,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfigParams = (this.$store.getters.apis.copyTemplate && this.$store.getters.apis.copyTemplate.params) || []
-    this.apiParams = {}
-    this.apiConfigParams.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('copyTemplate')
   },
   created () {
     this.columns = [
