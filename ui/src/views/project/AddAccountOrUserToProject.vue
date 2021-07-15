@@ -193,12 +193,7 @@ export default {
     }
     this.apiParams = {}
     for (var api of apis) {
-      const details = {}
-      const apiConfig = this.$store.getters.apis[api]
-      apiConfig.params.forEach(param => {
-        details[param.name] = param
-      })
-      this.apiParams[api] = details
+      this.apiParams[api] = this.$getApiParams(api)
     }
   },
   methods: {
