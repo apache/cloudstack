@@ -20,7 +20,7 @@
     :title="`${$t('label.delete.rule')}?`"
     @confirm="handleDelete"
     :disabled="disabled">
-    <tooltip-button :tooltip="$t('label.delete.rule')" tooltipPlacement="bottom" type="danger" icon="delete" :disabled="disabled" />
+    <tooltip-button :tooltip="$t('label.delete.rule')" tooltipPlacement="bottom" type="danger" icon="delete-outlined" :disabled="disabled" />
   </a-popconfirm>
 </template>
 

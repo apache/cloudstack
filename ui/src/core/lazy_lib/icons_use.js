@@ -78,6 +78,7 @@ import {
   LinkOutlined,
   LoadingOutlined,
   LockOutlined,
+  LoginOutlined,
   LogoutOutlined,
   MedicineBoxOutlined,
   MenuFoldOutlined,
@@ -189,6 +190,7 @@ export default {
     app.component('LinkOutlined', LinkOutlined)
     app.component('LoadingOutlined', LoadingOutlined)
     app.component('LockOutlined', LockOutlined)
+    app.component('LoginOutlined', LoginOutlined)
     app.component('LogoutOutlined', LogoutOutlined)
     app.component('MedicineBoxOutlined', MedicineBoxOutlined)
     app.component('MenuFoldOutlined', MenuFoldOutlined)

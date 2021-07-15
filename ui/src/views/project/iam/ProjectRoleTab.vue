@@ -28,29 +28,29 @@
           :dataSource="dataSource"
           :rowKey="(record,idx) => record.projectid + '-' + idx"
           :pagination="false">
-          <template slot="expandedRowRender" slot-scope="record">
+          <template #expandedRowRender="{ record }">
             <ProjectRolePermissionTab class="table" :resource="resource" :role="record"/>
           </template>
-          <template slot="name" slot-scope="record"> {{ record }} </template>
-          <template slot="description" slot-scope="record">
+          <template #name="{ record }"> {{ record }} </template>
+          <template #description="{ record }">
             {{ record }}
           </template>
-          <span slot="action" slot-scope="text, record">
+          <template #action="{ record }">
             <tooltip-button
               tooltipPlacement="top"
               :tooltip="$t('label.update.project.role')"
-              icon="edit"
+              icon="edit-outlined"
               size="small"
               style="margin:10px"
-              @click="openUpdateModal(record)" />
+              @onClick="openUpdateModal(record)" />
             <tooltip-button
               tooltipPlacement="top"
               :tooltip="$t('label.remove.project.role')"
               type="danger"
-              icon="delete"
+              icon="delete-outlined"
               size="small"
-              @click="deleteProjectRole(record)" />
-          </span>
+              @onClick="deleteProjectRole(record)" />
+          </template>
         </a-table>
         <a-modal
           :title="$t('label.edit.project.role')"
@@ -59,35 +59,20 @@
           :afterClose="closeAction"
           :maskClosable="false">
           <a-form
-            :form="form"
-            @submit="updateProjectRole"
+            :ref="formRef"
+            :model="form"
+            :rules="rules"
             layout="vertical">
-            <a-form-item :label="$t('label.name')">
-              <a-input v-decorator="['name']" autoFocus></a-input>
+            <a-form-item ref="name" name="name" :label="$t('label.name')">
+              <a-input v-model:value="form.name" autoFocus></a-input>
             </a-form-item>
-            <a-form-item :label="$t('label.description')">
-              <a-input v-decorator="['description']"></a-input>
+            <a-form-item ref="description" name="description" :label="$t('label.description')">
+              <a-input v-model:value="form.description"></a-input>
             </a-form-item>
             <div :span="24" class="action-button">
-              <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+              <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
               <a-button type="primary" @click="updateProjectRole" :loading="loading">{{ $t('label.ok') }}</a-button>
             </div>
-            <span slot="action" slot-scope="text, record">
-              <tooltip-button
-                tooltipPlacement="top"
-                :tooltip="$t('label.update.project.role')"
-                icon="edit"
-                size="small"
-                style="margin:10px"
-                @click="openUpdateModal(record)" />
-              <tooltip-button
-                tooltipPlacement="top"
-                :tooltip="$t('label.remove.project.role')"
-                type="danger"
-                icon="edit"
-                size="small"
-                @click="deleteProjectRole(record)" />
-            </span>
           </a-form>
         </a-modal>
         <a-modal
@@ -97,19 +82,21 @@
           :afterClose="closeAction"
           :maskClosable="false">
           <a-form
-            :form="form"
+            :ref="formRef"
+            :model="form"
+            :rules="rules"
             @submit="createProjectRole"
             layout="vertical">
-            <a-form-item :label="$t('label.name')">
+            <a-form-item ref="name" name="name" :label="$t('label.name')">
               <a-input
-                v-decorator="[ 'name', { rules: [{ required: true, message: 'Please provide input' }] }]"
+                v-model:value="form.name"
                 autoFocus></a-input>
             </a-form-item>
-            <a-form-item :label="$t('label.description')">
-              <a-input v-decorator="[ 'description' ]"></a-input>
+            <a-form-item ref="description" name="description" :label="$t('label.description')">
+              <a-input v-model:value="form.description"></a-input>
             </a-form-item>
             <div :span="24" class="action-button">
-              <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+              <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
               <a-button type="primary" @click="createProjectRole" :loading="loading">{{ $t('label.ok') }}</a-button>
             </div>
           </a-form>
@@ -119,9 +106,11 @@
   </div>
 </template>
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import ProjectRolePermissionTab from '@/views/project/iam/ProjectRolePermissionTab'
 import TooltipButton from '@/components/view/TooltipButton'
+
 export default {
   name: 'ProjectRoleTab',
   props: {
@@ -145,9 +134,6 @@ export default {
       projectPermisssions: [],
       customStyle: 'margin-bottom: -10px; border-bottom-style: none'
     }
-  },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
   },
   created () {
     this.columns = [
@@ -177,11 +163,15 @@ export default {
       if (!newItem || !newItem.id) {
         return
       }
-      this.resource = newItem
       this.fetchData()
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
+    },
     fetchData () {
       this.loading = true
       api('listProjectRoles', { projectid: this.resource.id }).then(json => {
@@ -200,16 +190,17 @@ export default {
     openUpdateModal (role) {
       this.selectedRole = role
       this.editModalVisible = true
+      this.rules = {}
     },
     openCreateModal () {
       this.createModalVisible = true
+      this.rules = {
+        name: [{ required: true, message: this.$t('message.error.required.input') }]
+      }
     },
-    updateProjectRole (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    updateProjectRole () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         var params = {}
         this.loading = true
         params.projectid = this.resource.id
@@ -243,12 +234,9 @@ export default {
         this.createModalVisible = false
       }
     },
-    createProjectRole (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    createProjectRole () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         var params = {}
         params.projectid = this.resource.id
