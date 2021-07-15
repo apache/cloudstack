@@ -55,12 +55,7 @@
             @submit="handleGetHealthChecksSubmit"
             layout="vertical">
             <a-form-item>
-              <span slot="label">
-                {{ $t('label.perform.fresh.checks') }}
-                <a-tooltip :title="apiParams.performfreshchecks.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </span>
+              <tooltip-label slot="label" :title="$t('label.perform.fresh.checks')" :tooltip="apiParams.performfreshchecks.description"/>
               <a-switch
                 v-decorator="[$t('performfreshchecks')]"
                 :placeholder="apiParams.performfreshchecks.description"
@@ -76,11 +71,13 @@
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'RouterHealthCheck',
   components: {
-    Status
+    Status,
+    TooltipLabel
   },
   props: {
     resource: {

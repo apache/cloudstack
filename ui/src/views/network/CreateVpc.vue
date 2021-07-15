@@ -21,12 +21,7 @@
         :form="form"
         layout="vertical">
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.name') }}
-            <a-tooltip :title="apiParams.name.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -35,12 +30,7 @@
             autoFocus/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.displaytext') }}
-            <a-tooltip :title="apiParams.displaytext.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
           <a-input
             v-decorator="['displaytext', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -48,12 +38,7 @@
             :placeholder="apiParams.displaytext.description"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.zoneid') }}
-            <a-tooltip :title="apiParams.zoneid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             :loading="loadingZone"
             v-decorator="['zoneid', {
@@ -67,12 +52,7 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.cidr') }}
-            <a-tooltip :title="apiParams.cidr.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.cidr')" :tooltip="apiParams.cidr.description"/>
           <a-input
             v-decorator="['cidr', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -80,23 +60,13 @@
             :placeholder="apiParams.cidr.description"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.networkdomain') }}
-            <a-tooltip :title="apiParams.networkdomain.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
           <a-input
             v-decorator="['networkdomain']"
             :placeholder="apiParams.networkdomain.description"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.vpcofferingid') }}
-            <a-tooltip :title="apiParams.vpcofferingid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.vpcofferingid')" :tooltip="apiParams.vpcofferingid.description"/>
           <a-select
             :loading="loadingOffering"
             v-decorator="['vpcofferingid', {
@@ -108,12 +78,7 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.start') }}
-            <a-tooltip :title="apiParams.start.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.start')" :tooltip="apiParams.start.description"/>
           <a-switch v-decorator="['start', {initialValue: true}]" defaultChecked />
         </a-form-item>
       </a-form>
@@ -126,8 +91,13 @@
 </template>
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
+
 export default {
   name: 'CreateVpc',
+  components: {
+    TooltipLabel
+  },
   data () {
     return {
       loading: false,
