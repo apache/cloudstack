@@ -23,39 +23,24 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.name') }}
-            <a-tooltip :title="createRoleApiParams.name.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
-            :placeholder="createRoleApiParams.name.description"
+            :placeholder="apiParams.name.description"
             autoFocus />
         </a-form-item>
 
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.description') }}
-            <a-tooltip :title="createRoleApiParams.description.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.description')" :tooltip="apiParams.description.description"/>
           <a-input
             v-decorator="['description']"
-            :placeholder="createRoleApiParams.description.description" />
+            :placeholder="apiParams.description.description" />
         </a-form-item>
 
-        <a-form-item v-if="'roleid' in createRoleApiParams">
-          <span slot="label">
-            {{ $t('label.based.on') }}
-            <a-tooltip :title="$t('label.based.on.role.id.or.type')">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+        <a-form-item v-if="'roleid' in apiParams">
+          <tooltip-label slot="label" :title="$t('label.based.on')" :tooltip="$t('label.based.on.role.id.or.type')"/>
           <a-radio-group
             v-decorator="['using', {
               initialValue: this.createRoleUsing
@@ -72,17 +57,12 @@
         </a-form-item>
 
         <a-form-item v-if="this.createRoleUsing === 'type'">
-          <span slot="label">
-            {{ $t('label.type') }}
-            <a-tooltip :title="createRoleApiParams.type.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.type')" :tooltip="apiParams.type.description"/>
           <a-select
             v-decorator="['type', {
               rules: [{ required: true, message: $t('message.error.select') }]
             }]"
-            :placeholder="createRoleApiParams.type.description">
+            :placeholder="apiParams.type.description">
             <a-select-option v-for="role in defaultRoles" :key="role">
               {{ role }}
             </a-select-option>
@@ -90,17 +70,12 @@
         </a-form-item>
 
         <a-form-item v-if="this.createRoleUsing === 'role'">
-          <span slot="label">
-            {{ $t('label.role') }}
-            <a-tooltip :title="createRoleApiParams.roleid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.role')" :tooltip="apiParams.roleid.description"/>
           <a-select
             v-decorator="['roleid', {
               rules: [{ required: true, message: $t('message.error.select') }]
             }]"
-            :placeholder="createRoleApiParams.roleid.description">
+            :placeholder="apiParams.roleid.description">
             <a-select-option
               v-for="role in roles"
               :value="role.id"
@@ -121,9 +96,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateRole',
+  components: {
+    TooltipLabel
+  },
   data () {
     return {
       roles: [],
@@ -137,11 +116,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.createRole || {}
-    this.createRoleApiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.createRoleApiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('createRole')
   },
   watch: {
     '$route' (to, from) {

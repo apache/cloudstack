@@ -61,15 +61,13 @@ public class DeleteManagementNetworkIpRangeCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.START_IP,
             type = CommandType.STRING,
             required = true,
-            description = "The starting IP address.",
-            validations = ApiArgValidator.NotNullOrEmpty)
+            description = "The starting IP address.")
     private String startIp;
 
     @Parameter(name = ApiConstants.END_IP,
             type = CommandType.STRING,
             required = true,
-            description = "The ending IP address.",
-            validations = ApiArgValidator.NotNullOrEmpty)
+            description = "The ending IP address.")
     private String endIp;
 
     @Parameter(name = ApiConstants.VLAN,
