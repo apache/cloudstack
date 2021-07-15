@@ -26,7 +26,7 @@ import 'nprogress/nprogress.css' // progress bar style
 import message from 'ant-design-vue/es/message'
 import notification from 'ant-design-vue/es/notification'
 import { setDocumentTitle } from '@/utils/domUtil'
-import { ACCESS_TOKEN, APIS } from '@/store/mutation-types'
+import { ACCESS_TOKEN, APIS, SERVER_MANAGER } from '@/store/mutation-types'
 
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
@@ -39,6 +39,19 @@ router.beforeEach((to, from, next) => {
     const title = i18n.t(to.meta.title) + ' - ' + Vue.prototype.$config.appTitle
     setDocumentTitle(title)
   }
+
+  const servers = Vue.prototype.$config.servers
+  const serverStorage = Vue.ls.get(SERVER_MANAGER)
+  let apiFullPath = ''
+  if (serverStorage) {
+    apiFullPath = (serverStorage.apiHost || '') + serverStorage.apiBase
+  }
+  const serverFilter = servers.filter(ser => (ser.apiHost || '') + ser.apiBase === apiFullPath)
+  const server = serverFilter[0] || servers[0]
+
+  Vue.axios.defaults.baseURL = (server.apiHost || '') + server.apiBase
+  store.dispatch('SetServer', server)
+
   const validLogin = Vue.ls.get(ACCESS_TOKEN) || Cookies.get('userid') || Cookies.get('userid', { path: '/client' })
   if (validLogin) {
     if (to.path === '/user/login') {
