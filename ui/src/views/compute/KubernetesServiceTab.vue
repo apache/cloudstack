@@ -98,13 +98,13 @@
           :rowKey="item => item.id"
           :pagination="false"
         >
-          <template slot="name" slot-scope="text, record">
+          <template #name="{ text, record }" :name="text">
             <router-link :to="{ path: '/vm/' + record.id }">{{ record.name }}</router-link>
           </template>
-          <template slot="state" slot-scope="text">
+          <template #state="{ text }">
             <status :text="text ? text : ''" displayText />
           </template>
-          <template slot="port" slot-scope="text, record, index">
+          <template #port="{ text, record, index }" :name="text" :record="record">
             {{ cksSshStartingPort + index }}
           </template>
         </a-table>
@@ -175,12 +175,12 @@ export default {
       {
         title: this.$t('label.name'),
         dataIndex: 'name',
-        scopedSlots: { customRender: 'name' }
+        slots: { customRender: 'name' }
       },
       {
         title: this.$t('label.state'),
         dataIndex: 'state',
-        scopedSlots: { customRender: 'state' }
+        slots: { customRender: 'state' }
       },
       {
         title: this.$t('label.instancename'),
@@ -193,7 +193,7 @@ export default {
       {
         title: this.$t('label.ssh.port'),
         dataIndex: 'port',
-        scopedSlots: { customRender: 'port' }
+        slots: { customRender: 'port' }
       },
       {
         title: this.$t('label.zonename'),

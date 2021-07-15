@@ -19,41 +19,45 @@
   <div class="take-snapshot">
     <a-spin :spinning="loading || actionLoading">
       <a-alert type="warning">
-        <span slot="message" v-html="$t('label.header.volume.take.snapshot')" />
+        <template #message>
+          <div v-html="$t('label.header.volume.take.snapshot')" />
+        </template>
       </a-alert>
       <a-form
         class="form"
-        :form="form"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
         layout="vertical"
         @submit="handleSubmit">
         <a-row :gutter="12">
           <a-col :md="24" :lg="24">
-            <a-form-item :label="$t('label.name')">
+            <a-form-item :label="$t('label.name')" name="name" ref="name">
               <a-input
-                v-decorator="['name']"
+                v-model:value="form.name"
                 :placeholder="apiParams.name.description"
                 autoFocus />
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="24">
-            <a-form-item :label="$t('label.asyncbackup')">
-              <a-switch v-decorator="['asyncbackup']" />
+            <a-form-item :label="$t('label.asyncbackup')" name="asyncbackup" ref="asyncbackup">
+              <a-switch v-model:value="form.asyncbackup" />
             </a-form-item>
           </a-col>
-          <a-col :md="24" :lg="24" v-if="quiescevm">
+          <a-col :md="24" :lg="24" v-if="quiescevm" name="quiescevm" ref="quiescevm">
             <a-form-item :label="$t('label.quiescevm')">
-              <a-switch v-decorator="['quiescevm']" />
+              <a-switch v-model:checked="form.quiescevm" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-divider/>
         <div class="tagsTitle">{{ $t('label.tags') }}</div>
         <div>
-          <template v-for="(tag, index) in tags">
+          <div v-for="(tag, index) in tags" :key="index">
             <a-tag :key="index" :closable="true">
               {{ tag.key }} = {{ tag.value }}
             </a-tag>
-          </template>
+          </div>
           <div v-if="inputVisible">
             <a-input-group
               type="text"
@@ -64,26 +68,26 @@
               <a-input ref="input" :value="inputKey" @change="handleKeyChange" style="width: 100px; text-align: center" :placeholder="$t('label.key')" />
               <a-input style=" width: 30px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
               <a-input :value="inputValue" @change="handleValueChange" style="width: 100px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-              <tooltip-button :tooltip="$t('label.ok')" icon="check" size="small" @click="handleInputConfirm" />
-              <tooltip-button :tooltip="$t('label.cancel')" icon="close" size="small" @click="inputVisible=false" />
+              <tooltip-button :tooltip="$t('label.ok')" icon="check-outlined" size="small" @onClick="handleInputConfirm" />
+              <tooltip-button :tooltip="$t('label.cancel')" icon="close-outlined" size="small" @onClick="inputVisible=false" />
             </a-input-group>
           </div>
           <a-tag v-else @click="showInput" style="background: #fff; borderStyle: dashed;">
-            <a-icon type="plus" /> {{ $t('label.new.tag') }}
+            <plus-outlined /> {{ $t('label.new.tag') }}
           </a-tag>
         </div>
         <div :span="24" class="action-button">
           <a-button
             :loading="actionLoading"
             @click="closeAction">
-            {{ this.$t('label.cancel') }}
+            {{ $t('label.cancel') }}
           </a-button>
           <a-button
             v-if="handleShowButton()"
             :loading="actionLoading"
             type="primary"
             @click="handleSubmit">
-            {{ this.$t('label.ok') }}
+            {{ $t('label.ok') }}
           </a-button>
         </div>
       </a-form>
@@ -92,6 +96,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipButton from '@/components/view/TooltipButton'
 
@@ -122,23 +127,29 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiConfig = this.$store.getters.apis.createSnapshot || {}
     this.apiParams = {}
     this.apiConfig.params.forEach(param => {
       this.apiParams[param.name] = param
     })
   },
-  mounted () {
+  created () {
+    this.initForm()
     this.quiescevm = this.resource.quiescevm
   },
   methods: {
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((error, values) => {
-        if (error) {
-          return
-        }
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        name: undefined,
+        asyncbackup: undefined,
+        quiescevm: false
+      })
+      this.rules = reactive({})
+    },
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         let params = {}
         params.volumeId = this.resource.id

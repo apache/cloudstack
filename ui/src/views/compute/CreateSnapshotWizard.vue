@@ -19,22 +19,22 @@
   <div class="form-layout">
     <a-spin :spinning="loading">
       <a-form
-        :form="form"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <span slot="label" :title="apiParams.volumeid.description">
+          <template #label :title="apiParams.volumeid.description">
             {{ $t('label.volumeid') }}
             <a-tooltip>
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-select
             showSearch
             allowClear
-            v-decorator="['volumeid', {
-              rules: [{ required: true, message: $t('message.error.select') }]
-            }]"
+            v-model:value="form.volumeid"
             @change="onChangeVolume"
             :placeholder="apiParams.volumeid.description"
             autoFocus>
@@ -46,33 +46,33 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label" :title="apiParams.name.description">
+          <template #label :title="apiParams.name.description">
             {{ $t('label.name') }}
             <a-tooltip>
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input
-            v-decorator="['name']"
+            v-model:value="form.name"
             :placeholder="apiParams.name.description"/>
         </a-form-item>
         <a-form-item v-if="isQuiesceVm">
-          <span slot="label" :title="apiParams.quiescevm.description">
+          <template #label :title="apiParams.quiescevm.description">
             {{ $t('label.quiescevm') }}
             <a-tooltip>
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
-          <a-switch v-decorator="['quiescevm', { initialValue: false }]"/>
+          </template>
+          <a-switch v-model:checked="form.quiescevm"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label" :title="apiParams.asyncbackup.description">
+          <template #label :title="apiParams.asyncbackup.description">
             {{ $t('label.asyncbackup') }}
             <a-tooltip>
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
-          <a-switch v-decorator="['asyncbackup', { initialValue: false }]"/>
+          </template>
+          <a-switch v-model:checked="form.asyncbackup"/>
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -84,6 +84,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -102,7 +103,9 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
+    this.formRef = ref()
+    this.form = reactive({})
+    this.rules = reactive({})
     this.apiConfig = this.$store.getters.apis.createSnapshot || {}
     this.apiParams = {}
     this.apiConfig.params.forEach(param => {
@@ -110,9 +113,20 @@ export default {
     })
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.form.volumeid = undefined
+      this.form.name = undefined
+      this.form.quiescevm = false
+      this.form.asyncbackup = false
+
+      this.rules = {
+        volumeid: [{ required: true, message: this.$t('message.error.select') }]
+      }
+    },
     fetchData () {
       this.loading = true
 
@@ -123,12 +137,9 @@ export default {
         .catch(e => {})
         .finally(() => { this.loading = false })
     },
-    handleSubmit (e) {
-      e.preventDefault()
-
-      this.form.validateFields((err, values) => {
-        if (err) return
-
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         params.volumeid = values.volumeid
         params.name = values.name

@@ -23,7 +23,7 @@
           class="input-search-invitation"
           style="width: unset"
           :placeholder="$t('label.search')"
-          v-model="searchQuery"
+          v-model:value="searchQuery"
           @search="onSearch"
           autoFocus />
       </a-col>
@@ -36,25 +36,27 @@
           :pagination="false"
           :rowKey="record => record.id || record.account"
           @change="onChangeTable">
-          <template slot="state" slot-scope="text">
+          <template #state="{ text }">
             <status :text="text ? text : ''" displayText />
           </template>
-          <span slot="action" v-if="record.state===stateAllow" slot-scope="text, record" class="account-button-action">
-            <tooltip-button
-              tooltipPlacement="top"
-              :tooltip="$t('label.accept.project.invitation')"
-              type="success"
-              icon="check"
-              size="small"
-              @click="onShowConfirmAcceptInvitation(record)"/>
-            <tooltip-button
-              tooltipPlacement="top"
-              :tooltip="$t('label.decline.invitation')"
-              type="danger"
-              icon="close"
-              size="small"
-              @click="onShowConfirmRevokeInvitation(record)"/>
-          </span>
+          <template #action="{ record }">
+            <div v-if="record.state===stateAllow" class="account-button-action">
+              <tooltip-button
+                tooltipPlacement="top"
+                :tooltip="$t('label.accept.project.invitation')"
+                type="success"
+                icon="check-outlined"
+                size="small"
+                @onClick="onShowConfirmAcceptInvitation(record)"/>
+              <tooltip-button
+                tooltipPlacement="top"
+                :tooltip="$t('label.decline.invitation')"
+                type="danger"
+                icon="close-outlined"
+                size="small"
+                @onClick="onShowConfirmRevokeInvitation(record)"/>
+            </div>
+          </template>
         </a-table>
         <a-pagination
           class="row-element"
@@ -67,7 +69,7 @@
           @change="changePage"
           @showSizeChange="changePageSize"
           showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
+          <template #buildOptionText="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
           </template>
         </a-pagination>
@@ -108,23 +110,23 @@ export default {
       {
         title: this.$t('label.project'),
         dataIndex: 'project',
-        scopedSlots: { customRender: 'project' }
+        slots: { customRender: 'project' }
       },
       {
         title: this.$t('label.account'),
         dataIndex: 'account',
-        scopedSlots: { customRender: 'account' }
+        slots: { customRender: 'account' }
       },
       {
         title: this.$t('label.domain'),
         dataIndex: 'domain',
-        scopedSlots: { customRender: 'domain' }
+        slots: { customRender: 'domain' }
       },
       {
         title: this.$t('label.state'),
         dataIndex: 'state',
         width: 130,
-        scopedSlots: { customRender: 'state' },
+        slots: { customRender: 'state' },
         filters: [
           {
             text: this.$t('state.pending'),
@@ -149,7 +151,7 @@ export default {
         title: this.$t('label.action'),
         dataIndex: 'action',
         width: 80,
-        scopedSlots: { customRender: 'action' }
+        slots: { customRender: 'action' }
       }
     ]
 
@@ -165,7 +167,7 @@ export default {
       this.columns.splice(2, 0, {
         title: this.$t('label.user'),
         dataIndex: 'userid',
-        scopedSlots: { customRender: 'user' }
+        slots: { customRender: 'user' }
       })
     }
     this.fetchData()
@@ -317,7 +319,7 @@ export default {
 </script>
 
 <style scoped>
-  /deep/.ant-table-fixed-right {
+  :deep(.ant-table-fixed-right) {
     z-index: 5;
   }
 

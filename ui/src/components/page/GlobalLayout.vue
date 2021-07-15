@@ -17,7 +17,6 @@
 
 <template>
   <a-layout class="layout" :class="[device]">
-
     <template v-if="isSideMenu()">
       <a-drawer
         v-if="isMobile()"
@@ -158,7 +157,7 @@ export default {
       if (this.sidebarOpened) {
         left = this.isDesktop() ? '256px' : '80px'
       } else {
-        left = this.isMobile() && '0' || (this.fixSidebar && '80px' || '0')
+        left = this.isMobile() ? '0' : (this.fixSidebar ? '80px' : '0')
       }
       return left
     },

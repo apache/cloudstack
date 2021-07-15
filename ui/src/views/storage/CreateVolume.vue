@@ -17,32 +17,33 @@
 
 <template>
   <a-spin :spinning="loading">
-    <a-form class="form" :form="form" @submit="handleSubmit" layout="vertical">
-      <a-form-item>
-        <span slot="label">
+    <a-form
+      class="form"
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      layout="vertical">
+      <a-form-item ref="name" name="name">
+        <template #label>
           {{ $t('label.name') }}
           <a-tooltip :title="apiParams.name.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
           </a-tooltip>
-        </span>
+        </template>
         <a-input
-          v-decorator="['name', {
-            rules: [{ required: true, message: $t('message.error.volume.name') }]
-          }]"
+          v-model:value="form.name"
           :placeholder="$t('label.volumename')"
           autoFocus />
       </a-form-item>
-      <a-form-item>
-        <span slot="label">
+      <a-form-item ref="zoneid" name="zoneid">
+        <template #label>
           {{ $t('label.zoneid') }}
           <a-tooltip :title="apiParams.zoneid.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
           </a-tooltip>
-        </span>
+        </template>
         <a-select
-          v-decorator="['zoneid', {
-            initialValue: selectedZoneId,
-            rules: [{ required: true, message: $t('message.error.zone') }] }]"
+          v-model:value="form.zoneid"
           :loading="loading"
           @change="zone => fetchDiskOfferings(zone)">
           <a-select-option
@@ -53,17 +54,15 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item>
-        <span slot="label">
+      <a-form-item ref="diskofferingid" name="diskofferingid">
+        <template #label>
           {{ $t('label.diskoffering') }}
           <a-tooltip :title="apiParams.diskofferingid.description || 'Disk Offering'">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
           </a-tooltip>
-        </span>
+        </template>
         <a-select
-          v-decorator="['diskofferingid', {
-            initialValue: selectedDiskOfferingId,
-            rules: [{ required: true, message: $t('message.error.select') }]}]"
+          v-model:value="form.diskofferingid"
           :loading="loading"
           @change="id => (customDiskOffering = offerings.filter(x => x.id === id)[0].iscustomized || false)"
         >
@@ -75,20 +74,17 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <span v-if="customDiskOffering">
-        <a-form-item>
-          <span slot="label">
-            {{ $t('label.sizegb') }}
-            <a-tooltip :title="apiParams.size.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
-          <a-input
-            v-decorator="['size', {
-              rules: [{ required: true, message: $t('message.error.custom.disk.size') }]}]"
-            :placeholder="$t('label.disksize')"/>
-        </a-form-item>
-      </span>
+      <a-form-item v-if="customDiskOffering" ref="size" name="size">
+        <template #label>
+          {{ $t('label.sizegb') }}
+          <a-tooltip :title="apiParams.size.description">
+            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+          </a-tooltip>
+        </template>
+        <a-input
+          v-model:value="form.size"
+          :placeholder="$t('label.disksize')"/>
+      </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
         <a-button type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -98,6 +94,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -106,30 +103,43 @@ export default {
     return {
       zones: [],
       offerings: [],
-      selectedZoneId: '',
-      selectedDiskOfferingId: '',
       customDiskOffering: false,
       loading: false
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = {}
-    var apiConfig = this.$store.getters.apis.createVolume || {}
+    const apiConfig = this.$store.getters.apis.createVolume || {}
     apiConfig.params.forEach(param => {
       this.apiParams[param.name] = param
     })
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        name: undefined,
+        zoneid: undefined,
+        diskofferingid: undefined,
+        size: undefined
+      })
+      this.rules = reactive({
+        name: [{ required: true, message: this.$t('message.error.volume.name') }],
+        zoneid: [{ required: true, message: this.$t('message.error.zone') }],
+        diskofferingid: [{ required: true, message: this.$t('message.error.select') }],
+        size: [{ required: true, message: this.$t('message.error.custom.disk.size') }]
+      })
+    },
     fetchData () {
       this.loading = true
       api('listZones').then(json => {
         this.zones = json.listzonesresponse.zone || []
-        this.selectedZoneId = this.zones[0].id || ''
-        this.fetchDiskOfferings(this.selectedZoneId)
+        this.form.zoneid = this.zones[0].id || ''
+        this.fetchDiskOfferings(this.form.zoneid)
       }).finally(() => {
         this.loading = false
       })
@@ -141,17 +151,15 @@ export default {
         listall: true
       }).then(json => {
         this.offerings = json.listdiskofferingsresponse.diskoffering || []
-        this.selectedDiskOfferingId = this.offerings[0].id || ''
+        this.form.diskofferingid = this.offerings[0].id || ''
         this.customDiskOffering = this.offerings[0].iscustomized || false
       }).finally(() => {
         this.loading = false
       })
     },
-    handleSubmit (e) {
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         api('createVolume', values).then(response => {
           this.$pollJob({

@@ -20,7 +20,9 @@
     <div class="modal-form">
       <div v-if="storagePools.length > 0">
         <a-alert type="warning">
-          <span slot="message" v-html="$t('message.migrate.volume')" />
+          <template #message>
+            <div v-html="$t('message.migrate.volume')" />
+          </template>
         </a-alert>
         <p class="modal-form__label">{{ $t('label.storagepool') }}</p>
         <a-select
@@ -31,7 +33,7 @@
             {{ storagePool.name }} <span v-if="resource.virtualmachineid">{{ storagePool.suitableformigration ? `(${$t('label.suitable')})` : `(${$t('label.not.suitable')})` }}</span>
           </a-select-option>
         </a-select>
-        <template v-if="this.resource.virtualmachineid">
+        <template v-if="resource.virtualmachineid">
           <p class="modal-form__label" @click="replaceDiskOffering = !replaceDiskOffering" style="cursor:pointer;">
             {{ $t('label.usenewdiskoffering') }}
           </p>
@@ -48,7 +50,9 @@
         </template>
       </div>
       <a-alert style="margin-top: 15px" type="warning" v-else>
-        <span slot="message" v-html="$t('message.no.primary.stores')" />
+        <template #message>
+          <div v-html="$t('message.no.primary.stores')" />
+        </template>
       </a-alert>
     </div>
 
@@ -132,7 +136,7 @@ export default {
       })
     },
     closeModal () {
-      this.$parent.$parent.close()
+      this.$emit('close-action')
     },
     submitMigrateVolume () {
       if (this.storagePools.length === 0) {

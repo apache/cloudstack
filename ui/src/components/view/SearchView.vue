@@ -19,11 +19,11 @@
   <span :style="styleSearch">
     <span v-if="!searchFilters || searchFilters.length === 0" style="display: flex;">
       <a-input-search
-        style="width: 100%; display: table-cell"
+        v-model:value="searchQuery"
         :placeholder="$t('label.search')"
-        v-model="searchQuery"
         allowClear
-        @search="onSearch" />
+        @search="onSearch"
+      />
     </span>
 
     <span
@@ -33,92 +33,93 @@
         allowClear
         class="input-search"
         :placeholder="$t('label.search')"
-        v-model="searchQuery"
+        v-model:value="searchQuery"
         @search="onSearch">
-        <a-popover
-          placement="bottomRight"
-          slot="addonBefore"
-          trigger="click"
-          v-model="visibleFilter">
-          <template slot="content" v-if="visibleFilter">
-            <a-form
-              style="min-width: 170px"
-              :form="form"
-              layout="vertical"
-              @submit="handleSubmit">
-              <a-form-item
-                v-for="(field, index) in fields"
-                :key="index"
-                :label="field.name==='keyword' ? $t('label.name') : $t('label.' + field.name)">
-                <a-select
-                  allowClear
-                  v-if="field.type==='list'"
-                  v-decorator="[field.name, {
-                    initialValue: fieldValues[field.name] || null
-                  }]"
-                  :loading="field.loading">
-                  <a-select-option
-                    v-for="(opt, idx) in field.opts"
-                    :key="idx"
-                    :value="opt.id">{{ $t(opt.name) }}</a-select-option>
-                </a-select>
-                <a-input
-                  v-else-if="field.type==='input'"
-                  v-decorator="[field.name, {
-                    initialValue: fieldValues[field.name] || null
-                  }]" />
-                <div v-else-if="field.type==='tag'">
-                  <div>
-                    <a-input-group
-                      type="text"
-                      size="small"
-                      compact>
-                      <a-input ref="input" :value="inputKey" @change="e => inputKey = e.target.value" style="width: 50px; text-align: center" :placeholder="$t('label.key')" />
-                      <a-input style=" width: 20px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
-                      <a-input :value="inputValue" @change="handleValueChange" style="width: 50px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-                      <tooltip-button :tooltip="$t('label.clear')" icon="close" size="small" @click="inputKey = inputValue = ''" />
-                    </a-input-group>
+        <template #addonBefore>
+          <a-popover
+            placement="bottomRight"
+            trigger="click"
+            v-model:visible="visibleFilter">
+            <template #content v-if="visibleFilter">
+              <a-form
+                style="min-width: 170px"
+                :ref="formRef"
+                :model="form"
+                layout="vertical">
+                <a-form-item
+                  v-for="(field, index) in fields"
+                  :key="index"
+                  :label="field.name==='keyword' ? $t('label.name') : $t('label.' + field.name)">
+                  <a-select
+                    allowClear
+                    v-if="field.type==='list'"
+                    v-model:value="form[field.name]"
+                    :loading="field.loading">
+                    <a-select-option
+                      v-for="(opt, idx) in field.opts"
+                      :key="idx"
+                      :value="opt.id">{{ $t(opt.name) }}</a-select-option>
+                  </a-select>
+                  <a-input
+                    v-else-if="field.type==='input'"
+                    v-model:value="form[field.name]" />
+                  <div v-else-if="field.type==='tag'">
+                    <div>
+                      <a-input-group
+                        type="text"
+                        size="small"
+                        compact>
+                        <a-input ref="input" :value="inputKey" @change="e => inputKey = e.target.value" style="width: 50px; text-align: center" :placeholder="$t('label.key')" />
+                        <a-input style=" width: 20px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
+                        <a-input :value="inputValue" @change="handleValueChange" style="width: 50px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
+                        <tooltip-button icon="CloseOutlined" size="small" @onClick="inputKey = inputValue = ''" />
+                      </a-input-group>
+                    </div>
                   </div>
+                </a-form-item>
+                <div class="filter-group-button">
+                  <a-button
+                    class="filter-group-button-clear"
+                    type="default"
+                    size="small"
+                    @click="onClear">
+                    <template #icon><StopOutlined /></template>
+                    {{ $t('label.reset') }}
+                  </a-button>
+                  <a-button
+                    class="filter-group-button-search"
+                    type="primary"
+                    size="small"
+                    html-type="submit"
+                    @click="handleSubmit">
+                    <template #icon><SearchOutlined /></template>
+                    {{ $t('label.search') }}
+                  </a-button>
                 </div>
-              </a-form-item>
-              <div class="filter-group-button">
-                <a-button
-                  class="filter-group-button-clear"
-                  type="default"
-                  size="small"
-                  icon="stop"
-                  @click="onClear">{{ $t('label.reset') }}</a-button>
-                <a-button
-                  class="filter-group-button-search"
-                  type="primary"
-                  size="small"
-                  icon="search"
-                  html-type="submit"
-                  @click="handleSubmit">{{ $t('label.search') }}</a-button>
-              </div>
-            </a-form>
-          </template>
-          <a-button
-            class="filter-button"
-            size="small"
-            @click="() => { searchQuery = null }">
-            <a-icon type="filter" :theme="isFiltered ? 'twoTone' : 'outlined'" />
-          </a-button>
-        </a-popover>
+              </a-form>
+            </template>
+            <a-button
+              class="filter-button"
+              size="small"
+              @click="() => { searchQuery = null }">
+              <FilterTwoTone v-if="isFiltered" />
+              <FilterOutlined v-else />
+            </a-button>
+          </a-popover>
+        </template>
       </a-input-search>
     </span>
   </span>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/view/TooltipButton.vue'
 
 export default {
   name: 'SearchView',
-  components: {
-    TooltipButton
-  },
+  components: { TooltipButton },
   props: {
     searchFilters: {
       type: Array,
@@ -146,8 +147,10 @@ export default {
       isFiltered: false
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
+  created () {
+    this.formRef = ref()
+    this.form = reactive({})
+    this.rules = reactive({})
   },
   watch: {
     visibleFilter (newValue, oldValue) {
@@ -319,6 +322,9 @@ export default {
       if (this.$route.meta.params) {
         Object.assign(this.fieldValues, this.$route.meta.params)
       }
+      this.fields.forEach(field => {
+        this.form[field.name] = this.fieldValues[field.name]
+      })
       this.inputKey = this.fieldValues['tags[0].key'] || null
       this.inputValue = this.fieldValues['tags[0].value'] || null
     },
@@ -422,11 +428,7 @@ export default {
       this.parentSearch({ searchQuery: this.searchQuery })
     },
     onClear () {
-      this.searchFilters.map(item => {
-        const field = {}
-        field[item] = undefined
-        this.form.setFieldsValue(field)
-      })
+      this.formRef.value.resetFields()
       this.isFiltered = false
       this.inputKey = null
       this.inputValue = null
@@ -434,13 +436,10 @@ export default {
       this.paramsFilter = {}
       this.parentSearch(this.paramsFilter)
     },
-    handleSubmit (e) {
-      e.preventDefault()
+    handleSubmit () {
       this.paramsFilter = {}
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.isFiltered = true
         for (const key in values) {
           const input = values[key]
@@ -477,7 +476,7 @@ export default {
 }
 
 .filter-group {
-  /deep/.ant-input-group-addon {
+  :deep(.ant-input-group-addon) {
     padding: 0 5px;
   }
 
@@ -503,7 +502,7 @@ export default {
     }
   }
 
-  /deep/.ant-input-group {
+  :deep(.ant-input-group) {
     .ant-input-affix-wrapper {
       width: calc(100% - 10px);
     }

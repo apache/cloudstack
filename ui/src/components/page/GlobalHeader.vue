@@ -18,16 +18,14 @@
 <template>
   <a-layout-header v-if="!headerBarFixed" :class="[fixedHeader && 'ant-header-fixedHeader', sidebarOpened ? 'ant-header-side-opened' : 'ant-header-side-closed', theme ]" :style="{ padding: '0' }">
     <div v-if="mode === 'sidemenu'" class="header">
-      <a-icon
-        v-if="device==='mobile'"
-        class="trigger"
-        :type="collapsed ? 'menu-fold' : 'menu-unfold'"
-        @click="toggle"></a-icon>
-      <a-icon
-        v-else
-        class="trigger"
-        :type="collapsed ? 'menu-unfold' : 'menu-fold'"
-        @click="toggle"/>
+      <template v-if="device==='mobile'">
+        <MenuFoldOutlined class="trigger" v-if="collapsed" @click="toggle" />
+        <MenuUnfoldOutlined class="trigger" v-else @click="toggle" />
+      </template>
+      <template v-else>
+        <MenuUnfoldOutlined class="trigger" v-if="collapsed" @click="toggle" />
+        <MenuFoldOutlined class="trigger" v-else @click="toggle" />
+      </template>
       <project-menu v-if="device !== 'mobile'" />
       <saml-domain-switcher style="margin-left: 20px" />
       <user-menu></user-menu>
@@ -42,11 +40,10 @@
             :menu="menus"
             :theme="theme"
           ></s-menu>
-          <a-icon
-            v-else
-            class="trigger"
-            :type="collapsed ? 'menu-fold' : 'menu-unfold'"
-            @click="toggle"></a-icon>
+          <div v-else>
+            <MenuFoldOutlined class="trigger" v-if="collapsed" @click="toggle" />
+            <MenuUnfoldOutlined class="trigger" v-else @click="toggle" />
+          </div>
         </div>
         <project-menu v-if="device !== 'mobile'" />
         <saml-domain-switcher style="margin-left: 20px" />
@@ -58,7 +55,6 @@
 </template>
 
 <script>
-import Breadcrumb from '@/components/widgets/Breadcrumb'
 import Logo from '../header/Logo'
 import SMenu from '../menu/'
 import ProjectMenu from '../header/ProjectMenu'
@@ -70,7 +66,6 @@ import { mixin } from '@/utils/mixin.js'
 export default {
   name: 'GlobalHeader',
   components: {
-    Breadcrumb,
     Logo,
     SMenu,
     ProjectMenu,

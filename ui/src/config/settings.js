@@ -26,9 +26,14 @@ export default {
   invertedMode: true,
   multiTab: false, // enable to have tab/route history stuff
   // vue-ls options
+  // storageOptions: {
+  //   namespace: 'primate__', // key prefix
+  //   name: 'ls', // name variable Vue.[ls] or this.[$ls],
+  //   storage: 'local' // storage name session, local, memory
+  // },
+  // vue-ls options
   storageOptions: {
-    namespace: 'primate__', // key prefix
-    name: 'ls', // name variable Vue.[ls] or this.[$ls],
-    storage: 'local' // storage name session, local, memory
+    prefix: 'primate__', // key prefix
+    drivers: ['local'] // storage name session, local, memory
   }
 }

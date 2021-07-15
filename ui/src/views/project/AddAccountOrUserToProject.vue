@@ -19,42 +19,43 @@
     <a-tabs class="form-layout">
       <a-tab-pane key="1" :tab="$t('label.action.project.add.account')">
         <a-form
-          :form="form"
-          @submit="addAccountToProject"
+          :ref="formRef"
+          :model="form"
+          :rules="rules"
           layout="vertical">
-          <a-form-item>
-            <span slot="label">
+          <a-form-item ref="account" name="account">
+            <template #label>
               {{ $t('label.account') }}
               <a-tooltip :title="apiParams.addAccountToProject.account.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
               </a-tooltip>
-            </span>
+            </template>
             <a-input
-              v-decorator="['account']"
+              v-model:value="form.account"
               :placeholder="apiParams.addAccountToProject.account.description"
               autoFocus />
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
+          <a-form-item ref="email" name="email">
+            <template #label>
               {{ $t('label.email') }}
               <a-tooltip :title="apiParams.addAccountToProject.email.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
               </a-tooltip>
-            </span>
+            </template>
             <a-input
-              v-decorator="['email']"
+              v-model:value="form.email"
               :placeholder="apiParams.addAccountToProject.email.description"></a-input>
           </a-form-item>
-          <a-form-item v-if="apiParams.addAccountToProject.projectroleid">
-            <span slot="label">
+          <a-form-item ref="projectroleid" name="projectroleid" v-if="apiParams.addAccountToProject.projectroleid">
+            <template #label>
               {{ $t('label.project.role') }}
               <a-tooltip :title="apiParams.addAccountToProject.projectroleid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
               </a-tooltip>
-            </span>
+            </template>
             <a-select
               showSearch
-              v-decorator="['projectroleid']"
+              v-model:value="form.projectroleid"
               :loading="loading"
               :placeholder="$t('label.project.role')"
             >
@@ -63,68 +64,71 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item v-if="apiParams.addAccountToProject.roletype">
-            <span slot="label">
+          <a-form-item ref="roletype" name="roletype" v-if="apiParams.addAccountToProject.roletype">
+            <template #label>
               {{ $t('label.roletype') }}
               <a-tooltip :title="apiParams.addAccountToProject.roletype.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
               </a-tooltip>
-            </span>
+            </template>
             <a-select
               showSearch
-              v-decorator="['roletype']"
+              v-model:value="form.roletype"
               :placeholder="$t('label.roletype')">
               <a-select-option value="Admin">Admin</a-select-option>
               <a-select-option value="Regular">Regular</a-select-option>
             </a-select>
           </a-form-item>
           <div :span="24" class="action-button">
-            <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+            <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
             <a-button type="primary" @click="addAccountToProject" :loading="loading">{{ $t('label.ok') }}</a-button>
           </div>
         </a-form>
       </a-tab-pane>
       <a-tab-pane key="2" :tab="$t('label.action.project.add.user')" v-if="apiParams.addUserToProject">
         <a-form
-          :form="form"
-          @submit="addUserToProject"
+          :ref="formRef"
+          :model="form"
+          :rules="rules"
           layout="vertical">
           <a-alert type="warning" style="margin-bottom: 20px">
-            <span slot="message" v-html="$t('message.add.user.to.project')"></span>
+            <template #message>
+              <div v-html="$t('message.add.user.to.project')"></div>
+            </template>
           </a-alert>
-          <a-form-item>
-            <span slot="label">
+          <a-form-item ref="username" name="username">
+            <template #label>
               {{ $t('label.user') }}
               <a-tooltip :title="apiParams.addUserToProject.username.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
               </a-tooltip>
-            </span>
+            </template>
             <a-input
-              v-decorator="['username']"
+              v-model:value="form.username"
               :placeholder="apiParams.addUserToProject.username.description"
               autoFocus />
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
+          <a-form-item ref="email" name="email">
+            <template #label>
               {{ $t('label.email') }}
               <a-tooltip :title="apiParams.addUserToProject.email.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
               </a-tooltip>
-            </span>
+            </template>
             <a-input
-              v-decorator="['email']"
+              v-model:value="form.email"
               :placeholder="apiParams.addUserToProject.email.description"></a-input>
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
+          <a-form-item ref="projectroleid" name="projectroleid">
+            <template #label>
               {{ $t('label.project.role') }}
               <a-tooltip :title="apiParams.addUserToProject.roletype.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
               </a-tooltip>
-            </span>
+            </template>
             <a-select
               showSearch
-              v-decorator="['projectroleid']"
+              v-model:value="form.projectroleid"
               :loading="loading"
               :placeholder="$t('label.project.role')"
             >
@@ -133,23 +137,23 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
+          <a-form-item ref="roletype" name="roletype">
+            <template #label>
               {{ $t('label.roletype') }}
               <a-tooltip :title="apiParams.addUserToProject.roletype.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
               </a-tooltip>
-            </span>
+            </template>
             <a-select
               showSearch
-              v-decorator="['roletype']"
+              v-model:value="form.roletype"
               :placeholder="$t('label.roletype')">
               <a-select-option value="Admin">Admin</a-select-option>
               <a-select-option value="Regular">Regular</a-select-option>
             </a-select>
           </a-form-item>
           <div :span="24" class="action-button">
-            <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+            <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
             <a-button type="primary" @click="addUserToProject" :loading="loading">{{ $t('label.ok') }}</a-button>
           </div>
         </a-form>
@@ -158,7 +162,9 @@
   </div>
 </template>
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+
 export default {
   name: 'AddAccountOrUserToProject',
   props: {
@@ -183,10 +189,10 @@ export default {
     }
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     const apis = ['addAccountToProject']
     if ('addUserToProject' in this.$store.getters.apis) {
       apis.push('addUserToProject')
@@ -202,6 +208,11 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
+    },
     fetchData () {
       this.fetchUsers()
       this.fetchAccounts()
@@ -246,12 +257,9 @@ export default {
     isProjectRolesSupported () {
       return ('listProjectRoles' in this.$store.getters.apis)
     },
-    addAccountToProject (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    addAccountToProject () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         var params = {
           projectid: this.resource.id
@@ -280,12 +288,9 @@ export default {
         })
       })
     },
-    addUserToProject (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    addUserToProject () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         this.loading = true
         var params = {

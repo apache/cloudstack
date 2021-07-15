@@ -19,7 +19,7 @@
   <a-icon v-if="loadingTable" type="loading" class="main-loading-spinner"></a-icon>
   <div v-else>
     <div v-if="updateTable" class="loading-overlay">
-      <a-icon type="loading" />
+      <loading-outlined />
     </div>
     <div
       class="rules-list ant-list ant-list-bordered"
@@ -43,13 +43,13 @@
             @change="onPermissionChange(null, $event)" />
         </div>
         <div class="rules-table__col rules-table__col--description">
-          <a-input v-model="newRuleDescription" placeholder="Description"></a-input>
+          <a-input v-model:value="newRuleDescription" placeholder="Description"></a-input>
         </div>
         <div class="rules-table__col rules-table__col--actions">
           <tooltip-button
             tooltipPlacement="bottom"
             :tooltip="$t('label.save.new.rule')"
-            icon="plus"
+            icon="plus-outlined"
             type="primary"
             @click="onRuleSave" />
         </div>
@@ -67,7 +67,7 @@
             :key="`item-${index}`"
             class="rules-table-item ant-list-item">
             <div class="rules-table__col rules-table__col--grab drag-handle">
-              <a-icon type="drag"></a-icon>
+              <drag-outlined />
             </div>
             <div class="rules-table__col rules-table__col--rule">
               {{ record.rule }}
@@ -82,7 +82,7 @@
                 {{ record.description }}
               </template>
               <div v-else class="no-description">
-                No description entered.
+                {{ $t('message.no.description') }}
               </div>
             </div>
             <div class="rules-table__col rules-table__col--actions">

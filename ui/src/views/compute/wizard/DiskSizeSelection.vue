@@ -24,7 +24,7 @@
         <span style="display: inline-flex">
           <a-input-number
             autoFocus
-            v-model="inputValue"
+            v-model:value="inputValue"
             @change="($event) => updateDiskSize($event)"
           />
           <span style="padding-top: 6px; margin-left: 5px">GB</span>

@@ -20,7 +20,7 @@
     <a-input-search
       style="width: 25vw; float: right; margin-bottom: 10px; z-index: 8"
       :placeholder="$t('label.search')"
-      v-model="filter"
+      v-model:value="filter"
       @search="handleSearch" />
     <a-button type="primary" @click="showCreateForm = true" style="float: right; margin-right: 5px; z-index: 8">
       {{ $t('label.create.network') }}
@@ -34,21 +34,23 @@
       :rowSelection="rowSelection"
       :scroll="{ y: 225 }"
     >
-      <a-list
-        slot="expandedRowRender"
-        slot-scope="record"
-        :key="record.id"
-        :dataSource="getDetails(record)"
-        size="small"
-      >
-        <a-list-item slot="renderItem" slot-scope="item" :key="item.id">
-          <a-list-item-meta
-            :description="item.description"
-          >
-            <template v-slot:title>{{ item.title }}</template>
-          </a-list-item-meta>
-        </a-list-item>
-      </a-list>
+      <template #expandedRowRender="record">
+        <a-list
+          :key="record.id"
+          :dataSource="getDetails(record)"
+          size="small"
+        >
+          <template #renderItem="item">
+            <a-list-item :key="item.id">
+              <a-list-item-meta
+                :description="item.description"
+              >
+                <template #title>{{ item.title }}</template>
+              </a-list-item-meta>
+            </a-list-item>
+          </template>
+        </a-list>
+      </template>
     </a-table>
 
     <div style="display: block; text-align: right;">
@@ -62,7 +64,7 @@
         @change="onChangePage"
         @showSizeChange="onChangePageSize"
         showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>
@@ -224,9 +226,6 @@ export default {
         }
       }
     }
-  },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
   },
   created () {
     api('listVPCs', {

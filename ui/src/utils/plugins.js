@@ -22,8 +22,8 @@ import { message, notification } from 'ant-design-vue'
 import eventBus from '@/config/eventBus'
 
 export const pollJobPlugin = {
-  install (Vue) {
-    Vue.prototype.$pollJob = function (options) {
+  install (app) {
+    app.config.globalProperties.$pollJob = function (options) {
       /**
        * @param {String} jobId
        * @param {String} [name='']
@@ -40,13 +40,13 @@ export const pollJobPlugin = {
       const {
         jobId,
         name = '',
-        successMessage = i18n.t('label.success'),
+        successMessage = i18n.global.t('label.success'),
         successMethod = () => {},
-        errorMessage = i18n.t('label.error'),
+        errorMessage = i18n.global.t('label.error'),
         errorMethod = () => {},
-        loadingMessage = `${i18n.t('label.loading')}...`,
+        loadingMessage = `${i18n.global.t('label.loading')}...`,
         showLoading = true,
-        catchMessage = i18n.t('label.error.caught'),
+        catchMessage = i18n.global.t('label.error.caught'),
         catchMethod = () => {},
         action = null
       } = options
@@ -56,7 +56,7 @@ export const pollJobPlugin = {
         if (result.jobstatus === 1) {
           var content = successMessage
           if (successMessage === 'Success' && action && action.label) {
-            content = i18n.t(action.label)
+            content = i18n.global.t(action.label)
           }
           if (name) {
             content = content + ' - ' + name
@@ -66,7 +66,7 @@ export const pollJobPlugin = {
             key: jobId,
             duration: 2
           })
-          eventBus.$emit('async-job-complete', action)
+          eventBus.emit('async-job-complete', action)
           successMethod(result)
         } else if (result.jobstatus === 2) {
           message.error({
@@ -76,7 +76,7 @@ export const pollJobPlugin = {
           })
           var title = errorMessage
           if (action && action.label) {
-            title = i18n.t(action.label)
+            title = i18n.global.t(action.label)
           }
           var desc = result.jobresult.errortext
           if (name) {
@@ -88,7 +88,7 @@ export const pollJobPlugin = {
             key: jobId,
             duration: 0
           })
-          eventBus.$emit('async-job-complete', action)
+          eventBus.emit('async-job-complete', action)
           errorMethod(result)
         } else if (result.jobstatus === 0) {
           if (showLoading) {
@@ -105,7 +105,7 @@ export const pollJobPlugin = {
       }).catch(e => {
         console.error(`${catchMessage} - ${e}`)
         notification.error({
-          message: i18n.t('label.error'),
+          message: i18n.global.t('label.error'),
           description: catchMessage,
           duration: 0
         })
@@ -117,14 +117,14 @@ export const pollJobPlugin = {
 }
 
 export const notifierPlugin = {
-  install (Vue) {
-    Vue.prototype.$notifyError = function (error) {
+  install (app) {
+    app.config.globalProperties.$notifyError = function (error) {
       console.log(error)
-      var msg = i18n.t('message.request.failed')
+      var msg = i18n.global.t('message.request.failed')
       var desc = ''
       if (error && error.response) {
         if (error.response.status) {
-          msg = `${i18n.t('message.request.failed')} (${error.response.status})`
+          msg = `${i18n.global.t('message.request.failed')} (${error.response.status})`
         }
         if (error.message) {
           desc = error.message
@@ -149,8 +149,8 @@ export const notifierPlugin = {
 }
 
 export const toLocaleDatePlugin = {
-  install (Vue) {
-    Vue.prototype.$toLocaleDate = function (date) {
+  install (app) {
+    app.config.globalProperties.$toLocaleDate = function (date) {
       var timezoneOffset = this.$store.getters.timezoneoffset
       if (this.$store.getters.usebrowsertimezone) {
         // Since GMT+530 is returned as -330 (mins to GMT)
@@ -169,8 +169,8 @@ export const toLocaleDatePlugin = {
 }
 
 export const configUtilPlugin = {
-  install (Vue) {
-    Vue.prototype.$applyDocHelpMappings = function (docHelp) {
+  install (app) {
+    app.config.globalProperties.$applyDocHelpMappings = function (docHelp) {
       var docHelpMappings = this.$config.docHelpMappings
       if (docHelp && docHelpMappings &&
         docHelpMappings.constructor === Object && Object.keys(docHelpMappings).length > 0) {

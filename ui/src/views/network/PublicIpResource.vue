@@ -18,7 +18,7 @@
 <template>
   <div>
     <autogen-view @change-resource="changeResource">
-      <div slot="action">
+      <template #action>
         <action-button
           :style="{ float: device === 'mobile' ? 'left' : 'right' }"
           :loading="loading"
@@ -27,8 +27,8 @@
           :dataView="true"
           :resource="resource"
           @exec-action="(action) => execAction(action, action.groupAction && !dataView)" />
-      </div>
-      <div slot="resource">
+      </template>
+      <template #resource>
         <resource-view
           v-if="isPublicIpAddress && 'id' in resource"
           :loading="loading"
@@ -36,7 +36,7 @@
           :historyTab="activeTab"
           :tabs="tabs"
           @onTabChange="(tab) => { this.activeTab = tab }" />
-      </div>
+      </template>
     </autogen-view>
   </div>
 </template>

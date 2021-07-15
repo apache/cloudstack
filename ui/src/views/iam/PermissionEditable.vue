@@ -17,7 +17,7 @@
 
 <template>
   <a-select
-    :value="defaultValue"
+    v-model:value="value"
     @change="handleChange"
     autoFocus>
     <a-select-option value="allow">{{ $t('label.allow') }}</a-select-option>
@@ -33,11 +33,20 @@ export default {
       required: true
     }
   },
+  data () {
+    return {
+      value: ''
+    }
+  },
+  watch: {
+    defaultValue () {
+      this.value = this.defaultValue
+    }
+  },
   methods: {
     handleChange (e) {
       this.$emit('change', e)
     }
   }
-
 }
 </script>

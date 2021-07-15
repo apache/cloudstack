@@ -17,18 +17,18 @@
 
 <template>
   <a-spin :spinning="loading">
-    <a-form class="form" :form="form" @submit="handleSubmit" layout="vertical">
+    <a-form class="form" :ref="formRef" :model="form" :rules="rules" layout="vertical">
       <div style="margin-bottom: 10px">
         <a-alert type="warning">
-          <span slot="message" v-html="$t('message.confirm.attach.disk')" />
+          <template #message>
+            <div v-html="$t('message.confirm.attach.disk')"></div>
+          </template>
         </a-alert>
       </div>
-      <a-form-item :label="$t('label.virtualmachineid')">
+      <a-form-item :label="$t('label.virtualmachineid')" name="virtualmachineid" ref="virtualmachineid">
         <a-select
           autoFocus
-          v-decorator="['virtualmachineid', {
-            rules: [{ required: true, message: $t('message.error.select') }]
-          }]"
+          v-model:value="form.virtualmachineid"
           :placeholder="apiParams.virtualmachineid.description">
           <a-select-option v-for="vm in virtualmachines" :key="vm.id">
             {{ vm.name || vm.displayname }}
@@ -43,6 +43,7 @@
   </a-spin>
 </template>
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -61,7 +62,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiConfig = this.$store.getters.apis.attachVolume || {}
     this.apiParams = {}
     this.apiConfig.params.forEach(param => {
@@ -69,9 +69,19 @@ export default {
     })
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        virtualmachineid: undefined
+      })
+      this.rules = reactive({
+        virtualmachineid: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
     fetchData () {
       var params = {
         zoneid: this.resource.zoneid
@@ -102,12 +112,9 @@ export default {
     closeAction () {
       this.$emit('close-action')
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         this.loading = true
         api('attachVolume', {

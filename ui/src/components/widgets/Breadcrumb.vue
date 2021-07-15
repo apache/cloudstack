@@ -22,8 +22,8 @@
         v-if="item && item.name"
         :to="{ path: item.path === '' ? '/' : item.path }"
       >
-        <a-icon v-if="index == 0" :type="item.meta.icon" style="font-size: 16px" @click="resetToMainView" />
-        {{ $t(item.meta.title) }}
+        <render-icon v-if="index == 0" :icon="item.meta.icon" style="font-size: 16px" @click="resetToMainView" />
+        <span v-else>{{ $t(item.meta.title) }}</span>
       </router-link>
       <span v-else-if="$route.params.id">
         <label
@@ -42,7 +42,7 @@
       </span>
       <span v-if="index === (breadList.length - 1)" style="margin-left: 5px">
         <a-tooltip placement="bottom">
-          <template slot="title">
+          <template #title>
             {{ $t('label.open.documentation') }}
           </template>
           <a
@@ -50,7 +50,7 @@
             style="margin-right: 12px"
             :href="$config.docBase + '/' + $route.meta.docHelp"
             target="_blank">
-            <a-icon type="question-circle-o"></a-icon>
+            <QuestionCircleOutlined />
           </a>
         </a-tooltip>
         <slot name="end">
@@ -61,9 +61,11 @@
 </template>
 
 <script>
+import RenderIcon from '@/utils/renderIcon'
 
 export default {
   name: 'Breadcrumb',
+  components: { RenderIcon },
   props: {
     resource: {
       type: Object,

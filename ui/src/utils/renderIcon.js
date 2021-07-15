@@ -15,42 +15,48 @@
 // specific language governing permissions and limitations
 // under the License.
 
-<template>
-  <div>
-    TODO: upload ISO from local file component
-
-    <a-upload
-      name="avatar"
-      listType="picture-card"
-      class="avatar-uploader"
-      :showUploadList="false"
-      action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
-      :beforeUpload="beforeUpload"
-      @change="handleChange"
-    >
-      <img v-if="imageUrl" :src="imageUrl" alt="avatar" />
-      <div v-else>
-        <a-icon :type="loading ? 'loading' : 'plus'" />
-        <div class="ant-upload-text">{{ $t('label.upload') }}</div>
-      </div>
-    </a-upload>
-  </div>
-</template>
-
-<script>
+import { h, resolveComponent } from 'vue'
 
 export default {
-  name: '',
-  components: {
-  },
-  data () {
-    return {
+  name: 'RenderIcon',
+  props: {
+    icon: {
+      type: String,
+      default: ''
+    },
+    svgIcon: {
+      type: Object,
+      default: {}
+    },
+    props: {
+      type: Object,
+      default: {}
+    },
+    event: {
+      type: Object,
+      default: {}
     }
   },
   methods: {
+    renderIcon () {
+      return h(resolveComponent(this.icon), this.props, this.event)
+    },
+    renderSvgIcon () {
+      const props = Object.assign({}, this.props)
+      props.width = '1em'
+      props.height = '1em'
+      props.class = 'custom-icon'
+
+      return h('span', { role: 'img', class: 'anticon' }, [
+        h(this.svgIcon, { ...props }, this.event)
+      ])
+    }
+  },
+  render () {
+    if (this.icon) {
+      return this.renderIcon()
+    }
+
+    return this.renderSvgIcon()
   }
 }
-</script>
-
-<style scoped>
-</style>

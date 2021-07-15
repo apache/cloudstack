@@ -22,7 +22,7 @@
         <a-select
           autoFocus
           @change="handleTierSelect"
-          v-model="vpcTiers"
+          v-model:value="vpcTiers"
           :placeholder="$t('label.select.tier')">
           <a-select-option v-for="network in networksList" :key="network.id" :value="network.id">
             {{ network.name }}
@@ -33,7 +33,7 @@
       <div class="list__header__col list__header__col--full">
         <a-input-search
           :placeholder="$t('label.search')"
-          v-model="searchQuery"
+          v-model:value="searchQuery"
           @search="fetchData" />
       </div>
     </div>
@@ -45,7 +45,7 @@
       :dataSource="vmsList"
       :pagination="false"
       :rowKey="record => record.id || record.account">
-      <template slot="name" slot-scope="record">
+      <template #name="{ record }">
         <div>
           {{ record.name }}
         </div>
@@ -61,10 +61,10 @@
           </a-select-option>
         </a-select>
       </template>
-      <template slot="state" slot-scope="text">
+      <template #state="text">
         <status :text="text ? text : ''" displayText />
       </template>
-      <template slot="radio" slot-scope="text">
+      <template #radio="text">
         <a-radio
           class="list__radio"
           :value="text"
@@ -83,7 +83,7 @@
       @change="changePage"
       @showSizeChange="changePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
@@ -122,12 +122,12 @@ export default {
       columns: [
         {
           title: this.$t('label.name'),
-          scopedSlots: { customRender: 'name' }
+          slots: { customRender: 'name' }
         },
         {
           title: this.$t('label.state'),
           dataIndex: 'state',
-          scopedSlots: { customRender: 'state' }
+          slots: { customRender: 'state' }
         },
         {
           title: this.$t('label.displayname'),
@@ -144,7 +144,7 @@ export default {
         {
           title: this.$t('label.select'),
           dataIndex: 'id',
-          scopedSlots: { customRender: 'radio' }
+          slots: { customRender: 'radio' }
         }
       ],
       tiersSelect: false,
@@ -398,7 +398,7 @@ export default {
     overflow-y: auto;
   }
 
-  /deep/ .ant-table-small {
+  :deep(.ant-table-small) {
     border: 0
   }
 </style>

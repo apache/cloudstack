@@ -20,36 +20,37 @@
     <a-form
       class="form-layout"
       layout="vertical"
-      :form="form"
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
       @submit="handleSubmit">
       <a-form-item>
-        <span slot="label">
+        <template #label>
           {{ $t('label.name') }}
           <a-tooltip :title="apiParams.name.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
           </a-tooltip>
-        </span>
+        </template>
         <a-input
-          v-decorator="['name', { initialValue: resource.name || '' }]"
+          v-model:value="form.name"
           autoFocus />
       </a-form-item>
       <a-form-item>
-        <span slot="label">
+        <template #label>
           {{ $t('label.displayname') }}
           <a-tooltip :title="apiParams.displayname.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+             <info-circle-outlined style="color: rgba(0,0,0,.45)" />
           </a-tooltip>
-        </span>
-        <a-input
-          v-decorator="['displayname', { initialValue: resource.displayname || '' }]" />
+        </template>
+        <a-input v-model:value="form.displayname" />
       </a-form-item>
       <a-form-item>
-        <span slot="label">
+        <template #label>
           {{ $t('label.ostypeid') }}
           <a-tooltip :title="apiParams.ostypeid.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+             <info-circle-outlined style="color: rgba(0,0,0,.45)" />
           </a-tooltip>
-        </span>
+        </template>
         <a-select
           showSearch
           optionFilterProp="children"
@@ -57,47 +58,43 @@
             return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }"
           :loading="osTypes.loading"
-          v-decorator="['ostypeid', { initialValue: resource.ostypeid || '' }]">
+          v-model:value="form.ostypeid">
           <a-select-option v-for="(ostype) in osTypes.opts" :key="ostype.id">
             {{ ostype.description }}
           </a-select-option>
         </a-select>
       </a-form-item>
       <a-form-item>
-        <span slot="label">
+        <template #label>
           {{ $t('label.isdynamicallyscalable') }}
           <a-tooltip :title="apiParams.isdynamicallyscalable.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+             <info-circle-outlined style="color: rgba(0,0,0,.45)" />
           </a-tooltip>
-        </span>
-        <a-switch
-          :default-checked="resource.isdynamicallyscalable"
-          v-decorator="['isdynamicallyscalable']" />
+        </template>
+        <a-switch v-model:checked="form.isdynamicallyscalable" />
       </a-form-item>
       <a-form-item>
-        <span slot="label">
+        <template #label>
           {{ $t('label.haenable') }}
           <a-tooltip :title="apiParams.haenable.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+             <info-circle-outlined style="color: rgba(0,0,0,.45)" />
           </a-tooltip>
-        </span>
-        <a-switch
-          :default-checked="resource.haenable"
-          v-decorator="['haenable']" />
+        </template>
+        <a-switch v-model:checked="form.haenable" />
       </a-form-item>
       <a-form-item>
-        <span slot="label">
+        <template #label>
           {{ $t('label.group') }}
           <a-tooltip :title="apiParams.group.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+             <info-circle-outlined style="color: rgba(0,0,0,.45)" />
           </a-tooltip>
-        </span>
-        <a-auto-complete
-          v-decorator="['group', { initialValue: resource.group }]"
+        </template>
+        <this.formRef.value.validate()omplete
+          v-model:value="form.group"
           :filterOption="(input, option) => {
             return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }"
-          :dataSource="groups.opts" />
+          :options="groups.opts" />
       </a-form-item>
 
       <div :span="24" class="action-button">
@@ -109,6 +106,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -137,7 +135,9 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
+    this.formRef = ref()
+    this.form = reactive({})
+    this.rules = reactive({})
     this.apiParams = {}
     const apiConfig = this.$store.getters.apis.updateVirtualMachine || {}
     apiConfig.params.forEach(param => {
@@ -145,9 +145,18 @@ export default {
     })
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.form.name = this.resource.name
+      this.form.displayname = this.resource.displayname
+      this.form.ostypeid = this.resource.ostypeid
+      this.form.isdynamicallyscalable = this.resource.isdynamicallyscalable
+      this.form.haenable = false
+      this.form.group = this.resource.group
+    },
     fetchData () {
       this.fetchOsTypes()
       this.fetchInstaceGroups()
@@ -177,11 +186,9 @@ export default {
         this.$notifyError(error)
       }).finally(() => { this.groups.loading = false })
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) return
-
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         params.id = this.resource.id
         params.name = values.name

@@ -18,7 +18,7 @@
 <template>
   <a-spin :spinning="componentLoading">
     <div class="new-route">
-      <a-input v-model="newRoute" icon="plus" :placeholder="$t('label.cidr.destination.network')" autoFocus></a-input>
+      <a-input v-model:value="newRoute" icon="plus" :placeholder="$t('label.cidr.destination.network')" autoFocus></a-input>
       <a-button type="primary" :disabled="!('createStaticRoute' in $store.getters.apis)" @click="handleAdd">{{ $t('label.add.route') }}</a-button>
     </div>
 
@@ -35,26 +35,26 @@
       </div>
     </div>
 
-    <a-modal title="Edit Tags" v-model="tagsModalVisible" :footer="null" :maskClosable="false">
+    <a-modal :title="$('label.edit.tags')" v-model:value="tagsModalVisible" :footer="null" :maskClosable="false">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>
-        <a-form :form="newTagsForm" class="add-tags" @submit="handleAddTag">
+        <a-form :ref="tagRef" :model="newTagsForm" :rules="tagRules" class="add-tags" >
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
             <a-form-item>
               <a-input
                 autoFocus
-                v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
+                v-model:value="newTagsForm.key" />
             </a-form-item>
           </div>
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.value') }}</p>
             <a-form-item>
-              <a-input v-decorator="['value', { rules: [{ required: true, message: this.$t('message.specifiy.tag.value')}] }]" />
+              <a-input v-model:value="newTagsForm.value" />
             </a-form-item>
           </div>
-          <a-button type="primary" :disabled="!('createTags' in $store.getters.apis)" html-type="submit">{{ $t('label.add') }}</a-button>
+          <a-button type="primary" :disabled="!('createTags' in $store.getters.apis)" @click="handleAddTag">{{ $t('label.add') }}</a-button>
         </a-form>
 
         <a-divider style="margin-top: 0;"></a-divider>
@@ -75,6 +75,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipButton from '@/components/view/TooltipButton'
 
@@ -106,6 +107,7 @@ export default {
     }
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   watch: {
@@ -116,6 +118,16 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.tagRef = ref()
+      this.newTagsForm = reactive({
+        start: true
+      })
+      this.tagRules = reactive({
+        key: [{ required: true, message: this.$t('message.specifiy.tag.key') }],
+        value: [{ required: true, message: this.$t('message.specifiy.tag.value') }]
+      })
+    },
     fetchData () {
       this.componentLoading = true
       api('listStaticRoutes', { gatewayid: this.resource.id }).then(json => {
@@ -241,15 +253,11 @@ export default {
         this.tagsLoading = false
       })
     },
-    handleAddTag (e) {
+    handleAddTag () {
       this.tagsLoading = true
 
-      e.preventDefault()
-      this.newTagsForm.validateFields((err, values) => {
-        if (err) {
-          this.tagsLoading = false
-          return
-        }
+      this.tagRef.value.validate().then(() => {
+        const values = toRaw(this.newTagsForm)
 
         api('createTags', {
           'tags[0].key': values.key,
@@ -279,12 +287,12 @@ export default {
         }).catch(error => {
           this.$notifyError(error)
           this.tagsLoading = false
-        })
+        }).finally(() => { this.tagsLoading = false })
       })
     },
     openTagsModal (route) {
       this.selectedRule = route
-      this.newTagsForm.resetFields()
+      this.rulesRef.value.resetFields()
       this.fetchTags(this.selectedRule)
       this.tagsModalVisible = true
     }

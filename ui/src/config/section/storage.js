@@ -15,17 +15,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 
 export default {
   name: 'storage',
   title: 'label.storage',
-  icon: 'database',
+  icon: 'database-outlined',
   children: [
     {
       name: 'volume',
       title: 'label.volumes',
-      icon: 'hdd',
+      icon: 'hdd-outlined',
       docHelp: 'adminguide/storage.html#working-with-volumes',
       permission: ['listVolumesMetrics'],
       resourceType: 'Volume',
@@ -66,25 +67,25 @@ export default {
       actions: [
         {
           api: 'createVolume',
-          icon: 'plus',
+          icon: 'plus-outlined',
           docHelp: 'adminguide/storage.html#creating-a-new-volume',
           label: 'label.action.create.volume',
           listView: true,
           popup: true,
-          component: () => import('@/views/storage/CreateVolume.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateVolume.vue')))
         },
         {
           api: 'createVolume',
-          icon: 'cloud-upload',
+          icon: 'cloud-upload-outlined',
           docHelp: 'adminguide/storage.html#uploading-an-existing-volume-to-a-virtual-machine',
           label: 'label.upload.volume.from.local',
           listView: true,
           popup: true,
-          component: () => import('@/views/storage/UploadLocalVolume.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UploadLocalVolume.vue')))
         },
         {
           api: 'uploadVolume',
-          icon: 'link',
+          icon: 'link-outlined',
           docHelp: 'adminguide/storage.html#uploading-an-existing-volume-to-a-virtual-machine',
           label: 'label.upload.volume.from.url',
           listView: true,
@@ -97,16 +98,16 @@ export default {
         },
         {
           api: 'attachVolume',
-          icon: 'paper-clip',
+          icon: 'paper-clip-outlined',
           label: 'label.action.attach.disk',
           dataView: true,
           show: (record) => { return record.type !== 'ROOT' && ['Allocated', 'Ready', 'Uploaded'].includes(record.state) && !('virtualmachineid' in record) },
           popup: true,
-          component: () => import('@/views/storage/AttachVolume.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/AttachVolume.vue')))
         },
         {
           api: 'detachVolume',
-          icon: 'link',
+          icon: 'link-outlined',
           label: 'label.action.detach.disk',
           message: 'message.detach.disk',
           dataView: true,
@@ -117,7 +118,7 @@ export default {
         },
         {
           api: 'createSnapshot',
-          icon: 'camera',
+          icon: 'camera-outlined',
           docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
           label: 'label.action.take.snapshot',
           dataView: true,
@@ -127,11 +128,11 @@ export default {
               record.hypervisor === 'KVM' && record.vmstate !== 'Running')
           },
           popup: true,
-          component: () => import('@/views/storage/TakeSnapshot.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/TakeSnapshot.vue')))
         },
         {
           api: 'createSnapshotPolicy',
-          icon: 'clock-circle',
+          icon: 'clock-circle-outlined',
           docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
           label: 'label.action.recurring.snapshot',
           dataView: true,
@@ -141,7 +142,7 @@ export default {
               record.hypervisor === 'KVM' && record.vmstate !== 'Running')
           },
           popup: true,
-          component: () => import('@/views/storage/RecurringSnapshotVolume.vue'),
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/RecurringSnapshotVolume.vue'))),
           mapping: {
             volumeid: {
               value: (record) => { return record.id }
@@ -153,28 +154,28 @@ export default {
         },
         {
           api: 'resizeVolume',
-          icon: 'fullscreen',
+          icon: 'fullscreen-outlined',
           docHelp: 'adminguide/storage.html#resizing-volumes',
           label: 'label.action.resize.volume',
           dataView: true,
           popup: true,
           show: (record) => { return ['Allocated', 'Ready'].includes(record.state) },
-          component: () => import('@/views/storage/ResizeVolume.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ResizeVolume.vue')))
         },
         {
           api: 'migrateVolume',
-          icon: 'drag',
+          icon: 'drag-outlined',
           docHelp: 'adminguide/storage.html#id2',
           label: 'label.migrate.volume',
           args: ['volumeid', 'storageid', 'livemigrate'],
           dataView: true,
           show: (record, store) => { return record.state === 'Ready' && ['Admin'].includes(store.userInfo.roletype) },
           popup: true,
-          component: () => import('@/views/storage/MigrateVolume.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/MigrateVolume.vue')))
         },
         {
           api: 'extractVolume',
-          icon: 'cloud-download',
+          icon: 'cloud-download-outlined',
           label: 'label.action.download.volume',
           message: 'message.download.volume.confirm',
           dataView: true,
@@ -192,7 +193,7 @@ export default {
         },
         {
           api: 'createTemplate',
-          icon: 'picture',
+          icon: 'picture-outlined',
           label: 'label.action.create.template.from.volume',
           dataView: true,
           show: (record) => {
@@ -209,7 +210,7 @@ export default {
         },
         {
           api: 'recoverVolume',
-          icon: 'medicine-box',
+          icon: 'medicine-box-outlined',
           label: 'label.action.recover.volume',
           message: 'message.action.recover.volume',
           dataView: true,
@@ -219,7 +220,7 @@ export default {
         },
         {
           api: 'deleteVolume',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.action.delete.volume',
           message: 'message.action.delete.volume',
           dataView: true,
@@ -232,7 +233,7 @@ export default {
         },
         {
           api: 'destroyVolume',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.action.destroy.volume',
           message: 'message.action.destroy.volume',
           dataView: true,
@@ -250,7 +251,7 @@ export default {
     {
       name: 'snapshot',
       title: 'label.snapshots',
-      icon: 'build',
+      icon: 'build-outlined',
       docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
       permission: ['listSnapshots'],
       resourceType: 'Snapshot',
@@ -267,7 +268,7 @@ export default {
       actions: [
         {
           api: 'createTemplate',
-          icon: 'picture',
+          icon: 'picture-outlined',
           label: 'label.create.template',
           dataView: true,
           show: (record) => { return record.state === 'BackedUp' },
@@ -280,7 +281,7 @@ export default {
         },
         {
           api: 'createVolume',
-          icon: 'hdd',
+          icon: 'hdd-outlined',
           label: 'label.action.create.volume',
           dataView: true,
           show: (record) => { return record.state === 'BackedUp' },
@@ -299,7 +300,7 @@ export default {
         },
         {
           api: 'revertSnapshot',
-          icon: 'sync',
+          icon: 'sync-outlined',
           label: 'label.action.revert.snapshot',
           message: 'message.action.revert.snapshot',
           dataView: true,
@@ -307,7 +308,7 @@ export default {
         },
         {
           api: 'deleteSnapshot',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.action.delete.snapshot',
           message: 'message.action.delete.snapshot',
           dataView: true,
@@ -318,7 +319,7 @@ export default {
     {
       name: 'vmsnapshot',
       title: 'label.vm.snapshots',
-      icon: 'camera',
+      icon: 'camera-outlined',
       docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
       permission: ['listVMSnapshot'],
       resourceType: 'VMSnapshot',
@@ -335,17 +336,17 @@ export default {
       actions: [
         {
           api: 'createSnapshotFromVMSnapshot',
-          icon: 'camera',
+          icon: 'camera-outlined',
           label: 'label.action.create.snapshot.from.vmsnapshot',
           message: 'message.action.create.snapshot.from.vmsnapshot',
           dataView: true,
           popup: true,
           show: (record) => { return (record.state === 'Ready' && record.hypervisor === 'KVM') },
-          component: () => import('@/views/storage/CreateSnapshotFromVMSnapshot.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateSnapshotFromVMSnapshot.vue')))
         },
         {
           api: 'revertToVMSnapshot',
-          icon: 'sync',
+          icon: 'sync-outlined',
           label: 'label.action.vmsnapshot.revert',
           message: 'label.action.vmsnapshot.revert',
           dataView: true,
@@ -359,7 +360,7 @@ export default {
         },
         {
           api: 'deleteVMSnapshot',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.action.vmsnapshot.delete',
           message: 'message.action.vmsnapshot.delete',
           dataView: true,
@@ -376,14 +377,14 @@ export default {
     {
       name: 'backup',
       title: 'label.backup',
-      icon: 'cloud-upload',
+      icon: 'cloud-upload-outlined',
       permission: ['listBackups'],
       columns: [{ name: (record) => { return record.virtualmachinename } }, 'virtualmachinename', 'status', 'type', 'created', 'account', 'zone'],
       details: ['virtualmachinename', 'id', 'type', 'externalid', 'size', 'virtualsize', 'volumes', 'backupofferingname', 'zone', 'account', 'domain', 'created'],
       actions: [
         {
           api: 'restoreBackup',
-          icon: 'sync',
+          icon: 'sync-outlined',
           docHelp: 'adminguide/virtual_machines.html#restoring-vm-backups',
           label: 'label.backup.restore',
           message: 'message.backup.restore',
@@ -392,17 +393,17 @@ export default {
         },
         {
           api: 'restoreVolumeFromBackupAndAttachToVM',
-          icon: 'paper-clip',
+          icon: 'paper-clip-outlined',
           label: 'label.backup.attach.restore',
           message: 'message.backup.attach.restore',
           dataView: true,
           show: (record) => { return record.state !== 'Destroyed' },
           popup: true,
-          component: () => import('@/views/storage/RestoreAttachBackupVolume.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/RestoreAttachBackupVolume.vue')))
         },
         {
           api: 'removeVirtualMachineFromBackupOffering',
-          icon: 'scissor',
+          icon: 'scissor-outlined',
           label: 'label.backup.offering.remove',
           message: 'message.backup.offering.remove',
           dataView: true,
@@ -419,7 +420,7 @@ export default {
         },
         {
           api: 'deleteBackup',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.delete.backup',
           message: 'message.delete.backup',
           dataView: true,

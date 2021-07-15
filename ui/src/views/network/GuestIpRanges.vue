@@ -19,10 +19,10 @@
   <div>
     <a-spin :spinning="fetchLoading">
       <a-button
-        icon="plus"
         shape="round"
         style="float: right;margin-bottom: 10px; z-index: 8"
         @click="() => { showCreateForm = true }">
+        <template #icon><plus-outlined /></template>
         {{ $t('label.add.ip.range') }}
       </a-button>
       <br />
@@ -36,7 +36,7 @@
         :rowKey="item => item.id"
         :pagination="false" >
 
-        <template slot="action" slot-scope="text, record">
+        <template #action="{ record }">
           <a-popconfirm
             :title="$t('message.confirm.remove.ip.range')"
             @confirm="removeIpRange(record.id)"
@@ -46,7 +46,7 @@
               tooltipPlacement="bottom"
               :tooltip="$t('label.action.delete.ip.range')"
               type="danger"
-              icon="delete" />
+              icon="delete-outlined" />
           </a-popconfirm>
         </template>
 
@@ -63,7 +63,7 @@
         @change="changePage"
         @showSizeChange="changePageSize"
         showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>
@@ -140,7 +140,7 @@ export default {
         },
         {
           title: '',
-          scopedSlots: { customRender: 'action' }
+          slots: { customRender: 'action' }
         }
       ]
     }

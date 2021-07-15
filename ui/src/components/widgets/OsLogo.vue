@@ -17,7 +17,7 @@
 
 <template>
   <a-tooltip placement="bottom">
-    <template slot="title">
+    <template #title>
       {{ name }}
     </template>
     <font-awesome-icon :icon="['fab', logo]" :size="size" style="color: #666;" v-if="logo !== 'debian'" />
@@ -63,8 +63,7 @@ export default {
     }
   },
   watch: {
-    osId: function (newItem, oldItem) {
-      this.osId = newItem
+    osId: function () {
       this.fetchData()
     }
   },

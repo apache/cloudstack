@@ -24,7 +24,7 @@
       CloudStack {{ $store.getters.features.cloudstackversion }}
       <a-divider type="vertical" />
       <a href="https://github.com/apache/cloudstack/issues/new" target="_blank">
-        <a-icon type="github"/>
+        <GithubOutlined />
         {{ $t('label.report.bug') }}
       </a>
     </div>

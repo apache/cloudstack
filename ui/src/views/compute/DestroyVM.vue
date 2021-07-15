@@ -20,28 +20,30 @@
     <a-alert type="warning" v-html="resource.backupofferingid ? $t('message.action.destroy.instance.with.backups') : $t('message.action.destroy.instance')" /><br/>
     <a-spin :spinning="loading">
       <a-form
-        :form="form"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.allowuserexpungerecovervm">
-          <span slot="label">
+          <template #label>
             {{ $t('label.expunge') }}
             <a-tooltip placement="bottom" :title="apiParams.expunge.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
-          <a-switch v-decorator="['expunge']" :auto-focus="true" />
+          </template>
+          <a-switch v-model:value="form.expunge" :auto-focus="true" />
         </a-form-item>
 
         <a-form-item v-if="volumes.length > 0">
-          <span slot="label">
+          <template #label>
             {{ $t('label.delete.volumes') }}
             <a-tooltip placement="bottom" :title="apiParams.volumeids.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-select
-            v-decorator="['volumeids']"
+            v-model:value="form.volumeids"
             :placeholder="$t('label.delete.volumes')"
             mode="multiple"
             :loading="loading"
@@ -63,6 +65,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -81,7 +84,12 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
+    this.formRef = ref()
+    this.form = reactive({
+      expunge: false,
+      volumeids: undefined
+    })
+    this.rules = reactive({})
     this.apiParams = {}
     var apiConfig = this.$store.getters.apis.destroyVirtualMachine || {}
     apiConfig.params.forEach(param => {
@@ -106,12 +114,9 @@ export default {
         this.loading = false
       })
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
 
         const params = {

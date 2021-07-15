@@ -19,21 +19,21 @@
   <div :style="!$route.meta.pageHeader ? 'margin: -24px -24px 0px;' : null">
     <!-- pageHeader , route meta hideHeader:true on hide -->
     <page-header v-if="!$route.meta.pageHeader" :title="title" :logo="logo" :avatar="avatar">
-      <slot slot="action" name="action"></slot>
-      <slot slot="content" name="headerContent"></slot>
-      <div slot="content" v-if="!this.$slots.headerContent && desc">
+      <template #action><slot name="action"></slot></template>
+      <template #content><slot name="headerContent"></slot></template>
+      <template #slot:content v-if="!this.$slots.headerContent && desc">
         <p style="font-size: 14px;color: rgba(0,0,0,.65)">{{ desc }}</p>
         <div class="link">
-          <template v-for="(link, index) in linkList">
-            <a :key="index" :href="link.href">
-              <a-icon :type="link.icon"/>
+          <template v-for="(link, index) in linkList" :key="index">
+            <a :href="link.href">
+              <render-icon v-if="index == 0" :icon="link.icon" />
               <span>{{ link.title }}</span>
             </a>
           </template>
         </div>
-      </div>
-      <slot slot="extra" name="extra"></slot>
-      <div slot="pageMenu">
+      </template>
+      <template #extra><slot name="extra"></slot></template>
+      <template #pageMenu>
         <div class="page-menu-search" v-if="search">
           <a-input-search style="width: 80%; max-width: 522px;" placeholder="请输入..." size="large" enterButton="搜索" />
         </div>
@@ -43,7 +43,7 @@
             <a-tab-pane v-for="item in tabs.items" :tab="item.title" :key="item.key"></a-tab-pane>
           </a-tabs>
         </div>
-      </div>
+      </template>
     </page-header>
     <div class="content">
       <div :class="['page-header-index-wide']">
@@ -54,11 +54,14 @@
 </template>
 
 <script>
+import RenderIcon from '@/utils/renderIcon'
+
 import PageHeader from './PageHeader'
 
 export default {
   name: 'LayoutContent',
   components: {
+    RenderIcon,
     PageHeader
   },
   // ['desc', 'logo', 'title', 'avatar', 'linkList', 'extraImage']

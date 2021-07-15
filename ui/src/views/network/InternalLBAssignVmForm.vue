@@ -35,7 +35,7 @@
             <span>
               {{ vm.name }}
             </span>
-            <a-icon v-if="addVmModalNicLoading" type="loading"></a-icon>
+            <loading-outlined v-if="addVmModalNicLoading"  />
             <a-select
               :autoFocus="!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id && index === 0"
               v-else-if="!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id"
@@ -70,7 +70,7 @@
           @change="changePage"
           @showSizeChange="changePageSize"
           showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
+          <template #buildOptionText="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
           </template>
         </a-pagination>

@@ -20,23 +20,25 @@
     size="small"
     :loading="loading"
     :dataSource="usageList" >
-    <a-list-item slot="renderItem" slot-scope="item" class="list-item" v-if="!($route.meta.name === 'project' && item === 'project')">
-      <div class="list-item__container">
-        <strong>
-          {{ $t('label.' + item + 'limit') }}
-        </strong>
-        ({{ resource[item + 'available'] === '-1' ? $t('label.unlimited') : resource[item + 'available'] }} {{ $t('label.available') }})
-        <div class="list-item__vals">
-          <div class="list-item__data">
-            {{ $t('label.used') }} / {{ $t('label.limit') }} : {{ resource[item + 'total'] }} / {{ resource[item + 'limit'] === '-1' ? $t('label.unlimited') : resource[item + 'limit'] }}
+    <template #renderItem="{ item }">
+      <a-list-item class="list-item" v-if="!($route.meta.name === 'project' && item === 'project')">
+        <div class="list-item__container">
+          <strong>
+            {{ $t('label.' + item + 'limit') }}
+          </strong>
+          ({{ resource[item + 'available'] === '-1' ? $t('label.unlimited') : resource[item + 'available'] }} {{ $t('label.available') }})
+          <div class="list-item__vals">
+            <div class="list-item__data">
+              {{ $t('label.used') }} / {{ $t('label.limit') }} : {{ resource[item + 'total'] }} / {{ resource[item + 'limit'] === '-1' ? $t('label.unlimited') : resource[item + 'limit'] }}
+            </div>
+            <a-progress
+              status="normal"
+              :percent="parseFloat(getPercentUsed(resource[item + 'total'], resource[item + 'limit']))"
+              :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(2) + '%' : ''" />
           </div>
-          <a-progress
-            status="normal"
-            :percent="parseFloat(getPercentUsed(resource[item + 'total'], resource[item + 'limit']))"
-            :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(2) + '%' : ''" />
         </div>
-      </div>
-    </a-list-item>
+      </a-list-item>
+    </template>
   </a-list>
 </template>
 
@@ -59,14 +61,6 @@ export default {
         'vm', 'cpu', 'memory', 'primarystorage', 'volume', 'ip', 'network',
         'vpc', 'secondarystorage', 'snapshot', 'template', 'project'
       ]
-    }
-  },
-  watch: {
-    resource (newData, oldData) {
-      if (!newData || !newData.id) {
-        return
-      }
-      this.resource = newData
     }
   },
   methods: {

@@ -21,14 +21,14 @@
     <p v-html="$t('message.select.affinity.groups')" />
 
     <div v-if="loading" class="loading">
-      <a-icon type="loading" style="color: #1890ff;" />
+      <loading-outlined style="color: #1890ff;" />
     </div>
 
     <div class="form__item">
       <a-input-search
         style="margin-bottom: 10px;"
         :placeholder="$t('label.search')"
-        v-model="filter"
+        v-model:value="filter"
         @search="handleSearch"
         autoFocus />
     </div>
@@ -48,8 +48,8 @@
     </div>
 
     <div :span="24" class="action-button">
-      <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-      <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+      <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+      <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
     </div>
 
   </a-form>

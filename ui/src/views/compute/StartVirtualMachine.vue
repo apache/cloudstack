@@ -19,23 +19,25 @@
   <div class="form-layout">
     <a-spin :spinning="loading">
       <a-alert type="warning">
-        <span slot="message" v-html="$t('message.action.start.instance')" />
+        <template #message>{{ $t('message.action.start.instance') }}</template>
       </a-alert>
       <br />
       <a-form
-        :form="form"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
         @submit="handleSubmit"
         layout="vertical">
-        <div v-if="this.$store.getters.userInfo.roletype === 'Admin'">
+        <div v-if="$store.getters.userInfo.roletype === 'Admin'">
           <a-form-item>
-            <span slot="label">
+            <template #label>
               {{ $t('label.podid') }}
               <a-tooltip :title="apiParams.podid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
               </a-tooltip>
-            </span>
+            </template>
             <a-select
-              v-decorator="['podid', {}]"
+              v-model:value="form.podid"
               showSearch
               optionFilterProp="children"
               :filterOption="(input, option) => {
@@ -44,22 +46,22 @@
               :loading="podsLoading"
               :placeholder="apiParams.podid.description"
               @change="handlePodChange"
-              :autoFocus="this.$store.getters.userInfo.roletype === 'Admin'">
-              <a-select-option v-for="pod in this.pods" :key="pod.id">
+              :autoFocus="$store.getters.userInfo.roletype === 'Admin'">
+              <a-select-option v-for="pod in pods" :key="pod.id">
                 {{ pod.name }}
               </a-select-option>
             </a-select>
           </a-form-item>
           <a-form-item>
-            <span slot="label">
+            <template #label>
               {{ $t('label.clusterid') }}
               <a-tooltip :title="apiParams.clusterid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
               </a-tooltip>
-            </span>
+            </template>
             <a-select
               id="cluster-selection"
-              v-decorator="['clusterid', {}]"
+              v-model:value="form.clusterid"
               showSearch
               optionFilterProp="children"
               :filterOption="(input, option) => {
@@ -68,21 +70,21 @@
               :loading="clustersLoading"
               :placeholder="apiParams.clusterid.description"
               @change="handleClusterChange">
-              <a-select-option v-for="cluster in this.clusters" :key="cluster.id">
+              <a-select-option v-for="cluster in clusters" :key="cluster.id">
                 {{ cluster.name }}
               </a-select-option>
             </a-select>
           </a-form-item>
           <a-form-item>
-            <span slot="label">
+            <template #label>
               {{ $t('label.hostid') }}
               <a-tooltip :title="apiParams.hostid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
               </a-tooltip>
-            </span>
+            </template>
             <a-select
               id="host-selection"
-              v-decorator="['hostid', {}]"
+              v-model:value="form.hostid"
               showSearch
               optionFilterProp="children"
               :filterOption="(input, option) => {
@@ -90,7 +92,7 @@
               }"
               :loading="hostsLoading"
               :placeholder="apiParams.hostid.description">
-              <a-select-option v-for="host in this.hosts" :key="host.id">
+              <a-select-option v-for="host in hosts" :key="host.id">
                 {{ host.name }}
               </a-select-option>
             </a-select>
@@ -98,20 +100,20 @@
         </div>
 
         <a-form-item v-if="resource.hypervisor === 'VMware'">
-          <span slot="label">
+          <template #label>
             {{ $t('label.bootintosetup') }}
             <a-tooltip :title="apiParams.bootintosetup.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-switch
-            v-decorator="['bootintosetup']">
+            v-model:checked="form.bootintosetup">
           </a-switch>
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -119,6 +121,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -142,7 +145,9 @@ export default {
   },
   inject: ['parentFetchData'],
   beforeCreate () {
-    this.form = this.$form.createForm(this)
+    this.formRef = ref()
+    this.form = reactive({})
+    this.rules = reactive({})
     this.apiConfig = this.$store.getters.apis.startVirtualMachine || {}
     this.apiParams = {}
     this.apiConfig.params.forEach(param => {
@@ -150,6 +155,7 @@ export default {
     })
   },
   created () {
+    this.initForm()
     if (this.$store.getters.userInfo.roletype === 'Admin') {
       this.fetchPods()
       this.fetchClusters()
@@ -157,6 +163,12 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.form.podid = undefined
+      this.form.clusterid = undefined
+      this.form.hostid = undefined
+      this.form.bootintosetup = undefined
+    },
     fetchPods () {
       this.pods = []
       this.podsLoading = true
@@ -215,21 +227,18 @@ export default {
       })
     },
     handlePodChange (podid) {
-      this.form.clearField('clusterid')
-      this.form.clearField('hostid')
+      this.form.clusterid = undefined
+      this.form.hostid = undefined
       this.fetchClusters(podid)
       this.fetchHosts(podid)
     },
     handleClusterChange (clusterid) {
-      this.form.clearField('hostid')
+      this.form.hostid = undefined
       this.fetchHosts('', clusterid)
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         this.loading = true
         const params = {

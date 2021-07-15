@@ -18,25 +18,24 @@
 <template>
   <a-spin :spinning="formLoading">
     <a-form
-      :form="form"
+      :model="form"
+      :rules="rules"
       @submit="handleSubmit"
       layout="vertical"
     >
-      <a-form-item
-        v-for="(item, index) in dataResource"
-        :key="index"
-        v-if="item.resourcetypename !== 'project'"
-        :v-bind="item.resourcetypename"
-        :label="$t('label.max' + item.resourcetypename.replace('_', ''))">
-        <a-input-number
-          :disabled="!('updateResourceLimit' in $store.getters.apis)"
-          style="width: 100%;"
-          v-decorator="[item.resourcetype, {
-            initialValue: item.max
-          }]"
-          :autoFocus="index === 0"
-        />
-      </a-form-item>
+      <div v-for="(item, index) in dataResource" :key="index">
+        <a-form-item
+          v-if="item.resourcetypename !== 'project'"
+          :v-bind="item.resourcetypename"
+          :label="$t('label.max' + item.resourcetypename.replace('_', ''))">
+          <a-input-number
+            :disabled="!('updateResourceLimit' in $store.getters.apis)"
+            style="width: 100%;"
+            v-model:value="form[item.resourcetype]"
+            :autoFocus="index === 0"
+          />
+        </a-form-item>
+      </div>
       <div class="card-footer">
         <a-button
           :disabled="!('updateResourceLimit' in $store.getters.apis)"
@@ -50,6 +49,7 @@
 </template>
 
 <script>
+import { reactive } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -71,7 +71,8 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
+    this.form = reactive({})
+    this.rules = reactive({})
   },
   created () {
     this.fetchData()
@@ -81,7 +82,6 @@ export default {
       if (!newData || !newData.id) {
         return
       }
-      this.resource = newData
       this.fetchData()
     }
   },
@@ -100,9 +100,14 @@ export default {
     },
     async fetchData () {
       const params = this.getParams()
+      const form = {}
       try {
         this.formLoading = true
         this.dataResource = await this.listResourceLimits(params)
+        this.dataResource.forEach(item => {
+          form[item.resourcetype] = item.max | -1
+        })
+        this.form = form
         this.formLoading = false
       } catch (e) {
         this.$notification.error({

@@ -19,296 +19,259 @@
   <div class="form-layout">
     <a-spin :spinning="loading">
       <a-form
-        :form="form"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <span slot="label">
+          <template #label>
             {{ $t('label.name') }}
             <a-tooltip :title="apiParams.name.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input
-            v-decorator="['name', {
-              rules: [{ required: true, message: $t('message.error.kubecluster.name') }]
-            }]"
+            v-model:value="form.name"
             :placeholder="apiParams.name.description"
             autoFocus />
         </a-form-item>
         <a-form-item>
-          <span slot="label">
+          <template #label>
             {{ $t('label.description') }}
             <a-tooltip :title="apiParams.description.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input
-            v-decorator="['description', {
-              rules: [{ required: true, message: $t('message.error.cluster.description') }]
-            }]"
+            v-model:value="form.description"
             :placeholder="apiParams.description.description"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
+          <template #label>
             {{ $t('label.zoneid') }}
             <a-tooltip :title="apiParams.zoneid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-select
             id="zone-selection"
-            v-decorator="['zoneid', {
-              rules: [{ required: true, message: $t('message.error.zone.for.cluster') }]
-            }]"
+            v-model:value="form.zoneid"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description"
-            @change="val => { this.handleZoneChange(this.zones[val]) }">
-            <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
+            @change="val => { handleZoneChange(zones[val]) }">
+            <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
+          <template #label>
             {{ $t('label.kubernetesversionid') }}
             <a-tooltip :title="apiParams.kubernetesversionid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-select
             id="version-selection"
-            v-decorator="['kubernetesversionid', {
-              rules: [{ required: true, message: $t('message.error.version.for.cluster') }]
-            }]"
+            v-model:value="form.kubernetesversionid"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="kubernetesVersionLoading"
             :placeholder="apiParams.kubernetesversionid.description"
-            @change="val => { this.handleKubernetesVersionChange(this.kubernetesVersions[val]) }">
-            <a-select-option v-for="(opt, optIndex) in this.kubernetesVersions" :key="optIndex">
+            @change="val => { handleKubernetesVersionChange(kubernetesVersions[val]) }">
+            <a-select-option v-for="(opt, optIndex) in kubernetesVersions" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
+          <template #label>
             {{ $t('label.serviceofferingid') }}
             <a-tooltip :title="apiParams.serviceofferingid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-select
             id="offering-selection"
-            v-decorator="['serviceofferingid', {
-              rules: [{ required: true, message: $t('message.error.serviceoffering.for.cluster') }]
-            }]"
+            v-model:value="form.serviceofferingid"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="serviceOfferingLoading"
             :placeholder="apiParams.serviceofferingid.description">
-            <a-select-option v-for="(opt, optIndex) in this.serviceOfferings" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in serviceOfferings" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
+          <template #label>
             {{ $t('label.noderootdisksize') }}
             <a-tooltip :title="apiParams.noderootdisksize.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input
-            v-decorator="['noderootdisksize', {
-              rules: [{
-                validator: (rule, value, callback) => {
-                  if (value && (isNaN(value) || value <= 0)) {
-                    callback(this.$t('message.validate.number'))
-                  }
-                  callback()
-                }
-              }]
-            }]"
+            v-model:value="form.noderootdisksize"
             :placeholder="apiParams.noderootdisksize.description"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
+          <template #label>
             {{ $t('label.networkid') }}
             <a-tooltip :title="apiParams.networkid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-select
             id="network-selection"
-            v-decorator="['networkid', {}]"
+            v-model:value="form.networkid"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="networkLoading"
             :placeholder="apiParams.networkid.description">
-            <a-select-option v-for="(opt, optIndex) in this.networks" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in networks" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.haenable')" v-if="this.selectedKubernetesVersion != null && this.selectedKubernetesVersion != undefined && this.selectedKubernetesVersion.supportsha === true">
-          <a-switch v-decorator="['haenable', {initialValue: this.haEnabled}]" :checked="this.haEnabled" @change="val => { this.haEnabled = val }" />
+        <a-form-item v-if="selectedKubernetesVersion != null && selectedKubernetesVersion != undefined && selectedKubernetesVersion.supportsha === true">
+          <template #label>
+            {{ $t('label.haenable') }}
+            <a-tooltip :title="apiParams.haenable?.description || ''">
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </template>
+          <a-switch v-model:cheked="form.haenable" />
         </a-form-item>
-        <a-form-item v-if="this.haEnabled">
-          <span slot="label">
+        <a-form-item v-if="form.haEnabled">
+          <template #label>
             {{ $t('label.masternodes') }}
             <a-tooltip :title="apiParams.masternodes.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input
-            v-decorator="['masternodes', {
-              initialValue: '2',
-              rules: [{ required: true, message: $t('message.error.input.value') },
-                      {
-                        validator: (rule, value, callback) => {
-                          if (value && (isNaN(value) || value < 2)) {
-                            callback(this.$t('message.validate.number'))
-                          }
-                          callback()
-                        }
-                      }
-              ]
-            }]"
+            v-model:value="form.masternodes"
             :placeholder="apiParams.masternodes.description"/>
         </a-form-item>
-        <a-form-item v-if="this.haEnabled">
-          <span slot="label">
+        <a-form-item v-if="form.haEnabled">
+          <template #label>
             {{ $t('label.externalloadbalanceripaddress') }}
             <a-tooltip :title="apiParams.externalloadbalanceripaddress.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input
-            v-decorator="['externalloadbalanceripaddress', {}]"
+            v-model:value="form.externalloadbalanceripaddress"
             :placeholder="apiParams.externalloadbalanceripaddress.description"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
+          <template #label>
             {{ $t('label.cks.cluster.size') }}
             <a-tooltip :title="apiParams.size.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input
-            v-decorator="['size', {
-              initialValue: '1',
-              rules: [{ required: true, message: $t('message.error.size.for.cluster') },
-                      {
-                        validator: (rule, value, callback) => {
-                          if (value && (isNaN(value) || value <= 0)) {
-                            callback(this.$t('message.validate.number'))
-                          }
-                          callback()
-                        }
-                      }
-              ]
-            }]"
+            v-model:value="form.size"
             :placeholder="apiParams.size.description"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
+          <template #label>
             {{ $t('label.keypair') }}
             <a-tooltip :title="apiParams.keypair.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-select
             id="keypair-selection"
-            v-decorator="['keypair', {}]"
+            v-model:value="form.keypair"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="keyPairLoading"
             :placeholder="apiParams.keypair.description">
-            <a-select-option v-for="(opt, optIndex) in this.keyPairs" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in keyPairs" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
         <div v-if="$store.getters.features.kubernetesclusterexperimentalfeaturesenabled">
           <a-form-item :label="$t('label.private.registry')">
-            <a-switch v-decorator="['privateregistry']" @change="checked => { this.usePrivateRegistry = checked }" />
+            <template #label>
+              {{ $t('label.private.registry') }}
+              <a-tooltip :title="apiParams.keprivateregistryypair.description">
+                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              </a-tooltip>
+            </template>
+            <a-switch v-model:checked="form.privateregistry" />
           </a-form-item>
           <div v-if="usePrivateRegistry">
             <a-form-item>
-              <span slot="label">
+              <template #label>
                 {{ $t('label.username') }}
                 <a-tooltip :title="apiParams.dockerregistryusername.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
                 </a-tooltip>
-              </span>
+              </template>
               <a-input
-                v-decorator="['dockerregistryusername', {
-                  rules: [{ required: true, message: $t('label.required') }]
-                }]"
+                v-model:value="form.dockerregistryusername"
                 :placeholder="apiParams.dockerregistryusername.description"/>
             </a-form-item>
             <a-form-item>
-              <span slot="label">
+              <template #label>
                 {{ $t('label.password') }}
                 <a-tooltip :title="apiParams.dockerregistrypassword.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
                 </a-tooltip>
-              </span>
+              </template>
               <a-input-password
-                v-decorator="['dockerregistrypassword', {
-                  rules: [{ required: true, message: $t('label.required') }]
-                }]"
+                v-model:value="form.dockerregistrypassword"
                 :placeholder="apiParams.dockerregistrypassword.description"/>
             </a-form-item>
             <a-form-item>
-              <span slot="label">
+              <template #label>
                 {{ $t('label.url') }}
                 <a-tooltip :title="apiParams.dockerregistryurl.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
                 </a-tooltip>
-              </span>
+              </template>
               <a-input
-                v-decorator="['dockerregistryurl', {
-                  rules: [{ required: true, message: $t('label.required') }]
-                }]"
+                v-model:value="form.dockerregistryurl"
                 :placeholder="apiParams.dockerregistryurl.description"/>
             </a-form-item>
             <a-form-item>
-              <span slot="label">
+              <template #label>
                 {{ $t('label.email') }}
                 <a-tooltip :title="apiParams.dockerregistryemail.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
                 </a-tooltip>
-              </span>
+              </template>
               <a-input
-                v-decorator="['dockerregistryemail', {
-                  rules: [{ required: true, message: $t('label.required') }]
-                }]"
+                v-model:value="form.dockerregistryemail"
                 :placeholder="apiParams.dockerregistryemail.description"/>
             </a-form-item>
           </div>
         </div>
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -316,6 +279,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -335,13 +299,11 @@ export default {
       networkLoading: false,
       keyPairs: [],
       keyPairLoading: false,
-      haEnabled: false,
       usePrivateRegistry: false,
       loading: false
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiConfig = this.$store.getters.apis.createKubernetesCluster || {}
     this.apiParams = {}
     this.apiConfig.params.forEach(param => {
@@ -349,6 +311,7 @@ export default {
     })
   },
   created () {
+    this.initForm()
     this.networks = [
       {
         id: null,
@@ -364,6 +327,69 @@ export default {
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        name: undefined,
+        description: undefined,
+        zoneid: undefined,
+        kubernetesversionid: undefined,
+        serviceofferingid: undefined,
+        noderootdisksize: undefined,
+        networkid: undefined,
+        haenable: false,
+        masternodes: 2,
+        externalloadbalanceripaddress: undefined,
+        size: 1,
+        keypair: undefined,
+        privateregistry: false,
+        dockerregistryusername: undefined,
+        dockerregistrypassword: undefined,
+        dockerregistryurl: undefined,
+        dockerregistryemail: undefined
+      })
+      this.rules = reactive({
+        name: [{ required: true, message: this.$t('message.error.kubecluster.name') }],
+        description: [{ required: true, message: this.$t('message.error.cluster.description') }],
+        zoneid: [{ required: true, message: this.$t('message.error.zone.for.cluster') }],
+        kubernetesversionid: [{ required: true, message: this.$t('message.error.version.for.cluster') }],
+        serviceofferingid: [{ required: true, message: this.$t('message.error.serviceoffering.for.cluster') }],
+        noderootdisksize: [{
+          validator: async (rule, value) => {
+            if (value && (isNaN(value) || value <= 0)) {
+              return Promise.reject(this.this.$t('message.validate.number'))
+            }
+            return Promise.resolve()
+          }
+        }],
+        masternodes: [
+          { required: true, message: this.$t('message.error.input.value') },
+          {
+            validator: async (rule, value) => {
+              if (value && (isNaN(value) || value < 2)) {
+                return Promise.reject(this.this.$t('message.validate.number'))
+              }
+              return Promise.resolve()
+            }
+          }
+        ],
+        size: [
+          { required: true, message: this.$t('message.error.size.for.cluster') },
+          {
+            validator: async (rule, value) => {
+              if (value && (isNaN(value) || value <= 0)) {
+                return Promise.reject(this.this.$t('message.validate.number'))
+              }
+              return Promise.resolve()
+            }
+          }
+        ],
+        dockerregistryusername: [{ required: true, message: this.$t('label.required') }],
+        dockerregistrypassword: [{ required: true, message: this.$t('label.required') }],
+        dockerregistryurl: [{ required: true, message: this.$t('label.required') }],
+        dockerregistryemail: [{ required: true, message: this.$t('label.required') }]
+      })
+    },
     fetchData () {
       this.fetchZoneData()
       this.fetchNetworkData()
@@ -387,9 +413,7 @@ export default {
       }).finally(() => {
         this.zoneLoading = false
         if (this.arrayHasItems(this.zones)) {
-          this.form.setFieldsValue({
-            zoneid: 0
-          })
+          this.form.zoneid = 0
           this.handleZoneChange(this.zones[0])
         }
       })
@@ -417,9 +441,7 @@ export default {
       }).finally(() => {
         this.kubernetesVersionLoading = false
         if (this.arrayHasItems(this.kubernetesVersions)) {
-          this.form.setFieldsValue({
-            kubernetesversionid: 0
-          })
+          this.form.kubernetesversionid = 0
           this.handleKubernetesVersionChange(this.kubernetesVersions[0])
         }
       })
@@ -451,9 +473,7 @@ export default {
       }).finally(() => {
         this.serviceOfferingLoading = false
         if (this.arrayHasItems(this.serviceOfferings)) {
-          this.form.setFieldsValue({
-            serviceofferingid: 0
-          })
+          this.form.serviceofferingid = 0
         }
       })
     },
@@ -468,9 +488,7 @@ export default {
       }).finally(() => {
         this.networkLoading = false
         if (this.arrayHasItems(this.networks)) {
-          this.form.setFieldsValue({
-            networkid: 0
-          })
+          this.form.networkid = 0
         }
       })
     },
@@ -490,18 +508,13 @@ export default {
       }).finally(() => {
         this.keyPairLoading = false
         if (this.arrayHasItems(this.keyPairs)) {
-          this.form.setFieldsValue({
-            keypair: 0
-          })
+          this.form.keypair = 0
         }
       })
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         const params = {
           name: values.name,

@@ -35,7 +35,6 @@ export default {
       if (!newItem || !newItem.id) {
         return
       }
-      this.resource = newItem
       this.determineOwner()
     }
   },

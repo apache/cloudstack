@@ -19,7 +19,7 @@
   <div class="form">
     <a-input-search
       :placeholder="$t('label.search')"
-      v-model="searchQuery"
+      v-model:value="searchQuery"
       style="margin-bottom: 10px;"
       @search="fetchData"
       autoFocus />
@@ -31,27 +31,23 @@
       :dataSource="hosts"
       :pagination="false"
       :rowKey="record => record.id">
-      <div slot="suitability" slot-scope="record">
-        <a-icon
+      <template #suitability="{ record }">
+        <check-circle-two-tone
           class="host-item__suitability-icon"
-          type="check-circle"
-          theme="twoTone"
           twoToneColor="#52c41a"
           v-if="record.suitableformigration" />
-        <a-icon
+        <close-circle-two-tone
           class="host-item__suitability-icon"
-          type="close-circle"
-          theme="twoTone"
           twoToneColor="#f5222d"
           v-else />
-      </div>
-      <div slot="memused" slot-scope="record">
-        {{ record.memoryused | byteToGigabyte }} GB
-      </div>
-      <div slot="memoryallocatedpercentage" slot-scope="record">
+      </template>
+      <template #memused="{ record }">
+        {{ byteToGigabyte(record.memoryused) }} GB
+      </template>
+      <template #memoryallocatedpercentage="{ record }">
         {{ record.memoryallocatedpercentage }}
-      </div>
-      <template slot="select" slot-scope="record">
+      </template>
+      <template #select="{ record }">
         <a-radio
           class="host-item__radio"
           @click="selectedHost = record"
@@ -70,7 +66,7 @@
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
@@ -111,7 +107,7 @@ export default {
         },
         {
           title: this.$t('label.suitability'),
-          scopedSlots: { customRender: 'suitability' }
+          slots: { customRender: 'suitability' }
         },
         {
           title: this.$t('label.cpuused'),
@@ -119,15 +115,15 @@ export default {
         },
         {
           title: this.$t('label.memoryallocated'),
-          scopedSlots: { customRender: 'memoryallocatedpercentage' }
+          slots: { customRender: 'memoryallocatedpercentage' }
         },
         {
           title: this.$t('label.memused'),
-          scopedSlots: { customRender: 'memused' }
+          slots: { customRender: 'memused' }
         },
         {
           title: this.$t('label.select'),
-          scopedSlots: { customRender: 'select' }
+          slots: { customRender: 'select' }
         }
       ]
     }
@@ -204,9 +200,7 @@ export default {
       this.page = currentPage
       this.pageSize = pageSize
       this.fetchData()
-    }
-  },
-  filters: {
+    },
     byteToGigabyte: value => {
       return (value / Math.pow(10, 9)).toFixed(2)
     }

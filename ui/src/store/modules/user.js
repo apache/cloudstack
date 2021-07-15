@@ -16,7 +16,6 @@
 // under the License.
 
 import Cookies from 'js-cookie'
-import Vue from 'vue'
 import md5 from 'md5'
 import message from 'ant-design-vue/es/message'
 import notification from 'ant-design-vue/es/notification'
@@ -59,15 +58,15 @@ const user = {
       state.token = token
     },
     SET_TIMEZONE_OFFSET: (state, timezoneoffset) => {
-      Vue.ls.set(TIMEZONE_OFFSET, timezoneoffset)
+      window.ls.set(TIMEZONE_OFFSET, timezoneoffset)
       state.timezoneoffset = timezoneoffset
     },
     SET_USE_BROWSER_TIMEZONE: (state, bool) => {
-      Vue.ls.set(USE_BROWSER_TIMEZONE, bool)
+      window.ls.set(USE_BROWSER_TIMEZONE, bool)
       state.usebrowsertimezone = bool
     },
     SET_PROJECT: (state, project = {}) => {
-      Vue.ls.set(CURRENT_PROJECT, project)
+      window.ls.set(CURRENT_PROJECT, project)
       state.project = project
     },
     SET_NAME: (state, name) => {
@@ -81,13 +80,13 @@ const user = {
     },
     SET_APIS: (state, apis) => {
       state.apis = apis
-      Vue.ls.set(APIS, apis)
+      window.ls.set(APIS, apis)
     },
     SET_FEATURES: (state, features) => {
       state.features = features
     },
     SET_ASYNC_JOB_IDS: (state, jobsJsonArray) => {
-      Vue.ls.set(ASYNC_JOB_IDS, jobsJsonArray)
+      window.ls.set(ASYNC_JOB_IDS, jobsJsonArray)
       state.asyncJobIds = jobsJsonArray
     },
     SET_LDAP: (state, isLdapEnabled) => {
@@ -97,15 +96,15 @@ const user = {
       state.cloudian = cloudian
     },
     RESET_THEME: (state) => {
-      Vue.ls.set(DEFAULT_THEME, 'light')
+      window.ls.set(DEFAULT_THEME, 'light')
     },
     SET_ZONES: (state, zones) => {
       state.zones = zones
-      Vue.ls.set(ZONES, zones)
+      window.ls.set(ZONES, zones)
     },
     SET_DOMAIN_STORE (state, domainStore) {
       state.domainStore = domainStore
-      Vue.ls.set(DOMAIN_STORE, domainStore)
+      window.ls.set(DOMAIN_STORE, domainStore)
     }
   },
 
@@ -125,11 +124,11 @@ const user = {
           Cookies.set('userfullname', result.firstname + ' ' + result.lastname, { expires: 1 })
           Cookies.set('userid', result.userid, { expires: 1 })
           Cookies.set('username', result.username, { expires: 1 })
-          Vue.ls.set(ACCESS_TOKEN, result.sessionkey, 24 * 60 * 60 * 1000)
+          window.ls.set(ACCESS_TOKEN, result.sessionkey, 24 * 60 * 60 * 1000)
           commit('SET_TOKEN', result.sessionkey)
           commit('SET_TIMEZONE_OFFSET', result.timezoneoffset)
 
-          const cachedUseBrowserTimezone = Vue.ls.get(USE_BROWSER_TIMEZONE, false)
+          const cachedUseBrowserTimezone = window.ls.get(USE_BROWSER_TIMEZONE, false)
           commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
 
           commit('SET_APIS', {})
@@ -154,11 +153,11 @@ const user = {
 
     GetInfo ({ commit }) {
       return new Promise((resolve, reject) => {
-        const cachedApis = Vue.ls.get(APIS, {})
-        const cachedZones = Vue.ls.get(ZONES, [])
-        const cachedTimezoneOffset = Vue.ls.get(TIMEZONE_OFFSET, 0.0)
-        const cachedUseBrowserTimezone = Vue.ls.get(USE_BROWSER_TIMEZONE, false)
-        const domainStore = Vue.ls.get(DOMAIN_STORE, {})
+        const cachedApis = window.ls.get(APIS, {})
+        const cachedZones = window.ls.get(ZONES, [])
+        const cachedTimezoneOffset = window.ls.get(TIMEZONE_OFFSET, 0.0)
+        const cachedUseBrowserTimezone = window.ls.get(USE_BROWSER_TIMEZONE, false)
+        const domainStore = window.ls.get(DOMAIN_STORE, {})
         const hasAuth = Object.keys(cachedApis).length > 0
 
         commit('SET_DOMAIN_STORE', domainStore)
@@ -184,7 +183,7 @@ const user = {
             reject(error)
           })
         } else {
-          const hide = message.loading(i18n.t('message.discovering.feature'), 0)
+          const hide = message.loading(i18n.global.t('message.discovering.feature'), 0)
           api('listZones', { listall: true }).then(json => {
             const zones = json.listzonesresponse.zone || []
             commit('SET_ZONES', zones)
@@ -205,10 +204,12 @@ const user = {
             commit('SET_APIS', apis)
             resolve(apis)
             store.dispatch('GenerateRoutes', { apis }).then(() => {
-              router.addRoutes(store.getters.addRouters)
+              store.getters.addRouters.map(route => {
+                router.addRoute(route)
+              })
             })
             hide()
-            message.success(i18n.t('message.sussess.discovering.feature'))
+            message.success(i18n.global.t('message.sussess.discovering.feature'))
           }).catch(error => {
             reject(error)
           })
@@ -270,9 +271,9 @@ const user = {
         commit('SET_CLOUDIAN', {})
         commit('RESET_THEME')
         commit('SET_DOMAIN_STORE', {})
-        Vue.ls.remove(CURRENT_PROJECT)
-        Vue.ls.remove(ACCESS_TOKEN)
-        Vue.ls.remove(ASYNC_JOB_IDS)
+        window.ls.remove(CURRENT_PROJECT)
+        window.ls.remove(ACCESS_TOKEN)
+        window.ls.remove(ASYNC_JOB_IDS)
 
         logout(state.token).then(() => {
           message.destroy()
@@ -287,7 +288,7 @@ const user = {
       })
     },
     AddAsyncJob ({ commit }, jobJson) {
-      var jobsArray = Vue.ls.get(ASYNC_JOB_IDS, [])
+      var jobsArray = window.ls.get(ASYNC_JOB_IDS, [])
       jobsArray.push(jobJson)
       commit('SET_ASYNC_JOB_IDS', jobsArray)
     },
@@ -307,7 +308,9 @@ const user = {
           commit('SET_APIS', apis)
           resolve(apis)
           store.dispatch('GenerateRoutes', { apis }).then(() => {
-            router.addRoutes(store.getters.addRouters)
+            store.getters.addRouters.map(route => {
+              router.addRoute(route)
+            })
           })
         }).catch(error => {
           reject(error)

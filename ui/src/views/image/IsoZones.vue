@@ -25,16 +25,16 @@
       :dataSource="dataSource"
       :pagination="false"
       :rowKey="record => record.zoneid">
-      <div slot="isready" slot-scope="text, record">
+      <template #isready="{ record }">
         <span v-if="record.isready">{{ $t('label.yes') }}</span>
         <span v-else>{{ $t('label.no') }}</span>
-      </div>
-      <template slot="action" slot-scope="text, record">
+      </template>
+      <template #action="{ record }">
         <span style="margin-right: 5px">
           <tooltip-button
             :tooltip="$t('label.action.copy.iso')"
             :disabled="!('copyIso' in $store.getters.apis && record.isready)"
-            icon="copy"
+            icon="copy-outlined"
             :loading="copyLoading"
             @click="showCopyIso(record)" />
         </span>
@@ -51,7 +51,7 @@
             <tooltip-button
               :tooltip="$t('label.action.delete.iso')"
               type="danger"
-              icon="delete" />
+              icon="delete-outlined" />
           </a-popconfirm>
         </span>
       </template>
@@ -67,7 +67,7 @@
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
@@ -87,26 +87,20 @@
       centered>
       <a-spin :spinning="copyLoading">
         <a-form
-          :form="form"
-          @submit="handleCopyIsoSubmit"
+          :ref="formRef"
+          :model="form"
+          :rules="rules"
           layout="vertical">
-          <a-form-item :label="$t('label.zoneid')">
+          <a-form-item ref="zoneid" name="zoneid" :label="$t('label.zoneid')">
             <a-select
               id="zone-selection"
               mode="multiple"
               :placeholder="$t('label.select.zones')"
-              v-decorator="['zoneid', {
-                rules: [
-                  {
-                    required: true,
-                    message: `${this.$t('message.error.select')}`
-                  }
-                ]
-              }]"
+              v-model:value="form.zoneid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="zoneLoading"
               autoFocus>
@@ -122,6 +116,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipButton from '@/components/view/TooltipButton'
 
@@ -157,7 +152,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiConfigParams = (this.$store.getters.apis.copyIso && this.$store.getters.apis.copyIso.params) || []
     this.apiParams = {}
     this.apiConfigParams.forEach(param => {
@@ -165,6 +159,7 @@ export default {
     })
   },
   created () {
+    this.initForm()
     this.columns = [
       {
         title: this.$t('label.zonename'),
@@ -177,7 +172,7 @@ export default {
       {
         title: this.$t('label.isready'),
         dataIndex: 'isready',
-        scopedSlots: { customRender: 'isready' }
+        slots: { customRender: 'isready' }
       }
     ]
     if (this.isActionPermitted()) {
@@ -186,7 +181,7 @@ export default {
         dataIndex: 'action',
         fixed: 'right',
         width: 100,
-        scopedSlots: { customRender: 'action' }
+        slots: { customRender: 'action' }
       })
     }
 
@@ -205,6 +200,13 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        zoneid: [{ type: 'array', required: true, message: this.$t('message.error.select') }]
+      })
+    },
     fetchData () {
       const params = {}
       params.id = this.resource.id
@@ -289,9 +291,7 @@ export default {
     },
     showCopyIso (record) {
       this.currentRecord = record
-      this.form.setFieldsValue({
-        zoneid: []
-      })
+      this.form.zoneid = []
       this.fetchZoneData()
       this.showCopyActionForm = true
     },
@@ -299,12 +299,9 @@ export default {
       this.currentRecord = {}
       this.showCopyActionForm = false
     },
-    handleCopyIsoSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    handleCopyIsoSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {
           id: this.currentRecord.id,
           sourcezoneid: this.currentRecord.zoneid,
