@@ -1840,6 +1840,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
     }
 
+    private String generateKeyValuePairOrEmptyString(String key, String value){
+        if (value == null)
+            return "";
+
+        return String.format(",%s=%s", key, value);
+    }
+
     private void updateLbValues(final HashMap<String, String> lbConfigsMap, StringBuilder loadBalancingData) {
         String lbMaxConn = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbMaxConn.key(), null);
         String lbFullConn = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbFullConn.key(), null);
@@ -1854,36 +1861,16 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         String serverMinconn = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbServerMinConn.key(), null);
         String serverMaxqueue = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbServerMaxQueue.key(), null);
 
-        if (lbMaxConn != null) {
-            loadBalancingData.append(",lb.maxconn=").append(lbMaxConn);
-        }
-        if (lbFullConn != null) {
-            loadBalancingData.append(",lb.fullconn=").append(lbFullConn);
-        }
-        if (lbTimeoutConnect != null) {
-            loadBalancingData.append(",lb.timeout.connect=").append(lbTimeoutConnect);
-        }
-        if (lbTimeoutServer != null) {
-            loadBalancingData.append(",lb.timeout.server=").append(lbTimeoutServer);
-        }
-        if (lbTimeoutClient != null) {
-            loadBalancingData.append(",lb.timeout.client=").append(lbTimeoutClient);
-        }
-        if (lbBackendHttps != null) {
-            loadBalancingData.append(",lb.backend.https=").append(lbBackendHttps);
-        }
-        if (lbHttp2 != null) {
-            loadBalancingData.append(",http2=").append(lbHttp2);
-        }
-        if (serverMaxconn != null) {
-            loadBalancingData.append(",server.maxconn=").append(serverMaxconn);
-        }
-        if (serverMinconn != null) {
-            loadBalancingData.append(",server.minconn=").append(serverMinconn);
-        }
-        if (serverMaxqueue != null) {
-            loadBalancingData.append(",server.maxqueue=").append(serverMaxqueue);
-        }
+        loadBalancingData.append(generateKeyValuePairOrEmptyString("lb.maxconn", lbMaxConn))
+                .append(generateKeyValuePairOrEmptyString("lb.fullconn", lbFullConn))
+                .append(generateKeyValuePairOrEmptyString("lb.timeout.connect", lbTimeoutConnect))
+                .append(generateKeyValuePairOrEmptyString("lb.timeout.server", lbTimeoutServer))
+                .append(generateKeyValuePairOrEmptyString("lb.timeout.client", lbTimeoutClient))
+                .append(generateKeyValuePairOrEmptyString("lb.backend.https", lbBackendHttps))
+                .append(generateKeyValuePairOrEmptyString("http2", lbHttp2))
+                .append(generateKeyValuePairOrEmptyString("server.maxconn", serverMaxconn))
+                .append(generateKeyValuePairOrEmptyString("server.minconn", serverMinconn))
+                .append(generateKeyValuePairOrEmptyString("server.maxqueue", serverMaxqueue));
     }
 
     private Map<String, String> getRouterHealthChecksConfig(final DomainRouterVO router) {

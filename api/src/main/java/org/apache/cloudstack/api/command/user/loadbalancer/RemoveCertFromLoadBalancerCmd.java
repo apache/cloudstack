@@ -110,9 +110,6 @@ public class RemoveCertFromLoadBalancerCmd extends BaseAsyncCmd {
     @Override
     public Long getSyncObjId() {
         LoadBalancer lb = _entityMgr.findById(LoadBalancer.class, getLbRuleId());
-        if (lb == null) {
-            return null;
-        }
-        return lb.getNetworkId();
+        return (lb != null )? lb.getNetworkId(): null;
     }
 }

@@ -1062,8 +1062,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public List<LoadBalancerConfigResponse> createLoadBalancerConfigResponse(List<? extends LoadBalancerConfig> configs) {
-        List<LoadBalancerConfigResponse> lbConfigResponses = new ArrayList<LoadBalancerConfigResponse>();
-        if (configs == null || configs.size() == 0) {
+        List<LoadBalancerConfigResponse> lbConfigResponses = new ArrayList<>();
+        if (CollectionUtils.isEmpty(configs)) {
             return lbConfigResponses;
         }
         LoadBalancerConfig config = configs.get(0);

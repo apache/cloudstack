@@ -17,6 +17,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -112,7 +113,7 @@ public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
     }
 
     public boolean isForced() {
-        return (forced != null) ? forced : false;
+        return BooleanUtils.toBoolean(forced);
     }
 
     @Override
@@ -133,9 +134,6 @@ public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
     @Override
     public Long getSyncObjId() {
         LoadBalancer lb = _entityMgr.findById(LoadBalancer.class, getLbRuleId());
-        if (lb == null) {
-            return null;
-        }
-        return lb.getNetworkId();
+        return (lb != null )? lb.getNetworkId(): null;
     }
 }

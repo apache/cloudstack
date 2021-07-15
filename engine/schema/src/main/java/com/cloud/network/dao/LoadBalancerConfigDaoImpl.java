@@ -96,21 +96,11 @@ public class LoadBalancerConfigDaoImpl extends GenericDaoBase<LoadBalancerConfig
     @Override
     public LoadBalancerConfigVO findConfig(Scope scope, Long networkId, Long vpcId, Long loadBalancerId, String name) {
         SearchCriteria<LoadBalancerConfigVO> sc = AllFieldsSearch.create();
-        if (scope != null) {
-            sc.setParameters("scope", scope);
-        }
-        if (networkId != null) {
-            sc.setParameters("networkId", networkId);
-        }
-        if (vpcId != null) {
-            sc.setParameters("vpcId", vpcId);
-        }
-        if (loadBalancerId != null) {
-            sc.setParameters("loadBalancerId", loadBalancerId);
-        }
-        if (name != null) {
-            sc.setParameters("name", name);
-        }
+        sc.setParametersIfNotNull("scope", scope);
+        sc.setParametersIfNotNull("networkId", networkId);
+        sc.setParametersIfNotNull("vpcId", vpcId);
+        sc.setParametersIfNotNull("loadBalancerId", loadBalancerId);
+        sc.setParametersIfNotNull("name", name);
         return findOneBy(sc);
     }
 

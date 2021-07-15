@@ -20,7 +20,6 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -30,6 +29,7 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.network.lb.LoadBalancerConfig;
 import org.apache.cloudstack.network.lb.LoadBalancerConfig.Scope;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -123,7 +123,7 @@ public class CreateLoadBalancerConfigCmd extends BaseAsyncCreateCmd {
     }
 
     public boolean isForced() {
-        return (forced != null) ? forced : false;
+        return BooleanUtils.toBoolean(forced);
     }
 
     /////////////////////////////////////////////////////
@@ -138,9 +138,8 @@ public class CreateLoadBalancerConfigCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
 
-        LoadBalancerConfig config = null;
         try {
-            config = _entityMgr.findById(LoadBalancerConfig.class, getEntityId());
+            LoadBalancerConfig config = _entityMgr.findById(LoadBalancerConfig.class, getEntityId());
             LoadBalancerConfigResponse lbConfigResponse = new LoadBalancerConfigResponse();
             if (config != null) {
                 lbConfigResponse = _responseGenerator.createLoadBalancerConfigResponse(config);
@@ -165,41 +164,22 @@ public class CreateLoadBalancerConfigCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getSyncObjType() {
-        if (networkId != null) {
-            return BaseAsyncCmd.networkSyncObject;
-        } else if (vpcId != null) {
-            return BaseAsyncCmd.vpcSyncObject;
-        }
-        return null;
+        return LoadBalancerHelper.getSyncObjType(networkId, vpcId);
     }
 
     @Override
     public Long getSyncObjId() {
-        if (networkId != null) {
-            return getNetworkId();
-        } else if (vpcId != null) {
-            return getVpcId();
-        }
-        return null;
+        return LoadBalancerHelper.getSyncObjId(networkId, vpcId);
     }
 
     @Override
     public long getEntityOwnerId() {
         if (Scope.Network.name().equalsIgnoreCase(scope) && networkId != null) {
-            Network network = _entityMgr.findById(Network.class, networkId);
-            if (network != null) {
-                return network.getAccountId();
-            }
+            return LoadBalancerHelper.getEntityOwnerId(_entityMgr, Network.class, networkId);
         } else if (Scope.Vpc.name().equalsIgnoreCase(scope) && vpcId != null) {
-            Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
-            if (vpc != null) {
-                return vpc.getAccountId();
-            }
+            return LoadBalancerHelper.getEntityOwnerId(_entityMgr, Vpc.class, vpcId);
         } else if (Scope.LoadBalancerRule.name().equalsIgnoreCase(scope) && loadBalancerId != null) {
-            LoadBalancer lb = _entityMgr.findById(LoadBalancer.class, loadBalancerId);
-            if (lb != null) {
-                return lb.getAccountId();
-            }
+            return LoadBalancerHelper.getEntityOwnerId(_entityMgr, LoadBalancer.class, loadBalancerId);
         }
         throw new InvalidParameterValueException("Unable to find the entity owner");
     }

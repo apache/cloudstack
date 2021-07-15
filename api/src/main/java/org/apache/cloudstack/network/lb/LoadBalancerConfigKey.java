@@ -145,10 +145,7 @@ public enum LoadBalancerConfigKey {
 
     public static LoadBalancerConfigKey getConfigsByScopeAndName(Scope scope, String name) {
         Map<String, LoadBalancerConfigKey> configs = Configs.get(scope);
-        if (configs.keySet().contains(name)) {
-            return configs.get(name);
-        }
-        return null;
+        return configs.get(name);
     }
 
     public static Scope getScopeFromString(String scope) {
@@ -194,9 +191,8 @@ public enum LoadBalancerConfigKey {
                 errMsg = "Please enter a valid long value for parameter " + key;
                 Long.parseLong(value);
             }
-        } catch (final Exception e) {
-            // catching generic exception as some throws NullPointerException and some throws NumberFormatExcpeion
-            return new Pair<LoadBalancerConfigKey, String>(null, errMsg);
+        } catch (final NullPointerException|NumberFormatException e) {
+            return new Pair<>(null, errMsg);
         }
         if (type.equals(Boolean.class)) {
             if (!(value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false"))) {

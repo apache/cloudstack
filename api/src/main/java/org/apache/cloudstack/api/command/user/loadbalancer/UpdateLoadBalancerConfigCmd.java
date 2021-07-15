@@ -83,65 +83,28 @@ public class UpdateLoadBalancerConfigCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         LoadBalancerConfig result = _lbConfigService.updateLoadBalancerConfig(this);
-        if (result != null) {
-            LoadBalancerConfigResponse response = _responseGenerator.createLoadBalancerConfigResponse(result);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
-        } else {
+        if (result == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update load balancer config");
         }
+
+        LoadBalancerConfigResponse response = _responseGenerator.createLoadBalancerConfigResponse(result);
+        response.setResponseName(getCommandName());
+        this.setResponseObject(response);
     }
 
     @Override
     public String getSyncObjType() {
-        LoadBalancerConfig config = _entityMgr.findById(LoadBalancerConfig.class, getId());
-        if (config == null) {
-            throw new InvalidParameterValueException("Unable to find load balancer config: " + id);
-        }
-        if (config.getNetworkId() != null) {
-            return BaseAsyncCmd.networkSyncObject;
-        } else if (config.getVpcId() != null) {
-            return BaseAsyncCmd.vpcSyncObject;
-        }
-        return null;
+        return LoadBalancerHelper.getSyncObjType(_entityMgr, getId());
     }
 
     @Override
     public Long getSyncObjId() {
-        LoadBalancerConfig config = _entityMgr.findById(LoadBalancerConfig.class, getId());
-        if (config == null) {
-            throw new InvalidParameterValueException("Unable to find load balancer config: " + id);
-        }
-        if (config.getNetworkId() != null) {
-            return config.getNetworkId();
-        } else if (config.getVpcId() != null) {
-            return config.getVpcId();
-        }
-        return null;
+        return LoadBalancerHelper.getSyncObjId(_entityMgr, getId());
     }
 
     @Override
     public long getEntityOwnerId() {
-        LoadBalancerConfig config = _entityMgr.findById(LoadBalancerConfig.class, getId());
-        if (config != null) {
-            if (config.getNetworkId() != null) {
-                Network network = _entityMgr.findById(Network.class, config.getNetworkId());
-                if (network != null) {
-                    return network.getAccountId();
-                }
-            } else if (config.getVpcId() != null) {
-                Vpc vpc = _entityMgr.findById(Vpc.class, config.getVpcId());
-                if (vpc != null) {
-                    return vpc.getAccountId();
-                }
-            } else if (config.getLoadBalancerId() != null) {
-                FirewallRule rule = _entityMgr.findById(FirewallRule.class, config.getLoadBalancerId());
-                if (rule != null) {
-                    return rule.getAccountId();
-                }
-            }
-        }
-        throw new InvalidParameterValueException("Unable to find the entity owner");
+        return LoadBalancerHelper.getEntityOwnerId(_entityMgr, getId());
     }
 
     @Override

@@ -53,6 +53,7 @@ import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerCon
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.network.lb.LoadBalancerConfig.Scope;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
 
 public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBalancerConfigService, LoadBalancerConfigManager {
@@ -129,8 +130,8 @@ public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBa
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
-        List<LoadBalancerConfigVO> configs = new ArrayList<LoadBalancerConfigVO>();
-        if (id != null || networkId != null || vpcId != null || loadBalancerId != null) {
+        List<LoadBalancerConfigVO> configs = new ArrayList<>();
+        if ( ObjectUtils.anyNotNull( id, networkId, vpcId, loadBalancerId)) {
             configs = _lbConfigDao.search(sc, null);
         }
         if (cmd.listAll()) {
@@ -281,11 +282,8 @@ public class LoadBalancerConfigManagerImpl extends ManagerBase implements LoadBa
                 }
                 throw new InvalidParameterValueException("networkId is required");
             }
-            if (vpcId != null || loadBalancerId != null) {
+            if (ObjectUtils.anyNotNull( vpcId, loadBalancerId)) {
                 throw new InvalidParameterValueException("vpcId and loadBalancerId should be null if scope is Network");
-            }
-            if (networkId == null) {
-                throw new InvalidParameterValueException("networkId is required");
             }
             NetworkVO network = _networkDao.findById(networkId);
             if (network == null) {

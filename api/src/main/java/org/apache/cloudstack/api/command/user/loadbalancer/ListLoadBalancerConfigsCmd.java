@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.response.LoadBalancerConfigResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.network.lb.LoadBalancerConfig;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 @APICommand(name = "listLoadBalancerConfigs", description = "Lists load balancer configs.",
@@ -115,7 +116,7 @@ public class ListLoadBalancerConfigsCmd extends BaseListCmd {
     }
 
     public boolean listAll() {
-        return listAll == null ? false : listAll;
+        return BooleanUtils.toBoolean(listAll);
     }
 
     // ///////////////////////////////////////////////////

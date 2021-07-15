@@ -24,6 +24,7 @@ import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.NicTO;
 
 import org.apache.cloudstack.network.lb.LoadBalancerConfig;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
@@ -87,7 +88,7 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
     }
 
     public void setNetworkLbConfigs(List<? extends LoadBalancerConfig> networkLbConfigs) {
-        if (networkLbConfigs == null || networkLbConfigs.size() == 0) {
+        if (CollectionUtils.isEmpty(networkLbConfigs)) {
             this.networkLbConfigs = new LoadBalancerConfigTO[0];
             return;
         }

@@ -30,10 +30,10 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.network.lb.LoadBalancerConfig;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.network.vpc.Vpc;
 
@@ -101,7 +101,7 @@ public class ReplaceLoadBalancerConfigsCmd extends BaseAsyncCmd {
     }
 
     public Map<String, String> getConfigList() {
-        if (configList == null || configList.isEmpty()) {
+        if (MapUtils.isEmpty(configList)) {
             return null;
         }
 
@@ -127,38 +127,20 @@ public class ReplaceLoadBalancerConfigsCmd extends BaseAsyncCmd {
 
     @Override
     public String getSyncObjType() {
-        if (networkId != null) {
-            return BaseAsyncCmd.networkSyncObject;
-        } else if (vpcId != null) {
-            return BaseAsyncCmd.vpcSyncObject;
-        }
-        return null;
+        return LoadBalancerHelper.getSyncObjType(networkId, vpcId);
     }
 
     @Override
     public Long getSyncObjId() {
-        if (networkId != null) {
-            return networkId;
-        } else if (vpcId != null) {
-            return vpcId;
-        }
-        return null;
+        return LoadBalancerHelper.getSyncObjId(networkId, vpcId);
     }
 
     @Override
     public long getEntityOwnerId() {
         if (networkId != null) {
-            Network network = _entityMgr.findById(Network.class, networkId);
-            if (network != null) {
-                return network.getAccountId();
-            }
-        } else if (vpcId != null) {
-            Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
-            if (vpc != null) {
-                return vpc.getAccountId();
-            }
+            return LoadBalancerHelper.getEntityOwnerId(_entityMgr, Network.class, networkId);
         }
-        throw new InvalidParameterValueException("Unable to find the entity owner");
+        return LoadBalancerHelper.getEntityOwnerId(_entityMgr, Vpc.class, vpcId);
     }
 
     @Override

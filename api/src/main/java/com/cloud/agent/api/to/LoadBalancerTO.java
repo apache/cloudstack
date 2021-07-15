@@ -36,6 +36,7 @@ import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.utils.Pair;
 
 import org.apache.cloudstack.network.lb.LoadBalancerConfig;
+import org.springframework.util.CollectionUtils;
 
 public class LoadBalancerTO {
     String uuid;
@@ -187,7 +188,7 @@ public class LoadBalancerTO {
     }
 
     public void setLbConfigs(List<? extends LoadBalancerConfig> lbConfigs) {
-        if (lbConfigs == null || lbConfigs.size() == 0) {
+        if (CollectionUtils.isEmpty(lbConfigs)) {
             this.lbConfigs = new LoadBalancerConfigTO[0];
             return;
         }
