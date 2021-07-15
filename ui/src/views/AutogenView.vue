@@ -190,12 +190,7 @@
               :v-bind="field.name"
               v-if="!(currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].value)"
             >
-              <span slot="label">
-                {{ $t('label.' + field.name) }}
-                <a-tooltip :title="field.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </span>
+              <tooltip-label slot="label" :title="$t('label.' + field.name)" :tooltip="field.description"/>
 
               <span v-if="field.type==='boolean'">
                 <a-switch
@@ -391,6 +386,7 @@ import ResourceView from '@/components/view/ResourceView'
 import ActionButton from '@/components/view/ActionButton'
 import SearchView from '@/components/view/SearchView'
 import BulkActionProgress from '@/components/view/BulkActionProgress'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'Resource',
@@ -402,7 +398,8 @@ export default {
     Status,
     ActionButton,
     SearchView,
-    BulkActionProgress
+    BulkActionProgress,
+    TooltipLabel
   },
   mixins: [mixinDevice],
   provide: function () {
