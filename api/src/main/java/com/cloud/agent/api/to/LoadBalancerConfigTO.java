@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,26 +14,29 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+package com.cloud.agent.api.to;
 
-package com.cloud.network;
+import org.apache.cloudstack.network.lb.LoadBalancerConfig;
 
-import java.util.List;
+public class LoadBalancerConfigTO {
+    private String name;
+    private String value;
 
-import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
-import com.cloud.agent.api.to.PortForwardingRuleTO;
-import com.cloud.agent.resource.virtualnetwork.model.LoadBalancerRule.SslCertEntry;
+    public LoadBalancerConfigTO(String name, String value) {
+        this.name = name;
+        this.value = value;
+    }
 
-public interface LoadBalancerConfigurator {
-    public final static int ADD = 0;
-    public final static int REMOVE = 1;
-    public final static int STATS = 2;
+    public LoadBalancerConfigTO(LoadBalancerConfig config) {
+        this.name = config.getName();
+        this.value = config.getValue();
+    }
 
-    public String[] generateConfiguration(List<PortForwardingRuleTO> fwRules);
+    public String getName() {
+        return name;
+    }
 
-    public String[] generateConfiguration(LoadBalancerConfigCommand lbCmd);
-
-    public String[][] generateFwRules(LoadBalancerConfigCommand lbCmd);
-
-    public SslCertEntry[] generateSslCertEntries(LoadBalancerConfigCommand lbCmd);
+    public String getValue() {
+        return value;
+    }
 }

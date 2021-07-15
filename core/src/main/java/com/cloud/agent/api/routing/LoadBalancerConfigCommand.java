@@ -19,14 +19,21 @@
 
 package com.cloud.agent.api.routing;
 
+import com.cloud.agent.api.to.LoadBalancerConfigTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.NicTO;
+
+import org.apache.cloudstack.network.lb.LoadBalancerConfig;
+import org.springframework.util.CollectionUtils;
+
+import java.util.List;
 
 /**
  * LoadBalancerConfigCommand sends the load balancer configuration
  */
 public class LoadBalancerConfigCommand extends NetworkElementCommand {
     LoadBalancerTO[] loadBalancers;
+    LoadBalancerConfigTO[] networkLbConfigs;
     public String lbStatsVisibility = "guest-network";
     public String lbStatsPublicIP; /* load balancer listen on this ips for stats */
     public String lbStatsPrivateIP; /* load balancer listen on this ips for stats */
@@ -37,9 +44,12 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
     public String lbStatsUri = "/admin?stats";
     public String maxconn = "";
     public String lbProtocol;
+    public String lbSslConfiguration = "";
     public boolean keepAliveEnabled = false;
     NicTO nic;
     Long vpcId;
+    Boolean isTransparent = false;
+    String networkCidr;
 
     protected LoadBalancerConfigCommand() {
     }
@@ -71,5 +81,37 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
 
     public Long getVpcId() {
         return vpcId;
+    }
+
+    public LoadBalancerConfigTO[] getNetworkLbConfigs() {
+        return this.networkLbConfigs;
+    }
+
+    public void setNetworkLbConfigs(List<? extends LoadBalancerConfig> networkLbConfigs) {
+        if (CollectionUtils.isEmpty(networkLbConfigs)) {
+            this.networkLbConfigs = new LoadBalancerConfigTO[0];
+            return;
+        }
+        this.networkLbConfigs = new LoadBalancerConfigTO[networkLbConfigs.size()];
+        int i = 0;
+        for (LoadBalancerConfig lbConfig : networkLbConfigs) {
+            this.networkLbConfigs[i++] = new LoadBalancerConfigTO(lbConfig);
+        }
+    }
+
+    public void setIsTransparent(final Boolean isTransparent) {
+        this.isTransparent = isTransparent;
+    }
+
+    public Boolean isTransparent() {
+        return isTransparent;
+    }
+
+    public void setNetworkCidr(String networkCidr) {
+        this.networkCidr = networkCidr;
+    }
+
+    public String getNetworkCidr() {
+        return networkCidr;
     }
 }

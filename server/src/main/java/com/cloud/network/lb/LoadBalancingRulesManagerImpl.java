@@ -1185,7 +1185,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_LB_CERT_ASSIGN, eventDescription = "assigning certificate to load balancer", async = true)
-    public boolean assignCertToLoadBalancer(long lbRuleId, Long certId) {
+    public boolean assignCertToLoadBalancer(long lbRuleId, Long certId, boolean forced) {
         CallContext caller = CallContext.current();
 
         LoadBalancerVO loadBalancer = _lbDao.findById(Long.valueOf(lbRuleId));
@@ -1212,8 +1212,13 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         //check if the lb is already bound
         LoadBalancerCertMapVO certMapRule = _lbCertMapDao.findByLbRuleId(loadBalancer.getId());
-        if (certMapRule != null)
-            throw new InvalidParameterValueException("Another certificate is already bound to the LB");
+        if (certMapRule != null) {
+            if (! forced) {
+                throw new InvalidParameterValueException("Another certificate is already bound to the LB");
+            }
+            s_logger.debug("Another certificate is already bound to the LB, removing it");
+            removeCertFromLoadBalancer(lbRuleId);
+        }
 
         //check for correct port
         if (loadBalancer.getLbProtocol() == null || !(loadBalancer.getLbProtocol().equals(NetUtils.SSL_PROTO)))
@@ -2104,6 +2109,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         LoadBalancerVO lbBackup = _lbDao.findById(lbRuleId);
         String customId = cmd.getCustomId();
         Boolean forDisplay = cmd.getDisplay();
+        String protocol = cmd.getLbProtocol();
 
         if (lb == null) {
             throw new InvalidParameterValueException("Unable to find lb rule by id=" + lbRuleId);
@@ -2132,6 +2138,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             lb.setDisplay(forDisplay);
         }
 
+        if (protocol != null) {
+            lb.setLbProtocol(protocol);
+        }
+
         // Validate rule in LB provider
         LoadBalancingRule rule = getLoadBalancerRuleToApply(lb);
         if (!validateLbRule(rule)) {
@@ -2142,7 +2152,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         boolean success = _lbDao.update(lbRuleId, lb);
 
         // If algorithm is changed, have to reapply the lb config
-        if ((algorithm != null) && (tmplbVo.getAlgorithm().compareTo(algorithm) != 0)){
+        if ((algorithm != null && tmplbVo.getAlgorithm().compareTo(algorithm) != 0)
+                || (protocol != null && ! tmplbVo.getLbProtocol().equalsIgnoreCase(protocol))) {
             try {
                 lb.setState(FirewallRule.State.Add);
                 _lbDao.persist(lb);
@@ -2162,6 +2173,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     }
                     if (lbBackup.getAlgorithm() != null) {
                         lb.setAlgorithm(lbBackup.getAlgorithm());
+                    }
+                    if (lbBackup.getLbProtocol() != null) {
+                        lb.setLbProtocol(lbBackup.getLbProtocol());
                     }
                     lb.setState(lbBackup.getState());
                     _lbDao.update(lb.getId(), lb);

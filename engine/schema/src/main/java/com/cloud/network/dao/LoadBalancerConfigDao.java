@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,26 +14,31 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-
-package com.cloud.network;
+package com.cloud.network.dao;
 
 import java.util.List;
 
-import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
-import com.cloud.agent.api.to.PortForwardingRuleTO;
-import com.cloud.agent.resource.virtualnetwork.model.LoadBalancerRule.SslCertEntry;
+import com.cloud.utils.db.GenericDao;
 
-public interface LoadBalancerConfigurator {
-    public final static int ADD = 0;
-    public final static int REMOVE = 1;
-    public final static int STATS = 2;
+import org.apache.cloudstack.network.lb.LoadBalancerConfig.Scope;
 
-    public String[] generateConfiguration(List<PortForwardingRuleTO> fwRules);
+public interface LoadBalancerConfigDao extends GenericDao<LoadBalancerConfigVO, Long> {
 
-    public String[] generateConfiguration(LoadBalancerConfigCommand lbCmd);
+    List<LoadBalancerConfigVO> listByNetworkId(Long networkId);
 
-    public String[][] generateFwRules(LoadBalancerConfigCommand lbCmd);
+    List<LoadBalancerConfigVO> listByVpcId(Long vpcId);
 
-    public SslCertEntry[] generateSslCertEntries(LoadBalancerConfigCommand lbCmd);
+    List<LoadBalancerConfigVO> listByLoadBalancerId(Long loadBalancerId);
+
+    void removeByNetworkId(Long networkId);
+
+    void removeByVpcId(Long vpcId);
+
+    void removeByLoadBalancerId(Long loadBalancerId);
+
+    LoadBalancerConfigVO findConfig(Scope scope, Long networkId, Long vpcId, Long loadBalancerId, String name);
+
+    void addConfig(LoadBalancerConfigVO config);
+
+    List<LoadBalancerConfigVO> saveConfigs(List<LoadBalancerConfigVO> configs);
 }

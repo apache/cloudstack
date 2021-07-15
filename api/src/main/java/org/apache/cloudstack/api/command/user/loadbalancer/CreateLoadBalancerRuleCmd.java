@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
@@ -255,7 +256,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
     }
 
     public String getLbProtocol() {
-        return lbProtocol;
+        return StringUtils.trim(StringUtils.lowerCase(lbProtocol));
     }
 
     /////////////////////////////////////////////////////
