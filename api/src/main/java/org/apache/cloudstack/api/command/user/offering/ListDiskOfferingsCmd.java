@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
+import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
@@ -50,6 +51,9 @@ public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
             since = "4.13")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, description = "The ID of the disk volume", since = "4.16")
+    private Long volumeId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -64,6 +68,10 @@ public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
 
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public Long getVolumeId() {
+        return volumeId;
     }
 
     /////////////////////////////////////////////////////

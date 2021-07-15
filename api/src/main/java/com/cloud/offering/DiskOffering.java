@@ -149,4 +149,6 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
     void setCacheMode(DiskCacheMode cacheMode);
 
     boolean isComputeOnly();
+
+    boolean getDiskSizeStrictness();
 }
