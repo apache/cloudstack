@@ -33,12 +33,7 @@
               @submit="handleSubmit"
               layout="vertical">
               <a-form-item>
-                <span slot="label">
-                  {{ $t('label.displayname') }}
-                  <a-tooltip :title="apiParams.displayname.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                  </a-tooltip>
-                </span>
+                <tooltip-label slot="label" :title="$t('label.displayname')" :tooltip="apiParams.displayname.description"/>
                 <a-input
                   v-decorator="['displayname', {
                     rules: [{ required: true, message: $t('message.error.input.value') }]
@@ -48,23 +43,13 @@
                   autoFocus />
               </a-form-item>
               <a-form-item>
-                <span slot="label">
-                  {{ $t('label.hostnamelabel') }}
-                  <a-tooltip :title="apiParams.hostname.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                  </a-tooltip>
-                </span>
+                <tooltip-label slot="label" :title="$t('label.hostnamelabel')" :tooltip="apiParams.hostname.description"/>
                 <a-input
                   v-decorator="['hostname', {}]"
                   :placeholder="apiParams.hostname.description" />
               </a-form-item>
               <a-form-item>
-                <span slot="label">
-                  {{ $t('label.domainid') }}
-                  <a-tooltip :title="apiParams.domainid.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                  </a-tooltip>
-                </span>
+                <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
                 <a-select
                   v-decorator="['domainid', {}]"
                   showSearch
@@ -75,26 +60,16 @@
                   :options="domainSelectOptions"
                   :loading="optionsLoading.domains"
                   :placeholder="apiParams.domainid.description"
-                  @change="val => { this.selectedDomain = val }" />
+                  @change="val => { this.selectedDomainId = val }" />
               </a-form-item>
-              <a-form-item :label="$t('label.account')" v-if="selectedDomain">
-                <span slot="label">
-                  {{ $t('label.project') }}
-                  <a-tooltip :title="apiParams.account.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                  </a-tooltip>
-                </span>
+              <a-form-item v-if="selectedDomainId">
+                <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.account.description"/>
                 <a-input
                   v-decorator="['account', {}]"
                   :placeholder="apiParams.account.description"/>
               </a-form-item>
               <a-form-item>
-                <span slot="label">
-                  {{ $t('label.project') }}
-                  <a-tooltip :title="apiParams.projectid.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                  </a-tooltip>
-                </span>
+                <tooltip-label slot="label" :title="$t('label.project')" :tooltip="apiParams.projectid.description"/>
                 <a-select
                   v-decorator="['projectid', {}]"
                   showSearch
@@ -107,12 +82,7 @@
                   :placeholder="apiParams.projectid.description" />
               </a-form-item>
               <a-form-item>
-                <span slot="label">
-                  {{ $t('label.templatename') }}
-                  <a-tooltip :title="apiParams.templateid.description + '. ' + $t('message.template.import.vm.temporary')">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                  </a-tooltip>
-                </span>
+                <tooltip-label slot="label" :title="$t('label.templatename')" :tooltip="apiParams.templateid.description + '. ' + $t('message.template.import.vm.temporary')"/>
                 <a-radio-group
                   style="width:100%"
                   :value="templateType"
@@ -146,12 +116,7 @@
                 </a-radio-group>
               </a-form-item>
               <a-form-item>
-                <span slot="label">
-                  {{ $t('label.serviceofferingid') }}
-                  <a-tooltip :title="apiParams.serviceofferingid.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                  </a-tooltip>
-                </span>
+                <tooltip-label slot="label" :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
               </a-form-item>
               <compute-offering-selection
                 :compute-items="computeOfferings"
@@ -182,17 +147,9 @@
                 @update-compute-memory="updateFieldValue" />
               <div v-if="resource.disk && resource.disk.length > 1">
                 <a-form-item>
-                  <span slot="label">
-                    {{ $t('label.disk.selection') }}
-                    <a-tooltip :title="apiParams.datadiskofferinglist.description">
-                      <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                    </a-tooltip>
-                  </span>
+                  <tooltip-label slot="label" :title="$t('label.disk.selection')" :tooltip="apiParams.datadiskofferinglist.description"/>
                 </a-form-item>
-                <a-form-item>
-                  <span slot="label">
-                    {{ $t('label.rootdisk') }}
-                  </span>
+                <a-form-item :title="$t('label.rootdisk')">
                   <a-select
                     v-decorator="['rootdiskid', {
                       rules: [{ required: true, message: $t('message.error.input.value'), }],
@@ -221,12 +178,7 @@
               </div>
               <div v-if="resource.nic && resource.nic.length > 0">
                 <a-form-item>
-                  <span slot="label">
-                    {{ $t('label.network.selection') }}
-                    <a-tooltip :title="apiParams.nicnetworklist.description">
-                      <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                    </a-tooltip>
-                  </span>
+                  <tooltip-label slot="label" :title="$t('label.network.selection')" :tooltip="apiParams.nicnetworklist.description"/>
                   <span>{{ $t('message.ip.address.changes.effect.after.vm.restart') }}</span>
                 </a-form-item>
                 <multi-network-selection
@@ -240,23 +192,13 @@
               <a-row :gutter="12">
                 <a-col :md="24" :lg="12">
                   <a-form-item>
-                    <span slot="label">
-                      {{ $t('label.migrate.allowed') }}
-                      <a-tooltip :title="apiParams.migrateallowed.description">
-                        <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                      </a-tooltip>
-                    </span>
+                    <tooltip-label slot="label" :title="$t('label.migrate.allowed')" :tooltip="apiParams.migrateallowed.description"/>
                     <a-switch v-decorator="['migrateallowed', {initialValue: this.switches.migrateAllowed}]" :checked="this.switches.migrateAllowed" @change="val => { this.switches.migrateAllowed = val }" />
                   </a-form-item>
                 </a-col>
                 <a-col :md="24" :lg="12">
                   <a-form-item>
-                    <span slot="label">
-                      {{ $t('label.forced') }}
-                      <a-tooltip :title="apiParams.forced.description">
-                        <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                      </a-tooltip>
-                    </span>
+                    <tooltip-label slot="label" :title="$t('label.forced')" :tooltip="apiParams.forced.description"/>
                     <a-switch v-decorator="['forced', {initialValue: this.switches.forced}]" :checked="this.switches.forced" @change="val => { this.switches.forced = val }" />
                   </a-form-item>
                 </a-col>
@@ -277,6 +219,7 @@
 import { api } from '@/api'
 import _ from 'lodash'
 import InfoCard from '@/components/view/InfoCard'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
 import MultiDiskSelection from '@views/compute/wizard/MultiDiskSelection'
@@ -286,6 +229,7 @@ export default {
   name: 'ImportUnmanagedInstances',
   components: {
     InfoCard,
+    TooltipLabel,
     ComputeOfferingSelection,
     ComputeSelection,
     MultiDiskSelection,
@@ -320,7 +264,7 @@ export default {
       },
       domains: [],
       domainLoading: false,
-      selectedDomain: {},
+      selectedDomainId: null,
       templates: [],
       templateLoading: false,
       templateType: 'auto',
