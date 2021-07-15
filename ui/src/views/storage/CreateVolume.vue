@@ -65,7 +65,7 @@
             initialValue: selectedDiskOfferingId,
             rules: [{ required: true, message: $t('message.error.select') }]}]"
           :loading="loading"
-          @change="id => (customDiskOffering = offerings.filter(x => x.id === id)[0].iscustomized || false)"
+          @change="id => onChangeDiskOffering(id)"
         >
           <a-select-option
             v-for="(offering, index) in offerings"
@@ -89,6 +89,48 @@
             :placeholder="$t('label.disksize')"/>
         </a-form-item>
       </span>
+      <span v-if="isCustomizedDiskIOps">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.miniops') }}
+            <a-tooltip :title="apiParams.miniops.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
+          <a-input
+            v-decorator="['miniops', {
+              rules: [{
+                validator: (rule, value, callback) => {
+                  if (value && (isNaN(value) || value <= 0)) {
+                    callback(this.$t('message.error.number'))
+                  }
+                  callback()
+                }
+              }]
+            }]"
+            :placeholder="this.$t('label.miniops')"/>
+        </a-form-item>
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.maxiops') }}
+            <a-tooltip :title="apiParams.maxiops.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
+          <a-input
+            v-decorator="['maxiops', {
+              rules: [{
+                validator: (rule, value, callback) => {
+                  if (value && (isNaN(value) || value <= 0)) {
+                    callback(this.$t('message.error.number'))
+                  }
+                  callback()
+                }
+              }]
+            }]"
+            :placeholder="this.$t('label.maxiops')"/>
+        </a-form-item>
+      </span>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
         <a-button type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -109,7 +151,8 @@ export default {
       selectedZoneId: '',
       selectedDiskOfferingId: '',
       customDiskOffering: false,
-      loading: false
+      loading: false,
+      isCustomizedDiskIOps: false
     }
   },
   beforeCreate () {
@@ -139,6 +182,7 @@ export default {
         this.offerings = json.listdiskofferingsresponse.diskoffering || []
         this.selectedDiskOfferingId = this.offerings[0].id || ''
         this.customDiskOffering = this.offerings[0].iscustomized || false
+        this.isCustomizedDiskIOps = this.offerings[0]?.iscustomizediops || false
       }).finally(() => {
         this.loading = false
       })
@@ -180,6 +224,11 @@ export default {
     },
     closeModal () {
       this.$emit('close-action')
+    },
+    onChangeDiskOffering (id) {
+      const offering = this.offerings.filter(x => x.id === id)
+      this.customDiskOffering = offering[0]?.iscustomized || false
+      this.isCustomizedDiskIOps = offering[0]?.iscustomizediops || false
     }
   }
 }
