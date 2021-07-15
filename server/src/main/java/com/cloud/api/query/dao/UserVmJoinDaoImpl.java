@@ -204,7 +204,6 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
 
         userVmResponse.setPublicIpId(userVm.getPublicIpUuid());
         userVmResponse.setPublicIp(userVm.getPublicIpAddress());
-        userVmResponse.setKeyPairName(userVm.getKeypairName());
         userVmResponse.setOsTypeId(userVm.getGuestOsUuid());
         GuestOS guestOS = ApiDBUtils.findGuestOSById(userVm.getGuestOsId());
         if (guestOS != null) {
@@ -325,6 +324,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         if (vmDetails != null) {
             Map<String, String> resourceDetails = new HashMap<String, String>();
             for (UserVmDetailVO userVmDetailVO : vmDetails) {
+                if (userVmDetailVO.getName() == ApiConstants.SSH_KEYPAIRS) {
+                    userVmResponse.setKeyPairNames(userVmDetailVO.getValue());
+                    continue;
+                }
                 if (!userVmDetailVO.getName().startsWith(ApiConstants.PROPERTIES) ||
                         (UserVmManager.DisplayVMOVFProperties.value() && userVmDetailVO.getName().startsWith(ApiConstants.PROPERTIES))) {
                     resourceDetails.put(userVmDetailVO.getName(), userVmDetailVO.getValue());
