@@ -665,7 +665,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         sb.and("snapshotTypeEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.IN);
         sb.and("snapshotTypeNEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.NEQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-
+        sb.and("snapshotTypeInternal", sb.entity().getsnapshotType(), SearchCriteria.Op.NEQ);
         if (tags != null && !tags.isEmpty()) {
             SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
             for (int count = 0; count < tags.size(); count++) {
@@ -737,7 +737,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             // Show only MANUAL and RECURRING snapshot types
             sc.setParameters("snapshotTypeNEQ", Snapshot.Type.TEMPLATE.ordinal());
         }
-
+        sc.setParameters("snapshotTypeInternal", Type.INTERNAL.ordinal());
         Pair<List<SnapshotVO>, Integer> result = _snapshotDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends Snapshot>, Integer>(result.first(), result.second());
     }
@@ -1027,7 +1027,13 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     private Type getSnapshotType(Long policyId) {
         if (policyId.equals(Snapshot.MANUAL_POLICY_ID)) {
             return Type.MANUAL;
-        } else {
+        }
+
+        else if (policyId.equals(Snapshot.INTERNAL_POLICY_ID)) {
+            return Type.INTERNAL;
+        }
+
+        else {
             SnapshotPolicyVO spstPolicyVO = _snapshotPolicyDao.findById(policyId);
             IntervalType intvType = DateUtil.getIntervalType(spstPolicyVO.getInterval());
             return getSnapshotType(intvType);

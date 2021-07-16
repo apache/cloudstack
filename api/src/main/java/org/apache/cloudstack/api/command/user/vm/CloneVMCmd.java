@@ -9,6 +9,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -108,23 +109,27 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
             s_logger.info("The template id recorded is: " + template.getId());
             setTemporaryTemlateId(template.getId());
             _templateService.createPrivateTemplate(this);
-            _snapshotService.deleteSnapshot(getTemporarySnapShotId());
             UserVm vmRecord = _userVmService.recordVirtualMachineToDB(this);
             if (vmRecord == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "unable to record a new VM to db!");
             }
             setEntityId(vmRecord.getId());
             setEntityUuid(vmRecord.getUuid());
-        } catch (ResourceUnavailableException | InsufficientCapacityException e) {
+        }
+        catch (ResourceUnavailableException | InsufficientCapacityException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
         } catch (InvalidParameterValueException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
+        } catch (ServerApiException e) {
+            throw new ServerApiException(e.getErrorCode(), e.getDescription());
+        } catch (CloudRuntimeException e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         } finally {
-            if (getTemporaryTemlateId() != null) {
-                // TODO: delete template in the service
-                s_logger.warn("clearing the temporary template: " + getTemporaryTemlateId());
+            if (getTemporarySnapShotId() != null) {
+                _snapshotService.deleteSnapshot(getTemporarySnapShotId());
+                s_logger.warn("clearing the temporary snapshot: " + getTemporarySnapShotId());
             }
         }
     }
@@ -138,7 +143,7 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
     }
 
     public String getTemplateName() {
-        return getVMName() + "-QA";
+        return (getVMName() + "-Clone-" + _uuidMgr.generateUuid(VirtualMachineTemplate.class, null)).substring(0, 32);
     }
 
     @Override

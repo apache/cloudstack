@@ -4648,12 +4648,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             try {
                 for (VolumeVO dataDisk : dataDisks) {
                     long diskId = dataDisk.getId();
-                    SnapshotVO dataSnapShot = (SnapshotVO) volumeService.allocSnapshot(diskId, Snapshot.MANUAL_POLICY_ID, "DataDisk-Clone" + dataDisk.getName(), null);
+                    SnapshotVO dataSnapShot = (SnapshotVO) volumeService.allocSnapshot(diskId, Snapshot.INTERNAL_POLICY_ID, "DataDisk-Clone" + dataDisk.getName(), null);
                     if (dataSnapShot == null) {
                         throw new CloudRuntimeException("Unable to allocate snapshot of data disk: " + dataDisk.getId() + " name: " + dataDisk.getName());
                     }
                     createdSnapshots.add(dataSnapShot);
-                    SnapshotVO snapshotEntity = (SnapshotVO) volumeService.takeSnapshot(diskId, Snapshot.MANUAL_POLICY_ID, dataSnapShot.getId(), caller, false, null, false, new HashMap<>());
+                    SnapshotVO snapshotEntity = (SnapshotVO) volumeService.takeSnapshot(diskId, Snapshot.INTERNAL_POLICY_ID, dataSnapShot.getId(), caller, false, null, false, new HashMap<>());
                     if (snapshotEntity == null) {
                         throw new CloudRuntimeException("Error when creating the snapshot entity");
                     }
@@ -4674,6 +4674,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     VolumeVO volumeEntity = (VolumeVO) volumeService.cloneDataVolume(cmd, snapshotEntity.getId(), newDatadisk);
                     createdVolumes.add(volumeEntity);
                 }
+
+                for (VolumeVO createdVol : createdVolumes) {
+                    volumeService.attachVolumeToVm(cmd, createdVol.getId(), createdVol.getDeviceId());
+                }
             } catch (CloudRuntimeException e){
                 s_logger.warn("data disk process failed during clone, clearing the temporary resources...");
                 for (VolumeVO dataDiskToClear : createdVolumes) {
@@ -4683,22 +4687,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (newDatadisk != null) {
                     volumeService.destroyVolume(newDatadisk.getId(), caller, true, false);
                 }
+                destroyVm(vmId, true);
                 throw new CloudRuntimeException(e.getMessage());
             } finally {
                 // clear the temporary data snapshots
                 for (Snapshot snapshotLeftOver : createdSnapshots) {
                     snapshotService.deleteSnapshot(snapshotLeftOver.getId());
                 }
-            }
-        }
-
-        for (VolumeVO createdVol : createdVolumes) {
-            try {
-                volumeService.attachVolumeToVm(cmd, createdVol.getId(), createdVol.getDeviceId());
-            } catch (CloudRuntimeException e) {
-                s_logger.warn("data disk: " + createdVol.getId() + " attachment to VM " + vmId + " failed due to" + e.getMessage());
-                s_logger.info("Clearing the data disk: " + createdVol.getId());
-                volumeService.destroyVolume(createdVol.getId(), caller, true, true);
             }
         }
 
@@ -5756,22 +5751,27 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                                         mapToLong(AffinityGroupVO::getId).
                                         boxed().
                                         collect(Collectors.toList());
-        if (dataCenter.getNetworkType() == NetworkType.Basic) {
-            vmResult = createBasicSecurityGroupVirtualMachine(dataCenter, serviceOffering, template, securityGroupIdList, curAccount, hostName, displayName, diskOfferingId,
-                    size, group, hypervisorType, cmd.getHttpMethod(), userData, sshKeyPair, ipToNetoworkMap, addr, isDisplayVM, keyboard, affinityGroupIdList,
-                    curVm.getDetails() == null ? new HashMap<>() : curVm.getDetails(), cmd.getCustomId(), new HashMap<>(),
-                    null, new HashMap<>(), dynamicScalingEnabled);
-        } else {
-            if (dataCenter.isSecurityGroupEnabled()) {
-                vmResult = createAdvancedSecurityGroupVirtualMachine(dataCenter, serviceOffering, template, networkIds, securityGroupIdList, curAccount, hostName,
-                        displayName, diskOfferingId, size, group, hypervisorType, cmd.getHttpMethod(), userData, sshKeyPair, ipToNetoworkMap, addr, isDisplayVM, keyboard,
-                        affinityGroupIdList, curVm.getDetails() == null ? new HashMap<>() : curVm.getDetails(), cmd.getCustomId(), new HashMap<>(),
+        try {
+            if (dataCenter.getNetworkType() == NetworkType.Basic) {
+                vmResult = createBasicSecurityGroupVirtualMachine(dataCenter, serviceOffering, template, securityGroupIdList, curAccount, hostName, displayName, diskOfferingId,
+                        size, group, hypervisorType, cmd.getHttpMethod(), userData, sshKeyPair, ipToNetoworkMap, addr, isDisplayVM, keyboard, affinityGroupIdList,
+                        curVm.getDetails() == null ? new HashMap<>() : curVm.getDetails(), cmd.getCustomId(), new HashMap<>(),
                         null, new HashMap<>(), dynamicScalingEnabled);
             } else {
-                vmResult = createAdvancedVirtualMachine(dataCenter, serviceOffering, template, networkIds, curAccount, hostName, displayName, diskOfferingId, size, group,
-                        hypervisorType, cmd.getHttpMethod(), userData, sshKeyPair, ipToNetoworkMap, addr, isDisplayVM, keyboard, affinityGroupIdList, curVm.getDetails() == null ? new HashMap<>() : curVm.getDetails(),
-                        cmd.getCustomId(), new HashMap<>(), null, new HashMap<>(), dynamicScalingEnabled);
+                if (dataCenter.isSecurityGroupEnabled()) {
+                    vmResult = createAdvancedSecurityGroupVirtualMachine(dataCenter, serviceOffering, template, networkIds, securityGroupIdList, curAccount, hostName,
+                            displayName, diskOfferingId, size, group, hypervisorType, cmd.getHttpMethod(), userData, sshKeyPair, ipToNetoworkMap, addr, isDisplayVM, keyboard,
+                            affinityGroupIdList, curVm.getDetails() == null ? new HashMap<>() : curVm.getDetails(), cmd.getCustomId(), new HashMap<>(),
+                            null, new HashMap<>(), dynamicScalingEnabled);
+                } else {
+                    vmResult = createAdvancedVirtualMachine(dataCenter, serviceOffering, template, networkIds, curAccount, hostName, displayName, diskOfferingId, size, group,
+                            hypervisorType, cmd.getHttpMethod(), userData, sshKeyPair, ipToNetoworkMap, addr, isDisplayVM, keyboard, affinityGroupIdList, curVm.getDetails() == null ? new HashMap<>() : curVm.getDetails(),
+                            cmd.getCustomId(), new HashMap<>(), null, new HashMap<>(), dynamicScalingEnabled);
+                }
             }
+        } catch (CloudRuntimeException e) {
+            _templateMgr.delete(curAccount.getId(), template.getId(), zoneId);
+            throw new CloudRuntimeException("Unable to create the VM record");
         }
         return vmResult;
     }
