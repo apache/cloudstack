@@ -88,10 +88,6 @@ export default {
     items: {
       type: Array,
       default: () => []
-    },
-    anType: {
-      type: String,
-      required: true
     }
   },
   inject: ['parentFetchData'],
