@@ -46,12 +46,15 @@
           :shape="!dataView && action.icon === 'plus' ? 'round' : 'circle'"
           style="margin-left: 5px"
           :size="size"
+          v-shortkey="action.shortKey"
+          @shortkey="execAction(action)"
           @click="execAction(action)">
           <span v-if="!dataView && action.icon === 'plus'">
             {{ $t(action.label) }}
           </span>
           <a-icon v-if="(typeof action.icon === 'string')" :type="action.icon" />
           <font-awesome-icon v-else :icon="action.icon" />
+          <span class="view-shortkey" v-if="$store.getters.showshortkeys">{{ action.shortKey[0] }}</span>
         </a-button>
       </a-badge>
       <a-button
@@ -65,12 +68,15 @@
         :shape="!dataView && ['plus', 'user-add'].includes(action.icon) ? 'round' : 'circle'"
         style="margin-left: 5px"
         :size="size"
+        v-shortkey="action.shortKey"
+        @shortkey="execAction(action)"
         @click="execAction(action)">
         <span v-if="!dataView && ['plus', 'user-add'].includes(action.icon)">
           {{ $t(action.label) }}
         </span>
         <a-icon v-if="(typeof action.icon === 'string')" :type="action.icon" />
         <font-awesome-icon v-else :icon="action.icon" />
+        <span class="view-shortkey" v-if="$store.getters.showshortkeys">{{ action.shortKey[0] }}</span>
       </a-button>
     </a-tooltip>
   </span>
@@ -194,7 +200,15 @@ export default {
 .button-action-badge {
   margin-left: 5px;
 }
-
+.view-shortkey {
+ position: absolute;
+ bottom: 20px;
+ right: 5px;
+ background-color: rgba(0, 0, 0, .90);
+ padding: 0px 5px 0px 5px;
+ border-radius: 4px;
+ color: #e8e8e8;
+}
 /deep/.button-action-badge .ant-badge-count {
   right: 10px;
   z-index: 8;

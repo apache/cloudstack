@@ -22,12 +22,14 @@ export default {
   name: 'image',
   title: 'label.images',
   icon: 'picture',
+  shortKey: ['i'],
   docHelp: 'adminguide/templates.html',
   children: [
     {
       name: 'template',
       title: 'label.templates',
       icon: 'save',
+      shortKey: ['i'],
       docHelp: 'adminguide/templates.html',
       permission: ['listTemplates'],
       params: { templatefilter: 'self', showunique: 'true' },
@@ -72,6 +74,7 @@ export default {
         {
           api: 'registerTemplate',
           icon: 'plus',
+          shortKey: ['a'],
           label: 'label.action.register.template',
           docHelp: 'adminguide/templates.html#uploading-templates-from-a-remote-http-server',
           listView: true,
@@ -81,6 +84,7 @@ export default {
         {
           api: 'registerTemplate',
           icon: 'cloud-upload',
+          shortKey: ['u'],
           label: 'label.upload.template.from.local',
           docHelp: 'adminguide/templates.html#uploading-templates-and-isos-from-a-local-computer',
           listView: true,
@@ -180,6 +184,7 @@ export default {
       name: 'iso',
       title: 'label.isos',
       icon: 'usb',
+      shortKey: ['shift', 'd'],
       docHelp: 'adminguide/templates.html#working-with-isos',
       permission: ['listIsos'],
       params: { isofilter: 'self', showunique: 'true' },
@@ -210,6 +215,7 @@ export default {
         {
           api: 'registerIso',
           icon: 'plus',
+          shortKey: ['a'],
           label: 'label.action.register.iso',
           docHelp: 'adminguide/templates.html#id10',
           listView: true,
@@ -219,6 +225,7 @@ export default {
         {
           api: 'registerIso',
           icon: 'cloud-upload',
+          shortKey: ['u'],
           label: 'label.upload.iso.from.local',
           docHelp: 'adminguide/templates.html#id10',
           listView: true,
@@ -307,6 +314,7 @@ export default {
       name: 'kubernetesiso',
       title: 'label.kubernetes.isos',
       icon: kubernetes,
+      shortKey: ['shift', 'e'],
       docHelp: 'plugins/cloudstack-kubernetes-service.html#kubernetes-supported-versions',
       permission: ['listKubernetesSupportedVersions'],
       columns: ['name', 'state', 'semanticversion', 'isostate', 'mincpunumber', 'minmemory', 'zonename'],
@@ -315,6 +323,7 @@ export default {
         {
           api: 'addKubernetesSupportedVersion',
           icon: 'plus',
+          shortKey: ['a'],
           label: 'label.kubernetes.version.add',
           listView: true,
           popup: true,

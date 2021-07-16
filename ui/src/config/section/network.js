@@ -21,12 +21,14 @@ export default {
   name: 'network',
   title: 'label.network',
   icon: 'wifi',
+  shortKey: ['n'],
   docHelp: 'adminguide/networking_and_traffic.html#advanced-zone-physical-network-configuration',
   children: [
     {
       name: 'guestnetwork',
       title: 'label.guest.networks',
       icon: 'apartment',
+      shortKey: ['n'],
       permission: ['listNetworks'],
       resourceType: 'Network',
       columns: ['name', 'state', 'type', 'vpcname', 'cidr', 'ip6cidr', 'broadcasturi', 'domain', 'account', 'zonename'],
@@ -62,6 +64,7 @@ export default {
         {
           api: 'createNetwork',
           icon: 'plus',
+          shortKey: ['a'],
           label: 'label.add.network',
           docHelp: 'adminguide/networking_and_traffic.html#configure-guest-traffic-in-an-advanced-zone',
           listView: true,
@@ -122,6 +125,7 @@ export default {
       name: 'vpc',
       title: 'label.vpc',
       icon: 'deployment-unit',
+      shortKey: ['shift', 'p'],
       docHelp: 'adminguide/networking_and_traffic.html#configuring-a-virtual-private-cloud',
       permission: ['listVPCs'],
       resourceType: 'Vpc',
@@ -149,6 +153,7 @@ export default {
         {
           api: 'createVPC',
           icon: 'plus',
+          shortKey: ['a'],
           label: 'label.add.vpc',
           docHelp: 'adminguide/networking_and_traffic.html#adding-a-virtual-private-cloud',
           listView: true,
@@ -189,6 +194,7 @@ export default {
       name: 'securitygroups',
       title: 'label.security.groups',
       icon: 'fire',
+      shortKey: ['shift', 'm'],
       docHelp: 'adminguide/networking_and_traffic.html#security-groups',
       permission: ['listSecurityGroups'],
       resourceType: 'SecurityGroup',
@@ -218,6 +224,7 @@ export default {
         {
           api: 'createSecurityGroup',
           icon: 'plus',
+          shortKey: ['a'],
           label: 'label.add.security.group',
           docHelp: 'adminguide/networking_and_traffic.html#adding-a-security-group',
           listView: true,
@@ -245,6 +252,7 @@ export default {
       name: 'publicip',
       title: 'label.public.ip.addresses',
       icon: 'environment',
+      shortKey: ['shift', 'o'],
       docHelp: 'adminguide/networking_and_traffic.html#reserving-public-ip-addresses-and-vlans-for-accounts',
       permission: ['listPublicIpAddresses'],
       resourceType: 'PublicIpAddress',
@@ -276,6 +284,7 @@ export default {
         {
           api: 'enableStaticNat',
           icon: 'plus-circle',
+          shortKey: ['a'],
           label: 'label.action.enable.static.nat',
           docHelp: 'adminguide/networking_and_traffic.html#enabling-or-disabling-static-nat',
           dataView: true,
@@ -329,6 +338,7 @@ export default {
         {
           api: 'createPrivateGateway',
           icon: 'plus',
+          shortKey: ['a'],
           label: 'label.add.private.gateway',
           docHelp: 'adminguide/networking_and_traffic.html#adding-a-private-gateway-to-a-vpc',
           listView: true,
@@ -412,6 +422,7 @@ export default {
         {
           api: 'createVpnConnection',
           icon: 'plus',
+          shortKey: ['a'],
           label: 'label.create.vpn.connection',
           docHelp: 'adminguide/networking_and_traffic.html#creating-a-vpn-connection',
           listView: true,
@@ -464,6 +475,7 @@ export default {
         {
           api: 'createNetworkACLList',
           icon: 'plus',
+          shortKey: ['a'],
           label: 'label.add.acl.list',
           docHelp: 'adminguide/networking_and_traffic.html#creating-acl-lists',
           listView: true,
@@ -506,6 +518,7 @@ export default {
         {
           api: 'createLoadBalancer',
           icon: 'plus',
+          shortKey: ['a'],
           label: 'label.add.internal.lb',
           docHelp: 'adminguide/networking_and_traffic.html#creating-an-internal-lb-rule',
           listView: true,
@@ -556,6 +569,7 @@ export default {
         {
           api: 'addVpnUser',
           icon: 'plus',
+          shortKey: ['a'],
           label: 'label.add.vpn.user',
           listView: true,
           args: (record, store) => {
@@ -591,6 +605,7 @@ export default {
       name: 'vpncustomergateway',
       title: 'label.vpncustomergatewayid',
       icon: 'lock',
+      shortKey: ['g'],
       permission: ['listVpnCustomerGateways'],
       columns: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'account'],
       details: ['name', 'id', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'ikeversion', 'esppolicy', 'esplifetime', 'dpd', 'splitconnections', 'forceencap', 'account', 'domain'],
@@ -599,6 +614,7 @@ export default {
         {
           api: 'createVpnCustomerGateway',
           icon: 'plus',
+          shortKey: ['a'],
           label: 'label.add.vpn.customer.gateway',
           docHelp: 'adminguide/networking_and_traffic.html#creating-and-updating-a-vpn-customer-gateway',
           listView: true,

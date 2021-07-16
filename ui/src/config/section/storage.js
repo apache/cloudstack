@@ -21,11 +21,13 @@ export default {
   name: 'storage',
   title: 'label.storage',
   icon: 'database',
+  shortKey: ['s'],
   children: [
     {
       name: 'volume',
       title: 'label.volumes',
       icon: 'hdd',
+      shortKey: ['s'],
       docHelp: 'adminguide/storage.html#working-with-volumes',
       permission: ['listVolumesMetrics'],
       resourceType: 'Volume',
@@ -67,6 +69,7 @@ export default {
         {
           api: 'createVolume',
           icon: 'plus',
+          shortKey: ['a'],
           docHelp: 'adminguide/storage.html#creating-a-new-volume',
           label: 'label.action.create.volume',
           listView: true,
@@ -76,6 +79,7 @@ export default {
         {
           api: 'createVolume',
           icon: 'cloud-upload',
+          shortKey: ['u'],
           docHelp: 'adminguide/storage.html#uploading-an-existing-volume-to-a-virtual-machine',
           label: 'label.upload.volume.from.local',
           listView: true,
@@ -85,6 +89,7 @@ export default {
         {
           api: 'uploadVolume',
           icon: 'link',
+          shortKey: ['l'],
           docHelp: 'adminguide/storage.html#uploading-an-existing-volume-to-a-virtual-machine',
           label: 'label.upload.volume.from.url',
           listView: true,
@@ -251,6 +256,7 @@ export default {
       name: 'snapshot',
       title: 'label.snapshots',
       icon: 'build',
+      shortKey: ['shift', 's'],
       docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
       permission: ['listSnapshots'],
       resourceType: 'Snapshot',
@@ -319,6 +325,7 @@ export default {
       name: 'vmsnapshot',
       title: 'label.vm.snapshots',
       icon: 'camera',
+      shortKey: ['shift', 'c'],
       docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
       permission: ['listVMSnapshot'],
       resourceType: 'VMSnapshot',
@@ -377,6 +384,7 @@ export default {
       name: 'backup',
       title: 'label.backup',
       icon: 'cloud-upload',
+      shortKey: ['shift', 'b'],
       permission: ['listBackups'],
       columns: [{ name: (record) => { return record.virtualmachinename } }, 'virtualmachinename', 'status', 'type', 'created', 'account', 'zone'],
       details: ['virtualmachinename', 'id', 'type', 'externalid', 'size', 'virtualsize', 'volumes', 'backupofferingname', 'zone', 'account', 'domain', 'created'],

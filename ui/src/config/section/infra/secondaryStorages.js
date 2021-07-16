@@ -20,6 +20,7 @@ export default {
   name: 'imagestore',
   title: 'label.secondary.storage',
   icon: 'picture',
+  shortKey: ['ctrl', '6'],
   docHelp: 'adminguide/storage.html#secondary-storage',
   permission: ['listImageStores'],
   columns: () => {
@@ -50,6 +51,7 @@ export default {
     {
       api: 'migrateSecondaryStorageData',
       icon: 'drag',
+      shortKey: ['m'],
       label: 'label.migrate.data.from.image.store',
       listView: true,
       popup: true,
@@ -58,6 +60,7 @@ export default {
     {
       api: 'addImageStore',
       icon: 'plus',
+      shortKey: ['a'],
       docHelp: 'installguide/configuration.html#add-secondary-storage',
       label: 'label.add.secondary.storage',
       listView: true,

@@ -24,6 +24,8 @@
         height: $config.theme['@logo-height']
       }"
       :src="$config.logo"
+      v-shortkey="['f']"
+      @shortkey="toggleShowShortkey"
       class="logo-image" />
   </div>
 </template>
@@ -44,6 +46,11 @@ export default {
       type: Boolean,
       default: true,
       required: false
+    }
+  },
+  methods: {
+    toggleShowShortkey () {
+      this.$store.dispatch('SetShowKeyboardShortkeys', !this.$store.getters.showshortkeys)
     }
   }
 }

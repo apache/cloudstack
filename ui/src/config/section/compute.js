@@ -22,11 +22,13 @@ export default {
   name: 'compute',
   title: 'label.compute',
   icon: 'cloud',
+  shortKey: ['c'],
   children: [
     {
       name: 'vm',
       title: 'label.instances',
       icon: 'desktop',
+      shortKey: ['c'],
       docHelp: 'adminguide/virtual_machines.html',
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
@@ -75,6 +77,7 @@ export default {
           api: 'deployVirtualMachine',
           icon: 'plus',
           label: 'label.vm.add',
+          shortKey: ['a'],
           docHelp: 'adminguide/virtual_machines.html#creating-vms',
           listView: true,
           component: () => import('@/views/compute/DeployVM.vue')
@@ -105,6 +108,7 @@ export default {
         {
           api: 'stopVirtualMachine',
           icon: 'poweroff',
+          shortKey: "['s']",
           label: 'label.action.stop.instance',
           message: 'message.action.stop.instance',
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
@@ -420,6 +424,7 @@ export default {
       name: 'kubernetes',
       title: 'label.kubernetes',
       icon: kubernetes,
+      shortKey: ['shift', 'k'],
       docHelp: 'plugins/cloudstack-kubernetes-service.html',
       permission: ['listKubernetesClusters'],
       columns: () => {
@@ -439,6 +444,7 @@ export default {
         {
           api: 'createKubernetesCluster',
           icon: 'plus',
+          shortKey: ['a'],
           label: 'label.kubernetes.cluster.create',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#creating-a-new-kubernetes-cluster',
           listView: true,
@@ -500,6 +506,7 @@ export default {
       name: 'vmgroup',
       title: 'label.instance.groups',
       icon: 'gold',
+      shortKey: ['shift', 'i'],
       docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
       permission: ['listInstanceGroups'],
       columns: ['name', 'account'],
@@ -513,6 +520,7 @@ export default {
         {
           api: 'createInstanceGroup',
           icon: 'plus',
+          shortKey: ['a'],
           label: 'label.new.instance.group',
           listView: true,
           args: ['name']
@@ -536,6 +544,7 @@ export default {
       name: 'ssh',
       title: 'label.ssh.key.pairs',
       icon: 'key',
+      shortKey: ['shift', 'l'],
       docHelp: 'adminguide/virtual_machines.html#using-ssh-keys-for-authentication',
       permission: ['listSSHKeyPairs'],
       columns: () => {
@@ -555,6 +564,7 @@ export default {
         {
           api: 'createSSHKeyPair',
           icon: 'plus',
+          shortKey: ['a'],
           label: 'label.create.ssh.key.pair',
           docHelp: 'adminguide/virtual_machines.html#creating-the-ssh-keypair',
           listView: true,
@@ -586,6 +596,7 @@ export default {
       name: 'affinitygroup',
       title: 'label.affinity.groups',
       icon: 'swap',
+      shortKey: ['shift', 'g'],
       docHelp: 'adminguide/virtual_machines.html#affinity-groups',
       permission: ['listAffinityGroups'],
       columns: () => {
@@ -605,6 +616,7 @@ export default {
         {
           api: 'createAffinityGroup',
           icon: 'plus',
+          shortKey: ['a'],
           label: 'label.add.affinity.group',
           docHelp: 'adminguide/virtual_machines.html#creating-a-new-affinity-group',
           listView: true,
