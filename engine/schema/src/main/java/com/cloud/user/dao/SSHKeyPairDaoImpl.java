@@ -19,6 +19,7 @@ package com.cloud.user.dao;
 import java.util.List;
 
 
+import com.cloud.utils.db.Filter;
 import org.springframework.stereotype.Component;
 
 import com.cloud.user.SSHKeyPairVO;
@@ -64,6 +65,16 @@ public class SSHKeyPairDaoImpl extends GenericDaoBase<SSHKeyPairVO, Long> implem
     }
 
     @Override
+    public List<SSHKeyPairVO> findByNames(long accountId, long domainId, List<String> names) {
+        SearchCriteria<SSHKeyPairVO> sc = createSearchCriteria();
+        final Filter s_f = new Filter(SSHKeyPairVO.class,"name",false, null, null);
+        sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        sc.addAnd("name", SearchCriteria.Op.IN, names.toArray());
+        return this.search(sc, s_f);
+    }
+
+    @Override
     public SSHKeyPairVO findByPublicKey(String publicKey) {
         SearchCriteria<SSHKeyPairVO> sc = createSearchCriteria();
         sc.addAnd("publicKey", SearchCriteria.Op.EQ, publicKey);
@@ -78,6 +89,7 @@ public class SSHKeyPairDaoImpl extends GenericDaoBase<SSHKeyPairVO, Long> implem
         sc.addAnd("publicKey", SearchCriteria.Op.EQ, publicKey);
         return findOneBy(sc);
     }
+
 
     @Override
     public boolean deleteByName(long accountId, long domainId, String name) {

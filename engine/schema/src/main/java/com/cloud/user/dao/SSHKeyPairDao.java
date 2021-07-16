@@ -37,4 +37,5 @@ public interface SSHKeyPairDao extends GenericDao<SSHKeyPairVO, Long> {
 
     public SSHKeyPairVO findByPublicKey(long accountId, long domainId, String publicKey);
 
+    List<SSHKeyPairVO> findByNames(long accountId, long domainId, List<String> names);
 }
