@@ -128,12 +128,22 @@ export default {
         case 'Host':
           this.annotationType = 'HOST'
           break
+        case 'Volume':
+          this.annotationType = 'VOLUME'
+          break
+        case 'Snapshot':
+          this.annotationType = 'SNAPSHOT'
+          break
       }
     },
     fetchData () {
       this.resourceType = this.$route.meta.resourceType
       this.setAnnotationTypeFromResourceType()
-      this.notes = this.items
+      if (this.items.length) {
+        this.notes = this.items
+      } else {
+        this.getAnnotations()
+      }
     },
     getAnnotations () {
       if (!('listAnnotations' in this.$store.getters.apis)) {

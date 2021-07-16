@@ -24,6 +24,8 @@ import javax.inject.Inject;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
@@ -69,6 +71,10 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     private AccountService accountService;
     @Inject
     private VMInstanceDao vmInstanceDao;
+    @Inject
+    private VolumeDao volumeDao;
+    @Inject
+    private SnapshotDao snapshotDao;
 
     private static final List<RoleType> adminRoles = Arrays.asList(RoleType.Admin,
             RoleType.DomainAdmin, RoleType.ResourceAdmin);
@@ -226,15 +232,24 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     }
 
     private void ensureEntityIsOwnedByTheUser(String entityType, String entityUuid, UserVO callingUser) {
-        ControlledEntity entity;
-
-        if (EntityType.VM.name().equals(entityType)) {
-            entity = vmInstanceDao.findByUuid(entityUuid);
-        } else {
-            throw new CloudRuntimeException("Unexpected entity type: " + entityType);
+        ControlledEntity entity = null;
+        try {
+            EntityType type = EntityType.valueOf(entityType);
+            switch (type) {
+                case VM:
+                    entity = vmInstanceDao.findByUuid(entityUuid);
+                    break;
+                case VOLUME:
+                    entity = volumeDao.findByUuid(entityUuid);
+                    break;
+                case SNAPSHOT:
+                    entity = snapshotDao.findByUuid(entityUuid);
+                    break;
+            }
+            accountService.checkAccess(callingUser, entity);
+        } catch (IllegalArgumentException e) {
+            LOGGER.error("Could not parse entity type " + entityType, e);
         }
-
-        accountService.checkAccess(callingUser, entity);
     }
 
     private List<AnnotationResponse> convertAnnotationsToResponses(List<AnnotationVO> annotations) {
