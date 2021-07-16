@@ -33,6 +33,10 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -99,8 +103,6 @@ import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.dao.ServiceOfferingJoinDao;
-import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
@@ -246,6 +248,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private PrimaryDataStoreDao _storagePoolDao;
     @Inject
     private DiskOfferingDao _diskOfferingDao;
+    @Inject
+    private ServiceOfferingDao _serviceOfferingDao;
     @Inject
     private DiskOfferingDetailsDao _diskOfferingDetailsDao;
     @Inject
@@ -1042,6 +1046,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException(String.format("Resize volume for %s is not allowed since disk offering's size is fixed", volume.getName()));
             }
 
+            Long instanceId = volume.getInstanceId();
+            VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(instanceId);
+            if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
+                ServiceOfferingVO serviceOffering =  _serviceOfferingDao.findById(vmInstanceVO.getServiceOfferingId());
+                if (serviceOffering != null && serviceOffering.getDiskOfferingStrictness()) {
+                    throw new InvalidParameterValueException(String.format("Cannot resize ROOT volume [%s] with new disk offering since existing disk offering is strictly assigned to the ROOT volume.", volume.getName()));
+                }
+            }
+
             if (diskOffering.getTags() != null) {
                 if (!com.cloud.utils.StringUtils.areTagsEqual(diskOffering.getTags(), newDiskOffering.getTags())) {
                     throw new InvalidParameterValueException("The tags on the new and old disk offerings must match.");
@@ -1070,9 +1083,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 newSize = newDiskOffering.getDiskSize();
             }
-
-            Long instanceId = volume.getInstanceId();
-            VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(instanceId);
             checkIfVolumeIsRootAndVmIsRunning(newSize, volume, vmInstanceVO);
 
             if (newDiskOffering.isCustomizedIops() != null && newDiskOffering.isCustomizedIops()) {
@@ -2432,7 +2442,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (diskOffering == null) {
             throw new CloudRuntimeException("volume '" + vol.getUuid() + "', has no diskoffering. Migration target cannot be checked.");
         }
-        if (VolumeTagsStoragePoolStrictness.value() && !doesTargetStorageSupportDiskOffering(destPool, diskOffering)) {
+        if (VolumeTagsStoragePoolStrictness.valueIn(destPool.getDataCenterId()) && !doesTargetStorageSupportDiskOffering(destPool, diskOffering)) {
             throw new CloudRuntimeException(String.format("Migration target pool [%s, tags:%s] has no matching tags for volume [%s, uuid:%s, tags:%s]", destPool.getName(),
                     getStoragePoolTags(destPool), vol.getName(), vol.getUuid(), diskOffering.getTags()));
         }
@@ -2572,12 +2582,25 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             return;
         }
         if ((destPool.isShared() && newDiskOffering.isUseLocalStorage()) || destPool.isLocal() && newDiskOffering.isShared()) {
-            throw new InvalidParameterValueException("You cannot move the volume to a shared storage and assing a disk offering for local storage and vice versa.");
+            throw new InvalidParameterValueException("You cannot move the volume to a shared storage and assign a disk offering for local storage and vice versa.");
         }
-        if (!doesTargetStorageSupportDiskOffering(destPool, newDiskOffering)) {
+        if (VolumeTagsStoragePoolStrictness.valueIn(destPool.getDataCenterId()) && !doesTargetStorageSupportDiskOffering(destPool, newDiskOffering)) {
             throw new InvalidParameterValueException(String.format("Target Storage [id=%s] tags [%s] does not match new disk offering [id=%s] tags [%s].", destPool.getUuid(),
                     getStoragePoolTags(destPool), newDiskOffering.getUuid(), newDiskOffering.getTags()));
         }
+        if (volume.volumeType.equals(Volume.Type.ROOT)) {
+            VMInstanceVO vm = null;
+            if (volume.getInstanceId() != null) {
+                vm = _vmInstanceDao.findById(volume.getInstanceId());
+            }
+            if (vm != null) {
+                ServiceOfferingVO serviceOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
+                if (serviceOffering != null && serviceOffering.getDiskOfferingStrictness()) {
+                    throw new InvalidParameterValueException(String.format("Disk offering cannot be changed to the volume %s since existing disk offering is strictly associated with the volume");
+                }
+            }
+        }
+
         if (volume.getSize() != newDiskOffering.getDiskSize()) {
             DiskOfferingVO oldDiskOffering = this._diskOfferingDao.findById(volume.getDiskOfferingId());
             s_logger.warn(String.format(
