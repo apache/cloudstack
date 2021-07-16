@@ -926,7 +926,6 @@ export default {
             })
             Promise.all(this.promises).finally(() => {
               this.actionLoading = false
-              this.closeAction()
               this.fetchData()
             })
           }
@@ -940,6 +939,7 @@ export default {
         const action = this.currentAction
         api(action.api, params).then(json => {
           resolve(this.handleResponse(json, resourceName, action, false))
+          this.closeAction()
         }).catch(error => {
           if ([401].includes(error.response.status)) {
             return
