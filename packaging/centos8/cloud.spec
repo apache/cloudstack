@@ -473,6 +473,7 @@ mkdir -m 0755 -p /usr/share/cloudstack-agent/tmp
 /sbin/service libvirtd restart
 /sbin/systemctl enable cloudstack-agent > /dev/null 2>&1 || true
 /sbin/systemctl enable cloudstack-rolling-maintenance@p > /dev/null 2>&1 || true
+/sbin/systemctl enable cloudstack-agent-ha-helper > /dev/null 2>&1 || true
 
 # if saved configs from upgrade exist, copy them over
 if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
@@ -565,8 +566,10 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %attr(0755,root,root) %{_bindir}/%{name}-guest-tool
 %attr(0755,root,root) %{_bindir}/%{name}-ssh
 %attr(0644,root,root) %{_unitdir}/%{name}-agent.service
+%attr(0644,root,root) %{_unitdir}/%{name}-agent-ha-helper.service
 %attr(0644,root,root) %{_unitdir}/%{name}-rolling-maintenance@.service
 %config(noreplace) %{_sysconfdir}/default/%{name}-agent
+%config(noreplace) %{_sysconfdir}/default/%{name}-agent-ha-helper
 %attr(0644,root,root) %{_sysconfdir}/profile.d/%{name}-agent-profile.sh
 %config(noreplace) %attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-agent
 %attr(0755,root,root) %{_datadir}/%{name}-common/scripts/network/cisco
