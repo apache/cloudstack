@@ -104,22 +104,12 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
 
     private boolean hasNfsPoolZoneWideForHost(Host agent) {
         List<StoragePoolVO> zonePools = _storagePoolDao.findZoneWideStoragePoolsByHypervisor(agent.getDataCenterId(), agent.getHypervisorType());
-        for (StoragePoolVO pool : zonePools) {
-            if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
-                return true;
-            }
-        }
-        return false;
+        return zonePools.stream().anyMatch(pool -> pool.getPoolType() == StoragePoolType.NetworkFilesystem);
     }
 
     private boolean hasNfsPoolClusterWideForHost(Host agent) {
         List<StoragePoolVO> clusterPools = _storagePoolDao.listPoolsByCluster(agent.getClusterId());
-        for (StoragePoolVO pool : clusterPools) {
-            if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
-                return true;
-            }
-        }
-        return false;
+        return clusterPools.stream().anyMatch(pool -> pool.getPoolType() == StoragePoolType.NetworkFilesystem);
     }
 
     /**
