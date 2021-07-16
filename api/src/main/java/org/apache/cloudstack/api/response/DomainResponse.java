@@ -26,6 +26,7 @@ import com.cloud.domain.Domain;
 import com.cloud.serializer.Param;
 
 import java.util.Date;
+import java.util.Map;
 
 @EntityReference(value = Domain.class)
 public class DomainResponse extends BaseResponse implements ResourceLimitAndCountResponse {
@@ -174,6 +175,10 @@ public class DomainResponse extends BaseResponse implements ResourceLimitAndCoun
 
     @SerializedName("secondarystorageavailable") @Param(description="the total secondary storage space (in GiB) available to be used for this domain", since="4.2.0")
     private String secondaryStorageAvailable;
+
+    @SerializedName(ApiConstants.DOMAIN_DETAILS)
+    @Param(description = "details for the domain")
+    private Map<String, String> details;
 
     public String getId() {
         return this.id;
@@ -428,5 +433,9 @@ public class DomainResponse extends BaseResponse implements ResourceLimitAndCoun
     @Override
     public void setVmRunning(Integer vmRunning) {
         // TODO Auto-generated method stub
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 }

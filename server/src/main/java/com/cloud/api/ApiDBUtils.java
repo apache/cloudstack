@@ -27,6 +27,7 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.domain.dao.DomainDetailsDao;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -402,6 +403,7 @@ public class ApiDBUtils {
     static ResourceLimitService s_resourceLimitMgr;
     static ProjectService s_projectMgr;
     static ResourceManager s_resourceMgr;
+    static DomainDetailsDao s_domainDetailsDao;
     static AccountDetailsDao s_accountDetailsDao;
     static NetworkDomainDao s_networkDomainDao;
     static HighAvailabilityManager s_haMgr;
@@ -589,6 +591,8 @@ public class ApiDBUtils {
     @Inject
     private ResourceManager resourceMgr;
     @Inject
+    private DomainDetailsDao domainDetailsDao;
+    @Inject
     private AccountDetailsDao accountDetailsDao;
     @Inject
     private NetworkDomainDao networkDomainDao;
@@ -773,6 +777,7 @@ public class ApiDBUtils {
         s_resourceLimitMgr = resourceLimitMgr;
         s_projectMgr = projectMgr;
         s_resourceMgr = resourceMgr;
+        s_domainDetailsDao = domainDetailsDao;
         s_accountDetailsDao = accountDetailsDao;
         s_networkDomainDao = networkDomainDao;
         s_haMgr = haMgr;
@@ -1418,6 +1423,11 @@ public class ApiDBUtils {
 
     public static long getProjectOwnwerId(long projectId) {
         return s_projectMgr.getProjectOwner(projectId).getId();
+    }
+
+    public static Map<String, String> getDomainDetails(long domainId) {
+        Map<String, String> details = s_domainDetailsDao.findDetails(domainId);
+        return details.isEmpty() ? null : details;
     }
 
     public static Map<String, String> getAccountDetails(long accountId) {

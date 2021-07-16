@@ -186,6 +186,16 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         throw new CloudRuntimeException("Unable to find config storage for this scope: " + config.scope() + " for " + config.key());
     }
 
+    public ScopedConfigStorage getDomainScope(ConfigKey<?> config) {
+        for (ScopedConfigStorage storage : _scopedStorages) {
+            if (storage.getScope() == ConfigKey.Scope.Domain) {
+                return storage;
+            }
+        }
+
+        throw new CloudRuntimeException("Unable to find config storage for this scope: " + ConfigKey.Scope.Domain + " for " + config.key());
+    }
+
     public List<ScopedConfigStorage> getScopedStorages() {
         return _scopedStorages;
     }
