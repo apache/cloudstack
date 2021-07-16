@@ -24,6 +24,7 @@ import javax.inject.Inject;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
@@ -32,6 +33,8 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
@@ -62,6 +65,10 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     private AccountDao accountDao;
     @Inject
     private RoleService roleService;
+    @Inject
+    private AccountService accountService;
+    @Inject
+    private VMInstanceDao vmInstanceDao;
 
     private static final List<RoleType> adminRoles = Arrays.asList(RoleType.Admin,
             RoleType.DomainAdmin, RoleType.ResourceAdmin);
@@ -164,16 +171,18 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     private List<AnnotationVO> getAnnotationsForApiCmd(ListAnnotationsCmd cmd) {
         List<AnnotationVO> annotations;
         String userUuid = cmd.getUserUuid();
+        String entityUuid = cmd.getEntityUuid();
+        String entityType = cmd.getEntityType();
         String annotationFilter = isNotBlank(cmd.getAnnotationFilter()) ? cmd.getAnnotationFilter() : "all";
         boolean isCallerAdmin = isCallingUserAdmin();
-        if (!isCallerAdmin && annotationFilter.equalsIgnoreCase("all")) {
+        if ((isBlank(entityUuid) || isBlank(entityType)) && !isCallerAdmin && annotationFilter.equalsIgnoreCase("all")) {
             throw new CloudRuntimeException("Only admins can filter all the annotations");
         }
         UserVO callingUser = getCallingUserFromContext();
         String callingUserUuid = callingUser.getUuid();
         String keyword = cmd.getKeyword();
 
-        if(cmd.getUuid() != null) {
+        if (cmd.getUuid() != null) {
             annotations = new ArrayList<>();
             String uuid = cmd.getUuid();
             if(LOGGER.isDebugEnabled()) {
@@ -187,20 +196,21 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
                 annotationVO.isAdminsOnly() == isCallerAdmin) {
                 annotations.add(annotationVO);
             }
-        } else if( ! (cmd.getEntityType() == null || cmd.getEntityType().isEmpty()) ) {
-            String type = cmd.getEntityType();
+        } else if (isNotBlank(entityType)) {
             if(LOGGER.isDebugEnabled()) {
-                LOGGER.debug("getting annotations for type: " + type);
+                LOGGER.debug("getting annotations for type: " + entityType);
             }
-            if (cmd.getEntityUuid() != null) {
-                String uuid = cmd.getEntityUuid();
-                if(LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("getting annotations for entity: " + uuid);
+            if (isNotBlank(entityUuid)) {
+                if (!isCallerAdmin) {
+                    ensureEntityIsOwnedByTheUser(entityType, entityUuid, callingUser);
                 }
-                annotations = annotationDao.listByEntity(type, cmd.getEntityUuid(), userUuid, isCallerAdmin,
+                if(LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("getting annotations for entity: " + entityUuid);
+                }
+                annotations = annotationDao.listByEntity(entityType, entityUuid, userUuid, isCallerAdmin,
                         annotationFilter, callingUserUuid, keyword);
             } else {
-                annotations = annotationDao.listByEntityType(type, userUuid, isCallerAdmin,
+                annotations = annotationDao.listByEntityType(entityType, userUuid, isCallerAdmin,
                         annotationFilter, callingUserUuid, keyword);
             }
         } else {
@@ -213,6 +223,18 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
             annotations = annotationDao.listAllAnnotations(userUuid, isCallerAdmin, annotationFilter, keyword);
         }
         return annotations;
+    }
+
+    private void ensureEntityIsOwnedByTheUser(String entityType, String entityUuid, UserVO callingUser) {
+        ControlledEntity entity;
+
+        if (EntityType.VM.name().equals(entityType)) {
+            entity = vmInstanceDao.findByUuid(entityUuid);
+        } else {
+            throw new CloudRuntimeException("Unexpected entity type: " + entityType);
+        }
+
+        accountService.checkAccess(callingUser, entity);
     }
 
     private List<AnnotationResponse> convertAnnotationsToResponses(List<AnnotationVO> annotations) {
