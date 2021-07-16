@@ -1906,17 +1906,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (guestOS == null) {
             throw new InvalidParameterValueException("GuestOS with ID: " + guestOSId + " does not exist.");
         }
-
         // get snapshot from this step
-
-
         Long nextTemplateId = _tmpltDao.getNextInSequence(Long.class, "id");
         s_logger.info("Creating snapshot for the tempalte creation");
-        SnapshotVO snapshot = (SnapshotVO) volumeService.allocSnapshot(volumeId, Snapshot.MANUAL_POLICY_ID, curVm.getDisplayName() + "-Clone-" + nextTemplateId, null);
+        SnapshotVO snapshot = (SnapshotVO) volumeService.allocSnapshot(volumeId, Snapshot.INTERNAL_POLICY_ID, curVm.getDisplayName() + "-Clone-" + nextTemplateId, null);
         if (snapshot == null) {
             throw new CloudRuntimeException("Unable to create a snapshot during the template creation recording");
         }
-        Snapshot snapshotEntity = volumeService.takeSnapshot(volumeId, Snapshot.MANUAL_POLICY_ID, snapshot.getId(), caller, false, null, false, new HashMap<>());
+        Snapshot snapshotEntity = volumeService.takeSnapshot(volumeId, Snapshot.INTERNAL_POLICY_ID, snapshot.getId(), caller, false, null, false, new HashMap<>());
         if (snapshotEntity == null) {
             throw new CloudRuntimeException("Error when creating the snapshot entity");
         }
@@ -1991,11 +1988,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     snapshot.getSize());
         }
 
-        if (template != null) {
-            return template;
-        } else {
-            throw new CloudRuntimeException("Failed to create a template");
-        }
+        return template;
     }
 
     @Override
