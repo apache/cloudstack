@@ -313,16 +313,20 @@ public class DatastoreMO extends BaseMO {
     public boolean fileExists(String fileFullPath) throws Exception {
         DatastoreFile file = new DatastoreFile(fileFullPath);
         DatastoreFile dirFile = new DatastoreFile(file.getDatastoreName(), file.getDir());
-
-        HostDatastoreBrowserMO browserMo = getHostDatastoreBrowserMO();
-
-        s_logger.info("Search file " + file.getFileName() + " on " + dirFile.getPath());
-        HostDatastoreBrowserSearchResults results = browserMo.searchDatastore(dirFile.getPath(), file.getFileName(), true);
-        if (results != null) {
-            List<FileInfo> info = results.getFile();
-            if (info != null && info.size() > 0) {
-                s_logger.info("File " + fileFullPath + " exists on datastore");
-                return true;
+        Boolean folderExists = true;
+        if(file.getDir() != ""){
+            folderExists = folderExists(String.format("[%s]", file.getDatastoreName()), file.getDir());
+        }
+        if (folderExists){
+            HostDatastoreBrowserMO browserMo = getHostDatastoreBrowserMO();
+            s_logger.info("Search file " + file.getFileName() + " on " + dirFile.getPath());
+            HostDatastoreBrowserSearchResults results = browserMo.searchDatastore(dirFile.getPath(), file.getFileName(), true);
+            if (results != null) {
+                List<FileInfo> info = results.getFile();
+                if (info != null && info.size() > 0) {
+                    s_logger.info("File " + fileFullPath + " exists on datastore");
+                    return true;
+                }
             }
         }
 
@@ -363,7 +367,7 @@ public class DatastoreMO extends BaseMO {
 
     public boolean folderExists(String folderParentDatastorePath, String folderName) throws Exception {
         HostDatastoreBrowserMO browserMo = getHostDatastoreBrowserMO();
-
+        s_logger.info("Search folder " + folderName + " on " + folderParentDatastorePath);
         HostDatastoreBrowserSearchResults results = browserMo.searchDatastore(folderParentDatastorePath, folderName, true);
         if (results != null) {
             List<FileInfo> info = results.getFile();
