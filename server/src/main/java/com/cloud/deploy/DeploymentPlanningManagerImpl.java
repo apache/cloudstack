@@ -268,7 +268,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     }
 
     @Override
-    public DeployDestination planDeployment(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids, DeploymentPlanner planner, List<String> errors)
+    public DeployDestination planDeployment(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids, DeploymentPlanner planner)
             throws InsufficientServerCapacityException, AffinityConflictException {
 
         ServiceOffering offering = vmProfile.getServiceOffering();
@@ -531,8 +531,9 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                                         avoids.getPoolsToAvoid());
 
                         resetAvoidSet(plannerAvoidOutput, plannerAvoidInput);
-                        dest = checkClustersforDestination(clusterList, vmProfile, plan, avoids, dc,
-                                getPlannerUsage(planner, vmProfile, plan, avoids), plannerAvoidOutput, errors);
+
+                        dest =
+                                checkClustersforDestination(clusterList, vmProfile, plan, avoids, dc, getPlannerUsage(planner, vmProfile, plan, avoids), plannerAvoidOutput);
                         if (dest != null) {
                             return dest;
                         }
@@ -1169,7 +1170,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     // /refactoring planner methods
     private DeployDestination checkClustersforDestination(List<Long> clusterList, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, DataCenter dc,
-            DeploymentPlanner.PlannerResourceUsage resourceUsageRequired, ExcludeList plannerAvoidOutput, List<String> errors) {
+            DeploymentPlanner.PlannerResourceUsage resourceUsageRequired, ExcludeList plannerAvoidOutput) {
 
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("ClusterId List to consider: " + clusterList);
@@ -1180,7 +1181,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
             if (clusterVO.getHypervisorType() != vmProfile.getHypervisorType()) {
                 s_logger.debug("Cluster: " + clusterId + " has HyperVisorType that does not match the VM, skipping this cluster");
-                errors.add("Cluster: " + clusterId + " has HyperVisorType that does not match the VM, skipping this cluster");
                 avoid.addCluster(clusterVO.getId());
                 continue;
             }
@@ -1230,11 +1230,9 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                         }
                     } else {
                         s_logger.debug("No suitable storagePools found under this Cluster: " + clusterId);
-                        errors.add("No suitable storagePools found under Cluster: " + clusterId);
                     }
                 } else {
-                    s_logger.debug("No suitable hosts found under Cluster: " + clusterId);
-                    errors.add("No suitable hosts found under Cluster: " + clusterId);
+                    s_logger.debug("No suitable hosts found under this Cluster: " + clusterId);
                 }
             }
 

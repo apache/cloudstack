@@ -24,8 +24,6 @@ import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
-import java.util.List;
-
 public interface DeploymentPlanningManager extends Manager {
 
 
@@ -50,8 +48,8 @@ public interface DeploymentPlanningManager extends Manager {
      *
      *
      */
-    DeployDestination planDeployment(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids,
-                                     DeploymentPlanner planner, List<String> errors) throws InsufficientServerCapacityException, AffinityConflictException;
+    DeployDestination planDeployment(VirtualMachineProfile vmProfile, DeploymentPlan plan,
+            ExcludeList avoids, DeploymentPlanner planner) throws InsufficientServerCapacityException, AffinityConflictException;
 
     String finalizeReservation(DeployDestination plannedDestination,
             VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids, DeploymentPlanner planner)

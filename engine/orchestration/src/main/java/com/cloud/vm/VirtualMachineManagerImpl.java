@@ -1118,16 +1118,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, owner, params);
                 logBootModeParameters(params);
                 DeployDestination dest = null;
-                ArrayList<String> errors = new ArrayList<>();
                 try {
-                    dest = _dpMgr.planDeployment(vmProfile, plan, avoids, planner, errors);
+                    dest = _dpMgr.planDeployment(vmProfile, plan, avoids, planner);
                 } catch (final AffinityConflictException e2) {
                     s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
-                    String errorMessage = "Unable to create deployment, affinity rules associted to the VM conflict";
-                    for (String error: errors) {
-                        errorMessage += "\n" + errors;
-                    }
-                    throw new CloudRuntimeException(errorMessage);
+                    throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict");
                 }
 
                 if (dest == null) {
@@ -3378,14 +3373,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         excludes.addHost(hostId);
 
         DeployDestination dest = null;
-
-        ArrayList<String> errors = new ArrayList();
-
         while (true) {
 
             try {
                 plan.setMigrationPlan(true);
-                dest = _dpMgr.planDeployment(profile, plan, excludes, planner, errors);
+                dest = _dpMgr.planDeployment(profile, plan, excludes, planner);
             } catch (final AffinityConflictException e2) {
                 s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
                 throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict");
@@ -3399,13 +3391,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to find destination for migrating the vm " + profile);
                 }
-
-                String errorMessage = "Unable to find a server to migrate to.";
-                for (String error: errors){
-                    errorMessage += "\n" + error;
-                }
-
-                throw new InsufficientServerCapacityException(errorMessage, host.getClusterId());
+                throw new InsufficientServerCapacityException("Unable to find a server to migrate to.", host.getClusterId());
             }
 
             excludes.addHost(dest.getHost().getId());
@@ -4286,7 +4272,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         DeployDestination dest = null;
 
         try {
-            dest = _dpMgr.planDeployment(profile, plan, excludes, null, new ArrayList<>());
+            dest = _dpMgr.planDeployment(profile, plan, excludes, null);
         } catch (final AffinityConflictException e2) {
             s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
             throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict");
