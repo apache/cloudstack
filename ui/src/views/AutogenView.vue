@@ -1060,8 +1060,8 @@ export default {
                 this.fetchData()
               }
             }
-            this.closeAction()
           })
+          this.closeAction()
         }).catch(error => {
           if ([401].includes(error.response.status)) {
             return
