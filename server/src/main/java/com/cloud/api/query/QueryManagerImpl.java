@@ -3080,6 +3080,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 sc.addAnd("id", SearchCriteria.Op.NEQ, currentVmOffering.getId());
             }
 
+            if (currentVmOffering.getDiskOfferingStrictness()) {
+                sc.addAnd("diskOfferingId", Op.EQ, currentVmOffering.getDiskOfferingId());
+                sc.addAnd("diskOfferingStrictness", Op.EQ, true);
+            } else {
+                sc.addAnd("diskOfferingStrictness", Op.EQ, false);
+            }
+
             boolean isRootVolumeUsingLocalStorage = virtualMachineManager.isRootVolumeOnLocalStorage(vmId);
 
             // 1. Only return offerings with the same storage type than the storage pool where the VM's root volume is allocated

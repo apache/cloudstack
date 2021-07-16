@@ -309,6 +309,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public static final ConfigKey<Boolean> AllowUserExpungeRecoverVolume = new ConfigKey<Boolean>("Advanced", Boolean.class, "allow.user.expunge.recover.volume", "true",
             "Determines whether users can expunge or recover their volume", true, ConfigKey.Scope.Account);
 
+    public static final ConfigKey<Boolean> VolumeTagsStoragePoolStrictness = new ConfigKey<Boolean>("Advanced", Boolean.class, "volume.tags.storage.pool.strictness", "true",
+            "Determines whether tags on volume needs to be considered while migrating to another storage pool. If true, volume tags will be matched with destination storage pool", true, ConfigKey.Scope.Zone);
+
     private long _maxVolumeSizeInGb;
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
 
@@ -2429,6 +2432,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (diskOffering == null) {
             throw new CloudRuntimeException("volume '" + vol.getUuid() + "', has no diskoffering. Migration target cannot be checked.");
         }
+        if (VolumeTagsStoragePoolStrictness.value() && !doesTargetStorageSupportDiskOffering(destPool, diskOffering)) {
+            throw new CloudRuntimeException(String.format("Migration target pool [%s, tags:%s] has no matching tags for volume [%s, uuid:%s, tags:%s]", destPool.getName(),
+                    getStoragePoolTags(destPool), vol.getName(), vol.getUuid(), diskOffering.getTags()));
+        }
 
         if (liveMigrateVolume && State.Running.equals(vm.getState()) &&
                 destPool.getClusterId() != null && srcClusterId != null) {
@@ -3863,6 +3870,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ConcurrentMigrationsThresholdPerDatastore, AllowUserExpungeRecoverVolume};
+        return new ConfigKey<?>[] {ConcurrentMigrationsThresholdPerDatastore, AllowUserExpungeRecoverVolume, VolumeTagsStoragePoolStrictness};
     }
 }
