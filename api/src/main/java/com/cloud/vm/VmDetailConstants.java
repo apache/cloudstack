@@ -68,4 +68,5 @@ public interface VmDetailConstants {
     String DISK_OFFERING = "diskOffering";
 
     String DEPLOY_AS_IS_CONFIGURATION = "configurationId";
+    String KEY_PAIR_NAMES = "keypairnames";
 }

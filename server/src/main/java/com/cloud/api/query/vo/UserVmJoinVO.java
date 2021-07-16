@@ -344,9 +344,6 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "project_name")
     private String projectName;
 
-    @Column(name = "keypair_name")
-    private String keypairName;
-
     @Column(name = "job_id")
     private Long jobId;
 
@@ -752,10 +749,6 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Override
     public String getProjectName() {
         return projectName;
-    }
-
-    public String getKeypairName() {
-        return keypairName;
     }
 
     public boolean isLimitCpuUse() {

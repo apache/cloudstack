@@ -992,9 +992,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sb.and("affinityGroupId", sb.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
         }
 
-        if (keyPairName != null) {
-            sb.and("keyPairName", sb.entity().getKeypairName(), SearchCriteria.Op.EQ);
-        }
+        //if (keyPairName != null) {
+        //    sb.and("keyPairName", sb.entity().getKeypairName(), SearchCriteria.Op.EQ);
+        //}
 
         if (!isRootAdmin) {
             sb.and("displayVm", sb.entity().isDisplayVm(), SearchCriteria.Op.EQ);

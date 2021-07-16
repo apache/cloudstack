@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.user.dao;
 
-import java.util.ArrayList;
 import java.util.List;
 
 

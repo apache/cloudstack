@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -324,10 +325,6 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         if (vmDetails != null) {
             Map<String, String> resourceDetails = new HashMap<String, String>();
             for (UserVmDetailVO userVmDetailVO : vmDetails) {
-                if (userVmDetailVO.getName() == ApiConstants.SSH_KEYPAIRS) {
-                    userVmResponse.setKeyPairNames(userVmDetailVO.getValue());
-                    continue;
-                }
                 if (!userVmDetailVO.getName().startsWith(ApiConstants.PROPERTIES) ||
                         (UserVmManager.DisplayVMOVFProperties.value() && userVmDetailVO.getName().startsWith(ApiConstants.PROPERTIES))) {
                     resourceDetails.put(userVmDetailVO.getName(), userVmDetailVO.getValue());
@@ -366,6 +363,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         } else {
             userVmResponse.setDynamicallyScalable(userVm.isDynamicallyScalable());
         }
+
+        userVmResponse.setKeyPairName(userVm.getDetail(VmDetailConstants.KEY_PAIR_NAMES));
 
         return userVmResponse;
     }

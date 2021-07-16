@@ -949,9 +949,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             final UserVmVO userVm = _vmDao.findById(vmId);
             _vmDao.loadDetails(userVm);
             userVm.setDetail(VmDetailConstants.SSH_PUBLIC_KEY, sshPublicKey);
+            userVm.setDetail(VmDetailConstants.KEY_PAIR_NAMES, keypairnames);
             _vmDao.saveDetails(userVm);
-
-            userVmDetailsDao.addDetail(vmId, ApiConstants.SSH_KEYPAIRS, keypairnames, true);
 
             if (vmInstance.getState() == State.Stopped) {
                 s_logger.debug("Vm " + vmInstance + " is stopped, not rebooting it as a part of SSH Key reset");
