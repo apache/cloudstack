@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.cloud.hypervisor.vmware.mo.NetworkMO;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -5749,16 +5750,26 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     public void cleanupNetwork(HostMO hostMo, NetworkDetails netDetails) {
-        // we will no longer cleanup VLAN networks in order to support native VMware HA
-        /*
-         * assert(netDetails.getName() != null); try { synchronized(this) { NetworkMO networkMo = new
-         * NetworkMO(hostMo.getContext(), netDetails.getNetworkMor()); ManagedObjectReference[] vms =
-         * networkMo.getVMsOnNetwork(); if(vms == null || vms.length == 0) { if(s_logger.isInfoEnabled()) {
-         * s_logger.info("Cleanup network as it is currently not in use: " + netDetails.getName()); }
-         *
-         * hostMo.deletePortGroup(netDetails.getName()); } } } catch(Throwable e) {
-         * s_logger.warn("Unable to cleanup network due to exception, skip for next time"); }
-         */
+        if (!VmwareManager.s_vmwareCleanupPortGroups.value()){
+            return;
+        }
+        try {
+            synchronized(this) {
+                if (netDetails.getName() == null) {
+                    throw new CloudRuntimeException("Unspecified port group name, unable to cleanup network");
+                }
+                NetworkMO networkMo = new NetworkMO(hostMo.getContext(), netDetails.getNetworkMor());
+                List<ManagedObjectReference> vms = networkMo.getVMsOnNetwork();
+                if (CollectionUtils.isEmpty(vms)) {
+                    if(s_logger.isInfoEnabled()) {
+                        s_logger.info("Cleanup network as it is currently not in use: " + netDetails.getName());
+                    }
+                    hostMo.deletePortGroup(netDetails.getName());
+                }
+            }
+        } catch(Throwable e) {
+            s_logger.warn("Unable to cleanup network due to exception: " + e.getMessage());
+        }
     }
 
     @Override

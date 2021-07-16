@@ -46,6 +46,9 @@ public interface VmwareManager {
     static final ConfigKey<Integer> s_vmwareOVAPackageTimeout = new ConfigKey<Integer>(Integer.class, "vmware.package.ova.timeout", "Advanced", "3600",
             "Vmware script timeout for ova packaging process", true, ConfigKey.Scope.Global, 1000);
 
+    static final ConfigKey<Boolean> s_vmwareCleanupPortGroups = new ConfigKey<Boolean>("Advanced", Boolean.class, "vmware.cleanup.port.groups",  "false",
+            "Remove unused port groups. WARNING: When set to true, native VMware HA might not work.", true, ConfigKey.Scope.Global);
+
     String composeWorkerName();
 
     String getSystemVMIsoFileNameOnDatastore();
