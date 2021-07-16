@@ -26,16 +26,15 @@ import './core/lazy_use'
 import './core/ext'
 import './permission' // permission control
 import './utils/filter' // global filter
+import './utils/shortkey' // keyboard shortcuts
 import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin } from './utils/plugins'
 import { VueAxios } from './utils/request'
-import VueShortkey from 'vue-shortkey' // keyboard shortcuts
 
 Vue.config.productionTip = false
 Vue.use(VueAxios, router)
 Vue.use(pollJobPlugin)
 Vue.use(notifierPlugin)
 Vue.use(toLocaleDatePlugin)
-Vue.use(VueShortkey, { prevent: ['input', 'textarea'] })
 
 fetch('config.json').then(response => response.json()).then(config => {
   Vue.prototype.$config = config

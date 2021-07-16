@@ -43,6 +43,8 @@
     "axios": "^0.21.1",
     "babel-plugin-require-context-hook": "^1.0.0",
     "core-js": "^3.6.5",
+    "custom-event-polyfill": "^1.0.7",
+    "element-matches": "^0.1.2",
     "enquire.js": "^2.1.6",
     "js-cookie": "^2.2.1",
     "lodash": "^4.17.15",
@@ -57,7 +59,6 @@
     "vue-i18n": "^8.22.4",
     "vue-ls": "^3.2.2",
     "vue-router": "^3.5.1",
-    "vue-shortkey": "^3.1.7",
     "vue-svg-component-runtime": "^1.0.1",
     "vuedraggable": "^2.24.3",
     "vuex": "^3.6.2"
