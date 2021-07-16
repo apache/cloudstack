@@ -88,7 +88,7 @@
 <script>
 import { api } from '@/api'
 import CreateVlanIpRange from '@/views/network/CreateVlanIpRange'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 export default {
   name: 'GuestIpRanges',
   components: {

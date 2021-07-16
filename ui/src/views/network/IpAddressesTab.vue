@@ -26,6 +26,14 @@
         @click="onShowAcquireIp">
         {{ $t('label.acquire.new.ip') }}
       </a-button>
+      <a-button
+        v-if="(('disassociateIpAddress' in $store.getters.apis) && this.selectedRowKeys.length > 0)"
+        type="danger"
+        icon="plus"
+        style="width: 100%; margin-bottom: 15px"
+        @click="bulkActionConfirmation()">
+        {{ $t('label.action.bulk.release.public.ip.address') }}
+      </a-button>
       <div v-if="$route.path.startsWith('/vpc')">
         Select Tier:
         <a-select
@@ -50,6 +58,7 @@
         :columns="columns"
         :dataSource="ips"
         :rowKey="item => item.id"
+        :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
         :pagination="false" >
         <template slot="ipaddress" slot-scope="text, record">
           <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/publicip/' + record.id }" >{{ text }} </router-link>
@@ -124,18 +133,36 @@
         </a-form-item>
       </a-spin>
     </a-modal>
+    <bulk-action-view
+      v-if="showConfirmationAction || showGroupActionModal"
+      :showConfirmationAction="showConfirmationAction"
+      :showGroupActionModal="showGroupActionModal"
+      :items="ips"
+      :selectedRowKeys="selectedRowKeys"
+      :selectedItems="selectedItems"
+      :columns="columns"
+      :selectedColumns="selectedColumns"
+      action="disassociateIpAddress"
+      :loading="loading"
+      :message="message"
+      @group-action="releaseIpAddresses"
+      @handle-cancel="handleCancel"
+      @close-modal="closeModal" />
   </div>
 </template>
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
+import BulkActionView from '@/components/view/BulkActionView'
+import eventBus from '@/config/eventBus'
 
 export default {
   name: 'IpAddressesTab',
   components: {
     Status,
-    TooltipButton
+    TooltipButton,
+    BulkActionView
   },
   props: {
     resource: {
@@ -159,6 +186,16 @@ export default {
       pageSize: 10,
       totalIps: 0,
       tiersSelect: false,
+      selectedRowKeys: [],
+      showGroupActionModal: false,
+      selectedItems: [],
+      selectedColumns: [],
+      filterColumns: ['Action'],
+      showConfirmationAction: false,
+      message: {
+        title: this.$t('label.action.bulk.release.public.ip.address'),
+        confirmMessage: this.$t('label.confirm.release.public.ip.addresses')
+      },
       columns: [
         {
           title: this.$t('label.ipaddress'),
@@ -202,6 +239,7 @@ export default {
       this.fetchData()
     }
   },
+  inject: ['parentFetchData'],
   methods: {
     fetchData () {
       const params = {
@@ -250,6 +288,19 @@ export default {
       this.vpcTier = tier
       this.fetchData()
     },
+    setSelection (selection) {
+      this.selectedRowKeys = selection
+      this.$emit('selection-change', this.selectedRowKeys)
+      this.selectedItems = (this.ips.filter(function (item) {
+        return selection.indexOf(item.id) !== -1
+      }))
+    },
+    resetSelection () {
+      this.setSelection([])
+    },
+    onSelectChange (selectedRowKeys, selectedRows) {
+      this.setSelection(selectedRowKeys)
+    },
     changePage (page, pageSize) {
       this.page = page
       this.pageSize = pageSize
@@ -259,6 +310,13 @@ export default {
       this.page = currentPage
       this.pageSize = pageSize
       this.fetchData()
+    },
+    bulkActionConfirmation () {
+      this.showConfirmationAction = true
+      this.selectedColumns = this.columns.filter(column => {
+        return !this.filterColumns.includes(column.title)
+      })
+      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
     },
     acquireIpAddress () {
       const params = {}
@@ -298,23 +356,66 @@ export default {
         this.acquireLoading = false
       })
     },
+    handleCancel () {
+      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      this.showGroupActionModal = false
+      this.selectedItems = []
+      this.selectedColumns = []
+      this.selectedRowKeys = []
+      this.parentFetchData()
+    },
+    releaseIpAddresses (e) {
+      this.showConfirmationAction = false
+      this.selectedColumns.splice(0, 0, {
+        dataIndex: 'status',
+        title: this.$t('label.operation.status'),
+        scopedSlots: { customRender: 'status' },
+        filters: [
+          { text: 'In Progress', value: 'InProgress' },
+          { text: 'Success', value: 'success' },
+          { text: 'Failed', value: 'failed' }
+        ]
+      })
+      if (this.selectedRowKeys.length > 0) {
+        this.showGroupActionModal = true
+      }
+      for (const ip of this.selectedItems) {
+        this.releaseIpAddress(ip)
+      }
+    },
     releaseIpAddress (ip) {
       this.fetchLoading = true
       api('disassociateIpAddress', {
         id: ip.id
       }).then(response => {
+        const jobId = response.disassociateipaddressresponse.jobid
+        this.$store.dispatch('AddAsyncJob', {
+          title: this.$t('label.action.release.ip'),
+          jobid: jobId,
+          description: ip.id,
+          status: 'progress',
+          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
+        })
+        eventBus.$emit('update-job-details', jobId, null)
         this.$pollJob({
-          jobId: response.disassociateipaddressresponse.jobid,
+          jobId: jobId,
           successMessage: this.$t('message.success.release.ip'),
           successMethod: () => {
+            if (this.selectedItems.length > 0) {
+              eventBus.$emit('update-resource-state', this.selectedItems, ip.id, 'success')
+            }
             this.fetchData()
           },
           errorMessage: this.$t('message.release.ip.failed'),
           errorMethod: () => {
+            if (this.selectedItems.length > 0) {
+              eventBus.$emit('update-resource-state', this.selectedItems, ip.id, 'failed')
+            }
             this.fetchData()
           },
           loadingMessage: `${this.$t('label.releasing.ip')} ${this.$t('label.for')} ${this.resource.name} ${this.$t('label.is.in.progress')}`,
-          catchMessage: this.$t('error.fetching.async.job.result')
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal
         })
       }).catch(error => {
         this.fetchLoading = false
@@ -353,6 +454,9 @@ export default {
     },
     onCloseModal () {
       this.showAcquireIp = false
+    },
+    closeModal () {
+      this.showConfirmationAction = false
     }
   }
 }

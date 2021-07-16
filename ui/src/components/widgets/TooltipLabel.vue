@@ -16,47 +16,37 @@
 // under the License.
 
 <template>
-  <a-popconfirm
-    :title="`${$t('label.delete.rule')}?`"
-    @confirm="handleDelete"
-    :disabled="disabled">
-    <tooltip-button :tooltip="$t('label.delete.rule')" tooltipPlacement="bottom" type="danger" icon="delete" :disabled="disabled" />
-  </a-popconfirm>
+  <span>
+    {{ title }}
+    <a-tooltip v-if="tooltip" :title="tooltip" :placement="tooltipPlacement">
+      <a-icon type="info-circle" class="tooltip-icon" />
+    </a-tooltip>
+  </span>
 </template>
 
 <script>
-import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
-  name: 'RuleDelete',
-  components: {
-    TooltipButton
-  },
+  name: 'TooltipLabel',
   props: {
-    record: {
-      type: Object,
-      required: true
+    title: {
+      type: String,
+      default: ''
     },
-    disabled: {
-      type: Boolean,
-      default: false
-    }
-  },
-  methods: {
-    handleDelete () {
-      this.$emit('delete')
+    tooltip: {
+      type: String,
+      default: null
+    },
+    tooltipPlacement: {
+      type: String,
+      default: 'top'
     }
   }
 }
 </script>
 
-<style
-  scoped
-  lang="scss"
->
-  .anticon-delete {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+<style scoped lang="scss">
+  .tooltip-icon {
+    color: rgba(0,0,0,.45);
   }
 </style>

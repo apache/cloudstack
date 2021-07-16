@@ -110,7 +110,7 @@
 
 <script>
 import { api } from '@/api'
-import TooltipButton from './TooltipButton.vue'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   components: { TooltipButton },
