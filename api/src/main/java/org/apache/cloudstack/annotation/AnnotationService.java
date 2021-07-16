@@ -34,12 +34,8 @@ public interface AnnotationService {
     AnnotationResponse updateAnnotationVisibility(UpdateAnnotationVisibilityCmd cmd);
 
     enum EntityType {
-        HOST("host"), DOMAIN("domain"), VM("vm_instance");
-        private String tableName;
+        HOST, DOMAIN, VM, VOLUME, SNAPSHOT;
 
-        EntityType(String tableName) {
-            this.tableName = tableName;
-        }
         static public boolean contains(String representation) {
             try {
                 /* EntityType tiep = */ valueOf(representation);
