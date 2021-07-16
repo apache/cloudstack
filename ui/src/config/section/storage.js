@@ -256,7 +256,7 @@ export default {
       name: 'snapshot',
       title: 'label.snapshots',
       icon: 'build',
-      shortKey: ['shift', 's'],
+      shortKey: ['s', 'o'],
       docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
       permission: ['listSnapshots'],
       resourceType: 'Snapshot',
