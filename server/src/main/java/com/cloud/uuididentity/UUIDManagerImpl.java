@@ -121,7 +121,7 @@ public class UUIDManagerImpl implements UUIDManager {
         if (identity == null) {
             throw new InvalidParameterValueException(String.format("Unable to find UUID for id [%s] of type [%s]",
                                                                    customId,
-                                                                   (entityType == null ? "<unknown>" ? entityType.getSimpleName())));
+                                                                   (entityType == null ? "<unknown>" : entityType.getSimpleName())));
         }
         return identity.getUuid();
 
