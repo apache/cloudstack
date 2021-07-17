@@ -2872,6 +2872,7 @@
 "message.error.upload.template.description": "Only one template can be uploaded at a time",
 "message.error.url": "Please enter URL",
 "message.error.username": "Enter your username",
+"message.error.valid.iops.range": "Please enter a valid IOPS range",
 "message.error.vcenter.datacenter": "Please enter vCenter Datacenter",
 "message.error.vcenter.datastore": "Please enter vCenter Datastore",
 "message.error.vcenter.host": "Please enter vCenter Host",

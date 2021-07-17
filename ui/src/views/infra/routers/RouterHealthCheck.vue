@@ -120,11 +120,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfigParams = (this.$store.getters.apis.getRouterHealthCheckResults && this.$store.getters.apis.getRouterHealthCheckResults.params) || []
-    this.apiParams = {}
-    this.apiConfigParams.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('getRouterHealthCheckResults')
   },
   watch: {
     resource: function (newItem, oldItem) {
