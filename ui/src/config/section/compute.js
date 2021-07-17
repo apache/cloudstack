@@ -131,7 +131,10 @@ export default {
               }
             }
             return fields
-          }
+          },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
         },
         {
           api: 'restoreVirtualMachine',
@@ -144,6 +147,17 @@ export default {
           mapping: {
             virtualmachineid: {
               value: (record) => { return record.id }
+            }
+          },
+          successMethod: (obj, result) => {
+            const vm = result.jobresult.virtualmachine || {}
+            if (result.jobstatus === 1 && vm.password) {
+              const name = vm.displayname || vm.name || vm.id
+              obj.$notification.success({
+                message: `${obj.$t('label.reinstall.vm')}: ` + name,
+                description: `${obj.$t('label.password.reset.confirm')}: ` + vm.password,
+                duration: 0
+              })
             }
           }
         },
@@ -339,6 +353,17 @@ export default {
             domainid: {
               value: (record) => { return record.domainid }
             }
+          },
+          successMethod: (obj, result) => {
+            const vm = result.jobresult.virtualmachine || {}
+            if (result.jobstatus === 1 && vm.password) {
+              const name = vm.displayname || vm.name || vm.id
+              obj.$notification.success({
+                message: `${obj.$t('label.reset.ssh.key.pair.on.vm')}: ` + name,
+                description: `${obj.$t('label.password.reset.confirm')}: ` + vm.password,
+                duration: 0
+              })
+            }
           }
         },
         {
@@ -408,7 +433,7 @@ export default {
         fields.push('zonename')
         return fields
       },
-      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'size', 'masternodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename'],
+      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'size', 'controlnodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename'],
       tabs: [{
         name: 'k8s',
         component: () => import('@/views/compute/KubernetesServiceTab.vue')
@@ -430,7 +455,10 @@ export default {
           message: 'message.kubernetes.cluster.start',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#starting-a-stopped-kubernetes-cluster',
           dataView: true,
-          show: (record) => { return ['Stopped'].includes(record.state) }
+          show: (record) => { return ['Stopped'].includes(record.state) },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         },
         {
           api: 'stopKubernetesCluster',
@@ -439,7 +467,10 @@ export default {
           message: 'message.kubernetes.cluster.stop',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#stopping-kubernetes-cluster',
           dataView: true,
-          show: (record) => { return !['Stopped', 'Destroyed', 'Destroying'].includes(record.state) }
+          show: (record) => { return !['Stopped', 'Destroyed', 'Destroying'].includes(record.state) },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         },
         {
           api: 'scaleKubernetesCluster',
@@ -470,7 +501,10 @@ export default {
           message: 'message.kubernetes.cluster.delete',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#deleting-kubernetes-cluster',
           dataView: true,
-          show: (record) => { return !['Destroyed', 'Destroying'].includes(record.state) }
+          show: (record) => { return !['Destroyed', 'Destroying'].includes(record.state) },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
     },
@@ -506,7 +540,11 @@ export default {
           api: 'deleteInstanceGroup',
           icon: 'delete',
           label: 'label.delete.instance.group',
-          dataView: true
+          message: 'message.action.delete.instance.group',
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
     },
@@ -556,6 +594,16 @@ export default {
             domainid: {
               value: (record, params) => { return record.domainid }
             }
+          },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection, values, record) => {
+            return selection.map(x => {
+              const data = record.filter(y => { return y.name === x })
+              return {
+                name: x, account: data[0].account, domainid: data[0].domainid
+              }
+            })
           }
         }
       ]
@@ -599,7 +647,10 @@ export default {
           label: 'label.delete.affinity.group',
           docHelp: 'adminguide/virtual_machines.html#delete-an-affinity-group',
           message: 'message.delete.affinity.group',
-          dataView: true
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
     }

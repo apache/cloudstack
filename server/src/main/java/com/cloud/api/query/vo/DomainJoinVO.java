@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="domain_view")
+@Table(name = "domain_view")
 public class DomainJoinVO extends BaseViewVO implements InternalIdentity, Identity {
 
     @Id

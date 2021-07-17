@@ -150,7 +150,7 @@
     >
       <a-form :form="form">
         <span class="ant-form-text"> {{ $t('message.edit.traffic.type') }} </span>
-        <a-form-item v-bind="formItemLayout" style="margin-top:16px;" :label="$t('label.traffic.label')">
+        <a-form-item v-if="hypervisor !== 'VMware'" v-bind="formItemLayout" style="margin-top:16px;" :label="$t('label.traffic.label')">
           <a-input
             v-decorator="['trafficLabel', {
               rules: [{
@@ -160,13 +160,28 @@
             }]"
           />
         </a-form-item>
+        <span v-else>
+          <a-form-item :label="$t('label.vswitch.name')">
+            <a-input v-decorator="['vSwitchName']" />
+          </a-form-item>
+          <a-form-item :label="$t('label.vlanid')">
+            <a-input v-decorator="['vlanId']" />
+          </a-form-item>
+          <a-form-item v-if="isAdvancedZone" :label="$t('label.vswitch.type')">
+            <a-select v-decorator="['vSwitchType']">
+              <a-select-option value="nexusdvs">{{ $t('label.vswitch.type.nexusdvs') }}</a-select-option>
+              <a-select-option value="vmwaresvs">{{ $t('label.vswitch.type.vmwaresvs') }}</a-select-option>
+              <a-select-option value="vmwaredvs">{{ $t('label.vswitch.type.vmwaredvs') }}</a-select-option>
+            </a-select>
+          </a-form-item>
+        </span>
       </a-form>
     </a-modal>
   </div>
 </template>
 <script>
 
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   components: {
@@ -209,7 +224,8 @@ export default {
       addingTrafficForKey: '-1',
       trafficLabelSelected: null,
       showError: false,
-      defaultTrafficOptions: []
+      defaultTrafficOptions: [],
+      isChangeHyperv: false
     }
   },
   computed: {
@@ -270,6 +286,9 @@ export default {
         traffics.push('public')
       }
       return traffics
+    },
+    hypervisor () {
+      return this.prefillContent.hypervisor?.value || null
     }
   },
   beforeCreate () {
@@ -287,8 +306,13 @@ export default {
       this.count = this.physicalNetworks.length
       requiredTrafficTypes.forEach(type => {
         let foundType = false
-        this.physicalNetworks.forEach(net => {
+        this.physicalNetworks.forEach((net, idx) => {
           for (const index in net.traffics) {
+            if (this.hypervisor === 'VMware') {
+              delete this.physicalNetworks[idx].traffics[index].label
+            } else {
+              this.physicalNetworks[idx].traffics[index].label = ''
+            }
             const traffic = net.traffics[index]
             if (traffic.type === 'storage') {
               const idx = this.availableTrafficToAdd.indexOf(traffic.type)
@@ -410,8 +434,25 @@ export default {
         traffic: traffic
       }
       this.showEditTraffic = true
-      this.form.setFieldsValue({
-        trafficLabel: this.trafficInEdit !== null ? this.trafficInEdit.traffic.label : null
+      const fields = {}
+      if (this.hypervisor === 'VMware') {
+        delete this.trafficInEdit.traffic.label
+        fields.vSwitchName = null
+        fields.vlanId = null
+        if (traffic.type === 'guest') {
+          fields.vSwitchName = this.trafficInEdit?.traffic?.vSwitchName || 'vSwitch0'
+        }
+        fields.vSwitchType = 'vmwaresvs'
+      } else {
+        delete this.trafficInEdit.traffic.vSwitchName
+        delete this.trafficInEdit.traffic.vlanId
+        delete this.trafficInEdit.traffic.vSwitchType
+        fields.trafficLabel = null
+        fields.trafficLabel = this.trafficInEdit?.traffic?.label || null
+      }
+
+      Object.keys(fields).forEach(key => {
+        this.form.getFieldDecorator([key], { initialValue: fields[key] })
       })
     },
     deleteTraffic (key, traffic, $event) {
@@ -429,7 +470,15 @@ export default {
       this.form.validateFields((err, values) => {
         if (!err) {
           this.showEditTraffic = false
-          trafficInEdit.traffic.label = values.trafficLabel
+          if (this.hypervisor === 'VMware') {
+            trafficInEdit.traffic.vSwitchName = values.vSwitchName
+            trafficInEdit.traffic.vlanId = values.vlanId
+            if (this.isAdvancedZone) {
+              trafficInEdit.traffic.vSwitchType = values.vSwitchType
+            }
+          } else {
+            trafficInEdit.traffic.label = values.trafficLabel
+          }
           this.trafficInEdit = null
         }
       })

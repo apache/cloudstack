@@ -926,8 +926,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
       State oldState = transition.getCurrentState();
       State newState = transition.getToState();
       Event event = transition.getEvent();
-      s_logger.debug("VM state transitted from :" + oldState + " to " + newState + " with event: " + event + "vm's original host id: " + vm.getLastHostId() +
-              " new host id: " + vm.getHostId() + " host id before state transition: " + oldHostId);
+      Host lastHost = _hostDao.findById(vm.getLastHostId());
+      Host oldHost = _hostDao.findById(oldHostId);
+      Host newHost = _hostDao.findById(vm.getHostId());
+      s_logger.debug(String.format("%s state transited from [%s] to [%s] with event [%s]. VM's original host: %s, new host: %s, host before state transition: %s", vm, oldState,
+                newState, event, lastHost, newHost, oldHost));
 
       if (oldState == State.Starting) {
         if (newState != State.Running) {
@@ -1249,6 +1252,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {CpuOverprovisioningFactor, MemOverprovisioningFactor, StorageCapacityDisableThreshold, StorageOverprovisioningFactor,
-            StorageAllocatedCapacityDisableThreshold, StorageOperationsExcludeCluster, VmwareCreateCloneFull, ImageStoreNFSVersion};
+            StorageAllocatedCapacityDisableThreshold, StorageOperationsExcludeCluster, VmwareCreateCloneFull, ImageStoreNFSVersion, SecondaryStorageCapacityThreshold};
     }
 }

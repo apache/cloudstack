@@ -14,28 +14,34 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.dao;
+package com.cloud.agent.api;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+public class GetStoragePoolCapabilitiesAnswer extends Answer {
 
-import com.cloud.storage.VolumeHostVO;
-import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.fsm.StateDao;
+    private Map<String, String> poolDetails;
 
-public interface VolumeHostDao extends GenericDao<VolumeHostVO, Long>,
-        StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
+    public GetStoragePoolCapabilitiesAnswer(GetStoragePoolCapabilitiesCommand cmd) {
+        super(cmd);
+        poolDetails = new HashMap<>();
+    }
 
-    VolumeHostVO findByHostVolume(long hostId, long volumeId);
+    public void setResult(boolean result){
+        this.result = result;
+    }
 
-    VolumeHostVO findByVolumeId(long volumeId);
+    public void setDetails(String details){
+        this.details = details;
+    }
 
-    List<VolumeHostVO> listBySecStorage(long sserverId);
+    public Map<String, String> getPoolDetails() {
+        return poolDetails;
+    }
 
-    List<VolumeHostVO> listDestroyed(long hostId);
-
-    VolumeHostVO findVolumeByZone(long zoneId, long volumeId);
+    public void setPoolDetails(Map<String, String> poolDetails) {
+        this.poolDetails = poolDetails;
+    }
 
 }
