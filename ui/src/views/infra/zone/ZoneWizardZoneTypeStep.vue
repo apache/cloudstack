@@ -139,7 +139,6 @@ export default {
   .form-content {
     border: 1px dashed #e9e9e9;
     border-radius: 6px;
-    background-color: #fafafa;
     min-height: 200px;
     text-align: center;
     vertical-align: center;
@@ -161,7 +160,6 @@ export default {
 
     .zone-support {
       text-align: justify;
-      background: #fafafa;
     }
   }
 </style>

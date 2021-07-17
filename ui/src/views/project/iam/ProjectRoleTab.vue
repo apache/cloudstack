@@ -143,7 +143,7 @@ export default {
       editModalVisible: false,
       selectedRole: null,
       projectPermisssions: [],
-      customStyle: 'margin-bottom: -10px; border-bottom-style: none'
+      customStyle: 'margin-bottom: 0; border: none'
     }
   },
   beforeCreate () {

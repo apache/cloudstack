@@ -27,7 +27,7 @@
           <span slot="label">
             {{ $t('label.expunge') }}
             <a-tooltip placement="bottom" :title="apiParams.expunge.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-switch v-decorator="['expunge']" :auto-focus="true" />
@@ -37,7 +37,7 @@
           <span slot="label">
             {{ $t('label.delete.volumes') }}
             <a-tooltip placement="bottom" :title="apiParams.volumeids.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select

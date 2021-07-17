@@ -74,7 +74,11 @@
                       size="small"
                       compact>
                       <a-input ref="input" :value="inputKey" @change="e => inputKey = e.target.value" style="width: 50px; text-align: center" :placeholder="$t('label.key')" />
-                      <a-input style=" width: 20px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
+                      <a-input
+                        class="tag-disabled-input"
+                        style=" width: 20px; border-left: 0; pointer-events: none; text-align: center"
+                        placeholder="="
+                        disabled />
                       <a-input :value="inputValue" @change="handleValueChange" style="width: 50px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
                       <tooltip-button :tooltip="$t('label.clear')" icon="close" size="small" @click="inputKey = inputValue = ''" />
                     </a-input-group>

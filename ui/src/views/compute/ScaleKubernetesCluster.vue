@@ -30,7 +30,7 @@
           <span slot="label">
             {{ $t('label.cks.cluster.size') }}
             <a-tooltip :title="apiParams.size.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -52,7 +52,7 @@
           <span slot="label">
             {{ $t('label.serviceofferingid') }}
             <a-tooltip :title="apiParams.serviceofferingid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select

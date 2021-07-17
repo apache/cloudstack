@@ -162,7 +162,7 @@
               <span slot="label">
                 {{ $t('label.' + field.name) }}
                 <a-tooltip :title="field.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <a-icon type="info-circle" />
                 </a-tooltip>
               </span>
 
@@ -614,7 +614,6 @@ export default {
 
       params.page = this.page
       params.pagesize = this.pageSize
-      this.searchParams = params
       api(this.apiName, params).then(json => {
         var responseName
         var objectName
@@ -702,6 +701,7 @@ export default {
         }
       }).finally(f => {
         this.loading = false
+        this.searchParams = params
       })
     },
     closeAction () {

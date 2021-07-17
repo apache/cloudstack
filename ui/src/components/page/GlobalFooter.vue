@@ -49,18 +49,8 @@ export default {
 
     .line {
       margin-bottom: 8px;
-
-      a {
-        color: rgba(0, 0, 0, .45);
-
-        &:hover {
-          color: rgba(0, 0, 0, .65);
-        }
-
-      }
     }
     .copyright {
-      color: rgba(0, 0, 0, .45);
       font-size: 14px;
     }
   }

@@ -371,7 +371,7 @@ export default {
           scopedSlots: { customRender: 'ip' }
         }
       ],
-      customStyle: 'margin-bottom: -10px; border-bottom-style: none',
+      customStyle: 'margin-bottom: 0; border: none',
       page: 1,
       pageSize: 10,
       itemCounts: {
