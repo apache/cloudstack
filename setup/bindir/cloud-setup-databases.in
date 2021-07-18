@@ -188,7 +188,7 @@ for full help
         sys.exit(1)
 
     def setupDBSchema(self):
-        if not self.rootuser:
+        if not self.options.schemaonly and not self.rootuser:
             self.info("No mysql root user specified, will not create Cloud DB schema\n", None)
             return
 
@@ -219,13 +219,17 @@ for full help
                     ""),
             )
 
-        for f in ["create-database","create-schema", "create-database-premium","create-schema-premium"]:
+        scriptsToRun = ["create-database","create-schema", "create-database-premium","create-schema-premium"]
+        if self.options.schemaonly:
+            scriptsToRun = ["create-schema", "create-schema-premium"]
+
+        for f in scriptsToRun:
             p = os.path.join(self.dbFilesPath,"%s.sql"%f)
             if not os.path.exists(p): continue
             text = open(p).read()
             for t, r in replacements: text = text.replace(t,r)
             self.info("Applying %s"%p)
-            self.runMysql(text, p, True)
+            self.runMysql(text, p, self.rootuser != None)
             self.info(None, True)
 
         if self.serversetup:
@@ -248,21 +252,21 @@ for full help
             p = os.path.join(self.dbFilesPath, 'server-setup.sql')
             text = open(p).read()
             self.info("Applying %s"%p)
-            self.runMysql(text, p, True)
+            self.runMysql(text, p, self.rootuser != None)
             self.info(None, True)
 
         for f in ["templates"]:
             p = os.path.join(self.dbFilesPath,"%s.sql"%f)
             text = open(p).read()
             self.info("Applying %s"%p)
-            self.runMysql(text, p, True)
+            self.runMysql(text, p, self.rootuser != None)
             self.info(None, True)
 
         p = os.path.join(self.dbFilesPath,"schema-level.sql")
         if os.path.isfile(p):
             text = open(p).read()
             self.info("Applying %s"%p)
-            self.runMysql(text, p, True)
+            self.runMysql(text, p, self.rootuser != None)
             self.info(None, True)
 
     def prepareDBFiles(self):
@@ -514,6 +518,8 @@ for example:
             self.info("Mysql server port:%s"%self.port, True)
 
         def validateParameters():
+            if self.options.schemaonly and self.rootuser != None:
+                self.errorAndExit("--schema-only and --deploy-as cannot be passed together\n")
             if self.encryptiontype != 'file' and self.encryptiontype != 'web':
                 self.errorAndExit('Wrong encryption type %s, --encrypt-type can only be "file" or "web'%self.encryptiontype)
 
@@ -559,6 +565,11 @@ for example:
                           help="If enabled, print the commands it will run as they run")
         self.parser.add_option("-d", "--deploy-as", action="store", type="string", dest="rootcreds", default="",
                           help="Colon-separated user name and password of a MySQL user with administrative privileges")
+        self.parser.add_option("-s", "--schema-only", action="store_true", dest="schemaonly", default=False,
+                          help="Creates the db schema without having to pass root credentials - " \
+                               "Please note: The databases (cloud, cloud_usage) and user (cloud) has to be configured " \
+                               "manually prior to running this script when using this flag.")
+
         self.parser.add_option("-a", "--auto", action="store", type="string", dest="serversetup", default="",
                           help="Path to an XML file describing an automated unattended cloud setup")
         self.parser.add_option("-e", "--encrypt-type", action="store", type="string", dest="encryptiontype", default="file",
@@ -576,7 +587,6 @@ for example:
         self.parser.add_option("-j", "--encryption-jar-path", action="store", dest="encryptionJarPath", help="The path to the jasypt library to be used to encrypt the values in db.properties")
         self.parser.add_option("-n", "--encryption-key-file", action="store", dest="encryptionKeyFile", help="The name of the file in which encryption key to be generated")
         self.parser.add_option("-b", "--mysql-bin-path", action="store", dest="mysqlbinpath", help="The mysql installed bin path")
-
         (self.options, self.args) = self.parser.parse_args()
         parseCasualCredit()
         parseOtherOptions()
