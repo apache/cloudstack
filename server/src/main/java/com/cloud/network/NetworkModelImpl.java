@@ -1554,6 +1554,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                 if (!checkedProvider.contains(providerName)) {
                     result = result && isProviderEnabledInPhysicalNetwork(physicalNtwkId, providerName);
                 }
+                checkedProvider.add(providerName);
             }
         }
 
