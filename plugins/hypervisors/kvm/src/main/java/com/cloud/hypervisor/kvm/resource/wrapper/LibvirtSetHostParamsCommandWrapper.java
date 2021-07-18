@@ -36,6 +36,7 @@ public final class LibvirtSetHostParamsCommandWrapper extends CommandWrapper<Set
         final Map<String, String> params = command.getParams();
         boolean success = libvirtComputingResource.getVirtRouterResource().configureHostParams(params);
         success = success && libvirtComputingResource.configureHostParams(params);
+        libvirtComputingResource.configureHeartBeatParams(params);
 
         if (!success) {
             return new Answer(command, false, "Failed to set host parameters");
