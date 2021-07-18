@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.UpdateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
@@ -254,6 +255,17 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     @Override
     public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException,
         ResourceAllocationException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationService#updateVlanAndPublicIpRange(org.apache.cloudstack.api
+     * .commands.UpdateVlanIpRangeCmd)
+     */
+    @Override
+    public Vlan updateVlanAndPublicIpRange(UpdateVlanIpRangeCmd cmd) throws ConcurrentOperationException,
+            ResourceUnavailableException, ResourceAllocationException{
         // TODO Auto-generated method stub
         return null;
     }
@@ -499,6 +511,14 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
         String vlanGateway, String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, Account vlanOwner, String startIPv6, String endIPv6, String vlanGatewayv6, String vlanCidrv6)
         throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationManager#updateVlanAndPublicIpRange(long, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
+     */
+    @Override
+    public Vlan updateVlanAndPublicIpRange(long id, String startIp, String endIp, String gateway, String netmask) throws ConcurrentOperationException {
         return null;
     }
 
