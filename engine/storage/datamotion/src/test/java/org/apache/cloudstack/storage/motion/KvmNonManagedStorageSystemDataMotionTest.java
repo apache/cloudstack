@@ -75,6 +75,10 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineManager;
+import java.util.HashSet;
+import java.util.Set;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KvmNonManagedStorageSystemDataMotionTest {
@@ -159,13 +163,23 @@ public class KvmNonManagedStorageSystemDataMotionTest {
         Assert.assertEquals(expectedStrategyPriority, strategyPriority);
     }
 
+    public Boolean supportStoragePoolType(StoragePoolType storagePoolType) {
+        Set<StoragePoolType> supportedTypes = new HashSet<>();
+        supportedTypes.add(StoragePoolType.Filesystem);
+        supportedTypes.add(StoragePoolType.NetworkFilesystem);
+        supportedTypes.add(StoragePoolType.SharedMountPoint);
+
+        return supportedTypes.contains(storagePoolType);
+    }
+
     @Test
     public void internalCanHandleTestNonManaged() {
         StoragePoolType[] storagePoolTypeArray = StoragePoolType.values();
         for (int i = 0; i < storagePoolTypeArray.length; i++) {
             Map<VolumeInfo, DataStore> volumeMap = configureTestInternalCanHandle(false, storagePoolTypeArray[i]);
             StrategyPriority strategyPriority = kvmNonManagedStorageDataMotionStrategy.internalCanHandle(volumeMap, new HostVO("sourceHostUuid"), new HostVO("destHostUuid"));
-            if (storagePoolTypeArray[i] == StoragePoolType.Filesystem || storagePoolTypeArray[i] == StoragePoolType.NetworkFilesystem) {
+
+            if (supportStoragePoolType(storagePoolTypeArray[i])) {
                 Assert.assertEquals(StrategyPriority.HYPERVISOR, strategyPriority);
             } else {
                 Assert.assertEquals(StrategyPriority.CANT_HANDLE, strategyPriority);
@@ -243,7 +257,7 @@ public class KvmNonManagedStorageSystemDataMotionTest {
         for (int i = 0; i < storagePoolTypes.length; i++) {
             Mockito.doReturn(storagePoolTypes[i]).when(sourceStoragePool).getPoolType();
             boolean result = kvmNonManagedStorageDataMotionStrategy.shouldMigrateVolume(sourceStoragePool, destHost, destStoragePool);
-            if (storagePoolTypes[i] == StoragePoolType.Filesystem || storagePoolTypes[i] == StoragePoolType.NetworkFilesystem) {
+            if (supportStoragePoolType(storagePoolTypes[i])) {
                 Assert.assertTrue(result);
             } else {
                 Assert.assertFalse(result);
@@ -472,4 +486,22 @@ public class KvmNonManagedStorageSystemDataMotionTest {
         lenient().when(pool2.isManaged()).thenReturn(false);
         kvmNonManagedStorageDataMotionStrategy.verifyLiveMigrationForKVM(migrationMap, host2);
     }
+
+    @Test
+    public void validateSupportStoragePoolType() {
+        Set<StoragePoolType> supportedTypes = new HashSet<>();
+        supportedTypes.add(StoragePoolType.Filesystem);
+        supportedTypes.add(StoragePoolType.NetworkFilesystem);
+        supportedTypes.add(StoragePoolType.SharedMountPoint);
+
+        for (StoragePoolType poolType : StoragePoolType.values()) {
+            boolean isSupported = kvmNonManagedStorageDataMotionStrategy.supportStoragePoolType(poolType);
+            if (supportedTypes.contains(poolType)) {
+                assertTrue(isSupported);
+            } else {
+                assertFalse(isSupported);
+            }
+        }
+    }
+
 }

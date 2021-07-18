@@ -134,7 +134,10 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Preconditions;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.stream.Collectors;
+import org.apache.commons.collections.CollectionUtils;
 
 public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private static final Logger LOGGER = Logger.getLogger(StorageSystemDataMotionStrategy.class);
@@ -1861,9 +1864,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 MigrateCommand.MigrateDiskInfo migrateDiskInfo;
 
-                boolean isNonManagedNfsToNfs = sourceStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem
-                        && destStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem && !managedStorageDestination;
-                if (isNonManagedNfsToNfs) {
+                boolean isNonManagedNfsToNfsOrSharedMountPointToNfs = supportStoragePoolType(sourceStoragePool.getPoolType()) && destStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem && !managedStorageDestination;
+                if (isNonManagedNfsToNfsOrSharedMountPointToNfs) {
                     migrateDiskInfo = new MigrateCommand.MigrateDiskInfo(srcVolumeInfo.getPath(),
                             MigrateCommand.MigrateDiskInfo.DiskType.FILE,
                             MigrateCommand.MigrateDiskInfo.DriverType.QCOW2,
@@ -2897,4 +2899,27 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
         return copyCmdAnswer;
     }
+
+    protected Boolean supportStoragePoolType(StoragePoolType storagePoolTypeToValidate, StoragePoolType... extraAcceptedValues) {
+        List<StoragePoolType> values = new ArrayList<>();
+
+        values.add(StoragePoolType.NetworkFilesystem);
+        values.add(StoragePoolType.SharedMountPoint);
+
+        if (extraAcceptedValues != null) {
+            CollectionUtils.addAll(values, extraAcceptedValues);
+        }
+
+        return isStoragePoolTypeInList(storagePoolTypeToValidate, values.toArray(new StoragePoolType[values.size()]));
+    }
+
+    protected Boolean isStoragePoolTypeInList(StoragePoolType storagePoolTypeToValidate, StoragePoolType... acceptedValues){
+        Set<StoragePoolType> supportedTypes = new HashSet<>();
+
+        if (acceptedValues != null) {
+            supportedTypes.addAll(Arrays.asList(acceptedValues));
+        }
+
+        return supportedTypes.contains(storagePoolTypeToValidate);
+    };
 }
