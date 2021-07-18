@@ -82,6 +82,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
@@ -180,6 +181,8 @@ public class UnmanagedVMsManagerImplTest {
     private UserVmDao userVmDao;
     @Mock
     private NicDao nicDao;
+    @Mock
+    private HostDao hostDao;
 
     @Mock
     private VMInstanceVO virtualMachine;
@@ -235,6 +238,7 @@ public class UnmanagedVMsManagerImplTest {
         HostVO hostVO = Mockito.mock(HostVO.class);
         when(hostVO.isInMaintenanceStates()).thenReturn(false);
         hosts.add(hostVO);
+        when(hostVO.checkHostServiceOfferingTags(Mockito.any())).thenReturn(true);
         when(resourceManager.listHostsInClusterByStatus(Mockito.anyLong(), Mockito.any(Status.class))).thenReturn(hosts);
         List<VMTemplateStoragePoolVO> templates = new ArrayList<>();
         when(templatePoolDao.listAll()).thenReturn(templates);
@@ -368,6 +372,7 @@ public class UnmanagedVMsManagerImplTest {
         when(importUnmanageInstanceCmd.getName()).thenReturn("TestInstance");
         when(importUnmanageInstanceCmd.getAccountName()).thenReturn(null);
         when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
+        doNothing().when(hostDao).loadHostTags(null);
         PowerMockito.mockStatic(UsageEventUtils.class);
         unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
     }
