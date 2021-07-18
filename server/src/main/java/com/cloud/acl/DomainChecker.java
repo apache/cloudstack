@@ -28,6 +28,7 @@ import org.apache.cloudstack.acl.RolePermissionEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -165,6 +166,16 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                         // For projects check if the caller account can access the project account
                         if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT || !(_projectMgr.canAccessProjectAccount(caller, owner.getId()))) {
                             throw new PermissionDeniedException("Domain Admin and regular users can modify only their own Public templates");
+                        }
+                    }
+                } else if (QueryService.RestrictPublicTemplateAccessToDomain.valueIn(caller.getDomainId()) && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) { // public template can be used by other accounts in the same domain or in sub-domains, and domain admin of parent domains
+                    if (caller.getDomainId() != owner.getDomainId() && !_domainDao.isChildDomain(owner.getDomainId(), caller.getDomainId())) {
+                        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                            throw new PermissionDeniedException(caller + "is not allowed to access the template " + template);
+                        } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+                            if (!_domainDao.isChildDomain(caller.getDomainId(), owner.getDomainId())) {
+                                throw new PermissionDeniedException(caller + "is not allowed to access the template " + template);
+                            }
                         }
                     }
                 }
