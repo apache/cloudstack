@@ -33,6 +33,9 @@ import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
+import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.StartupCommand;
@@ -139,6 +142,16 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     @Override
     public Host maintain(final PrepareForMaintenanceCmd cmd) {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Host declareHostAsDegraded(DeclareHostAsDegradedCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public Host cancelHostAsDegraded(final CancelHostAsDegradedCmd cmd) {
         return null;
     }
 

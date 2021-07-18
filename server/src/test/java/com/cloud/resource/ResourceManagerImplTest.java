@@ -35,7 +35,11 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
+import com.cloud.exception.InvalidParameterValueException;
+import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
+import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Assert;
 import org.junit.Before;
@@ -46,6 +50,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -426,5 +431,96 @@ public class ResourceManagerImplTest {
         verify(resourceManager, never()).setHostIntoPrepareForMaintenanceAfterErrorsFixed(anyObject());
         verify(resourceManager, never()).resourceStateTransitTo(anyObject(), any(), anyLong());
         Assert.assertFalse(enterMaintenanceMode);
+    }
+
+    @Test
+    public void declareHostAsDegradedTestDisconnected() throws NoTransitionException {
+        prepareAndTestDeclareHostAsDegraded(Status.Disconnected, ResourceState.Enabled, ResourceState.Degraded);
+    }
+
+    @Test
+    public void declareHostAsDegradedTestAlert() throws NoTransitionException {
+        prepareAndTestDeclareHostAsDegraded(Status.Alert, ResourceState.Enabled, ResourceState.Degraded);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void declareHostAsDegradedExpectNoTransitionException() throws NoTransitionException {
+        Status[] statusArray = Status.values();
+        for (int i = 0; i < statusArray.length - 1; i++) {
+            if (statusArray[i] != Status.Alert && statusArray[i] != Status.Disconnected) {
+                prepareAndTestDeclareHostAsDegraded(statusArray[i], ResourceState.Enabled, ResourceState.Enabled);
+            }
+        }
+    }
+
+    @Test(expected = NoTransitionException.class)
+    public void declareHostAsDegradedTestAlreadyDegraded() throws NoTransitionException {
+        prepareAndTestDeclareHostAsDegraded(Status.Alert, ResourceState.Degraded, ResourceState.Degraded);
+    }
+
+    @Test(expected = NoTransitionException.class)
+    public void declareHostAsDegradedTestOnError() throws NoTransitionException {
+        prepareAndTestDeclareHostAsDegraded(Status.Alert, ResourceState.Error, ResourceState.Degraded);
+    }
+
+    @Test(expected = NoTransitionException.class)
+    public void declareHostAsDegradedTestOnCreating() throws NoTransitionException {
+        prepareAndTestDeclareHostAsDegraded(Status.Alert, ResourceState.Creating, ResourceState.Degraded);
+    }
+
+    @Test(expected = NoTransitionException.class)
+    public void declareHostAsDegradedTestOnErrorInMaintenance() throws NoTransitionException {
+        prepareAndTestDeclareHostAsDegraded(Status.Alert, ResourceState.ErrorInPrepareForMaintenance, ResourceState.Degraded);
+    }
+
+    @Test
+    public void declareHostAsDegradedTestSupportedStates() throws NoTransitionException {
+        ResourceState[] states = ResourceState.values();
+        for (int i = 0; i < states.length - 1; i++) {
+            if (states[i] == ResourceState.Enabled
+                    || states[i] == ResourceState.Maintenance
+                    || states[i] == ResourceState.Disabled) {
+                prepareAndTestDeclareHostAsDegraded(Status.Alert, states[i], ResourceState.Degraded);
+            }
+        }
+    }
+
+    private void prepareAndTestDeclareHostAsDegraded(Status hostStatus, ResourceState originalState, ResourceState expectedResourceState) throws NoTransitionException {
+        DeclareHostAsDegradedCmd declareHostAsDegradedCmd = Mockito.spy(new DeclareHostAsDegradedCmd());
+        HostVO hostVo = createDummyHost(hostStatus);
+        hostVo.setResourceState(originalState);
+        when(declareHostAsDegradedCmd.getId()).thenReturn(0l);
+        when(hostDao.findById(0l)).thenReturn(hostVo);
+
+        Host result = resourceManager.declareHostAsDegraded(declareHostAsDegradedCmd);
+
+        Assert.assertEquals(expectedResourceState, hostVo.getResourceState());
+    }
+
+    @Test
+    public void cancelHostAsDegradedTest() throws NoTransitionException {
+        prepareAndTestCancelHostAsDegraded(Status.Alert, ResourceState.Degraded, ResourceState.Enabled);
+    }
+
+    @Test(expected = NoTransitionException.class)
+    public void cancelHostAsDegradedTestHostNotDegraded() throws NoTransitionException {
+        prepareAndTestCancelHostAsDegraded(Status.Alert, ResourceState.Enabled, ResourceState.Enabled);
+    }
+
+    private void prepareAndTestCancelHostAsDegraded(Status hostStatus, ResourceState originalState, ResourceState expectedResourceState) throws NoTransitionException {
+        CancelHostAsDegradedCmd cancelHostAsDegradedCmd = Mockito.spy(new CancelHostAsDegradedCmd());
+        HostVO hostVo = createDummyHost(hostStatus);
+        hostVo.setResourceState(originalState);
+        when(cancelHostAsDegradedCmd.getId()).thenReturn(0l);
+        when(hostDao.findById(0l)).thenReturn(hostVo);
+
+        Host result = resourceManager.cancelHostAsDegraded(cancelHostAsDegradedCmd);
+
+        Assert.assertEquals(expectedResourceState, hostVo.getResourceState());
+    }
+
+    private HostVO createDummyHost(Status hostStatus) {
+        return new HostVO(1L, "host01", Host.Type.Routing, "192.168.1.1", "255.255.255.0", null, null, null, null, null, null, null, null, null, null, UUID.randomUUID().toString(),
+                hostStatus, "1.0", null, null, 1L, null, 0, 0, null, 0, null);
     }
 }
