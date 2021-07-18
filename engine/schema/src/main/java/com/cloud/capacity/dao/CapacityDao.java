@@ -22,6 +22,7 @@ import java.util.Map;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.db.GenericDao;
 
 public interface CapacityDao extends GenericDao<CapacityVO, Long> {
@@ -38,6 +39,8 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
     List<SummedCapacity> findNonSharedStorageForClusterPodZone(Long zoneId, Long podId, Long clusterId);
 
     Pair<List<Long>, Map<Long, Double>> orderClustersByAggregateCapacity(long id, short capacityType, boolean isZone);
+
+    Ternary<Long, Long, Long> findCapacityByZoneAndHostTag(Long zoneId, String hostTag);
 
     List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId);
 

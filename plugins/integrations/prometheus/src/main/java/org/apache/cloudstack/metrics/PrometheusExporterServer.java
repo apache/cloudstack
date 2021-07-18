@@ -30,4 +30,7 @@ public interface PrometheusExporterServer extends Manager {
 
     ConfigKey<String> PrometheusExporterAllowedAddresses = new ConfigKey<>("Advanced", String.class, "prometheus.exporter.allowed.ips", "127.0.0.1",
             "List of comma separated prometheus server ips (with no spaces) that should be allowed to access the URLs", true);
+
+    ConfigKey<Integer> PrometheusExporterOfferingCountLimit = new ConfigKey<>("Advanced", Integer.class, "prometheus.exporter.offering.output.limit", "-1",
+            "Limit the number of output for cloudstack_vms_total_by_size to the provided value. -1 for unlimited output.", true);
 }

@@ -28,6 +28,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.google.common.base.Strings;
 import com.cloud.utils.db.TransactionLegacy;
@@ -54,6 +55,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     protected final SearchBuilder<AccountVO> NonProjectAccountSearch;
     protected final SearchBuilder<AccountVO> AccountByRoleSearch;
     protected final GenericSearchBuilder<AccountVO, Long> AccountIdsSearch;
+    protected final GenericSearchBuilder<AccountVO, Long> ActiveDomainCount;
 
     public AccountDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -100,6 +102,13 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         AccountByRoleSearch = createSearchBuilder();
         AccountByRoleSearch.and("roleId", AccountByRoleSearch.entity().getRoleId(), SearchCriteria.Op.EQ);
         AccountByRoleSearch.done();
+
+        ActiveDomainCount = createSearchBuilder(Long.class);
+        ActiveDomainCount.select(null, Func.COUNT, null);
+        ActiveDomainCount.and("domain", ActiveDomainCount.entity().getDomainId(), SearchCriteria.Op.EQ);
+        ActiveDomainCount.and("state", ActiveDomainCount.entity().getState(), SearchCriteria.Op.EQ);
+        ActiveDomainCount.groupBy(ActiveDomainCount.entity().getDomainId());
+        ActiveDomainCount.done();
     }
 
     @Override
@@ -317,5 +326,10 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         }
     }
 
-
+    @Override
+    public int getActiveDomains() {
+        SearchCriteria<Long> sc = ActiveDomainCount.create();
+        sc.setParameters("state", "enabled");
+        return customSearch(sc, null).size();
+    }
 }
