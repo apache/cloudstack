@@ -55,4 +55,6 @@ public interface VolumeDataStoreDao extends GenericDao<VolumeDataStoreVO, Long>,
     boolean updateVolumeId(long srcVolId, long destVolId);
 
     List<VolumeDataStoreVO> listVolumeDownloadUrlsByZoneId(long zoneId);
+
+    List<VolumeDataStoreVO> listByVolume(long volumeId, long storeId);
 }

@@ -62,7 +62,6 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     private SearchBuilder<VolumeDataStoreVO> uploadVolumeStateSearch;
     private static final String EXPIRE_DOWNLOAD_URLS_FOR_ZONE = "update volume_store_ref set download_url_created=? where download_url_created is not null and store_id in (select id from image_store where data_center_id=?)";
 
-
     @Inject
     DataStoreManager storeMgr;
     @Inject
@@ -119,7 +118,6 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         uploadVolumeStateSearch.join("volumeOnlySearch", volumeOnlySearch, volumeOnlySearch.entity().getId(), uploadVolumeStateSearch.entity().getVolumeId(), JoinType.LEFT);
         uploadVolumeStateSearch.and("destroyed", uploadVolumeStateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         uploadVolumeStateSearch.done();
-
         return true;
     }
 
@@ -333,13 +331,21 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     }
 
     @Override
+    public List<VolumeDataStoreVO> listByVolume(long volumeId, long storeId) {
+        SearchCriteria<VolumeDataStoreVO> sc = storeVolumeSearch.create();
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("volume_id", volumeId);
+        sc.setParameters("destroyed", false);
+        return listBy(sc);
+    }
+
+    @Override
     public List<VolumeDataStoreVO> listUploadedVolumesByStoreId(long id) {
         SearchCriteria<VolumeDataStoreVO> sc = uploadVolumeSearch.create();
         sc.setParameters("store_id", id);
         sc.setParameters("destroyed", false);
         return listIncludingRemovedBy(sc);
     }
-
 
     @Override
     public void expireDnldUrlsForZone(Long dcId){
