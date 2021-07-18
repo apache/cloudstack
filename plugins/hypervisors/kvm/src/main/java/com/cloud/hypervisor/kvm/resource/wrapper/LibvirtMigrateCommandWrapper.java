@@ -74,10 +74,13 @@ import com.cloud.hypervisor.kvm.resource.MigrateKVMAsync;
 import com.cloud.hypervisor.kvm.resource.VifDriver;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.google.common.base.Strings;
+import java.io.File;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
 
 @ResourceWrapper(handles =  MigrateCommand.class)
 public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCommand, Answer, LibvirtComputingResource> {
@@ -85,6 +88,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     private static final String GRAPHICS_ELEM_END = "/graphics>";
     private static final String GRAPHICS_ELEM_START = "<graphics";
     private static final String CONTENTS_WILDCARD = "(?s).*";
+    private static final String VM_MIGRATE_DOMAIN_RETRIEVE_TIMEOUT= "vm.migrate.domain.retrieve.timeout";
+    private static final int DEFAULT_VM_MIGRATE_DOMAIN_RETRIEVE_TIMEOUT_IN_SECONDS = 10;
     private static final Logger s_logger = Logger.getLogger(LibvirtMigrateCommandWrapper.class);
 
     protected String createMigrationURI(final String destinationIp, final LibvirtComputingResource libvirtComputingResource) {
@@ -239,7 +244,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
             s_logger.info("Migration thread for " + vmName + " is done");
 
-            destDomain = migrateThread.get(10, TimeUnit.SECONDS);
+            int vmMigrateDomainRetrieveTimeout = parseAgentPropertiesVmMigrateDomainRetrieveTimeout();
+
+            destDomain = migrateThread.get(vmMigrateDomainRetrieveTimeout, TimeUnit.SECONDS);
 
             if (destDomain != null) {
                 deleteOrDisconnectDisksOnSourcePool(libvirtComputingResource, migrateDiskInfoList, disks);
@@ -301,6 +308,17 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         }
 
         return new MigrateAnswer(command, result == null, result, null);
+    }
+
+    private int parseAgentPropertiesVmMigrateDomainRetrieveTimeout() throws IOException {
+        final File agentPropertiesFile = PropertiesUtil.findConfigFile(KeyStoreUtils.AGENT_PROPSFILE);
+        if (agentPropertiesFile != null) {
+            String configValue = PropertiesUtil.loadFromFile(agentPropertiesFile).getProperty(VM_MIGRATE_DOMAIN_RETRIEVE_TIMEOUT);
+            if(StringUtils.isNotBlank(configValue)) {
+                return Integer.parseInt(configValue);
+            }
+        }
+        return DEFAULT_VM_MIGRATE_DOMAIN_RETRIEVE_TIMEOUT_IN_SECONDS;
     }
 
     /**
