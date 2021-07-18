@@ -49,9 +49,9 @@ CREATE TABLE IF NOT EXISTS `cloud`.`backup_offering` (
   CONSTRAINT `fk_backup_offering__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `backup_offering_id` bigint unsigned DEFAULT NULL COMMENT 'ID of backup offering';
-ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `backup_external_id` varchar(255) DEFAULT NULL COMMENT 'ID of external backup job or container if any';
-ALTER TABLE `cloud`.`vm_instance` ADD COLUMN `backup_volumes` text DEFAULT NULL COMMENT 'details of backedup volumes';
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_instance','backup_offering_id', 'bigint unsigned DEFAULT NULL COMMENT \'ID of backup offering\'');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_instance','backup_external_id', 'varchar(255) DEFAULT NULL COMMENT \'ID of external backup job or container if any\'');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_instance','backup_volumes', 'text DEFAULT NULL COMMENT \'details of backedup volumes\'');
 
 CREATE TABLE IF NOT EXISTS `cloud`.`backups` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -295,7 +295,7 @@ UPDATE `cloud`.`guest_os` SET `category_id`='4' WHERE `id`=285 AND display_name=
 UPDATE `cloud`.`guest_os` SET `category_id`='4' WHERE `id`=286 AND display_name="Red Hat Enterprise Linux 8.0";
 
 -- Create table for router health checks. We only save last check result for each.
-CREATE TABLE  `cloud`.`router_health_check` (
+CREATE TABLE IF NOT EXISTS `cloud`.`router_health_check` (
   `id` bigint unsigned NOT NULL auto_increment,
   `router_id` bigint unsigned NOT NULL COMMENT 'router id',
   `check_name` varchar(255) NOT NULL COMMENT 'name of the health check',

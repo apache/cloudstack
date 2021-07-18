@@ -25,4 +25,4 @@ DELETE FROM `cloud`.`configuration` WHERE name = 'host.maintenance.retries';
 UPDATE `cloud`.`storage_pool` SET path="/var/lib/libvirt/images" WHERE path="/var/lib/libvirt/images/";
 
 -- remove (one of) duplicate unique indexes from Region table
-ALTER TABLE `region` DROP INDEX `id_3`;
+ALTER TABLE `region` DROP INDEX IF EXISTS `id_3`;
