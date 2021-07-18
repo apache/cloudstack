@@ -19,7 +19,6 @@
 #Import Local Modules
 import marvin
 from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
@@ -134,7 +133,7 @@ class TestCreateDiskOffering(cloudstackTestCase):
     @attr(hypervisor="kvm")
     @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "simulator", "smoke"])
     def test_04_create_fat_type_disk_offering(self):
-        """Test to create  a sparse type disk offering"""
+        """Test to create a sparse type disk offering"""
 
         # Validate the following:
         # 1. createDiskOfferings should return valid info for new offering

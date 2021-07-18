@@ -78,6 +78,9 @@ export default {
           case 'ReadWrite':
             state = this.$t('state.readwrite')
             break
+          case 'InProgress':
+            state = this.$t('state.inprogress')
+            break
         }
         return state.charAt(0).toUpperCase() + state.slice(1)
       }
@@ -102,6 +105,7 @@ export default {
         case 'True':
         case 'Up':
         case 'enabled':
+        case 'success':
           status = 'success'
           break
         case 'Alert':
@@ -112,6 +116,7 @@ export default {
         case 'Error':
         case 'False':
         case 'Stopped':
+        case 'failed':
           status = 'error'
           break
         case 'Migrating':
@@ -119,6 +124,7 @@ export default {
         case 'Starting':
         case 'Stopping':
         case 'Upgrading':
+        case 'InProgress':
           status = 'processing'
           break
         case 'Allocated':
