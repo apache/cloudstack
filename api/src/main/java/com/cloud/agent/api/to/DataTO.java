@@ -32,5 +32,7 @@ public interface DataTO {
      */
     String getPath();
 
+    String getName();
+
     long getId();
 }

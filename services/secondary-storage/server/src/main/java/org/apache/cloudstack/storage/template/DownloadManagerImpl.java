@@ -16,6 +16,56 @@
 // under the License.
 package org.apache.cloudstack.storage.template;
 
+import com.cloud.agent.api.storage.DownloadAnswer;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.OVFInformationTO;
+import com.cloud.agent.api.to.S3TO;
+import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.exception.InternalErrorException;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.StorageLayer;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.template.HttpTemplateDownloader;
+import com.cloud.storage.template.IsoProcessor;
+import com.cloud.storage.template.LocalTemplateDownloader;
+import com.cloud.storage.template.MetalinkTemplateDownloader;
+import com.cloud.storage.template.OVAProcessor;
+import com.cloud.storage.template.Processor;
+import com.cloud.storage.template.Processor.FormatInfo;
+import com.cloud.storage.template.QCOW2Processor;
+import com.cloud.storage.template.RawImageProcessor;
+import com.cloud.storage.template.S3TemplateDownloader;
+import com.cloud.storage.template.ScpTemplateDownloader;
+import com.cloud.storage.template.SwiftVolumeDownloader;
+import com.cloud.storage.template.TARProcessor;
+import com.cloud.storage.template.TemplateConstants;
+import com.cloud.storage.template.TemplateDownloader;
+import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
+import com.cloud.storage.template.TemplateDownloader.Status;
+import com.cloud.storage.template.TemplateLocation;
+import com.cloud.storage.template.TemplateProp;
+import com.cloud.storage.template.VhdProcessor;
+import com.cloud.storage.template.VmdkProcessor;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Proxy;
+import com.cloud.utils.script.Script;
+import com.cloud.utils.storage.QCOW2Utils;
+import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
+import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
+import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
+import org.apache.cloudstack.utils.security.ChecksumValue;
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.log4j.Logger;
+
+import javax.naming.ConfigurationException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -34,56 +84,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import javax.naming.ConfigurationException;
-
-import com.cloud.agent.api.to.OVFInformationTO;
-import com.cloud.storage.template.Processor;
-import com.cloud.storage.template.S3TemplateDownloader;
-import com.cloud.storage.template.TemplateDownloader;
-import com.cloud.storage.template.TemplateLocation;
-import com.cloud.storage.template.MetalinkTemplateDownloader;
-import com.cloud.storage.template.HttpTemplateDownloader;
-import com.cloud.storage.template.LocalTemplateDownloader;
-import com.cloud.storage.template.ScpTemplateDownloader;
-import com.cloud.storage.template.TemplateProp;
-import com.cloud.storage.template.OVAProcessor;
-import com.cloud.storage.template.IsoProcessor;
-import com.cloud.storage.template.QCOW2Processor;
-import com.cloud.storage.template.VmdkProcessor;
-import com.cloud.storage.template.RawImageProcessor;
-import com.cloud.storage.template.TARProcessor;
-import com.cloud.storage.template.VhdProcessor;
-import com.cloud.storage.template.TemplateConstants;
-import org.apache.cloudstack.storage.command.DownloadCommand;
-import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
-import org.apache.cloudstack.storage.command.DownloadProgressCommand;
-import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
-import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
-import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
-import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
-import org.apache.log4j.Logger;
-
-import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.utils.net.Proxy;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.NfsTO;
-import com.cloud.agent.api.to.S3TO;
-import com.cloud.exception.InternalErrorException;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.StorageLayer;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.template.Processor.FormatInfo;
-import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
-import com.cloud.storage.template.TemplateDownloader.Status;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
-import com.cloud.utils.storage.QCOW2Utils;
-import org.apache.cloudstack.utils.security.ChecksumValue;
-import org.apache.cloudstack.utils.security.DigestHelper;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
@@ -140,6 +140,19 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             this.templatesize = 0;
             this.id = id;
             this.resourceType = resourceType;
+        }
+
+        public DownloadJob(TemplateDownloader td, String jobId, long id, String tmpltName, ImageFormat format, String installPathPrefix) {
+            super();
+            this.td = td;
+            this.tmpltName = tmpltName;
+            this.format = format;
+            this.hvm = false;
+            this.description = null;
+            this.installPathPrefix = installPathPrefix;
+            this.templatesize = 0;
+            this.id = id;
+            this.resourceType = null;
         }
 
         public String getDescription() {
@@ -263,7 +276,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     public void setDownloadStatus(String jobId, Status status) {
         DownloadJob dj = jobs.get(jobId);
         if (dj == null) {
-            LOGGER.warn("setDownloadStatus for jobId: " + jobId + ", status=" + status + " no job found");
+            LOGGER.info("setDownloadStatus for jobId: " + jobId + ", status=" + status + " no job found");
             return;
         }
         TemplateDownloader td = dj.getTemplateDownloader();
@@ -304,8 +317,27 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     td.setStatus(Status.POST_DOWNLOAD_FINISHED);
                     td.setDownloadError("Install completed successfully at " + new SimpleDateFormat().format(new Date()));
                 }
-            }
-            else {
+            } else if (td instanceof SwiftVolumeDownloader) {
+                dj.setCheckSum(((SwiftVolumeDownloader) td).getMd5sum());
+                if ("vhd".equals(((SwiftVolumeDownloader) td).getFileExtension()) ||
+                        "VHD".equals(((SwiftVolumeDownloader) td).getFileExtension())) {
+                    Processor vhdProcessor = _processors.get("VHD Processor");
+                    long virtualSize = 0;
+                    try {
+                        virtualSize = vhdProcessor.getVirtualSize(((SwiftVolumeDownloader) td).getVolumeFile());
+                        dj.setTemplatesize(virtualSize);
+                    } catch (IOException e) {
+                        LOGGER.error("Unable to read VHD file", e);
+                        e.printStackTrace();
+                    }
+                } else {
+                    dj.setTemplatesize(((SwiftVolumeDownloader) td).getDownloadedBytes());
+                }
+                dj.setTemplatePhysicalSize(((SwiftVolumeDownloader) td).getDownloadedBytes());
+                dj.setTmpltPath(((SwiftVolumeDownloader) td).getDownloadLocalPath());
+                td.setStatus(Status.POST_DOWNLOAD_FINISHED);
+                td.setDownloadError("Volume downloaded to swift cache successfully at " + new SimpleDateFormat().format(new Date()));
+            } else {
                 // For other TemplateDownloaders where files are locally available,
                 // we run the postLocalDownload() method.
                 td.setDownloadError("Download success, starting install ");
@@ -496,7 +528,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
         String checksum = newValue.toString();
         if (checksum == null) {
-            LOGGER.warn("Something wrong happened when try to calculate the checksum of downloaded template!");
+            LOGGER.error("Something wrong happened when trying to calculate the checksum of downloaded template!");
         }
         dnld.setCheckSum(checksum);
         return null;
@@ -529,7 +561,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
 
         if (!loc.save()) {
-            LOGGER.warn("Cleaning up because we're unable to save the formats");
+            LOGGER.info("Cleaning up because we're unable to save the formats");
             loc.purge();
         }
 
@@ -579,6 +611,36 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     @Override
+    public String downloadSwiftVolume(DownloadCommand cmd, String installPathPrefix, long maxDownloadSizeInBytes) {
+        UUID uuid = UUID.randomUUID();
+        String jobId = uuid.toString();
+        //TODO get from global config
+        long maxVolumeSizeInBytes = maxDownloadSizeInBytes;
+        URI uri = null;
+        try {
+            uri = new URI(cmd.getUrl());
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException("URI is incorrect: " + cmd.getUrl());
+        }
+        TemplateDownloader td;
+        if ((uri != null) && (uri.getScheme() != null)) {
+            if (uri.getScheme().equalsIgnoreCase("http") || uri.getScheme().equalsIgnoreCase("https")) {
+                td = new SwiftVolumeDownloader(cmd, new Completion(jobId), maxVolumeSizeInBytes, installPathPrefix);
+            } else {
+                throw new CloudRuntimeException("Scheme is not supported " + cmd.getUrl());
+            }
+        } else {
+            throw new CloudRuntimeException("Unable to download from URL: " + cmd.getUrl());
+        }
+        DownloadJob dj = new DownloadJob(td, jobId, cmd.getId(), cmd.getName(), cmd.getFormat(), cmd.getInstallPath());
+        dj.setTmpltPath(installPathPrefix);
+        jobs.put(jobId, dj);
+        threadPool.execute(td);
+
+        return jobId;
+    }
+
+    @Override
     public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
             String installPathPrefix, String templatePath, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType) {
         UUID uuid = UUID.randomUUID();
@@ -588,7 +650,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         try {
 
             if (!_storage.mkdirs(tmpDir)) {
-                LOGGER.warn("Unable to create " + tmpDir);
+                LOGGER.error("Unable to create " + tmpDir);
                 return "Unable to create " + tmpDir;
             }
             // TO DO - define constant for volume properties.
@@ -597,12 +659,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                             "volume.properties");
                     if (file.exists()) {
                         if(! file.delete()) {
-                            LOGGER.warn("Deletion of file '" + file.getAbsolutePath() + "' failed.");
+                            LOGGER.error("Deletion of file '" + file.getAbsolutePath() + "' failed.");
                         }
                     }
 
                     if (!file.createNewFile()) {
-                        LOGGER.warn("Unable to create new file: " + file.getAbsolutePath());
+                        LOGGER.error("Unable to create new file: " + file.getAbsolutePath());
                         return "Unable to create new file: " + file.getAbsolutePath();
                     }
 
@@ -644,7 +706,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
                     return jobId;
         } catch (IOException e) {
-            LOGGER.warn("Unable to download to " + tmpDir, e);
+            LOGGER.error("Unable to download to " + tmpDir, e);
             return null;
         }
     }
@@ -734,7 +796,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         this._processTimeout = timeout;
         ResourceType resourceType = cmd.getResourceType();
         if (cmd instanceof DownloadProgressCommand) {
-            return handleDownloadProgressCmd(resource, (DownloadProgressCommand)cmd);
+            return handleDownloadProgressCmd(resource, (DownloadProgressCommand) cmd);
         }
 
         if (cmd.getUrl() == null) {
@@ -746,7 +808,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             return new DownloadAnswer("Invalid Name", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
         }
 
-        if(! DigestHelper.isAlgorithmSupported(cmd.getChecksum())) {
+        if (cmd.getChecksum() != null && !DigestHelper.isAlgorithmSupported(cmd.getChecksum())) {
             return new DownloadAnswer("invalid algorithm: " + cmd.getChecksum(), VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED);
         }
 
@@ -754,7 +816,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         String installPathPrefix = cmd.getInstallPath();
         // for NFS, we need to get mounted path
         if (dstore instanceof NfsTO) {
-            installPathPrefix = resource.getRootDir(((NfsTO)dstore).getUrl(), _nfsVersion) + File.separator + installPathPrefix;
+            installPathPrefix = resource.getRootDir(((NfsTO) dstore).getUrl(), _nfsVersion) + File.separator + installPathPrefix;
+        } else if (dstore instanceof SwiftTO) {
+            installPathPrefix = resource.getRootDir(cmd.getCacheStore().getUrl(),_nfsVersion);
         }
         String user = null;
         String password = null;
@@ -768,8 +832,10 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         String jobId = null;
         if (dstore instanceof S3TO) {
             jobId =
-                    downloadS3Template((S3TO)dstore, cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(),
+                    downloadS3Template((S3TO) dstore, cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(),
                             cmd.getChecksum(), installPathPrefix, user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType);
+        } else if (dstore instanceof SwiftTO) {
+            jobId = downloadSwiftVolume(cmd, installPathPrefix, maxDownloadSizeInBytes);
         } else {
             jobId =
                     downloadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(),
@@ -897,7 +963,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     continue;
                 }
             } catch (IOException e) {
-                LOGGER.warn("Unable to load template location " + path, e);
+                LOGGER.error("Unable to load template location " + path, e);
                 continue;
             }
 
@@ -917,7 +983,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             }
 
             result.put(tInfo.getTemplateName(), tInfo);
-            LOGGER.debug("Added template name: " + tInfo.getTemplateName() + ", path: " + tmplt);
+            LOGGER.info("Added template name: " + tInfo.getTemplateName() + ", path: " + tmplt);
         }
         return result;
     }
@@ -943,7 +1009,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     continue;
                 }
             } catch (IOException e) {
-                LOGGER.warn("Unable to load volume location " + path, e);
+                LOGGER.error("Unable to load volume location " + path, e);
                 continue;
             }
 
@@ -963,7 +1029,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             }
 
             result.put(vInfo.getId(), vInfo);
-            LOGGER.debug("Added volume name: " + vInfo.getTemplateName() + ", path: " + vol);
+            LOGGER.info("Added volume name: " + vInfo.getTemplateName() + ", path: " + vol);
         }
         return result;
     }
@@ -1091,7 +1157,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         String result = command.execute();
         if (result != null) {
-            LOGGER.warn("Error in blocking outgoing to port 80/443 err=" + result);
+            LOGGER.error("Error in blocking outgoing to port 80/443 err=" + result);
             return;
         }
     }
@@ -1117,7 +1183,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         command.add("apache2");
         String result = command.execute();
         if (result != null) {
-            LOGGER.warn("Error in stopping httpd service err=" + result);
+            LOGGER.error("Error in stopping httpd service err=" + result);
         }
         String port = Integer.toString(TemplateConstants.DEFAULT_TMPLT_COPY_PORT);
         String intf = TemplateConstants.DEFAULT_TMPLT_COPY_INTF;
@@ -1129,7 +1195,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         result = command.execute();
         if (result != null) {
-            LOGGER.warn("Error in opening up apache2 port err=" + result);
+            LOGGER.error("Error in opening up apache2 port err=" + result);
             return;
         }
 
@@ -1138,7 +1204,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         command.add("apache2");
         result = command.execute();
         if (result != null) {
-            LOGGER.warn("Error in starting apache2 service err=" + result);
+            LOGGER.error("Error in starting apache2 service err=" + result);
             return;
         }
 
@@ -1150,7 +1216,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         command.add("www-data");
         result = command.execute();
         if (result != null) {
-            LOGGER.warn("Error in creating directory =" + result);
+            LOGGER.error("Error in creating directory =" + result);
             return;
         }
     }

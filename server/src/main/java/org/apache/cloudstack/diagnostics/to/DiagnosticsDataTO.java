@@ -26,6 +26,7 @@ public class DiagnosticsDataTO implements DataTO {
     private DataStoreTO dataStoreTO;
     private Hypervisor.HypervisorType hypervisorType;
     private String path;
+    private String name;
     private long id;
 
     public DiagnosticsDataTO(Hypervisor.HypervisorType hypervisorType, DataStoreTO dataStoreTO) {
@@ -57,4 +58,7 @@ public class DiagnosticsDataTO implements DataTO {
     public long getId() {
         return id;
     }
+
+    @Override
+    public String getName() { return name; }
 }
