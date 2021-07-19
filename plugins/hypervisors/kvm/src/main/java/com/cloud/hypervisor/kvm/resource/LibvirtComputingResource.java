@@ -2413,9 +2413,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return new WatchDogDef(_watchDogAction, _watchDogModel);
     }
 
-    /*
-     * Adds an explicit USB devices for ARM64
-     */
     protected void createArm64UsbDef(DevicesDef devices) {
         devices.addDevice(new InputDef(KEYBOARD, USB));
         devices.addDevice(new InputDef(MOUSE, USB));
