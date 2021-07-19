@@ -248,7 +248,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     private Boolean redundantRouter;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "the date this network was created")
+    @Param(description = "the date this network was created", since = "4.16.0")
     private Date created;
 
     public Boolean getDisplayNetwork() {
