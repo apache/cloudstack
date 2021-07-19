@@ -26,16 +26,35 @@
       :rowSelection="rowSelection"
       :scroll="{ y: 225 }" >
 
-      <span slot="offering" slot-scope="text, record">
-        <a-select
-          autoFocus
-          v-if="validOfferings[record.id] && validOfferings[record.id].length > 0"
-          @change="updateOffering($event, record.id)"
-          :defaultValue="validOfferings[record.id][0].id">
-          <a-select-option v-for="offering in validOfferings[record.id]" :key="offering.id">
-            {{ offering.displaytext }}
-          </a-select-option>
-        </a-select>
+      <span slot="name" slot-scope="text, record">
+        <span>{{ record.displaytext || record.name }}</span>
+        <div v-if="record.meta">
+          <template v-for="meta in record.meta">
+            <a-tag style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
+          </template>
+        </div>
+      </span>
+      <span slot="offering" slot-scope="text, record" style="width: 50%">
+        <span
+          v-if="validOfferings[record.id] && validOfferings[record.id].length > 0">
+          <check-box-select-pair
+            v-if="selectedCustomDiskOffering!=null"
+            layout="vertical"
+            :resourceKey="record.id"
+            :selectOptions="validOfferings[record.id]"
+            :checkBoxLabel="autoSelectLabel"
+            :defaultCheckBoxValue="true"
+            :reversed="true"
+            @handle-checkselectpair-change="updateOfferingCheckPairSelect" />
+          <a-select
+            v-else
+            @change="updateOfferingSelect($event, record.id)"
+            :defaultValue="validOfferings[record.id][0].id">
+            <a-select-option v-for="offering in validOfferings[record.id]" :key="offering.id">
+              {{ offering.displaytext }}
+            </a-select-option>
+          </a-select>
+        </span>
         <span v-else>
           {{ $t('label.no.matching.offering') }}
         </span>
@@ -46,9 +65,13 @@
 
 <script>
 import { api } from '@/api'
+import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 
 export default {
   name: 'MultiDiskSelection',
+  components: {
+    CheckBoxSelectPair
+  },
   props: {
     items: {
       type: Array,
@@ -57,6 +80,22 @@ export default {
     zoneId: {
       type: String,
       default: () => ''
+    },
+    selectionEnabled: {
+      type: Boolean,
+      default: true
+    },
+    customOfferingsAllowed: {
+      type: Boolean,
+      default: false
+    },
+    autoSelectCustomOffering: {
+      type: Boolean,
+      default: false
+    },
+    autoSelectLabel: {
+      type: String,
+      default: ''
     }
   },
   data () {
@@ -64,7 +103,8 @@ export default {
       columns: [
         {
           dataIndex: 'name',
-          title: this.$t('label.data.disk')
+          title: this.$t('label.data.disk'),
+          scopedSlots: { customRender: 'name' }
         },
         {
           dataIndex: 'offering',
@@ -76,33 +116,35 @@ export default {
       selectedRowKeys: [],
       diskOfferings: [],
       validOfferings: {},
+      selectedCustomDiskOffering: null,
       values: {}
     }
   },
   computed: {
     tableSource () {
       return this.items.map(item => {
-        return {
-          id: item.id,
-          name: `${item.name} (${item.size} GB)`,
-          disabled: this.validOfferings[item.id] && this.validOfferings[item.id].length === 0
-        }
+        var disk = { ...item, disabled: this.validOfferings[item.id] && this.validOfferings[item.id].length === 0 }
+        disk.name = `${item.name} (${item.size} GB)`
+        return disk
       })
     },
     rowSelection () {
-      return {
-        type: 'checkbox',
-        selectedRowKeys: this.selectedRowKeys,
-        getCheckboxProps: record => ({
-          props: {
-            disabled: record.disabled
+      if (this.selectionEnabled === true) {
+        return {
+          type: 'checkbox',
+          selectedRowKeys: this.selectedRowKeys,
+          getCheckboxProps: record => ({
+            props: {
+              disabled: record.disabled
+            }
+          }),
+          onChange: (rows) => {
+            this.selectedRowKeys = rows
+            this.sendValues()
           }
-        }),
-        onChange: (rows) => {
-          this.selectedRowKeys = rows
-          this.sendValues()
         }
       }
+      return null
     }
   },
   watch: {
@@ -128,7 +170,9 @@ export default {
         listall: true
       }).then(response => {
         this.diskOfferings = response.listdiskofferingsresponse.diskoffering || []
-        this.diskOfferings = this.diskOfferings.filter(x => !x.iscustomized)
+        if (!this.customOfferingsAllowed) {
+          this.diskOfferings = this.diskOfferings.filter(x => !x.iscustomized)
+        }
         this.orderDiskOfferings()
       }).finally(() => {
         this.loading = false
@@ -137,8 +181,11 @@ export default {
     orderDiskOfferings () {
       this.loading = true
       this.validOfferings = {}
+      if (this.customOfferingsAllowed && this.autoSelectCustomOffering) {
+        this.selectedCustomDiskOffering = this.diskOfferings.filter(x => x.iscustomized)?.[0]
+      }
       for (const item of this.items) {
-        this.validOfferings[item.id] = this.diskOfferings.filter(x => x.disksize >= item.size)
+        this.validOfferings[item.id] = this.diskOfferings.filter(x => x.disksize >= item.size || (this.customOfferingsAllowed && x.iscustomized))
       }
       this.setDefaultValues()
       this.loading = false
@@ -146,18 +193,31 @@ export default {
     setDefaultValues () {
       this.values = {}
       for (const item of this.items) {
-        this.values[item.id] = this.validOfferings[item.id].length > 0 ? this.validOfferings[item.id][0].id : ''
+        this.values[item.id] = this.selectedCustomDiskOffering?.id || this.validOfferings[item.id]?.[0]?.id || ''
+      }
+      this.sendValues()
+    },
+    updateOfferingCheckPairSelect (diskId, checked, value) {
+      if (this.selectedCustomDiskOffering) {
+        this.values[diskId] = checked ? this.selectedCustomDiskOffering.id : value
+        this.sendValues()
       }
     },
-    updateOffering (value, templateid) {
-      this.values[templateid] = value
+    updateOfferingSelect (value, diskId) {
+      this.values[diskId] = value
       this.sendValues()
     },
     sendValues () {
       const data = {}
-      this.selectedRowKeys.map(x => {
-        data[x] = this.values[x]
-      })
+      if (this.selectionEnabled) {
+        this.selectedRowKeys.map(x => {
+          data[x] = this.values[x]
+        })
+      } else {
+        for (var x in this.values) {
+          data[x] = this.values[x]
+        }
+      }
       this.$emit('select-multi-disk-offering', data)
     }
   }

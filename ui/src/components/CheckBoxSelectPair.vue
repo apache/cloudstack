@@ -16,26 +16,39 @@
 // under the License.
 
 <template>
-  <div>
-    <a-checkbox v-decorator="[checkBoxDecorator, {}]" class="pair-checkbox" @change="handleCheckChange">
-      {{ checkBoxLabel }}
-    </a-checkbox>
-    <a-form-item class="pair-select-container" :label="selectLabel" v-if="this.checked">
-      <a-select
-        v-decorator="[selectDecorator, {
-          initialValue: selectedOption ? selectedOption : this.getSelectInitialValue()
-        }]"
-        showSearch
-        optionFilterProp="children"
-        :filterOption="(input, option) => {
-          return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-        }"
-        @change="val => { this.handleSelectChange(val) }">
-        <a-select-option v-for="(opt) in selectOptions" :key="opt.name" :disabled="opt.enabled === false">
-          {{ opt.name || opt.description }}
-        </a-select-option>
-      </a-select>
-    </a-form-item>
+  <div style="width: 100%">
+    <a-row :gutter="6">
+      <a-col :md="24" :lg="layout === 'horizontal' ? 12 : 24">
+        <a-checkbox
+          v-decorator="[checkBoxDecorator, {}]"
+          :checked="checked"
+          @change="handleCheckChange">
+          {{ checkBoxLabel }}
+        </a-checkbox>
+      </a-col>
+      <a-col :md="24" :lg="layout === 'horizontal' ? 12 : 24">
+        <a-form-item
+          v-if="reversed != checked"
+          :label="selectLabel">
+          <a-select
+            v-decorator="[selectDecorator, { initialValue: selectedOption ? selectedOption : getSelectInitialValue()}]"
+            :defaultValue="selectDecorator ? undefined : selectedOption ? selectedOption : getSelectInitialValue()"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            @change="val => { this.handleSelectChange(val) }">
+            <a-select-option
+              v-for="(opt) in selectSource"
+              :key="opt.id"
+              :disabled="opt.enabled === false">
+              {{ opt.displaytext || opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+      </a-col>
+    </a-row>
   </div>
 </template>
 
@@ -44,6 +57,10 @@
 export default {
   name: 'CheckBoxSelectPair',
   props: {
+    layout: {
+      type: String,
+      default: 'horizontal'
+    },
     resourceKey: {
       type: String,
       required: true
@@ -56,6 +73,10 @@ export default {
       type: String,
       default: ''
     },
+    defaultCheckBoxValue: {
+      type: Boolean,
+      default: false
+    },
     selectOptions: {
       type: Array,
       required: true
@@ -67,12 +88,30 @@ export default {
     selectDecorator: {
       type: String,
       default: ''
+    },
+    reversed: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
     return {
       checked: false,
-      selectedOption: ''
+      selectedOption: null
+    }
+  },
+  created () {
+    this.checked = this.defaultCheckBoxValue
+  },
+  computed: {
+    selectSource () {
+      return this.selectOptions.map(item => {
+        var option = { ...item }
+        if (!('id' in option)) {
+          option.id = option.name
+        }
+        return option
+      })
     }
   },
   methods: {
@@ -80,30 +119,18 @@ export default {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
     },
     getSelectInitialValue () {
-      const provider = this.selectOptions?.filter(x => x.enabled)?.[0]?.name || ''
-      this.handleSelectChange(provider)
-      return provider
+      const initialValue = this.selectSource?.filter(x => x.enabled !== false)?.[0]?.id || ''
+      this.handleSelectChange(initialValue)
+      return initialValue
     },
     handleCheckChange (e) {
       this.checked = e.target.checked
-      this.$emit('handle-checkpair-change', this.resourceKey, this.checked, '')
+      this.$emit('handle-checkselectpair-change', this.resourceKey, this.checked, this.selectedOption)
     },
     handleSelectChange (val) {
       this.selectedOption = val
-      this.$emit('handle-checkpair-change', this.resourceKey, this.checked, val)
+      this.$emit('handle-checkselectpair-change', this.resourceKey, this.checked, this.selectedOption)
     }
   }
 }
 </script>
-
-<style scoped lang="scss">
-  .pair-checkbox {
-    width: 180px;
-  }
-  .pair-select-container {
-    position: relative;
-    float: right;
-    margin-bottom: -5px;
-    width: 20vw;
-  }
-</style>

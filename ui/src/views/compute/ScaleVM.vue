@@ -33,9 +33,9 @@
 
     <compute-selection
       v-if="selectedOffering && selectedOffering.iscustomized"
-      :cpunumber-input-decorator="cpuNumberKey"
-      :cpuspeed-input-decorator="cpuSpeedKey"
-      :memory-input-decorator="memoryKey"
+      :cpuNumberInputDecorator="cpuNumberKey"
+      :cpuSpeedInputDecorator="cpuSpeedKey"
+      :memoryInputDecorator="memoryKey"
       :computeOfferingId="selectedOffering.id"
       :isConstrained="'serviceofferingdetails' in selectedOffering"
       :minCpu="getMinCpu()"

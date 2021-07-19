@@ -25,17 +25,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.agent.api.PrepareUnmanageVMInstanceAnswer;
-import com.cloud.agent.api.PrepareUnmanageVMInstanceCommand;
-import com.cloud.event.ActionEvent;
-import com.cloud.exception.UnsupportedServiceException;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ResponseGenerator;
@@ -59,12 +48,15 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetUnmanagedInstancesAnswer;
 import com.cloud.agent.api.GetUnmanagedInstancesCommand;
+import com.cloud.agent.api.PrepareUnmanageVMInstanceAnswer;
+import com.cloud.agent.api.PrepareUnmanageVMInstanceCommand;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource;
@@ -75,6 +67,7 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanningManager;
+import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -83,6 +76,7 @@ import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -103,6 +97,8 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSHypervisor;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
@@ -112,6 +108,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -127,7 +124,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
@@ -135,7 +134,9 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 
@@ -243,6 +244,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         if (host != null) {
             response.setHostId(host.getUuid());
+            response.setHostName(host.getName());
         }
         response.setPowerState(instance.getPowerState().toString());
         response.setCpuCores(instance.getCpuCores());
@@ -1078,6 +1080,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (cluster.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
             throw new InvalidParameterValueException(String.format("VM ingestion is currently not supported for hypervisor: %s", cluster.getHypervisorType().toString()));
         }
+        String keyword = cmd.getKeyword();
+        if (StringUtils.isNotEmpty(keyword)) {
+            keyword = keyword.toLowerCase();
+        }
         List<HostVO> hosts = resourceManager.listHostsInClusterByStatus(clusterId, Status.Up);
         List<String> additionalNameFilters = getAdditionalNameFilters(cluster);
         List<UnmanagedInstanceResponse> responses = new ArrayList<>();
@@ -1097,11 +1103,15 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 continue;
             }
             GetUnmanagedInstancesAnswer unmanagedInstancesAnswer = (GetUnmanagedInstancesAnswer) answer;
-            HashMap<String, UnmanagedInstanceTO> unmanagedInstances = new HashMap<>();
-            unmanagedInstances.putAll(unmanagedInstancesAnswer.getUnmanagedInstances());
+            HashMap<String, UnmanagedInstanceTO> unmanagedInstances = new HashMap<>(unmanagedInstancesAnswer.getUnmanagedInstances());
             Set<String> keys = unmanagedInstances.keySet();
             for (String key : keys) {
-                responses.add(createUnmanagedInstanceResponse(unmanagedInstances.get(key), cluster, host));
+                UnmanagedInstanceTO instance = unmanagedInstances.get(key);
+                if (StringUtils.isNotEmpty(keyword) &&
+                        !instance.getName().toLowerCase().contains(keyword)) {
+                    continue;
+                }
+                responses.add(createUnmanagedInstanceResponse(instance, cluster, host));
             }
         }
         ListResponse<UnmanagedInstanceResponse> listResponses = new ListResponse<>();

@@ -123,11 +123,11 @@ export default {
       type: Number,
       default: 256
     },
-    cpunumberInputDecorator: {
+    cpuNumberInputDecorator: {
       type: String,
       default: ''
     },
-    cpuspeedInputDecorator: {
+    cpuSpeedInputDecorator: {
       type: String,
       default: ''
     },
@@ -219,10 +219,10 @@ export default {
       if (!this.validateInput('cpu', value)) {
         return
       }
-      this.$emit('update-compute-cpunumber', this.cpunumberInputDecorator, value)
+      this.$emit('update-compute-cpunumber', this.cpuNumberInputDecorator, value)
     },
     updateComputeCpuSpeed (value) {
-      this.$emit('update-compute-cpuspeed', this.cpuspeedInputDecorator, value)
+      this.$emit('update-compute-cpuspeed', this.cpuSpeedInputDecorator, value)
     },
     updateComputeMemory (value) {
       if (!value) this.memoryInputValue = 0
