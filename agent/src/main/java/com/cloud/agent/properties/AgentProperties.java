@@ -32,6 +32,14 @@ public class AgentProperties{
     */
     public static final Property<Integer> HEARTBEAT_UPDATE_TIMEOUT = new Property<Integer>("heartbeat.update.timeout", 60000);
 
+    /**
+     * Reboot host and alert management on heartbeat timeout. <br>
+     * Data type: boolean.<br>
+     * Default value: true.
+     */
+    public static final Property<Boolean> REBOOT_HOST_AND_ALERT_MANAGEMENT_ON_HEARTBEAT_TIMEOUT
+        = new Property<Boolean>("reboot.host.and.alert.management.on.heartbeat.timeout", true);
+
     public static class Property <T>{
         private final String name;
         private final T defaultValue;
