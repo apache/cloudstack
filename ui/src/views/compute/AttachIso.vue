@@ -56,7 +56,6 @@ export default {
       required: true
     }
   },
-  inject: ['parentFetchData'],
   data () {
     return {
       loading: false,
@@ -131,14 +130,8 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
-              successMethod: result => {
-                this.$store.dispatch('AddAsyncJob', {
-                  title: title,
-                  jobid: jobId,
-                  status: this.$t('progress')
-                })
-                this.parentFetchData()
-              },
+              title: title,
+              description: values.id,
               successMessage: `${this.$t('label.action.attach.iso')} ${this.$t('label.success')}`,
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
               catchMessage: this.$t('error.fetching.async.job.result')

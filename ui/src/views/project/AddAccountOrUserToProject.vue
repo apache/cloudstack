@@ -266,7 +266,6 @@ export default {
             loadingMessage: `Adding Account: ${params.account} to project...`,
             catchMessage: 'Error encountered while fetching async job result'
           })
-          this.$emit('refresh-data')
           this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
@@ -301,7 +300,6 @@ export default {
             loadingMessage: `Adding User ${params.username} to project...`,
             catchMessage: 'Error encountered while fetching async job result'
           })
-          this.$emit('refresh-data')
           this.closeAction()
         }).catch(error => {
           console.log('catch')

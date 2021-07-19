@@ -196,24 +196,13 @@ export default {
         api('createVolume', values).then(response => {
           this.$pollJob({
             jobId: response.createvolumeresponse.jobid,
+            title: this.$t('message.success.create.volume'),
+            description: values.name,
             successMessage: this.$t('message.success.create.volume'),
-            successMethod: () => {
-              this.$store.dispatch('AddAsyncJob', {
-                title: this.$t('message.success.create.volume'),
-                jobid: response.createvolumeresponse.jobid,
-                description: values.name,
-                status: 'progress'
-              })
-              this.$emit('refresh-data')
-            },
             errorMessage: this.$t('message.create.volume.failed'),
-            errorMethod: () => {
-              this.$emit('refresh-data')
-            },
             loadingMessage: this.$t('message.create.volume.processing'),
             catchMessage: this.$t('error.fetching.async.job.result')
           })
-          this.$emit('refresh-data')
           this.closeModal()
         }).catch(error => {
           this.$notifyError(error)

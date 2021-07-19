@@ -206,18 +206,11 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
-              successMethod: result => {
-                this.$store.dispatch('AddAsyncJob', {
-                  title: title,
-                  jobid: jobId,
-                  description: description,
-                  status: this.$t('progress')
-                })
-              },
+              title: title,
+              description: description,
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
               catchMessage: this.$t('error.fetching.async.job.result')
             })
-            this.$emit('refresh-data')
           }
           this.closeAction()
         }).catch(error => {

@@ -297,15 +297,11 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.dedicateclusterresponse.jobid,
+          title: this.$t('message.cluster.dedicated'),
+          description: `${this.$t('label.domainid')} : ${this.dedicatedDomainId}`,
           successMessage: this.$t('message.cluster.dedicated'),
           successMethod: () => {
             this.loading = false
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.cluster.dedicated'),
-              jobid: response.dedicateclusterresponse.jobid,
-              description: `${this.$t('label.domainid')} : ${this.dedicatedDomainId}`,
-              status: 'progress'
-            })
           },
           errorMessage: this.$t('error.dedicate.cluster.failed'),
           errorMethod: () => {

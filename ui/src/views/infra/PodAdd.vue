@@ -212,15 +212,11 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.dedicatepodresponse.jobid,
+          title: this.$t('message.pod.dedicated'),
+          description: `${this.$t('label.domainid')} : ${this.dedicatedDomainId}`,
           successMessage: this.$t('message.pod.dedicated'),
           successMethod: () => {
             this.loading = false
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.pod.dedicated'),
-              jobid: response.dedicatepodresponse.jobid,
-              description: `${this.$t('label.domainid')} : ${this.dedicatedDomainId}`,
-              status: 'progress'
-            })
           },
           errorMessage: this.$t('error.dedicate.pod.failed'),
           errorMethod: () => {
