@@ -46,12 +46,7 @@
             :v-bind="field.name"
             v-if="!(action.mapping && field.name in action.mapping && action.mapping[field.name].value)"
           >
-            <span slot="label">
-              {{ $t('label.' + field.name) }}
-              <a-tooltip :title="field.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.' + field.name)" :tooltip="field.description"/>
 
             <span v-if="field.type==='boolean'">
               <a-switch
@@ -136,9 +131,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'DomainActionForm',
+  components: {
+    TooltipLabel
+  },
   props: {
     action: {
       type: Object,

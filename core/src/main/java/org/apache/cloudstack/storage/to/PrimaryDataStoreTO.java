@@ -52,6 +52,7 @@ public class PrimaryDataStoreTO implements DataStoreTO {
     private Map<String, String> details;
     private static final String pathSeparator = "/";
     private Boolean fullCloneFlag;
+    private Boolean diskProvisioningStrictnessFlag;
     private final boolean isManaged;
 
     public PrimaryDataStoreTO(PrimaryDataStore dataStore) {
@@ -162,5 +163,13 @@ public class PrimaryDataStoreTO implements DataStoreTO {
 
     public boolean isManaged() {
         return isManaged;
+    }
+
+    public Boolean getDiskProvisioningStrictnessFlag() {
+        return diskProvisioningStrictnessFlag;
+    }
+
+    public void setDiskProvisioningStrictnessFlag(Boolean diskProvisioningStrictnessFlag) {
+        this.diskProvisioningStrictnessFlag = diskProvisioningStrictnessFlag;
     }
 }

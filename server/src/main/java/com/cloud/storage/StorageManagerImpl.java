@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.storage;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -29,11 +31,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.LinkedHashSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -41,11 +43,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.dc.VsphereStoragePolicyVO;
-import com.cloud.dc.dao.VsphereStoragePolicyDao;
-import com.cloud.service.dao.ServiceOfferingDetailsDao;
-import com.cloud.utils.StringUtils;
+import com.cloud.agent.api.GetStoragePoolCapabilitiesAnswer;
+import com.cloud.agent.api.GetStoragePoolCapabilitiesCommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
@@ -53,8 +52,8 @@ import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingStoreCmd;
-import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.SyncStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -101,6 +100,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -121,12 +121,13 @@ import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetVolumeStatsAnswer;
 import com.cloud.agent.api.GetVolumeStatsCommand;
+import com.cloud.agent.api.ModifyStoragePoolAnswer;
+import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.VolumeStatsEntry;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
-import com.cloud.agent.api.ModifyStoragePoolCommand;
-import com.cloud.agent.api.ModifyStoragePoolAnswer;
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.TemplateJoinDao;
@@ -143,8 +144,10 @@ import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.AgentUnavailableException;
@@ -172,6 +175,7 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.Type;
@@ -195,6 +199,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
@@ -217,8 +222,6 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 @Component
 public class StorageManagerImpl extends ManagerBase implements StorageManager, ClusterManagerListener, Configurable {
@@ -316,7 +319,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     SnapshotService _snapshotService;
     @Inject
+    public StorageService storageService;
+    @Inject
     StoragePoolTagsDao _storagePoolTagsDao;
+    @Inject
+    PrimaryDataStoreDao primaryStoreDao;
     @Inject
     DiskOfferingDetailsDao _diskOfferingDetailsDao;
     @Inject
@@ -2392,8 +2399,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public boolean isStoragePoolComplaintWithStoragePolicy(List<Volume> volumes, StoragePool pool) throws StorageUnavailableException {
-        if (volumes == null || volumes.isEmpty()) {
+    public boolean isStoragePoolCompliantWithStoragePolicy(List<Volume> volumes, StoragePool pool) throws StorageUnavailableException {
+        if (CollectionUtils.isEmpty(volumes)) {
             return false;
         }
         List<Pair<Volume, Answer>> answers = new ArrayList<Pair<Volume, Answer>>();
@@ -2773,6 +2780,77 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return imageStoreVO;
     }
 
+    /**
+     * @param poolId - Storage pool id for pool to update.
+     * @param failOnChecks - If true, throw an error if pool type and state checks fail.
+     */
+    @Override
+    public void updateStorageCapabilities(Long poolId, boolean failOnChecks) {
+        StoragePoolVO pool = _storagePoolDao.findById(poolId);
+
+        if (pool == null) {
+            throw new CloudRuntimeException("Primary storage not found for id: " + poolId);
+        }
+
+        // Only checking NFS for now - required for disk provisioning type support for vmware.
+        if (pool.getPoolType() != StoragePoolType.NetworkFilesystem) {
+            if (failOnChecks) {
+                throw new CloudRuntimeException("Storage capabilities update only supported on NFS storage mounted.");
+            }
+            return;
+        }
+
+        if (pool.getStatus() != StoragePoolStatus.Initialized && pool.getStatus() != StoragePoolStatus.Up) {
+            if (failOnChecks){
+                throw new CloudRuntimeException("Primary storage is not in the right state to update capabilities");
+            }
+            return;
+        }
+
+        HypervisorType hypervisor = pool.getHypervisor();
+
+        if (hypervisor == null){
+            if (pool.getClusterId() != null) {
+                ClusterVO cluster = _clusterDao.findById(pool.getClusterId());
+                hypervisor = cluster.getHypervisorType();
+            }
+        }
+
+        if (!HypervisorType.VMware.equals(hypervisor)) {
+            if (failOnChecks) {
+                throw new CloudRuntimeException("Storage capabilities update only supported on VMWare.");
+            }
+            return;
+        }
+
+        // find the host
+        List<Long> poolIds = new ArrayList<Long>();
+        poolIds.add(pool.getId());
+        List<Long> hosts = _storagePoolHostDao.findHostsConnectedToPools(poolIds);
+        if (hosts.size() > 0) {
+            GetStoragePoolCapabilitiesCommand cmd = new GetStoragePoolCapabilitiesCommand();
+            cmd.setPool(new StorageFilerTO(pool));
+            GetStoragePoolCapabilitiesAnswer answer = (GetStoragePoolCapabilitiesAnswer) _agentMgr.easySend(hosts.get(0), cmd);
+            if (answer.getPoolDetails() != null && answer.getPoolDetails().containsKey(Storage.Capability.HARDWARE_ACCELERATION.toString())) {
+                StoragePoolDetailVO hardwareAccelerationSupported = _storagePoolDetailsDao.findDetail(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString());
+                if (hardwareAccelerationSupported == null) {
+                    StoragePoolDetailVO storagePoolDetailVO = new StoragePoolDetailVO(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString(), answer.getPoolDetails().get(Storage.Capability.HARDWARE_ACCELERATION.toString()), false);
+                    _storagePoolDetailsDao.persist(storagePoolDetailVO);
+                } else {
+                    hardwareAccelerationSupported.setValue(answer.getPoolDetails().get(Storage.Capability.HARDWARE_ACCELERATION.toString()));
+                    _storagePoolDetailsDao.update(hardwareAccelerationSupported.getId(), hardwareAccelerationSupported);
+                }
+            } else {
+                if (answer != null && !answer.getResult()) {
+                    s_logger.error("Failed to update storage pool capabilities: " + answer.getDetails());
+                    if (failOnChecks) {
+                        throw new CloudRuntimeException(answer.getDetails());
+                    }
+                }
+            }
+        }
+    }
+
     private void duplicateCacheStoreRecordsToRegionStore(long storeId) {
         _templateStoreDao.duplicateCacheRecordsOnRegionStore(storeId);
         _snapshotStoreDao.duplicateCacheRecordsOnRegionStore(storeId);
@@ -3132,7 +3210,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 STORAGE_POOL_CLIENT_MAX_CONNECTIONS,
                 PRIMARY_STORAGE_DOWNLOAD_WAIT,
                 SecStorageMaxMigrateSessions,
-                MaxDataMigrationWaitTime
+                MaxDataMigrationWaitTime,
+                DiskProvisioningStrictness
         };
     }
 
