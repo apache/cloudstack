@@ -35,6 +35,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.offering.DiskOffering;
@@ -234,7 +235,7 @@ public interface VirtualMachineManager extends Manager {
      */
     VirtualMachineTO toVmTO(VirtualMachineProfile profile);
 
-    boolean replugNic(Network network, NicTO nic, VirtualMachineTO vm, ReservationContext context, DeployDestination dest) throws ConcurrentOperationException,
+    boolean replugNic(Network network, NicTO nic, VirtualMachineTO vm, Host dest) throws ConcurrentOperationException,
             ResourceUnavailableException, InsufficientCapacityException;
 
     VirtualMachine reConfigureVm(String vmUuid, ServiceOffering oldServiceOffering, ServiceOffering newServiceOffering, Map<String, String> customParameters, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException,
