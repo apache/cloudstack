@@ -67,6 +67,10 @@ export default {
       }, {
         name: 'settings',
         component: () => import('@/components/view/DetailSettings')
+      },
+      {
+        name: 'comments',
+        component: () => import('@/components/view/AnnotationsTab.vue')
       }],
       actions: [
         {
@@ -205,6 +209,10 @@ export default {
       }, {
         name: 'zones',
         component: () => import('@/views/image/IsoZones.vue')
+      },
+      {
+        name: 'comments',
+        component: () => import('@/components/view/AnnotationsTab.vue')
       }],
       actions: [
         {

@@ -634,7 +634,12 @@ export default {
 
       params.listall = true
       if (this.$route.meta.params) {
-        Object.assign(params, this.$route.meta.params)
+        const metaParams = this.$route.meta.params
+        if (typeof metaParams === 'function') {
+          Object.assign(params, metaParams())
+        } else {
+          Object.assign(params, metaParams)
+        }
       }
       if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) &&
         'templatefilter' in params && this.routeName === 'template') {
@@ -791,6 +796,18 @@ export default {
           this.columns.map(col => {
             if (col.title === 'Account') {
               col.title = this.$t('label.project.owner')
+            }
+          })
+        }
+
+        if (this.apiName === 'listAnnotations' && this.items.length > 0) {
+          this.columns.map(col => {
+            if (col.title === 'label.entityid') {
+              col.title = this.$t('label.annotation.entity.id')
+            } else if (col.title === 'label.entitytype') {
+              col.title = this.$t('label.annotation.entity.type')
+            } else if (col.title === 'label.adminsonly') {
+              col.title = this.$t('label.annotation.admins.only')
             }
           })
         }
@@ -1282,6 +1299,7 @@ export default {
       delete query.account
       delete query.domainid
       delete query.state
+      delete query.annotationfilter
       if (this.$route.name === 'template') {
         query.templatefilter = filter
       } else if (this.$route.name === 'iso') {
@@ -1299,6 +1317,8 @@ export default {
         } else if (['running', 'stopped'].includes(filter)) {
           query.state = filter
         }
+      } else if (this.$route.name === 'comment') {
+        query.annotationfilter = filter
       }
       query.filter = filter
       query.page = 1

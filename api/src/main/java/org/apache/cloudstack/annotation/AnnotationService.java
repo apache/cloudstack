@@ -19,6 +19,7 @@ package org.apache.cloudstack.annotation;
 import org.apache.cloudstack.api.command.admin.annotation.AddAnnotationCmd;
 import org.apache.cloudstack.api.command.admin.annotation.ListAnnotationsCmd;
 import org.apache.cloudstack.api.command.admin.annotation.RemoveAnnotationCmd;
+import org.apache.cloudstack.api.command.admin.annotation.UpdateAnnotationVisibilityCmd;
 import org.apache.cloudstack.api.response.AnnotationResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
@@ -26,17 +27,16 @@ public interface AnnotationService {
     ListResponse<AnnotationResponse> searchForAnnotations(ListAnnotationsCmd cmd);
 
     AnnotationResponse addAnnotation(AddAnnotationCmd addAnnotationCmd);
-    AnnotationResponse addAnnotation(String text, EntityType type, String uuid);
+    AnnotationResponse addAnnotation(String text, EntityType type, String uuid, boolean adminsOnly);
 
     AnnotationResponse removeAnnotation(RemoveAnnotationCmd removeAnnotationCmd);
 
-    enum EntityType {
-        HOST("host"), DOMAIN("domain"), VM("vm_instance");
-        private String tableName;
+    AnnotationResponse updateAnnotationVisibility(UpdateAnnotationVisibilityCmd cmd);
 
-        EntityType(String tableName) {
-            this.tableName = tableName;
-        }
+    enum EntityType {
+        HOST, DOMAIN, VM, VOLUME, SNAPSHOT, VM_SNAPSHOT, INSTANCE_GROUP, SSH_KEYPAIR,
+        NETWORK, VPC, PUBLIC_IP_ADDRESS, VPN_CUSTOMER_GATEWAY, TEMPLATE, ISO;
+
         static public boolean contains(String representation) {
             try {
                 /* EntityType tiep = */ valueOf(representation);

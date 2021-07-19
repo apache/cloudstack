@@ -105,6 +105,25 @@
       <router-link :to="{ path: '/accountuser', query: { username: record.username, domainid: record.domainid } }" v-else-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </span>
+    <span slot="entityid" slot-scope="text, record" href="javascript:;">
+      <router-link :to="{ path: '/vm' + '/' + record.entityid }" v-if="'VM' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/host' + '/' + record.entityid }" v-else-if="'HOST' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/volume' + '/' + record.entityid }" v-else-if="'VOLUME' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/snapshot' + '/' + record.entityid }" v-else-if="'SNAPSHOT' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/vmsnapshot' + '/' + record.entityid }" v-else-if="'VM_SNAPSHOT' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/vmgroup' + '/' + record.entityid }" v-else-if="'INSTANCE_GROUP' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/guestnetwork' + '/' + record.entityid }" v-else-if="'NETWORK' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/vpc' + '/' + record.entityid }" v-else-if="'VPC' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/publicip' + '/' + record.entityid }" v-else-if="'PUBLIC_IP_ADDRESS' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/vpncustomergateway' + '/' + record.entityid }" v-else-if="'VPN_CUSTOMER_GATEWAY' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/template' + '/' + record.entityid }" v-else-if="'TEMPLATE' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/iso' + '/' + record.entityid }" v-else-if="'ISO' === record.entitytype">{{ text }}</router-link>
+      <span v-else>{{ text }}</span>
+    </span>
+    <span slot="adminsonly" v-if="['Admin'].includes($store.getters.userInfo.roletype)" slot-scope="text, record" href="javascript:;">
+      <a-checkbox :checked="record.adminsonly" :value="record.id" v-if="record.userid === $store.getters.userInfo.id" @change="e => updateAdminsOnly(e)" />
+      <a-checkbox :checked="record.adminsonly" disabled v-else />
+    </span>
     <span slot="ipaddress" slot-scope="text, record" href="javascript:;">
       <router-link v-if="['/publicip', '/privategw'].includes($route.path)" :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
@@ -417,7 +436,7 @@ export default {
         '/guestnetwork', '/vpc', '/vpncustomergateway',
         '/template', '/iso',
         '/project', '/account',
-        '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm',
+        '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering'].join('|'))
         .test(this.$route.path)
     },
@@ -425,7 +444,7 @@ export default {
       return ['vm', 'alert', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot',
         'vmsnapshot', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
-        'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes'
+        'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment'
       ].includes(this.$route.name)
     },
     fetchColumns () {
@@ -581,6 +600,17 @@ export default {
       }
 
       return record.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ') || text
+    },
+    updateAdminsOnly (e) {
+      api('updateAnnotationVisibility', {
+        id: e.target.value,
+        adminsonly: e.target.checked
+      }).finally(() => {
+        const data = this.items
+        const index = data.findIndex(item => item.id === e.target.value)
+        const elem = data[index]
+        elem.adminsonly = e.target.checked
+      })
     }
   }
 }
@@ -601,6 +631,10 @@ export default {
 
 /deep/ .dark-row {
   background-color: #f9f9f9;
+}
+
+/deep/ .ant-table-tbody>tr>td, .ant-table-thead>tr>th {
+  overflow-wrap: anywhere;
 }
 </style>
 
