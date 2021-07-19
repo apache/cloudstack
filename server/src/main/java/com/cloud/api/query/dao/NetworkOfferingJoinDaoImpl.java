@@ -88,6 +88,7 @@ public class NetworkOfferingJoinDaoImpl extends GenericDaoBase<NetworkOfferingJo
         networkOfferingResponse.setConcurrentConnections(offering.getConcurrentConnections());
         networkOfferingResponse.setSupportsStrechedL2Subnet(offering.isSupportingStrechedL2());
         networkOfferingResponse.setSupportsPublicAccess(offering.isSupportingPublicAccess());
+        networkOfferingResponse.setCreated(offering.getCreated());
         if (offering.getGuestType() != null) {
             networkOfferingResponse.setGuestIpType(offering.getGuestType().toString());
         }

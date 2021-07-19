@@ -242,6 +242,11 @@ public class VpcVO implements Vpc {
     }
 
     @Override
+    public Date getCreated() {
+        return created;
+    }
+
+    @Override
     public Class<?> getEntityType() {
         return Vpc.class;
     }

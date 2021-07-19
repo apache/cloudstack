@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -206,6 +207,10 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     @SerializedName("vmrunning")
     @Param(description = "the total number of virtual machines running for this project", since = "4.2.0")
     private Integer vmRunning;
+
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "the date this project was created", since = "4.16.0")
+    private Date created;
 
     public void setId(String id) {
         this.id = id;
@@ -420,5 +425,13 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
 
     public void setOwners(List<Map<String, String>> owners) {
         this.owners = owners;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
     }
 }

@@ -17,6 +17,7 @@
 package com.cloud.network;
 
 import java.net.URI;
+import java.util.Date;
 
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
@@ -326,6 +327,11 @@ public class NetworkProfile implements Network {
 
     @Override
     public String getRouterIpv6() {
+        return null;
+    }
+
+    @Override
+    public Date getCreated() {
         return null;
     }
 
