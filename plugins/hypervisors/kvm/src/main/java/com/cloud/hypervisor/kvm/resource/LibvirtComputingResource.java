@@ -209,6 +209,71 @@ import com.google.common.base.Strings;
 public class LibvirtComputingResource extends ServerResourceBase implements ServerResource, VirtualRouterDeployer {
     private static final Logger s_logger = Logger.getLogger(LibvirtComputingResource.class);
 
+    private static final String LEGACY = "legacy";
+    private static final String SECURE = "secure";
+
+    /**
+     * Machine type.
+     */
+    private static final String PC = "pc";
+    private static final String VIRT = "virt";
+
+    /**
+     * Possible devices to add to VM.
+     */
+    private static final String TABLET = "tablet";
+    private static final String USB = "usb";
+    private static final String MOUSE = "mouse";
+    private static final String KEYBOARD = "keyboard";
+
+    /**
+     * Policies used by VM.
+     */
+    private static final String RESTART = "restart";
+    private static final String DESTROY = "destroy";
+
+    private static final String KVMCLOCK = "kvmclock";
+    private static final String HYPERVCLOCK = "hypervclock";
+    private static final String WINDOWS = "Windows";
+    private static final String Q35 = "q35";
+    private static final String PTY = "pty";
+    private static final String VNC = "vnc";
+
+    /**
+     * Acronym of System Management Mode. Perform low-level system management operations while an OS is running.
+     */
+    private static final String SMM = "smm";
+    /**
+     * Acronym of Advanced Configuration and Power Interface.<br>
+     * Provides an open standard that operating systems can use to discover and configure
+     * computer hardware components, to perform power management.
+     */
+    private static final String ACPI = "acpi";
+    /**
+     * Acronym of Advanced Programmable Interrupt Controllers.<br>
+     * With an I/O APIC, operating systems can use more than 16 interrupt requests (IRQs)
+     * and therefore avoid IRQ sharing for improved reliability.
+     */
+    private static final String APIC = "apic";
+    /**
+     * Acronym of Physical Address Extension. Feature implemented in modern x86 processors.<br>
+     * PAE extends memory addressing capabilities, allowing more than 4 GB of random access memory (RAM) to be used.
+     */
+    private static final String PAE = "pae";
+    /**
+     * Libvirt supports guest CPU mode since 0.9.10.
+     */
+    private static final int MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_MODE = 9010;
+    /**
+     * The CPU tune element provides details of the CPU tunable parameters for the domain.<br>
+     * It is supported since Libvirt 0.9.0
+     */
+    private static final int MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_TUNE = 9000;
+    /**
+     * Constant that defines ARM64 (aarch64) guest architectures.
+     */
+    private static final String AARCH64 = "aarch64";
+
     private String _modifyVlanPath;
     private String _versionstringpath;
     private String _patchScriptPath;
@@ -2239,8 +2304,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
+    /**
+     * Creates VM KVM definitions from virtual machine transfer object specifications.
+     */
     public LibvirtVMDef createVMFromSpec(final VirtualMachineTO vmTO) {
-        final LibvirtVMDef vm = new LibvirtVMDef();
+        s_logger.debug(String.format("Creating VM from specifications [%s]", vmTO.toString()));
+
+        LibvirtVMDef vm = new LibvirtVMDef();
         vm.setDomainName(vmTO.getName());
         String uuid = vmTO.getUuid();
         uuid = getUuid(uuid);
@@ -2251,215 +2321,311 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         Map<String, String> customParams = vmTO.getDetails();
         boolean isUefiEnabled = false;
         boolean isSecureBoot = false;
-        String bootMode =null;
+        String bootMode = null;
+
         if (MapUtils.isNotEmpty(customParams) && customParams.containsKey(GuestDef.BootType.UEFI.toString())) {
             isUefiEnabled = true;
-            bootMode = customParams.get(GuestDef.BootType.UEFI.toString());
-            if (StringUtils.isNotBlank(bootMode) && "secure".equalsIgnoreCase(bootMode)) {
+            s_logger.debug(String.format("Enabled UEFI for VM UUID [%s].", uuid));
+
+            if (isSecureMode(customParams.get(GuestDef.BootType.UEFI.toString()))) {
+                s_logger.debug(String.format("Enabled Secure Boot for VM UUID [%s].", uuid));
                 isSecureBoot = true;
             }
         }
 
         Map<String, String> extraConfig = vmTO.getExtraConfig();
         if (dpdkSupport && (!extraConfig.containsKey(DpdkHelper.DPDK_NUMA) || !extraConfig.containsKey(DpdkHelper.DPDK_HUGE_PAGES))) {
-            s_logger.info("DPDK is enabled but it needs extra configurations for CPU NUMA and Huge Pages for VM deployment");
+            s_logger.info(String.format("DPDK is enabled for VM [%s], but it needs extra configurations for CPU NUMA and Huge Pages for VM deployment.", vmTO.toString()));
+        }
+        configureVM(vmTO, vm, customParams, isUefiEnabled, isSecureBoot, bootMode, extraConfig, uuid);
+        return vm;
+    }
+
+    /**
+     * Configures created VM from specification, adding the necessary components to VM.
+     */
+    private void configureVM(VirtualMachineTO vmTO, LibvirtVMDef vm, Map<String, String> customParams, boolean isUefiEnabled, boolean isSecureBoot, String bootMode,
+            Map<String, String> extraConfig, String uuid) {
+        s_logger.debug(String.format("Configuring VM with UUID [%s].", uuid));
+
+        GuestDef guest = createGuestFromSpec(vmTO, vm, uuid, customParams);
+        if (isUefiEnabled) {
+            configureGuestIfUefiEnabled(isSecureBoot, bootMode, guest);
         }
 
-        final GuestDef guest = new GuestDef();
+        vm.addComp(guest);
+        vm.addComp(createGuestResourceDef(vmTO));
 
-        if (HypervisorType.LXC == _hypervisorType && VirtualMachine.Type.User == vmTO.getType()) {
-            // LXC domain is only valid for user VMs. Use KVM for system VMs.
-            guest.setGuestType(GuestDef.GuestType.LXC);
-            vm.setHvsType(HypervisorType.LXC.toString().toLowerCase());
-        } else {
-            guest.setGuestType(GuestDef.GuestType.KVM);
-            vm.setHvsType(HypervisorType.KVM.toString().toLowerCase());
-            vm.setLibvirtVersion(_hypervisorLibvirtVersion);
-            vm.setQemuVersion(_hypervisorQemuVersion);
+        int vcpus = vmTO.getCpus();
+        if (!extraConfig.containsKey(DpdkHelper.DPDK_NUMA)) {
+            vm.addComp(createCpuModeDef(vmTO, vcpus));
         }
+
+        if (_hypervisorLibvirtVersion >= MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_TUNE) {
+            vm.addComp(createCpuTuneDef(vmTO));
+        }
+
+        FeaturesDef features = createFeaturesDef(customParams, isUefiEnabled, isSecureBoot);
+        enlightenWindowsVm(vmTO, features);
+        vm.addComp(features);
+
+        vm.addComp(createTermPolicy());
+        vm.addComp(createClockDef(vmTO));
+        vm.addComp(createDevicesDef(vmTO, guest, vcpus, isUefiEnabled));
+
+        addExtraConfigsToVM(vmTO, vm, extraConfig);
+    }
+
+    /**
+     *  Adds extra configuration to User VM Domain XML before starting.
+     */
+    private void addExtraConfigsToVM(VirtualMachineTO vmTO, LibvirtVMDef vm, Map<String, String> extraConfig) {
+        if (MapUtils.isNotEmpty(extraConfig) && VirtualMachine.Type.User.equals(vmTO.getType())) {
+            s_logger.debug(String.format("Appending extra configuration data [%s] to guest VM [%s] domain XML.", extraConfig, vmTO.toString()));
+            addExtraConfigComponent(extraConfig, vm);
+        }
+    }
+
+    /**
+     * Adds devices components to VM.
+     */
+    protected DevicesDef createDevicesDef(VirtualMachineTO vmTO, GuestDef guest, int vcpus, boolean isUefiEnabled) {
+        DevicesDef devices = new DevicesDef();
+        devices.setEmulatorPath(_hypervisorPath);
+        devices.setGuestType(guest.getGuestType());
+        devices.addDevice(createSerialDef());
+
+        if (_rngEnable) {
+            devices.addDevice(createRngDef());
+        }
+
+        devices.addDevice(createChannelDef(vmTO));
+        devices.addDevice(createWatchDogDef());
+        devices.addDevice(createVideoDef());
+        devices.addDevice(createConsoleDef());
+        devices.addDevice(createGraphicDef(vmTO));
+        devices.addDevice(createTabletInputDef());
+
+        if (isGuestAarch64()) {
+            createArm64UsbDef(devices);
+        }
+
+        DiskDef.DiskBus busT = getDiskModelFromVMDetail(vmTO);
+        if (busT == null) {
+            busT = getGuestDiskModel(vmTO.getPlatformEmulator(), isUefiEnabled);
+        }
+
+        if (busT == DiskDef.DiskBus.SCSI) {
+            devices.addDevice(createSCSIDef(vcpus));
+        }
+        return devices;
+    }
+
+    protected WatchDogDef createWatchDogDef() {
+        return new WatchDogDef(_watchDogAction, _watchDogModel);
+    }
+
+    protected void createArm64UsbDef(DevicesDef devices) {
+        devices.addDevice(new InputDef(KEYBOARD, USB));
+        devices.addDevice(new InputDef(MOUSE, USB));
+        devices.addDevice(new LibvirtVMDef.USBDef((short)0, 0, 5, 0, 0));
+    }
+
+    protected InputDef createTabletInputDef() {
+        return new InputDef(TABLET, USB);
+    }
+
+    /**
+     * Creates a Libvirt Graphic Definition with the VM's password and VNC address.
+     */
+    protected GraphicDef createGraphicDef(VirtualMachineTO vmTO) {
+        return new GraphicDef(VNC, (short)0, true, vmTO.getVncAddr(), vmTO.getVncPassword(), null);
+    }
+
+    /**
+     * Adds a Virtio channel for the Qemu Guest Agent tools.
+     */
+    protected ChannelDef createChannelDef(VirtualMachineTO vmTO) {
+        File virtIoChannel = Paths.get(_qemuSocketsPath.getPath(), vmTO.getName() + "." + _qemuGuestAgentSocketName).toFile();
+        return new ChannelDef(_qemuGuestAgentSocketName, ChannelDef.ChannelType.UNIX, virtIoChannel);
+    }
+
+    /**
+     * Creates Virtio SCSI controller. <br>
+     * The respective Virtio SCSI XML definition is generated only if the VM's Disk Bus is of ISCSI.
+     */
+    protected SCSIDef createSCSIDef(int vcpus) {
+        return new SCSIDef((short)0, 0, 0, 9, 0, vcpus);
+    }
+
+    protected ConsoleDef createConsoleDef() {
+        return new ConsoleDef(PTY, null, null, (short)0);
+    }
+
+    protected VideoDef createVideoDef() {
+        return new VideoDef(_videoHw, _videoRam);
+    }
+
+    protected RngDef createRngDef() {
+        return new RngDef(_rngPath, _rngBackendModel, _rngRateBytes, _rngRatePeriod);
+    }
+
+    protected SerialDef createSerialDef() {
+        return new SerialDef(PTY, null, (short)0);
+    }
+
+    protected ClockDef createClockDef(final VirtualMachineTO vmTO) {
+        ClockDef clock = new ClockDef();
+        if (org.apache.commons.lang.StringUtils.startsWith(vmTO.getOs(), WINDOWS)) {
+            clock.setClockOffset(ClockDef.ClockOffset.LOCALTIME);
+            clock.setTimer(HYPERVCLOCK, null, null);
+        } else if ((vmTO.getType() != VirtualMachine.Type.User || isGuestPVEnabled(vmTO.getOs())) && _hypervisorLibvirtVersion >= MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_MODE) {
+            clock.setTimer(KVMCLOCK, null, null, _noKvmClock);
+        }
+        return clock;
+    }
+
+    protected TermPolicy createTermPolicy() {
+        TermPolicy term = new TermPolicy();
+        term.setCrashPolicy(DESTROY);
+        term.setPowerOffPolicy(DESTROY);
+        term.setRebootPolicy(RESTART);
+        return term;
+    }
+
+    protected FeaturesDef createFeaturesDef(Map<String, String> customParams, boolean isUefiEnabled, boolean isSecureBoot) {
+        FeaturesDef features = new FeaturesDef();
+        features.addFeatures(PAE);
+        features.addFeatures(APIC);
+        features.addFeatures(ACPI);
+        if (isUefiEnabled && isSecureBoot) {
+            features.addFeatures(SMM);
+        }
+        return features;
+    }
+
+    /**
+     * A 4.0.X/4.1.X management server doesn't send the correct JSON
+     * command for getMinSpeed, it only sends a 'speed' field.<br>
+     * So, to create a cpu tune,  if getMinSpeed() returns null we fall back to getSpeed().<br>
+     * This way a >4.1 agent can work communicate a <=4.1 management server.<br>
+     * This change is due to the overcommit feature in 4.2.
+     */
+    protected CpuTuneDef createCpuTuneDef(VirtualMachineTO vmTO) {
+        CpuTuneDef ctd = new CpuTuneDef();
+        int shares = vmTO.getCpus() * (vmTO.getMinSpeed() != null ? vmTO.getMinSpeed() : vmTO.getSpeed());
+        ctd.setShares(shares);
+        setQuotaAndPeriod(vmTO, ctd);
+        return ctd;
+    }
+
+    private CpuModeDef createCpuModeDef(VirtualMachineTO vmTO, int vcpus) {
+        final CpuModeDef cmd = new CpuModeDef();
+        cmd.setMode(_guestCpuMode);
+        cmd.setModel(_guestCpuModel);
+        if (VirtualMachine.Type.User.equals(vmTO.getType())) {
+            cmd.setFeatures(_cpuFeatures);
+        }
+        setCpuTopology(cmd, vcpus, vmTO.getDetails());
+        return cmd;
+    }
+
+    /**
+     * Creates guest resources based in VM specification.
+     */
+    protected GuestResourceDef createGuestResourceDef(VirtualMachineTO vmTO) {
+        GuestResourceDef grd = new GuestResourceDef();
+
+        grd.setMemorySize(vmTO.getMaxRam() / 1024);
+        if (vmTO.getMinRam() != vmTO.getMaxRam() && !_noMemBalloon) {
+            grd.setMemBalloning(true);
+            grd.setCurrentMem(vmTO.getMinRam() / 1024);
+        }
+        grd.setVcpuNum(vmTO.getCpus());
+        return grd;
+    }
+
+    private void configureGuestIfUefiEnabled(boolean isSecureBoot, String bootMode, GuestDef guest) {
+        setGuestLoader(bootMode, SECURE, guest, GuestDef.GUEST_LOADER_SECURE);
+        setGuestLoader(bootMode, LEGACY, guest, GuestDef.GUEST_LOADER_LEGACY);
+
+        if (isUefiPropertieNotNull(GuestDef.GUEST_NVRAM_PATH)) {
+            guest.setNvram(_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_PATH));
+        }
+
+        if (isSecureBoot && isUefiPropertieNotNull(GuestDef.GUEST_NVRAM_TEMPLATE_SECURE) && SECURE.equalsIgnoreCase(bootMode)) {
+            guest.setNvramTemplate(_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_SECURE));
+        } else if (isUefiPropertieNotNull(GuestDef.GUEST_NVRAM_TEMPLATE_LEGACY)) {
+            guest.setNvramTemplate(_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_LEGACY));
+        }
+    }
+
+    private void setGuestLoader(String bootMode, String mode, GuestDef guest, String propertie) {
+        if (isUefiPropertieNotNull(propertie) && mode.equalsIgnoreCase(bootMode)) {
+            guest.setLoader(_uefiProperties.getProperty(propertie));
+        }
+    }
+
+    private boolean isUefiPropertieNotNull(String propertie) {
+        return _uefiProperties.getProperty(propertie) != null;
+    }
+
+    private boolean isGuestAarch64() {
+        return AARCH64.equals(_guestCpuArch);
+    }
+
+    /**
+     * Creates a guest definition from a VM specification.
+     */
+    protected GuestDef createGuestFromSpec(VirtualMachineTO vmTO, LibvirtVMDef vm, String uuid, Map<String, String> customParams) {
+        GuestDef guest = new GuestDef();
+
+        configureGuestAndVMHypervisorType(vmTO, vm, guest);
         guest.setGuestArch(_guestCpuArch != null ? _guestCpuArch : vmTO.getArch());
-        guest.setMachineType(_guestCpuArch != null && _guestCpuArch.equals("aarch64") ? "virt" : "pc");
+        guest.setMachineType(isGuestAarch64() ? VIRT : PC);
         guest.setBootType(GuestDef.BootType.BIOS);
         if (MapUtils.isNotEmpty(customParams) && customParams.containsKey(GuestDef.BootType.UEFI.toString())) {
             guest.setBootType(GuestDef.BootType.UEFI);
             guest.setBootMode(GuestDef.BootMode.LEGACY);
-            guest.setMachineType("q35");
-            if (StringUtils.isNotBlank(customParams.get(GuestDef.BootType.UEFI.toString())) && "secure".equalsIgnoreCase(customParams.get(GuestDef.BootType.UEFI.toString()))) {
-                guest.setBootMode(GuestDef.BootMode.SECURE); // setting to secure mode
+            guest.setMachineType(Q35);
+            if (SECURE.equalsIgnoreCase(customParams.get(GuestDef.BootType.UEFI.toString()))) {
+                guest.setBootMode(GuestDef.BootMode.SECURE);
             }
         }
         guest.setUuid(uuid);
         guest.setBootOrder(GuestDef.BootOrder.CDROM);
         guest.setBootOrder(GuestDef.BootOrder.HARDISK);
+        return guest;
+    }
 
-        if (isUefiEnabled) {
-            if (_uefiProperties.getProperty(GuestDef.GUEST_LOADER_SECURE) != null && "secure".equalsIgnoreCase(bootMode)) {
-                guest.setLoader(_uefiProperties.getProperty(GuestDef.GUEST_LOADER_SECURE));
-            }
-
-            if (_uefiProperties.getProperty(GuestDef.GUEST_LOADER_LEGACY) != null && "legacy".equalsIgnoreCase(bootMode)) {
-                guest.setLoader(_uefiProperties.getProperty(GuestDef.GUEST_LOADER_LEGACY));
-            }
-
-            if (_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_PATH) != null) {
-                guest.setNvram(_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_PATH));
-            }
-
-            if (isSecureBoot) {
-                if (_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_SECURE) != null && "secure".equalsIgnoreCase(bootMode)) {
-                    guest.setNvramTemplate(_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_SECURE));
-                }
-            } else {
-                if (_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_LEGACY) != null) {
-                    guest.setNvramTemplate(_uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_LEGACY));
-                }
-            }
-        }
-
-            vm.addComp(guest);
-
-        final GuestResourceDef grd = new GuestResourceDef();
-
-        if (vmTO.getMinRam() != vmTO.getMaxRam() && !_noMemBalloon) {
-            grd.setMemBalloning(true);
-            grd.setCurrentMem(vmTO.getMinRam() / 1024);
-            grd.setMemorySize(vmTO.getMaxRam() / 1024);
+    protected void configureGuestAndVMHypervisorType(VirtualMachineTO vmTO, LibvirtVMDef vm, GuestDef guest) {
+        if (HypervisorType.LXC == _hypervisorType && VirtualMachine.Type.User.equals(vmTO.getType())) {
+            configureGuestAndUserVMToUseLXC(vm, guest);
         } else {
-            grd.setMemorySize(vmTO.getMaxRam() / 1024);
+            configureGuestAndSystemVMToUseKVM(vm, guest);
         }
-        final int vcpus = vmTO.getCpus();
-        grd.setVcpuNum(vcpus);
-        vm.addComp(grd);
-
-        if (!extraConfig.containsKey(DpdkHelper.DPDK_NUMA)) {
-            final CpuModeDef cmd = new CpuModeDef();
-            cmd.setMode(_guestCpuMode);
-            cmd.setModel(_guestCpuModel);
-            if (vmTO.getType() == VirtualMachine.Type.User) {
-                cmd.setFeatures(_cpuFeatures);
-            }
-            setCpuTopology(cmd, vcpus, vmTO.getDetails());
-            vm.addComp(cmd);
-        }
-
-        if (_hypervisorLibvirtVersion >= 9000) {
-            final CpuTuneDef ctd = new CpuTuneDef();
-            /**
-             A 4.0.X/4.1.X management server doesn't send the correct JSON
-             command for getMinSpeed, it only sends a 'speed' field.
-
-             So if getMinSpeed() returns null we fall back to getSpeed().
-
-             This way a >4.1 agent can work communicate a <=4.1 management server
-
-             This change is due to the overcommit feature in 4.2
-             */
-            if (vmTO.getMinSpeed() != null) {
-                ctd.setShares(vmTO.getCpus() * vmTO.getMinSpeed());
-            } else {
-                ctd.setShares(vmTO.getCpus() * vmTO.getSpeed());
-            }
-
-            setQuotaAndPeriod(vmTO, ctd);
-
-            vm.addComp(ctd);
-        }
-
-        final FeaturesDef features = new FeaturesDef();
-        features.addFeatures("pae");
-        features.addFeatures("apic");
-        features.addFeatures("acpi");
-        if (isUefiEnabled && isSecureMode(customParams.get(GuestDef.BootType.UEFI.toString()))) {
-            features.addFeatures("smm");
-        }
-
-        //KVM hyperv enlightenment features based on OS Type
-        enlightenWindowsVm(vmTO, features);
-
-        vm.addComp(features);
-
-        final TermPolicy term = new TermPolicy();
-        term.setCrashPolicy("destroy");
-        term.setPowerOffPolicy("destroy");
-        term.setRebootPolicy("restart");
-        vm.addComp(term);
-
-        final ClockDef clock = new ClockDef();
-        if (vmTO.getOs().startsWith("Windows")) {
-            clock.setClockOffset(ClockDef.ClockOffset.LOCALTIME);
-            clock.setTimer("hypervclock", null, null);
-        } else if (vmTO.getType() != VirtualMachine.Type.User || isGuestPVEnabled(vmTO.getOs())) {
-            if (_hypervisorLibvirtVersion >= 9 * 1000 + 10) {
-                clock.setTimer("kvmclock", null, null, _noKvmClock);
-            }
-        }
-
-        vm.addComp(clock);
-
-        final DevicesDef devices = new DevicesDef();
-        devices.setEmulatorPath(_hypervisorPath);
-        devices.setGuestType(guest.getGuestType());
-
-        final SerialDef serial = new SerialDef("pty", null, (short)0);
-        devices.addDevice(serial);
-
-        if (_rngEnable) {
-            final RngDef rngDevice = new RngDef(_rngPath, _rngBackendModel, _rngRateBytes, _rngRatePeriod);
-            devices.addDevice(rngDevice);
-        }
-
-        /* Add a VirtIO channel for the Qemu Guest Agent tools */
-        File virtIoChannel = Paths.get(_qemuSocketsPath.getPath(), vmTO.getName() + "." + _qemuGuestAgentSocketName).toFile();
-        devices.addDevice(new ChannelDef(_qemuGuestAgentSocketName, ChannelDef.ChannelType.UNIX, virtIoChannel));
-
-        devices.addDevice(new WatchDogDef(_watchDogAction, _watchDogModel));
-
-        final VideoDef videoCard = new VideoDef(_videoHw, _videoRam);
-        devices.addDevice(videoCard);
-
-        final ConsoleDef console = new ConsoleDef("pty", null, null, (short)0);
-        devices.addDevice(console);
-
-        //add the VNC port passwd here, get the passwd from the vmInstance.
-        final String passwd = vmTO.getVncPassword();
-        final GraphicDef grap = new GraphicDef("vnc", (short)0, true, vmTO.getVncAddr(), passwd, null);
-        devices.addDevice(grap);
-
-        final InputDef input = new InputDef("tablet", "usb");
-        devices.addDevice(input);
-
-        // Add an explicit USB devices for ARM64
-        if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
-            devices.addDevice(new InputDef("keyboard", "usb"));
-            devices.addDevice(new InputDef("mouse", "usb"));
-            devices.addDevice(new LibvirtVMDef.USBDef((short)0, 0, 5, 0, 0));
-        }
-
-        DiskDef.DiskBus busT = getDiskModelFromVMDetail(vmTO);
-
-        if (busT == null) {
-            busT = getGuestDiskModel(vmTO.getPlatformEmulator(), isUefiEnabled);
-        }
-
-        // If we're using virtio scsi, then we need to add a virtual scsi controller
-        if (busT == DiskDef.DiskBus.SCSI) {
-            final SCSIDef sd = new SCSIDef((short)0, 0, 0, 9, 0, vcpus);
-            devices.addDevice(sd);
-        }
-
-        vm.addComp(devices);
-
-        // Add extra configuration to User VM Domain XML before starting
-        if (vmTO.getType().equals(VirtualMachine.Type.User) && MapUtils.isNotEmpty(extraConfig)) {
-            s_logger.info("Appending extra configuration data to guest VM domain XML");
-            addExtraConfigComponent(extraConfig, vm);
-        }
-
-        return vm;
     }
 
     /**
-     * Add extra configurations (if any) as a String component to the domain XML
+     * KVM domain is only valid for system VMs. Use LXC for user VMs.
+     */
+    private void configureGuestAndSystemVMToUseKVM(LibvirtVMDef vm, GuestDef guest) {
+        guest.setGuestType(GuestDef.GuestType.KVM);
+        vm.setHvsType(HypervisorType.KVM.toString().toLowerCase());
+        vm.setLibvirtVersion(_hypervisorLibvirtVersion);
+        vm.setQemuVersion(_hypervisorQemuVersion);
+    }
+
+    /**
+     * LXC domain is only valid for user VMs. Use KVM for system VMs.
+     */
+    private void configureGuestAndUserVMToUseLXC(LibvirtVMDef vm, GuestDef guest) {
+        guest.setGuestType(GuestDef.GuestType.LXC);
+        vm.setHvsType(HypervisorType.LXC.toString().toLowerCase());
+    }
+
+    /**
+     * Adds extra configurations (if any) as a String component to the domain XML
      */
     protected void addExtraConfigComponent(Map<String, String> extraConfig, LibvirtVMDef vm) {
         if (MapUtils.isNotEmpty(extraConfig)) {

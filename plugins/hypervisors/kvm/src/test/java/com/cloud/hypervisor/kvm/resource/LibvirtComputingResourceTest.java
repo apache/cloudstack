@@ -79,6 +79,7 @@ import org.libvirt.jna.virDomainMemoryStats;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -160,11 +161,27 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.NfsStoragePool;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ClockDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ConsoleDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuTuneDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DevicesDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.FeaturesDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GraphicDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestDef.GuestType;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestResourceDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InputDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VideoDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
@@ -201,6 +218,8 @@ public class LibvirtComputingResourceTest {
     VirtualMachineTO vmTO;
     @Mock
     LibvirtVMDef vmDef;
+    @Spy
+    private LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(LibvirtComputingResource.class);
 
     private final static long HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IOURING = 6003000;
     private final static long HYPERVISOR_QEMU_VERSION_SUPPORTS_IOURING = 5000000;
@@ -217,6 +236,7 @@ public class LibvirtComputingResourceTest {
 
     @Before
     public void setup() throws Exception {
+        libvirtComputingResourceSpy._qemuSocketsPath = new File("/var/run/qemu");
         Scanner scanner = new Scanner(memInfo);
         PowerMockito.whenNew(Scanner.class).withAnyArguments().thenReturn(scanner);
     }
@@ -243,15 +263,13 @@ public class LibvirtComputingResourceTest {
         final String vncAddr = "";
         final String vncPassword = "mySuperSecretPassword";
 
-        final LibvirtComputingResource lcr = new LibvirtComputingResource();
-        lcr._qemuSocketsPath = new File("/var/run/qemu");
-
         final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, speed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setArch("x86_64");
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+        to.setVcpuMaxLimit(cpus + 1);
 
-        final LibvirtVMDef vm = lcr.createVMFromSpec(to);
+        final LibvirtVMDef vm = libvirtComputingResourceSpy.createVMFromSpec(to);
         vm.setHvsType(hyperVisorType);
 
         verifyVm(to, vm);
@@ -276,15 +294,13 @@ public class LibvirtComputingResourceTest {
         final String vncAddr = "";
         final String vncPassword = "mySuperSecretPassword";
 
-        final LibvirtComputingResource lcr = new LibvirtComputingResource();
-        lcr._qemuSocketsPath = new File("/var/run/qemu");
-
         final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setArch("x86_64");
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+        to.setVcpuMaxLimit(cpus + 1);
 
-        final LibvirtVMDef vm = lcr.createVMFromSpec(to);
+        final LibvirtVMDef vm = libvirtComputingResourceSpy.createVMFromSpec(to);
         vm.setHvsType(hyperVisorType);
 
         verifyVm(to, vm);
@@ -309,14 +325,11 @@ public class LibvirtComputingResourceTest {
         final String vncAddr = "";
         final String vncPassword = "mySuperSecretPassword";
 
-        final LibvirtComputingResource lcr = new LibvirtComputingResource();
-        lcr._qemuSocketsPath = new File("/var/run/qemu");
-
         final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
 
-        final LibvirtVMDef vm = lcr.createVMFromSpec(to);
+        LibvirtVMDef vm = libvirtComputingResourceSpy.createVMFromSpec(to);
         vm.setHvsType(hyperVisorType);
 
         verifyVm(to, vm);
@@ -331,59 +344,388 @@ public class LibvirtComputingResourceTest {
      */
     @Test
     public void testCreateVMFromSpec() {
-        final int id = random.nextInt(65534);
-        final String name = "test-instance-1";
-
-        final int cpus = random.nextInt(2) + 1;
-        final int minSpeed = 1024;
-        final int maxSpeed = 2048;
-        final int minRam = 256 * 1024;
-        final int maxRam = 512 * 1024;
-
-        final String os = "Ubuntu";
-
-        final String vncAddr = "";
-        final String vncPassword = "mySuperSecretPassword";
-
-        final LibvirtComputingResource lcr = new LibvirtComputingResource();
-        lcr._qemuSocketsPath = new File("/var/run/qemu");
-
-        final VirtualMachineTO to =
-                new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
-        to.setVncAddr(vncAddr);
-        to.setArch("x86_64");
-        to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
-
-        final LibvirtVMDef vm = lcr.createVMFromSpec(to);
+        VirtualMachineTO to = createDefaultVM(false);
+        final LibvirtVMDef vm = libvirtComputingResourceSpy.createVMFromSpec(to);
         vm.setHvsType(hyperVisorType);
 
         verifyVm(to, vm);
     }
 
-    private void verifyVm(final VirtualMachineTO to, final LibvirtVMDef vm) {
-        final Document domainDoc = parse(vm.toString());
-        assertXpath(domainDoc, "/domain/@type", vm.getHvsType());
-        assertXpath(domainDoc, "/domain/name/text()", to.getName());
-        assertXpath(domainDoc, "/domain/uuid/text()", to.getUuid());
-        assertXpath(domainDoc, "/domain/description/text()", to.getOs());
-        assertXpath(domainDoc, "/domain/clock/@offset", "utc");
-        assertNodeExists(domainDoc, "/domain/features/pae");
-        assertNodeExists(domainDoc, "/domain/features/apic");
-        assertNodeExists(domainDoc, "/domain/features/acpi");
-        assertXpath(domainDoc, "/domain/devices/serial/@type", "pty");
-        assertXpath(domainDoc, "/domain/devices/serial/target/@port", "0");
-        assertXpath(domainDoc, "/domain/devices/graphics/@type", "vnc");
-        assertXpath(domainDoc, "/domain/devices/graphics/@listen", to.getVncAddr());
-        assertXpath(domainDoc, "/domain/devices/graphics/@autoport", "yes");
-        assertXpath(domainDoc, "/domain/devices/graphics/@passwd", to.getVncPassword());
+    @Test
+    public void testCreateGuestFromSpecWithoutCustomParam() {
+        VirtualMachineTO to = createDefaultVM(false);
+        LibvirtVMDef vm = new LibvirtVMDef();
+        GuestDef guestDef = libvirtComputingResourceSpy.createGuestFromSpec(to, vm, to.getUuid(), null);
+        verifySysInfo(guestDef, "smbios", to.getUuid(), "pc");
+        Assert.assertEquals(GuestDef.BootType.BIOS, guestDef.getBootType());
+        Assert.assertNull(guestDef.getBootMode());
+    }
 
-        assertXpath(domainDoc, "/domain/devices/console/@type", "pty");
-        assertXpath(domainDoc, "/domain/devices/console/target/@port", "0");
-        assertXpath(domainDoc, "/domain/devices/input/@type", "tablet");
-        assertXpath(domainDoc, "/domain/devices/input/@bus", "usb");
+    @Test
+    public void testCreateGuestFromSpecWithCustomParamAndUefi() {
+        VirtualMachineTO to = createDefaultVM(false);
 
-        assertNodeExists(domainDoc, "/domain/devices/channel");
-        assertXpath(domainDoc, "/domain/devices/channel/@type", ChannelDef.ChannelType.UNIX.toString());
+        Map<String, String> extraConfig = new HashMap<>();
+        extraConfig.put(GuestDef.BootType.UEFI.toString(), "legacy");
+
+        LibvirtVMDef vm = new LibvirtVMDef();
+
+        GuestDef guestDef = libvirtComputingResourceSpy.createGuestFromSpec(to, vm, to.getUuid(), extraConfig);
+        verifySysInfo(guestDef, "smbios", to.getUuid(), "q35");
+        Assert.assertEquals(GuestDef.BootType.UEFI, guestDef.getBootType());
+        Assert.assertEquals(GuestDef.BootMode.LEGACY, guestDef.getBootMode());
+    }
+
+    @Test
+    public void testCreateGuestFromSpecWithCustomParamUefiAndSecure() {
+        VirtualMachineTO to = createDefaultVM(false);
+
+        Map<String, String> extraConfig = new HashMap<>();
+        extraConfig.put(GuestDef.BootType.UEFI.toString(), "secure");
+
+        LibvirtVMDef vm = new LibvirtVMDef();
+
+        GuestDef guestDef = libvirtComputingResourceSpy.createGuestFromSpec(to, vm, to.getUuid(), extraConfig);
+        verifySysInfo(guestDef, "smbios", to.getUuid(), "q35");
+        Assert.assertEquals(GuestDef.BootType.UEFI, guestDef.getBootType());
+        Assert.assertEquals(GuestDef.BootMode.SECURE, guestDef.getBootMode());
+    }
+
+    @Test
+    public void testCreateGuestResourceDef() {
+        VirtualMachineTO to = createDefaultVM(false);
+
+        GuestResourceDef guestResourceDef = libvirtComputingResourceSpy.createGuestResourceDef(to);
+        verifyGuestResourceDef(guestResourceDef, to);
+    }
+
+    @Test
+    public void testCreateDevicesDef() {
+        VirtualMachineTO to = createDefaultVM(false);
+
+        GuestDef guest = new GuestDef();
+        guest.setGuestType(GuestType.KVM);
+
+        DevicesDef devicesDef = libvirtComputingResourceSpy.createDevicesDef(to, guest, to.getCpus() + 1, false);
+        verifyDevices(devicesDef, to);
+    }
+
+    @Test
+    public void testCreateDevicesWithSCSIDisk() {
+        VirtualMachineTO to = createDefaultVM(false);
+        to.setDetails(new HashMap<>());
+        libvirtComputingResourceSpy._guestCpuArch = "aarch64";
+
+        GuestDef guest = new GuestDef();
+        guest.setGuestType(GuestType.KVM);
+
+        DevicesDef devicesDef = libvirtComputingResourceSpy.createDevicesDef(to, guest, to.getCpus() + 1, false);
+        verifyDevices(devicesDef, to);
+
+        Document domainDoc = parse(devicesDef.toString());
+        assertNodeExists(domainDoc, "/devices/controller[@type='scsi']");
+        assertNodeExists(domainDoc, "/devices/controller[@model='virtio-scsi']");
+        assertNodeExists(domainDoc, "/devices/controller/address[@type='pci']");
+        assertNodeExists(domainDoc, "/devices/controller/driver[@queues='" + (to.getCpus() + 1) + "']");
+    }
+
+    @Test
+    public void testConfigureGuestAndSystemVMToUseKVM() {
+        VirtualMachineTO to = createDefaultVM(false);
+        libvirtComputingResourceSpy._hypervisorLibvirtVersion = 100;
+        libvirtComputingResourceSpy._hypervisorQemuVersion = 10;
+        LibvirtVMDef vm = new LibvirtVMDef();
+
+        GuestDef guestFromSpec = libvirtComputingResourceSpy.createGuestFromSpec(to, vm, to.getUuid(), null);
+        Assert.assertEquals(GuestDef.GuestType.KVM, guestFromSpec.getGuestType());
+        Assert.assertEquals(HypervisorType.KVM.toString().toLowerCase(), vm.getHvsType());
+    }
+
+    @Test
+    public void testConfigureGuestAndUserVMToUseLXC() {
+        VirtualMachineTO to = createDefaultVM(false);
+        libvirtComputingResourceSpy._hypervisorType = HypervisorType.LXC;
+        LibvirtVMDef vm = new LibvirtVMDef();
+
+        GuestDef guestFromSpec = libvirtComputingResourceSpy.createGuestFromSpec(to, vm, to.getUuid(), null);
+        Assert.assertEquals(GuestDef.GuestType.LXC, guestFromSpec.getGuestType());
+        Assert.assertEquals(HypervisorType.LXC.toString().toLowerCase(), vm.getHvsType());
+    }
+
+    @Test
+    public void testCreateCpuTuneDefWithoutQuotaAndPeriod() {
+        VirtualMachineTO to = createDefaultVM(false);
+
+        CpuTuneDef cpuTuneDef = libvirtComputingResourceSpy.createCpuTuneDef(to);
+        Document domainDoc = parse(cpuTuneDef.toString());
+        assertXpath(domainDoc, "/cputune/shares/text()", String.valueOf(cpuTuneDef.getShares()));
+    }
+
+    @Test
+    public void testCreateCpuTuneDefWithQuotaAndPeriod() {
+        VirtualMachineTO to = createDefaultVM(true);
+        to.setCpuQuotaPercentage(10.0);
+
+        CpuTuneDef cpuTuneDef = libvirtComputingResourceSpy.createCpuTuneDef(to);
+        Document domainDoc = parse(cpuTuneDef.toString());
+        assertXpath(domainDoc, "/cputune/shares/text()", String.valueOf(cpuTuneDef.getShares()));
+        assertXpath(domainDoc, "/cputune/quota/text()", String.valueOf(cpuTuneDef.getQuota()));
+        assertXpath(domainDoc, "/cputune/period/text()", String.valueOf(cpuTuneDef.getPeriod()));
+    }
+
+    @Test
+    public void testCreateCpuTuneDefWithMinQuota() {
+        VirtualMachineTO to = createDefaultVM(true);
+        to.setCpuQuotaPercentage(0.01);
+
+        CpuTuneDef cpuTuneDef = libvirtComputingResourceSpy.createCpuTuneDef(to);
+        Document domainDoc = parse(cpuTuneDef.toString());
+        assertXpath(domainDoc, "/cputune/shares/text()", String.valueOf(cpuTuneDef.getShares()));
+        assertXpath(domainDoc, "/cputune/quota/text()", "1000");
+        assertXpath(domainDoc, "/cputune/period/text()", String.valueOf(cpuTuneDef.getPeriod()));
+    }
+
+    @Test
+    public void testCreateDefaultClockDef() {
+        VirtualMachineTO to = createDefaultVM(false);
+
+        ClockDef clockDef = libvirtComputingResourceSpy.createClockDef(to);
+        Document domainDoc = parse(clockDef.toString());
+
+        assertXpath(domainDoc, "/clock/@offset", "utc");
+    }
+
+    @Test
+    public void testCreateClockDefWindows() {
+        VirtualMachineTO to = createDefaultVM(false);
+        to.setOs("Windows");
+
+        ClockDef clockDef = libvirtComputingResourceSpy.createClockDef(to);
+        Document domainDoc = parse(clockDef.toString());
+
+        assertXpath(domainDoc, "/clock/@offset", "localtime");
+        assertXpath(domainDoc, "/clock/timer/@name", "hypervclock");
+        assertXpath(domainDoc, "/clock/timer/@present", "yes");
+    }
+
+    @Test
+    public void testCreateClockDefKvmclock() {
+        VirtualMachineTO to = createDefaultVM(false);
+        libvirtComputingResourceSpy._hypervisorLibvirtVersion = 9020;
+
+        ClockDef clockDef = libvirtComputingResourceSpy.createClockDef(to);
+        Document domainDoc = parse(clockDef.toString());
+
+        assertXpath(domainDoc, "/clock/@offset", "utc");
+        assertXpath(domainDoc, "/clock/timer/@name", "kvmclock");
+    }
+
+    @Test
+    public void testCreateTermPolicy() {
+        TermPolicy termPolicy = libvirtComputingResourceSpy.createTermPolicy();
+
+        String xml = "<terms>\n" + termPolicy.toString() + "</terms>";
+        Document domainDoc = parse(xml);
+
+        assertXpath(domainDoc, "/terms/on_reboot/text()", "restart");
+        assertXpath(domainDoc, "/terms/on_poweroff/text()", "destroy");
+        assertXpath(domainDoc, "/terms/on_crash/text()", "destroy");
+    }
+
+    @Test
+    public void testCreateFeaturesDef() {
+        VirtualMachineTO to = createDefaultVM(false);
+        FeaturesDef featuresDef = libvirtComputingResourceSpy.createFeaturesDef(null, false, false);
+
+        String xml = "<domain>" + featuresDef.toString() + "</domain>";
+        Document domainDoc = parse(xml);
+
+        verifyFeatures(domainDoc);
+    }
+
+    @Test
+    public void testCreateFeaturesDefWithUefi() {
+        VirtualMachineTO to = createDefaultVM(false);
+        HashMap<String, String> extraConfig = new HashMap<>();
+        extraConfig.put(GuestDef.BootType.UEFI.toString(), "");
+
+        FeaturesDef featuresDef = libvirtComputingResourceSpy.createFeaturesDef(extraConfig, true, true);
+
+        String xml = "<domain>" + featuresDef.toString() + "</domain>";
+        Document domainDoc = parse(xml);
+
+        verifyFeatures(domainDoc);
+    }
+
+    @Test
+    public void testCreateWatchDog() {
+        WatchDogDef watchDogDef = libvirtComputingResourceSpy.createWatchDogDef();
+        verifyWatchDogDevices(parse(watchDogDef.toString()), "");
+    }
+
+    @Test
+    public void testCreateArm64UsbDef() {
+        DevicesDef devicesDef = new DevicesDef();
+
+        libvirtComputingResourceSpy.createArm64UsbDef(devicesDef);
+        Document domainDoc = parse(devicesDef.toString());
+
+        assertXpath(domainDoc, "/devices/controller/@type", "usb");
+        assertXpath(domainDoc, "/devices/controller/@model", "qemu-xhci");
+        assertXpath(domainDoc, "/devices/controller/address/@type", "pci");
+        assertNodeExists(domainDoc, "/devices/input[@type='keyboard']");
+        assertNodeExists(domainDoc, "/devices/input[@bus='usb']");
+        assertNodeExists(domainDoc, "/devices/input[@type='mouse']");
+        assertNodeExists(domainDoc, "/devices/input[@bus='usb']");
+    }
+
+    @Test
+    public void testCreateInputDef() {
+        InputDef inputDef = libvirtComputingResourceSpy.createTabletInputDef();
+        verifyTabletInputDevice(parse(inputDef.toString()), "");
+    }
+
+    @Test
+    public void testCreateGraphicDef() {
+        VirtualMachineTO to = createDefaultVM(false);
+        GraphicDef graphicDef = libvirtComputingResourceSpy.createGraphicDef(to);
+        verifyGraphicsDevices(to, parse(graphicDef.toString()), "");
+    }
+
+    @Test
+    public void testCreateChannelDef() {
+        VirtualMachineTO to = createDefaultVM(false);
+        ChannelDef channelDef = libvirtComputingResourceSpy.createChannelDef(to);
+        verifyChannelDevices(to, parse(channelDef.toString()), "");
+    }
+
+    @Test
+    public void testCreateSCSIDef() {
+        VirtualMachineTO to = createDefaultVM(false);
+
+        SCSIDef scsiDef = libvirtComputingResourceSpy.createSCSIDef(to.getCpus());
+        Document domainDoc = parse(scsiDef.toString());
+        verifyScsi(to, domainDoc, "");
+    }
+
+    @Test
+    public void testCreateConsoleDef() {
+        VirtualMachineTO to = createDefaultVM(false);
+        ConsoleDef consoleDef = libvirtComputingResourceSpy.createConsoleDef();
+        verifyConsoleDevices(parse(consoleDef.toString()), "");
+    }
+
+    @Test
+    public void testCreateVideoDef() {
+        VirtualMachineTO to = createDefaultVM(false);
+        libvirtComputingResourceSpy._videoRam = 200;
+        libvirtComputingResourceSpy._videoHw = "vGPU";
+
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef();
+        Document domainDoc = parse(videoDef.toString());
+        assertXpath(domainDoc, "/video/model/@type", "vGPU");
+        assertXpath(domainDoc, "/video/model/@vram", "200");
+    }
+
+    @Test
+    public void testCreateRngDef() {
+        VirtualMachineTO to = createDefaultVM(false);
+        RngDef rngDef = libvirtComputingResourceSpy.createRngDef();
+        Document domainDoc = parse(rngDef.toString());
+
+        assertXpath(domainDoc, "/rng/@model", "virtio");
+        assertXpath(domainDoc, "/rng/rate/@period", "1000");
+        assertXpath(domainDoc, "/rng/rate/@bytes", "2048");
+        assertXpath(domainDoc, "/rng/backend/@model", "random");
+        assertXpath(domainDoc, "/rng/backend/text()", "/dev/random");
+    }
+
+    @Test
+    public void testCreateSerialDef() {
+        VirtualMachineTO to = createDefaultVM(false);
+        SerialDef serialDef = libvirtComputingResourceSpy.createSerialDef();
+        verifySerialDevices(parse(serialDef.toString()), "");
+    }
+
+    private VirtualMachineTO createDefaultVM(boolean limitCpuUse) {
+        int id = random.nextInt(65534);
+        String name = "test-instance-1";
+
+        int cpus = random.nextInt(2) + 1;
+        int minSpeed = 1024;
+        int maxSpeed = 2048;
+        int minRam = 256 * 1024;
+        int maxRam = 512 * 1024;
+
+        String os = "Ubuntu";
+        String vncAddr = "";
+        String vncPassword = "mySuperSecretPassword";
+
+        final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, limitCpuUse,
+                vncPassword);
+        to.setArch("x86_64");
+        to.setVncAddr(vncAddr);
+        to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+        to.setVcpuMaxLimit(cpus + 1);
+
+        return to;
+    }
+
+    private void verifyGuestResourceDef(GuestResourceDef guestResourceDef, VirtualMachineTO to) {
+        String xml = "<domain>" + guestResourceDef.toString() + "</domain>";
+        Document domainDoc = parse(xml);
+
+        String minRam = String.valueOf(to.getMinRam() / 1024);
+        verifyMemory(to, domainDoc, minRam);
+        assertNodeExists(domainDoc, "/domain/vcpu");
+        verifyMemballoonDevices(domainDoc);
+        verifyVcpu(to, domainDoc);
+    }
+
+    private void verifyVm(VirtualMachineTO to, LibvirtVMDef vm) {
+        Document domainDoc = parse(vm.toString());
+        verifyHeader(domainDoc, vm.getHvsType(), to.getName(), to.getUuid(), to.getOs());
+        verifyFeatures(domainDoc);
+        verifyClock(domainDoc);
+        verifySerialDevices(domainDoc, "/domain/devices");
+        verifyGraphicsDevices(to, domainDoc, "/domain/devices");
+        verifyConsoleDevices(domainDoc, "/domain/devices");
+        verifyTabletInputDevice(domainDoc, "/domain/devices");
+        verifyChannelDevices(to, domainDoc, "/domain/devices");
+
+        String minRam = String.valueOf(to.getMinRam() / 1024);
+        verifyMemory(to, domainDoc, minRam);
+        assertNodeExists(domainDoc, "/domain/cpu");
+
+        verifyMemballoonDevices(domainDoc);
+        verifyVcpu(to, domainDoc);
+        verifyOsType(domainDoc);
+        verifyOsBoot(domainDoc);
+        verifyPoliticOn_(domainDoc);
+        verifyWatchDogDevices(domainDoc, "/domain/devices");
+    }
+
+    private void verifyMemballoonDevices(Document domainDoc) {
+        assertXpath(domainDoc, "/domain/devices/memballoon/@model", "virtio");
+    }
+
+    private void verifyVcpu(VirtualMachineTO to, Document domainDoc) {
+        assertXpath(domainDoc, "/domain/vcpu/text()", String.valueOf(to.getCpus()));
+    }
+
+    private void verifyMemory(VirtualMachineTO to, Document domainDoc, String minRam) {
+        assertXpath(domainDoc, "/domain/memory/text()", String.valueOf(to.getMaxRam() / 1024));
+        assertXpath(domainDoc, "/domain/currentMemory/text()", minRam);
+    }
+
+    private void verifyWatchDogDevices(Document domainDoc, String prefix) {
+        assertXpath(domainDoc, prefix + "/watchdog/@model", "i6300esb");
+        assertXpath(domainDoc, prefix + "/watchdog/@action", "none");
+    }
+
+    private void verifyChannelDevices(VirtualMachineTO to, Document domainDoc, String prefix) {
+        assertNodeExists(domainDoc, prefix + "/channel");
+        assertXpath(domainDoc, prefix + "/channel/@type", ChannelDef.ChannelType.UNIX.toString());
 
         /*
            The configure() method of LibvirtComputingResource has not been called, so the default path for the sockets
@@ -392,28 +734,93 @@ public class LibvirtComputingResourceTest {
            Calling configure is also not possible since that looks for certain files on the system which are not present
            during testing
          */
-        assertXpath(domainDoc, "/domain/devices/channel/source/@path", "/var/run/qemu/" + to.getName() + ".org.qemu.guest_agent.0");
-        assertXpath(domainDoc, "/domain/devices/channel/target/@name", "org.qemu.guest_agent.0");
+        assertXpath(domainDoc, prefix + "/channel/source/@path", "/var/run/qemu/" + to.getName() + ".org.qemu.guest_agent.0");
+        assertXpath(domainDoc, prefix + "/channel/target/@name", "org.qemu.guest_agent.0");
+    }
 
-        assertXpath(domainDoc, "/domain/memory/text()", String.valueOf( to.getMaxRam() / 1024 ));
-        assertXpath(domainDoc, "/domain/currentMemory/text()", String.valueOf( to.getMinRam() / 1024 ));
+    private void verifyTabletInputDevice(Document domainDoc, String prefix) {
+        assertXpath(domainDoc, prefix + "/input/@type", "tablet");
+        assertXpath(domainDoc, prefix + "/input/@bus", "usb");
+    }
 
-        assertXpath(domainDoc, "/domain/devices/memballoon/@model", "virtio");
-        assertXpath(domainDoc, "/domain/vcpu/text()", String.valueOf(to.getCpus()));
+    private void verifyConsoleDevices(Document domainDoc, String prefix) {
+        assertXpath(domainDoc, prefix + "/console/@type", "pty");
+        assertXpath(domainDoc, prefix + "/console/target/@port", "0");
+    }
 
-        assertXpath(domainDoc, "/domain/os/type/@machine", "pc");
-        assertXpath(domainDoc, "/domain/os/type/text()", "hvm");
+    private void verifyScsi(VirtualMachineTO to, Document domainDoc, String prefix) {
+        assertXpath(domainDoc, prefix + "/controller/@type", "scsi");
+        assertXpath(domainDoc, prefix + "/controller/@model", "virtio-scsi");
+        assertXpath(domainDoc, prefix + "/controller/address/@type", "pci");
+        assertXpath(domainDoc, prefix + "/controller/driver/@queues", String.valueOf(to.getCpus()));
+    }
 
-        assertNodeExists(domainDoc, "/domain/cpu");
+    private void verifyClock(Document domainDoc) {
+        assertXpath(domainDoc, "/domain/clock/@offset", "utc");
+    }
+
+    private void verifyGraphicsDevices(VirtualMachineTO to, Document domainDoc, String prefix) {
+        assertXpath(domainDoc, prefix + "/graphics/@type", "vnc");
+        assertXpath(domainDoc, prefix + "/graphics/@listen", to.getVncAddr());
+        assertXpath(domainDoc, prefix + "/graphics/@autoport", "yes");
+        assertXpath(domainDoc, prefix + "/graphics/@passwd", to.getVncPassword());
+    }
+
+    private void verifySerialDevices(Document domainDoc, String prefix) {
+        assertXpath(domainDoc, prefix + "/serial/@type", "pty");
+        assertXpath(domainDoc, prefix + "/serial/target/@port", "0");
+    }
+
+    private void verifyOsBoot(Document domainDoc) {
         assertNodeExists(domainDoc, "/domain/os/boot[@dev='cdrom']");
         assertNodeExists(domainDoc, "/domain/os/boot[@dev='hd']");
+    }
 
+    private void verifyOsType(Document domainDoc) {
+        assertXpath(domainDoc, "/domain/os/type/@machine", "pc");
+        assertXpath(domainDoc, "/domain/os/type/text()", "hvm");
+    }
+
+    private void verifyPoliticOn_(Document domainDoc) {
         assertXpath(domainDoc, "/domain/on_reboot/text()", "restart");
         assertXpath(domainDoc, "/domain/on_poweroff/text()", "destroy");
         assertXpath(domainDoc, "/domain/on_crash/text()", "destroy");
+    }
 
-        assertXpath(domainDoc, "/domain/devices/watchdog/@model", "i6300esb");
-        assertXpath(domainDoc, "/domain/devices/watchdog/@action", "none");
+    private void verifyFeatures(Document domainDoc) {
+        assertNodeExists(domainDoc, "/domain/features/pae");
+        assertNodeExists(domainDoc, "/domain/features/apic");
+        assertNodeExists(domainDoc, "/domain/features/acpi");
+    }
+
+    private void verifyHeader(Document domainDoc, String hvsType, String name, String uuid, String os) {
+        assertXpath(domainDoc, "/domain/@type", hvsType);
+        assertXpath(domainDoc, "/domain/name/text()", name);
+        assertXpath(domainDoc, "/domain/uuid/text()", uuid);
+        assertXpath(domainDoc, "/domain/description/text()", os);
+    }
+
+    private void verifyDevices(DevicesDef devicesDef, VirtualMachineTO to) {
+        Document domainDoc = parse(devicesDef.toString());
+
+        verifyWatchDogDevices(domainDoc, "/devices");
+        verifyConsoleDevices(domainDoc, "/devices");
+        verifySerialDevices(domainDoc, "/devices");
+        verifyGraphicsDevices(to, domainDoc, "/devices");
+        verifyChannelDevices(to, domainDoc, "/devices");
+        verifyTabletInputDevice(domainDoc, "/devices");
+    }
+
+    private void verifySysInfo(GuestDef guestDef, String type, String uuid, String machine) {
+        // Need put <guestdef> because the string of guestdef generate two root element in XML, raising a error in parse.
+        String xml = "<guestdef>\n" + guestDef.toString() + "</guestdef>";
+
+        Document domainDoc = parse(xml);
+        assertXpath(domainDoc, "/guestdef/sysinfo/@type", type);
+        assertNodeExists(domainDoc, "/guestdef/sysinfo/system/entry[@name='manufacturer']");
+        assertNodeExists(domainDoc, "/guestdef/sysinfo/system/entry[@name='product']");
+        assertXpath(domainDoc, "/guestdef/sysinfo/system/entry[@name='uuid']/text()", uuid);
+        assertXpath(domainDoc, "/guestdef/os/type/@machine", machine);
     }
 
     static Document parse(final String input) {

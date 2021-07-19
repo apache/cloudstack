@@ -413,4 +413,9 @@ public class VirtualMachineTO {
     public void setDeployAsIsInfo(DeployAsIsInfoTO deployAsIsInfo) {
         this.deployAsIsInfo = deployAsIsInfo;
     }
+
+    @Override
+    public String toString() {
+        return String.format("VM {id: \"%s\", name: \"%s\", uuid: \"%s\", type: \"%s\"}", id, name, uuid, type);
+    }
 }
