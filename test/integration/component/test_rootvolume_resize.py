@@ -228,16 +228,14 @@ class TestResizeVolume(cloudstackTestCase):
             listall='True'
         )
         rootvolume = list_volume_response[0]
-        if vm.state == "Running" and \
-                (vm.hypervisor.lower() == "xenserver" or \
-                             vm.hypervisor.lower() == "vmware"):
+        if vm.state == "Running" and vm.hypervisor.lower() == "xenserver":
             self.virtual_machine.stop(apiclient)
             time.sleep(self.services["sleep"])
-            if vm.hypervisor.lower() == "vmware":
-                rootdiskcontroller = self.getDiskController(vm)
-                if rootdiskcontroller!="scsi":
-                    raise Exception("root volume resize only supported on scsi disk ,"
-                                    "please check rootdiskcontroller type")
+        if vm.hypervisor.lower() == "vmware":
+            rootdiskcontroller = self.getDiskController(vm)
+            if rootdiskcontroller!="scsi":
+                raise Exception("root volume resize only supported on scsi disk ,"
+                                "please check rootdiskcontroller type")
 
         rootvolobj = Volume(rootvolume.__dict__)
         newsize = (rootvolume.size >> 30) + 2
@@ -245,8 +243,7 @@ class TestResizeVolume(cloudstackTestCase):
         if rootvolume is not None:
             try:
                 rootvolobj.resize(apiclient, size=newsize)
-                if vm.hypervisor.lower() == "xenserver" or \
-                                vm.hypervisor.lower() == "vmware":
+                if vm.hypervisor.lower() == "xenserver":
                     self.virtual_machine.start(apiclient)
                     time.sleep(self.services["sleep"])
                 ssh = SshClient(self.virtual_machine.ssh_ip, 22,
@@ -916,9 +913,7 @@ class TestResizeVolume(cloudstackTestCase):
             )
             res = validateList(list_volume_response)
             self.assertNotEqual(res[2], INVALID_INPUT, "listVolumes returned invalid object in response")
-            if vm.state == "Running" and (
-                            vm.hypervisor.lower() == "xenserver" or
-                            vm.hypervisor.lower() == "vmware"):
+            if vm.state == "Running" and vm.hypervisor.lower() == "xenserver":
                 self.virtual_machine.stop(self.apiclient)
                 time.sleep(self.services["sleep"])
 
@@ -998,9 +993,7 @@ class TestResizeVolume(cloudstackTestCase):
             )
             res = validateList(list_volume_response)
             self.assertNotEqual(res[2], INVALID_INPUT, "listVolumes returned invalid object in response")
-            if vm.state == "Running" and (
-                            vm.hypervisor.lower() == "xenserver" or
-                            vm.hypervisor.lower() == "vmware"):
+            if vm.state == "Running" and vm.hypervisor.lower() == "xenserver":
                 self.virtual_machine.stop(self.apiclient)
                 time.sleep(self.services["sleep"])
             rootvolume = list_volume_response[0]
@@ -1115,9 +1108,7 @@ class TestResizeVolume(cloudstackTestCase):
             )
             res = validateList(list_volume_response)
             self.assertNotEqual(res[2], INVALID_INPUT, "listVolumes returned invalid object in response")
-            if vm.state == "Running" and \
-                    (vm.hypervisor.lower() == "xenserver" or
-                             vm.hypervisor.lower() == "vmware"):
+            if vm.state == "Running" and vm.hypervisor.lower() == "xenserver":
                 self.virtual_machine.stop(self.apiclient)
                 time.sleep(self.services["sleep"])
             rootvolume = list_volume_response[0]
