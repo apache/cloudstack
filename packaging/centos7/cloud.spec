@@ -326,8 +326,10 @@ mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/plugins
 install -D packaging/systemd/cloudstack-agent.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-agent.service
+install -D packaging/systemd/cloudstack-agent-ha-helper.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-agent-ha-helper.service
 install -D packaging/systemd/cloudstack-rolling-maintenance@.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-rolling-maintenance@.service
 install -D packaging/systemd/cloudstack-agent.default ${RPM_BUILD_ROOT}%{_sysconfdir}/default/%{name}-agent
+install -D packaging/systemd/cloudstack-agent-ha-helper.default ${RPM_BUILD_ROOT}%{_sysconfdir}/default/%{name}-agent-ha-helper
 install -D agent/target/transformed/agent.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/agent.properties
 install -D agent/target/transformed/environment.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/environment.properties
 install -D agent/target/transformed/log4j-cloud.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/log4j-cloud.xml
@@ -480,6 +482,7 @@ mkdir -m 0755 -p /usr/share/cloudstack-agent/tmp
 /sbin/service libvirtd restart
 /sbin/systemctl enable cloudstack-agent > /dev/null 2>&1 || true
 /sbin/systemctl enable cloudstack-rolling-maintenance@p > /dev/null 2>&1 || true
+/sbin/systemctl enable cloudstack-agent-ha-helper > /dev/null 2>&1 || true
 
 # if saved configs from upgrade exist, copy them over
 if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
@@ -575,8 +578,10 @@ pip3 install --upgrade urllib3
 %attr(0755,root,root) %{_bindir}/%{name}-guest-tool
 %attr(0755,root,root) %{_bindir}/%{name}-ssh
 %attr(0644,root,root) %{_unitdir}/%{name}-agent.service
+%attr(0644,root,root) %{_unitdir}/%{name}-agent-ha-helper.service
 %attr(0644,root,root) %{_unitdir}/%{name}-rolling-maintenance@.service
 %config(noreplace) %{_sysconfdir}/default/%{name}-agent
+%config(noreplace) %{_sysconfdir}/default/%{name}-agent-ha-helper
 %attr(0644,root,root) %{_sysconfdir}/profile.d/%{name}-agent-profile.sh
 %config(noreplace) %attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-agent
 %attr(0755,root,root) %{_datadir}/%{name}-common/scripts/network/cisco

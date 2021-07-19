@@ -24,12 +24,12 @@ import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.component.AdapterBase;
 import org.apache.cloudstack.ha.HAManager;
+import org.apache.cloudstack.kvm.ha.KvmHaHelper;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
@@ -40,8 +40,6 @@ import java.util.List;
 public class KVMInvestigator extends AdapterBase implements Investigator {
     private final static Logger s_logger = Logger.getLogger(KVMInvestigator.class);
     @Inject
-    private HostDao _hostDao;
-    @Inject
     private AgentManager _agentMgr;
     @Inject
     private ResourceManager _resourceMgr;
@@ -49,6 +47,8 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
     private PrimaryDataStoreDao _storagePoolDao;
     @Inject
     private HAManager haManager;
+    @Inject
+    private KvmHaHelper kvmHaHelper;
 
     @Override
     public boolean isVmAlive(com.cloud.vm.VirtualMachine vm, Host host) throws UnknownVM {
@@ -77,43 +77,70 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
             return haManager.getHostStatus(agent);
         }
 
-        List<StoragePoolVO> clusterPools = _storagePoolDao.listPoolsByCluster(agent.getClusterId());
-        boolean hasNfs = false;
-        for (StoragePoolVO pool : clusterPools) {
-            if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
-                hasNfs = true;
-                break;
-            }
-        }
-        if (!hasNfs) {
-            List<StoragePoolVO> zonePools = _storagePoolDao.findZoneWideStoragePoolsByHypervisor(agent.getDataCenterId(), agent.getHypervisorType());
-            for (StoragePoolVO pool : zonePools) {
-                if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
-                    hasNfs = true;
-                    break;
-                }
-            }
-        }
-        if (!hasNfs) {
-            s_logger.warn(
-                    "Agent investigation was requested on host " + agent + ", but host does not support investigation because it has no NFS storage. Skipping investigation.");
-            return Status.Disconnected;
+        Status agentStatus = Status.Disconnected;
+        boolean hasNfs = isHostServedByNfsPool(agent);
+        if (hasNfs) {
+            agentStatus = checkAgentStatusViaNfs(agent);
+            s_logger.debug(String.format("Agent investigation was requested on host %s. Agent status via NFS heartbeat is %s.", agent, agentStatus));
+        } else {
+            s_logger.debug(String.format("Agent investigation was requested on host %s, but host has no NFS storage. Skipping investigation via NFS.", agent));
         }
 
+        boolean isKvmHaWebserviceEnabled = kvmHaHelper.isKvmHaWebserviceEnabled(agent);
+        if (isKvmHaWebserviceEnabled) {
+            agentStatus = kvmHaHelper.checkAgentStatusViaKvmHaAgent(agent, agentStatus);
+        }
+
+        return agentStatus;
+    }
+
+    private boolean isHostServedByNfsPool(Host agent) {
+        boolean hasNfs = hasNfsPoolClusterWideForHost(agent);
+        if (!hasNfs) {
+            hasNfs = hasNfsPoolZoneWideForHost(agent);
+        }
+        return hasNfs;
+    }
+
+    private boolean hasNfsPoolZoneWideForHost(Host agent) {
+        List<StoragePoolVO> zonePools = _storagePoolDao.findZoneWideStoragePoolsByHypervisor(agent.getDataCenterId(), agent.getHypervisorType());
+        for (StoragePoolVO pool : zonePools) {
+            if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasNfsPoolClusterWideForHost(Host agent) {
+        List<StoragePoolVO> clusterPools = _storagePoolDao.listPoolsByCluster(agent.getClusterId());
+        for (StoragePoolVO pool : clusterPools) {
+            if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks the Agent Status sending command CheckOnHostCommand to the Agent, which verifies host Status via NFS Heart Beat script
+     */
+    private Status checkAgentStatusViaNfs(Host agent) {
         Status hostStatus = null;
         Status neighbourStatus = null;
         CheckOnHostCommand cmd = new CheckOnHostCommand(agent);
 
-        try {
-            Answer answer = _agentMgr.easySend(agent.getId(), cmd);
-            if (answer != null) {
-                hostStatus = answer.getResult() ? Status.Down : Status.Up;
-            }
-        } catch (Exception e) {
-            s_logger.debug("Failed to send command to host: " + agent.getId());
+        Answer answer = _agentMgr.easySend(agent.getId(), cmd);
+        if (answer != null) {
+            hostStatus = answer.getResult() ? Status.Down : Status.Up;
         }
+
         if (hostStatus == null) {
             hostStatus = Status.Disconnected;
+        }
+
+        if (Status.Up == hostStatus) {
+            return hostStatus;
         }
 
         List<HostVO> neighbors = _resourceMgr.listHostsInClusterByStatus(agent.getClusterId(), Status.Up);
@@ -122,12 +149,12 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
                     || (neighbor.getHypervisorType() != Hypervisor.HypervisorType.KVM && neighbor.getHypervisorType() != Hypervisor.HypervisorType.LXC)) {
                 continue;
             }
-            s_logger.debug("Investigating host:" + agent.getId() + " via neighbouring host:" + neighbor.getId());
+            s_logger.debug(String.format("Investigating %s via neighbouring %s ", agent, neighbor));
             try {
-                Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
+                answer = _agentMgr.easySend(neighbor.getId(), cmd);
                 if (answer != null) {
                     neighbourStatus = answer.getResult() ? Status.Down : Status.Up;
-                    s_logger.debug("Neighbouring host:" + neighbor.getId() + " returned status:" + neighbourStatus + " for the investigated host:" + agent.getId());
+                    s_logger.debug(String.format("Neighbouring %s returned status: %s for the investigated %s", neighbor, neighbourStatus, agent));
                     if (neighbourStatus == Status.Up) {
                         break;
                     }
@@ -136,13 +163,15 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
                 s_logger.debug("Failed to send command to host: " + neighbor.getId());
             }
         }
-        if (neighbourStatus == Status.Up && (hostStatus == Status.Disconnected || hostStatus == Status.Down)) {
+
+        if (neighbourStatus == Status.Up) {
             hostStatus = Status.Disconnected;
-        }
-        if (neighbourStatus == Status.Down && (hostStatus == Status.Disconnected || hostStatus == Status.Down)) {
+        } else if (neighbourStatus == Status.Down) {
             hostStatus = Status.Down;
         }
-        s_logger.debug("HA: HOST is ineligible legacy state " + hostStatus + " for host " + agent.getId());
+
+        s_logger.debug(String.format("HA: HOST is ineligible legacy state %s for %s", hostStatus, agent));
         return hostStatus;
     }
+
 }

@@ -56,3 +56,10 @@ Package: cloudstack-integration-tests
 Architecture: all
 Depends: ${misc:Depends}, cloudstack-marvin (= ${source:Version})
 Description: The CloudStack Marvin integration tests
+
+Package: cloudstack-agent-ha-helper
+Architecture: all
+Depends: ${python3:Depends}, libvirt-bin (>= 1.3) | libvirt-daemon-system (>= 3.0), python3-libvirt
+Description: The CloudStack Agent HA Helper is a (Python) webserver on port 8080;
+ it exposes a simple JSON API which returns a list of Virtual Machines
+ running in the host according to libvirt.
