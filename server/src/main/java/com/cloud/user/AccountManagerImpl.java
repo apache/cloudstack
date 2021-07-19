@@ -2589,7 +2589,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
         }
-        if (listProjectResourcesCriteria != null) {
+        if (listProjectResourcesCriteria != null && listProjectResourcesCriteria != Project.ListProjectResourcesCriteria.ListAllResources) {
             SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
             if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
                 accountSearch.and("type", accountSearch.entity().getType(), SearchCriteria.Op.EQ);
@@ -2611,7 +2611,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
             ListProjectResourcesCriteria listProjectResourcesCriteria) {
 
-        if (listProjectResourcesCriteria != null) {
+        if (listProjectResourcesCriteria != null && listProjectResourcesCriteria != Project.ListProjectResourcesCriteria.ListAllResources) {
             sc.setJoinParameters("accountSearch", "type", Account.ACCOUNT_TYPE_PROJECT);
         }
 
@@ -2695,6 +2695,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         } else {
             if (id == null) {
                 domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.SkipProjectResources);
+            }
+
+            if ((caller.getType() == Account.ACCOUNT_TYPE_ADMIN) ||
+                    (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
+                    (caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) ||
+                    (caller.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN)) {
+                domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.ListAllResources);
             }
             if (permittedAccounts.isEmpty() && domainId == null) {
                 if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
