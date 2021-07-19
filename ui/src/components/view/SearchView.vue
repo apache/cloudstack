@@ -62,8 +62,11 @@
                     :key="idx"
                     :value="opt.id">{{ $t(opt.name) }}</a-select-option>
                 </a-select>
+                <a-switch
+                  v-if="field.type==='switch'"
+                  v-decorator="[field.name]" />
                 <a-input
-                  v-else-if="field.type==='input'"
+                  v-if="field.type==='input'"
                   v-decorator="[field.name, {
                     initialValue: fieldValues[field.name] || null
                   }]" />
@@ -214,6 +217,9 @@ export default {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
+        }
+        if (item === 'projectwide') {
+          type = 'switch'
         }
 
         this.fields.push({
@@ -447,7 +453,11 @@ export default {
           if (input === '' || input === null || input === undefined) {
             continue
           }
-          this.paramsFilter[key] = input
+          if (key === 'projectwide' && input) {
+            this.paramsFilter.projectid = -1
+          } else {
+            this.paramsFilter[key] = input
+          }
         }
         if (this.searchFilters.includes('tags')) {
           if (this.inputKey) {
