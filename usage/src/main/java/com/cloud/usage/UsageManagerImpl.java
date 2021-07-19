@@ -1641,7 +1641,13 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
         SnapshotVO snapshotInstance = _snapshotDao.findById(snapId);
 
-        if (snapshotInstance != null && snapshotInstance.getsnapshotType() == Snapshot.Type.INTERNAL.ordinal()) {
+        if (snapshotInstance == null) {
+            return;
+        }
+
+        String typeDescription = snapshotInstance.getTypeDescription();
+
+        if (typeDescription == null || typeDescription.trim().equalsIgnoreCase("INTERNAL")) {
             return;
         }
 
