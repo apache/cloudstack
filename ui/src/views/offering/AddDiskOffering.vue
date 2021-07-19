@@ -23,45 +23,30 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.name') }}
-            <a-tooltip :title="apiParams.name.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             autoFocus
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
-            :placeholder="this.$t('label.name')"/>
+            :placeholder="apiParams.name.description"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.displaytext') }}
-            <a-tooltip :title="apiParams.displaytext.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
           <a-input
             v-decorator="['displaytext', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
-            :placeholder="this.$t('label.displaytext')"/>
+            :placeholder="apiParams.displaytext.description"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.storagetype') }}
-            <a-tooltip :title="apiParams.storagetype.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.storagetype')" :tooltip="apiParams.storagetype.description"/>
           <a-radio-group
             v-decorator="['storagetype', {
-              initialValue: this.storageType
+              initialValue: storageType
             }]"
             buttonStyle="solid"
-            @change="selected => { this.handleStorageTypeChange(selected.target.value) }">
+            @change="selected => { handleStorageTypeChange(selected.target.value) }">
             <a-radio-button value="shared">
               {{ $t('label.shared') }}
             </a-radio-button>
@@ -71,18 +56,13 @@
           </a-radio-group>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.provisioningtype') }}
-            <a-tooltip :title="apiParams.provisioningtype.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.provisioningtype')" :tooltip="apiParams.provisioningtype.description"/>
           <a-radio-group
             v-decorator="['provisioningtype', {
-              initialValue: this.provisioningType
+              initialValue: provisioningType
             }]"
             buttonStyle="solid"
-            @change="selected => { this.handleProvisioningTypeChange(selected.target.value) }">
+            @change="selected => { handleProvisioningTypeChange(selected.target.value) }">
             <a-radio-button value="thin">
               {{ $t('label.provisioningtype.thin') }}
             </a-radio-button>
@@ -95,21 +75,11 @@
           </a-radio-group>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.customdisksize') }}
-            <a-tooltip :title="apiParams.customized.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
-          <a-switch v-decorator="['customdisksize', { initialValue: this.isCustomDiskSize }]" :checked="this.isCustomDiskSize" @change="val => { this.isCustomDiskSize = val }" />
+          <tooltip-label slot="label" :title="$t('label.customdisksize')" :tooltip="apiParams.customized.description"/>
+          <a-switch v-decorator="['customdisksize', { initialValue: isCustomDiskSize }]" :checked="isCustomDiskSize" @change="val => { isCustomDiskSize = val }" />
         </a-form-item>
-        <a-form-item v-if="!this.isCustomDiskSize">
-          <span slot="label">
-            {{ $t('label.disksize') }}
-            <a-tooltip :title="apiParams.disksize.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+        <a-form-item v-if="!isCustomDiskSize">
+          <tooltip-label slot="label" :title="$t('label.disksize')" :tooltip="apiParams.disksize.description"/>
           <a-input
             v-decorator="['disksize', {
               rules: [
@@ -117,22 +87,22 @@
                 {
                   validator: (rule, value, callback) => {
                     if (value && (isNaN(value) || value <= 0)) {
-                      callback(this.$t('message.error.number'))
+                      callback($t('message.error.number'))
                     }
                     callback()
                   }
                 }
               ]
             }]"
-            :placeholder="this.$t('label.disksize')"/>
+            :placeholder="apiParams.disksize.description"/>
         </a-form-item>
         <a-form-item :label="$t('label.qostype')">
           <a-radio-group
             v-decorator="['qostype', {
-              initialValue: this.qosType
+              initialValue: qosType
             }]"
             buttonStyle="solid"
-            @change="selected => { this.handleQosTypeChange(selected.target.value) }">
+            @change="selected => { handleQosTypeChange(selected.target.value) }">
             <a-radio-button value="">
               {{ $t('label.none') }}
             </a-radio-button>
@@ -144,168 +114,123 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item v-if="this.qosType === 'hypervisor'">
-          <span slot="label">
-            {{ $t('label.diskbytesreadrate') }}
-            <a-tooltip :title="apiParams.bytesreadrate.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+        <a-form-item v-if="qosType === 'hypervisor'">
+          <tooltip-label slot="label" :title="$t('label.diskbytesreadrate')" :tooltip="apiParams.bytesreadrate.description"/>
           <a-input
             v-decorator="['diskbytesreadrate', {
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback(this.$t('message.error.number'))
+                    callback($t('message.error.number'))
                   }
                   callback()
                 }
               }]
             }]"
-            :placeholder="this.$t('label.diskbytesreadrate')"/>
+            :placeholder="apiParams.bytesreadrate.description"/>
         </a-form-item>
-        <a-form-item v-if="this.qosType === 'hypervisor'">
-          <span slot="label">
-            {{ $t('label.diskbyteswriterate') }}
-            <a-tooltip :title="apiParams.byteswriterate.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+        <a-form-item v-if="qosType === 'hypervisor'">
+          <tooltip-label slot="label" :title="$t('label.diskbyteswriterate')" :tooltip="apiParams.byteswriterate.description"/>
           <a-input
             v-decorator="['diskbyteswriterate', {
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback(this.$t('message.error.number'))
+                    callback($t('message.error.number'))
                   }
                   callback()
                 }
               }]
             }]"
-            :placeholder="this.$t('label.diskbyteswriterate')"/>
+            :placeholder="apiParams.byteswriterate.description"/>
         </a-form-item>
-        <a-form-item v-if="this.qosType === 'hypervisor'">
-          <span slot="label">
-            {{ $t('label.diskiopsreadrate') }}
-            <a-tooltip :title="apiParams.iopsreadrate.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+        <a-form-item v-if="qosType === 'hypervisor'">
+          <tooltip-label slot="label" :title="$t('label.diskiopsreadrate')" :tooltip="apiParams.iopsreadrate.description"/>
           <a-input
             v-decorator="['diskiopsreadrate', {
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback(this.$t('message.error.number'))
+                    callback($t('message.error.number'))
                   }
                   callback()
                 }
               }]
             }]"
-            :placeholder="this.$t('label.diskiopsreadrate')"/>
+            :placeholder="apiParams.iopsreadrate.description"/>
         </a-form-item>
-        <a-form-item v-if="this.qosType === 'hypervisor'">
-          <span slot="label">
-            {{ $t('label.diskiopswriterate') }}
-            <a-tooltip :title="apiParams.iopswriterate.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+        <a-form-item v-if="qosType === 'hypervisor'">
+          <tooltip-label slot="label" :title="$t('label.diskiopswriterate')" :tooltip="apiParams.iopswriterate.description"/>
           <a-input
             v-decorator="['diskiopswriterate', {
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback(this.$t('message.error.number'))
+                    callback($t('message.error.number'))
                   }
                   callback()
                 }
               }]
             }]"
-            :placeholder="this.$t('label.diskiopswriterate')"/>
+            :placeholder="apiParams.iopswriterate.description"/>
         </a-form-item>
-        <a-form-item v-if="this.qosType === 'storage'">
-          <span slot="label">
-            {{ $t('label.iscustomizeddiskiops') }}
-            <a-tooltip :title="apiParams.customizediops.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
-          <a-switch v-decorator="['iscustomizeddiskiops']" :checked="this.isCustomizedDiskIops" @change="val => { this.isCustomizedDiskIops = val }" />
+        <a-form-item v-if="qosType === 'storage'">
+          <tooltip-label slot="label" :title="$t('label.iscustomizeddiskiops')" :tooltip="apiParams.customizediops.description"/>
+          <a-switch v-decorator="['iscustomizeddiskiops']" :checked="isCustomizedDiskIops" @change="val => { isCustomizedDiskIops = val }" />
         </a-form-item>
-        <a-form-item v-if="this.qosType === 'storage' && !this.isCustomizedDiskIops">
-          <span slot="label">
-            {{ $t('label.diskiopsmin') }}
-            <a-tooltip :title="apiParams.miniops.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+        <a-form-item v-if="qosType === 'storage' && !isCustomizedDiskIops">
+          <tooltip-label slot="label" :title="$t('label.diskiopsmin')" :tooltip="apiParams.miniops.description"/>
           <a-input
             v-decorator="['diskiopsmin', {
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback(this.$t('message.error.number'))
+                    callback($t('message.error.number'))
                   }
                   callback()
                 }
               }]
             }]"
-            :placeholder="this.$t('label.diskiopsmin')"/>
+            :placeholder="apiParams.miniops.description"/>
         </a-form-item>
-        <a-form-item v-if="this.qosType === 'storage' && !this.isCustomizedDiskIops">
-          <span slot="label">
-            {{ $t('label.diskiopsmax') }}
-            <a-tooltip :title="apiParams.maxiops.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+        <a-form-item v-if="qosType === 'storage' && !isCustomizedDiskIops">
+          <tooltip-label slot="label" :title="$t('label.diskiopsmax')" :tooltip="apiParams.maxiops.description"/>
           <a-input
             v-decorator="['diskiopsmax', {
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback(this.$t('message.error.number'))
+                    callback($t('message.error.number'))
                   }
                   callback()
                 }
               }]
             }]"
-            :placeholder="this.$t('label.diskiopsmax')"/>
+            :placeholder="apiParams.maxiops.description"/>
         </a-form-item>
-        <a-form-item v-if="this.qosType === 'storage'">
-          <span slot="label">
-            {{ $t('label.hypervisorsnapshotreserve') }}
-            <a-tooltip :title="apiParams.hypervisorsnapshotreserve.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+        <a-form-item v-if="qosType === 'storage'">
+          <tooltip-label slot="label" :title="$t('label.hypervisorsnapshotreserve')" :tooltip="apiParams.hypervisorsnapshotreserve.description"/>
           <a-input
             v-decorator="['hypervisorsnapshotreserve', {
               rules: [{
                 validator: (rule, value, callback) => {
                   if (value && (isNaN(value) || value <= 0)) {
-                    callback(this.$t('message.error.number'))
+                    callback($t('message.error.number'))
                   }
                   callback()
                 }
               }]
             }]"
-            :placeholder="this.$t('label.hypervisorsnapshotreserve')"/>
+            :placeholder="apiParams.hypervisorsnapshotreserve.description"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.writecachetype') }}
-            <a-tooltip :title="apiParams.cachemode.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.writecachetype')" :tooltip="apiParams.cachemode.description"/>
           <a-radio-group
             v-decorator="['writecachetype', {
-              initialValue: this.writeCacheType
+              initialValue: writeCacheType
             }]"
             buttonStyle="solid"
-            @change="selected => { this.handleWriteCacheTypeChange(selected.target.value) }">
+            @change="selected => { handleWriteCacheTypeChange(selected.target.value) }">
             <a-radio-button value="none">
               {{ $t('label.nodiskcache') }}
             </a-radio-button>
@@ -317,13 +242,8 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item v-if="this.isAdmin()">
-          <span slot="label">
-            {{ $t('label.storagetags') }}
-            <a-tooltip :title="apiParams.tags.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+        <a-form-item v-if="isAdmin()">
+          <tooltip-label slot="label" :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
           <a-select
             mode="tags"
             v-decorator="['tags', {}]"
@@ -333,23 +253,18 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="storageTagLoading"
-            :placeholder="this.$t('label.tags')"
-            v-if="this.isAdmin()">
-            <a-select-option v-for="(opt) in this.storageTags" :key="opt">
+            :placeholder="apiParams.tags.description"
+            v-if="isAdmin()">
+            <a-select-option v-for="(opt) in storageTags" :key="opt">
               {{ opt }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.ispublic')" v-show="this.isAdmin()">
-          <a-switch v-decorator="['ispublic', {initialValue: this.isPublic}]" :checked="this.isPublic" @change="val => { this.isPublic = val }" />
+        <a-form-item :label="$t('label.ispublic')" v-show="isAdmin()">
+          <a-switch v-decorator="['ispublic', {initialValue: isPublic}]" :checked="isPublic" @change="val => { isPublic = val }" />
         </a-form-item>
-        <a-form-item v-if="!this.isPublic">
-          <span slot="label">
-            {{ $t('label.domainid') }}
-            <a-tooltip :title="apiParams.domainid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+        <a-form-item v-if="!isPublic">
+          <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
           <a-select
             mode="multiple"
             v-decorator="['domainid', {
@@ -366,19 +281,14 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
-            :placeholder="this.$t('label.domainid')">
-            <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
+            :placeholder="apiParams.domainid.description">
+            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
               {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.zoneid') }}
-            <a-tooltip :title="apiParams.zoneid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             id="zone-selection"
             mode="multiple"
@@ -387,7 +297,7 @@
                 {
                   validator: (rule, value, callback) => {
                     if (value && value.length > 1 && value.indexOf(0) !== -1) {
-                      callback(this.$t('message.error.zone.combined'))
+                      callback($t('message.error.zone.combined'))
                     }
                     callback()
                   }
@@ -401,31 +311,26 @@
             }"
             @select="val => fetchvSphereStoragePolicies(val)"
             :loading="zoneLoading"
-            :placeholder="this.$t('label.zoneid')">
-            <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
+            :placeholder="apiParams.zoneid.description">
+            <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item v-if="'listVsphereStoragePolicies' in $store.getters.apis && storagePolicies !== null">
-          <span slot="label">
-            {{ $t('label.vmware.storage.policy') }}
-            <a-tooltip :title="apiParams.storagetype.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.vmware.storage.policy')" :tooltip="apiParams.storagepolicy.description"/>
           <a-select
             v-decorator="['storagepolicy']"
             :placeholder="apiParams.storagepolicy.description">
-            <a-select-option v-for="policy in this.storagePolicies" :key="policy.id">
+            <a-select-option v-for="policy in storagePolicies" :key="policy.id">
               {{ policy.name || policy.id }}
             </a-select-option>
           </a-select>
         </a-form-item>
       </a-form>
       <div :span="24" class="action-button">
-        <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-spin>
   </div>
@@ -433,16 +338,12 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddDiskOffering',
-  props: {
-    resource: {
-      type: Object,
-      required: true
-    }
-  },
   components: {
+    TooltipLabel
   },
   data () {
     return {
@@ -471,11 +372,7 @@ export default {
         this.selectedZoneIndex = values.zoneid
       }
     })
-    this.apiParams = {}
-    var apiConfig = this.$store.getters.apis.createDiskOffering || {}
-    apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('createDiskOffering')
   },
   created () {
     this.zones = [

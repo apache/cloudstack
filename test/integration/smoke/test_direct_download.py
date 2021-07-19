@@ -184,20 +184,28 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
                 cls.services["service_offerings"]["tiny"]
             )
             cls._cleanup.append(cls.service_offering)
-            cls.network_offering = NetworkOffering.create(
-                cls.apiclient,
-                cls.services["l2-network_offering"],
-            )
-            cls.network_offering.update(cls.apiclient, state='Enabled')
-            cls.services["network"]["networkoffering"] = cls.network_offering.id
-            cls.l2_network = Network.create(
-                cls.apiclient,
-                cls.services["l2-network"],
-                zoneid=cls.zone.id,
-                networkofferingid=cls.network_offering.id
-            )
-            cls._cleanup.append(cls.l2_network)
-            cls._cleanup.append(cls.network_offering)
+
+            if cls.zone.networktype == 'Basic' :
+                networks = Network.list(cls.apiclient)
+                if len(networks) == 0 :
+                    self.skipTest("Skipping test since no network found in basic zone")
+                else :
+                    cls.network = networks[0]
+            else :
+                cls.network_offering = NetworkOffering.create(
+                    cls.apiclient,
+                    cls.services["l2-network_offering"],
+                )
+                cls._cleanup.append(cls.network_offering)
+                cls.network_offering.update(cls.apiclient, state='Enabled')
+                cls.services["network"]["networkoffering"] = cls.network_offering.id
+                cls.network = Network.create(
+                    cls.apiclient,
+                    cls.services["l2-network"],
+                    zoneid=cls.zone.id,
+                    networkofferingid=cls.network_offering.id
+                )
+                cls._cleanup.append(cls.network)
 
             storage_pools = StoragePool.list(
                 cls.apiclient,
@@ -221,11 +229,7 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestDirectDownloadTemplates, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -234,11 +238,7 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestDirectDownloadTemplates, self).tearDown()
 
     def getCurrentStoragePoolTags(self, poolId):
         local_pool = StoragePool.list(
@@ -269,6 +269,22 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
             tags=tags
         )
 
+    def deployVM(self, offering) :
+        if self.zone.networktype == 'Basic' :
+            vm = VirtualMachine.create(
+                self.apiclient,
+                self.services["virtual_machine"],
+                serviceofferingid=offering.id
+            )
+        else :
+            vm = VirtualMachine.create(
+                self.apiclient,
+                self.services["virtual_machine"],
+                serviceofferingid=offering.id,
+                networkids=self.network.id
+            )
+        self.cleanup.append(vm)
+        return vm
 
     @skipTestIf("nfsKvmNotAvailable")
     @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"], required_hardware="false")
@@ -282,12 +298,7 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
         self.updateStoragePoolTags(self.nfsPoolId, test_tag)
         nfs_storage_offering = self.createServiceOffering("TestNFSStorageDirectDownload", "shared", test_tag)
 
-        vm = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machine"],
-            serviceofferingid=nfs_storage_offering.id,
-            networkids=self.l2_network.id
-        )
+        vm = self.deployVM(nfs_storage_offering)
         self.assertEqual(
             vm.state,
             "Running",
@@ -296,7 +307,6 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
 
         # Revert storage tags for the storage pool used in this test
         self.updateStoragePoolTags(self.nfsPoolId, tags)
-        self.cleanup.append(vm)
         self.cleanup.append(nfs_storage_offering)
         return
 
@@ -313,12 +323,7 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
         local_storage_offering = self.createServiceOffering("TestLocalStorageDirectDownload", "local", test_tag)
 
         # Deploy VM
-        vm = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machine"],
-            serviceofferingid=local_storage_offering.id,
-            networkids=self.l2_network.id,
-        )
+        vm = self.deployVM(local_storage_offering)
         self.assertEqual(
             vm.state,
             "Running",
@@ -327,7 +332,6 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
 
         # Revert storage tags for the storage pool used in this test
         self.updateStoragePoolTags(self.localPoolId, tags)
-        self.cleanup.append(vm)
         self.cleanup.append(local_storage_offering)
         return
 

@@ -1271,8 +1271,8 @@ export default {
       params.zoneid = this.stepData.zoneReturned.id
       params.podId = this.stepData.podReturned.id
       params.clusterid = this.stepData.clusterReturned.id
-      params.name = this.prefillContent.primaryStorageName ? this.prefillContent.primaryStorageName.value : null
-      params.scope = this.prefillContent.primaryStorageScope ? this.prefillContent.primaryStorageScope.value : null
+      params.name = this.prefillContent.primaryStorageName?.value || null
+      params.scope = this.prefillContent.primaryStorageScope?.value || null
 
       if (params.scope === 'zone') {
         const hypervisor = this.prefillContent.hypervisor.value
@@ -1283,79 +1283,79 @@ export default {
         }
       }
 
-      var server = this.prefillContent.primaryStorageServer ? this.prefillContent.primaryStorageServer.value : null
+      var server = this.prefillContent.primaryStorageServer?.value || null
       let url = ''
       const protocol = this.prefillContent.primaryStorageProtocol.value
 
       if (protocol === 'nfs') {
-        let path = this.prefillContent.primaryStoragePath.value
+        let path = this.prefillContent.primaryStoragePath?.value || ''
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
         url = this.nfsURL(server, path)
       } else if (protocol === 'SMB') {
-        let path = this.prefillContent.primaryStoragePath.value
+        let path = this.prefillContent.primaryStoragePath?.value || ''
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
         url = this.smbURL(server, path)
-        params['details[0].user'] = this.prefillContent.primaryStorageSMBUsername.value
-        params['details[0].password'] = this.prefillContent.primaryStorageSMBPassword.value
-        params['details[0].domain'] = this.prefillContent.primaryStorageSMBDomain.value
+        params['details[0].user'] = this.prefillContent.primaryStorageSMBUsername?.value || null
+        params['details[0].password'] = this.prefillContent.primaryStorageSMBPassword?.value || null
+        params['details[0].domain'] = this.prefillContent.primaryStorageSMBDomain?.value || null
       } else if (protocol === 'PreSetup') {
         let path = ''
         if (this.stepData.clusterReturned.hypervisortype === 'XenServer') {
-          path = this.prefillContent.primaryStorageSRLabel.value
+          path = this.prefillContent.primaryStorageSRLabel?.value || ''
           server = 'localhost'
         } else {
-          path = this.prefillContent.primaryStoragePath.value
+          path = this.prefillContent.primaryStoragePath?.value || ''
         }
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
         url = this.presetupURL(server, path)
       } else if (protocol === 'ocfs2') {
-        let path = this.prefillContent.primaryStoragePath.value
+        let path = this.prefillContent.primaryStoragePath?.value || ''
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
         url = this.ocfs2URL(server, path)
       } else if (protocol === 'SharedMountPoint') {
-        let path = this.prefillContent.primaryStoragePath.value
+        let path = this.prefillContent.primaryStoragePath?.value || ''
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
         url = this.sharedMountPointURL(server, path)
       } else if (protocol === 'clvm') {
-        let vg = this.prefillContent.primaryStorageVolumeGroup.value
+        let vg = this.prefillContent.primaryStorageVolumeGroup?.value || ''
         if (vg.substring(0, 1) !== '/') {
           vg = '/' + vg
         }
         url = this.clvmURL(vg)
       } else if (protocol === 'rbd') {
-        const rbdmonitor = this.prefillContent.primaryStorageRADOSMonitor.value
-        const rbdpool = this.prefillContent.primaryStorageRADOSPool.value
-        const rbdid = this.prefillContent.primaryStorageRADOSUser.value
-        const rbdsecret = this.prefillContent.primaryStorage.value
+        const rbdmonitor = this.prefillContent.primaryStorageRADOSMonitor?.value || ''
+        const rbdpool = this.prefillContent.primaryStorageRADOSPool?.value || ''
+        const rbdid = this.prefillContent.primaryStorageRADOSUser?.value || ''
+        const rbdsecret = this.prefillContent.primaryStorageRADOSSecret?.value || ''
         url = this.rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret)
       } else if (protocol === 'vmfs') {
-        let path = this.prefillContent.primaryStorageVmfsDatacenter.value
+        let path = this.prefillContent.primaryStorageVmfsDatacenter?.value || ''
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
-        path += '/' + this.prefillContent.primaryStorageVmfsDatastore.value
+        path += '/' + this.prefillContent.primaryStorageVmfsDatastore?.value || ''
         url = this.vmfsURL('dummy', path)
       } else {
-        let iqn = this.prefillContent.primaryStorageTargetIQN.value
+        let iqn = this.prefillContent.primaryStorageTargetIQN?.value || ''
         if (iqn.substring(0, 1) !== '/') {
           iqn = '/' + iqn
         }
-        const lun = this.prefillContent.primaryStorageLUN.value
+        const lun = this.prefillContent.primaryStorageLUN?.value || ''
         url = this.iscsiURL(server, iqn, lun)
       }
 
       params.url = url
-      params.tags = this.prefillContent.primaryStorageTags.value
+      params.tags = this.prefillContent.primaryStorageTags?.value || ''
 
       try {
         if (!this.stepData.stepMove.includes('createStoragePool')) {

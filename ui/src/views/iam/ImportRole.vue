@@ -23,12 +23,7 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.rules.file') }}
-            <a-tooltip :title="$t('label.rules.file.to.import')">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.rules.file')" :tooltip="$t('label.rules.file.to.import')"/>
           <a-upload-dragger
             :multiple="false"
             :fileList="fileList"
@@ -52,44 +47,29 @@
           </a-upload-dragger>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.name') }}
-            <a-tooltip :title="importRoleApiParams.name.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
             }]"
-            :placeholder="importRoleApiParams.name.description"
+            :placeholder="apiParams.name.description"
             autoFocus />
         </a-form-item>
 
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.description') }}
-            <a-tooltip :title="importRoleApiParams.description.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.description')" :tooltip="apiParams.description.description"/>
           <a-input
             v-decorator="['description']"
-            :placeholder="importRoleApiParams.description.description" />
+            :placeholder="apiParams.description.description" />
         </a-form-item>
 
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.type') }}
-            <a-tooltip :title="importRoleApiParams.type.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.type')" :tooltip="apiParams.type.description"/>
           <a-select
             v-decorator="['type', {
               rules: [{ required: true, message: $t('message.error.select') }]
             }]"
-            :placeholder="importRoleApiParams.type.description">
+            :placeholder="apiParams.type.description">
             <a-select-option v-for="role in defaultRoles" :key="role">
               {{ role }}
             </a-select-option>
@@ -97,12 +77,7 @@
         </a-form-item>
 
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.forced') }}
-            <a-tooltip :title="importRoleApiParams.forced.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.forced')" :tooltip="apiParams.forced.description"/>
           <a-switch
             v-decorator="['forced', {
               initialValue: false
@@ -120,9 +95,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ImportRole',
+  components: {
+    TooltipLabel
+  },
   data () {
     return {
       fileList: [],
@@ -133,11 +112,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.importRole || {}
-    this.importRoleApiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.importRoleApiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('importRole')
   },
   methods: {
     handleRemove (file) {

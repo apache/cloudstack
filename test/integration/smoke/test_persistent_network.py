@@ -52,6 +52,22 @@ class TestL2PersistentNetworks(cloudstackTestCase):
         cls.testClient = super(TestL2PersistentNetworks, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
         cls.hypervisor = cls.testClient.getHypervisorInfo()
+
+        isKVM = cls.hypervisor.lower() in ["kvm"]
+        isOVSEnabled = False
+        hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+        if isKVM :
+            # Test only if all the hosts use OVS
+            grepCmd = 'grep "network.bridge.type=openvswitch" /etc/cloudstack/agent/agent.properties'
+            hosts = list_hosts(cls.api_client, type='Routing', hypervisor='kvm')
+            for host in hosts :
+                if len(SshClient(host.ipaddress, port=22, user=hostConfig["username"],
+                    passwd=hostConfig["password"]).execute(grepCmd)) != 0 :
+                        isOVSEnabled = True
+                        break
+        if isKVM and isOVSEnabled :
+            cls.skipTest(cls, "KVM with OVS doesn't support persistent networks, skipping")
+
         # Fill services from the external config file
         cls.services = cls.testClient.getParsedTestDataConfig()
         cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][
@@ -152,7 +168,7 @@ class TestL2PersistentNetworks(cloudstackTestCase):
         return hosts
 
     '''
-    Verifies creation of bridge on KVM host 
+    Verifies creation of bridge on KVM host
     '''
     def verify_bridge_creation(self, host, vlan_id):
         username = self.hostConfig["username"]
@@ -186,7 +202,7 @@ class TestL2PersistentNetworks(cloudstackTestCase):
             return None
 
     '''
-    Verifies creation of port group on the Distributed vSwitch or a host in a cluster connected to 
+    Verifies creation of port group on the Distributed vSwitch or a host in a cluster connected to
     a Standard vSwitch
     '''
     def verify_port_group_creation(self, vlan_id):
@@ -264,7 +280,7 @@ class TestL2PersistentNetworks(cloudstackTestCase):
                         "Failed to find port group on hosts of cluster: " + cluster.name)
 
     '''
-    This test verifies that on creation of an Isolated network with network offering with isPersistent flag 
+    This test verifies that on creation of an Isolated network with network offering with isPersistent flag
     set to true the corresponding network resources are created without having to deploy a VM - VR created
     '''
     @attr(tags=["advanced", "isolated", "persistent", "network"], required_hardware="false")
@@ -303,7 +319,7 @@ class TestL2PersistentNetworks(cloudstackTestCase):
             self.verify_network_setup_on_host_per_cluster(host.hypervisor.lower(), networkVlan)
 
     '''
-    This test verifies that on creation of an L2 network with network offering with isPersistent flag 
+    This test verifies that on creation of an L2 network with network offering with isPersistent flag
     set to true the corresponding network resources are created without having to deploy a VM - VR created
     '''
     @attr(tags=["advanced", "l2", "persistent", "network"], required_hardware="false")

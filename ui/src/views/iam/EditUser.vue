@@ -20,12 +20,7 @@
     <a-spin :spinning="loading">
       <a-form :form="form" :loading="loading" @submit="handleSubmit" layout="vertical">
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.username') }}
-            <a-tooltip :title="apiParams.username.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.username')" :tooltip="apiParams.username.description"/>
           <a-input
             v-decorator="['username', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -34,12 +29,7 @@
             autoFocus />
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.email') }}
-            <a-tooltip :title="apiParams.email.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.email')" :tooltip="apiParams.email.description"/>
           <a-input
             v-decorator="['email', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -49,12 +39,7 @@
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item>
-              <span slot="label">
-                {{ $t('label.firstname') }}
-                <a-tooltip :title="apiParams.firstname.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </span>
+              <tooltip-label slot="label" :title="$t('label.firstname')" :tooltip="apiParams.firstname.description"/>
               <a-input
                 v-decorator="['firstname', {
                   rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -64,12 +49,7 @@
           </a-col>
           <a-col :md="24" :lg="12">
             <a-form-item>
-              <span slot="label">
-                {{ $t('label.lastname') }}
-                <a-tooltip :title="apiParams.lastname.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </span>
+              <tooltip-label slot="label" :title="$t('label.lastname')" :tooltip="apiParams.lastname.description"/>
               <a-input
                 v-decorator="['lastname', {
                   rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -79,12 +59,7 @@
           </a-col>
         </a-row>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.timezone') }}
-            <a-tooltip :title="apiParams.timezone.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
           <a-select
             showSearch
             v-decorator="['timezone']"
@@ -107,9 +82,13 @@
 import { api } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'EditUser',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -131,11 +110,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.updateUser || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('updateUser')
   },
   created () {
     this.fetchData()

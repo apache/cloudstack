@@ -45,12 +45,7 @@
           </a-upload-dragger>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.name') }}
-            <a-tooltip :title="apiParams.name.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-decorator="['name', {
               rules: [{ required: true, message: $t('message.error.volume.name') }]
@@ -59,12 +54,7 @@
             autoFocus />
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.zone') }}
-            <a-tooltip :title="apiParams.zoneid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           <a-select
             v-decorator="['zoneId', {
               initialValue: zoneSelected,
@@ -81,12 +71,7 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.format') }}
-            <a-tooltip :title="apiParams.format.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.format')" :tooltip="apiParams.format.description"/>
           <a-select
             v-decorator="['format', {
               initialValue: formats[0],
@@ -103,12 +88,7 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.volumechecksum') }}
-            <a-tooltip :title="apiParams.checksum.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.volumechecksum')" :tooltip="apiParams.checksum.description"/>
           <a-input
             v-decorator="['checksum']"
             :placeholder="$t('label.volumechecksum.description')"
@@ -126,9 +106,13 @@
 <script>
 import { api } from '@/api'
 import { axios } from '../../utils/request'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'UploadLocalVolume',
+  components: {
+    TooltipLabel
+  },
   data () {
     return {
       fileList: [],
@@ -142,11 +126,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiParams = {}
-    var apiConfig = this.$store.getters.apis.getUploadParamsForVolume || {}
-    apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('getUploadParamsForVolume')
   },
   created () {
     this.listZones()

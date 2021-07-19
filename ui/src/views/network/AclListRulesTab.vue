@@ -219,7 +219,7 @@
 <script>
 import { api } from '@/api'
 import draggable from 'vuedraggable'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'AclListRulesTab',

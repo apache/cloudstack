@@ -411,12 +411,13 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         if (canHandle(network, Service.Vpn)) {
             final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need stop vpn on the backend; virtual router doesn't " + "exist in the network " + network.getId());
+                s_logger.debug(String.format("There is no virtual router in network [uuid: %s, name: %s], it is not necessary to stop the VPN on backend.",
+                        network.getUuid(), network.getName()));
                 return true;
             }
             return _routerMgr.deleteRemoteAccessVpn(network, vpn, routers);
         } else {
-            s_logger.debug("Element " + getName() + " doesn't handle removeVpn command");
+            s_logger.debug(String.format("Element %s doesn't handle removeVpn command", getName()));
             return false;
         }
     }

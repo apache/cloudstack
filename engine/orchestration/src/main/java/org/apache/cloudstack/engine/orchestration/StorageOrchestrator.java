@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.engine.orchestration;
 
+import com.cloud.capacity.CapacityManager;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -101,7 +102,6 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             true, ConfigKey.Scope.Global);
 
     Integer numConcurrentCopyTasksPerSSVM = 2;
-    private double imageStoreCapacityThreshold = 0.90;
 
     @Override
     public String getConfigComponentName() {
@@ -404,7 +404,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     private boolean storageCapacityBelowThreshold(Map<Long, Pair<Long, Long>> storageCapacities, Long destStoreId) {
         Pair<Long, Long> imageStoreCapacity = storageCapacities.get(destStoreId);
         long usedCapacity = imageStoreCapacity.second() - imageStoreCapacity.first();
-        if (imageStoreCapacity != null && (usedCapacity / (imageStoreCapacity.second() * 1.0)) <= imageStoreCapacityThreshold) {
+        if (imageStoreCapacity != null && (usedCapacity / (imageStoreCapacity.second() * 1.0)) <= CapacityManager.SecondaryStorageCapacityThreshold.value()) {
             s_logger.debug("image store: " + destStoreId + " has sufficient capacity to proceed with migration of file");
             return true;
         }

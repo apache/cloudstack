@@ -881,8 +881,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
             if (state != State.Stopped) {
-                s_logger.debug("VM " + vm + " is not in a state to be started: " + state);
-                return null;
+                String msg = String.format("Cannot start %s in %s state", vm, state);
+                s_logger.warn(msg);
+                throw new CloudRuntimeException(msg);
             }
         }
 
@@ -4345,19 +4346,25 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throws ResourceUnavailableException, ConcurrentOperationException {
 
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
-        s_logger.info("Migrating " + vm + " to " + dest);
+        s_logger.info(String.format("Migrating %s to %s", vm, dest));
 
         vm.getServiceOfferingId();
         final long dstHostId = dest.getHost().getId();
         final Host fromHost = _hostDao.findById(srcHostId);
+        Host srcHost = _hostDao.findById(srcHostId);
         if (fromHost == null) {
-            s_logger.info("Unable to find the host to migrate from: " + srcHostId);
-            throw new CloudRuntimeException("Unable to find the host to migrate from: " + srcHostId);
+            String logMessageUnableToFindHost = String.format("Unable to find host to migrate from %s.", srcHost);
+            s_logger.info(logMessageUnableToFindHost);
+            throw new CloudRuntimeException(logMessageUnableToFindHost);
         }
 
-        if (fromHost.getClusterId().longValue() != dest.getCluster().getId()) {
-            s_logger.info("Source and destination host are not in same cluster, unable to migrate to host: " + dstHostId);
-            throw new CloudRuntimeException("Source and destination host are not in same cluster, unable to migrate to host: " + dest.getHost().getId());
+        Host dstHost = _hostDao.findById(dstHostId);
+        long destHostClusterId = dest.getCluster().getId();
+        long fromHostClusterId = fromHost.getClusterId();
+        if (fromHostClusterId != destHostClusterId) {
+            String logMessageHostsOnDifferentCluster = String.format("Source and destination host are not in same cluster, unable to migrate to %s", srcHost);
+            s_logger.info(logMessageHostsOnDifferentCluster);
+            throw new CloudRuntimeException(logMessageHostsOnDifferentCluster);
         }
 
         final VirtualMachineGuru vmGuru = getVmGuru(vm);
@@ -4474,13 +4481,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     try {
                         _agentMgr.send(srcHostId, new Commands(cleanup(vm.getInstanceName())), null);
                     } catch (final AgentUnavailableException e) {
-                        s_logger.error("AgentUnavailableException while cleanup on source host: " + srcHostId);
+                        s_logger.error(String.format("Unable to cleanup source %s. ", srcHost), e);
                     }
                     cleanup(vmGuru, new VirtualMachineProfileImpl(vm), work, Event.AgentReportStopped, true);
                     throw new CloudRuntimeException("Unable to complete migration for " + vm);
                 }
             } catch (final OperationTimedoutException e) {
-                s_logger.debug("Error while checking the vm " + vm + " on host " + dstHostId, e);
+                s_logger.debug(String.format("Error while checking the %s on %s", vm, dstHost), e);
             }
 
             migrated = true;
@@ -4488,9 +4495,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (!migrated) {
                 s_logger.info("Migration was unsuccessful.  Cleaning up: " + vm);
 
-                _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(),
-                        "Unable to migrate vm " + vm.getInstanceName() + " from host " + fromHost.getName() + " in zone " + dest.getDataCenter().getName() + " and pod " +
-                                dest.getPod().getName(), "Migrate Command failed.  Please check logs.");
+                String alertSubject = String.format("Unable to migrate %s from %s in Zone [%s] and Pod [%s].",
+                        vm.getInstanceName(), fromHost, dest.getDataCenter().getName(), dest.getPod().getName());
+                String alertBody = "Migrate Command failed. Please check logs.";
+                _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(), alertSubject, alertBody);
                 try {
                     _agentMgr.send(dstHostId, new Commands(cleanup(vm.getInstanceName())), null);
                 } catch (final AgentUnavailableException ae) {
@@ -4840,6 +4848,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         //    3) handle out of sync stationary states, marking VM from Stopped to Running with
         //       alert messages
         //
+        Host host = _hostDao.findById(vm.getHostId());
+        Host poweredHost = _hostDao.findById(vm.getPowerHostId());
         switch (vm.getState()) {
         case Starting:
             s_logger.info("VM " + vm.getInstanceName() + " is at " + vm.getState() + " and we received a power-on report while there is no pending jobs on it");
@@ -4861,7 +4871,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         case Running:
             try {
                 if (vm.getHostId() != null && vm.getHostId().longValue() != vm.getPowerHostId().longValue()) {
-                    s_logger.info("Detected out of band VM migration from host " + vm.getHostId() + " to host " + vm.getPowerHostId());
+                    s_logger.info(String.format("Detected out of band VM migration from %s to %s", host, poweredHost));
                 }
                 stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOnReport, vm.getPowerHostId());
             } catch (final NoTransitionException e) {

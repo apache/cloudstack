@@ -20,12 +20,7 @@
     <a-spin :spinning="loading">
       <a-form :form="form" :loading="loading" @submit="handleSubmit" layout="vertical">
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.username') }}
-            <a-tooltip :title="apiParams.username.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.username')" :tooltip="apiParams.username.description"/>
           <a-input
             v-decorator="['username', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -36,12 +31,7 @@
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item>
-              <span slot="label">
-                {{ $t('label.password') }}
-                <a-tooltip :title="apiParams.password.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </span>
+              <tooltip-label slot="label" :title="$t('label.password')" :tooltip="apiParams.password.description"/>
               <a-input-password
                 v-decorator="['password', {
                   rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -51,12 +41,7 @@
           </a-col>
           <a-col :md="24" :lg="12">
             <a-form-item>
-              <span slot="label">
-                {{ $t('label.confirmpassword') }}
-                <a-tooltip :title="apiParams.password.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </span>
+              <tooltip-label slot="label" :title="$t('label.confirmpassword')" :tooltip="apiParams.password.description"/>
               <a-input-password
                 v-decorator="['confirmpassword', {
                   rules: [
@@ -69,12 +54,7 @@
           </a-col>
         </a-row>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.email') }}
-            <a-tooltip :title="apiParams.email.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.email')" :tooltip="apiParams.email.description"/>
           <a-input
             v-decorator="['email', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -84,12 +64,7 @@
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item>
-              <span slot="label">
-                {{ $t('label.firstname') }}
-                <a-tooltip :title="apiParams.firstname.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </span>
+              <tooltip-label slot="label" :title="$t('label.firstname')" :tooltip="apiParams.firstname.description"/>
               <a-input
                 v-decorator="['firstname', {
                   rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -99,12 +74,7 @@
           </a-col>
           <a-col :md="24" :lg="12">
             <a-form-item>
-              <span slot="label">
-                {{ $t('label.lastname') }}
-                <a-tooltip :title="apiParams.lastname.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </span>
+              <tooltip-label slot="label" :title="$t('label.lastname')" :tooltip="apiParams.lastname.description"/>
               <a-input
                 v-decorator="['lastname', {
                   rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -114,12 +84,7 @@
           </a-col>
         </a-row>
         <a-form-item v-if="this.isAdminOrDomainAdmin() && !domainid">
-          <span slot="label">
-            {{ $t('label.domain') }}
-            <a-tooltip :title="apiParams.domainid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
           <a-select
             :loading="domainLoading"
             v-decorator="['domainid']"
@@ -130,12 +95,7 @@
           </a-select>
         </a-form-item>
         <a-form-item v-if="!account">
-          <span slot="label">
-            {{ $t('label.account') }}
-            <a-tooltip :title="apiParams.account.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.account.description"/>
           <a-select
             v-decorator="['account', {
               rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -148,12 +108,7 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.timezone') }}
-            <a-tooltip :title="apiParams.timezone.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
           <a-select
             showSearch
             v-decorator="['timezone']"
@@ -168,12 +123,7 @@
             <a-switch v-decorator="['samlenable']" @change="checked => { this.samlEnable = checked }" />
           </a-form-item>
           <a-form-item v-if="samlEnable">
-            <span slot="label">
-              {{ $t('label.samlentity') }}
-              <a-tooltip :title="apiParams.entityid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.samlentity')" :tooltip="apiParams.entityid.description"/>
             <a-select
               v-decorator="['samlentity', {
                 initialValue: selectedIdp,
@@ -198,9 +148,13 @@
 import { api } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddUser',
+  components: {
+    TooltipLabel
+  },
   data () {
     this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
     return {
@@ -222,15 +176,7 @@ export default {
   },
   created () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.createUser || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
-    this.apiConfig = this.$store.getters.apis.authorizeSamlSso || { params: [] }
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('createUser', 'authorizeSamlSso')
     this.fetchData()
   },
   methods: {

@@ -26,7 +26,7 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name = ("autoscale_vmgroup_vm_map"))
+@Table(name = "autoscale_vmgroup_vm_map")
 public class AutoScaleVmGroupVmMapVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
