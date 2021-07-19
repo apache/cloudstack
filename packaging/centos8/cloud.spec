@@ -362,7 +362,7 @@ cp -r test/integration/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-integration-tests/
 # MYSQL HA
 if [ "x%{_ossnoss}" == "xnoredist" ] ; then
   mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-mysql-ha/lib
-  cp -r plugins/database/mysql-ha/target/cloud-plugin-database-mysqlha-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
+  cp -r plugins/database/mysql-ha/target/cloud-plugin-database-mysqlha-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-mysql-ha/lib
 fi
 
 #License files from whisker
@@ -627,7 +627,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %if "%{_ossnoss}" == "noredist"
 %files mysql-ha
 %defattr(0644,cloud,cloud,0755)
-%attr(0644,root,root) %{_datadir}/%{name}-management/lib/*mysqlha*jar
+%attr(0644,root,root) %{_datadir}/%{name}-mysql-ha/lib/*
 %endif
 
 %files baremetal-agent
