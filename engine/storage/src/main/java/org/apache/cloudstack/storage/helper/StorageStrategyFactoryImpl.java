@@ -84,6 +84,16 @@ public class StorageStrategyFactoryImpl implements StorageStrategyFactory {
         });
     }
 
+    @Override
+    public VMSnapshotStrategy getVmSnapshotStrategy(final Long vmId, Long rootPoolId, boolean snapshotMemory) {
+        return bestMatch(vmSnapshotStrategies, new CanHandle<VMSnapshotStrategy>() {
+            @Override
+            public StrategyPriority canHandle(VMSnapshotStrategy strategy) {
+                return strategy.canHandle(vmId, rootPoolId, snapshotMemory);
+            }
+        });
+    }
+
     private static <T> T bestMatch(Collection<T> collection, final CanHandle<T> canHandle) {
         if (collection.size() == 0)
             return null;
