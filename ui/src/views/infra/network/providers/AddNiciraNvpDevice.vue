@@ -154,8 +154,8 @@ export default {
           }
           params.id = this.nsp.id
           const jobId = await this.addNiciraNvpDevice(params)
-          await this.parentPollActionCompletion(jobId, this.action, this.$t(this.nsp.name))
-          await this.provideCloseAction()
+          this.parentPollActionCompletion(jobId, this.action, this.$t(this.nsp.name))
+          this.provideCloseAction()
           this.loading = false
         } catch (error) {
           this.loading = false
