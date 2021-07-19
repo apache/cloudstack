@@ -43,7 +43,7 @@
           </div>
         </div>
       </a-list-item>
-      <a-list-item>
+      <a-list-item v-if="host.hosttags">
         <div>
           <strong>{{ $t('label.hosttags') }}</strong>
           <div>
@@ -51,7 +51,7 @@
           </div>
         </div>
       </a-list-item>
-      <a-list-item>
+      <a-list-item v-if="host.oscategoryid">
         <div>
           <strong>{{ $t('label.oscategoryid') }}</strong>
           <div>
@@ -83,7 +83,7 @@
           </div>
         </div>
       </a-list-item>
-      <a-list-item v-if="host.hostha">
+      <a-list-item v-if="host.hostha && host.hostha.haenable">
         <div>
           <strong>{{ $t('label.hastate') }}</strong>
           <div>
@@ -91,7 +91,7 @@
           </div>
         </div>
       </a-list-item>
-      <a-list-item v-if="host.hostha">
+      <a-list-item v-if="host.hostha && host.hostha.haenable">
         <div>
           <strong>{{ $t('label.haprovider') }}</strong>
           <div>
