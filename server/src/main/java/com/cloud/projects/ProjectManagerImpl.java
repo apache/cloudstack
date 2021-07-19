@@ -82,13 +82,15 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import java.util.HashSet;
 import java.util.Set;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.utils.mailing.MailAddress;
 import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
 import org.apache.commons.lang3.BooleanUtils;
 
 @Component
-public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
+public class ProjectManagerImpl extends ManagerBase implements ProjectManager, Configurable {
     public static final Logger s_logger = Logger.getLogger(ProjectManagerImpl.class);
 
     @Inject
@@ -1366,4 +1368,13 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         return _allowUserToCreateProject;
     }
 
+    @Override
+    public String getConfigComponentName() {
+        return ProjectManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {ProjectSmtpEnabledSecurityProtocols, ProjectSmtpUseStartTLS};
+    }
 }
