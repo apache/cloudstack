@@ -134,6 +134,33 @@ export default {
         case 'Snapshot':
           this.annotationType = 'SNAPSHOT'
           break
+        case 'VMSnapshot':
+          this.annotationType = 'VM_SNAPSHOT'
+          break
+        case 'VMInstanceGroup':
+          this.annotationType = 'INSTANCE_GROUP'
+          break
+        case 'SSHKeyPair':
+          this.annotationType = 'SSH_KEYPAIR'
+          break
+        case 'Network':
+          this.annotationType = 'NETWORK'
+          break
+        case 'Vpc':
+          this.annotationType = 'VPC'
+          break
+        case 'PublicIpAddress':
+          this.annotationType = 'PUBLIC_IP_ADDRESS'
+          break
+        case 'VPNCustomerGateway':
+          this.annotationType = 'VPN_CUSTOMER_GATEWAY'
+          break
+        case 'Template':
+          this.annotationType = 'TEMPLATE'
+          break
+        case 'ISO':
+          this.annotationType = 'ISO'
+          break
       }
     },
     fetchData () {

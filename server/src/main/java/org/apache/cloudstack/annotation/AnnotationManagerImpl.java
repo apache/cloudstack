@@ -24,18 +24,26 @@ import javax.inject.Inject;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
@@ -75,6 +83,22 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     private VolumeDao volumeDao;
     @Inject
     private SnapshotDao snapshotDao;
+    @Inject
+    private VMSnapshotDao vmSnapshotDao;
+    @Inject
+    private InstanceGroupDao instanceGroupDao;
+    @Inject
+    private SSHKeyPairDao sshKeyPairDao;
+    @Inject
+    private NetworkDao networkDao;
+    @Inject
+    private VpcDao vpcDao;
+    @Inject
+    private IPAddressDao ipAddressDao;
+    @Inject
+    private Site2SiteCustomerGatewayDao customerGatewayDao;
+    @Inject
+    private VMTemplateDao templateDao;
 
     private static final List<RoleType> adminRoles = Arrays.asList(RoleType.Admin,
             RoleType.DomainAdmin, RoleType.ResourceAdmin);
@@ -232,23 +256,42 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     }
 
     private void ensureEntityIsOwnedByTheUser(String entityType, String entityUuid, UserVO callingUser) {
-        ControlledEntity entity = null;
         try {
             EntityType type = EntityType.valueOf(entityType);
-            switch (type) {
-                case VM:
-                    entity = vmInstanceDao.findByUuid(entityUuid);
-                    break;
-                case VOLUME:
-                    entity = volumeDao.findByUuid(entityUuid);
-                    break;
-                case SNAPSHOT:
-                    entity = snapshotDao.findByUuid(entityUuid);
-                    break;
-            }
+            ControlledEntity entity = getEntityFromUuidAndType(entityUuid, type);
             accountService.checkAccess(callingUser, entity);
         } catch (IllegalArgumentException e) {
             LOGGER.error("Could not parse entity type " + entityType, e);
+        }
+    }
+
+    private ControlledEntity getEntityFromUuidAndType(String entityUuid, EntityType type) {
+        switch (type) {
+            case VM:
+                return vmInstanceDao.findByUuid(entityUuid);
+            case VOLUME:
+                return volumeDao.findByUuid(entityUuid);
+            case SNAPSHOT:
+                return snapshotDao.findByUuid(entityUuid);
+            case VM_SNAPSHOT:
+                return vmSnapshotDao.findByUuid(entityUuid);
+            case INSTANCE_GROUP:
+                return instanceGroupDao.findByUuid(entityUuid);
+            case SSH_KEYPAIR:
+                return sshKeyPairDao.findByUuid(entityUuid);
+            case NETWORK:
+                return networkDao.findByUuid(entityUuid);
+            case VPC:
+                return vpcDao.findByUuid(entityUuid);
+            case PUBLIC_IP_ADDRESS:
+                return ipAddressDao.findByUuid(entityUuid);
+            case VPN_CUSTOMER_GATEWAY:
+                return customerGatewayDao.findByUuid(entityUuid);
+            case TEMPLATE:
+            case ISO:
+                return templateDao.findByUuid(entityUuid);
+            default:
+                throw new CloudRuntimeException("Invalid entity type " + type);
         }
     }
 

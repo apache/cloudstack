@@ -108,6 +108,16 @@
     <span slot="entityid" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: '/vm' + '/' + record.entityid }" v-if="'VM' === record.entitytype">{{ text }}</router-link>
       <router-link :to="{ path: '/host' + '/' + record.entityid }" v-else-if="'HOST' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/volume' + '/' + record.entityid }" v-else-if="'VOLUME' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/snapshot' + '/' + record.entityid }" v-else-if="'SNAPSHOT' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/vmsnapshot' + '/' + record.entityid }" v-else-if="'VM_SNAPSHOT' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/vmgroup' + '/' + record.entityid }" v-else-if="'INSTANCE_GROUP' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/guestnetwork' + '/' + record.entityid }" v-else-if="'NETWORK' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/vpc' + '/' + record.entityid }" v-else-if="'VPC' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/publicip' + '/' + record.entityid }" v-else-if="'PUBLIC_IP_ADDRESS' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/vpncustomergateway' + '/' + record.entityid }" v-else-if="'VPN_CUSTOMER_GATEWAY' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/template' + '/' + record.entityid }" v-else-if="'TEMPLATE' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/iso' + '/' + record.entityid }" v-else-if="'ISO' === record.entitytype">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </span>
     <span slot="adminsonly" v-if="['Admin'].includes($store.getters.userInfo.roletype)" slot-scope="text, record" href="javascript:;">
