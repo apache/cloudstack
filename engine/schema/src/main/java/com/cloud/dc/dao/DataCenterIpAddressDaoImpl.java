@@ -21,7 +21,6 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
-
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.log4j.Logger;
@@ -235,6 +234,17 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
     public List<DataCenterIpAddressVO> listByPodIdDcId(long podId, long dcId) {
         SearchCriteria<DataCenterIpAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("pod", podId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<DataCenterIpAddressVO> listIpAddressUsage(final long podId, final long dcId, final boolean onlyListAllocated) {
+        SearchCriteria<DataCenterIpAddressVO> sc = createSearchCriteria();
+        if(onlyListAllocated) {
+            sc.addAnd("takenAt", SearchCriteria.Op.NNULL);
+        }
+        sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
+        sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, dcId);
         return listBy(sc);
     }
 
