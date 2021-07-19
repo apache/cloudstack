@@ -34,6 +34,13 @@ public class VmWork implements Serializable {
         this.handlerName = handlerName;
     }
 
+    public VmWork(VmWork vmWork) {
+        this.userId = vmWork.getUserId();
+        this.accountId = vmWork.getAccountId();
+        this.vmId = vmWork.getVmId();
+        this.handlerName = vmWork.getHandlerName();
+    }
+
     public long getUserId() {
         return userId;
     }

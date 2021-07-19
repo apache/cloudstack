@@ -34,6 +34,11 @@ public class VmWorkReboot extends VmWork {
         setParams(params);
     }
 
+    public VmWorkReboot(VmWork vmWork, Map<VirtualMachineProfile.Param, Object> params) {
+        super(vmWork);
+        setParams(params);
+    }
+
     public Map<VirtualMachineProfile.Param, Object> getParams() {
         Map<VirtualMachineProfile.Param, Object> map = new HashMap<VirtualMachineProfile.Param, Object>();
 

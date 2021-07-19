@@ -30,6 +30,12 @@ public class VmWorkAddVmToNetwork extends VmWork {
         requstedNicProfile = requested;
     }
 
+   public VmWorkAddVmToNetwork(VmWork vmWork, long networkId, NicProfile requested) {
+        super(vmWork);
+        this.networkId = networkId;
+        this.requstedNicProfile = requested;
+    }
+
     public Long getNetworkId() {
         return networkId;
     }

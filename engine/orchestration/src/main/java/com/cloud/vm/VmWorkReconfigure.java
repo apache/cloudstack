@@ -39,6 +39,14 @@ public class VmWorkReconfigure extends VmWork {
         this.sameHost = sameHost;
     }
 
+    public VmWorkReconfigure(VmWork vmWork, long oldServiceOfferingId, long newServiceOfferingId, Map<String, String> customParameters, boolean sameHost) {
+        super(vmWork);
+        this.oldServiceOfferingId = oldServiceOfferingId;
+        this.newServiceOfferingId = newServiceOfferingId;
+        this.customParameters = customParameters;
+        this.sameHost = sameHost;
+    }
+
     public Long getOldServiceOfferingId() {
         return oldServiceOfferingId;
     }

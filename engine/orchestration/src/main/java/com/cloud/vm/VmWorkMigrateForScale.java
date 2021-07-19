@@ -30,6 +30,11 @@ public class VmWorkMigrateForScale extends VmWorkMigrate {
         this.newSvcOfferingId = newSvcOfferingId;
     }
 
+    public VmWorkMigrateForScale(VmWork vmWork, long srcHostId, DeployDestination dest, Long newSvcOfferingId) {
+        super(vmWork, srcHostId, dest);
+        this.newSvcOfferingId = newSvcOfferingId;
+    }
+
     public Long getNewServiceOfferringId() {
         return newSvcOfferingId;
     }

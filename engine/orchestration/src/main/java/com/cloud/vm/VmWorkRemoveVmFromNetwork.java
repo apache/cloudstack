@@ -33,6 +33,12 @@ public class VmWorkRemoveVmFromNetwork extends VmWork {
         this.broadcastUri = broadcastUri;
     }
 
+    public VmWorkRemoveVmFromNetwork(VmWork vmWork, Network network, URI broadcastUri) {
+        super(vmWork);
+        this.network = network;
+        this.broadcastUri = broadcastUri;
+    }
+
     public Network getNetwork() {
         return network;
     }

@@ -41,18 +41,27 @@ public class VmWorkMigrate extends VmWork {
     public VmWorkMigrate(long userId, long accountId, long vmId, String handlerName,
             long srcHostId, DeployDestination dst) {
         super(userId, accountId, vmId, handlerName);
+        setConstructorParams(srcHostId, dst);
+    }
+
+    public VmWorkMigrate(VmWork vmWork, long srcHostId, DeployDestination dest) {
+        super(vmWork);
+        setConstructorParams(srcHostId, dest);
+    }
+
+    private void setConstructorParams(long srcHostId, DeployDestination dest) {
         this.srcHostId = srcHostId;
-        zoneId = dst.getDataCenter() != null ? dst.getDataCenter().getId() : null;
-        podId = dst.getPod() != null ? dst.getPod().getId() : null;
-        clusterId = dst.getCluster() != null ? dst.getCluster().getId() : null;
-        hostId = dst.getHost() != null ? dst.getHost().getId() : null;
-        if (dst.getStorageForDisks() != null) {
-            storage = new HashMap<String, String>(dst.getStorageForDisks().size());
-            for (Map.Entry<Volume, StoragePool> entry : dst.getStorageForDisks().entrySet()) {
-                storage.put(entry.getKey().getUuid(), entry.getValue().getUuid());
+        this.zoneId = dest.getDataCenter() != null ? dest.getDataCenter().getId() : null;
+        this.podId = dest.getPod() != null ? dest.getPod().getId() : null;
+        this.clusterId = dest.getCluster() != null ? dest.getCluster().getId() : null;
+        this.hostId = dest.getHost() != null ? dest.getHost().getId() : null;
+        if (dest.getStorageForDisks() != null) {
+            this.storage = new HashMap<>(dest.getStorageForDisks().size());
+            for (Map.Entry<Volume, StoragePool> entry : dest.getStorageForDisks().entrySet()) {
+                this.storage.put(entry.getKey().getUuid(), entry.getValue().getUuid());
             }
         } else {
-            storage = null;
+            this.storage = null;
         }
     }
 

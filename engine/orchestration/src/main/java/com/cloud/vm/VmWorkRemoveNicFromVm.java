@@ -27,6 +27,11 @@ public class VmWorkRemoveNicFromVm extends VmWork {
         this.nicId = nicId;
     }
 
+    public VmWorkRemoveNicFromVm(VmWork vmWork, long nicId) {
+        super(vmWork);
+        this.nicId = nicId;
+    }
+
     public Long getNicId() {
         return nicId;
     }

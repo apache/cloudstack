@@ -35,6 +35,13 @@ public class VmWorkMigrateWithStorage extends VmWork {
         this.volumeToPool = volumeToPool;
     }
 
+    public VmWorkMigrateWithStorage(VmWork vmWork, long srcHostId, long destHostId, Map<Long, Long> volumeToPool) {
+        super(vmWork);
+        this.srcHostId = srcHostId;
+        this.destHostId = destHostId;
+        this.volumeToPool = volumeToPool;
+    }
+
     public long getSrcHostId() {
         return srcHostId;
     }
