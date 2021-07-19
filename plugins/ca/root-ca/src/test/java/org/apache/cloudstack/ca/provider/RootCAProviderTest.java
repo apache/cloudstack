@@ -133,6 +133,7 @@ public class RootCAProviderTest {
         provider.rootCAAuthStrictness = Mockito.mock(ConfigKey.class);
         Mockito.when(provider.rootCAAuthStrictness.value()).thenReturn(Boolean.FALSE);
         final SSLEngine e = provider.createSSLEngine(SSLUtils.getSSLContext(), "/1.2.3.4:5678", null);
+        Assert.assertTrue(e.getWantClientAuth());
         Assert.assertFalse(e.getNeedClientAuth());
     }
 
