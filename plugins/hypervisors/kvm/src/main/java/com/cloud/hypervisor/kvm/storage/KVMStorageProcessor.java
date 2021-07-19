@@ -1627,6 +1627,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                             qemuCmdArgs.put("device", deviceName);
                             qemuCmdArgs.put("target", snapshotPath);
                             qemuCmdArgs.put("sync", "full");
+                            qemuCmdArgs.put("job-id", deviceName);
                             String result = vm.qemuMonitorCommand(new Gson().toJson(QemuCommand.executeQemuCommand(QemuCommand.QEMU_DRIVE_BACKUP, qemuCmdArgs)).toString(), 0);
                             if (QemuCommand.hasPassed(result)) {
                                 final File snapFile = new File(snapshotDestPath + "/" + snapshotName);
