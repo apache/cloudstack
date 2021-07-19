@@ -1613,9 +1613,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                     String queryBlockResult = vm.qemuMonitorCommand(new Gson().toJson(QemuCommand.executeQemuCommand(QemuCommand.QEMU_BLOCK, null)).toString(), 0);
                     String path = disk.getPath();
                     String snapshotDestPath = primaryPool.getLocalPath() + File.separator + "tmp";
-                    if (queryBlockResult != null) {
+                    if (StringUtils.isNotBlank(queryBlockResult)) {
                         String deviceName = QemuCommand.getDeviceName(queryBlockResult, path);
-                        if (deviceName != null) {
+                        if (StringUtils.isNotBlank(deviceName)) {
                             try {
                                 FileUtils.forceMkdir(new File(snapshotDestPath));
                             } catch (IOException e) {
