@@ -292,7 +292,6 @@ export default {
     addNetworkServiceProvider (args) {
       return new Promise((resolve, reject) => {
         api('addNetworkServiceProvider', args).then(async json => {
-          const jobId = json.addnetworkserviceproviderresponse.jobid
           this.$pollJob({
             jobId: json.addnetworkserviceproviderresponse.jobid,
             successMethod: (result) => {
