@@ -39,7 +39,6 @@ from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
                                         list_routers)
-from marvin.lib.utils import cleanup_resources
 import socket
 import time
 
@@ -206,14 +205,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            print(("Warning: Exception during cleanup : %s" % e))
-            #raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
+        super(TestVPCNetworkLBRules, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -229,7 +221,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["vpc_offering"]
                                     )
-
         self.cleanup.append(self.vpc_off)
         self.debug("Enabling the VPC offering created")
         self.vpc_off.update(self.apiclient, state='Enabled')
@@ -244,16 +235,11 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                         account=self.account.name,
                         domainid=self.account.domainid
                         )
+        self.cleanup.append(self.vpc)
         return
 
     def tearDown(self):
-        try:
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            self.debug("Warning: Exception during cleanup : %s" % e)
-            #raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestVPCNetworkLBRules, self).tearDown()
 
     def get_Router_For_VPC(self):
         routers = list_routers(self.apiclient,
@@ -270,7 +256,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                             )
         router = routers[0]
         return router
-
 
     def stop_VPC_VRouter(self):
         router = self.get_Router_For_VPC()
@@ -332,7 +317,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
     def check_wget_from_vm(self, vm, public_ip, testnegative=False):
         import urllib.request, urllib.parse, urllib.error
-        self.debug("Checking if we can wget from a VM=%s http server on public_ip=%s"  % (vm.name, public_ip.ipaddress.ipaddress))
+        self.debug("Checking if we can wget from a VM=%s http server on public_ip=%s, expecting success = %b "  % (vm.name, public_ip.ipaddress.ipaddress, testnegative))
         try:
             urllib.request.urlretrieve("http://%s/test.html" % public_ip.ipaddress.ipaddress, filename="test.html")
             if not testnegative:
@@ -371,6 +356,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                                 networkid=network.id,
                                 vpcid=self.vpc.id
                                 )
+        self.cleanup.append(nat_rule)
 
         self.debug("Adding NetwrokACl rules to make NAT rule accessible")
         nwacl_nat = NetworkACL.create(self.apiclient,
@@ -378,6 +364,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                                     services=self.services["natrule"],
                                     traffictype='Ingress'
                                     )
+        self.cleanup.append(nwacl_nat)
         self.debug('nwacl_nat=%s' % nwacl_nat.__dict__)
         return nat_rule
 
@@ -390,6 +377,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                                 networkid=None, #network.id,
                                 vpcid=self.vpc.id
                                 )
+        self.cleanup.append(public_ip)
         self.debug("Associated %s with network %s" % (public_ip.ipaddress.ipaddress,
                                         network.id
                                         ))
@@ -402,7 +390,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["vpc_offering"]
                                     )
-
         self.cleanup.append(vpc_off)
         self.debug("Enabling the VPC offering created")
         vpc_off.update(self.apiclient, state='Enabled')
@@ -417,6 +404,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                         account=self.account.name,
                         domainid=self.account.domainid
                         )
+        self.cleanup.append(vpc)
         return vpc
 
     def create_Network(self, net_offerring, gateway='10.1.1.1',vpc=None):
@@ -427,9 +415,9 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                                             net_offerring,
                                             conservemode=False
                                         )
+            self.cleanup.append(nw_off)
             # Enable Network offering
             nw_off.update(self.apiclient, state='Enabled')
-            self.cleanup.append(nw_off)
             self.debug('Created and Enabled NetworkOffering')
 
             self.services["network"]["name"] = "NETWORK-" + str(gateway)
@@ -443,6 +431,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                                     gateway=gateway,
                                     vpcid=vpc.id if vpc else self.vpc.id
                                     )
+            self.cleanup.append(obj_network)
             self.debug("Created network with ID: %s" % obj_network.id)
             return obj_network
         except:
@@ -460,6 +449,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                                     networkids=[str(network.id)],
                                     hostid=host_id
                                     )
+            self.cleanup.append(vm)
             self.debug('Created VM=%s in network=%s' % (vm.id, network.name))
 
             return vm
@@ -493,6 +483,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                                     networkid=network.id,
                                     traffictype='Ingress'
                                     )
+        self.cleanup.append(nwacl_nat)
         self.debug('nwacl_nat=%s' % nwacl_nat.__dict__)
         return lb_rule
 
@@ -504,13 +495,12 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                                 services=self.services["http_rule"],
                                 traffictype='Egress'
                                 )
-
+        self.cleanup.append(nwacl_internet_1)
         return nwacl_internet_1
 
     @attr(tags=["advanced", "intervlan"], required_hardware="false")
     def test_01_VPC_LBRulesListing(self):
         """ Test case no 210 and 227: List Load Balancing Rules belonging to a VPC
-        """
 
         # Validate the following
         # 1. Create a VPC with cidr - 10.1.1.1/16
@@ -523,6 +513,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         # 8. Use the Create LB rule for vm3 amd vm4 in network2, should fail
         # because it's no_lb offering
         # 9. List LB rule
+        """
 
         network_1 = self.create_Network(self.services["network_offering"])
         network_2 = self.create_Network(self.services["network_offering_no_lb"], '10.1.2.1')
@@ -559,7 +550,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
     def test_02_VPC_CreateLBRuleInMultipleNetworks(self):
         """ Test Create LB rules for 1 network which is part of a two/multiple virtual networks of a
             VPC using a new Public IP Address available with the VPC when the Virtual Router is in Running State
-        """
 
         # Validate the following
         # 1. Create a VPC with cidr - 10.1.1.1/16
@@ -569,6 +559,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         # 5. Use the Create LB rule for vm1 and vm2 in network1.
         # 6. Add vm3 to LB rule.
         # 7. wget a file and check for LB rule.
+        """
 
         network_1 = self.create_Network(self.services["network_offering"])
         vm_1 = self.create_VM_in_Network(network_1)
@@ -584,7 +575,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
     def test_03_VPC_CreateLBRuleInMultipleNetworksVRStoppedState(self):
         """ Test case no 222 : Create LB rules for a two/multiple virtual networks of a 
             VPC using a new Public IP Address available with the VPC when the Virtual Router is in Stopped State
-        """
 
         # Validate the following
         # 1. Create a VPC with cidr - 10.1.1.1/16
@@ -595,6 +585,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         # 7. Use the Create LB rule for vm1 and vm2 in network1.
         # 8. Add vm3 to LB rule.
         # 9. wget a file and check for LB rule.
+        """
 
         network_1 = self.create_Network(self.services["network_offering"])
         network_2 = self.create_Network(self.services["network_offering_no_lb"], '10.1.2.1')
@@ -620,7 +611,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
     def test_04_VPC_CreateLBRuleInMultipleNetworksVRStoppedState(self):
         """ Test case no 222 : Create LB rules for a two/multiple virtual networks of a
             VPC using a new Public IP Address available with the VPC when the Virtual Router is in Stopped State
-        """
 
         # Validate the following
         # 1. Create a VPC with cidr - 10.1.1.1/16
@@ -631,6 +621,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         # 7. Use the Create LB rule for vm1 and vm2 in network1.
         # 8. Add vm3 to LB rule.
         # 9. wget a file and check for LB rule.
+        """
 
         network_1 = self.create_Network(self.services["network_offering"])
         network_2 = self.create_Network(self.services["network_offering_no_lb"], '10.1.2.1')
@@ -650,7 +641,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
     def test_05_VPC_CreateAndDeleteLBRule(self):
         """ Test case no 214 : Delete few(not all) LB rules for a single virtual network of a
             VPC belonging to a single Public IP Address when the Virtual Router is in Running State
-        """
 
         # Validate the following
         # 1. Create a VPC with cidr - 10.1.1.1/16
@@ -662,6 +652,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         # 7. wget and ssh and check for LB rule.
         # 8. Delete ssh LB Rule.
         # 9. ssh LB should fail.
+        """
 
         network_1 = self.create_Network(self.services["network_offering"])
         vm_1 = self.create_VM_in_Network(network_1)
@@ -681,7 +672,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
     def test_06_VPC_CreateAndDeleteLBRuleVRStopppedState(self):
         """ Test Delete few(not all) LB rules for a single virtual network of
             a VPC belonging to a single Public IP Address when the Virtual Router is in Stopped State
-        """
 
         # Validate the following
         # 1. Create a VPC with cidr - 10.1.1.1/16
@@ -693,6 +683,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         # 7. wget and ssh and check for LB rule.
         # 8. Delete ssh LB Rule.
         # 9. ssh LB should fail.
+        """
 
         network_1 = self.create_Network(self.services["network_offering"])
         vm_1 = self.create_VM_in_Network(network_1)
@@ -718,7 +709,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
     def test_07_VPC_CreateAndDeleteAllLBRule(self):
         """ Test Delete all LB rules for a single virtual network of a
             VPC belonging to a single Public IP Address when the Virtual Router is in Running State
-        """
 
         # Validate the following
         # 1. Create a VPC with cidr - 10.1.1.1/16
@@ -730,6 +720,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         # 7. wget and ssh and check for LB rule.
         # 8. Delete all LB Rule.
         # 9. ssh and http LB should fail.
+        """
 
         network_1 = self.create_Network(self.services["network_offering"])
         vm_1 = self.create_VM_in_Network(network_1)
@@ -751,7 +742,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
     def test_08_VPC_CreateAndDeleteAllLBRuleVRStoppedState(self):
         """ Test Delete all LB rules for a single virtual network of a
             VPC belonging to a single Public IP Address when the Virtual Router is in Stopped State
-        """
 
         # Validate the following
         # 1. Create a VPC with cidr - 10.1.1.1/16
@@ -763,6 +753,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         # 7. wget and ssh and check for LB rule.
         # 8. Delete all LB Rule.
         # 9. ssh and http LB should fail.
+        """
 
         network_1 = self.create_Network(self.services["network_offering"])
         vm_1 = self.create_VM_in_Network(network_1)
@@ -783,7 +774,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_09_VPC_LBRuleCreateFailMultipleVPC(self):
         """ Test User should not be allowed to create a LB rule for a VM that belongs to a different VPC.
-        """
 
         # Validate the following
         # 1. Create a VPC1 with cidr - 10.1.1.1/16
@@ -798,6 +788,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         # 9. wget and check LB Rule
         # 10. create LB rule for vm3 and vm4 in VPC1
         # 11. LB rule creation should fail
+        """
 
         network_1 = self.create_Network(self.services["network_offering"])
 
@@ -821,7 +812,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
     @attr(tags=["advanced", "intervlan"], required_hardware="false")
     def test_10_VPC_FailedToCreateLBRuleNonVPCNetwork(self):
         """ Test User should not be allowed to create a LB rule for a VM that does not belong to any VPC.
-        """
 
         # Validate the following
         # 1. Create a VPC1 with cidr - 10.1.1.1/16
@@ -835,6 +825,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         # 9. wget and check LB Rule
         # 10. create LB rule for vm3 and vm4 in VPC1
         # 11. LB rule creation should fail
+        """
 
         network_1 = self.create_Network(self.services["network_offering"])
         vm_1 = self.create_VM_in_Network(network_1)
@@ -859,7 +850,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
     def test_11_VPC_LBRuleCreateNotAllowed(self):
         """ Test case no 217 and 236: User should not be allowed to create a LB rule for a
             VM that does not belong to the same network but belongs to the same VPC.
-        """
 
         # Validate the following
         # 1. Create a VPC1 with cidr - 10.1.1.1/16
@@ -873,6 +863,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         # 9. wget and check LB Rule
         # 10. create LB rule for vm3 and vm1 in VPC1
         # 11. LB rule creation should fail
+        """
 
         network_1 = self.create_Network(self.services["network_offering"])
 
@@ -896,7 +887,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
     @attr(tags=["advanced", "intervlan"], required_hardware="false")
     def test_12_VPC_LBRuleCreateFailForRouterIP(self):
         """ Test User should not be allowed to create a LB rule on an Ipaddress that Source Nat enabled.
-        """
 
         # Validate the following
         # 1. Create a VPC1 with cidr - 10.1.1.1/16
@@ -907,6 +897,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         # 6. Get source NAT public ip of router
         # 7. Use the Create LB rule for vm1 and vm2 in network1.
         # 8. LB rule creation should fail
+        """
 
         network_1 = self.create_Network(self.services["network_offering"])
         vm_1 = self.create_VM_in_Network(network_1)
@@ -924,7 +915,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_13_VPC_LBRuleCreateFailForPFSourceNATIP(self):
         """ Test User should not be allowed to create a LB rule on an Ipaddress that already has a PF rule.
-        """
 
         # Validate the following
         # 1. Create a VPC1 with cidr - 10.1.1.1/16
@@ -936,6 +926,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         # 6. Create a PP rule for vm1
         # 7. Use the Create LB rule for vm1 and vm2 in network1.
         # 8. LB rule creation should fail
+        """
 
         network_1 = self.create_Network(self.services["network_offering"])
         vm_1 = self.create_VM_in_Network(network_1)
@@ -954,7 +945,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
     @attr(tags=["advanced", "intervlan"], required_hardware="false")
     def test_14_VPC_LBRuleCreateFailForStaticNatRule(self):
         """ Test User should not be allowed to create a LB rule on an Ipaddress that already has a Static Nat rule.
-        """
 
         # Validate the following
         # 1. Create a VPC1 with cidr - 10.1.1.1/16
@@ -967,6 +957,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         # 8. Succesessfully wget a file from vm1.
         # 9. Use the Create LB rule for vm1 and vm2 in network1.
         # 10. LB rule creation should fail.
+        """
 
         network_1 = self.create_Network(self.services["network_offering"])
         vm_1 = self.create_VM_in_Network(network_1)
@@ -983,7 +974,6 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
     @attr(tags=["advanced", "intervlan"], required_hardware="false")
     def test_15_VPC_ReleaseIPForLBRuleCreated(self):
         """ Test release Ip address that has a LB rule assigned to it.
-        """
 
         # Validate the following
         # 1. Create a VPC1 with cidr - 10.1.1.1/16
@@ -995,6 +985,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         # 6. Create a StaticNat Rule rule for vm1
         # 7. Use the Create LB rule for vm1 and vm2 in network1.
         # 8. LB rule creation should fail
+        """
 
         network_1 = self.create_Network(self.services["network_offering"])
         vm_1 = self.create_VM_in_Network(network_1)
@@ -1002,6 +993,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         public_ip_1 = self.acquire_Public_IP(network_1)
         lb_rule = self.create_LB_Rule(public_ip_1, network_1, [vm_2, vm_1])
         public_ip_1.delete(self.apiclient)
+        self.cleanup.remove(public_ip_1)
 
         with self.assertRaises(Exception):
             lb_rules = LoadBalancerRule.list(self.apiclient,
