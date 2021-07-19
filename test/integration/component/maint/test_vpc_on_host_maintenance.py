@@ -58,6 +58,7 @@ class TestVPCHostMaintenance(cloudstackTestCase):
             cls.api_client,
             cls.services["vpc_offering"]
         )
+        cls._cleanup.append(cls.vpc_off)
         cls.vpc_off.update(cls.api_client, state='Enabled')
         cls.hosts = Host.list(
             cls.api_client,
@@ -93,8 +94,6 @@ class TestVPCHostMaintenance(cloudstackTestCase):
                             "Failed to enable maintenance mode on %s" %
                             host.name)
                     timeout = timeout - 1
-
-        cls._cleanup.append(cls.vpc_off)
         return
 
     @classmethod
@@ -138,12 +137,7 @@ class TestVPCHostMaintenance(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestVPCHostMaintenance, self).tearDown()
 
     def validate_vpc_offering(self, vpc_offering):
         """Validates the VPC offering"""
@@ -217,5 +211,6 @@ class TestVPCHostMaintenance(cloudstackTestCase):
             domainid=self.account.domainid,
             start=False
         )
+        self.cleanup.append(vpc)
         self.validate_vpc_network(vpc, state='enabled')
         return
