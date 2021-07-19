@@ -34,7 +34,8 @@ public interface AnnotationService {
     AnnotationResponse updateAnnotationVisibility(UpdateAnnotationVisibilityCmd cmd);
 
     enum EntityType {
-        HOST, DOMAIN, VM, VOLUME, SNAPSHOT;
+        HOST, DOMAIN, VM, VOLUME, SNAPSHOT, VM_SNAPSHOT, INSTANCE_GROUP, SSH_KEYPAIR,
+        NETWORK, VPC, PUBLIC_IP_ADDRESS, VPN_CUSTOMER_GATEWAY, TEMPLATE, ISO;
 
         static public boolean contains(String representation) {
             try {

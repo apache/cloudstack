@@ -513,6 +513,7 @@ export default {
       title: 'label.instance.groups',
       icon: 'gold',
       docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
+      resourceType: 'VMInstanceGroup',
       permission: ['listInstanceGroups'],
       columns: ['name', 'account'],
       details: ['name', 'id', 'account', 'domain', 'created'],
@@ -521,6 +522,16 @@ export default {
         title: 'label.instances',
         param: 'groupid'
       }],
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'comments',
+          component: () => import('@/components/view/AnnotationsTab.vue')
+        }
+      ],
       actions: [
         {
           api: 'createInstanceGroup',
@@ -561,12 +572,23 @@ export default {
         }
         return fields
       },
+      resourceType: 'SSHKeyPair',
       details: ['name', 'fingerprint', 'account', 'domain'],
       related: [{
         name: 'vm',
         title: 'label.instances',
         param: 'keypair'
       }],
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'comments',
+          component: () => import('@/components/view/AnnotationsTab.vue')
+        }
+      ],
       actions: [
         {
           api: 'createSSHKeyPair',

@@ -23,9 +23,9 @@ export default {
   docHelp: 'adminguide/events.html',
   permission: ['listAnnotations'],
   columns: () => {
-    const cols = ['created', 'annotation', 'entityid', 'entitytype', 'username']
+    const cols = ['created', 'annotation', 'entityid', 'entitytype']
     if (['Admin'].includes(store.getters.userInfo.roletype)) {
-      cols.push('adminsonly')
+      cols.push('username', 'adminsonly')
     }
     return cols
   },
@@ -48,10 +48,6 @@ export default {
       groupAction: true,
       popup: true,
       groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
-      // show: (record, store) => {
-      //   return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
-      //     !(record.domain === 'ROOT' && record.name === 'admin' && record.accounttype === 1)
-      // }
     }
   ]
 }
