@@ -70,6 +70,7 @@ import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.VolumeStatsEntry;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.dc.Vlan.VlanType;
@@ -145,6 +146,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+import org.apache.commons.io.FileUtils;
 
 /**
  * Provides real time stats for various agent resources up to x seconds
@@ -295,8 +297,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private long storageStatsInterval = -1L;
     private long volumeStatsInterval = -1L;
     private long autoScaleStatsInterval = -1L;
-
-    private double _imageStoreCapacityThreshold = 0.90;
 
     private String externalStatsPrefix = "";
     String externalStatsHost = null;
@@ -1375,10 +1375,28 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         if (!_storageStats.keySet().contains(imageStore.getId())) { // Stats not available for this store yet, can be a new store. Better to assume it has enough capacity?
             return true;
         }
-        StorageStats imageStoreStats = _storageStats.get(imageStore.getId());
-        if (imageStoreStats != null && (imageStoreStats.getByteUsed() / (imageStoreStats.getCapacityBytes() * 1.0)) <= _imageStoreCapacityThreshold) {
+
+        long imageStoreId = imageStore.getId();
+        StorageStats imageStoreStats = _storageStats.get(imageStoreId);
+
+        if (imageStoreStats == null) {
+            s_logger.debug(String.format("Stats for image store [%s] not found.", imageStoreId));
+            return false;
+        }
+
+        double totalCapacity = imageStoreStats.getCapacityBytes();
+        double usedCapacity = imageStoreStats.getByteUsed();
+        double threshold = getImageStoreCapacityThreshold();
+        String readableTotalCapacity = FileUtils.byteCountToDisplaySize((long) totalCapacity);
+        String readableUsedCapacity = FileUtils.byteCountToDisplaySize((long) usedCapacity);
+
+        s_logger.debug(String.format("Verifying image storage [%s]. Capacity: total=[%s], used=[%s], threshold=[%s%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100));
+
+        if (usedCapacity / totalCapacity <= threshold) {
             return true;
         }
+
+        s_logger.warn(String.format("Image storage [%s] has not enough capacity. Capacity: total=[%s], used=[%s], threshold=[%s%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100));
         return false;
     }
 
@@ -1611,6 +1629,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     }
 
     public double getImageStoreCapacityThreshold() {
-        return _imageStoreCapacityThreshold;
+        return CapacityManager.SecondaryStorageCapacityThreshold.value();
     }
 }

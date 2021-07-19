@@ -372,11 +372,7 @@ export default {
         this.selectedZoneIndex = values.zoneid
       }
     })
-    this.apiParams = {}
-    var apiConfig = this.$store.getters.apis.createDiskOffering || {}
-    apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('createDiskOffering')
   },
   created () {
     this.zones = [

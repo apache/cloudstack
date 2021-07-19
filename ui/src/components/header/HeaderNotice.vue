@@ -33,8 +33,11 @@
             </a-list-item-meta>
           </a-list-item>
           <a-list-item v-for="(job, index) in jobs" :key="index">
-            <a-list-item-meta :title="job.title" :description="job.description">
-              <a-avatar :style="notificationAvatar[job.status].style" :icon="notificationAvatar[job.status].icon" slot="avatar"/>
+            <a-list-item-meta :title="job.title">
+              <a-avatar :style="notificationAvatar[job.status].style" :icon="notificationAvatar[job.status].icon" slot="avatar"/><br/>
+              <span v-if="getResourceName(job.description, 'name') && job.path" slot="description"><router-link :to="{ path: job.path}"> {{ getResourceName(job.description, "name") + ' - ' }}</router-link></span>
+              <span v-if="getResourceName(job.description, 'name') && job.path" slot="description"> {{ getResourceName(job.description, "msg") }}</span>
+              <span v-else slot="description"> {{ job.description }} </span>
             </a-list-item-meta>
           </a-list-item>
         </a-list>
@@ -80,6 +83,16 @@ export default {
         this.pollJobs()
       }, 4000)
     },
+    getResourceName (description, data) {
+      if (description) {
+        if (data === 'name') {
+          const name = description.match(/\(([^)]+)\)/)
+          return name ? name[1] : null
+        }
+        const msg = description.substring(description.indexOf(')') + 1)
+        return msg
+      }
+    },
     async pollJobs () {
       var hasUpdated = false
       for (var i in this.jobs) {
@@ -102,12 +115,14 @@ export default {
               if (result.jobresult.errortext !== null) {
                 this.jobs[i].description = '(' + this.jobs[i].description + ') ' + result.jobresult.errortext
               }
-              this.$notification.error({
-                message: this.jobs[i].title,
-                description: this.jobs[i].description,
-                key: this.jobs[i].jobid,
-                duration: 0
-              })
+              if (!this.jobs[i].bulkAction) {
+                this.$notification.error({
+                  message: this.jobs[i].title,
+                  description: this.jobs[i].description,
+                  key: this.jobs[i].jobid,
+                  duration: 0
+                })
+              }
             }
           }).catch(function (e) {
             console.log(this.$t('error.fetching.async.job.result') + e)

@@ -68,7 +68,7 @@
           <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
           <action-button
             v-else
-            :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: 'inline-flex' }"
+            :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: getStyle(), padding: '5px' }"
             :loading="loading"
             :actions="actions"
             :selectedRowKeys="selectedRowKeys"
@@ -129,8 +129,11 @@
         :okText="$t('label.ok')"
         :cancelText="$t('label.cancel')"
         style="top: 20px;"
+        :width="modalWidth"
         @ok="handleSubmit"
         @cancel="closeAction"
+        :ok-button-props="getOkProps()"
+        :cancel-button-props="getCancelProps()"
         :confirmLoading="actionLoading"
         centered
       >
@@ -146,9 +149,37 @@
         </span>
         <a-spin :spinning="actionLoading">
           <span v-if="currentAction.message">
-            <a-alert type="warning">
-              <span slot="message" v-html="$t(currentAction.message)" />
-            </a-alert>
+            <div v-if="selectedRowKeys.length > 0">
+              <a-alert
+                v-if="['delete', 'poweroff'].includes(currentAction.icon)"
+                type="error">
+                <a-icon slot="message" type="exclamation-circle" style="color: red; fontSize: 30px; display: inline-flex" />
+                <span style="padding-left: 5px" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+                <span slot="message" v-html="$t(currentAction.message)" />
+              </a-alert>
+              <a-alert v-else type="warning">
+                <span v-if="selectedRowKeys.length > 0" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+                <span slot="message" v-html="$t(currentAction.message)" />
+              </a-alert>
+            </div>
+            <div v-else>
+              <a-alert type="warning">
+                <span slot="message" v-html="$t(currentAction.message)" />
+              </a-alert>
+            </div>
+            <div v-if="selectedRowKeys.length > 0">
+              <a-divider />
+              <a-table
+                v-if="selectedRowKeys.length > 0"
+                size="middle"
+                :columns="chosenColumns"
+                :dataSource="selectedItems"
+                :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
+                :pagination="true"
+                style="overflow-y: auto"
+              >
+              </a-table>
+            </div>
             <br v-if="currentAction.paramFields.length > 0"/>
           </span>
           <a-form
@@ -295,6 +326,7 @@
             </a-form-item>
           </a-form>
         </a-spin>
+        <br />
       </a-modal>
     </div>
 
@@ -332,6 +364,12 @@
         </template>
       </a-pagination>
     </div>
+    <bulk-action-progress
+      :showGroupActionModal="showGroupActionModal"
+      :selectedItems="selectedItems"
+      :selectedColumns="selectedColumns"
+      :message="modalInfo"
+      @handle-cancel="handleCancel" />
   </div>
 </template>
 
@@ -349,6 +387,7 @@ import ListView from '@/components/view/ListView'
 import ResourceView from '@/components/view/ResourceView'
 import ActionButton from '@/components/view/ActionButton'
 import SearchView from '@/components/view/SearchView'
+import BulkActionProgress from '@/components/view/BulkActionProgress'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -361,6 +400,7 @@ export default {
     Status,
     ActionButton,
     SearchView,
+    BulkActionProgress,
     TooltipLabel
   },
   mixins: [mixinDevice],
@@ -383,7 +423,12 @@ export default {
       loading: false,
       actionLoading: false,
       columns: [],
+      selectedColumns: [],
+      chosenColumns: [],
+      showGroupActionModal: false,
+      selectedItems: [],
       items: [],
+      modalInfo: {},
       itemCount: 0,
       page: 1,
       pageSize: 10,
@@ -400,7 +445,8 @@ export default {
       actions: [],
       formModel: {},
       confirmDirty: false,
-      firstIndex: 0
+      firstIndex: 0,
+      modalWidth: '30vw'
     }
   },
   beforeCreate () {
@@ -418,10 +464,73 @@ export default {
           return
         }
       }
+
+      if ((this.$route.path.includes('/publicip/') && ['firewall', 'portforwarding', 'loadbalancing'].includes(this.$route.query.tab)) ||
+        (this.$route.path.includes('/guestnetwork/') && (this.$route.query.tab === 'egress.rules' || this.$route.query.tab === 'public.ip.addresses'))) {
+        return
+      }
+
+      if (this.$route.path.includes('/template/') || this.$route.path.includes('/iso/')) {
+        return
+      }
       this.fetchData()
     })
     eventBus.$on('exec-action', (action, isGroupAction) => {
       this.execAction(action, isGroupAction)
+    })
+    eventBus.$on('update-bulk-job-status', (items, action) => {
+      for (const item of items) {
+        this.$store.getters.asyncJobIds.map(function (j) {
+          if (j.jobid === item.jobid) {
+            j.bulkAction = action
+          }
+        })
+      }
+    })
+    eventBus.$on('update-job-details', (jobId, resourceId) => {
+      const fullPath = this.$route.fullPath
+      const path = this.$route.path
+      var jobs = this.$store.getters.asyncJobIds.map(job => {
+        if (job.jobid === jobId) {
+          if (resourceId && !path.includes(resourceId)) {
+            job.path = path + '/' + resourceId
+          } else {
+            job.path = fullPath
+          }
+        }
+        return job
+      })
+
+      this.$store.commit('SET_ASYNC_JOB_IDS', jobs)
+    })
+
+    eventBus.$on('update-resource-state', (selectedItems, resource, state, jobid) => {
+      if (selectedItems.length === 0) {
+        return
+      }
+      var tempResource = []
+      if (selectedItems && resource) {
+        if (resource.includes(',')) {
+          resource = resource.split(',')
+          tempResource = resource
+        } else {
+          tempResource.push(resource)
+        }
+        for (var r = 0; r < tempResource.length; r++) {
+          var objIndex = 0
+          if (this.$route.path.includes('/template') || this.$route.path.includes('/iso')) {
+            objIndex = selectedItems.findIndex(obj => (obj.zoneid === tempResource[r]))
+          } else {
+            objIndex = selectedItems.findIndex(obj => (obj.id === tempResource[r] || obj.username === tempResource[r]))
+          }
+          if (state && objIndex !== -1) {
+            selectedItems[objIndex].status = state
+          }
+          if (jobid && objIndex !== -1) {
+            selectedItems[objIndex].jobid = jobid
+          }
+        }
+      }
     })
 
     if (this.device === 'desktop') {
@@ -467,7 +576,32 @@ export default {
       this.fetchData()
     }
   },
+  computed: {
+    hasSelected () {
+      return this.selectedRowKeys.length > 0
+    }
+  },
   methods: {
+    getStyle () {
+      if (['snapshot', 'vmsnapshot', 'publicip'].includes(this.$route.name)) {
+        return 'table-cell'
+      }
+      return 'inline-flex'
+    },
+    getOkProps () {
+      if (this.selectedRowKeys.length > 0 && this.currentAction?.groupAction) {
+        return { props: { type: 'default' } }
+      } else {
+        return { props: { type: 'primary' } }
+      }
+    },
+    getCancelProps () {
+      if (this.selectedRowKeys.length > 0 && this.currentAction?.groupAction) {
+        return { props: { type: 'primary' } }
+      } else {
+        return { props: { type: 'default' } }
+      }
+    },
     switchProject (projectId) {
       if (!projectId || !projectId.length || projectId.length !== 36) {
         return
@@ -602,6 +736,12 @@ export default {
           sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
         })
       }
+      this.chosenColumns = this.columns.filter(column => {
+        return ![this.$t('label.state'), this.$t('label.hostname'), this.$t('label.hostid'), this.$t('label.zonename'),
+          this.$t('label.zone'), this.$t('label.zoneid'), this.$t('label.ip'), this.$t('label.ipaddress'), this.$t('label.privateip'),
+          this.$t('label.linklocalip'), this.$t('label.size'), this.$t('label.sizegb'), this.$t('label.current'),
+          this.$t('label.created'), this.$t('label.order')].includes(column.title)
+      })
 
       if (['listTemplates', 'listIsos'].includes(this.apiName) && this.dataView) {
         delete params.showunique
@@ -718,6 +858,14 @@ export default {
     },
     onRowSelectionChange (selection) {
       this.selectedRowKeys = selection
+      if (selection?.length > 0) {
+        this.modalWidth = '50vw'
+        this.selectedItems = (this.items.filter(function (item) {
+          return selection.indexOf(item.id) !== -1
+        }))
+      } else {
+        this.modalWidth = '30vw'
+      }
     },
     execAction (action, isGroupAction) {
       const self = this
@@ -862,12 +1010,16 @@ export default {
       }).then(function () {
       })
     },
-    pollActionCompletion (jobId, action, resourceName, showLoading = true) {
+    pollActionCompletion (jobId, action, resourceName, resource, showLoading = true) {
+      eventBus.$emit('update-job-details', jobId, resource)
       this.$pollJob({
         jobId,
         name: resourceName,
         successMethod: result => {
           this.fetchData()
+          if (this.selectedItems.length > 0) {
+            eventBus.$emit('update-resource-state', this.selectedItems, resource, 'success')
+          }
           if (action.response) {
             const description = action.response(result.jobresult)
             if (description) {
@@ -882,11 +1034,17 @@ export default {
             action.successMethod(this, result)
           }
         },
-        errorMethod: () => this.fetchData(),
+        errorMethod: () => {
+          this.fetchData()
+          if (this.selectedItems.length > 0) {
+            eventBus.$emit('update-resource-state', this.selectedItems, resource, 'failed')
+          }
+        },
         loadingMessage: `${this.$t(action.label)} - ${resourceName}`,
         showLoading: showLoading,
         catchMessage: this.$t('error.fetching.async.job.result'),
-        action
+        action,
+        bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal
       })
     },
     fillEditFormFieldValues () {
@@ -906,8 +1064,33 @@ export default {
         }
       })
     },
+    handleCancel () {
+      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      this.showGroupActionModal = false
+      this.selectedItems = []
+      this.selectedColumns = []
+      this.selectedRowKeys = []
+      this.message = {}
+    },
     handleSubmit (e) {
       if (!this.dataView && this.currentAction.groupAction && this.selectedRowKeys.length > 0) {
+        if (this.selectedRowKeys.length > 0) {
+          this.selectedColumns = this.chosenColumns
+          this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
+          this.selectedColumns.splice(0, 0, {
+            dataIndex: 'status',
+            title: this.$t('label.operation.status'),
+            scopedSlots: { customRender: 'status' },
+            filters: [
+              { text: 'In Progress', value: 'InProgress' },
+              { text: 'Success', value: 'success' },
+              { text: 'Failed', value: 'failed' }
+            ]
+          })
+          this.showGroupActionModal = true
+          this.modalInfo.title = this.currentAction.label
+          this.modalInfo.docHelp = this.currentAction.docHelp
+        }
         this.form.validateFields((err, values) => {
           if (!err) {
             this.actionLoading = true
@@ -915,9 +1098,9 @@ export default {
             this.items.map(x => {
               itemsNameMap[x.id] = x.name || x.displaytext || x.id
             })
-            const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values)
+            const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values, this.items)
             for (const params of paramsList) {
-              var resourceName = itemsNameMap[params.id]
+              var resourceName = itemsNameMap[params.id || params.vmsnapshotid || params.username || params.name]
               // Using a method for this since it's an async call and don't want wrong prarms to be passed
               this.callGroupApi(params, resourceName)
             }
@@ -940,23 +1123,44 @@ export default {
     callGroupApi (params, resourceName) {
       const action = this.currentAction
       api(action.api, params).then(json => {
-        this.handleResponse(json, resourceName, action, false)
+        this.handleResponse(json, resourceName, this.getDataIdentifier(params), action, false)
       }).catch(error => {
         if ([401].includes(error.response.status)) {
           return
         }
-        this.$notifyError(error)
+        if (this.selectedItems.length !== 0) {
+          this.$notifyError(error)
+          eventBus.$emit('update-resource-state', this.selectedItems, this.getDataIdentifier(params), 'failed')
+        }
       })
     },
-    handleResponse (response, resourceName, action, showLoading = true) {
+    getDataIdentifier (params) {
+      var dataIdentifier = ''
+      dataIdentifier = params.id || params.username || params.name || params.vmsnapshotid || params.ids
+      return dataIdentifier
+    },
+    handleResponse (response, resourceName, resource, action, showLoading = true) {
       for (const obj in response) {
         if (obj.includes('response')) {
           if (response[obj].jobid) {
             const jobid = response[obj].jobid
-            this.$store.dispatch('AddAsyncJob', { title: this.$t(action.label), jobid: jobid, description: resourceName, status: 'progress' })
-            this.pollActionCompletion(jobid, action, resourceName, showLoading)
+            this.$store.dispatch('AddAsyncJob', {
+              title: this.$t(action.label),
+              jobid: jobid,
+              description: resourceName,
+              status: 'progress',
+              bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
+            })
+            eventBus.$emit('update-resource-state', this.selectedItems, resource, 'InProgress', jobid)
+            this.pollActionCompletion(jobid, action, resourceName, resource, showLoading)
             return true
           } else {
+            if (this.selectedItems.length > 0) {
+              eventBus.$emit('update-resource-state', this.selectedItems, resource, 'success')
+              if (resource) {
+                this.selectedItems.filter(item => item === resource)
+              }
+            }
             var message = action.successMessage ? this.$t(action.successMessage) : this.$t(action.label) +
               (resourceName ? ' - ' + resourceName : '')
             var duration = 2
@@ -1051,7 +1255,7 @@ export default {
           args = [action.api, params]
         }
         api(...args).then(json => {
-          hasJobId = this.handleResponse(json, resourceName, action)
+          hasJobId = this.handleResponse(json, resourceName, this.getDataIdentifier(params), action)
           if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView) {
             this.$router.go(-1)
           } else {
@@ -1066,6 +1270,7 @@ export default {
           }
 
           console.log(error)
+          eventBus.$emit('update-resource-state', this.selectedItems, this.getDataIdentifier(params), 'failed')
           this.$notifyError(error)
         }).finally(f => {
           this.actionLoading = false

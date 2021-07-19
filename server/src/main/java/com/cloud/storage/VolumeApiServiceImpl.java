@@ -1555,9 +1555,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 s_logger.warn("Failed to expunge volume: " + volumeId);
                 return null;
             }
+            removeVolume(volume.getId());
         }
 
-        removeVolume(volume.getId());
         return volume;
     }
 

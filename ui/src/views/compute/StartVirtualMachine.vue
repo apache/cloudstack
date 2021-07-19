@@ -100,6 +100,7 @@
 
 <script>
 import { api } from '@/api'
+import eventBus from '@/config/eventBus'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -127,11 +128,7 @@ export default {
   inject: ['parentFetchData'],
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.startVirtualMachine || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('startVirtualMachine')
   },
   created () {
     if (this.$store.getters.userInfo.roletype === 'Admin') {
@@ -242,6 +239,8 @@ export default {
             },
             response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null }
           })
+          const resourceId = this.resource.id
+          eventBus.$emit('update-job-details', jobId, resourceId)
           this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
