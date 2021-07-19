@@ -286,7 +286,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
     @Override
     protected AgentAttache createAttacheForDirectConnect(final Host host, final ServerResource resource) {
-        s_logger.debug("create ClusteredDirectAgentAttache for " + host.getId());
+        s_logger.debug(String.format("Create ClusteredDirectAgentAttache for %s.", host));
         final DirectAgentAttache attache = new ClusteredDirectAgentAttache(this, host.getId(), host.getName(), _nodeId, resource, host.isInMaintenanceStates());
         AgentAttache old = null;
         synchronized (_agents) {

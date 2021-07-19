@@ -119,6 +119,8 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.commons.collections.CollectionUtils;
@@ -420,6 +422,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
+
+    @Inject
+    private StoragePoolDetailsDao _storagePoolDetailsDao;
 
     @Inject
     private ProjectInvitationDao projectInvitationDao;
@@ -2420,7 +2425,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (store != null) {
                 DataStoreDriver driver = store.getDriver();
                 if (driver != null && driver.getCapabilities() != null) {
-                    poolResponse.setCaps(driver.getCapabilities());
+                    Map<String, String> caps = driver.getCapabilities();
+                    if (Storage.StoragePoolType.NetworkFilesystem.toString().equals(poolResponse.getType()) &&
+                        HypervisorType.VMware.toString().equals(poolResponse.getHypervisor())) {
+                        StoragePoolVO pool = _storagePoolDao.findPoolByUUID(poolResponse.getId());
+                        StoragePoolDetailVO detail = _storagePoolDetailsDao.findDetail(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString());
+                        if (detail != null) {
+                            caps.put(Storage.Capability.HARDWARE_ACCELERATION.toString(), detail.getValue());
+                        }
+                    }
+                    poolResponse.setCaps(caps);
                 }
             }
         }

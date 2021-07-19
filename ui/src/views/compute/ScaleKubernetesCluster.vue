@@ -29,22 +29,12 @@
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item v-if="apiParams.autoscalingenabled">
-          <span slot="label">
-            {{ $t('label.cks.cluster.autoscalingenabled') }}
-            <a-tooltip :title="apiParams.autoscalingenabled.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.cks.cluster.autoscalingenabled')" :tooltip="apiParams.autoscalingenabled.description"/>
           <a-switch :checked="this.autoscalingenabled" @change="val => { this.autoscalingenabled = val }" />
         </a-form-item>
         <span v-if="this.autoscalingenabled">
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.cks.cluster.minsize') }}
-              <a-tooltip :title="apiParams.minsize.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.cks.cluster.minsize')" :tooltip="apiParams.minsize.description"/>
             <a-input
               v-decorator="['minsize', {
                 initialValue: minsize,
@@ -60,12 +50,7 @@
               :placeholder="apiParams.minsize.description"/>
           </a-form-item>
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.cks.cluster.maxsize') }}
-              <a-tooltip :title="apiParams.maxsize.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.cks.cluster.maxsize')" :tooltip="apiParams.maxsize.description"/>
             <a-input
               v-decorator="['maxsize', {
                 initialValue: maxsize,
@@ -83,12 +68,7 @@
         </span>
         <span v-else>
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.serviceofferingid') }}
-              <a-tooltip :title="apiParams.serviceofferingid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
             <a-select
               id="offering-selection"
               v-decorator="['serviceofferingid', {}]"
@@ -105,12 +85,7 @@
             </a-select>
           </a-form-item>
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.cks.cluster.size') }}
-              <a-tooltip :title="apiParams.size.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.cks.cluster.size')" :tooltip="apiParams.size.description"/>
             <a-input
               v-decorator="['size', {
                 initialValue: originalSize,
@@ -137,9 +112,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ScaleKubernetesCluster',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -161,11 +140,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.scaleKubernetesCluster || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('scaleKubernetesCluster')
   },
   created () {
     if (!this.isObjectEmpty(this.resource)) {

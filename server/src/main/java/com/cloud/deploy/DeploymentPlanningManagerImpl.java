@@ -1411,7 +1411,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                         hostCanAccessPool = true;
                         if (potentialHost.getHypervisorType() == HypervisorType.VMware) {
                             try {
-                                boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolComplaintWithStoragePolicy(allVolumes, storagePool);
+                                boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolCompliantWithStoragePolicy(allVolumes, storagePool);
                                 if (!isStoragePoolStoragepolicyComplaince) {
                                     continue;
                                 }
@@ -1450,7 +1450,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
                                 if (potentialHost.getHypervisorType() == HypervisorType.VMware) {
                                     try {
-                                        boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolComplaintWithStoragePolicy(requestVolumes, potentialSPool);
+                                        boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolCompliantWithStoragePolicy(requestVolumes, potentialSPool);
                                         if (!isStoragePoolStoragepolicyComplaince) {
                                             continue;
                                         }
