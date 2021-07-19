@@ -26,6 +26,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 
 /**
  *
@@ -85,4 +86,11 @@ public interface SnapshotManager extends Configurable {
     SnapshotVO getParentSnapshot(VolumeInfo volume);
 
     SnapshotInfo takeSnapshot(VolumeInfo volume) throws ResourceAllocationException;
+
+    /**
+     * Copy the snapshot policies from a volume to another.
+     * @param srcVolume source volume.
+     * @param destVolume destination volume.
+     */
+    void copySnapshotPoliciesBetweenVolumes(VolumeVO srcVolume, VolumeVO destVolume);
 }
