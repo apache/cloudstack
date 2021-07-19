@@ -156,10 +156,13 @@ def random_gen(id=None, size=6, chars=string.ascii_uppercase + string.digits):
 
 
 def cleanup_resources(api_client, resources):
-    """Delete resources"""
+    """
+       Delete resources (created during tests)
+
+       TODO move to marvin.cloudstackTestCase.cloudstackTestCase as it is really part of all test_runs
+    """
     for obj in resources:
         obj.delete(api_client)
-
 
 def is_server_ssh_ready(ipaddress, port, username, password, retries=20, retryinterv=30, timeout=10.0, keyPairFileLocation=None):
     '''

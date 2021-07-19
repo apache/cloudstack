@@ -41,7 +41,6 @@ from marvin.lib.common import (
     get_zone,
     get_template,
     list_routers)
-from marvin.lib.utils import cleanup_resources
 
 
 class Services:
@@ -384,13 +383,14 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                   networkid=network.id,
                                   vpcid=self.vpc.id
                                   )
-
+        self.cleanup.append(nat_rule)
         self.debug("Adding NetworkACL rules to make NAT rule accessible")
         nwacl_nat = NetworkACL.create(self.apiclient,
                                       networkid=network.id,
                                       services=services,
                                       traffictype='Ingress'
                                       )
+        self.cleanup.append(nwacl_nat)
         self.debug('nwacl_nat=%s' % nwacl_nat.__dict__)
         return nat_rule
 
@@ -403,6 +403,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                            networkid=network.id,
                                            vpcid=self.vpc.id
                                            )
+        self.cleanup.append(public_ip)
         self.debug("Associated %s with network %s" % (public_ip.ipaddress.ipaddress,
                                                       network.id
                                                       ))
@@ -415,8 +416,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
             self.apiclient,
             self.services["vpc_offering"]
         )
-
-        self._cleanup.append(vpc_off)
+        self.cleanup.append(vpc_off)
         self.debug("Enabling the VPC offering created")
         vpc_off.update(self.apiclient, state='Enabled')
 
@@ -430,6 +430,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid
         )
+        self.cleanup.append(vpc)
         return vpc
 
     def create_network(self, net_offerring, gateway='10.1.1.1', vpc=None):
@@ -440,9 +441,9 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                             net_offerring,
                                             conservemode=False
                                             )
+            self.cleanup.append(nw_off)
             # Enable Network offering
             nw_off.update(self.apiclient, state='Enabled')
-            self._cleanup.append(nw_off)
             self.debug('Created and Enabled NetworkOffering')
 
             self.services["network"]["name"] = "NETWORK-" + str(gateway)
@@ -456,6 +457,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                          gateway=gateway,
                                          vpcid=vpc.id if vpc else self.vpc.id
                                          )
+            self.cleanup.append(obj_network)
             self.debug("Created network with ID: %s" % obj_network.id)
             return obj_network
         except Exception as e:
@@ -473,6 +475,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                 networkids=[str(network.id)],
                 hostid=host_id
             )
+            self.cleanup.append(vm)
             self.debug('Created VM=%s in network=%s' % (vm.id, network.name))
 
             return vm
@@ -497,6 +500,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
             vpcid=self.vpc.id,
             domainid=self.account.domainid
         )
+        self.cleanup.append(lb_rule)
         self.debug("Adding virtual machines %s and %s to LB rule" % (vmarray))
         lb_rule.assign(self.apiclient, vmarray)
         return lb_rule
@@ -509,13 +513,13 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
             services=self.services["http_rule"],
             traffictype='Ingress'
         )
+        self.cleanup.append(nwacl_internet_1)
 
         return nwacl_internet_1
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_01_network_services_VPC_StopCreatePF(self):
         """ Test : Create VPC PF rules on acquired public ip when VpcVirtualRouter is stopped
-        """
 
         # Validate the following
         # 1. Create a VPC with cidr - 10.1.1.1/16
@@ -526,6 +530,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         # 6. Use the Create PF rule for vm in network1.
         # 7. Start VPC Virtual Router.
         # 8. Successfully ssh into the Guest VM using the PF rule
+        """
 
         network_1 = self.create_network(self.services["network_offering"])
         vm_1 = self.deployvm_in_network(network_1)
@@ -535,6 +540,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         # remove the nat rule
         nat_rule.delete(self.apiclient)
+        self.cleanup.remove(nat_rule)
 
         router = self.stop_vpcrouter()
         # recreate nat rule
@@ -546,7 +552,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_02_network_services_VPC_CreatePF(self):
         """ Test Create VPC PF rules on acquired public ip when VpcVirtualRouter is Running
-        """
 
         # Validate the following
         # 1. Create a VPC with cidr - 10.1.1.1/16
@@ -555,6 +560,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         # 4. Deploy vm1 in network1.
         # 5. Use the Create PF rule for vm in network1.
         # 6. Successfully ssh into the Guest VM using the PF rule
+        """
 
         network_1 = self.create_network(self.services["network_offering"])
         vm_1 = self.deployvm_in_network(network_1)
@@ -566,7 +572,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_03_network_services_VPC_StopCreateMultiplePF(self):
         """ Test Create multiple VPC PF rules on acquired public ip in diff't networks when VpcVirtualRouter is stopped
-        """
 
         # Validate the following
         # 1. Create a VPC with cidr - 10.1.1.1/16
@@ -580,6 +585,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         # 9. Use the Create PF rule for vm2 in network2.
         # 10. Start VPC Virtual Router.
         # 11. Successfully ssh into the Guest VM1 and VM2 using the PF rule
+        """
 
         network_1 = self.create_network(self.services["network_offering_no_lb"])
         network_2 = self.create_network(self.services["network_offering_no_lb"], '10.1.2.1')
@@ -602,7 +608,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_04_network_services_VPC_CreateMultiplePF(self):
         """ Test Create multiple VPC PF rules on acquired public ip in diff't networks when VpcVirtualRouter is running
-        """
 
         # Validate the following
         # 1. Create a VPC with cidr - 10.1.1.1/16
@@ -614,6 +619,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         # 7. Use the Create PF rule for vm1 in network1.
         # 8. Use the Create PF rule for vm2 in network2.
         # 9. Successfully ssh into the Guest VM1 and VM2 using the PF rule
+        """
 
         network_1 = self.create_network(self.services["network_offering"])
         network_2 = self.create_network(self.services["network_offering_no_lb"], '10.1.2.1')
@@ -630,7 +636,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_05_network_services_VPC_StopDeletePF(self):
         """ Test delete a PF rule in VPC when VpcVirtualRouter is Stopped
-        """
 
         # Validate the following
         # 1. Create a VPC with cidr - 10.1.1.1/16
@@ -644,6 +649,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         # 9. Delete internet PF rule
         # 10. Start VPC Virtual Router.
         # 11. wget a file present on http server of VM1 should fail
+        """
 
         network_1 = self.create_network(self.services["network_offering"])
         vm_1 = self.deployvm_in_network(network_1)
@@ -661,7 +667,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_06_network_services_VPC_DeletePF(self):
         """ Test delete a PF rule in VPC when VpcVirtualRouter is Running
-        """
 
         # Validate the following
         # 1. Create a VPC with cidr - 10.1.1.1/16
@@ -673,6 +678,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         # 7. Successfully wget a file on http server of VM1.
         # 9. Delete internet PF rule
         # 10. wget a file present on http server of VM1 should fail
+        """
 
         network_1 = self.create_network(self.services["network_offering"])
         vm_1 = self.deployvm_in_network(network_1)
@@ -682,13 +688,13 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         http_rule.delete(self.apiclient)
+        self.cleanup.remove(http_rule)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
         return
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_07_network_services_VPC_StopDeleteAllPF(self):
         """ Test delete all PF rules in VPC when VpcVirtualRouter is Stopped
-        """
 
         # Validate the following
         # 1. Create a VPC with cidr - 10.1.1.1/16
@@ -703,6 +709,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         # 10. Start VPC Virtual Router.
         # 11. wget a file present on http server of VM1 should fail
         # 12. ssh into Guest VM using the PF rule should fail
+        """
 
         network_1 = self.create_network(self.services["network_offering"])
         vm_1 = self.deployvm_in_network(network_1)
@@ -723,7 +730,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_08_network_services_VPC_DeleteAllPF(self):
         """ Test delete all PF rules in VPC when VpcVirtualRouter is Running
-        """
 
         # Validate the following
         # 1. Create a VPC with cidr - 10.1.1.1/16
@@ -736,6 +742,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         # 8. Delete all PF rule
         # 9. wget a file present on http server of VM1 should fail
         # 10. ssh into Guest VM using the PF rule should fail
+        """
 
         network_1 = self.create_network(self.services["network_offering"])
         vm_1 = self.deployvm_in_network(network_1)
@@ -745,7 +752,9 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         http_rule.delete(self.apiclient)
+        self.cleanup.remove(http_rule)
         nat_rule.delete(self.apiclient)
+        self.cleanup.remove(nat_rule)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=True)
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True,
                                 isVmAccessible=False, network=network_1)
@@ -754,7 +763,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_09_network_services_VPC_StopDeleteAllMultiplePF(self):
         """ Test delete all PF rules in VPC across multiple networks when VpcVirtualRouter is Stopped
-        """
 
         # Validate the following
         # 1. Create a VPC with cidr - 10.1.1.1/16.
@@ -771,6 +779,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         # 12. Delete all PF rultes for vm1, vm2, vm3 and vm4.
         # 12. Start VPC Virtual Router.
         # 13. Fail to ssh and http to vm1, vm2, vm3 and vm4.
+        """
 
         network_1 = self.create_network(self.services["network_offering"])
         network_2 = self.create_network(self.services["network_offering_no_lb"], '10.1.2.1')
@@ -800,13 +809,21 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_wget_from_vm(vm_4, public_ip_4, testnegative=False)
         router = self.stop_vpcrouter()
         nat_rule1.delete(self.apiclient)
+        self.cleanup.remove(nat_rule1)
         nat_rule2.delete(self.apiclient)
+        self.cleanup.remove(nat_rule2)
         nat_rule3.delete(self.apiclient)
+        self.cleanup.remove(nat_rule3)
         nat_rule4.delete(self.apiclient)
+        self.cleanup.remove(nat_rule4)
         http_rule1.delete(self.apiclient)
+        self.cleanup.remove(http_rule1)
         http_rule2.delete(self.apiclient)
+        self.cleanup.remove(http_rule2)
         http_rule3.delete(self.apiclient)
+        self.cleanup.remove(http_rule3)
         http_rule4.delete(self.apiclient)
+        self.cleanup.remove(http_rule4)
         self.start_vpcrouter(router)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=True)
         self.check_ssh_into_vm(vm_2, public_ip_2, testnegative=True)
@@ -825,7 +842,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_10_network_services_VPC_DeleteAllMultiplePF(self):
         """ Test delete all PF rules in VPC across multiple networks when VpcVirtualRouter is Running
-        """
+
         # Validate the following
         # 1. Create a VPC with cidr - 10.1.1.1/16.
         # 2. Create a Network offering - NO1 with all supported services.
@@ -839,6 +856,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         # 10. Succesfully wget a file from http server present on vm1, vm2, vm3 and vm4.
         # 12. Delete all PF rultes for vm1, vm2, vm3 and vm4.
         # 13. Fail to ssh and http to vm1, vm2, vm3 and vm4.
+        """
 
         network_1 = self.create_network(self.services["network_offering"])
         network_2 = self.create_network(self.services["network_offering_no_lb"], '10.1.2.1')
@@ -867,13 +885,21 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_wget_from_vm(vm_3, public_ip_3, testnegative=False)
         self.check_wget_from_vm(vm_4, public_ip_4, testnegative=False)
         nat_rule1.delete(self.apiclient)
+        self.cleanup.remove(nat_rule1)
         nat_rule2.delete(self.apiclient)
+        self.cleanup.remove(nat_rule2)
         nat_rule3.delete(self.apiclient)
+        self.cleanup.remove(nat_rule3)
         nat_rule4.delete(self.apiclient)
+        self.cleanup.remove(nat_rule4)
         http_rule1.delete(self.apiclient)
+        self.cleanup.remove(http_rule1)
         http_rule2.delete(self.apiclient)
+        self.cleanup.remove(http_rule2)
         http_rule3.delete(self.apiclient)
+        self.cleanup.remove(http_rule3)
         http_rule4.delete(self.apiclient)
+        self.cleanup.remove(http_rule4)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=True)
         self.check_ssh_into_vm(vm_2, public_ip_2, testnegative=True)
         self.check_ssh_into_vm(vm_3, public_ip_3, testnegative=True)

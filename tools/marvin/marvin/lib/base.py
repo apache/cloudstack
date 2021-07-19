@@ -2546,6 +2546,7 @@ class GuestOs:
     @classmethod
     def listCategories(cls, apiclient, **kwargs):
         """List all Os Categories"""
+        cmd = listOsCategories.listOsCategoriesCmd()
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
 
         return (apiclient.listOsCategories(cmd))
