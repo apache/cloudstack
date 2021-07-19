@@ -16,10 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -316,7 +318,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
-        nics = new LinkedHashSet<NicResponse>();
+        nics = new TreeSet<>(Comparator.comparingInt(x -> Integer.parseInt(x.getDeviceId())));
         tags = new LinkedHashSet<ResourceTagResponse>();
         tagIds = new LinkedHashSet<Long>();
         affinityGroupList = new LinkedHashSet<AffinityGroupResponse>();

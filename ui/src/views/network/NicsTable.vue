@@ -91,6 +91,11 @@ export default {
     return {
       nicColumns: [
         {
+          title: this.$t('label.deviceid'),
+          dataIndex: 'deviceid',
+          scopedSlots: { customRender: 'deviceid' }
+        },
+        {
           title: this.$t('label.networkname'),
           dataIndex: 'networkname',
           scopedSlots: { customRender: 'networkname' }
