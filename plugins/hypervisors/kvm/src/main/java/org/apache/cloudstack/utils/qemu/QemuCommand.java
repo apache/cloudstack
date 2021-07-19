@@ -21,6 +21,8 @@ package org.apache.cloudstack.utils.qemu;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -57,6 +59,9 @@ public class QemuCommand {
                     if (arr.get(i).getAsJsonObject().has("inserted") && arr.get(i).getAsJsonObject().get("inserted").isJsonObject()) {
                         JsonObject inserted = arr.get(i).getAsJsonObject().get("inserted").getAsJsonObject();
                         if (inserted.get("file").getAsString().contains(path)) {
+                            if (StringUtils.isBlank(deviceName)) {
+                                return inserted.get("node-name").getAsString();
+                            }
                             return deviceName;
                         }
                     }
