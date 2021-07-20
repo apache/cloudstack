@@ -44,6 +44,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.event.VmMigrationEvent;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
@@ -78,6 +79,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
+import org.apache.cloudstack.vmmigration.VmMigrationVO;
+import org.apache.cloudstack.vmmigration.dao.VmMigrationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.BooleanUtils;
@@ -365,6 +368,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private NetworkOfferingDao networkOfferingDao;
     @Inject
     private DomainRouterJoinDao domainRouterJoinDao;
+    @Inject
+    VmMigrationDao _vmMigrationDao;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -2580,15 +2585,51 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
+    private void createRecord(VMInstanceVO vmInstance,
+                              Account caller,
+                              String srcHost,
+                              String dstHost,
+                              VmMigrationEvent.State state,
+                              String description) {
+        VmMigrationVO vmMigrationVO = new VmMigrationVO(state,
+                vmInstance.getInstanceName(),
+                vmInstance.getId(),
+                description,
+                vmInstance.getType().toString(),
+                srcHost,
+                dstHost,
+                new Date(),
+                caller.getAccountName(),
+                caller.getAccountId(),
+                caller.getDomainId());
+
+        _vmMigrationDao.persist(vmMigrationVO);
+    }
+
+    private void initVmMigrateRecord(VMInstanceVO vmInstance, Account caller, String srcHost, String dstHost) {
+        String description = "Starting migration of vm " + vmInstance.instanceName;
+        createRecord(vmInstance, caller, srcHost, dstHost, VmMigrationEvent.State.Started, description);
+    }
+
+    private void completeVmMigrateRecord(VMInstanceVO vmInstance, Account caller, String srcHost, String dstHost) {
+        String description = "Completed migration of vm " + vmInstance.instanceName;
+        createRecord(vmInstance, caller, srcHost, dstHost, VmMigrationEvent.State.Completed, description);
+    }
+
+    private void failedVmMigrateRecord(VMInstanceVO vmInstance, Account caller, String srcHost, String dstHost) {
+        String description = "Unable to migrate the vm " + vmInstance.instanceName;
+        createRecord(vmInstance, caller, srcHost, dstHost, VmMigrationEvent.State.Failed, description);
+    }
+
     @Override
     public void migrate(final String vmUuid, final long srcHostId, final DeployDestination dest)
             throws ResourceUnavailableException, ConcurrentOperationException {
 
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+        VirtualMachine vm = _vmDao.findByUuid(vmUuid);
         if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             // avoid re-entrance
             VmWorkJobVO placeHolder = null;
-            final VirtualMachine vm = _vmDao.findByUuid(vmUuid);
             placeHolder = createPlaceHolderWork(vm.getId());
             try {
                 orchestrateMigrate(vmUuid, srcHostId, dest);
@@ -2598,10 +2639,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
             }
         } else {
+            VMInstanceVO vmInstanceVO = _vmDao.findById(vm.getId());
+            Account caller = CallContext.current().getCallingAccount();
+            final Host fromHost = _hostDao.findById(srcHostId);
+            initVmMigrateRecord(vmInstanceVO, caller, fromHost.getName(), dest.getHost().getName());
             final Outcome<VirtualMachine> outcome = migrateVmThroughJobQueue(vmUuid, srcHostId, dest);
 
             try {
-                final VirtualMachine vm = outcome.get();
+                vm = outcome.get();
+                completeVmMigrateRecord(vmInstanceVO, caller, fromHost.getName(), dest.getHost().getName());
             } catch (final InterruptedException e) {
                 throw new RuntimeException("Operation is interrupted", e);
             } catch (final java.util.concurrent.ExecutionException e) {
@@ -2636,7 +2682,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     protected void migrate(final VMInstanceVO vm, final long srcHostId, final DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException {
-        s_logger.info("Migrating " + vm + " to " + dest);
+        s_logger.info("Migrating " + vm + " to " + dest + " from source host id : " + srcHostId);
+        Account caller = CallContext.current().getCallingAccount();
         final UserVmVO userVm = _userVmDao.findById(vm.getId());
         final long dstHostId = dest.getHost().getId();
         final Host fromHost = _hostDao.findById(srcHostId);
@@ -2697,6 +2744,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         work = _workDao.persist(work);
 
         Answer pfma = null;
+        initVmMigrateRecord(vm, caller, fromHost.getName(), dest.getHost().getName());
         try {
             pfma = _agentMgr.send(dstHostId, pfmc);
             if (pfma == null || !pfma.getResult()) {
@@ -2802,6 +2850,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 s_logger.debug("Error while checking the vm " + vm + " on host " + dstHostId, e);
             }
             migrated = true;
+            completeVmMigrateRecord(vm, caller, fromHost.getName(), dest.getHost().getName());
         } finally {
             if (!migrated) {
                 s_logger.info("Migration was unsuccessful.  Cleaning up: " + vm);
@@ -2822,6 +2871,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 } catch (final NoTransitionException e) {
                     s_logger.warn(e.getMessage());
                 }
+                failedVmMigrateRecord(vm, caller, fromHost.getName(), dest.getHost().getName());
             } else {
                 _networkMgr.commitNicForMigration(vmSrc, profile);
                 volumeMgr.release(vm.getId(), srcHostId);

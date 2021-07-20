@@ -511,3 +511,19 @@ CREATE VIEW `cloud`.`host_view` AS
         `cloud`.`user` ON `user`.`uuid` = `last_annotation_view`.`user_uuid`
     GROUP BY
         `host`.`id`;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_migration` (
+    `id` bigint unsigned NOT NULL auto_increment,
+    `state` varchar(255) NOT NULL,
+    `instance_id` bigint unsigned NOT NULL,
+    `instance_name` varchar(255) NOT NULL,
+    `description` varchar(255),
+    `vm_type` varchar(255)  NOT NULL,
+    `source_host` varchar(255) NOT NULL,
+    `destination_host` varchar(255) NOT NULL,
+    `created` DATETIME,
+    `user_name` varchar(255) NOT NULL,
+    `account_id` bigint NOT NULL,
+    `domain_id` bigint NOT NULL,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
