@@ -21,10 +21,7 @@
     :visible="showForm"
     :closable="true"
     :confirmLoading="currentAction.loading"
-    :okText="$t('label.ok')"
-    :cancelText="$t('label.cancel')"
     style="top: 20px;"
-    @ok="handleSubmit"
     @cancel="close"
     centered
   >

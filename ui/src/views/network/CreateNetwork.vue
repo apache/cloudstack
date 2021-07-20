@@ -126,12 +126,4 @@ export default {
       width: 600px;
     }
   }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
-    }
-  }
 </style>

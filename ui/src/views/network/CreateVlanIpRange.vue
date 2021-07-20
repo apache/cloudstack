@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="loading">
-    <div class="form-layout">
+    <div class="form-layout" v-ctrl-enter="handleSubmit">
       <div class="form">
         <a-form
           :form="form"
@@ -218,6 +218,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
 
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
@@ -283,14 +284,6 @@ export default {
 
   @media (min-width: 500px) {
     width: 450px;
-  }
-}
-
-.action-button {
-  text-align: right;
-
-  button {
-    margin-right: 5px;
   }
 }
 </style>

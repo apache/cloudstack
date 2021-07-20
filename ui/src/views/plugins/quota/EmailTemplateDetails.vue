@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-spin :spinning="loading || loading">
+  <a-spin :spinning="loading || loading" v-ctrl-enter="handleSubmit">
     <a-row :gutter="12">
       <a-col :md="24" :lg="24">
         <a-form-item :label="$t('label.templatesubject')">
@@ -100,6 +100,7 @@ export default {
       this.formModel.templatebody = this.resource.templatebody || null
     },
     handleSubmit () {
+      if (this.loading) return
       const params = {}
       params.templatesubject = this.formModel.templatesubject
       params.templatebody = this.formModel.templatebody

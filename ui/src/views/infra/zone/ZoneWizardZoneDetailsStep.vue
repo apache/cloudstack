@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div>
+  <div v-ctrl-enter="handleSubmit">
     <a-card
       class="ant-form-text"
       style="text-align: justify; margin: 10px 0; padding: 24px;"
@@ -331,7 +331,7 @@
         v-if="!isFixError">
         {{ $t('label.previous') }}
       </a-button>
-      <a-button type="primary" @click="handleSubmit" class="button-next">
+      <a-button ref="submit" type="primary" @click="handleSubmit" class="button-next">
         {{ $t('label.next') }}
       </a-button>
     </div>

@@ -28,6 +28,7 @@ import './permission' // permission control
 import './utils/filter' // global filter
 import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin, apiMetaUtilPlugin } from './utils/plugins'
 import { VueAxios } from './utils/request'
+import './utils/directives'
 
 Vue.config.productionTip = false
 Vue.use(VueAxios, router)

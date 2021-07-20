@@ -57,7 +57,10 @@
           v-model="editModalVisible"
           :footer="null"
           :afterClose="closeAction"
-          :maskClosable="false">
+          :maskClosable="false"
+          :closable="true"
+          @cancel="closeAction"
+          v-ctrl-enter="updateProjectRole">
           <a-form
             :form="form"
             @submit="updateProjectRole"
@@ -70,7 +73,7 @@
             </a-form-item>
             <div :span="24" class="action-button">
               <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-              <a-button type="primary" @click="updateProjectRole" :loading="loading">{{ $t('label.ok') }}</a-button>
+              <a-button type="primary" ref="submit" @click="updateProjectRole" :loading="loading">{{ $t('label.ok') }}</a-button>
             </div>
             <span slot="action" slot-scope="text, record">
               <tooltip-button
@@ -95,7 +98,10 @@
           v-model="createModalVisible"
           :footer="null"
           :afterClose="closeAction"
-          :maskClosable="false">
+          :maskClosable="false"
+          :closable="true"
+          @cancel="closeAction"
+          v-ctrl-enter="createProjectRole">
           <a-form
             :form="form"
             @submit="createProjectRole"
@@ -110,7 +116,7 @@
             </a-form-item>
             <div :span="24" class="action-button">
               <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-              <a-button type="primary" @click="createProjectRole" :loading="loading">{{ $t('label.ok') }}</a-button>
+              <a-button type="primary" ref="submit" @click="createProjectRole" :loading="loading">{{ $t('label.ok') }}</a-button>
             </div>
           </a-form>
         </a-modal>
@@ -206,6 +212,7 @@ export default {
     },
     updateProjectRole (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
@@ -245,6 +252,7 @@ export default {
     },
     createProjectRole (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
@@ -294,11 +302,3 @@ export default {
   }
 }
 </script>
-<style lang="scss" scoped>
-.action-button {
-    text-align: right;
-    button {
-      margin-right: 5px;
-    }
-  }
-</style>

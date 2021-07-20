@@ -21,6 +21,7 @@
       :form="form"
       @submit="handleSubmit"
       layout="vertical"
+      v-ctrl-enter="handleSubmit"
     >
       <a-form-item
         v-for="(item, index) in dataResource"
@@ -114,6 +115,8 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+
+      if (this.formLoading) return
 
       this.form.validateFields((err, values) => {
         if (err) {

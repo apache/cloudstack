@@ -22,6 +22,7 @@
     ref="formLogin"
     :form="form"
     @submit="handleSubmit"
+    v-ctrl-enter="handleSubmit"
   >
     <a-tabs
       :activeKey="customActiveKey"
@@ -103,6 +104,7 @@
         class="login-button"
         :loading="state.loginBtn"
         :disabled="state.loginBtn"
+        ref="submit"
       >{{ $t('label.login') }}</a-button>
     </a-form-item>
     <translation-menu/>
@@ -169,6 +171,7 @@ export default {
         customActiveKey,
         Login
       } = this
+      if (state.loginBtn) return
 
       state.loginBtn = true
 

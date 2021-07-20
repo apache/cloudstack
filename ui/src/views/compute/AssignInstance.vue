@@ -17,7 +17,7 @@
 
 <template>
   <div>
-    <div class="form">
+    <div class="form" v-ctrl-enter="submitData">
 
       <div v-if="loading" class="loading">
         <a-icon type="loading" style="color: #1890ff;"></a-icon>
@@ -81,7 +81,7 @@
         <a-button @click="closeAction">
           {{ $t('label.cancel') }}
         </a-button>
-        <a-button type="primary" @click="submitData">
+        <a-button type="primary" @click="submitData" ref="submit">
           {{ $t('label.submit') }}
         </a-button>
       </div>
@@ -205,6 +205,8 @@ export default {
       this.$emit('close-action')
     },
     submitData () {
+      if (this.loading) return
+
       let variableKey = ''
       let variableValue = ''
 

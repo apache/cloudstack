@@ -39,7 +39,6 @@
       :closable="true"
       :maskClosable="false"
       :footer="null"
-      :cancelText="$t('label.cancel')"
       @cancel="closeAction"
       centered
       width="auto">
@@ -54,7 +53,6 @@
       :closable="true"
       :maskClosable="false"
       :footer="null"
-      :cancelText="$t('label.cancel')"
       @cancel="closeAction"
       centered
       width="auto">

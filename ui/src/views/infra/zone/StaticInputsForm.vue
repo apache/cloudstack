@@ -23,6 +23,7 @@
       v-html="$t(description)">
     </a-card>
     <a-form
+      v-ctrl-enter="handleSubmit"
       class="form-content"
       :form="form"
       @submit="handleSubmit">
@@ -103,7 +104,7 @@
         @click="handleBack">
         {{ $t('label.previous') }}
       </a-button>
-      <a-button class="button-next" type="primary" @click="handleSubmit">
+      <a-button class="button-next" ref="submit" type="primary" @click="handleSubmit">
         {{ $t('label.next') }}
       </a-button>
     </div>
