@@ -325,6 +325,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         if (vmDetails != null) {
             Map<String, String> resourceDetails = new HashMap<String, String>();
             for (UserVmDetailVO userVmDetailVO : vmDetails) {
+                if (userVmDetailVO.getName().startsWith(VmDetailConstants.KEY_PAIR_NAMES)) {
+                    s_logger.info(userVmDetailVO.getValue());
+                    userVmResponse.setKeyPairNames(userVmDetailVO.getValue());
+                }
                 if (!userVmDetailVO.getName().startsWith(ApiConstants.PROPERTIES) ||
                         (UserVmManager.DisplayVMOVFProperties.value() && userVmDetailVO.getName().startsWith(ApiConstants.PROPERTIES))) {
                     resourceDetails.put(userVmDetailVO.getName(), userVmDetailVO.getValue());
@@ -363,8 +367,6 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         } else {
             userVmResponse.setDynamicallyScalable(userVm.isDynamicallyScalable());
         }
-
-        userVmResponse.setKeyPairName(userVm.getDetail(VmDetailConstants.KEY_PAIR_NAMES));
 
         return userVmResponse;
     }

@@ -156,6 +156,9 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING, description = "name of the ssh key pair used to login to the virtual machine")
     private String sshKeyPairName;
 
+    @Parameter(name = ApiConstants.SSH_KEYPAIRS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "name of the ssh key pairs used to login to the virtual machine")
+    private List<String> sshKeyPairNames;
+
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "destination Host ID to deploy the VM to - parameter available for root admin only")
     private Long hostId;
 
@@ -436,6 +439,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     public String getSSHKeyPairName() {
         return sshKeyPairName;
+    }
+
+    public List<String> getSSHKeyPairNames() {
+        return sshKeyPairNames;
     }
 
     public Long getHostId() {
