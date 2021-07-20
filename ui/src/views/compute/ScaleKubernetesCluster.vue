@@ -176,23 +176,15 @@ export default {
         }
         api('scaleKubernetesCluster', params).then(json => {
           const jobId = json.scalekubernetesclusterresponse.jobid
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.kubernetes.cluster.scale'),
-            jobid: jobId,
-            description: this.resource.name,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId,
+            title: this.$t('label.kubernetes.cluster.scale'),
+            description: this.resource.name,
             loadingMessage: `${this.$t('label.kubernetes.cluster.scale')} ${this.resource.name} ${this.$t('label.in.progress')}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
-            successMessage: `${this.$t('message.success.scale.kubernetes')} ${this.resource.name}`,
-            successMethod: result => {
-              this.$emit('refresh-data')
-            }
+            successMessage: `${this.$t('message.success.scale.kubernetes')} ${this.resource.name}`
           })
           this.closeAction()
-          this.$emit('refresh-data')
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
