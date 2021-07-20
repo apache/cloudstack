@@ -118,6 +118,7 @@
       <router-link :to="{ path: '/vpncustomergateway' + '/' + record.entityid }" v-else-if="'VPN_CUSTOMER_GATEWAY' === record.entitytype">{{ text }}</router-link>
       <router-link :to="{ path: '/template' + '/' + record.entityid }" v-else-if="'TEMPLATE' === record.entitytype">{{ text }}</router-link>
       <router-link :to="{ path: '/iso' + '/' + record.entityid }" v-else-if="'ISO' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/ssh' + '/' + record.entityid }" v-else-if="'SSH_KEYPAIR' === record.entitytype">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </span>
     <span slot="adminsonly" v-if="['Admin'].includes($store.getters.userInfo.roletype)" slot-scope="text, record" href="javascript:;">

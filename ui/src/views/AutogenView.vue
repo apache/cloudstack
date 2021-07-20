@@ -764,9 +764,7 @@ export default {
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
-        if (this.$route.path.startsWith('/ssh/')) {
-          params.name = this.$route.params.id
-        } else if (this.$route.path.startsWith('/vmsnapshot/')) {
+        if (this.$route.path.startsWith('/vmsnapshot/')) {
           params.vmsnapshotid = this.$route.params.id
         } else if (this.$route.path.startsWith('/ldapsetting/')) {
           params.hostname = this.$route.params.id
@@ -831,9 +829,7 @@ export default {
               this.items[idx][key] = func(this.items[idx])
             }
           }
-          if (this.$route.path.startsWith('/ssh')) {
-            this.items[idx].id = this.items[idx].name
-          } else if (this.$route.path.startsWith('/ldapsetting')) {
+          if (this.$route.path.startsWith('/ldapsetting')) {
             this.items[idx].id = this.items[idx].hostname
           }
         }

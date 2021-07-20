@@ -573,7 +573,7 @@ export default {
         return fields
       },
       resourceType: 'SSHKeyPair',
-      details: ['name', 'fingerprint', 'account', 'domain'],
+      details: ['id', 'name', 'fingerprint', 'account', 'domain'],
       related: [{
         name: 'vm',
         title: 'label.instances',
