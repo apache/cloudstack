@@ -218,8 +218,11 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         try {
             result = future.get();
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_ON_PRIMARY, snap.getAccountId(), snap.getDataCenterId(), snap.getId(),
-                    snap.getName(), null, null, snapshotOnPrimary.getSize(), snapshotOnPrimary.getSize(), snap.getClass().getName(), snap.getUuid());
+            SnapshotVO snapVO = _snapshotDao.findById(snap.getId());
+            if (snapVO == null || snapVO.getsnapshotType() != Snapshot.Type.INTERNAL.ordinal()) {
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_ON_PRIMARY, snap.getAccountId(), snap.getDataCenterId(), snap.getId(),
+                        snap.getName(), null, null, snapshotOnPrimary.getSize(), snapshotOnPrimary.getSize(), snap.getClass().getName(), snap.getUuid());
+            }
             return result;
         } catch (InterruptedException e) {
             s_logger.debug("Failed to create snapshot", e);

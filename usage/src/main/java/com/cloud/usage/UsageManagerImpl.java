@@ -1640,14 +1640,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         long snapId = event.getResourceId();
 
         SnapshotVO snapshotInstance = _snapshotDao.findById(snapId);
-        String typeDescription = snapshotInstance.getTypeDescription();
 
-        if (typeDescription == null || typeDescription.trim().equalsIgnoreCase("INTERNAL")) {
-
+        if (snapshotInstance != null && snapshotInstance.getsnapshotType() == Snapshot.Type.INTERNAL.ordinal()) {
             return;
         }
-        s_logger.warn("snapshot type: " + snapshotInstance.getTypeDescription() + " ---" + snapshotInstance.getsnapshotType() + "---name----" + snapshotInstance.getName());
-        s_logger.warn("type ordinal: " + Snapshot.Type.INTERNAL.ordinal());
 
         if (EventTypes.EVENT_SNAPSHOT_CREATE.equals(event.getType())) {
             if (usageSnapshotSelection){
