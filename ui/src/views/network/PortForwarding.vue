@@ -523,15 +523,10 @@ export default {
       this.loading = true
       api('deletePortForwardingRule', { id: rule.id }).then(response => {
         const jobId = response.deleteportforwardingruleresponse.jobid
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('label.portforwarding.rule'),
-          jobid: jobId,
-          description: rule.id,
-          status: 'progress',
-          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
-        })
         eventBus.$emit('update-job-details', jobId, null)
         this.$pollJob({
+          title: this.$t('label.portforwarding.rule'),
+          description: rule.id,
           jobId: jobId,
           successMessage: this.$t('message.success.remove.port.forward'),
           successMethod: () => {
