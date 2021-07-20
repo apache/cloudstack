@@ -94,17 +94,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.createSSHKeyPair || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
-    this.apiConfig = this.$store.getters.apis.registerSSHKeyPair || {}
-    this.apiConfig.params.forEach(param => {
-      if (!(param.name in this.apiParams)) {
-        this.apiParams[param.name] = param
-      }
-    })
+    this.apiParams = this.$getApiParams('createSSHKeyPair', 'registerSSHKeyPair')
   },
   created () {
     this.domains = [

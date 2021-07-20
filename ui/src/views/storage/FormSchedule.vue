@@ -193,7 +193,7 @@
 
 <script>
 import { api } from '@/api'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
 

@@ -23,8 +23,7 @@
     :dataSource="items"
     :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
     :pagination="false"
-    :rowSelection="['vm', 'alert'].includes($route.name) || $route.name === 'event' && $store.getters.userInfo.roletype === 'Admin'
-      ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
+    :rowSelection=" enableGroupAction() || $route.name === 'event' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
     :rowClassName="getRowClassName"
     style="overflow-y: auto"
   >
@@ -326,7 +325,7 @@ import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
 import InfoCard from '@/components/view/InfoCard'
 import QuickView from '@/components/view/QuickView'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'ListView',
@@ -421,6 +420,13 @@ export default {
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering'].join('|'))
         .test(this.$route.path)
+    },
+    enableGroupAction () {
+      return ['vm', 'alert', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot',
+        'vmsnapshot', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway',
+        'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
+        'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes'
+      ].includes(this.$route.name)
     },
     fetchColumns () {
       if (this.isOrderUpdatable()) {
