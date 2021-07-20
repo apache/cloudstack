@@ -99,9 +99,9 @@ export const pollJobPlugin = {
               duration: 1
             })
           }
-          var title = errorMessage
+          var errMessage = errorMessage
           if (action && action.label) {
-            title = i18n.t(action.label)
+            errMessage = i18n.t(action.label)
           }
           var desc = result.jobresult.errortext
           if (name) {
@@ -109,7 +109,7 @@ export const pollJobPlugin = {
           }
           if (!bulkAction) {
             notification.error({
-              message: title,
+              message: errMessage,
               description: desc,
               key: jobId,
               duration: 0
