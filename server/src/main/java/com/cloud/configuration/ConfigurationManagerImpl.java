@@ -1490,7 +1490,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public Pod editPod(final UpdatePodCmd cmd) {
-        return editPod(cmd.getId(), cmd.getPodName(), null, null, cmd.getGateway(), cmd.getNetmask(), cmd.getAllocationState());
+        return editPod(cmd.getId(), cmd.getPodName(), cmd.getStartIp(), cmd.getEndIp(), cmd.getGateway(), cmd.getNetmask(), cmd.getAllocationState());
     }
 
     @Override
@@ -1531,6 +1531,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             name = oldPodName;
         }
 
+        final long zoneId = pod.getDataCenterId();
+        final String[] existingPodIPRangeArray = pod.getDescription().split("-");
+        final String currentStartIP= existingPodIPRangeArray[0];
+        final String currentEndIP = existingPodIPRangeArray [1];
+
+        if(startIp == null){
+            startIp= currentStartIP;
+        }
+
+        if(endIp == null){
+            endIp= currentEndIP;
+        }
+
         if (allocationStateStr == null) {
             allocationStateStr = pod.getAllocationState().toString();
         }
@@ -1569,10 +1582,45 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        // Check if the IP range is valid.
+        checkIpRange(startIp, endIp, cidrAddress, cidrSize);
+
+        // Check if the IP range overlaps with the public ip.
+        checkOverlapPublicIpRange(zoneId, startIp, endIp);
+
+        // Check if the gateway is in the CIDR subnet
+        if (!NetUtils.getCidrSubNet(gateway, cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
+            throw new InvalidParameterValueException("The gateway is not in the CIDR subnet.");
+        }
+
+        if (NetUtils.ipRangesOverlap(startIp, endIp, gateway, gateway)) {
+            throw new InvalidParameterValueException("The gateway shouldn't overlap start/end ip addresses");
+        }
+
+        checkIpRangeContainsTakenAddresses(pod,startIp,endIp);
+
+        long newStartIPLong = NetUtils.ip2Long(startIp);
+        long newEndIPLong = NetUtils.ip2Long(endIp);
+        long currentStartIPLong = NetUtils.ip2Long(currentStartIP);
+        long currentEndIPLong = NetUtils.ip2Long(currentEndIP);
+
+        List<Long> currentIPRange = new ArrayList<>();
+        List<Long> newIPRange = new ArrayList<>();
+        while (newStartIPLong<=newEndIPLong){
+            newIPRange.add(newStartIPLong);
+            newStartIPLong++;
+        }
+        while (currentStartIPLong<=currentEndIPLong){
+            currentIPRange.add(currentStartIPLong);
+            currentStartIPLong++;
+        }
+
         try {
             final String allocationStateStrFinal = allocationStateStr;
             final String nameFinal = name;
             final String gatewayFinal = gateway;
+            final String newStartIP= startIp;
+            final String newEndIP= endIp;
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(final TransactionStatus status) {
@@ -1583,13 +1631,28 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     pod.setGateway(gatewayFinal);
                     pod.setCidrAddress(getCidrAddress(cidr));
                     pod.setCidrSize(getCidrSize(cidr));
+                    pod.setDescription(pod.getDescription().replace(currentStartIP+"-", newStartIP+"-").replace(currentEndIP,
+                            newEndIP));
 
                     Grouping.AllocationState allocationState = null;
                     if (allocationStateStrFinal != null && !allocationStateStrFinal.isEmpty()) {
                         allocationState = Grouping.AllocationState.valueOf(allocationStateStrFinal);
                         pod.setAllocationState(allocationState);
                     }
-
+                    List<Long> iPAddressesToAdd = new ArrayList(newIPRange);
+                    iPAddressesToAdd.removeAll(currentIPRange);
+                    if (iPAddressesToAdd.size()>0){
+                        for(Long startIP : iPAddressesToAdd){
+                            _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), NetUtils.long2Ip(startIP), NetUtils.long2Ip(startIP), false, null);
+                        }
+                    }else {
+                        currentIPRange.removeAll(newIPRange);
+                        if(currentIPRange.size()>0){
+                            for (Long startIP: currentIPRange){
+                                _privateIpAddressDao.deleteIpAddressByPodDc(NetUtils.long2Ip(startIP),pod.getId(),zoneId);
+                            }
+                        }
+                    }
                     _podDao.update(id, pod);
                 }
             });
@@ -1599,6 +1662,28 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return pod;
+    }
+
+    private void checkIpRangeContainsTakenAddresses(final HostPodVO pod,final String startIp, final String endIp ){
+        final List<DataCenterIpAddressVO> takenIps = _privateIpAddressDao.listIpAddressUsage(pod.getId(),pod.getDataCenterId(),true);
+        List<Long> newIPRange = new ArrayList<>();
+        List<Long> takenIpsList = new ArrayList<>();
+
+        long newStartIPLong = NetUtils.ip2Long(startIp);
+        long newEndIPLong = NetUtils.ip2Long(endIp);
+
+        while (newStartIPLong<=newEndIPLong){
+            newIPRange.add(newStartIPLong);
+            newStartIPLong++;
+        }
+        for (int i=0;i<takenIps.size();i++){
+            takenIpsList.add(NetUtils.ip2Long(takenIps.get(i).getIpAddress()));
+        }
+
+        if(!newIPRange.containsAll(takenIpsList)){
+            throw new InvalidParameterValueException("The IP range does not contain some IP addresses that have "
+                    + "already been taken. Please adjust your IP range to include all IP addresses already taken.");
+        }
     }
 
     @Override
@@ -1817,6 +1902,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (!Strings.isNullOrEmpty(endIp) && NetUtils.ip2Long(startIp) > NetUtils.ip2Long(endIp)) {
+            throw new InvalidParameterValueException("The start IP address must have a lower value than the end IP address.");
+        }
+
+        if (NetUtils.ip2Long(startIp) > NetUtils.ip2Long(endIp)) {
             throw new InvalidParameterValueException("The start IP address must have a lower value than the end IP address.");
         }
 
