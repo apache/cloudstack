@@ -178,7 +178,7 @@
             </a-select>
           </a-form-item>
         </span>
-        
+
         <div :span="24" class="action-button">
           <a-button @click="cancelEditTraffic">{{ this.$t('label.cancel') }}</a-button>
           <a-button type="primary" @click="updateTrafficLabel(trafficInEdit)">{{ this.$t('label.ok') }}</a-button>
