@@ -1,7 +1,13 @@
 {
   "messages": {
-    "en": { "label.action": "action-en" },
-    "de": { "label.action": "action-de" }
+    "en": {
+      "label.action": "action-en",
+      "label.view.console": "Console-en"
+    },
+    "de": {
+      "label.action": "action-de",
+      "label.view.console": "Console-de"
+    }
   },
   "apis": {
     "test-api-case-1": {},

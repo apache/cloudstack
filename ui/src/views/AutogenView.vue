@@ -615,7 +615,6 @@ export default {
 
       params.page = this.page
       params.pagesize = this.pageSize
-      this.searchParams = params
       api(this.apiName, params).then(json => {
         var responseName
         var objectName
@@ -703,6 +702,7 @@ export default {
         }
       }).finally(f => {
         this.loading = false
+        this.searchParams = params
       })
     },
     closeAction () {
@@ -949,41 +949,47 @@ export default {
       })
     },
     handleResponse (response, resourceName, action, showLoading = true) {
-      for (const obj in response) {
-        if (obj.includes('response')) {
-          if (response[obj].jobid) {
-            return new Promise(resolve => {
-              const jobid = response[obj].jobid
-              resolve(this.pollActionCompletion(jobid, action, resourceName, showLoading))
-            })
-          } else {
-            var message = action.successMessage ? this.$t(action.successMessage) : this.$t(action.label) +
-              (resourceName ? ' - ' + resourceName : '')
-            var duration = 2
-            if (action.additionalMessage) {
-              message = message + ' - ' + this.$t(action.successMessage)
-              duration = 5
+      return new Promise(resolve => {
+        let jobId = null;
+        for (const obj in response) {
+          if (obj.includes('response')) {
+            if (response[obj].jobid) {
+                jobId = response[obj].jobid
+            } else {
+              var message = action.successMessage ? this.$t(action.successMessage) : this.$t(action.label) +
+                (resourceName ? ' - ' + resourceName : '')
+              var duration = 2
+              if (action.additionalMessage) {
+                message = message + ' - ' + this.$t(action.successMessage)
+                duration = 5
+              }
+              this.$message.success({
+                content: message,
+                key: action.label + resourceName,
+                duration: duration
+              })
             }
-            this.$message.success({
-              content: message,
-              key: action.label + resourceName,
-              duration: duration
-            })
+            break
           }
-          break
         }
-      }
-      if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
-        this.$store.dispatch('UpdateConfiguration')
-      }
-      return false
+        if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
+          this.$store.dispatch('UpdateConfiguration')
+        }
+        if (jobId) {
+          return resolve(this.pollActionCompletion(jobId, action, resourceName, showLoading))
+        }
+
+        return resolve(false)
+      })
     },
     execSubmit (e) {
       e.preventDefault()
+      console.log('submit');
       this.form.validateFields((err, values) => {
         if (err) {
           return
         }
+        console.log('submit1');
         const params = {}
         const action = this.currentAction
         if ('id' in this.resource && action.params.map(i => { return i.name }).includes('id')) {
@@ -1050,7 +1056,9 @@ export default {
         } else {
           args = [action.api, params]
         }
+        console.log(args);
         api(...args).then(json => {
+          console.log(1);
           this.handleResponse(json, resourceName, action).then(jobId => {
             hasJobId = jobId
             if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView) {
@@ -1061,8 +1069,10 @@ export default {
               }
             }
           })
+          console.log(3);
           this.closeAction()
         }).catch(error => {
+          console.log(4);
           if ([401].includes(error.response.status)) {
             return
           }
