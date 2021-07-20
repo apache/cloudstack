@@ -37,7 +37,7 @@ const state = {
 const mutations = {
   SET_ASYNC_JOB_IDS: (state, jobsJsonArray) => {
     state.user.asyncJobIds = jobsJsonArray
-  },
+  }
 }
 
 store = common.createMockStore(state, {}, mutations)
