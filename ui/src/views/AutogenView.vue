@@ -950,11 +950,11 @@ export default {
     },
     handleResponse (response, resourceName, action, showLoading = true) {
       return new Promise(resolve => {
-        let jobId = null;
+        let jobId = null
         for (const obj in response) {
           if (obj.includes('response')) {
             if (response[obj].jobid) {
-                jobId = response[obj].jobid
+              jobId = response[obj].jobid
             } else {
               var message = action.successMessage ? this.$t(action.successMessage) : this.$t(action.label) +
                 (resourceName ? ' - ' + resourceName : '')
@@ -984,12 +984,10 @@ export default {
     },
     execSubmit (e) {
       e.preventDefault()
-      console.log('submit');
       this.form.validateFields((err, values) => {
         if (err) {
           return
         }
-        console.log('submit1');
         const params = {}
         const action = this.currentAction
         if ('id' in this.resource && action.params.map(i => { return i.name }).includes('id')) {
@@ -1056,9 +1054,7 @@ export default {
         } else {
           args = [action.api, params]
         }
-        console.log(args);
         api(...args).then(json => {
-          console.log(1);
           this.handleResponse(json, resourceName, action).then(jobId => {
             hasJobId = jobId
             if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView) {
@@ -1069,10 +1065,8 @@ export default {
               }
             }
           })
-          console.log(3);
           this.closeAction()
         }).catch(error => {
-          console.log(4);
           if ([401].includes(error.response.status)) {
             return
           }

@@ -2900,7 +2900,7 @@ describe('Views > AutogenView.vue', () => {
             key: 'labelnametest-name-value',
             duration: 2
           })
-          expect(spyFetchData).toHaveBeenCalled();
+          expect(spyFetchData).toHaveBeenCalled()
 
           done()
         })
