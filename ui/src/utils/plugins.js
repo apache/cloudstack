@@ -20,6 +20,7 @@ import { i18n } from '@/locales'
 import { api } from '@/api'
 import { message, notification } from 'ant-design-vue'
 import eventBus from '@/config/eventBus'
+import store from '@/store'
 
 export const pollJobPlugin = {
   install (Vue) {
@@ -27,6 +28,8 @@ export const pollJobPlugin = {
       /**
        * @param {String} jobId
        * @param {String} [name='']
+       * @param {String} [title='']
+       * @param {String} [description='']
        * @param {String} [successMessage=Success]
        * @param {Function} [successMethod=() => {}]
        * @param {String} [errorMessage=Error]
@@ -36,10 +39,13 @@ export const pollJobPlugin = {
        * @param {String} [catchMessage=Error caught]
        * @param {Function} [catchMethod=() => {}]
        * @param {Object} [action=null]
+       * @param {Object} [bulkAction=false]
        */
       const {
         jobId,
         name = '',
+        title = '',
+        description = '',
         successMessage = i18n.t('label.success'),
         successMethod = () => {},
         errorMessage = i18n.t('label.error'),
@@ -48,8 +54,16 @@ export const pollJobPlugin = {
         showLoading = true,
         catchMessage = i18n.t('label.error.caught'),
         catchMethod = () => {},
-        action = null
+        action = null,
+        bulkAction = false
       } = options
+
+      store.dispatch('AddHeaderNotice', {
+        key: jobId,
+        title: title,
+        description: description,
+        status: 'progress'
+      })
 
       api('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
@@ -66,29 +80,44 @@ export const pollJobPlugin = {
             key: jobId,
             duration: 2
           })
-          eventBus.$emit('async-job-complete', action)
+          store.dispatch('AddHeaderNotice', {
+            key: jobId,
+            title: title,
+            description: description,
+            status: 'done',
+            duration: 2
+          })
+          if (!action || !('isFetchData' in action) || (action.isFetchData)) {
+            eventBus.$emit('async-job-complete', action)
+          }
           successMethod(result)
         } else if (result.jobstatus === 2) {
-          message.error({
-            content: errorMessage,
-            key: jobId,
-            duration: 1
-          })
-          var title = errorMessage
+          if (!bulkAction) {
+            message.error({
+              content: errorMessage,
+              key: jobId,
+              duration: 1
+            })
+          }
+          var errMessage = errorMessage
           if (action && action.label) {
-            title = i18n.t(action.label)
+            errMessage = i18n.t(action.label)
           }
           var desc = result.jobresult.errortext
           if (name) {
             desc = `(${name}) ${desc}`
           }
-          notification.error({
-            message: title,
-            description: desc,
-            key: jobId,
-            duration: 0
-          })
-          eventBus.$emit('async-job-complete', action)
+          if (!bulkAction) {
+            notification.error({
+              message: errMessage,
+              description: desc,
+              key: jobId,
+              duration: 0
+            })
+          }
+          if (!action || !('isFetchData' in action) || (action.isFetchData)) {
+            eventBus.$emit('async-job-complete', action)
+          }
           errorMethod(result)
         } else if (result.jobstatus === 0) {
           if (showLoading) {
@@ -182,6 +211,23 @@ export const configUtilPlugin = {
         }
       }
       return docHelp
+    }
+  }
+}
+
+export const apiMetaUtilPlugin = {
+  install (Vue) {
+    Vue.prototype.$getApiParams = function () {
+      var apiParams = {}
+      for (var argument of arguments) {
+        var apiConfig = this.$store.getters.apis[argument] || {}
+        if (apiConfig && apiConfig.params) {
+          apiConfig.params.forEach(param => {
+            apiParams[param.name] = param
+          })
+        }
+      }
+      return apiParams
     }
   }
 }

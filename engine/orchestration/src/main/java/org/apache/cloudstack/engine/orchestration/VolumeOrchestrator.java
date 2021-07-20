@@ -349,7 +349,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
             DataCenterDeployment plan = new DataCenterDeployment(dc.getId(), podId, clusterId, hostId, null, null);
-            final List<StoragePool> poolList = allocator.reorderPools(suitablePools, profile, plan);
+            final List<StoragePool> poolList = allocator.reorderPools(suitablePools, profile, plan, null);
 
             if (poolList != null && !poolList.isEmpty()) {
                 return (StoragePool)dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);

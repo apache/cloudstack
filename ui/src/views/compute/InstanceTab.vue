@@ -261,7 +261,7 @@ import DetailsTab from '@/components/view/DetailsTab'
 import DetailSettings from '@/components/view/DetailSettings'
 import NicsTable from '@/views/network/NicsTable'
 import ListResourceTable from '@/components/view/ListResourceTable'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'InstanceTab',
@@ -477,13 +477,11 @@ export default {
           successMethod: () => {
             this.loadingNic = false
             this.closeModals()
-            this.parentFetchData()
           },
           errorMessage: this.$t('message.add.network.failed'),
           errorMethod: () => {
             this.loadingNic = false
             this.closeModals()
-            this.parentFetchData()
           },
           loadingMessage: this.$t('message.add.network.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
@@ -509,12 +507,10 @@ export default {
           successMessage: `${this.$t('label.success.set')} ${item.networkname} ${this.$t('label.as.default')}. ${this.$t('message.set.default.nic.manual')}.`,
           successMethod: () => {
             this.loadingNic = false
-            this.parentFetchData()
           },
           errorMessage: `${this.$t('label.error.setting')} ${item.networkname} ${this.$t('label.as.default')}`,
           errorMethod: () => {
             this.loadingNic = false
-            this.parentFetchData()
           },
           loadingMessage: `${this.$t('label.setting')} ${item.networkname} ${this.$t('label.as.default')}...`,
           catchMessage: this.$t('error.fetching.async.job.result'),
@@ -541,13 +537,11 @@ export default {
           successMethod: () => {
             this.loadingNic = false
             this.closeModals()
-            this.parentFetchData()
           },
           errorMessage: this.$t('label.error'),
           errorMethod: () => {
             this.loadingNic = false
             this.closeModals()
-            this.parentFetchData()
           },
           loadingMessage: this.$t('message.update.ipaddress.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
@@ -575,12 +569,10 @@ export default {
           successMessage: this.$t('message.success.remove.nic'),
           successMethod: () => {
             this.loadingNic = false
-            this.parentFetchData()
           },
           errorMessage: this.$t('message.error.remove.nic'),
           errorMethod: () => {
             this.loadingNic = false
-            this.parentFetchData()
           },
           loadingMessage: this.$t('message.remove.nic.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
@@ -611,13 +603,11 @@ export default {
           successMethod: () => {
             this.loadingNic = false
             this.fetchSecondaryIPs(this.selectedNicId)
-            this.parentFetchData()
           },
           errorMessage: this.$t('message.error.add.secondary.ipaddress'),
           errorMethod: () => {
             this.loadingNic = false
             this.fetchSecondaryIPs(this.selectedNicId)
-            this.parentFetchData()
           },
           loadingMessage: this.$t('message.add.secondary.ipaddress.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
@@ -646,13 +636,11 @@ export default {
             this.loadingNic = false
             this.fetchSecondaryIPs(this.selectedNicId)
             this.fetchPublicIps(this.editNetworkId)
-            this.parentFetchData()
           },
           errorMessage: this.$t('message.error.remove.secondary.ipaddress'),
           errorMethod: () => {
             this.loadingNic = false
             this.fetchSecondaryIPs(this.selectedNicId)
-            this.parentFetchData()
           },
           loadingMessage: this.$t('message.remove.secondary.ipaddress.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),

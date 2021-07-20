@@ -14,19 +14,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.usage.dao;
+package com.cloud.agent.api;
 
-import java.util.List;
+import com.cloud.agent.api.to.StorageFilerTO;
 
-import com.cloud.usage.ExternalPublicIpStatisticsVO;
-import com.cloud.utils.db.GenericDao;
+public class GetStoragePoolCapabilitiesCommand extends Command {
 
-public interface ExternalPublicIpStatisticsDao extends GenericDao<ExternalPublicIpStatisticsVO, Long> {
+    public StorageFilerTO getPool() {
+        return pool;
+    }
 
-    ExternalPublicIpStatisticsVO lock(long accountId, long zoneId, String publicIpAddress);
+    public void setPool(StorageFilerTO pool) {
+        this.pool = pool;
+    }
 
-    ExternalPublicIpStatisticsVO findBy(long accountId, long zoneId, String publicIpAddress);
+    private StorageFilerTO pool;
 
-    List<ExternalPublicIpStatisticsVO> listBy(long accountId, long zoneId);
-
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 }

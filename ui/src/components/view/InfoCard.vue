@@ -281,6 +281,9 @@
                 style="margin-left: -24px; margin-top: 5px;">
                 <a-icon type="api" />eth{{ index }} {{ eth.ipaddress }}
                 <router-link v-if="eth.networkname && eth.networkid" :to="{ path: '/guestnetwork/' + eth.networkid }">({{ eth.networkname }})</router-link>
+                <a-tag v-if="eth.isdefault">
+                  {{ $t('label.default') }}
+                </a-tag >
               </div>
             </div>
           </div>
@@ -294,6 +297,9 @@
                 :key="network.id"
                 style="margin-top: 5px;">
                 <a-icon type="api" />{{ network.name }}
+                <span v-if="resource.defaultnetworkid === network.id">
+                  ({{ $t('label.default') }})
+                </span>
               </div>
             </div>
           </div>
@@ -530,7 +536,7 @@
           <div class="resource-detail-item__label">{{ $t('label.domain') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="block" />
-            <router-link v-if="$store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + resource.domainid }">{{ resource.domain || resource.domainid }}</router-link>
+            <router-link v-if="$store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + resource.domainid + '?tab=details' }">{{ resource.domain || resource.domainid }}</router-link>
             <span v-else>{{ resource.domain || resource.domainid }}</span>
           </div>
         </div>
@@ -693,7 +699,7 @@ import { api } from '@/api'
 import Console from '@/components/widgets/Console'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'InfoCard',

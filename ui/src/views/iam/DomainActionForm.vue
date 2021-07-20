@@ -46,12 +46,7 @@
             :v-bind="field.name"
             v-if="!(action.mapping && field.name in action.mapping && action.mapping[field.name].value)"
           >
-            <span slot="label">
-              {{ $t('label.' + field.name) }}
-              <a-tooltip :title="field.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.' + field.name)" :tooltip="field.description"/>
 
             <span v-if="field.type==='boolean'">
               <a-switch
@@ -136,9 +131,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'DomainActionForm',
+  components: {
+    TooltipLabel
+  },
   props: {
     action: {
       type: Object,
@@ -171,28 +170,6 @@ export default {
   },
   inject: ['parentCloseAction', 'parentFetchData'],
   methods: {
-    pollActionCompletion (jobId, action) {
-      this.$pollJob({
-        jobId,
-        successMethod: result => {
-          this.parentFetchData()
-          if (action.response) {
-            const description = action.response(result.jobresult)
-            if (description) {
-              this.$notification.info({
-                message: this.$t(action.label),
-                description: (<span domPropsInnerHTML={description}></span>),
-                duration: 0
-              })
-            }
-          }
-        },
-        errorMethod: () => this.parentFetchData(),
-        loadingMessage: `${this.$t(action.label)} ${this.$t('label.in.progress')} ${this.$t('label.for')} ${this.resource.name}`,
-        catchMessage: this.$t('error.fetching.async.job.result'),
-        action
-      })
-    },
     handleSubmit (e) {
       e.preventDefault()
       this.form.validateFields((err, values) => {
@@ -252,13 +229,30 @@ export default {
             if (obj.includes('response')) {
               for (const res in json[obj]) {
                 if (res === 'jobid') {
-                  this.$store.dispatch('AddAsyncJob', {
+                  this.$pollJob({
+                    jobId: json[obj][res],
                     title: this.$t(this.action.label),
-                    jobid: json[obj][res],
                     description: this.resource.name,
-                    status: 'progress'
+                    successMethod: result => {
+                      if (this.action.api === 'deleteDomain') {
+                        this.$set(this.resource, 'isDel', true)
+                        this.parentUpdActionData(this.resource)
+                      }
+                      if (this.action.response) {
+                        const description = this.action.response(result.jobresult)
+                        if (description) {
+                          this.$notification.info({
+                            message: this.$t(this.action.label),
+                            description: (<span domPropsInnerHTML={description}></span>),
+                            duration: 0
+                          })
+                        }
+                      }
+                    },
+                    loadingMessage: `${this.$t(this.action.label)} ${this.$t('label.in.progress')} ${this.$t('label.for')} ${this.resource.name}`,
+                    catchMessage: this.$t('error.fetching.async.job.result'),
+                    action: this.action
                   })
-                  this.pollActionCompletion(json[obj][res], this.action)
                   hasJobId = true
                   break
                 }

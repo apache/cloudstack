@@ -154,17 +154,9 @@ export default {
           }
           params.id = this.nsp.id
           const jobId = await this.addNiciraNvpDevice(params)
-          if (jobId) {
-            await this.$store.dispatch('AddAsyncJob', {
-              title: this.$t(this.action.label),
-              jobid: jobId,
-              description: this.$t(this.nsp.name),
-              status: 'progress'
-            })
-            await this.parentPollActionCompletion(jobId, this.action)
-          }
+          this.parentPollActionCompletion(jobId, this.action, this.$t(this.nsp.name))
+          this.provideCloseAction()
           this.loading = false
-          await this.provideCloseAction()
         } catch (error) {
           this.loading = false
           this.$notification.error({
@@ -177,15 +169,19 @@ export default {
     addNetworkServiceProvider (args) {
       return new Promise((resolve, reject) => {
         api('addNetworkServiceProvider', args).then(async json => {
-          const jobId = json.addnetworkserviceproviderresponse.jobid
-          if (jobId) {
-            const result = await this.pollJob(jobId)
-            if (result.jobstatus === 2) {
+          this.$pollJob({
+            jobId: json.addnetworkserviceproviderresponse.jobid,
+            successMethod: (result) => {
+              resolve(result.jobresult.networkserviceprovider)
+            },
+            errorMethod: (result) => {
               reject(result.jobresult.errortext)
-              return
+            },
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            action: {
+              isFetchData: false
             }
-            resolve(result.jobresult.networkserviceprovider)
-          }
+          })
         }).catch(error => {
           reject(error)
         })
@@ -199,21 +195,6 @@ export default {
         }).catch(error => {
           reject(error)
         })
-      })
-    },
-    async pollJob (jobId) {
-      return new Promise(resolve => {
-        const asyncJobInterval = setInterval(() => {
-          api('queryAsyncJobResult', { jobId }).then(async json => {
-            const result = json.queryasyncjobresultresponse
-            if (result.jobstatus === 0) {
-              return
-            }
-
-            clearInterval(asyncJobInterval)
-            resolve(result)
-          })
-        }, 1000)
       })
     }
   }
