@@ -19,7 +19,7 @@ import Vuex from 'vuex'
 
 const mockStore = {
   state: {},
-  mock: (state, actions) => {
+  mock: (state, actions, mutations) => {
     mockStore.state = {
       app: {
         device: 'desktop'
@@ -28,8 +28,14 @@ const mockStore = {
       permission: {}
     }
 
+    mockStore.mutations = {}
+
     if (state && Object.keys(state).length > 0) {
       mockStore.state = { ...mockStore.state, ...state }
+    }
+
+    if (mutations && Object.keys(mutations).length > 0) {
+      mockStore.mutations = { ...mockStore.mutations, ...mutations }
     }
 
     if (!actions) {
@@ -40,8 +46,10 @@ const mockStore = {
       state: mockStore.state,
       getters: {
         apis: () => mockStore.state.user.apis,
-        userInfo: () => mockStore.state.user.info
+        userInfo: () => mockStore.state.user.info,
+        asyncJobIds: () => mockStore.state.user.asyncJobIds
       },
+      mutations: mockStore.mutations,
       actions
     })
   }

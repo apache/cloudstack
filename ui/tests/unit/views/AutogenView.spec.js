@@ -29,11 +29,18 @@ let router, store, i18n, mocks
 const state = {
   user: {
     apis: mockData.apis,
-    info: mockData.info
+    info: mockData.info,
+    asyncJobIds: mockData.asyncJobIds
   }
 }
 
-store = common.createMockStore(state)
+const mutations = {
+  SET_ASYNC_JOB_IDS: (state, jobsJsonArray) => {
+    state.user.asyncJobIds = jobsJsonArray
+  },
+}
+
+store = common.createMockStore(state, {}, mutations)
 i18n = common.createMockI18n('en', mockData.messages)
 
 const actions = {
