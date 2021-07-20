@@ -33,6 +33,9 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.dao.SnapshotDao;
 import org.apache.cloudstack.quota.QuotaAlertManager;
 import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.quota.QuotaStatement;
@@ -162,6 +165,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private QuotaAlertManager _alertManager;
     @Inject
     private QuotaStatement _quotaStatement;
+    @Inject
+    private SnapshotDao _snapshotDao;
 
     private String _version = null;
     private final Calendar _jobExecTime = Calendar.getInstance();
@@ -1633,6 +1638,13 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         long zoneId = -1L;
 
         long snapId = event.getResourceId();
+
+        SnapshotVO snapshotInstance = _snapshotDao.findById(snapId);
+
+        if (snapshotInstance != null && snapshotInstance.getsnapshotType() == Snapshot.Type.INTERNAL.ordinal()) {
+            return;
+        }
+
         if (EventTypes.EVENT_SNAPSHOT_CREATE.equals(event.getType())) {
             if (usageSnapshotSelection){
                 snapSize =  event.getVirtualSize();

@@ -105,6 +105,7 @@ public class EventTypes {
     public static final String EVENT_VM_IMPORT = "VM.IMPORT";
     public static final String EVENT_VM_UNMANAGE = "VM.UNMANAGE";
     public static final String EVENT_VM_RECOVER = "VM.RECOVER";
+    public static final String EVENT_VM_CLONE = "VM.CLONE";
 
     // Domain Router
     public static final String EVENT_ROUTER_CREATE = "ROUTER.CREATE";

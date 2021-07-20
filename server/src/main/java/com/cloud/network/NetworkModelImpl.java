@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -829,6 +830,15 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         }
 
         return networks;
+    }
+
+    @Override
+    public List<Long> listNetworksUsedByVm(long vmId) {
+        return listNetworksUsedByVm(vmId, false).
+                stream().
+                mapToLong(NetworkVO::getId).
+                boxed().
+                collect(Collectors.toList());
     }
 
     @Override

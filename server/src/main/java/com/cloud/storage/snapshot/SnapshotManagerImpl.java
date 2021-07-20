@@ -588,8 +588,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
             if (result) {
                 if (snapshotCheck.getState() == Snapshot.State.BackedUp) {
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshotCheck.getAccountId(), snapshotCheck.getDataCenterId(), snapshotId,
-                            snapshotCheck.getName(), null, null, 0L, snapshotCheck.getClass().getName(), snapshotCheck.getUuid());
+                    SnapshotVO snapVO = _snapshotDao.findById(snapshotId);
+                    if (snapVO == null || snapVO.getsnapshotType() != Type.INTERNAL.ordinal()) {
+                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshotCheck.getAccountId(), snapshotCheck.getDataCenterId(), snapshotId,
+                                snapshotCheck.getName(), null, null, 0L, snapshotCheck.getClass().getName(), snapshotCheck.getUuid());
+                    }
                 }
 
                 if (snapshotCheck.getState() != Snapshot.State.Error && snapshotCheck.getState() != Snapshot.State.Destroyed) {
@@ -665,7 +668,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         sb.and("snapshotTypeEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.IN);
         sb.and("snapshotTypeNEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.NEQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-
+        sb.and("snapshotTypeInternal", sb.entity().getsnapshotType(), SearchCriteria.Op.NEQ);
         if (tags != null && !tags.isEmpty()) {
             SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
             for (int count = 0; count < tags.size(); count++) {
@@ -737,7 +740,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             // Show only MANUAL and RECURRING snapshot types
             sc.setParameters("snapshotTypeNEQ", Snapshot.Type.TEMPLATE.ordinal());
         }
-
+        sc.setParameters("snapshotTypeInternal", Type.INTERNAL.ordinal());
         Pair<List<SnapshotVO>, Integer> result = _snapshotDao.searchAndCount(sc, searchFilter);
         return new Pair<List<? extends Snapshot>, Integer>(result.first(), result.second());
     }
@@ -1027,7 +1030,13 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     private Type getSnapshotType(Long policyId) {
         if (policyId.equals(Snapshot.MANUAL_POLICY_ID)) {
             return Type.MANUAL;
-        } else {
+        }
+
+        else if (policyId.equals(Snapshot.INTERNAL_POLICY_ID)) {
+            return Type.INTERNAL;
+        }
+
+        else {
             SnapshotPolicyVO spstPolicyVO = _snapshotPolicyDao.findById(policyId);
             IntervalType intvType = DateUtil.getIntervalType(spstPolicyVO.getInterval());
             return getSnapshotType(intvType);
@@ -1180,8 +1189,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                         throw new CloudRuntimeException("Could not find snapshot");
                     }
                 }
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
-                        snapshotStoreRef.getPhysicalSize(), volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
+                SnapshotVO snapInstance = _snapshotDao.findById(snapshot.getId());
+                if (snapInstance == null || snapInstance.getsnapshotType() != Type.INTERNAL.ordinal()) {
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
+                            snapshotStoreRef.getPhysicalSize(), volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
+                }
 
                 // Correct the resource count of snapshot in case of delta snapshots.
                 _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.secondary_storage, new Long(volume.getSize() - snapshotStoreRef.getPhysicalSize()));

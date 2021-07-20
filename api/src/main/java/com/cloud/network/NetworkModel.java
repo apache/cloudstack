@@ -107,6 +107,10 @@ public interface NetworkModel {
 
     List<? extends Network> listNetworksUsedByVm(long vmId, boolean isSystem);
 
+    default List<Long> listNetworksUsedByVm(long vmId) {
+        throw new UnsupportedOperationException();
+    }
+
     Nic getNicInNetwork(long vmId, long networkId);
 
     List<? extends Nic> getNicsForTraffic(long vmId, TrafficType type);
