@@ -35,7 +35,9 @@ public interface AnnotationService {
 
     enum EntityType {
         HOST, DOMAIN, VM, VOLUME, SNAPSHOT, VM_SNAPSHOT, INSTANCE_GROUP, SSH_KEYPAIR,
-        NETWORK, VPC, PUBLIC_IP_ADDRESS, VPN_CUSTOMER_GATEWAY, TEMPLATE, ISO;
+        NETWORK, VPC, PUBLIC_IP_ADDRESS, VPN_CUSTOMER_GATEWAY, TEMPLATE, ISO,
+        SERVICE_OFFERING, DISK_OFFERING, NETWORK_OFFERING,
+        ZONE, POD, CLUSTER, PRIMARY_STORAGE, SECONDARY_STORAGE, VR, SYSTEM_VM;
 
         static public boolean contains(String representation) {
             try {

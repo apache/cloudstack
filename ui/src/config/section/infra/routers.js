@@ -25,6 +25,7 @@ export default {
   columns: ['name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'redundantstate', 'version', 'hostname', 'account', 'zonename', 'requiresupgrade'],
   searchFilters: ['name', 'zoneid', 'podid', 'clusterid'],
   details: ['name', 'id', 'version', 'requiresupgrade', 'guestnetworkname', 'vpcname', 'publicip', 'guestipaddress', 'linklocalip', 'serviceofferingname', 'networkdomain', 'isredundantrouter', 'redundantstate', 'hostname', 'account', 'zonename', 'created'],
+  resourceType: 'VirtualRouter',
   tabs: [{
     name: 'details',
     component: () => import('@/components/view/DetailsTab.vue')
@@ -35,6 +36,9 @@ export default {
     name: 'router.health.checks',
     show: (record, route, user) => { return ['Running'].includes(record.state) && ['Admin'].includes(user.roletype) },
     component: () => import('@views/infra/routers/RouterHealthCheck.vue')
+  }, {
+    name: 'comments',
+    component: () => import('@/components/view/AnnotationsTab.vue')
   }],
   related: [{
     name: 'vm',

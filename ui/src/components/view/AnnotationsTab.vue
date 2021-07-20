@@ -161,6 +161,36 @@ export default {
         case 'ISO':
           this.annotationType = 'ISO'
           break
+        case 'ServiceOffering':
+          this.annotationType = 'SERVICE_OFFERING'
+          break
+        case 'DiskOffering':
+          this.annotationType = 'DISK_OFFERING'
+          break
+        case 'NetworkOffering':
+          this.annotationType = 'NETWORK_OFFERING'
+          break
+        case 'Zone':
+          this.annotationType = 'ZONE'
+          break
+        case 'Pod':
+          this.annotationType = 'POD'
+          break
+        case 'Cluster':
+          this.annotationType = 'CLUSTER'
+          break
+        case 'PrimaryStorage':
+          this.annotationType = 'PRIMARY_STORAGE'
+          break
+        case 'SecondaryStorage':
+          this.annotationType = 'SECONDARY_STORAGE'
+          break
+        case 'SystemVm':
+          this.annotationType = 'SYSTEM_VM'
+          break
+        case 'VirtualRouter':
+          this.annotationType = 'VR'
+          break
       }
     },
     fetchData () {
