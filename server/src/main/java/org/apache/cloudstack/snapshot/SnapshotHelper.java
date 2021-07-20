@@ -23,9 +23,19 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
+
 import static com.cloud.storage.snapshot.SnapshotManager.BackupSnapshotAfterTakingSnapshot;
 import com.cloud.utils.exception.CloudRuntimeException;
+
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
@@ -37,8 +47,11 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.log4j.Logger;
 
 public class SnapshotHelper {
@@ -58,6 +71,9 @@ public class SnapshotHelper {
 
     @Inject
     protected DataStoreManager dataStorageManager;
+
+    @Inject
+    protected SnapshotDao snapshotDao;
 
     protected boolean backupSnapshotAfterTakingSnapshot = BackupSnapshotAfterTakingSnapshot.value();
 
@@ -96,7 +112,7 @@ public class SnapshotHelper {
      */
     public SnapshotInfo backupSnapshotToSecondaryStorageIfNotExists(SnapshotInfo snapInfo, DataStoreRole dataStoreRole, Snapshot snapshot, boolean kvmSnapshotOnlyInPrimaryStorage) throws CloudRuntimeException {
         if (!isSnapshotBackupable(snapInfo, dataStoreRole, kvmSnapshotOnlyInPrimaryStorage)) {
-            logger.trace(String.format("Snapshot [%s] is already on secondary storage or is not a KVM snapshot that is only kept in primary storage. Therefore, we do not back it."
+            logger.trace(String.format("Snapshot [%s] is already on secondary storage or is not a KVM snapshot that is only kept in primary storage. Therefore, we do not back it up."
               + " up.", snapInfo.getId()));
 
             return snapInfo;
@@ -170,5 +186,60 @@ public class SnapshotHelper {
         }
 
         return DataStoreRole.Image;
+    }
+
+    /**
+     * Verifies if it is a KVM volume that has snapshots only in primary storage.
+     * @throws CloudRuntimeException If it is a KVM volume and has at least one snapshot only in primary storage.
+     */
+    public void isKvmVolumeSnapshotsOnlyInPrimaryStorage(VolumeVO volumeVo, HypervisorType hypervisorType) throws CloudRuntimeException {
+        if (HypervisorType.KVM != hypervisorType) {
+            logger.trace(String.format("The %s hypervisor [%s] is not KVM, therefore we will not check if the snapshots are only in primary storage.", volumeVo, hypervisorType));
+            return;
+        }
+
+        Set<Long> snapshotIdsOnlyInPrimaryStorage = getSnapshotIdsOnlyInPrimaryStorage(volumeVo.getId());
+
+        if (CollectionUtils.isEmpty(snapshotIdsOnlyInPrimaryStorage)) {
+            logger.trace(String.format("%s is a KVM volume and all its snapshots exists in the secondary storage, therefore this volume is able for migration.", volumeVo));
+            return;
+        }
+
+        throwCloudRuntimeExceptionOfSnapshotsOnlyInPrimaryStorage(volumeVo, snapshotIdsOnlyInPrimaryStorage);
+    }
+
+    /**
+     * Throws a CloudRuntimeException with the volume and the snapshots only in primary storage.
+     */
+    protected void throwCloudRuntimeExceptionOfSnapshotsOnlyInPrimaryStorage(VolumeVO volumeVo, Set<Long> snapshotIdsOnlyInPrimaryStorage) throws CloudRuntimeException {
+        List<SnapshotVO> snapshots = snapshotDao.listByIds(snapshotIdsOnlyInPrimaryStorage.toArray(new Long[0]));
+
+        String message = String.format("%s is a KVM volume and has snapshots only in primary storage. Snapshots [%s].%s", volumeVo, ReflectionToStringBuilderUtils
+                .reflectOnlySelectedFields(snapshots, ToStringStyle.JSON_STYLE, ",", "uuid", "name"), backupSnapshotAfterTakingSnapshot ? "" : " Consider excluding them to migrate"
+                        + " the volume to another storage.");
+
+        logger.error(message);
+        throw new CloudRuntimeException(message);
+    }
+
+    /**
+     * Retrieves the ids of the ready snapshots of the volume that only exists in primary storage.
+     * @param volumeId volume id to retrieve the snapshots.
+     * @return The ids of the ready snapshots of the volume that only exists in primary storage
+     */
+    protected Set<Long> getSnapshotIdsOnlyInPrimaryStorage(long volumeId) {
+        List<SnapshotDataStoreVO> snapshotsReferences = snapshotDataStoreDao.listReadyByVolumeId(volumeId);
+        Map<Long, List<SnapshotDataStoreVO>> referencesGroupBySnapshotId = snapshotsReferences.stream().collect(Collectors.groupingBy(reference -> reference.getSnapshotId()));
+
+        Set<Long> snapshotIdsOnlyInPrimaryStorage = new HashSet<>();
+        for (var reference: referencesGroupBySnapshotId.entrySet()) {
+            List<SnapshotDataStoreVO> listReferencesBySnapshotId = reference.getValue();
+
+            if  (!listReferencesBySnapshotId.stream().anyMatch(ref -> DataStoreRole.Image == ref.getRole())) {
+                snapshotIdsOnlyInPrimaryStorage.add(reference.getKey());
+            }
+        }
+
+        return snapshotIdsOnlyInPrimaryStorage;
     }
 }

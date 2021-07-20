@@ -84,4 +84,9 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
      * @return true if success, otherwise, false.
      */
     boolean expungeReferenceBySnapshotIdAndDataStoreRole(long snapshotId, DataStoreRole dataStorerole);
+
+    /**
+     * List all snapshots in 'snapshot_store_ref' with state 'Ready' by volume.
+     */
+    List<SnapshotDataStoreVO> listReadyByVolumeId(long volumeId);
 }
