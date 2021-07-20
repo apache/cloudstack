@@ -79,20 +79,8 @@ function packaging() {
 
     DISTRO=$3
 
-    if [ "$1" == "noredist" ] ; then
-        PYTHON=$(which python)
-        if [ -z "$PYTHON" ] ; then
-            PYTHON=$(which python2)
-            if [ -z "$PYTHON" ] ; then
-                PYTHON=$(which python3)
-                if [ -z "$PYTHON" ] ; then
-                    echo -e "python not found\n RPM Build Failed"
-                    exit 2
-                fi
-            fi
-        fi
-        $PYTHON ./templateConfig.py
-    fi
+    pip3 install requests configparser
+    python3 ./templateConfig.py
 
     MVN=$(which mvn)
     if [ -z "$MVN" ] ; then

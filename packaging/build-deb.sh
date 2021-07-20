@@ -155,6 +155,12 @@ fi
 dch -b -v "${VERSION}~${DISTCODE}" -u low -m "Apache CloudStack Release ${VERSION}"
 sed -i '0,/ UNRELEASED;/s// unstable;/g' debian/changelog
 
+apt-get install -y wget
+wget https://bootstrap.pypa.io/pip/2.7/get-pip.py
+python get-pip.py
+pip2 install requests configparser
+python templateConfig.py
+
 dpkg-checkbuilddeps
 dpkg-buildpackage -uc -us -b
 

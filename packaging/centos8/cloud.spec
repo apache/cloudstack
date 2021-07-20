@@ -292,7 +292,8 @@ touch ${RPM_BUILD_ROOT}%{_localstatedir}/run/%{name}-management.pid
 #install -D server/target/conf/cloudstack-catalina.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-catalina
 
 # SystemVM template
-cp -r packaging/templates/* ${RPM_BUILD_ROOT}%{_datadir}/templates/
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/
+cp -r packaging/templates/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/
 
 # UI
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/ui
@@ -542,6 +543,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %{_datadir}/%{name}-management/conf
 %{_datadir}/%{name}-management/lib/*.jar
 %{_datadir}/%{name}-management/logs
+%{_datadir}/%{name}-management/templates
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
 %attr(0755,root,root) %{_bindir}/%{name}-migrate-databases
 %attr(0755,root,root) %{_bindir}/%{name}-set-guest-password
