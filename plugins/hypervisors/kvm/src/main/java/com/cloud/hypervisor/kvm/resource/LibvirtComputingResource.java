@@ -1596,6 +1596,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         command.add("-n", vmName);
         command.add("-c", cmdLine);
         result = command.execute();
+
         if (result != null) {
             s_logger.error("Passing cmdline failed:" + result);
             return false;

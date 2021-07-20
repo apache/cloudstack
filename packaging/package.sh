@@ -79,6 +79,21 @@ function packaging() {
 
     DISTRO=$3
 
+    if [ "$1" == "noredist" ] ; then
+        PYTHON=$(which python)
+        if [ -z "$PYTHON" ] ; then
+            PYTHON=$(which python2)
+            if [ -z "$PYTHON" ] ; then
+                PYTHON=$(which python3)
+                if [ -z "$PYTHON" ] ; then
+                    echo -e "python not found\n RPM Build Failed"
+                    exit 2
+                fi
+            fi
+        fi
+        $PYTHON ./templateConfig.py
+    fi
+
     MVN=$(which mvn)
     if [ -z "$MVN" ] ; then
         MVN=$(locate bin/mvn | grep -e mvn$ | tail -1)
@@ -90,6 +105,9 @@ function packaging() {
 
     VERSION=$(cd $PWD/../; $MVN org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep --color=none '^[0-9]\.')
     REALVER=$(echo "$VERSION" | cut -d '-' -f 1)
+
+    echo $VERSION
+    echo $REALVER
 
     if [ -n "$5" ]; then
         BRAND="${5}."
@@ -103,6 +121,8 @@ function packaging() {
             BRAND=""
         fi
     fi
+
+    echo $BASEVER
 
     if echo "$VERSION" | grep -q SNAPSHOT ; then
         if [ -n "$4" ] ; then

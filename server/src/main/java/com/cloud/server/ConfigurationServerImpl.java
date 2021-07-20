@@ -669,7 +669,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         }
         s_logger.info("Going to update systemvm iso with generated keypairs if needed");
         try {
-            injectSshKeysIntoSystemVmIsoPatch(pubkeyfile.getAbsolutePath(), privkeyfile.getAbsolutePath());
+            // injectSshKeysIntoSystemVmIsoPatch(pubkeyfile.getAbsolutePath(), privkeyfile.getAbsolutePath());
         } catch (CloudRuntimeException e) {
             if (!devel) {
                 throw new CloudRuntimeException(e.getMessage());
@@ -761,10 +761,11 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             publicKeyPath = publicKeyPath.replaceAll("\\\\" ,"/" );
             privKeyPath = privKeyPath.replaceAll("\\\\" ,"/" );
         }
-        command.add(scriptPath);
-        command.add(publicKeyPath);
-        command.add(privKeyPath);
-        command.add(systemVmIsoPath);
+
+//        command.add(scriptPath);
+//        command.add(publicKeyPath);
+//        command.add(privKeyPath);
+//        command.add(systemVmIsoPath);
 
         final String result = command.execute();
         s_logger.info("The script injectkeys.sh was run with result : " + result);

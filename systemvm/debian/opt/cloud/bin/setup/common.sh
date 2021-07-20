@@ -759,12 +759,25 @@ parse_cmd_line() {
         ntpserverlist)
             export NTP_SERVER_LIST=$VALUE
             ;;
+            authorized_key)
+              export AUTHORIZED_KEYS=$VALUE
       esac
   done
   echo -e "\n\t}\n}" >> ${CHEF_TMP_FILE}
   if [ "$TYPE" != "unknown" ]
   then
     mv ${CHEF_TMP_FILE} /var/cache/cloud/cmd_line.json
+  fi
+
+  TMP_KEY_PATH=/tmp/.auth_key
+  AUTHORIZED_KEYS_PATH=/root/.ssh/authorized_keys
+  if [ ! -z "$AUTHORIZED_KEYS" ]
+  then
+    echo "$AUTHORIZED_KEYS" > $TMP_KEY_PATH
+    base64Val=`base64 -d $TMP_KEY_PATH`
+    echo "$base64Val" > $AUTHORIZED_KEYS_PATH
+    chmod go-rwx $AUTHORIZED_KEYS_PATH
+    rm -rf $TMP_KEY_PATH
   fi
 
   [ $ETH0_IP ] && export LOCAL_ADDRS=$ETH0_IP

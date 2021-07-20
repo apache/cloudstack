@@ -17,8 +17,10 @@
 package com.cloud.consoleproxy;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1386,6 +1388,15 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         if (_disableRpFilter) {
             buf.append(" disable_rp_filter=true");
         }
+
+        String MsPublicKey = _configDao.getValue("ssh.publickey");
+        String base64EncodedPublicKey = null;
+        if (MsPublicKey != null) {
+            // base64EncodedPublicKey = Base64.getEncoder().encodeToString(DBEncryptionUtil.decrypt(MsPrivateKey).getBytes(StandardCharsets.UTF_8));
+            base64EncodedPublicKey = Base64.getEncoder().encodeToString(MsPublicKey.getBytes(StandardCharsets.UTF_8));
+        }
+
+        buf.append(" authorized_key=").append(base64EncodedPublicKey);
 
         boolean externalDhcp = false;
         String externalDhcpStr = _configDao.getValue("direct.attach.network.externalIpAllocator.enabled");
