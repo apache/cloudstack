@@ -4333,9 +4333,10 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public SSHKeyPairResponse createSSHKeyPairResponse(SSHKeyPair sshkeyPair, boolean privatekey) {
-        SSHKeyPairResponse response = new SSHKeyPairResponse(sshkeyPair.getName(), sshkeyPair.getFingerprint());
+        SSHKeyPairResponse response = new SSHKeyPairResponse(sshkeyPair.getUuid(), sshkeyPair.getName(), sshkeyPair.getFingerprint());
         if (privatekey) {
-            response = new CreateSSHKeyPairResponse(sshkeyPair.getName(), sshkeyPair.getFingerprint(), sshkeyPair.getPrivateKey());
+            response = new CreateSSHKeyPairResponse(sshkeyPair.getUuid(), sshkeyPair.getName(),
+                    sshkeyPair.getFingerprint(), sshkeyPair.getPrivateKey());
         }
         Account account = ApiDBUtils.findAccountById(sshkeyPair.getAccountId());
         response.setAccountName(account.getAccountName());

@@ -25,6 +25,10 @@ import com.cloud.serializer.Param;
 
 public class SSHKeyPairResponse extends BaseResponse {
 
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "ID of the ssh keypair")
+    private String id;
+
     @SerializedName(ApiConstants.NAME)
     @Param(description = "Name of the keypair")
     private String name;
@@ -45,7 +49,8 @@ public class SSHKeyPairResponse extends BaseResponse {
     public SSHKeyPairResponse() {
     }
 
-    public SSHKeyPairResponse(String name, String fingerprint) {
+    public SSHKeyPairResponse(String uuid, String name, String fingerprint) {
+        this.id = uuid;
         this.name = name;
         this.fingerprint = fingerprint;
     }
@@ -88,5 +93,13 @@ public class SSHKeyPairResponse extends BaseResponse {
 
     public void setDomainName(String domain) {
         this.domain = domain;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }
