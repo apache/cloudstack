@@ -995,15 +995,15 @@ export default {
             if (param.name !== key) {
               continue
             }
-            if (!input === undefined || input === null ||
+            if (input === undefined || input === null ||
               (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering'].includes(action.api))) {
               if (param.type === 'boolean') {
                 params[key] = false
               }
               break
             }
-            if (!input && input !== 0 && !['tags'].includes(key)) {
-              continue
+            if (input === '' && !['tags'].includes(key)) {
+              break
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {
               params[key] = action.mapping[key].options[input]
