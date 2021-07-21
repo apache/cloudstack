@@ -3260,7 +3260,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         long accountTemplateDirSize = 0;
         File accountTemplateDir = new File(rootDir + getTemplatePathForAccount(accountId));
         if (accountTemplateDir.exists()) {
-            FileUtils.sizeOfDirectory(accountTemplateDir);
+            accountTemplateDirSize = FileUtils.sizeOfDirectory(accountTemplateDir);
         }
         long accountVolumeDirSize = 0;
         File accountVolumeDir = new File(rootDir + getVolumePathForAccount(accountId));

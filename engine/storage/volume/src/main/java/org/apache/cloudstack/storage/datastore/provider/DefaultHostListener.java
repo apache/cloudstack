@@ -22,16 +22,15 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
-import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.alert.AlertManager;
 import com.cloud.exception.StorageConflictException;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
@@ -43,9 +42,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class DefaultHostListener implements HypervisorHostListener {
     private static final Logger s_logger = Logger.getLogger(DefaultHostListener.class);
@@ -62,7 +59,9 @@ public class DefaultHostListener implements HypervisorHostListener {
     @Inject
     StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject
-    StoragePoolTagsDao storagePoolTagsDao;
+    StorageManager storageManager;
+    @Inject
+    StorageService storageService;
 
     @Override
     public boolean hostAdded(long hostId) {
@@ -71,7 +70,7 @@ public class DefaultHostListener implements HypervisorHostListener {
 
     @Override
     public boolean hostConnect(long hostId, long poolId) throws StorageConflictException {
-        StoragePool pool = (StoragePool)this.dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
+        StoragePool pool = (StoragePool) this.dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool);
         final Answer answer = agentMgr.easySend(hostId, cmd);
 
@@ -88,7 +87,7 @@ public class DefaultHostListener implements HypervisorHostListener {
 
         assert (answer instanceof ModifyStoragePoolAnswer) : "Well, now why won't you actually return the ModifyStoragePoolAnswer when it's ModifyStoragePoolCommand? Pool=" +
             pool.getId() + "Host=" + hostId;
-        ModifyStoragePoolAnswer mspAnswer = (ModifyStoragePoolAnswer)answer;
+        ModifyStoragePoolAnswer mspAnswer = (ModifyStoragePoolAnswer) answer;
         if (mspAnswer.getLocalDatastoreName() != null && pool.isShared()) {
             String datastoreName = mspAnswer.getLocalDatastoreName();
             List<StoragePoolVO> localStoragePools = this.primaryStoreDao.listLocalStoragePoolByPath(pool.getDataCenterId(), datastoreName);
@@ -104,44 +103,10 @@ public class DefaultHostListener implements HypervisorHostListener {
         updateStoragePoolHostVOAndDetails(poolVO, hostId, mspAnswer);
 
         if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
-            for (ModifyStoragePoolAnswer childDataStoreAnswer : ((ModifyStoragePoolAnswer) answer).getDatastoreClusterChildren()) {
-                StoragePoolInfo childStoragePoolInfo = childDataStoreAnswer.getPoolInfo();
-                StoragePoolVO dataStoreVO = primaryStoreDao.findPoolByUUID(childStoragePoolInfo.getUuid());
-                if (dataStoreVO != null) {
-                    continue;
-                }
-                dataStoreVO = new StoragePoolVO();
-                dataStoreVO.setStorageProviderName(poolVO.getStorageProviderName());
-                dataStoreVO.setHostAddress(childStoragePoolInfo.getHost());
-                dataStoreVO.setPoolType(Storage.StoragePoolType.PreSetup);
-                dataStoreVO.setPath(childStoragePoolInfo.getHostPath());
-                dataStoreVO.setPort(poolVO.getPort());
-                dataStoreVO.setName(childStoragePoolInfo.getName());
-                dataStoreVO.setUuid(childStoragePoolInfo.getUuid());
-                dataStoreVO.setDataCenterId(poolVO.getDataCenterId());
-                dataStoreVO.setPodId(poolVO.getPodId());
-                dataStoreVO.setClusterId(poolVO.getClusterId());
-                dataStoreVO.setStatus(StoragePoolStatus.Up);
-                dataStoreVO.setUserInfo(poolVO.getUserInfo());
-                dataStoreVO.setManaged(poolVO.isManaged());
-                dataStoreVO.setCapacityIops(poolVO.getCapacityIops());
-                dataStoreVO.setCapacityBytes(childDataStoreAnswer.getPoolInfo().getCapacityBytes());
-                dataStoreVO.setUsedBytes(childDataStoreAnswer.getPoolInfo().getCapacityBytes() - childDataStoreAnswer.getPoolInfo().getAvailableBytes());
-                dataStoreVO.setHypervisor(poolVO.getHypervisor());
-                dataStoreVO.setScope(poolVO.getScope());
-                dataStoreVO.setParent(poolVO.getId());
-
-                Map<String, String> details = new HashMap<>();
-                if(StringUtils.isNotEmpty(childDataStoreAnswer.getPoolType())) {
-                    details.put("pool_type", childDataStoreAnswer.getPoolType());
-                }
-
-                List<String> storageTags = storagePoolTagsDao.getStoragePoolTags(poolId);
-                primaryStoreDao.persist(dataStoreVO, details, storageTags);
-
-                updateStoragePoolHostVOAndDetails(dataStoreVO, hostId, childDataStoreAnswer);
-            }
+            storageManager.syncDatastoreClusterStoragePool(poolId, ((ModifyStoragePoolAnswer) answer).getDatastoreClusterChildren(), hostId);
         }
+
+        storageService.updateStorageCapabilities(poolId, false);
 
         s_logger.info("Connection established between storage pool " + pool + " and host " + hostId);
         return true;

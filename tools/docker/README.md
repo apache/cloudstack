@@ -61,7 +61,7 @@ Image provided by CloudStack are automatically built by Jenkins performing follo
 ### CentOS 6
 
 CentOS 6 image use RPM's from jenkins.buildacloud.org
-tag:latest = master branch
+tag:latest = main branch
 
 1. build the base image
 

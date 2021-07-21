@@ -19,5 +19,5 @@
 
 set -e
 
-pip install --upgrade http://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-2.0.4.zip#md5=3df394d89300db95163f17c843ef49df
-pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
+python3 -m pip install --upgrade pip
+python3 -m pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz

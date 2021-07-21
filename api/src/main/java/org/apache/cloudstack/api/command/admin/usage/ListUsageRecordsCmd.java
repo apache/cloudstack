@@ -85,6 +85,11 @@ public class ListUsageRecordsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.OLD_FORMAT, type = CommandType.BOOLEAN, description = "Flag to enable description rendered in old format which uses internal database IDs instead of UUIDs. False by default.")
     private Boolean oldFormat;
 
+    @Parameter(name = ApiConstants.IS_RECURSIVE, type = CommandType.BOOLEAN,
+            description = "Specify if usage records should be fetched recursively per domain. If an account id is passed, records will be limited to that account.",
+            since = "4.15")
+    private Boolean recursive = false;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -151,6 +156,10 @@ public class ListUsageRecordsCmd extends BaseListCmd {
 
     public boolean getOldFormat() {
         return oldFormat != null && oldFormat;
+    }
+
+    public Boolean isRecursive() {
+        return recursive;
     }
 
     /////////////////////////////////////////////////////

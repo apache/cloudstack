@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.consoleproxy;
 
+import com.cloud.utils.StringUtils;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.extensions.Frame;
@@ -96,47 +97,30 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
 
                     String tunnelUrl = param.getClientTunnelUrl();
                     String tunnelSession = param.getClientTunnelSession();
+                    String websocketUrl = param.getWebsocketUrl();
 
-                    try {
-                        if (tunnelUrl != null && !tunnelUrl.isEmpty() && tunnelSession != null
-                                && !tunnelSession.isEmpty()) {
-                            URI uri = new URI(tunnelUrl);
-                            s_logger.info("Connect to VNC server via tunnel. url: " + tunnelUrl + ", session: "
-                                    + tunnelSession);
+                    connectClientToVNCServer(tunnelUrl, tunnelSession, websocketUrl);
 
-                            ConsoleProxy.ensureRoute(uri.getHost());
-                            client.connectTo(uri.getHost(), uri.getPort(), uri.getPath() + "?" + uri.getQuery(),
-                                    tunnelSession, "https".equalsIgnoreCase(uri.getScheme()));
-                        } else {
-                            s_logger.info("Connect to VNC server directly. host: " + getClientHostAddress() + ", port: "
-                                    + getClientHostPort());
-                            ConsoleProxy.ensureRoute(getClientHostAddress());
-                            client.connectTo(getClientHostAddress(), getClientHostPort());
-                        }
-                    } catch (UnknownHostException e) {
-                        s_logger.error("Unexpected exception", e);
-                    } catch (IOException e) {
-                        s_logger.error("Unexpected exception", e);
-                    } catch (Throwable e) {
-                        s_logger.error("Unexpected exception", e);
-                    }
-
-                    String ver = client.handshake();
-                    session.getRemote().sendBytes(ByteBuffer.wrap(ver.getBytes(), 0, ver.length()));
-
-                    byte[] b = client.authenticate(getClientHostPassword());
-                    session.getRemote().sendBytes(ByteBuffer.wrap(b, 0, 4));
+                    authenticateToVNCServer();
 
                     int readBytes;
+                    byte[] b;
                     while (connectionAlive) {
-                        b = new byte[100];
-                        readBytes = client.read(b);
-                        if (readBytes == -1) {
-                            break;
-                        }
-                        if (readBytes > 0) {
-                            session.getRemote().sendBytes(ByteBuffer.wrap(b, 0, readBytes));
-                            updateFrontEndActivityTime();
+                        if (client.isVncOverWebSocketConnection()) {
+                            if (client.isVncOverWebSocketConnectionOpen()) {
+                                updateFrontEndActivityTime();
+                            }
+                            connectionAlive = client.isVncOverWebSocketConnectionAlive();
+                        } else {
+                            b = new byte[100];
+                            readBytes = client.read(b);
+                            if (readBytes == -1) {
+                                break;
+                            }
+                            if (readBytes > 0) {
+                                session.getRemote().sendBytes(ByteBuffer.wrap(b, 0, readBytes));
+                                updateFrontEndActivityTime();
+                            }
                         }
                     }
                     connectionAlive = false;
@@ -147,6 +131,55 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
 
         });
         worker.start();
+    }
+
+    /**
+     * Authenticate to VNC server when not using websockets
+     * @throws IOException
+     */
+    private void authenticateToVNCServer() throws IOException {
+        if (!client.isVncOverWebSocketConnection()) {
+            String ver = client.handshake();
+            session.getRemote().sendBytes(ByteBuffer.wrap(ver.getBytes(), 0, ver.length()));
+
+            byte[] b = client.authenticate(getClientHostPassword());
+            session.getRemote().sendBytes(ByteBuffer.wrap(b, 0, 4));
+        }
+    }
+
+    /**
+     * Connect to a VNC server in one of three possible ways:
+     * - When tunnelUrl and tunnelSession are not empty -> via tunnel
+     * - When websocketUrl is not empty -> connect to websocket
+     * - Otherwise -> connect to TCP port on host directly
+     */
+    private void connectClientToVNCServer(String tunnelUrl, String tunnelSession, String websocketUrl) {
+        try {
+            if (StringUtils.isNotBlank(websocketUrl)) {
+                s_logger.info("Connect to VNC over websocket URL: " + websocketUrl);
+                client.connectToWebSocket(websocketUrl, session);
+            } else if (tunnelUrl != null && !tunnelUrl.isEmpty() && tunnelSession != null
+                    && !tunnelSession.isEmpty()) {
+                URI uri = new URI(tunnelUrl);
+                s_logger.info("Connect to VNC server via tunnel. url: " + tunnelUrl + ", session: "
+                        + tunnelSession);
+
+                ConsoleProxy.ensureRoute(uri.getHost());
+                client.connectTo(uri.getHost(), uri.getPort(), uri.getPath() + "?" + uri.getQuery(),
+                        tunnelSession, "https".equalsIgnoreCase(uri.getScheme()));
+            } else {
+                s_logger.info("Connect to VNC server directly. host: " + getClientHostAddress() + ", port: "
+                        + getClientHostPort());
+                ConsoleProxy.ensureRoute(getClientHostAddress());
+                client.connectTo(getClientHostAddress(), getClientHostPort());
+            }
+        } catch (UnknownHostException e) {
+            s_logger.error("Unexpected exception", e);
+        } catch (IOException e) {
+            s_logger.error("Unexpected exception", e);
+        } catch (Throwable e) {
+            s_logger.error("Unexpected exception", e);
+        }
     }
 
     private void setClientParam(ConsoleProxyClientParam param) {

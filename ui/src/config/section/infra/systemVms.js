@@ -22,7 +22,7 @@ export default {
   docHelp: 'adminguide/systemvm.html',
   permission: ['listSystemVms'],
   columns: ['name', 'state', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'hostname', 'zonename'],
-  details: ['name', 'id', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'gateway', 'hostname', 'zonename', 'created', 'activeviewersessions'],
+  details: ['name', 'id', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'gateway', 'hostname', 'zonename', 'created', 'activeviewersessions', 'isdynamicallyscalable'],
   actions: [
     {
       api: 'startSystemVm',
@@ -30,7 +30,10 @@ export default {
       label: 'label.action.start.systemvm',
       message: 'message.action.start.systemvm',
       dataView: true,
-      show: (record) => { return record.state === 'Stopped' }
+      show: (record) => { return record.state === 'Stopped' },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     },
     {
       api: 'stopSystemVm',
@@ -39,7 +42,10 @@ export default {
       message: 'message.action.stop.systemvm',
       dataView: true,
       show: (record) => { return record.state === 'Running' },
-      args: ['forced']
+      args: ['forced'],
+      groupAction: true,
+      popup: true,
+      groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
     },
     {
       api: 'rebootSystemVm',
@@ -48,7 +54,10 @@ export default {
       message: 'message.action.reboot.systemvm',
       dataView: true,
       show: (record) => { return record.state === 'Running' },
-      args: ['forced']
+      args: ['forced'],
+      groupAction: true,
+      popup: true,
+      groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
     },
     {
       api: 'scaleSystemVm',
@@ -69,6 +78,7 @@ export default {
       api: 'migrateSystemVm',
       icon: 'drag',
       label: 'label.action.migrate.systemvm',
+      message: 'message.migrate.systemvm.confirm',
       dataView: true,
       show: (record, store) => { return record.state === 'Running' && ['Admin'].includes(store.userInfo.roletype) },
       component: () => import('@/views/compute/MigrateWizard'),
@@ -120,7 +130,10 @@ export default {
       label: 'label.action.destroy.systemvm',
       message: 'message.action.destroy.systemvm',
       dataView: true,
-      show: (record) => { return ['Running', 'Error', 'Stopped'].includes(record.state) }
+      show: (record) => { return ['Running', 'Error', 'Stopped'].includes(record.state) },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     }
   ]
 }

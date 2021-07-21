@@ -42,6 +42,7 @@ import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.Nic;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
@@ -280,5 +281,11 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
     public boolean startSite2SiteVpn(DomainRouterVO router) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public <T extends VirtualRouter> void collectNetworkStatistics(T router, Nic nic) {
+        // TODO Auto-generated method stub
+        return;
     }
 }

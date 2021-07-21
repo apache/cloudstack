@@ -26,6 +26,7 @@
           :loading="loading"
           :placeholder="$t('label.diskoffering')"
           @change="id => (customDiskOffering = offerings.filter(x => x.id === id)[0].iscustomized || false)"
+          :autoFocus="resource.type !== 'ROOT'"
         >
           <a-select-option
             v-for="(offering, index) in offerings"
@@ -39,7 +40,8 @@
           <a-input
             v-decorator="['size', {
               rules: [{ required: true, message: $t('message.error.size') }]}]"
-            :placeholder="$t('label.disksize')"/>
+            :placeholder="$t('label.disksize')"
+            :autoFocus="customDiskOffering || resource.type === 'ROOT'"/>
         </a-form-item>
       </div>
       <a-form-item :label="$t('label.shrinkok')">
@@ -74,7 +76,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {
@@ -101,15 +103,10 @@ export default {
         api('resizeVolume', values).then(response => {
           this.$pollJob({
             jobId: response.resizevolumeresponse.jobid,
+            title: this.$t('message.success.resize.volume'),
+            description: values.name,
             successMessage: this.$t('message.success.resize.volume'),
-            successMethod: () => {
-              this.$store.dispatch('AddAsyncJob', {
-                title: this.$t('message.success.resize.volume'),
-                jobid: response.resizevolumeresponse.jobid,
-                description: values.name,
-                status: 'progress'
-              })
-            },
+            successMethod: () => {},
             errorMessage: this.$t('message.resize.volume.failed'),
             errorMethod: () => {
               this.closeModal()
@@ -142,9 +139,10 @@ export default {
 </script>
 <style lang="scss" scoped>
 .form-layout {
-  width: 75vw;
-  @media (min-width: 700px) {
-    width: 40vw;
+  width: 85vw;
+
+  @media (min-width: 760px) {
+    width: 500px;
   }
 }
 .action-button {

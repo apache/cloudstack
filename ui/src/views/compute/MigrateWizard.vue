@@ -21,7 +21,8 @@
       :placeholder="$t('label.search')"
       v-model="searchQuery"
       style="margin-bottom: 10px;"
-      @search="fetchData" />
+      @search="fetchData"
+      autoFocus />
     <a-table
       size="small"
       style="overflow-y: auto"
@@ -154,7 +155,7 @@ export default {
       ]
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {
@@ -195,17 +196,11 @@ export default {
       var migrateParams = this.selectedHost.id === -1 ? { autoselect: true, virtualmachineid: this.resource.id }
         : { hostid: this.selectedHost.id, virtualmachineid: this.resource.id }
       api(migrateApi, migrateParams).then(response => {
-        var migrateResponse = isUserVm
-          ? this.selectedHost.requiresStorageMotion ? response.migratevirtualmachinewithvolumeresponse : response.migratevirtualmachineresponse
-          : response.migratesystemvmresponse
-        this.$store.dispatch('AddAsyncJob', {
-          title: `${this.$t('label.migrating')} ${this.resource.name}`,
-          jobid: migrateResponse.jobid,
-          description: this.resource.name,
-          status: 'progress'
-        })
+        const jobid = this.selectedHost.requiresStorageMotion ? response.migratevirtualmachinewithvolumeresponse.jobid : response.migratevirtualmachineresponse.jobid
         this.$pollJob({
-          jobId: migrateResponse.jobid,
+          jobId: jobid,
+          title: `${this.$t('label.migrating')} ${this.resource.name}`,
+          description: this.resource.name,
           successMessage: `${this.$t('message.success.migrating')} ${this.resource.name}`,
           successMethod: () => {
             this.$emit('close-action')

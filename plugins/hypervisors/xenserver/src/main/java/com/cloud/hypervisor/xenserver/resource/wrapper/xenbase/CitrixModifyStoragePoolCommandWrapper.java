@@ -28,6 +28,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.hypervisor.xenserver.resource.CitrixHelper;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
@@ -49,7 +50,10 @@ public final class CitrixModifyStoragePoolCommandWrapper extends CommandWrapper<
         final boolean add = command.getAdd();
         if (add) {
             try {
-                final String srName = command.getStoragePath() != null ? command.getStoragePath() : pool.getUuid();
+                String srName = command.getStoragePath();
+                if (srName == null) {
+                    srName = CitrixHelper.getSRNameLabel(pool.getUuid(), pool.getType(), pool.getPath());
+                }
                 final SR sr = citrixResourceBase.getStorageRepository(conn, srName);
                 citrixResourceBase.setupHeartbeatSr(conn, sr, false);
                 final long capacity = sr.getPhysicalSize(conn);
@@ -75,7 +79,8 @@ public final class CitrixModifyStoragePoolCommandWrapper extends CommandWrapper<
             }
         } else {
             try {
-                final SR sr = citrixResourceBase.getStorageRepository(conn, pool.getUuid());
+                final SR sr = citrixResourceBase.getStorageRepository(conn,
+                        CitrixHelper.getSRNameLabel(pool.getUuid(), pool.getType(), pool.getPath()));
                 final String srUuid = sr.getUuid(conn);
                 final String result = citrixResourceBase.callHostPluginPremium(conn, "setup_heartbeat_file", "host", citrixResourceBase.getHost().getUuid(), "sr", srUuid, "add",
                         "false");

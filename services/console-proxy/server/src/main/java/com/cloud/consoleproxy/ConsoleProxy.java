@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
+import com.cloud.utils.StringUtils;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.eclipse.jetty.websocket.api.Session;
 
@@ -171,6 +172,11 @@ public class ConsoleProxy {
         authResult.setReauthentication(reauthentication);
         authResult.setHost(param.getClientHostAddress());
         authResult.setPort(param.getClientHostPort());
+
+        String websocketUrl = param.getWebsocketUrl();
+        if (StringUtils.isNotBlank(websocketUrl)) {
+            return authResult;
+        }
 
         if (standaloneStart) {
             return authResult;

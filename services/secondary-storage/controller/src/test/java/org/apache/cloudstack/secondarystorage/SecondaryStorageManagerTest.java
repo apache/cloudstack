@@ -30,10 +30,16 @@ import org.mockito.MockitoAnnotations;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.VirtualMachineProfile;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.any;
@@ -188,5 +194,28 @@ public class SecondaryStorageManagerTest {
                     .thenReturn(Collections.singletonList(network));
 
         _ssMgr.getDefaultNetworkForAdvancedZone(dc);
+    }
+
+    @Test
+    public void validateVerifySshAccessOnManagementNicForSystemVm(){
+        Hypervisor.HypervisorType[] hypervisorTypesArray = Hypervisor.HypervisorType.values();
+        List<Hypervisor.HypervisorType> hypervisorTypesThatMustReturnManagementNic = new ArrayList<>(Arrays.asList(Hypervisor.HypervisorType.Hyperv));
+
+        for (Hypervisor.HypervisorType hypervisorType: hypervisorTypesArray) {
+            VirtualMachineProfile virtualMachineProfileMock = Mockito.mock(VirtualMachineProfile.class);
+            NicProfile controlNic = Mockito.mock(NicProfile.class);
+            NicProfile managementNic = Mockito.mock(NicProfile.class);
+
+            Mockito.doReturn(hypervisorType).when(virtualMachineProfileMock).getHypervisorType();
+
+            NicProfile expectedResult = controlNic;
+            if (hypervisorTypesThatMustReturnManagementNic.contains(hypervisorType)) {
+                expectedResult = managementNic;
+            }
+
+            NicProfile result = _ssMgr.verifySshAccessOnManagementNicForSystemVm(virtualMachineProfileMock, controlNic, managementNic);
+
+            Assert.assertEquals(expectedResult, result);
+        }
     }
 }

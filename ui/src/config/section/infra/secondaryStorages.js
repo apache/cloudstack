@@ -25,7 +25,10 @@ export default {
   columns: () => {
     var fields = ['name', 'url', 'protocol', 'scope', 'zonename']
     if (store.getters.apis.listImageStores.params.filter(x => x.name === 'readonly').length > 0) {
-      fields.push('readonly')
+      fields.push({
+        field: 'readonly',
+        customTitle: 'access'
+      })
     }
     return fields
   },
@@ -62,16 +65,10 @@ export default {
       component: () => import('@/views/infra/AddSecondaryStorage.vue')
     },
     {
-      api: 'deleteImageStore',
-      icon: 'delete',
-      label: 'label.action.delete.secondary.storage',
-      message: 'message.action.delete.secondary.storage',
-      dataView: true
-    },
-    {
       api: 'updateImageStore',
       icon: 'stop',
-      label: 'Make Image store read-only',
+      label: 'label.action.image.store.read.only',
+      message: 'message.action.secondary.storage.read.only',
       dataView: true,
       defaultArgs: { readonly: true },
       show: (record) => { return record.readonly === false }
@@ -79,10 +76,18 @@ export default {
     {
       api: 'updateImageStore',
       icon: 'check-circle',
-      label: 'Make Image store read-write',
+      label: 'label.action.image.store.read.write',
+      message: 'message.action.secondary.storage.read.write',
       dataView: true,
       defaultArgs: { readonly: false },
       show: (record) => { return record.readonly === true }
+    },
+    {
+      api: 'deleteImageStore',
+      icon: 'delete',
+      label: 'label.action.delete.secondary.storage',
+      message: 'message.action.delete.secondary.storage',
+      dataView: true
     }
   ]
 }
