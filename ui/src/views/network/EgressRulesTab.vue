@@ -288,15 +288,10 @@ export default {
       this.loading = true
       api('deleteEgressFirewallRule', { id: rule.id }).then(response => {
         const jobId = response.deleteegressfirewallruleresponse.jobid
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('label.action.delete.egress.firewall'),
-          jobid: jobId,
-          description: rule.id,
-          status: 'progress',
-          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
-        })
         eventBus.$emit('update-job-details', jobId, null)
         this.$pollJob({
+          title: this.$t('label.action.delete.egress.firewall'),
+          description: rule.id,
           jobId: jobId,
           successMessage: this.$t('message.success.remove.egress.rule'),
           successMethod: () => {

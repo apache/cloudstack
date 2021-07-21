@@ -389,15 +389,10 @@ export default {
         id: ip.id
       }).then(response => {
         const jobId = response.disassociateipaddressresponse.jobid
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('label.action.release.ip'),
-          jobid: jobId,
-          description: ip.id,
-          status: 'progress',
-          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
-        })
         eventBus.$emit('update-job-details', jobId, null)
         this.$pollJob({
+          title: this.$t('label.action.release.ip'),
+          description: ip.id,
           jobId: jobId,
           successMessage: this.$t('message.success.release.ip'),
           successMethod: () => {

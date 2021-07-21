@@ -1023,15 +1023,10 @@ export default {
         id: rule.id
       }).then(response => {
         const jobId = response.deleteloadbalancerruleresponse.jobid
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('label.action.delete.load.balancer'),
-          jobid: jobId,
-          description: rule.id,
-          status: 'progress',
-          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
-        })
         eventBus.$emit('update-job-details', jobId, null)
         this.$pollJob({
+          title: this.$t('label.action.delete.load.balancer'),
+          description: rule.id,
           jobId: jobId,
           successMessage: this.$t('message.success.remove.rule'),
           successMethod: () => {
