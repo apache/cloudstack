@@ -704,4 +704,4 @@ INSERT INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission) VALUES 
 INSERT INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission) VALUES (UUID(), 4, 'removeAnnotation', 'ALLOW');
 
 -- Add uuid for ssh keypairs
-ALTER TABLE `cloud.ssh_keypairs` ADD COLUMN `uuid` varchar(40) AFTER `id`;
+ALTER TABLE `cloud`.`ssh_keypairs` ADD COLUMN `uuid` varchar(40) AFTER `id`;
