@@ -582,13 +582,11 @@ export default {
           successMessage: this.$t('message.success.add.port.forward'),
           successMethod: () => {
             this.closeModal()
-            this.parentFetchData()
             this.fetchData()
           },
           errorMessage: this.$t('message.add.port.forward.failed'),
           errorMethod: () => {
             this.closeModal()
-            this.parentFetchData()
             this.fetchData()
           },
           loadingMessage: this.$t('message.add.port.forward.processing'),
@@ -648,6 +646,7 @@ export default {
     handleAddTag (e) {
       if (this.tagsModalLoading) return
       this.tagsModalLoading = true
+
       e.preventDefault()
       this.newTagsForm.validateFields((err, values) => {
         if (err) {
@@ -665,13 +664,11 @@ export default {
             jobId: response.createtagsresponse.jobid,
             successMessage: this.$t('message.success.add.tag'),
             successMethod: () => {
-              this.parentFetchData()
               this.parentToggleLoading()
               this.openTagsModal(this.selectedRule)
             },
             errorMessage: this.$t('message.add.tag.failed'),
             errorMethod: () => {
-              this.parentFetchData()
               this.parentToggleLoading()
               this.closeModal()
             },
@@ -683,10 +680,7 @@ export default {
               this.closeModal()
             }
           })
-        }).catch(error => {
-          this.$notifyError(error)
         })
-      })
     },
     handleDeleteTag (tag) {
       this.tagsModalLoading = true
@@ -700,13 +694,11 @@ export default {
           jobId: response.deletetagsresponse.jobid,
           successMessage: this.$t('message.success.delete.tag'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
           errorMessage: this.$t('message.delete.tag.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },

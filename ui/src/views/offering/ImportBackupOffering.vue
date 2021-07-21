@@ -107,7 +107,6 @@ export default {
   created () {
     this.fetchData()
   },
-  inject: ['parentFetchData'],
   methods: {
     fetchData () {
       this.fetchZone()
@@ -163,15 +162,9 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
+              title: title,
+              description: values.name,
               successMethod: result => {
-                const successDescription = result.jobresult.backupoffering.name
-                this.$store.dispatch('AddAsyncJob', {
-                  title: title,
-                  jobid: jobId,
-                  description: successDescription,
-                  status: 'progress'
-                })
-                this.parentFetchData()
                 this.closeAction()
                 this.loading = false
               },

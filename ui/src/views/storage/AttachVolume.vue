@@ -53,7 +53,6 @@ export default {
       required: true
     }
   },
-  inject: ['parentFetchData'],
   data () {
     return {
       virtualmachines: [],
@@ -110,16 +109,10 @@ export default {
           id: this.resource.id,
           virtualmachineid: values.virtualmachineid
         }).then(response => {
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.action.attach.disk'),
-            jobid: response.attachvolumeresponse.jobid,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId: response.attachvolumeresponse.jobid,
-            successMethod: () => {
-              this.parentFetchData()
-            },
+            title: this.$t('label.action.attach.disk'),
+            description: this.resource.id,
             errorMessage: `${this.$t('message.attach.volume.failed')}: ${this.resource.name || this.resource.id}`,
             loadingMessage: `${this.$t('message.attach.volume.progress')}: ${this.resource.name || this.resource.id}`,
             catchMessage: this.$t('error.fetching.async.job.result')
@@ -129,7 +122,6 @@ export default {
           this.$notifyError(error)
         }).finally(() => {
           this.loading = false
-          this.parentFetchData()
         })
       })
     }

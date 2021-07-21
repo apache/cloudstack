@@ -615,13 +615,10 @@ export default {
         }
 
         api('createPrivateGateway', params).then(response => {
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('message.success.add.private.gateway'),
-            jobid: response.createprivategatewayresponse.jobid,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId: response.createprivategatewayresponse.jobid,
+            title: this.$t('message.success.add.private.gateway'),
+            description: this.resource.id,
             successMethod: () => {
               this.modals.gateway = false
               this.handleFetchData()
@@ -663,13 +660,10 @@ export default {
           s2scustomergatewayid: values.vpncustomergateway,
           passive: values.passive ? values.passive : false
         }).then(response => {
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.vpn.connection'),
-            jobid: response.createvpnconnectionresponse.jobid,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId: response.createvpnconnectionresponse.jobid,
+            title: this.$t('label.vpn.connection'),
+            description: this.vpnGateways[0].id,
             successMethod: () => {
               this.fetchVpnConnections()
               this.fetchLoading = false
@@ -709,13 +703,10 @@ export default {
           description: values.description,
           vpcid: this.resource.id
         }).then(response => {
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('message.success.add.network.acl'),
-            jobid: response.createnetworkacllistresponse.jobid,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId: response.createnetworkacllistresponse.jobid,
+            title: this.$t('message.success.add.network.acl'),
+            description: values.name || values.description,
             successMethod: () => {
               this.fetchLoading = false
             },
@@ -742,13 +733,10 @@ export default {
       api('createVpnGateway', {
         vpcid: this.resource.id
       }).then(response => {
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('message.success.add.vpn.gateway'),
-          jobid: response.createvpngatewayresponse.jobid,
-          status: 'progress'
-        })
         this.$pollJob({
           jobId: response.createvpngatewayresponse.jobid,
+          title: this.$t('message.success.add.vpn.gateway'),
+          description: this.resource.id,
           successMethod: () => {
             this.fetchLoading = false
           },
