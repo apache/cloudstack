@@ -681,6 +681,7 @@ export default {
             }
           })
         })
+      })
     },
     handleDeleteTag (tag) {
       this.tagsModalLoading = true
