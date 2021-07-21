@@ -31,7 +31,10 @@ export default {
       label: 'label.action.start.router',
       message: 'message.confirm.start.lb.vm',
       dataView: true,
-      show: (record) => { return record.state === 'Stopped' }
+      show: (record) => { return record.state === 'Stopped' },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     },
     {
       api: 'stopInternalLoadBalancerVM',
@@ -39,7 +42,10 @@ export default {
       label: 'label.action.stop.router',
       dataView: true,
       args: ['forced'],
-      show: (record) => { return record.state === 'Running' }
+      show: (record) => { return record.state === 'Running' },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
     },
     {
       api: 'migrateSystemVm',

@@ -506,7 +506,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     @Override
     public String toString() {
-        return String.format("VM instance {\"id\": \"%s\", \"name\": \"%s\", \"uuid\": \"%s\", \"type\"=\"%s\"}", id, getInstanceName(), uuid, type);
+        return String.format("VM instance {id: \"%s\", name: \"%s\", uuid: \"%s\", type=\"%s\"}", id, getInstanceName(), uuid, type);
     }
 
     @Override
@@ -544,7 +544,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.dynamicallyScalable = dynamicallyScalable;
     }
 
-    public Boolean isDynamicallyScalable() {
+    public boolean isDynamicallyScalable() {
         return dynamicallyScalable;
     }
 

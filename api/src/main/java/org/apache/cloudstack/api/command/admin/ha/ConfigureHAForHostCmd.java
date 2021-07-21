@@ -61,7 +61,7 @@ public final class ConfigureHAForHostCmd extends BaseAsyncCmd {
     private Long hostId;
 
     @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING,
-            description = "HA provider", required = true, validations = {ApiArgValidator.NotNullOrEmpty})
+            description = "HA provider", required = true)
     private String haProvider;
 
     /////////////////////////////////////////////////////

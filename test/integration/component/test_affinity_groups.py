@@ -1648,7 +1648,7 @@ class TestAffinityGroupsAdminUser(cloudstackTestCase):
         list_aff_grps = AffinityGroup.list(self.api_client)
 
         self.assertNotEqual(list_aff_grps, [], "Admin not able to list Affinity "
-                         "Groups belonging to him")
+                         "Groups are owned by the admin")
         grp_names = [aff_grp1.name, aff_grp2.name]
         list_names = []
         for grp in list_aff_grps:

@@ -54,7 +54,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
-import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -180,9 +179,13 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         ServiceOffering offering = _serviceOfferingDao.findById(vmProfile.getId(), vmProfile.getServiceOfferingId());
         VirtualMachine vm = vmProfile.getVirtualMachine();
         HostVO host = hostDao.findById(vm.getHostId());
+        boolean divideMemoryByOverprovisioning = true;
+        boolean divideCpuByOverprovisioning = true;
 
-        boolean divideMemoryByOverprovisioning = VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor.valueIn(host.getClusterId());
-        boolean divideCpuByOverprovisioning = VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor.valueIn(host.getClusterId());
+        if (host != null) {
+            divideMemoryByOverprovisioning = VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor.valueIn(host.getClusterId());
+            divideCpuByOverprovisioning = VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor.valueIn(host.getClusterId());
+        }
 
         Long minMemory = (long)(offering.getRamSize() / (divideMemoryByOverprovisioning ? vmProfile.getMemoryOvercommitRatio() : 1));
         int minspeed = (int)(offering.getSpeed() / (divideCpuByOverprovisioning ? vmProfile.getCpuOvercommitRatio() : 1));
@@ -257,9 +260,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
         // Workaround to make sure the TO has the UUID we need for Niciri integration
         VMInstanceVO vmInstance = _virtualMachineDao.findById(to.getId());
-        // check if XStools/VMWare tools are present in the VM and dynamic scaling feature is enabled (per zone/global)
-        Boolean isDynamicallyScalable = vmInstance.isDynamicallyScalable() && UserVmManager.EnableDynamicallyScaleVm.valueIn(vm.getDataCenterId());
-        to.setEnableDynamicallyScaleVm(isDynamicallyScalable);
+        to.setEnableDynamicallyScaleVm(vmInstance.isDynamicallyScalable());
         to.setUuid(vmInstance.getUuid());
 
         to.setVmData(vmProfile.getVmData());

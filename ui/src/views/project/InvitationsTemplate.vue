@@ -79,7 +79,7 @@
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'InvitationsTemplate',
@@ -156,11 +156,7 @@ export default {
     this.page = 1
     this.pageSize = 10
     this.itemCount = 0
-    this.apiConfig = this.$store.getters.apis.listProjectInvitations || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('listProjectInvitations')
     if (this.apiParams.userid) {
       this.columns.splice(2, 0, {
         title: this.$t('label.user'),
@@ -299,11 +295,11 @@ export default {
             if (res === 'jobid') {
               hasJobId = true
               const jobId = json[obj][res]
-              this.$store.dispatch('AddAsyncJob', {
+              this.$pollJob({
                 title: title,
                 jobid: jobId,
                 description: description,
-                status: 'progress'
+                showLoading: false
               })
             }
           }

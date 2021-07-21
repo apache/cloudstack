@@ -27,7 +27,7 @@ import './core/ext'
 import './permission' // permission control
 import './utils/filter' // global filter
 import './utils/shortkey' // keyboard shortcuts
-import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin } from './utils/plugins'
+import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin, apiMetaUtilPlugin } from './utils/plugins'
 import { VueAxios } from './utils/request'
 
 Vue.config.productionTip = false
@@ -52,3 +52,4 @@ fetch('config.json').then(response => response.json()).then(config => {
 })
 
 Vue.use(configUtilPlugin)
+Vue.use(apiMetaUtilPlugin)

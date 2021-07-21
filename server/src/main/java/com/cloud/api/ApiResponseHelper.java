@@ -1470,6 +1470,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 vmResponse.setState(vm.getState().toString());
             }
 
+            vmResponse.setDynamicallyScalable(vm.isDynamicallyScalable());
             // for console proxies, add the active sessions
             if (vm.getType() == Type.ConsoleProxy) {
                 ConsoleProxyVO proxy = ApiDBUtils.findConsoleProxy(vm.getId());
@@ -1946,7 +1947,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         //check permissions
         if (_accountMgr.isNormalUser(caller.getId())) {
-            //regular user can see only jobs he owns
+            //regular users can see only jobs they own
             if (caller.getId() != jobOwner.getId()) {
                 throw new PermissionDeniedException("Account " + caller + " is not authorized to see job id=" + job.getId());
             }
@@ -2353,6 +2354,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setExternalId(network.getExternalId());
         response.setRedundantRouter(network.isRedundant());
+        response.setCreated(network.getCreated());
         response.setObjectName("network");
         return response;
     }
@@ -2962,6 +2964,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setId(vpc.getUuid());
         response.setName(vpc.getName());
         response.setDisplayText(vpc.getDisplayText());
+        response.setCreated(vpc.getCreated());
         response.setState(vpc.getState().name());
         VpcOffering voff = ApiDBUtils.findVpcOfferingById(vpc.getVpcOfferingId());
         if (voff != null) {
