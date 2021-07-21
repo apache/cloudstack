@@ -1556,7 +1556,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (HypervisorType.KVM == hypervisorType || HypervisorType.XenServer == hypervisorType || HypervisorType.Hyperv == hypervisorType || HypervisorType.LXC == hypervisorType) {
             return false;
         } else if (HypervisorType.VMware == hypervisorType) {
-            final Boolean fullClone = HypervisorGuru.VmwareFullClone.value();
+            final Boolean fullClone = CapacityManager.VmwareCreateCloneFull.value();
             return fullClone;
         } else {
             return ExecuteInSequence.value();

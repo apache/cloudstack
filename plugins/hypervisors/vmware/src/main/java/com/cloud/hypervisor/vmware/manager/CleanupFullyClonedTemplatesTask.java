@@ -18,8 +18,8 @@ package com.cloud.hypervisor.vmware.manager;
 
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.vo.TemplateJoinVO;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.template.TemplateManager;
@@ -74,7 +74,7 @@ public class CleanupFullyClonedTemplatesTask extends ManagedContextRunnable {
         mine = Thread.currentThread();
         s_logger.info("running job to mark fully cloned templates for gc in thread " + mine.getName());
 
-        if (HypervisorGuru.VmwareFullClone.value()) { // only run if full cloning is being used (might need to be more fine grained)
+        if (CapacityManager.VmwareCreateCloneFull.value()) { // only run if full cloning is being used (might need to be more fine grained)
             try {
                 queryAllPools();
             } catch (Throwable t) {

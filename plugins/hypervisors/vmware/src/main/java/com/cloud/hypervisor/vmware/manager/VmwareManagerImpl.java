@@ -27,6 +27,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.api.query.dao.TemplateJoinDao;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.dao.ManagementServerHostPeerDao;
 import com.cloud.configuration.Config;
@@ -306,7 +307,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             _storage.configure("StorageLayer", params);
         }
 
-        value = _configDao.getValue(Config.VmwareCreateFullClone.key());
+        value = String.valueOf(CapacityManager.VmwareCreateCloneFull.value());
         if (value == null) {
             _fullCloneFlag = false;
         } else {

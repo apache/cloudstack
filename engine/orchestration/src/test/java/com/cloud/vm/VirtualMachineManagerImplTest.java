@@ -30,8 +30,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import com.cloud.exception.InvalidParameterValueException;
+
+import com.cloud.capacity.CapacityManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -56,7 +57,6 @@ import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -206,7 +206,7 @@ public class VirtualMachineManagerImplTest {
     public void testExeceuteInSequence() {
         assertTrue(virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.XenServer) == false);
         assertTrue(virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.KVM) == false);
-        assertTrue(virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.VMware) == HypervisorGuru.VmwareFullClone.value());
+        assertTrue(virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.VMware) == CapacityManager.VmwareCreateCloneFull.value());
         assertTrue(virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.Ovm3) == VirtualMachineManager.ExecuteInSequence.value());
     }
 

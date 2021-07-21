@@ -76,7 +76,7 @@ public interface CapacityManager {
                     VmwareCreateCloneFullCK,
                     "false",
                     "If set to true, creates VMs as full clones on ESX hypervisor",
-                    true,
+                    false,
                     ConfigKey.Scope.StoragePool);
     static final ConfigKey<String> ImageStoreNFSVersion =
             new ConfigKey<String>(
