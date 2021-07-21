@@ -427,7 +427,7 @@ export default {
       name: 'kubernetes',
       title: 'label.kubernetes',
       icon: kubernetes,
-      shortKey: ['c', 'k'],
+      shortKey: ['c', 'b'],
       docHelp: 'plugins/cloudstack-kubernetes-service.html',
       permission: ['listKubernetesClusters'],
       columns: () => {

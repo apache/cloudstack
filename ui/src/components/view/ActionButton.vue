@@ -205,10 +205,13 @@ export default {
  position: absolute;
  bottom: 20px;
  right: 5px;
- background-color: rgba(0, 0, 0, .90);
- padding: 0px 5px 0px 5px;
+ font-size: 10px;
+ background-color: rgba(0, 0, 0, 0.9);
+ padding: 2px 6px 2px 6px;
  border-radius: 4px;
- color: #e8e8e8;
+ color: #e9e9e9;
+ margin: 5px;
+ box-shadow: 0px 0px 3px rgba(0, 0, 0, 0.5), -1px 0px 3px  rgba(0, 0, 0, 0.9);
 }
 /deep/.button-action-badge .ant-badge-count {
   right: 10px;
