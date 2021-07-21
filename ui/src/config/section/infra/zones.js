@@ -21,7 +21,7 @@ export default {
   name: 'zone',
   title: 'label.zones',
   icon: 'global',
-  shortKey: ['ctrl', '1'],
+  shortKey: ['k', 'z'],
   permission: ['listZonesMetrics'],
   columns: () => {
     const fields = ['name', 'allocationstate', 'networktype', 'clusters']

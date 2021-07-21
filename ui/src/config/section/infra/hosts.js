@@ -21,7 +21,7 @@ export default {
   name: 'host',
   title: 'label.hosts',
   icon: 'desktop',
-  shortKey: ['ctrl', '4'],
+  shortKey: ['k', 'h'],
   permission: ['listHostsMetrics'],
   resourceType: 'Host',
   params: { type: 'routing' },

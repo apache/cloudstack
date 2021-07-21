@@ -19,7 +19,7 @@ export default {
   name: 'systemvm',
   title: 'label.system.vms',
   icon: 'thunderbolt',
-  shortKey: ['ctrl', '7'],
+  shortKey: ['k', 's'],
   docHelp: 'adminguide/systemvm.html',
   permission: ['listSystemVms'],
   columns: ['name', 'state', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'hostname', 'zonename'],

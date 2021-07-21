@@ -19,7 +19,7 @@ export default {
   name: 'ilbvm',
   title: 'label.internal.lb',
   icon: 'share-alt',
-  shortKey: ['ctrl', '9'],
+  shortKey: ['k', 'n'],
   permission: ['listInternalLoadBalancerVMs'],
   params: { projectid: '-1' },
   columns: ['name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'version', 'hostname', 'account', 'zonename', 'requiresupgrade'],

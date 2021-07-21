@@ -19,7 +19,7 @@ export default {
   name: 'pod',
   title: 'label.pods',
   icon: 'appstore',
-  shortKey: ['ctrl', '2'],
+  shortKey: ['k', 'p'],
   permission: ['listPods'],
   columns: ['name', 'allocationstate', 'gateway', 'netmask', 'zonename'],
   details: ['name', 'id', 'allocationstate', 'netmask', 'gateway', 'zonename'],

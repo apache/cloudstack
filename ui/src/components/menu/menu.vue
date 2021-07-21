@@ -171,7 +171,19 @@ export default {
           <span slot="title">
             {this.renderIcon(menu.meta.icon, menu)}
             <span vShortkey={menu.meta.shortKey} {...{ on: on }}>{this.$t(menu.meta.title)}</span>
-            {this.$store.getters.showshortkeys ? menu.meta.shortKey ? <span class="show-shortkey">{menu.meta.shortKey[0]}</span> : '' : ''}
+            {
+              this.$store.getters.showshortkeys ? (
+                menu.meta.shortKey ? (
+                  <span class="show-shortkey">
+                    {menu.meta.shortKey[0]}{menu.meta.shortKey[1] ? '+' + menu.meta.shortKey[1] : ''}
+                  </span>
+                ) : (
+                  ''
+                )
+              ) : (
+                ''
+              )
+            }
           </span>
           {itemArr}
         </SubMenu>
@@ -233,11 +245,13 @@ export default {
 </script>
 <style scoped>
 .show-shortkey {
-  font-size: 10px;
-  background-color: rgba(0, 0, 0, 0.9);
+  font-size: 11px;
+  /* background-color: rgba(0, 0, 0, 0.9); */
   padding: 2px 6px 2px 6px;
   border-radius: 4px;
-  color: #e8e8e8;
+  color: #000000;
   margin: 5px;
+  text-shadow: 2px 2px 3px rgba(255,255,255,0.1);
+  box-shadow: 3px 3px 2px rgba(0, 0, 0, 0.3), -1px -1px 2px  rgba(0, 0, 0, 0.9);
 }
 </style>

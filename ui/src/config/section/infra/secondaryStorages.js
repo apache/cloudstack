@@ -20,7 +20,7 @@ export default {
   name: 'imagestore',
   title: 'label.secondary.storage',
   icon: 'picture',
-  shortKey: ['ctrl', '6'],
+  shortKey: ['k', 'i'],
   docHelp: 'adminguide/storage.html#secondary-storage',
   permission: ['listImageStores'],
   columns: () => {

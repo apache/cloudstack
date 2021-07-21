@@ -19,7 +19,7 @@ export default {
   name: 'account',
   title: 'label.accounts',
   icon: 'team',
-  shortKey: ['o'],
+  shortKey: ['shift', 'a'],
   docHelp: 'adminguide/accounts.html',
   permission: ['listAccounts'],
   columns: ['name', 'state', 'rolename', 'roletype', 'domainpath'],
