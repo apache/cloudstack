@@ -74,7 +74,7 @@
     <a-button
       v-if="(('deletePortForwardingRule' in $store.getters.apis) && this.selectedItems.length > 0)"
       type="danger"
-      icon="plus"
+      icon="delete"
       style="width: 100%; margin-bottom: 15px"
       @click="bulkActionConfirmation()">
       {{ $t('label.action.bulk.delete.portforward.rules') }}
