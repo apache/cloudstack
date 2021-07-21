@@ -119,6 +119,17 @@
       <router-link :to="{ path: '/template' + '/' + record.entityid }" v-else-if="'TEMPLATE' === record.entitytype">{{ text }}</router-link>
       <router-link :to="{ path: '/iso' + '/' + record.entityid }" v-else-if="'ISO' === record.entitytype">{{ text }}</router-link>
       <router-link :to="{ path: '/ssh' + '/' + record.entityid }" v-else-if="'SSH_KEYPAIR' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/domain' + '/' + record.entityid }" v-else-if="'DOMAIN' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/computeoffering' + '/' + record.entityid }" v-else-if="'SERVICE_OFFERING' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/diskoffering' + '/' + record.entityid }" v-else-if="'DISK_OFFERING' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/networkoffering' + '/' + record.entityid }" v-else-if="'NETWORK_OFFERING' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/pod' + '/' + record.entityid }" v-else-if="'POD' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/zone' + '/' + record.entityid }" v-else-if="'ZONE' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/cluster' + '/' + record.entityid }" v-else-if="'CLUSTER' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/storagepool' + '/' + record.entityid }" v-else-if="'PRIMARY_STORAGE' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/imagestore' + '/' + record.entityid }" v-else-if="'SECONDARY_STORAGE' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/router' + '/' + record.entityid }" v-else-if="'VR' === record.entitytype">{{ text }}</router-link>
+      <router-link :to="{ path: '/systemvm' + '/' + record.entityid }" v-else-if="'SYSTEM_VM' === record.entitytype">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </span>
     <span slot="adminsonly" v-if="['Admin'].includes($store.getters.userInfo.roletype)" slot-scope="text, record" href="javascript:;">
