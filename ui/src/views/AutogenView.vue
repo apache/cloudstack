@@ -809,7 +809,7 @@ export default {
           })
         }
 
-        if (this.apiName === 'listAnnotations' && this.items.length > 0) {
+        if (this.apiName === 'listAnnotations') {
           this.columns.map(col => {
             if (col.title === 'label.entityid') {
               col.title = this.$t('label.annotation.entity.id')
