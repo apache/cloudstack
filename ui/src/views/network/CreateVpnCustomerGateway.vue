@@ -244,7 +244,6 @@ export default {
       required: true
     }
   },
-  inject: ['parentFetchData', 'parentToggleLoading'],
   data () {
     return {
       encryptionAlgo: [
@@ -313,23 +312,17 @@ export default {
           splitconnections: values.splitconnections,
           ikeversion: values.ikeversion
         }).then(response => {
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('message.add.vpn.customer.gateway'),
-            jobid: response.createvpncustomergatewayresponse.jobid,
-            description: values.name,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId: response.createvpncustomergatewayresponse.jobid,
+            title: this.$t('message.add.vpn.customer.gateway'),
+            description: values.name,
             successMessage: this.$t('message.success.add.vpn.customer.gateway'),
             successMethod: () => {
               this.closeModal()
-              this.parentFetchData()
             },
             errorMessage: `${this.$t('message.create.vpn.customer.gateway.failed')} ` + response,
             errorMethod: () => {
               this.closeModal()
-              this.parentFetchData()
             },
             loadingMessage: this.$t('message.add.vpn.customer.gateway.processing'),
             catchMessage: this.$t('error.fetching.async.job.result'),
