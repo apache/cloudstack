@@ -79,6 +79,8 @@ import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DVPortSetting;
 import com.vmware.vim25.DVPortgroupConfigInfo;
 import com.vmware.vim25.DVPortgroupConfigSpec;
+import com.vmware.vim25.DVSMacLearningPolicy;
+import com.vmware.vim25.DVSMacManagementPolicy;
 import com.vmware.vim25.DVSSecurityPolicy;
 import com.vmware.vim25.DVSTrafficShapingPolicy;
 import com.vmware.vim25.DatacenterConfigInfo;
@@ -604,6 +606,7 @@ public class HypervisorHostHelper {
         if (vSwitchType == VirtualSwitchType.VMwareDistributedVirtualSwitch) {
             DVSTrafficShapingPolicy shapingPolicy;
             DVSSecurityPolicy secPolicy;
+            DVSMacManagementPolicy macManagementPolicy;
             vcApiVersion = getVcenterApiVersion(context);
             minVcApiVersionSupportingAutoExpand = "5.0";
             autoExpandSupported = isFeatureSupportedInVcenterApiVersion(vcApiVersion, minVcApiVersionSupportingAutoExpand);
@@ -634,6 +637,7 @@ public class HypervisorHostHelper {
 
                 shapingPolicy = getDVSShapingPolicy(networkRateMbps);
                 secPolicy = createDVSSecurityPolicy(details);
+                macManagementPolicy = createDVSMacManagementPolicy(details);
 
                 // First, if both vlan id and pvlan id are provided, we need to
                 // reconfigure the DVSwitch to have a tuple <vlan id, pvlan id> of
@@ -645,7 +649,7 @@ public class HypervisorHostHelper {
 
                 VMwareDVSPortgroupPolicy portGroupPolicy = null;
                 // Next, create the port group. For this, we need to create a VLAN spec.
-                createPortGroup(physicalNetwork, networkName, vlanId, vid, spvlanid, dataCenterMo, shapingPolicy, secPolicy, portGroupPolicy, dvSwitchMo, numPorts, autoExpandSupported);
+                createPortGroup(physicalNetwork, networkName, vlanId, vid, spvlanid, dataCenterMo, shapingPolicy, secPolicy, macManagementPolicy, portGroupPolicy, dvSwitchMo, numPorts, autoExpandSupported);
                 bWaitPortGroupReady = true;
             }
         } else if (vSwitchType == VirtualSwitchType.NexusDistributedVirtualSwitch) {
@@ -779,7 +783,7 @@ public class HypervisorHostHelper {
     }
 
     private static void createPortGroup(String physicalNetwork, String networkName, String vlanRange, Integer vid, Integer spvlanid, DatacenterMO dataCenterMo,
-                                        DVSTrafficShapingPolicy shapingPolicy, DVSSecurityPolicy secPolicy, VMwareDVSPortgroupPolicy portGroupPolicy, DistributedVirtualSwitchMO dvSwitchMo, int numPorts, boolean autoExpandSupported)
+                                        DVSTrafficShapingPolicy shapingPolicy, DVSSecurityPolicy secPolicy, DVSMacManagementPolicy macManagementPolicy, VMwareDVSPortgroupPolicy portGroupPolicy, DistributedVirtualSwitchMO dvSwitchMo, int numPorts, boolean autoExpandSupported)
                     throws Exception {
         VmwareDistributedVirtualSwitchVlanSpec vlanSpec = null;
         VmwareDistributedVirtualSwitchPvlanSpec pvlanSpec = null;
@@ -790,7 +794,7 @@ public class HypervisorHostHelper {
         // NOTE - VmwareDistributedVirtualSwitchPvlanSpec extends VmwareDistributedVirtualSwitchVlanSpec.
         if (vid == null || spvlanid == null) {
             vlanSpec = createDVPortVlanSpec(vid, vlanRange);
-            dvsPortSetting = createVmwareDVPortSettingSpec(shapingPolicy, secPolicy, vlanSpec);
+            dvsPortSetting = createVmwareDVPortSettingSpec(shapingPolicy, secPolicy, macManagementPolicy, vlanSpec);
         } else if (spvlanid != null) {
             // Create a pvlan spec. The pvlan spec is different from the pvlan config spec
             // that we created earlier. The pvlan config spec is used to configure the switch
@@ -801,7 +805,7 @@ public class HypervisorHostHelper {
             // and it will find out the associated primary vlan id and do the rest of the
             // port group configuration.
             pvlanSpec = createDVPortPvlanIdSpec(spvlanid);
-            dvsPortSetting = createVmwareDVPortSettingSpec(shapingPolicy, secPolicy, pvlanSpec);
+            dvsPortSetting = createVmwareDVPortSettingSpec(shapingPolicy, secPolicy, macManagementPolicy, pvlanSpec);
         }
 
         newDvPortGroupSpec = createDvPortGroupSpec(networkName, dvsPortSetting, autoExpandSupported);
@@ -1054,10 +1058,11 @@ public class HypervisorHostHelper {
     }
 
     public static VMwareDVSPortSetting createVmwareDVPortSettingSpec(DVSTrafficShapingPolicy shapingPolicy, DVSSecurityPolicy secPolicy,
-            VmwareDistributedVirtualSwitchVlanSpec vlanSpec) {
+            DVSMacManagementPolicy macManagementPolicy, VmwareDistributedVirtualSwitchVlanSpec vlanSpec) {
         VMwareDVSPortSetting dvsPortSetting = new VMwareDVSPortSetting();
         dvsPortSetting.setVlan(vlanSpec);
         dvsPortSetting.setSecurityPolicy(secPolicy);
+        dvsPortSetting.setMacManagementPolicy(macManagementPolicy);
         dvsPortSetting.setInShapingPolicy(shapingPolicy);
         dvsPortSetting.setOutShapingPolicy(shapingPolicy);
         return dvsPortSetting;
@@ -1191,21 +1196,21 @@ public class HypervisorHostHelper {
         }
 
         if (nicDetails.containsKey(NetworkOffering.Detail.PromiscuousMode)) {
-            if (Boolean.valueOf(nicDetails.get(NetworkOffering.Detail.PromiscuousMode))) {
+            if (Boolean.parseBoolean(nicDetails.get(NetworkOffering.Detail.PromiscuousMode))) {
                 secPolicy.setAllowPromiscuous(allow);
             } else {
                 secPolicy.setAllowPromiscuous(deny);
             }
         }
         if (nicDetails.containsKey(NetworkOffering.Detail.ForgedTransmits)) {
-            if (Boolean.valueOf(nicDetails.get(NetworkOffering.Detail.ForgedTransmits))) {
+            if (Boolean.parseBoolean(nicDetails.get(NetworkOffering.Detail.ForgedTransmits))) {
                 secPolicy.setForgedTransmits(allow);
             } else {
                 secPolicy.setForgedTransmits(deny);
             }
         }
         if (nicDetails.containsKey(NetworkOffering.Detail.MacAddressChanges)) {
-            if (Boolean.valueOf(nicDetails.get(NetworkOffering.Detail.MacAddressChanges))) {
+            if (Boolean.parseBoolean(nicDetails.get(NetworkOffering.Detail.MacAddressChanges))) {
                 secPolicy.setMacChanges(allow);
             } else {
                 secPolicy.setMacChanges(deny);
@@ -1213,6 +1218,35 @@ public class HypervisorHostHelper {
         }
 
         return secPolicy;
+    }
+
+    public static DVSMacManagementPolicy createDVSMacManagementPolicy(Map<NetworkOffering.Detail, String> nicDetails) {
+        DVSMacManagementPolicy macManagementPolicy = new DVSMacManagementPolicy();
+        macManagementPolicy.setAllowPromiscuous(false);
+        macManagementPolicy.setForgedTransmits(false);
+        macManagementPolicy.setMacChanges(false);
+        DVSMacLearningPolicy macLearningPolicy = new DVSMacLearningPolicy();
+        macLearningPolicy.setEnabled(false);
+
+        if (nicDetails == null) {
+            nicDetails = getDefaultSecurityDetails();
+        }
+        if (nicDetails.containsKey(NetworkOffering.Detail.PromiscuousMode)) {
+            macManagementPolicy.setAllowPromiscuous(Boolean.valueOf(nicDetails.get(NetworkOffering.Detail.PromiscuousMode)));
+        }
+        if (nicDetails.containsKey(NetworkOffering.Detail.ForgedTransmits)) {
+            macManagementPolicy.setForgedTransmits(Boolean.valueOf(nicDetails.get(NetworkOffering.Detail.ForgedTransmits)));
+        }
+        if (nicDetails.containsKey(NetworkOffering.Detail.MacAddressChanges)) {
+            macManagementPolicy.setMacChanges(Boolean.valueOf(nicDetails.get(NetworkOffering.Detail.MacAddressChanges)));
+        }
+        if (nicDetails.containsKey(NetworkOffering.Detail.MacLearning)) {
+            macLearningPolicy.setEnabled(Boolean.parseBoolean(nicDetails.get(NetworkOffering.Detail.MacLearning)));
+        }
+        macManagementPolicy.setMacLearningPolicy(macLearningPolicy);
+
+
+        return macManagementPolicy;
     }
 
     public static HostNetworkSecurityPolicy createVSSecurityPolicy(Map<NetworkOffering.Detail, String> nicDetails) {
