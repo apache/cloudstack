@@ -18,6 +18,7 @@ package org.apache.cloudstack.annotation.dao;
 
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.annotation.AnnotationVO;
@@ -32,6 +33,7 @@ import java.util.List;
 @Component
 public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implements AnnotationDao {
     private final SearchBuilder<AnnotationVO> AnnotationSearchBuilder;
+    private final GenericSearchBuilder<AnnotationVO, Long> AnnotationCountSearchBuilder;
 
     public AnnotationDaoImpl() {
         super();
@@ -42,6 +44,12 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
         AnnotationSearchBuilder.and("adminsOnly", AnnotationSearchBuilder.entity().getUserUuid(), SearchCriteria.Op.EQ);
         AnnotationSearchBuilder.and("annotation", AnnotationSearchBuilder.entity().getAnnotation(), SearchCriteria.Op.LIKE);
         AnnotationSearchBuilder.done();
+
+        AnnotationCountSearchBuilder = createSearchBuilder(Long.class);
+        AnnotationCountSearchBuilder.select(null, SearchCriteria.Func.COUNT, AnnotationCountSearchBuilder.entity().getId());
+        AnnotationCountSearchBuilder.and("entityType", AnnotationCountSearchBuilder.entity().getEntityType(), SearchCriteria.Op.EQ);
+        AnnotationCountSearchBuilder.and("entityUuid", AnnotationCountSearchBuilder.entity().getEntityUuid(), SearchCriteria.Op.EQ);
+        AnnotationCountSearchBuilder.done();
     }
 
     private List<AnnotationVO> listAnnotationsOrderedByCreatedDate(SearchCriteria<AnnotationVO> sc) {
@@ -99,5 +107,14 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
             sc.setParameters("annotation", "%" + keyword + "%");
         }
         return listAnnotationsOrderedByCreatedDate(sc);
+    }
+
+    @Override
+    public boolean hasAnnotations(String entityUuid, String entityType) {
+        SearchCriteria<Long> sc = AnnotationCountSearchBuilder.create();
+        sc.setParameters("entityType", entityType);
+        sc.setParameters("entityUuid", entityUuid);
+        Long annotationsNumber = customSearch(sc, null).get(0);
+        return annotationsNumber > 0L;
     }
 }

@@ -791,7 +791,7 @@ public class ApiConstants {
             + " \"{<algorithm>}\", not including the double quotes. In this <algorithm> is the exact string\n"
             + " representing the java supported algorithm, i.e. MD5 or SHA-256. Note that java does not\n" + " contain an algorithm called SHA256 or one called sha-256, only SHA-256.";
 
-    public static final String HAS_ANNOTATION = "hasannotation";
+    public static final String HAS_ANNOTATIONS = "hasannotations";
     public static final String LAST_ANNOTATED = "lastannotated";
     public static final String LDAP_DOMAIN = "ldapdomain";
 

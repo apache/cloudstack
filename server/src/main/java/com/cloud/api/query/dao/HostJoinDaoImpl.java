@@ -27,6 +27,8 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.response.GpuResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
@@ -69,6 +71,8 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     private OutOfBandManagementDao outOfBandManagementDao;
     @Inject
     private ManagementServerHostDao managementServerHostDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     private final SearchBuilder<HostJoinVO> hostSearch;
 
@@ -266,6 +270,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             hostResponse.setJobId(host.getJobUuid());
             hostResponse.setJobStatus(host.getJobStatus());
         }
+        hostResponse.setHasAnnotation(annotationDao.hasAnnotations(host.getUuid(), AnnotationService.EntityType.HOST.name()));
         hostResponse.setAnnotation(host.getAnnotation());
         hostResponse.setLastAnnotated(host.getLastAnnotated ());
         hostResponse.setUsername(host.getUsername());

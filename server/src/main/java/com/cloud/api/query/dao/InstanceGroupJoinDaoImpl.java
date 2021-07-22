@@ -19,6 +19,8 @@ package com.cloud.api.query.dao;
 import java.util.List;
 
 
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -31,11 +33,16 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.InstanceGroup;
 
+import javax.inject.Inject;
+
 @Component
 public class InstanceGroupJoinDaoImpl extends GenericDaoBase<InstanceGroupJoinVO, Long> implements InstanceGroupJoinDao {
     public static final Logger s_logger = Logger.getLogger(InstanceGroupJoinDaoImpl.class);
 
     private SearchBuilder<InstanceGroupJoinVO> vrIdSearch;
+
+    @Inject
+    private AnnotationDao annotationDao;
 
     protected InstanceGroupJoinDaoImpl() {
 
@@ -52,6 +59,7 @@ public class InstanceGroupJoinDaoImpl extends GenericDaoBase<InstanceGroupJoinVO
         groupResponse.setId(group.getUuid());
         groupResponse.setName(group.getName());
         groupResponse.setCreated(group.getCreated());
+        groupResponse.setHasAnnotation(annotationDao.hasAnnotations(group.getUuid(), AnnotationService.EntityType.INSTANCE_GROUP.name()));
 
         ApiResponseHelper.populateOwner(groupResponse, group);
 

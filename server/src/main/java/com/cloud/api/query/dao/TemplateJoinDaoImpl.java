@@ -29,6 +29,8 @@ import javax.inject.Inject;
 import com.cloud.deployasis.DeployAsIsConstants;
 import com.cloud.deployasis.TemplateDeployAsIsDetailVO;
 import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.utils.security.DigestHelper;
@@ -85,6 +87,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     private VMTemplateDetailsDao _templateDetailsDao;
     @Inject
     private TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
@@ -256,6 +260,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             addTagInformation(template, templateResponse);
         }
 
+        templateResponse.setHasAnnotation(annotationDao.hasAnnotations(template.getUuid(), AnnotationService.EntityType.TEMPLATE.name()));
+
         templateResponse.setDirectDownload(template.isDirectDownload());
         templateResponse.setDeployAsIs(template.isDeployAsIs());
         templateResponse.setRequiresHvm(template.isRequiresHvm());
@@ -353,6 +359,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             addTagInformation(template, templateResponse);
         }
 
+        if (templateResponse.hasAnnotation() == null) {
+            templateResponse.setHasAnnotation(annotationDao.hasAnnotations(template.getUuid(), AnnotationService.EntityType.TEMPLATE.name()));
+        }
+
         return templateResponse;
     }
 
@@ -440,6 +450,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 isoResponse.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
         }
+        isoResponse.setHasAnnotation(annotationDao.hasAnnotations(iso.getUuid(), AnnotationService.EntityType.ISO.name()));
 
         isoResponse.setDirectDownload(iso.isDirectDownload());
 

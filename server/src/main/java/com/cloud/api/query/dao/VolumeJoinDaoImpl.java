@@ -21,6 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -54,6 +56,8 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
     private VmDiskStatisticsDao vmDiskStatsDao;
     @Inject
     private PrimaryDataStoreDao primaryDataStoreDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     private final SearchBuilder<VolumeJoinVO> volSearch;
 
@@ -236,6 +240,8 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
             addTagInformation(volume, volResponse);
         }
 
+        volResponse.setHasAnnotation(annotationDao.hasAnnotations(volume.getUuid(), AnnotationService.EntityType.VOLUME.name()));
+
         volResponse.setExtractable(isExtractable);
         volResponse.setDisplayVolume(volume.isDisplayVolume());
         volResponse.setChainInfo(volume.getChainInfo());
@@ -263,6 +269,9 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         long tag_id = vol.getTagId();
         if (tag_id > 0) {
             addTagInformation(vol, volData);
+        }
+        if (volData.hasAnnotation() == null) {
+            volData.setHasAnnotation(annotationDao.hasAnnotations(vol.getUuid(), AnnotationService.EntityType.VOLUME.name()));
         }
         return volData;
     }

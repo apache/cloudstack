@@ -37,6 +37,8 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -401,6 +403,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private GuestOSCategoryDao _guestOsCategoryDao;
     @Inject
     private GuestOSDao _guestOsDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -587,6 +591,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
         }
         snapshotResponse.setTags(new HashSet<>(tagResponses));
+        snapshotResponse.setHasAnnotation(annotationDao.hasAnnotations(snapshot.getUuid(), AnnotationService.EntityType.SNAPSHOT.name()));
 
         snapshotResponse.setObjectName("snapshot");
         return snapshotResponse;
@@ -669,6 +674,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
         }
         vmSnapshotResponse.setTags(new HashSet<>(tagResponses));
+        vmSnapshotResponse.setHasAnnotation(annotationDao.hasAnnotations(vmSnapshot.getUuid(), AnnotationService.EntityType.VM_SNAPSHOT.name()));
 
         vmSnapshotResponse.setCurrent(vmSnapshot.getCurrent());
         vmSnapshotResponse.setType(vmSnapshot.getType().toString());
@@ -953,6 +959,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
         }
         ipResponse.setTags(tagResponses);
+        ipResponse.setHasAnnotation(annotationDao.hasAnnotations(ipAddr.getUuid(), AnnotationService.EntityType.PUBLIC_IP_ADDRESS.name()));
 
         ipResponse.setObjectName("ipaddress");
         return ipResponse;
@@ -1129,6 +1136,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             capacityResponses.addAll(getStatsCapacityresponse(null, null, pod.getId(), pod.getDataCenterId()));
             podResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
         }
+        podResponse.setHasAnnotation(annotationDao.hasAnnotations(pod.getUuid(), AnnotationService.EntityType.POD.name()));
         podResponse.setObjectName("pod");
         return podResponse;
     }
@@ -1285,6 +1293,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             capacityResponses.addAll(getStatsCapacityresponse(null, cluster.getId(), pod.getId(), pod.getDataCenterId()));
             clusterResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
         }
+        clusterResponse.setHasAnnotation(annotationDao.hasAnnotations(cluster.getUuid(), AnnotationService.EntityType.CLUSTER.name()));
         clusterResponse.setObjectName("cluster");
         return clusterResponse;
     }
@@ -1488,6 +1497,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 vmResponse.setDns2(zone.getDns2());
             }
 
+            vmResponse.setHasAnnotation(annotationDao.hasAnnotations(vm.getUuid(), AnnotationService.EntityType.SYSTEM_VM.name()));
             List<NicProfile> nicProfiles = ApiDBUtils.getNics(vm);
             for (NicProfile singleNicProfile : nicProfiles) {
                 Network network = ApiDBUtils.findNetworkById(singleNicProfile.getNetworkId());
@@ -2120,6 +2130,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (details != null && !details.isEmpty()) {
             response.setDetails(details);
         }
+        response.setHasAnnotation(annotationDao.hasAnnotations(offering.getUuid(), AnnotationService.EntityType.NETWORK_OFFERING.name()));
         return response;
     }
 
@@ -2331,6 +2342,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
         }
         response.setTags(tagResponses);
+        response.setHasAnnotation(annotationDao.hasAnnotations(network.getUuid(), AnnotationService.EntityType.NETWORK.name()));
 
         if (network.getNetworkACLId() != null) {
             NetworkACL acl = ApiDBUtils.findByNetworkACLId(network.getNetworkACLId());
@@ -3028,6 +3040,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
         }
         response.setTags(tagResponses);
+        response.setHasAnnotation(annotationDao.hasAnnotations(vpc.getUuid(), AnnotationService.EntityType.VPC.name()));
         response.setObjectName("vpc");
         return response;
     }
@@ -3263,6 +3276,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIkeVersion(result.getIkeVersion());
         response.setSplitConnections(result.getSplitConnections());
         response.setObjectName("vpncustomergateway");
+        response.setHasAnnotation(annotationDao.hasAnnotations(result.getUuid(), AnnotationService.EntityType.VPN_CUSTOMER_GATEWAY.name()));
 
         populateAccount(response, result.getAccountId());
         populateDomain(response, result.getDomainId());
@@ -4343,6 +4357,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Domain domain = ApiDBUtils.findDomainById(sshkeyPair.getDomainId());
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
+        response.setHasAnnotation(annotationDao.hasAnnotations(sshkeyPair.getUuid(), AnnotationService.EntityType.SSH_KEYPAIR.name()));
         return response;
     }
 

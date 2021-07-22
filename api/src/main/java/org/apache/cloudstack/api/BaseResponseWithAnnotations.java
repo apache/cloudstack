@@ -14,19 +14,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.annotation.dao;
+package org.apache.cloudstack.api;
 
-import org.apache.cloudstack.annotation.AnnotationVO;
-import com.cloud.utils.db.GenericDao;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
-import java.util.List;
+public abstract class BaseResponseWithAnnotations extends BaseResponse {
 
-/**
- * @since 4.11
- */
-public interface AnnotationDao extends GenericDao<AnnotationVO, Long> {
-    List<AnnotationVO> listByEntityType(String entityType, String userUuid, boolean isCallerAdmin, String annotationFilter, String callingUserUuid, String keyword);
-    List<AnnotationVO> listByEntity(String entityType, String entityUuid, String userUuid, boolean isCallerAdmin, String annotationFilter, String callingUserUuid, String keyword);
-    List<AnnotationVO> listAllAnnotations(String userUuid, boolean isCallerAdmin, String annotationFilter, String keyword);
-    boolean hasAnnotations(String entityUuid, String entityType);
+    @SerializedName(ApiConstants.HAS_ANNOTATIONS)
+    @Param(description = "true if the entity/resource has annotations")
+    private Boolean hasAnnotation;
+
+    public Boolean hasAnnotation() {
+        return hasAnnotation;
+    }
+
+    public void setHasAnnotation(Boolean hasAnnotation) {
+        this.hasAnnotation = hasAnnotation;
+    }
 }

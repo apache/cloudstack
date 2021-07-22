@@ -21,6 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -52,6 +54,8 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
     private ConfigurationDao _configDao;
     @Inject
     public AccountManager _accountMgr;
+    @Inject
+    private AnnotationDao annotationDao;
 
     private final SearchBuilder<DomainRouterJoinVO> vrSearch;
 
@@ -96,6 +100,8 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
             routerResponse.setVersion("UNKNOWN");
             routerResponse.setRequiresUpgrade(true);
         }
+
+        routerResponse.setHasAnnotation(annotationDao.hasAnnotations(router.getUuid(), AnnotationService.EntityType.VR.name()));
 
         if (caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
                 || _accountMgr.isRootAdmin(caller.getId())) {
