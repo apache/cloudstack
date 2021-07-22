@@ -2199,8 +2199,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         List<? extends IpAddress> wPagination = com.cloud.utils.StringUtils.applyPagination(addrs, cmd.getStartIndex(), cmd.getPageSizeVal());
         if (wPagination != null) {
-            Pair<List<? extends IpAddress>, Integer> listWPagination = new Pair<List<? extends IpAddress>, Integer>(wPagination, addrs.size());
-            return listWPagination;
+            return new Pair<List<? extends IpAddress>, Integer>(wPagination, addrs.size());
         }
         return new Pair<>(addrs, addrs.size());
     }
