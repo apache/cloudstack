@@ -17,7 +17,6 @@
 package com.cloud.storage.dao;
 
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.annotation.AnnotationService;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -53,11 +52,5 @@ public class DiskOfferingDaoImplTest {
         long size = gbUnits * DiskOfferingDaoImpl.GB_UNIT_BYTES - 12345;
         long sizeInGB = dao.getClosestDiskSizeInGB(size);
         Assert.assertEquals(gbUnits, sizeInGB);
-    }
-
-    @Test
-    public void testA() {
-        Long annotationsNumber = 4L;
-        System.out.println(AnnotationService.EntityType.VM.name());
     }
 }
