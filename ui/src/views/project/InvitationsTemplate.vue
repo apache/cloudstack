@@ -24,7 +24,8 @@
           style="width: unset"
           :placeholder="$t('label.search')"
           v-model="searchQuery"
-          @search="onSearch" />
+          @search="onSearch"
+          autoFocus />
       </a-col>
       <a-col :md="24" :lg="24">
         <a-table
@@ -39,28 +40,20 @@
             <status :text="text ? text : ''" displayText />
           </template>
           <span slot="action" v-if="record.state===stateAllow" slot-scope="text, record" class="account-button-action">
-            <a-tooltip placement="top">
-              <template slot="title">
-                {{ $t('label.accept.project.invitation') }}
-              </template>
-              <a-button
-                type="success"
-                shape="circle"
-                icon="check"
-                size="small"
-                @click="onShowConfirmAcceptInvitation(record)"/>
-            </a-tooltip>
-            <a-tooltip placement="top">
-              <template slot="title">
-                {{ $t('label.decline.invitation') }}
-              </template>
-              <a-button
-                type="danger"
-                shape="circle"
-                icon="close"
-                size="small"
-                @click="onShowConfirmRevokeInvitation(record)"/>
-            </a-tooltip>
+            <tooltip-button
+              tooltipPlacement="top"
+              :tooltip="$t('label.accept.project.invitation')"
+              type="success"
+              icon="check"
+              size="small"
+              @click="onShowConfirmAcceptInvitation(record)"/>
+            <tooltip-button
+              tooltipPlacement="top"
+              :tooltip="$t('label.decline.invitation')"
+              type="danger"
+              icon="close"
+              size="small"
+              @click="onShowConfirmRevokeInvitation(record)"/>
           </span>
         </a-table>
         <a-pagination
@@ -86,11 +79,13 @@
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'InvitationsTemplate',
   components: {
-    Status
+    Status,
+    TooltipButton
   },
   data () {
     return {
@@ -161,11 +156,7 @@ export default {
     this.page = 1
     this.pageSize = 10
     this.itemCount = 0
-    this.apiConfig = this.$store.getters.apis.listProjectInvitations || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('listProjectInvitations')
     if (this.apiParams.userid) {
       this.columns.splice(2, 0, {
         title: this.$t('label.user'),
@@ -173,8 +164,6 @@ export default {
         scopedSlots: { customRender: 'user' }
       })
     }
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {
@@ -306,11 +295,11 @@ export default {
             if (res === 'jobid') {
               hasJobId = true
               const jobId = json[obj][res]
-              this.$store.dispatch('AddAsyncJob', {
+              this.$pollJob({
                 title: title,
                 jobid: jobId,
                 description: description,
-                status: 'progress'
+                showLoading: false
               })
             }
           }

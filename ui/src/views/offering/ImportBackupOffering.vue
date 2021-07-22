@@ -22,36 +22,22 @@
       :form="form"
       @submit="handleSubmit">
       <a-form-item>
-        <span slot="label">
-          {{ $t('label.name') }}
-          <a-tooltip :title="apiParams.name.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </span>
+        <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
         <a-input
+          autoFocus
           v-decorator="['name', {
             rules: [{ required: true, message: $t('message.error.required.input') }]
           }]"/>
       </a-form-item>
       <a-form-item>
-        <span slot="label">
-          {{ $t('label.description') }}
-          <a-tooltip :title="apiParams.description.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </span>
+        <tooltip-label slot="label" :title="$t('label.description')" :tooltip="apiParams.description.description"/>
         <a-input
           v-decorator="['description', {
             rules: [{ required: true, message: $t('message.error.required.input') }]
           }]"/>
       </a-form-item>
       <a-form-item>
-        <span slot="label">
-          {{ $t('label.zoneid') }}
-          <a-tooltip :title="apiParams.zoneid.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </span>
+        <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
         <a-select
           showSearch
           allowClear
@@ -66,12 +52,7 @@
         </a-select>
       </a-form-item>
       <a-form-item>
-        <span slot="label">
-          {{ $t('label.externalid') }}
-          <a-tooltip :title="apiParams.externalid.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </span>
+        <tooltip-label slot="label" :title="$t('label.externalid')" :tooltip="apiParams.externalid.description"/>
         <a-select
           allowClear
           v-decorator="['externalid', {
@@ -84,12 +65,7 @@
         </a-select>
       </a-form-item>
       <a-form-item>
-        <span slot="label">
-          {{ $t('label.allowuserdrivenbackups') }}
-          <a-tooltip :title="apiParams.allowuserdrivenbackups.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </span>
+        <tooltip-label slot="label" :title="$t('label.allowuserdrivenbackups')" :tooltip="apiParams.allowuserdrivenbackups.description"/>
         <a-switch
           v-decorator="['allowuserdrivenbackups']"
           :default-checked="true"/>
@@ -104,9 +80,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ImportBackupOffering',
+  components: {
+    TooltipLabel
+  },
   data () {
     return {
       loading: false,
@@ -122,16 +102,11 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiParams = {}
-    var apiConfig = this.$store.getters.apis.importBackupOffering || {}
-    apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('importBackupOffering')
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
-  inject: ['parentFetchData'],
   methods: {
     fetchData () {
       this.fetchZone()
@@ -185,15 +160,9 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
+              title: title,
+              description: values.name,
               successMethod: result => {
-                const successDescription = result.jobresult.backupoffering.name
-                this.$store.dispatch('AddAsyncJob', {
-                  title: title,
-                  jobid: jobId,
-                  description: successDescription,
-                  status: 'progress'
-                })
-                this.parentFetchData()
                 this.closeAction()
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')} ${this.$t('label.for')} ${params.name}`,

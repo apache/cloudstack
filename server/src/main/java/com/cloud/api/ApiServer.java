@@ -1208,17 +1208,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
     }
 
-    @Override
-    public boolean isValidApiName(String apiName) {
-        if (apiName == null || apiName.isEmpty())
-            return false;
-
-        if (!s_apiNameCmdClassMap.containsKey(apiName))
-            return false;
-
-        return true;
-    }
-
     // FIXME: rather than isError, we might was to pass in the status code to give more flexibility
     private void writeResponse(final HttpResponse resp, final String responseText, final int statusCode, final String responseType, final String reasonPhrase) {
         try {

@@ -112,6 +112,16 @@ EOF
   if [ -f /etc/cron.daily/logrotate ]; then
     mv -n /etc/cron.daily/logrotate /etc/cron.hourly 2>&1
   fi
+
+  # Setup hourly lograte in systemd timer
+  sed -i 's/OnCalendar=daily/OnCalendar=hourly/g' /usr/lib/systemd/system/logrotate.timer
+  sed -i 's/AccuracySec=12h/AccuracySec=5m/g' /usr/lib/systemd/system/logrotate.timer
+
+  # reload daemon
+  /usr/bin/systemctl daemon-reload
+
+  # Load modules to support NAT traversal in VR
+  modprobe nf_nat_pptp
 }
 
 routing_svcs

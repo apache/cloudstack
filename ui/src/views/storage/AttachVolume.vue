@@ -25,6 +25,7 @@
       </div>
       <a-form-item :label="$t('label.virtualmachineid')">
         <a-select
+          autoFocus
           v-decorator="['virtualmachineid', {
             rules: [{ required: true, message: $t('message.error.select') }]
           }]"
@@ -52,7 +53,6 @@ export default {
       required: true
     }
   },
-  inject: ['parentFetchData'],
   data () {
     return {
       virtualmachines: [],
@@ -61,13 +61,9 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.attachVolume || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('attachVolume')
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {
@@ -113,16 +109,10 @@ export default {
           id: this.resource.id,
           virtualmachineid: values.virtualmachineid
         }).then(response => {
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.action.attach.disk'),
-            jobid: response.attachvolumeresponse.jobid,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId: response.attachvolumeresponse.jobid,
-            successMethod: () => {
-              this.parentFetchData()
-            },
+            title: this.$t('label.action.attach.disk'),
+            description: this.resource.id,
             errorMessage: `${this.$t('message.attach.volume.failed')}: ${this.resource.name || this.resource.id}`,
             loadingMessage: `${this.$t('message.attach.volume.progress')}: ${this.resource.name || this.resource.id}`,
             catchMessage: this.$t('error.fetching.async.job.result')
@@ -132,7 +122,6 @@ export default {
           this.$notifyError(error)
         }).finally(() => {
           this.loading = false
-          this.parentFetchData()
         })
       })
     }

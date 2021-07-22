@@ -678,7 +678,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         correctVif.destroy(conn);
 
                         // Disable the VLAN network if necessary
-                        disableVlanNetwork(conn, network);
+                        disableVlanNetwork(conn, network, true);
                     }
                 }
             }
@@ -1507,13 +1507,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         final VDI patchVDI = findPatchIsoVDI(conn, sr);
         for (final VM vm : vms) {
             final String vmName = vm.getNameLabel(conn);
-            try {
-                if (!vmName.startsWith("r-") && !vmName.startsWith("s-") && !vmName.startsWith("v-")) {
-                    return;
-                }
-                final Set<VBD> vbds = vm.getVBDs(conn);
-                for (final VBD vbd : vbds) {
-                    if (Types.VbdType.CD.equals(vbd.getType(conn))) {
+            if (!vmName.startsWith("r-") && !vmName.startsWith("s-") && !vmName.startsWith("v-")) {
+                continue;
+            }
+            final Set<VBD> vbds = vm.getVBDs(conn);
+            for (final VBD vbd : vbds) {
+                if (Types.VbdType.CD.equals(vbd.getType(conn))) {
+                    try {
                         if (!vbd.getEmpty(conn)) {
                             vbd.eject(conn);
                         }
@@ -1522,12 +1522,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                             vbd.insert(conn, patchVDI);
                             vbd.eject(conn);
                         }
-                        vbd.destroy(conn);
-                        break;
+                    } catch (Exception e) {
+                        s_logger.debug("Cannot eject CD-ROM device for VM " + vmName + " due to " + e.toString(), e);
                     }
+                    try {
+                        vbd.destroy(conn);
+                    } catch (Exception e) {
+                        s_logger.debug("Cannot destroy CD-ROM device for VM " + vmName + " due to " + e.toString(), e);
+                    }
+                    break;
                 }
-            } catch (final Exception e) {
-                s_logger.debug("Cannot destroy CD-ROM device for VM " + vmName + " due to " + e.toString(), e);
             }
         }
     }
@@ -1574,7 +1578,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    public void disableVlanNetwork(final Connection conn, final Network network) {
+    public void disableVlanNetwork(final Connection conn, final Network network, boolean deleteVlan) {
     }
 
     @Override
@@ -3110,7 +3114,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.warn("No recommended value found for dynamic max, setting static max and dynamic max equal");
             return dynamicMaxRam;
         }
-        final long staticMax = Math.min(recommendedValue, 4l * dynamicMinRam); // XS
+        final long staticMax = Math.min(recommendedValue, 4L * dynamicMinRam); // XS
         // constraint
         // for
         // stability
@@ -3612,7 +3616,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             for (final Network network : networks) {
                 if (network.getNameLabel(conn).startsWith("VLAN")) {
-                    disableVlanNetwork(conn, network);
+                    disableVlanNetwork(conn, network, true);
                 }
             }
         } catch (final Exception e) {

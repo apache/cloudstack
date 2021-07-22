@@ -1,4 +1,4 @@
-# Apache CloudStack [![Build Status](https://travis-ci.org/apache/cloudstack.svg?branch=master)](https://travis-ci.org/apache/cloudstack) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apachecloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apachecloudstack) [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=apachecloudstack&metric=ncloc)](https://sonarcloud.io/dashboard?id=apachecloudstack) ![GitHub language count](https://img.shields.io/github/languages/count/apache/cloudstack.svg) ![GitHub top language](https://img.shields.io/github/languages/top/apache/cloudstack.svg)
+# Apache CloudStack [![Build Status](https://travis-ci.org/apache/cloudstack.svg?branch=main)](https://travis-ci.org/apache/cloudstack) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apachecloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apachecloudstack) [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=apachecloudstack&metric=ncloc)](https://sonarcloud.io/dashboard?id=apachecloudstack) ![GitHub language count](https://img.shields.io/github/languages/count/apache/cloudstack.svg) ![GitHub top language](https://img.shields.io/github/languages/top/apache/cloudstack.svg)
 
 ![Apache CloudStack](tools/logo/apache_cloudstack.png)
 
@@ -58,7 +58,7 @@ via Github pull requests.
 * Developer [wiki](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Home)
 * [Release notes](http://docs.cloudstack.apache.org/projects/cloudstack-release-notes)
 * Design [documents](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Design)
-* API [documentation](http://cloudstack.apache.org/docs/api)
+* API [documentation](https://cloudstack.apache.org/api.html)
 * How to [contribute](CONTRIBUTING.md)
 
 ## Getting Involved and Contributing
@@ -81,11 +81,7 @@ Mailing lists:
 - [Issues Mailing List](mailto:issues-subscribe@cloudstack.apache.org)
 - [Marketing Mailing List](mailto:marketing-subscribe@cloudstack.apache.org)
 
-IRC, join us on irc.freenode.net on:
-- `#cloudstack`: General Apache CloudStack conversation and end user support
-- `#cloudstack-dev`: Development discussions
-
-Report and/or check bugs on [JIRA](https://issues.apache.org/jira/browse/CLOUDSTACK) and check our
+Report and/or check bugs on [Github](https://github.com/apache/cloudstack/issues) and check our
 developer [page](http://cloudstack.apache.org/developers.html) for contributing code.
 
 ## News and Events

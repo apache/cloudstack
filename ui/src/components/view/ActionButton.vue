@@ -17,11 +17,11 @@
 
 <template>
   <span class="row-action-button">
-    <a-tooltip arrowPointAtCenter placement="bottomRight">
+    <a-tooltip arrowPointAtCenter placement="bottomRight" v-if="resource && resource.id && dataView">
       <template slot="title">
         {{ $t('label.view.console') }}
       </template>
-      <console :resource="resource" :size="size" v-if="resource && resource.id && dataView" />
+      <console :resource="resource" :size="size" />
     </a-tooltip>
     <a-tooltip
       v-for="(action, actionIndex) in actions"
@@ -39,7 +39,8 @@
           action.showBadge && (
             (!dataView && ((action.listView && ('show' in action ? action.show(resource, $store.getters) : true)) || (action.groupAction && selectedRowKeys.length > 0 && ('groupShow' in action ? action.show(resource, $store.getters) : true)))) ||
             (dataView && action.dataView && ('show' in action ? action.show(resource, $store.getters) : true))
-          )" >
+          )"
+        :disabled="'disabled' in action ? action.disabled(resource, $store.getters) : false" >
         <a-button
           :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
           :shape="!dataView && action.icon === 'plus' ? 'round' : 'circle'"
@@ -59,6 +60,7 @@
             (!dataView && ((action.listView && ('show' in action ? action.show(resource, $store.getters) : true)) || (action.groupAction && selectedRowKeys.length > 0 && ('groupShow' in action ? action.show(resource, $store.getters) : true)))) ||
             (dataView && action.dataView && ('show' in action ? action.show(resource, $store.getters) : true))
           )"
+        :disabled="'disabled' in action ? action.disabled(resource, $store.getters) : false"
         :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
         :shape="!dataView && ['plus', 'user-add'].includes(action.icon) ? 'round' : 'circle'"
         style="margin-left: 5px"
@@ -134,12 +136,16 @@ export default {
   methods: {
     execAction (action) {
       action.resource = this.resource
+      if (action.docHelp) {
+        action.docHelp = this.$applyDocHelpMappings(action.docHelp)
+      }
       this.$emit('exec-action', action)
     },
     handleShowBadge () {
       this.actionBadge = {}
       const arrAsync = []
       const actionBadge = this.actions.filter(action => action.showBadge === true)
+      if ((actionBadge.dataView ? actionBadge.dataView : false) !== this.dataView) return
 
       if (actionBadge && actionBadge.length > 0) {
         const dataLength = actionBadge.length

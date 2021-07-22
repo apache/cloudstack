@@ -24,7 +24,8 @@
           v-decorator="['volumeid', {
             rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
           }]"
-          :loading="volumeOptions.loading">
+          :loading="volumeOptions.loading"
+          autoFocus>
           <a-select-option
             v-for="(opt) in volumeOptions.opts"
             :key="opt.id">
@@ -86,7 +87,7 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   inject: ['parentFetchData'],
@@ -143,15 +144,9 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
+              title: title,
+              description: values.volumeid,
               successMethod: result => {
-                const successDescription = result.jobresult.storagebackup.name
-                this.$store.dispatch('AddAsyncJob', {
-                  title: title,
-                  jobid: jobId,
-                  description: successDescription,
-                  status: 'progress'
-                })
-                this.parentFetchData()
                 this.closeAction()
               },
               loadingMessage: `${title} ${this.$t('label.in.progress.for')} ${this.resource.id}`,

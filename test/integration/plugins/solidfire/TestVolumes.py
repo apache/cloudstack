@@ -2617,7 +2617,7 @@ class TestVolumes(cloudstackTestCase):
         elif TestData.hypervisor_type == TestData.xenServer:
             return TestData.templateCacheNameXenServer
 
-        self.assert_(False, "Invalid hypervisor type")
+        self.assertTrue(False, "Invalid hypervisor type")
 
     def _get_modified_iscsi_name(self, sf_iscsi_name):
         sf_iscsi_name = sf_iscsi_name.replace("/", "")

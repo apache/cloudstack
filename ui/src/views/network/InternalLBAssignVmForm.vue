@@ -37,6 +37,7 @@
             </span>
             <a-icon v-if="addVmModalNicLoading" type="loading"></a-icon>
             <a-select
+              :autoFocus="!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id && index === 0"
               v-else-if="!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id"
               mode="multiple"
               v-model="iLb.vmguestip[index]"
@@ -52,7 +53,10 @@
           <span></span>
           <span>{{ vm.account }}</span>
           <span>{{ vm.zonename }}</span>
-          <a-checkbox :value="vm.id" @change="e => fetchNics(e, index)" />
+          <a-checkbox
+            :autoFocus="!(!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id) && index === 0"
+            :value="vm.id"
+            @change="e => fetchNics(e, index)" />
         </div>
         <a-divider/>
         <a-pagination
@@ -115,7 +119,7 @@ export default {
       fetchLoading: false
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   methods: {
@@ -206,17 +210,10 @@ export default {
         this.$pollJob({
           jobId: response.assigntoloadbalancerruleresponse.jobid,
           successMessage: `${this.$t('message.success.assigned.vms')} ${this.$t('label.to')} ${this.resource.name}`,
-          successMethod: () => {
-            this.$emit('refresh-data')
-          },
           errorMessage: `${this.$t('message.failed.to.assign.vms')} ${this.$t('label.to')} ${this.resource.name}`,
-          errorMethod: () => {
-            this.$emit('refresh-data')
-          },
           loadingMessage: `${this.$t('label.assigning.vms')} ${this.$t('label.to')} ${this.resource.name}`,
           catchMessage: this.$t('error.fetching.async.job.result')
         })
-        this.$emit('refresh-data')
         this.closeModal()
       }).catch(error => {
         this.$notification.error({

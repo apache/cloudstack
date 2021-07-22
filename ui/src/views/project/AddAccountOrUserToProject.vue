@@ -23,34 +23,20 @@
           @submit="addAccountToProject"
           layout="vertical">
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.account') }}
-              <a-tooltip :title="apiParams.addAccountToProject.account.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.addAccountToProject.account.description"/>
             <a-input
               v-decorator="['account']"
-              :placeholder="apiParams.addAccountToProject.account.description"/>
+              :placeholder="apiParams.addAccountToProject.account.description"
+              autoFocus />
           </a-form-item>
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.email') }}
-              <a-tooltip :title="apiParams.addAccountToProject.email.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.email')" :tooltip="apiParams.addAccountToProject.email.description"/>
             <a-input
               v-decorator="['email']"
               :placeholder="apiParams.addAccountToProject.email.description"></a-input>
           </a-form-item>
           <a-form-item v-if="apiParams.addAccountToProject.projectroleid">
-            <span slot="label">
-              {{ $t('label.project.role') }}
-              <a-tooltip :title="apiParams.addAccountToProject.projectroleid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.project.role')" :tooltip="apiParams.addAccountToProject.projectroleid.description"/>
             <a-select
               showSearch
               v-decorator="['projectroleid']"
@@ -63,12 +49,7 @@
             </a-select>
           </a-form-item>
           <a-form-item v-if="apiParams.addAccountToProject.roletype">
-            <span slot="label">
-              {{ $t('label.roletype') }}
-              <a-tooltip :title="apiParams.addAccountToProject.roletype.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.addAccountToProject.roletype.description"/>
             <a-select
               showSearch
               v-decorator="['roletype']"
@@ -92,34 +73,20 @@
             <span slot="message" v-html="$t('message.add.user.to.project')"></span>
           </a-alert>
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.user') }}
-              <a-tooltip :title="apiParams.addUserToProject.username.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.addUserToProject.username.description"/>
             <a-input
               v-decorator="['username']"
-              :placeholder="apiParams.addUserToProject.username.description"/>
+              :placeholder="apiParams.addUserToProject.username.description"
+              autoFocus />
           </a-form-item>
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.email') }}
-              <a-tooltip :title="apiParams.addUserToProject.email.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.email')" :tooltip="apiParams.addUserToProject.email.description"/>
             <a-input
               v-decorator="['email']"
               :placeholder="apiParams.addUserToProject.email.description"></a-input>
           </a-form-item>
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.project.role') }}
-              <a-tooltip :title="apiParams.addUserToProject.roletype.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.project.role')" :tooltip="apiParams.addUserToProject.roletype.description"/>
             <a-select
               showSearch
               v-decorator="['projectroleid']"
@@ -132,12 +99,7 @@
             </a-select>
           </a-form-item>
           <a-form-item>
-            <span slot="label">
-              {{ $t('label.roletype') }}
-              <a-tooltip :title="apiParams.addUserToProject.roletype.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.roletype')" :tooltip="apiParams.addUserToProject.roletype.description"/>
             <a-select
               showSearch
               v-decorator="['roletype']"
@@ -157,8 +119,13 @@
 </template>
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
+
 export default {
   name: 'AddAccountOrUserToProject',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -180,7 +147,7 @@ export default {
       }
     }
   },
-  mounted () {
+  created () {
     this.fetchData()
   },
   beforeCreate () {
@@ -191,12 +158,7 @@ export default {
     }
     this.apiParams = {}
     for (var api of apis) {
-      const details = {}
-      const apiConfig = this.$store.getters.apis[api]
-      apiConfig.params.forEach(param => {
-        details[param.name] = param
-      })
-      this.apiParams[api] = details
+      this.apiParams[api] = this.$getApiParams(api)
     }
   },
   methods: {
@@ -269,7 +231,6 @@ export default {
             loadingMessage: `Adding Account: ${params.account} to project...`,
             catchMessage: 'Error encountered while fetching async job result'
           })
-          this.$emit('refresh-data')
           this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
@@ -304,7 +265,6 @@ export default {
             loadingMessage: `Adding User ${params.username} to project...`,
             catchMessage: 'Error encountered while fetching async job result'
           })
-          this.$emit('refresh-data')
           this.closeAction()
         }).catch(error => {
           console.log('catch')

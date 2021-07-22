@@ -49,7 +49,7 @@ public class ProcessTest {
         ProcessResult result = RUNNER.executeCommands(Arrays.asList("sleep", "5"), Duration.standardSeconds(1));
         Assert.assertNotEquals(result.getReturnCode(), 0);
         Assert.assertTrue(result.getStdError().length() > 0);
-        Assert.assertEquals(result.getStdError(), "Operation timed out, aborted");
+        Assert.assertEquals(result.getStdError(), "Operation timed out, aborted.");
     }
 
     @Test
@@ -57,7 +57,7 @@ public class ProcessTest {
         ProcessResult result = RUNNER.executeCommands(Arrays.asList("ls", "/some/dir/that/should/not/exist"), Duration.standardSeconds(2));
         Assert.assertNotEquals(result.getReturnCode(), 0);
         Assert.assertTrue(result.getStdError().length() > 0);
-        Assert.assertNotEquals(result.getStdError(), "Operation timed out, aborted");
+        Assert.assertNotEquals(result.getStdError(), "Operation timed out, aborted.");
     }
 
     @Test(expected = IllegalArgumentException.class)

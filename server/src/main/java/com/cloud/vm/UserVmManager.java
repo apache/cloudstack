@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.offering.ServiceOffering;
+import com.cloud.template.VirtualMachineTemplate;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
@@ -96,6 +98,8 @@ public interface UserVmManager extends UserVmService {
 
     void removeInstanceFromInstanceGroup(long vmId);
 
+    boolean isVMUsingLocalStorage(VMInstanceVO vm);
+
     boolean expunge(UserVmVO vm, long callerUserId, Account caller);
 
     Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
@@ -122,4 +126,7 @@ public interface UserVmManager extends UserVmService {
     void persistDeviceBusInfo(UserVmVO paramUserVmVO, String paramString);
 
     HashMap<Long, List<VmNetworkStatsEntry>> getVmNetworkStatistics(long hostId, String hostName, List<Long> vmIds);
+
+    boolean checkIfDynamicScalingCanBeEnabled(VirtualMachine vm, ServiceOffering offering, VirtualMachineTemplate template, Long zoneId);
+
 }

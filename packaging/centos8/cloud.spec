@@ -80,6 +80,7 @@ Requires: iptables-services
 Requires: qemu-img
 Requires: python3-pip
 Requires: python3-setuptools
+Requires: libgcrypt > 1.8.3
 Group:     System Environment/Libraries
 %description management
 The CloudStack management server is the central point of coordination,
@@ -109,6 +110,7 @@ Requires: perl
 Requires: python3-libvirt
 Requires: qemu-img
 Requires: qemu-kvm
+Requires: libgcrypt > 1.8.3
 Provides: cloud-agent
 Group: System Environment/Libraries
 %description agent
@@ -389,7 +391,7 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-inte
 /usr/bin/systemctl off cloudstack-management || true
 
 %pre management
-id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
+id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -U -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
 
 rm -rf %{_localstatedir}/cache/cloudstack
@@ -420,6 +422,14 @@ pip3 install %{_datadir}/%{name}-management/setup/wheel/six-1.15.0-py2.py3-none-
 grep -s -q "db.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
 grep -s -q "db.usage.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.usage.driver=jdbc:mysql"  "%{_sysconfdir}/%{name}/management/db.properties"
 grep -s -q "db.simulator.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.simulator.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
+
+# Update DB properties having master and slave(s), with source and replica(s) respectively (for inclusiveness)
+grep -s -q "^db.cloud.slaves=" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/^db.cloud.slaves=/db.cloud.replicas=/g" "%{_sysconfdir}/%{name}/management/db.properties"
+grep -s -q "^db.cloud.secondsBeforeRetryMaster=" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/^db.cloud.secondsBeforeRetryMaster=/db.cloud.secondsBeforeRetrySource=/g" "%{_sysconfdir}/%{name}/management/db.properties"
+grep -s -q "^db.cloud.queriesBeforeRetryMaster=" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/^db.cloud.queriesBeforeRetryMaster=/db.cloud.queriesBeforeRetrySource=/g" "%{_sysconfdir}/%{name}/management/db.properties"
+grep -s -q "^db.usage.slaves=" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/^db.usage.slaves=/db.usage.replicas=/g" "%{_sysconfdir}/%{name}/management/db.properties"
+grep -s -q "^db.usage.secondsBeforeRetryMaster=" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/^db.usage.secondsBeforeRetryMaster=/db.usage.secondsBeforeRetrySource=/g" "%{_sysconfdir}/%{name}/management/db.properties"
+grep -s -q "^db.usage.queriesBeforeRetryMaster=" "%{_sysconfdir}/%{name}/management/db.properties" && sed -i "s/^db.usage.queriesBeforeRetryMaster=/db.usage.queriesBeforeRetrySource=/g" "%{_sysconfdir}/%{name}/management/db.properties"
 
 if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
     echo Please download vhd-util from http://download.cloudstack.org/tools/vhd-util and put it in
@@ -473,7 +483,7 @@ fi
 systemctl daemon-reload
 
 %pre usage
-id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
+id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -U -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
 
 %preun usage

@@ -23,8 +23,7 @@
     :dataSource="items"
     :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
     :pagination="false"
-    :rowSelection="['vm', 'alert'].includes($route.name) || $route.name === 'event' && $store.getters.userInfo.roletype === 'Admin'
-      ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
+    :rowSelection=" enableGroupAction() || $route.name === 'event' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
     :rowClassName="getRowClassName"
     style="overflow-y: auto"
   >
@@ -70,7 +69,7 @@
           :enabled="quickViewEnabled() && actions.length > 0 && columns && columns[0].dataIndex === 'name' "
           @exec-action="$parent.execAction"/>
         <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
-          <a-button type="dashed" size="small" shape="circle" icon="login" @click="changeProject(record)" />
+          <tooltip-button type="dashed" size="small" icon="login" @click="changeProject(record)" />
         </span>
         <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
 
@@ -113,6 +112,9 @@
         &nbsp;
         <a-tag>source-nat</a-tag>
       </span>
+    </span>
+    <span slot="ip6address" slot-scope="text, record" href="javascript:;">
+      <span>{{ ipV6Address(text, record) }}</span>
     </span>
     <a slot="publicip" slot-scope="text, record" href="javascript:;">
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
@@ -196,7 +198,7 @@
           <span style="margin-right:5px" :key="idx">
             <span v-if="$store.getters.userInfo.roletype !== 'User'">
               <router-link v-if="'user' in item" :to="{ path: '/accountuser', query: { username: item.user, domainid: record.domainid }}">{{ item.account + '(' + item.user + ')' }}</router-link>
-              <router-link v-else :to="{ path: '/account', query: { name: item.account, domainid: record.domainid } }">{{ item.account }}</router-link>
+              <router-link v-else :to="{ path: '/account', query: { name: item.account, domainid: record.domainid, dataView: true } }">{{ item.account }}</router-link>
             </span>
             <span v-else>{{ item.user ? item.account + '(' + item.user + ')' : item.account }}</span>
           </span>
@@ -207,7 +209,7 @@
           v-if="'quota' in record && $router.resolve(`${$route.path}/${record.account}`) !== '404'"
           :to="{ path: `${$route.path}/${record.account}`, query: { account: record.account, domainid: record.domainid, quota: true } }">{{ text }}</router-link>
         <router-link :to="{ path: '/account/' + record.accountid }" v-else-if="record.accountid">{{ text }}</router-link>
-        <router-link :to="{ path: '/account', query: { name: record.account, domainid: record.domainid } }" v-else-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
+        <router-link :to="{ path: '/account', query: { name: record.account, domainid: record.domainid, dataView: true } }" v-else-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
     </span>
@@ -228,7 +230,7 @@
       <span v-else>{{ text }}</span>
     </span>
     <a slot="readonly" slot-scope="text, record">
-      <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" />
+      <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" displayText />
     </a>
     <span slot="created" slot-scope="text">
       {{ $toLocaleDate(text) }}
@@ -284,30 +286,29 @@
       </div>
     </template>
     <template slot="actions" slot-scope="text, record">
-      <a-button
-        shape="circle"
+      <tooltip-button
+        :tooltip="$t('label.edit')"
         :disabled="!('updateConfiguration' in $store.getters.apis)"
         v-if="editableValueKey !== record.key"
         icon="edit"
         @click="editValue(record)" />
-      <a-button
-        shape="circle"
+      <tooltip-button
+        :tooltip="$t('label.cancel')"
+        @click="editableValueKey = null"
+        v-if="editableValueKey === record.key"
+        iconType="close-circle"
+        iconTwoToneColor="#f5222d" />
+      <tooltip-button
+        :tooltip="$t('label.ok')"
         :disabled="!('updateConfiguration' in $store.getters.apis)"
         @click="saveValue(record)"
-        v-if="editableValueKey === record.key" >
-        <a-icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" />
-      </a-button>
-      <a-button
-        shape="circle"
-        size="default"
-        @click="editableValueKey = null"
-        v-if="editableValueKey === record.key" >
-        <a-icon type="close-circle" theme="twoTone" twoToneColor="#f5222d" />
-      </a-button>
+        v-if="editableValueKey === record.key"
+        iconType="check-circle"
+        iconTwoToneColor="#52c41a" />
     </template>
     <template slot="tariffActions" slot-scope="text, record">
-      <a-button
-        shape="circle"
+      <tooltip-button
+        :tooltip="$t('label.edit')"
         v-if="editableValueKey !== record.key"
         :disabled="!('quotaTariffUpdate' in $store.getters.apis)"
         icon="edit"
@@ -324,6 +325,7 @@ import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
 import InfoCard from '@/components/view/InfoCard'
 import QuickView from '@/components/view/QuickView'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'ListView',
@@ -332,7 +334,8 @@ export default {
     OsLogo,
     Status,
     InfoCard,
-    QuickView
+    QuickView,
+    TooltipButton
   },
   props: {
     columns: {
@@ -417,6 +420,13 @@ export default {
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering'].join('|'))
         .test(this.$route.path)
+    },
+    enableGroupAction () {
+      return ['vm', 'alert', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot',
+        'vmsnapshot', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway',
+        'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
+        'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes'
+      ].includes(this.$route.name)
     },
     fetchColumns () {
       if (this.isOrderUpdatable()) {
@@ -564,6 +574,13 @@ export default {
     },
     editTariffValue (record) {
       this.parentEditTariffAction(true, record)
+    },
+    ipV6Address (text, record) {
+      if (!record || !record.nic || record.nic.length === 0) {
+        return ''
+      }
+
+      return record.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ') || text
     }
   }
 }

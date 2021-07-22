@@ -59,6 +59,7 @@ import org.apache.cloudstack.storage.command.ResignatureAnswer;
 import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
+import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -67,7 +68,9 @@ import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -621,7 +624,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 final QemuImg q = new QemuImg(cmd.getWaitInMillSeconds());
                 try {
                     q.convert(srcFile, destFile);
-                } catch (final QemuImgException e) {
+                } catch (final QemuImgException | LibvirtException e) {
                     final String message = "Failed to create new template while converting " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " +
                             e.getMessage();
 
@@ -977,7 +980,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 } catch (final IOException e) {
                     s_logger.error("Failed to create " + snapshotDestPath + ". The error was: " + e.getMessage());
                     return new CopyCmdAnswer(e.toString());
-                }  catch (final QemuImgException e) {
+                }  catch (final QemuImgException | LibvirtException e) {
                     s_logger.error("Failed to backup the RBD snapshot from " + rbdSnapshot +
                             " to " + snapshotFile + " the error was: " + e.getMessage());
                     return new CopyCmdAnswer(e.toString());
@@ -1081,9 +1084,10 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
-    protected synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach) throws LibvirtException, URISyntaxException,
+    protected synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, Map<String, String> params) throws LibvirtException, URISyntaxException,
     InternalErrorException {
         String isoXml = null;
+        boolean isUefiEnabled = MapUtils.isNotEmpty(params) && params.containsKey("UEFI");
         if (isoPath != null && isAttach) {
             final int index = isoPath.lastIndexOf("/");
             final String path = isoPath.substring(0, index);
@@ -1093,11 +1097,11 @@ public class KVMStorageProcessor implements StorageProcessor {
             isoPath = isoVol.getPath();
 
             final DiskDef iso = new DiskDef();
-            iso.defISODisk(isoPath);
+            iso.defISODisk(isoPath, isUefiEnabled);
             isoXml = iso.toString();
         } else {
             final DiskDef iso = new DiskDef();
-            iso.defISODisk(null);
+            iso.defISODisk(null, isUefiEnabled);
             isoXml = iso.toString();
         }
 
@@ -1123,7 +1127,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         try {
             String dataStoreUrl = getDataStoreUrlFromStore(store);
             final Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
-            attachOrDetachISO(conn, cmd.getVmName(), dataStoreUrl + File.separator + isoTO.getPath(), true);
+            attachOrDetachISO(conn, cmd.getVmName(), dataStoreUrl + File.separator + isoTO.getPath(), true, cmd.getControllerInfo());
         } catch (final LibvirtException e) {
             return new Answer(cmd, false, e.toString());
         } catch (final URISyntaxException e) {
@@ -1146,7 +1150,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         try {
             String dataStoreUrl = getDataStoreUrlFromStore(store);
             final Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
-            attachOrDetachISO(conn, cmd.getVmName(), dataStoreUrl + File.separator + isoTO.getPath(), false);
+            attachOrDetachISO(conn, cmd.getVmName(), dataStoreUrl + File.separator + isoTO.getPath(), false, cmd.getParams());
         } catch (final LibvirtException e) {
             return new Answer(cmd, false, e.toString());
         } catch (final URISyntaxException e) {
@@ -1192,6 +1196,14 @@ public class KVMStorageProcessor implements StorageProcessor {
             } else {
                 s_logger.debug("Detaching device: " + xml);
                 dm.detachDevice(xml);
+                LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+                parser.parseDomainXML(dm.getXMLDesc(0));
+                List<DiskDef> disks = parser.getDisks();
+                for (DiskDef diskDef : disks) {
+                    if (StringUtils.contains(xml, diskDef.getDiskPath())) {
+                        throw new InternalErrorException("Could not detach volume. Probably the VM is in boot state at the moment");
+                    }
+                }
             }
         } catch (final LibvirtException e) {
             if (attach) {
@@ -1920,8 +1932,14 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer CheckDataStoreStoragePolicyComplaince(CheckDataStoreStoragePolicyComplainceCommand cmd) {
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd) {
         s_logger.info("'CheckDataStoreStoragePolicyComplainceCommand' not currently applicable for KVMStorageProcessor");
         return new Answer(cmd,false,"Not currently applicable for KVMStorageProcessor");
+    }
+
+    @Override
+    public Answer syncVolumePath(SyncVolumePathCommand cmd) {
+        s_logger.info("SyncVolumePathCommand not currently applicable for KVMStorageProcessor");
+        return new Answer(cmd, false, "Not currently applicable for KVMStorageProcessor");
     }
 }

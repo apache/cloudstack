@@ -34,7 +34,8 @@
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="stateLoading"
-            :placeholder="apiParams.state.description">
+            :placeholder="apiParams.state.description"
+            autoFocus >
             <a-select-option v-for="(opt, optIndex) in this.states" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -70,11 +71,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.updateKubernetesSupportedVersion || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('updateKubernetesSupportedVersion')
   },
   created () {
     this.states = [
@@ -87,8 +84,6 @@ export default {
         name: this.$t('state.disabled')
       }
     ]
-  },
-  mounted () {
     this.fetchData()
   },
   methods: {

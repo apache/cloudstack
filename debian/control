@@ -15,7 +15,7 @@ Description: A common package which contains files which are shared by several C
 
 Package: cloudstack-management
 Architecture: all
-Depends: ${python3:Depends}, openjdk-11-jre-headless | java11-runtime-headless | java11-runtime | openjdk-11-jre-headless | zulu-11, cloudstack-common (= ${source:Version}), sudo, python3-mysql.connector, augeas-tools, mysql-client | mariadb-client, adduser, bzip2, ipmitool, file, gawk, iproute2, qemu-utils, python3-dnspython, lsb-release, init-system-helpers (>= 1.14~), python3-setuptools
+Depends: ${python3:Depends}, openjdk-11-jre-headless | java11-runtime-headless | java11-runtime | openjdk-11-jre-headless | zulu-11, cloudstack-common (= ${source:Version}), net-tools, sudo, python3-mysql.connector, augeas-tools, mysql-client | mariadb-client, adduser, bzip2, ipmitool, file, gawk, iproute2, qemu-utils, python3-dnspython, lsb-release, init-system-helpers (>= 1.14~), python3-setuptools
 Conflicts: cloud-server, cloud-client, cloud-client-ui
 Description: CloudStack server library
  The CloudStack management server
@@ -49,7 +49,7 @@ Description: The CloudStack documentation
 
 Package: cloudstack-marvin
 Architecture: all
-Depends: ${misc:Depends}, python-pip, python-dev, libffi-dev
+Depends: ${misc:Depends}, python3-pip, python3-dev, libffi-dev
 Description: The CloudStack Marvin library
 
 Package: cloudstack-integration-tests

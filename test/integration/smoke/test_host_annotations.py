@@ -107,7 +107,7 @@ class TestHostAnnotations(cloudstackTestCase):
 
         #Check that the last one is visible in host details
         self.assertEqual(self.getHostAnnotation(self.host.id), "annotation3")
-        print
+        print()
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_03_user_role_dont_see_annotations(self):

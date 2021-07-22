@@ -16,10 +16,11 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
+import com.cloud.storage.Storage;
 import com.vmware.vim25.ID;
 import com.vmware.vim25.TaskInfo;
 import com.vmware.vim25.VStorageObject;
-import com.vmware.vim25.VirtualDiskType;
+import com.vmware.vim25.BaseConfigInfoDiskFileBackingInfoProvisioningType;
 import com.vmware.vim25.VslmCreateSpec;
 import com.vmware.vim25.VslmCreateSpecDiskFileBackingSpec;
 import org.apache.log4j.Logger;
@@ -60,12 +61,21 @@ public class VirtualStorageObjectManagerMO extends BaseMO {
         return _context.getService().retrieveVStorageObject(_mor, id, morDS);
     }
 
-    public VStorageObject createDisk(ManagedObjectReference morDS, VirtualDiskType diskType, long currentSizeInBytes, String datastoreFilepath, String filename) throws Exception {
+    public VStorageObject createDisk(ManagedObjectReference morDS, Storage.ProvisioningType diskProvisioningType, long currentSizeInBytes, String datastoreFilepath, String filename) throws Exception {
         long currentSizeInMB = currentSizeInBytes/(1024*1024);
 
         VslmCreateSpecDiskFileBackingSpec diskFileBackingSpec = new VslmCreateSpecDiskFileBackingSpec();
         diskFileBackingSpec.setDatastore(morDS);
-        diskFileBackingSpec.setProvisioningType(diskType.value());
+        if (diskProvisioningType != null) {
+            if (diskProvisioningType == Storage.ProvisioningType.FAT) {
+                diskFileBackingSpec.setProvisioningType(BaseConfigInfoDiskFileBackingInfoProvisioningType.EAGER_ZEROED_THICK.value());
+            } else if (diskProvisioningType == Storage.ProvisioningType.THIN) {
+                diskFileBackingSpec.setProvisioningType(BaseConfigInfoDiskFileBackingInfoProvisioningType.THIN.value());
+            } else if (diskProvisioningType == Storage.ProvisioningType.SPARSE) {
+                diskFileBackingSpec.setProvisioningType(BaseConfigInfoDiskFileBackingInfoProvisioningType.LAZY_ZEROED_THICK.value());
+            }
+        }
+
         // path should be just the folder name. For example, instead of '[datastore1] folder1/filename.vmdk' you would just do 'folder1'.
         // path is introduced from 6.7. In 6.5 disk will be created in the default folder "fcd"
         diskFileBackingSpec.setPath(null);

@@ -46,12 +46,7 @@
             :v-bind="field.name"
             v-if="!(action.mapping && field.name in action.mapping && action.mapping[field.name].value)"
           >
-            <span slot="label">
-              {{ $t('label.' + field.name) }}
-              <a-tooltip :title="field.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.' + field.name)" :tooltip="field.description"/>
 
             <span v-if="field.type==='boolean'">
               <a-switch
@@ -68,6 +63,7 @@
                   rules: [{ required: field.required, message: $t('message.error.select') }]
                 }]"
                 :placeholder="field.description"
+                :autoFocus="fieldIndex === firstIndex"
               >
                 <a-select-option v-for="(opt, optIndex) in action.mapping[field.name].options" :key="optIndex">
                   {{ opt }}
@@ -87,6 +83,7 @@
                 :filterOption="(input, option) => {
                   return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
+                :autoFocus="fieldIndex === firstIndex"
               >
                 <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                   {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
@@ -101,6 +98,7 @@
                   rules: [{ required: field.required, message: $t('message.error.select') }]
                 }]"
                 :placeholder="field.description"
+                :autoFocus="fieldIndex === firstIndex"
               >
                 <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                   {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
@@ -113,6 +111,7 @@
                   rules: [{ required: field.required, message: `${$t('message.validate.number')}` }]
                 }]"
                 :placeholder="field.description"
+                :autoFocus="fieldIndex === firstIndex"
               />
             </span>
             <span v-else>
@@ -120,7 +119,8 @@
                 v-decorator="[field.name, {
                   rules: [{ required: field.required, message: $t('message.error.required.input') }]
                 }]"
-                :placeholder="field.description" />
+                :placeholder="field.description"
+                :autoFocus="fieldIndex === firstIndex" />
             </span>
           </a-form-item>
         </a-form>
@@ -131,9 +131,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'DomainActionForm',
+  components: {
+    TooltipLabel
+  },
   props: {
     action: {
       type: Object,
@@ -151,39 +155,21 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
+  created () {
+    this.firstIndex = 0
+    for (let fieldIndex = 0; fieldIndex < this.action.paramFields.length; fieldIndex++) {
+      const field = this.action.paramFields[fieldIndex]
+      if (!(this.action.mapping && field.name in this.action.mapping && this.action.mapping[field.name].value)) {
+        this.firstIndex = fieldIndex
+        break
+      }
+    }
     if (this.action.dataView && this.action.icon === 'edit') {
       this.fillEditFormFieldValues()
     }
   },
-  inject: ['parentCloseAction', 'parentFetchData', 'parentUpdActionData'],
+  inject: ['parentCloseAction', 'parentFetchData'],
   methods: {
-    pollActionCompletion (jobId, action) {
-      this.$pollJob({
-        jobId,
-        successMethod: result => {
-          if (this.action.api === 'deleteDomain') {
-            this.$set(this.resource, 'isDel', true)
-            this.parentUpdActionData(this.resource)
-          }
-          this.parentFetchData()
-          if (action.response) {
-            const description = action.response(result.jobresult)
-            if (description) {
-              this.$notification.info({
-                message: this.$t(action.label),
-                description: (<span domPropsInnerHTML={description}></span>),
-                duration: 0
-              })
-            }
-          }
-        },
-        errorMethod: () => this.parentFetchData(),
-        loadingMessage: `${this.$t(action.label)} ${this.$t('label.in.progress')} ${this.$t('label.for')} ${this.resource.name}`,
-        catchMessage: this.$t('error.fetching.async.job.result'),
-        action
-      })
-    },
     handleSubmit (e) {
       e.preventDefault()
       this.form.validateFields((err, values) => {
@@ -236,19 +222,37 @@ export default {
           }
         }
 
+        const resourceName = params.displayname || params.displaytext || params.name || this.resource.name
         let hasJobId = false
         api(this.action.api, params).then(json => {
           for (const obj in json) {
             if (obj.includes('response')) {
               for (const res in json[obj]) {
                 if (res === 'jobid') {
-                  this.$store.dispatch('AddAsyncJob', {
+                  this.$pollJob({
+                    jobId: json[obj][res],
                     title: this.$t(this.action.label),
-                    jobid: json[obj][res],
                     description: this.resource.name,
-                    status: 'progress'
+                    successMethod: result => {
+                      if (this.action.api === 'deleteDomain') {
+                        this.$set(this.resource, 'isDel', true)
+                        this.parentUpdActionData(this.resource)
+                      }
+                      if (this.action.response) {
+                        const description = this.action.response(result.jobresult)
+                        if (description) {
+                          this.$notification.info({
+                            message: this.$t(this.action.label),
+                            description: (<span domPropsInnerHTML={description}></span>),
+                            duration: 0
+                          })
+                        }
+                      }
+                    },
+                    loadingMessage: `${this.$t(this.action.label)} ${this.$t('label.in.progress')} ${this.$t('label.for')} ${this.resource.name}`,
+                    catchMessage: this.$t('error.fetching.async.job.result'),
+                    action: this.action
                   })
-                  this.pollActionCompletion(json[obj][res], this.action)
                   hasJobId = true
                   break
                 }
@@ -257,7 +261,18 @@ export default {
             }
           }
           if (!hasJobId) {
-            this.parentUpdActionData(json)
+            var message = this.action.successMessage ? this.$t(this.action.successMessage) : this.$t(this.action.label) +
+              (resourceName ? ' - ' + resourceName : '')
+            var duration = 2
+            if (this.action.additionalMessage) {
+              message = message + ' - ' + this.$t(this.action.successMessage)
+              duration = 5
+            }
+            this.$message.success({
+              content: message,
+              key: this.action.label + resourceName,
+              duration: duration
+            })
             this.parentFetchData()
           }
           this.parentCloseAction()

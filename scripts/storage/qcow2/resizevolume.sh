@@ -178,7 +178,23 @@ resizeqcow2() {
   fi
   ##### end sanity #####
 
-  actualsize=`qemu-img info $path | grep "virtual size" | sed -re  's/^.*\(([0-9]+).*$/\1/g'`
+  regex=".*version\s([0-9]+)\.([0-9]+).*"
+  content=$(qemu-img --version | grep version)
+
+  qemu_force_share_flag=""
+  if [[ $content =~ $regex ]]
+    then
+       version_first_element="${BASH_REMATCH[1]}"
+       version_second_element="${BASH_REMATCH[2]}"
+       if [[ ${version_first_element} -gt 2 ]] || [[ ${version_first_element} -eq 2 && ${version_second_element} -ge 10 ]]
+       then
+          qemu_force_share_flag=" -U "
+       fi
+    else
+      echo "Could not retrieve qemu version. Skipping validation to add --force-share flag."
+  fi
+
+  actualsize=`qemu-img info $qemu_force_share_flag $path | grep "virtual size" | sed -re  's/^.*\(([0-9]+).*$/\1/g'`
 
   if [ $actualsize -ne $currentsize ]
   then

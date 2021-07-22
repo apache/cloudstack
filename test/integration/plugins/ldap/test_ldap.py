@@ -466,7 +466,7 @@ class TestLDAP(cloudstackTestCase):
         cmd.value = cls.testdata.testdata[LdapTestData.configuration][LdapTestData.principal]
         response = cls.apiclient.updateConfiguration(cmd)
         cls.logger.debug("set the id: %s" % response)
-        if cls.testdata.testdata[LdapTestData.configuration].has_key(LdapTestData.groupPrinciple) :
+        if LdapTestData.groupPrinciple in cls.testdata.testdata[LdapTestData.configuration] :
             cmd.name = LdapTestData.groupPrinciple
             cmd.value = cls.testdata.testdata[LdapTestData.configuration][LdapTestData.groupPrinciple]
             response = cls.apiclient.updateConfiguration(cmd)

@@ -14,28 +14,28 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.dao;
 
-import java.util.List;
+package com.cloud.agent.api;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import com.cloud.agent.api.to.NicTO;
 
-import com.cloud.storage.VolumeHostVO;
-import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.fsm.StateDao;
+public class SetupPersistentNetworkCommand extends Command {
 
-public interface VolumeHostDao extends GenericDao<VolumeHostVO, Long>,
-        StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
+    NicTO nic;
 
-    VolumeHostVO findByHostVolume(long hostId, long volumeId);
+    public SetupPersistentNetworkCommand(NicTO nic) {
+        this.nic = nic;
+    }
 
-    VolumeHostVO findByVolumeId(long volumeId);
+    public NicTO getNic() {
+        return nic;
+    }
 
-    List<VolumeHostVO> listBySecStorage(long sserverId);
+    protected SetupPersistentNetworkCommand() {
+    }
 
-    List<VolumeHostVO> listDestroyed(long hostId);
-
-    VolumeHostVO findVolumeByZone(long zoneId, long volumeId);
-
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 }
