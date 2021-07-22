@@ -28,6 +28,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
 import java.util.Date;
 import java.util.UUID;
 
@@ -273,5 +276,10 @@ public class SnapshotVO implements Snapshot {
     @Override
     public Class<?> getEntityType() {
         return Snapshot.class;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Snapshot %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(this, "uuid", "name", "volume_id"));
     }
 }

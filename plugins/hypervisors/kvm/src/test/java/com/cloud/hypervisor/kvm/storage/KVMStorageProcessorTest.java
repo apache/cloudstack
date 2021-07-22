@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.junit.Assert;
@@ -78,6 +79,9 @@ public class KVMStorageProcessorTest {
 
     @Mock
     VolumeObjectTO volumeObjectToMock;
+
+    @Mock
+    SnapshotObjectTO snapshotObjectToMock;
 
     private static final String directDownloadTemporaryPath = "/var/lib/libvirt/images/dd";
     private static final long templateSize = 80000L;
@@ -312,5 +316,25 @@ public class KVMStorageProcessorTest {
         PowerMockito.mockStatic(Files.class);
         PowerMockito.when(Files.deleteIfExists(Mockito.any())).thenReturn(true);
         storageProcessorSpy.validateCopyResult("", "");
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    @PrepareForTest(KVMStorageProcessor.class)
+    public void validateDeleteSnapshotFileErrorOnDeleteThrowsCloudRuntimeException() throws Exception {
+        Mockito.doReturn("").when(snapshotObjectToMock).getPath();
+        PowerMockito.mockStatic(Files.class);
+        PowerMockito.when(Files.deleteIfExists(Mockito.any(Path.class))).thenThrow(IOException.class);
+
+        storageProcessorSpy.deleteSnapshotFile(snapshotObjectToMock);
+    }
+
+    @Test
+    @PrepareForTest(KVMStorageProcessor.class)
+    public void validateDeleteSnapshotFileSuccess () throws IOException {
+        Mockito.doReturn("").when(snapshotObjectToMock).getPath();
+        PowerMockito.mockStatic(Files.class);
+        PowerMockito.when(Files.deleteIfExists(Mockito.any(Path.class))).thenReturn(true);
+
+        storageProcessorSpy.deleteSnapshotFile(snapshotObjectToMock);
     }
 }

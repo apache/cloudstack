@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -1864,58 +1865,76 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
+    private List<StoragePoolType> storagePoolTypesToDeleteSnapshotFile = Arrays.asList(StoragePoolType.Filesystem, StoragePoolType.NetworkFilesystem,
+            StoragePoolType.SharedMountPoint);
+
     @Override
     public Answer deleteSnapshot(final DeleteCommand cmd) {
-        String snap_full_name = "";
+        String snapshotFullName = "";
         try {
             SnapshotObjectTO snapshotTO = (SnapshotObjectTO) cmd.getData();
             PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO) snapshotTO.getDataStore();
-            VolumeObjectTO volume = snapshotTO.getVolume();
             KVMStoragePool primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
-            KVMPhysicalDisk disk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), volume.getPath());
             String snapshotFullPath = snapshotTO.getPath();
             String snapshotName = snapshotFullPath.substring(snapshotFullPath.lastIndexOf("/") + 1);
-            snap_full_name = disk.getName() + "@" + snapshotName;
+            snapshotFullName = snapshotName;
             if (primaryPool.getType() == StoragePoolType.RBD) {
+                VolumeObjectTO volume = snapshotTO.getVolume();
+                KVMPhysicalDisk disk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), volume.getPath());
+                snapshotFullName = disk.getName() + "@" + snapshotName;
                 Rados r = radosConnect(primaryPool);
                 IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
                 Rbd rbd = new Rbd(io);
                 RbdImage image = rbd.open(disk.getName());
                 try {
-                    s_logger.info("Attempting to remove RBD snapshot " + snap_full_name);
+                    s_logger.info("Attempting to remove RBD snapshot " + snapshotFullName);
                     if (image.snapIsProtected(snapshotName)) {
-                        s_logger.debug("Unprotecting RBD snapshot " + snap_full_name);
+                        s_logger.debug("Unprotecting RBD snapshot " + snapshotFullName);
                         image.snapUnprotect(snapshotName);
                     }
                     image.snapRemove(snapshotName);
-                    s_logger.info("Snapshot " + snap_full_name + " successfully removed from " +
+                    s_logger.info("Snapshot " + snapshotFullName + " successfully removed from " +
                             primaryPool.getType().toString() + "  pool.");
                 } catch (RbdException e) {
-                    s_logger.error("Failed to remove snapshot " + snap_full_name + ", with exception: " + e.toString() +
+                    s_logger.error("Failed to remove snapshot " + snapshotFullName + ", with exception: " + e.toString() +
                         ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
                 } finally {
                     rbd.close(image);
                     r.ioCtxDestroy(io);
                 }
-            } else if (primaryPool.getType() == StoragePoolType.NetworkFilesystem || primaryPool.getType() == StoragePoolType.Filesystem) {
-                s_logger.info(String.format("Deleting snapshot (id=%s, name=%s, path=%s, storage type=%s) on primary storage", snapshotTO.getId(), snapshotTO.getName(), snapshotTO.getPath(), primaryPool.getType()));
-                deleteSnapshotViaManageSnapshotScript(snapshotName, disk);
+            } else if (storagePoolTypesToDeleteSnapshotFile.contains(primaryPool.getType())) {
+                s_logger.info(String.format("Deleting snapshot (id=%s, name=%s, path=%s, storage type=%s) on primary storage", snapshotTO.getId(), snapshotTO.getName(),
+                        snapshotTO.getPath(), primaryPool.getType()));
+                deleteSnapshotFile(snapshotTO);
             } else {
                 s_logger.warn("Operation not implemented for storage pool type of " + primaryPool.getType().toString());
                 throw new InternalErrorException("Operation not implemented for storage pool type of " + primaryPool.getType().toString());
             }
-            return new Answer(cmd, true, "Snapshot " + snap_full_name + " removed successfully.");
+            return new Answer(cmd, true, "Snapshot " + snapshotFullName + " removed successfully.");
         } catch (RadosException e) {
-            s_logger.error("Failed to remove snapshot " + snap_full_name + ", with exception: " + e.toString() +
+            s_logger.error("Failed to remove snapshot " + snapshotFullName + ", with exception: " + e.toString() +
                 ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
-            return new Answer(cmd, false, "Failed to remove snapshot " + snap_full_name);
+            return new Answer(cmd, false, "Failed to remove snapshot " + snapshotFullName);
         } catch (RbdException e) {
-            s_logger.error("Failed to remove snapshot " + snap_full_name + ", with exception: " + e.toString() +
+            s_logger.error("Failed to remove snapshot " + snapshotFullName + ", with exception: " + e.toString() +
                 ", RBD error: " + ErrorCode.getErrorMessage(e.getReturnValue()));
-            return new Answer(cmd, false, "Failed to remove snapshot " + snap_full_name);
+            return new Answer(cmd, false, "Failed to remove snapshot " + snapshotFullName);
         } catch (Exception e) {
-            s_logger.error("Failed to remove snapshot " + snap_full_name + ", with exception: " + e.toString());
-            return new Answer(cmd, false, "Failed to remove snapshot " + snap_full_name);
+            s_logger.error("Failed to remove snapshot " + snapshotFullName + ", with exception: " + e.toString());
+            return new Answer(cmd, false, "Failed to remove snapshot " + snapshotFullName);
+        }
+    }
+
+    /**
+     * Deletes the snapshot's file.
+     * @throws CloudRuntimeException If can't delete the snapshot file.
+     */
+    protected void deleteSnapshotFile(SnapshotObjectTO snapshotObjectTo) throws CloudRuntimeException {
+        try {
+            Files.deleteIfExists(Paths.get(snapshotObjectTo.getPath()));
+            s_logger.debug(String.format("Deleted snapshot [%s].", snapshotObjectTo));
+        } catch (IOException ex) {
+            throw new CloudRuntimeException(String.format("Unable to delete snapshot [%s] due to [%s].", snapshotObjectTo, ex.getMessage()));
         }
     }
 
