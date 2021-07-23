@@ -320,36 +320,6 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                                                       ))
         return public_ip
 
-    def create_network(self, net_offerring, gateway='10.1.1.1', vpc=None):
-        try:
-            self.debug('Create NetworkOffering')
-            net_offerring["name"] = "NET_OFF-" + str(gateway)
-            nw_off = NetworkOffering.create(self.apiclient,
-                                            net_offerring,
-                                            conservemode=False
-                                            )
-            self.cleanup.append(nw_off)
-            # Enable Network offering
-            nw_off.update(self.apiclient, state='Enabled')
-            self.debug('Created and Enabled NetworkOffering')
-
-            self.services["network"]["name"] = "NETWORK-" + str(gateway)
-            self.debug('Adding Network=%s' % self.services["network"])
-            obj_network = Network.create(self.apiclient,
-                                         self.services["network"],
-                                         accountid=self.account.name,
-                                         domainid=self.account.domainid,
-                                         networkofferingid=nw_off.id,
-                                         zoneid=self.zone.id,
-                                         gateway=gateway,
-                                         vpcid=vpc.id if vpc else self.vpc.id
-                                         )
-            self.cleanup.append(obj_network)
-            self.debug("Created network with ID: %s" % obj_network.id)
-            return obj_network
-        except Exception as e:
-            self.fail('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
-
     def deployvm_in_network(self, network, host_id=None):
         try:
             self.debug('Creating VM in network=%s' % network.name)
