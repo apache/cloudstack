@@ -100,7 +100,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     }
 
     public Boolean isAutoSelect() {
-        return autoSelect != null ? autoSelect : false;
+        return autoSelect != null ? autoSelect : true;
     }
 
     /////////////////////////////////////////////////////
