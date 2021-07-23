@@ -638,7 +638,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             String details = answer.getDetails();
             if (!answer.getResult()) {
                 String message = String.format("Unable to expunge %s due to [%s].", vmToString, details);
-                s_logger.warn(message);
+                s_logger.error(message);
                 throw new CloudRuntimeException(message);
             }
 
