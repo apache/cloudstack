@@ -20,7 +20,7 @@
     <a-button
       v-if="(('deleteTemplate' in $store.getters.apis) && this.selectedRowKeys.length > 0)"
       type="danger"
-      icon="plus"
+      icon="delete"
       style="width: 100%; margin-bottom: 15px"
       @click="bulkActionConfirmation()">
       {{ $t('label.action.bulk.delete.templates') }}

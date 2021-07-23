@@ -57,7 +57,7 @@
     <a-button
       v-if="(('deleteFirewallRule' in $store.getters.apis) && this.selectedItems.length > 0)"
       type="danger"
-      icon="plus"
+      icon="delete"
       style="width: 100%; margin-bottom: 15px"
       @click="bulkActionConfirmation()">
       {{ $t('label.action.bulk.delete.firewall.rules') }}
@@ -331,15 +331,10 @@ export default {
       this.loading = true
       api('deleteFirewallRule', { id: rule.id }).then(response => {
         const jobId = response.deletefirewallruleresponse.jobid
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('label.action.delete.firewall'),
-          jobid: jobId,
-          description: rule.id,
-          status: 'progress',
-          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
-        })
         eventBus.$emit('update-job-details', jobId, null)
         this.$pollJob({
+          title: this.$t('label.action.delete.firewall'),
+          description: rule.id,
           jobId: jobId,
           successMessage: this.$t('message.success.remove.firewall.rule'),
           successMethod: () => {

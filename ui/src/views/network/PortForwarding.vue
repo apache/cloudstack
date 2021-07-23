@@ -74,7 +74,7 @@
     <a-button
       v-if="(('deletePortForwardingRule' in $store.getters.apis) && this.selectedItems.length > 0)"
       type="danger"
-      icon="plus"
+      icon="delete"
       style="width: 100%; margin-bottom: 15px"
       @click="bulkActionConfirmation()">
       {{ $t('label.action.bulk.delete.portforward.rules') }}
@@ -523,15 +523,10 @@ export default {
       this.loading = true
       api('deletePortForwardingRule', { id: rule.id }).then(response => {
         const jobId = response.deleteportforwardingruleresponse.jobid
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('label.portforwarding.rule'),
-          jobid: jobId,
-          description: rule.id,
-          status: 'progress',
-          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
-        })
         eventBus.$emit('update-job-details', jobId, null)
         this.$pollJob({
+          title: this.$t('label.portforwarding.rule'),
+          description: rule.id,
           jobId: jobId,
           successMessage: this.$t('message.success.remove.port.forward'),
           successMethod: () => {
