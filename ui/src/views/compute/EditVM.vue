@@ -21,6 +21,7 @@
       class="form-layout"
       layout="vertical"
       :form="form"
+      v-ctrl-enter="handleSubmit"
       @submit="handleSubmit">
       <a-form-item>
         <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
