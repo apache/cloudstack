@@ -34,10 +34,23 @@ public interface AnnotationService {
     AnnotationResponse updateAnnotationVisibility(UpdateAnnotationVisibilityCmd cmd);
 
     enum EntityType {
-        HOST, DOMAIN, VM, VOLUME, SNAPSHOT, VM_SNAPSHOT, INSTANCE_GROUP, SSH_KEYPAIR,
-        NETWORK, VPC, PUBLIC_IP_ADDRESS, VPN_CUSTOMER_GATEWAY, TEMPLATE, ISO,
-        SERVICE_OFFERING, DISK_OFFERING, NETWORK_OFFERING,
-        ZONE, POD, CLUSTER, PRIMARY_STORAGE, SECONDARY_STORAGE, VR, SYSTEM_VM;
+        VM(true), VOLUME(true), SNAPSHOT(true),
+        VM_SNAPSHOT(true), INSTANCE_GROUP(true), SSH_KEYPAIR(true),
+        NETWORK(true), VPC(true), PUBLIC_IP_ADDRESS(true), VPN_CUSTOMER_GATEWAY(true),
+        TEMPLATE(true), ISO(true),
+        SERVICE_OFFERING(false), DISK_OFFERING(false), NETWORK_OFFERING(false),
+        ZONE(false), POD(false), CLUSTER(false), HOST(false), DOMAIN(false),
+        PRIMARY_STORAGE(false), SECONDARY_STORAGE(false), VR(false), SYSTEM_VM(false);
+
+        private final boolean usersAllowed;
+
+        public boolean isUserAllowed() {
+            return this.usersAllowed;
+        }
+
+        EntityType(boolean usersAllowed) {
+            this.usersAllowed = usersAllowed;
+        }
 
         static public boolean contains(String representation) {
             try {

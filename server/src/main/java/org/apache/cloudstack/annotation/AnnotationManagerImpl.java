@@ -120,11 +120,21 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     public AnnotationResponse addAnnotation(String text, EntityType type, String uuid, boolean adminsOnly) {
         UserVO userVO = getCallingUserFromContext();
         String userUuid = userVO.getUuid();
+        checkAnnotationPermissions(userUuid, type, userVO);
 
         AnnotationVO annotation = new AnnotationVO(text, type, uuid, adminsOnly);
         annotation.setUserUuid(userUuid);
         annotation = annotationDao.persist(annotation);
         return createAnnotationResponse(annotation);
+    }
+
+    private void checkAnnotationPermissions(String entityUuid, EntityType type, UserVO user) {
+        if (!isCallingUserAdmin()) {
+            if (!type.isUserAllowed()) {
+                throw new CloudRuntimeException("User " + user.getUsername() + " is not allowed to add annotations on type " + type.name());
+            }
+            ensureEntityIsOwnedByTheUser(type.name(), entityUuid, user);
+        }
     }
 
     @Override
