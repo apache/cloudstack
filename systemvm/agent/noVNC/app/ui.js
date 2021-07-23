@@ -1559,7 +1559,7 @@ const UI = {
             UI.sendKey(KeyTable.XK_Shift_L, "ShiftLeft", false);
             btn.classList.remove("noVNC_selected");
         } else {
-            UI.sendKey(KeyTable.XK_Control_L, "ShiftLeft", true);
+            UI.sendKey(KeyTable.XK_Shift_L, "ShiftLeft", true);
             btn.classList.add("noVNC_selected");
         }
     },
