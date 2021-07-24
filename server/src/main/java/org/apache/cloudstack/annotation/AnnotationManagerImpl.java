@@ -129,12 +129,14 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     }
 
     private void checkAnnotationPermissions(String entityUuid, EntityType type, UserVO user) {
-        if (!isCallingUserAdmin()) {
-            if (!type.isUserAllowed()) {
-                throw new CloudRuntimeException("User " + user.getUsername() + " is not allowed to add annotations on type " + type.name());
-            }
-            ensureEntityIsOwnedByTheUser(type.name(), entityUuid, user);
+        if (isCallingUserAdmin()) {
+            return;
         }
+        if (!type.isUserAllowed()) {
+            throw new CloudRuntimeException(String.format("User: %s is not allowed to add annotations on type: %s",
+                    user.getUsername(), type.name()));
+        }
+        ensureEntityIsOwnedByTheUser(type.name(), entityUuid, user);
     }
 
     @Override
@@ -142,14 +144,14 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     public AnnotationResponse removeAnnotation(RemoveAnnotationCmd removeAnnotationCmd) {
         String uuid = removeAnnotationCmd.getUuid();
         AnnotationVO annotation = annotationDao.findByUuid(uuid);
-        if (isCallingUserAllowedToRemoveAnnotation(annotation)) {
-            if(LOGGER.isDebugEnabled()) {
-                LOGGER.debug("marking annotation removed: " + uuid);
-            }
-            annotationDao.remove(annotation.getId());
-        } else {
-            throw new CloudRuntimeException("Only administrators or entity owner users can delete annotations, cannot remove annotation: " + uuid);
+        if (!isCallingUserAllowedToRemoveAnnotation(annotation)) {
+            throw new CloudRuntimeException(String.format("Only administrators or entity owner users can delete annotations, " +
+                    "cannot remove annotation with uuid: %s - type: %s ", uuid, annotation.getEntityType().name()));
         }
+        if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug(String.format("Removing annotation uuid: %s - type: %s", uuid, annotation.getEntityType().name()));
+        }
+        annotationDao.remove(annotation.getId());
 
         return createAnnotationResponse(annotation);
     }
@@ -159,15 +161,17 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         String uuid = cmd.getUuid();
         Boolean adminsOnly = cmd.getAdminsOnly();
         AnnotationVO annotation = annotationDao.findByUuid(uuid);
-        if (annotation != null && isCallingUserAdmin()) {
-            if(LOGGER.isDebugEnabled()) {
-                LOGGER.debug("updating annotation visibility: " + uuid);
-            }
-            annotation.setAdminsOnly(adminsOnly);
-            annotationDao.update(annotation.getId(), annotation);
-        } else {
-            throw new CloudRuntimeException("Cannot update visibility for annotation: " + uuid);
+        if (annotation == null || !isCallingUserAdmin()) {
+            String errDesc = (annotation == null) ? String.format("Annotation id:%s does not exist", uuid) :
+                    String.format("Type: %s", annotation.getEntityType().name());
+            throw new CloudRuntimeException(String.format("Only admins can update annotations' visibility. " +
+                    "Cannot update visibility for annotation with id: %s - %s", uuid, errDesc));
         }
+        if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug(String.format("Updating annotation with uuid: %s visibility to %B: ", uuid, adminsOnly));
+        }
+        annotation.setAdminsOnly(adminsOnly);
+        annotationDao.update(annotation.getId(), annotation);
         return createAnnotationResponse(annotation);
     }
 
@@ -215,7 +219,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         String entityType = cmd.getEntityType();
         String annotationFilter = isNotBlank(cmd.getAnnotationFilter()) ? cmd.getAnnotationFilter() : "all";
         boolean isCallerAdmin = isCallingUserAdmin();
-        if ((isBlank(entityUuid) || isBlank(entityType)) && !isCallerAdmin && annotationFilter.equalsIgnoreCase("all")) {
+        if (org.apache.commons.lang3.StringUtils.isAnyEmpty(entityUuid, entityType) &&
+                !isCallerAdmin && annotationFilter.equalsIgnoreCase("all")) {
             throw new CloudRuntimeException("Only admins can filter all the annotations");
         }
         UserVO callingUser = getCallingUserFromContext();

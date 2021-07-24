@@ -87,7 +87,7 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
             LOG.debug("Successfully generated uuid for existing ssh key-pairs");
         } catch (SQLException e) {
             String errMsg = "Exception while generating uuid for existing ssh key-pairs: " + e.getMessage();
-            LOG.error(errMsg);
+            LOG.error(errMsg, e);
             throw new CloudRuntimeException(errMsg, e);
         }
     }

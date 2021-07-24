@@ -64,7 +64,7 @@ public class UpdateAnnotationVisibilityCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
+        return String.format("%s%s", APINAME.toLowerCase(), BaseCmd.RESPONSE_SUFFIX);
     }
 
     @Override
