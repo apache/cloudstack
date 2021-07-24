@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="loading">
-    <a-form class="form" :form="form" @submit="handleSubmit" layout="vertical">
+    <a-form class="form" :form="form" @submit="handleSubmit" layout="vertical" v-ctrl-enter="handleSubmit">
       <div style="margin-bottom: 10px">
         <a-alert type="warning">
           <span slot="message" v-html="$t('message.confirm.attach.disk')" />

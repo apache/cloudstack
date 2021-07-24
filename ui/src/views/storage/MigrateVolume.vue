@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="migrate-volume-container" v-ctrl-enter="handleSubmit">
+  <div class="migrate-volume-container" v-ctrl-enter="submitMigrateVolume">
     <div class="modal-form">
       <div v-if="storagePools.length > 0">
         <a-alert type="warning">

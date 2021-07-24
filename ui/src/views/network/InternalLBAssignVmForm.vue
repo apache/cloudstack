@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="fetchLoading">
-    <div>
+    <div v-ctrl-enter="handleSubmit">
       <div class="vm-modal__header">
         <span style="min-width: 200px;">{{ $t('label.name') }}</span>
         <span>{{ $t('label.state') }}</span>
@@ -80,7 +80,7 @@
       <a-button @click="closeModal">
         {{ $t('label.cancel') }}
       </a-button>
-      <a-button type="primary" @click="handleSubmit">
+      <a-button type="primary" ref="submit"  @click="handleSubmit">
         {{ $t('label.ok') }}
       </a-button>
     </div>

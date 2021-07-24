@@ -45,6 +45,7 @@
           :disabled="!('quotaEmailTemplateUpdate' in $store.getters.apis)"
           :loading="loading"
           type="primary"
+          ref="submit"
           @click="handleSubmit">{{ $t('label.apply') }}</a-button>
         <a-button
           style="float: right;"

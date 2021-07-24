@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form">
+  <div class="form" v-ctrl-enter="submitForm">
     <a-input-search
       :placeholder="$t('label.search')"
       v-model="searchQuery"
