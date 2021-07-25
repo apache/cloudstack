@@ -140,7 +140,7 @@ export default {
           message: 'message.action.clone.instance',
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
-          show: (record) => { return ['Running'].includes(record.state) },
+          show: (record) => { return true },
           args: ['virtualmachineid'],
           mapping: {
             virtualmachineid: {
