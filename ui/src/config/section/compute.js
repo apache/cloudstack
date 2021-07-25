@@ -141,13 +141,13 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
           show: (record) => { return ['Running'].includes(record.state) },
-          args: ["virtualmachineid"],
+          args: ['virtualmachineid'],
           mapping: {
             virtualmachineid: {
-              value: (record, params) => {return record.id}
+              value: (record, params) => { return record.id }
             }
           }
-        }, 
+        },
         {
           api: 'restoreVirtualMachine',
           icon: 'sync',
