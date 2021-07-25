@@ -134,6 +134,21 @@ export default {
           }
         },
         {
+          api: 'cloneVirtualMachine',
+          icon: 'reload',
+          label: 'label.action.clone.vm',
+          message: 'message.action.clone.instance',
+          docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
+          dataView: true,
+          show: (record) => { return ['Running'].includes(record.state) },
+          args: ["virtualmachineid"],
+          mapping: {
+            virtualmachineid: {
+              value: (record, params) => {return record.id}
+            }
+          }
+        }, 
+        {
           api: 'restoreVirtualMachine',
           icon: 'sync',
           label: 'label.reinstall.vm',
