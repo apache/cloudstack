@@ -233,5 +233,6 @@
     "account": "test-account",
     "domainid": "test-domain-id"
   },
+  "headerNotices": [],
   "asyncJobIds": []
 }

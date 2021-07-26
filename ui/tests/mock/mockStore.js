@@ -47,6 +47,7 @@ const mockStore = {
       getters: {
         apis: () => mockStore.state.user.apis,
         userInfo: () => mockStore.state.user.info,
+        headerNotices: () => mockStore.state.user.headerNotices,
         asyncJobIds: () => mockStore.state.user.asyncJobIds
       },
       mutations: mockStore.mutations,
