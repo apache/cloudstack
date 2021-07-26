@@ -1200,7 +1200,6 @@ export default {
             if (param.name !== key) {
               continue
             }
-            1
             if (!input === undefined || input === null ||
               (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering'].includes(action.api))) {
               if (param.type === 'boolean') {
