@@ -124,15 +124,14 @@
         :visible="showAction"
         :closable="true"
         :maskClosable="false"
-        :okText="$t('label.ok')"
-        :cancelText="$t('label.cancel')"
+        :footer="null"
         style="top: 20px;"
         :width="modalWidth"
-        @ok="handleSubmit"
-        @cancel="closeAction"
         :ok-button-props="getOkProps()"
         :cancel-button-props="getCancelProps()"
         :confirmLoading="actionLoading"
+        @cancel="closeAction"
+        v-ctrl-enter="handleSubmit"
         centered
       >
         <span slot="title">
@@ -322,6 +321,11 @@
                   :placeholder="field.description" />
               </span>
             </a-form-item>
+
+            <div :span="24" class="action-button">
+              <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+              <a-button type="primary" @click="handleSubmit" ref="submit">{{ $t('label.ok') }}</a-button>
+            </div>
           </a-form>
         </a-spin>
         <br />
@@ -764,7 +768,7 @@ export default {
 
       params.page = this.page
       params.pagesize = this.pageSize
-      this.searchParams = params
+
       api(this.apiName, params).then(json => {
         var responseName
         var objectName
@@ -852,6 +856,7 @@ export default {
         }
       }).finally(f => {
         this.loading = false
+        this.searchParams = params
       })
     },
     closeAction () {
@@ -1077,6 +1082,7 @@ export default {
       this.message = {}
     },
     handleSubmit (e) {
+      if (this.actionLoading) return
       this.promises = []
       if (!this.dataView && this.currentAction.groupAction && this.selectedRowKeys.length > 0) {
         if (this.selectedRowKeys.length > 0) {

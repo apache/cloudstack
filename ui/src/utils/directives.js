@@ -16,35 +16,32 @@
 // under the License.
 
 import Vue from 'vue'
-import Vuex from 'vuex'
-import Antd from 'ant-design-vue'
-import VueRouter from 'vue-router'
-import VueI18n from 'vue-i18n'
-import VueStorage from 'vue-ls'
-import VueClipboard from 'vue-clipboard2'
-import config from '@/config/settings'
-import { createLocalVue } from '@vue/test-utils'
-import registerRequireContextHook from 'babel-plugin-require-context-hook/register'
-import '@/utils/directives'
 
-const localVue = createLocalVue()
+const ENTER_KEY_CODE = 13
+let lastFocusElm = null
 
-Vue.use(Antd)
-Vue.use(VueStorage, config.storageOptions)
+Vue.directive('ctrlEnter', {
+  bind: (el, binding, vnode) => {
+    el.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.keyCode === ENTER_KEY_CODE) {
+        e.preventDefault()
+        lastFocusElm = e.target
+        vnode.context.$refs.submit.$el.focus()
+      }
+    })
 
-localVue.use(VueRouter)
-localVue.use(VueI18n)
-localVue.use(Vuex)
-localVue.use(VueClipboard)
+    el.addEventListener('keyup', (e) => {
+      if (!e.ctrlKey || e.keyCode !== ENTER_KEY_CODE) {
+        e.preventDefault()
+        return
+      }
 
-registerRequireContextHook()
-
-window.matchMedia = window.matchMedia || function () {
-  return {
-    matches: false,
-    addListener: function () {},
-    removeListener: function () {}
+      e.preventDefault()
+      if (typeof binding.value === 'function') {
+        if (lastFocusElm) lastFocusElm.focus()
+        const argument = binding.arg || e
+        binding.value(argument)
+      }
+    })
   }
-}
-
-module.exports = localVue
+})

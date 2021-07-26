@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="loading">
-    <div class="form">
+    <div class="form" v-ctrl-enter="handleSubmitForm">
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.zonenamelabel') }}</div>
         <a-select v-model="zoneId" @change="fetchPods" autoFocus>
@@ -96,9 +96,9 @@
 
       <a-divider></a-divider>
 
-      <div class="actions">
+      <div :span="24" class="action-button">
         <a-button @click="() => this.$parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
-        <a-button @click="handleSubmitForm" type="primary">{{ $t('label.ok') }}</a-button>
+        <a-button @click="handleSubmitForm" ref="submit" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
 
     </div>
@@ -202,6 +202,7 @@ export default {
       this.showDedicated = !this.showDedicated
     },
     handleSubmitForm () {
+      if (this.loading) return
       if (!this.clustername) {
         this.$refs.requiredCluster.classList.add('required-label--visible')
         return
@@ -358,17 +359,6 @@ export default {
 
       @media (min-width: 760px) {
         width: 400px;
-      }
-    }
-  }
-
-  .actions {
-    display: flex;
-    justify-content: flex-end;
-
-    button {
-      &:not(:last-child) {
-        margin-right: 10px;
       }
     }
   }

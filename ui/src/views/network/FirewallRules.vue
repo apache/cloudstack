@@ -18,7 +18,7 @@
 <template>
   <div>
     <div>
-      <div class="form">
+      <div class="form" v-ctrl-enter="addRule">
         <div class="form__item">
           <div class="form__label">{{ $t('label.sourcecidr') }}</div>
           <a-input autoFocus v-model="newRule.cidrlist"></a-input>
@@ -113,19 +113,35 @@
       :title="$t('label.edit.tags')"
       v-model="tagsModalVisible"
       :footer="null"
+      :closable="true"
       :afterClose="closeModal"
-      :maskClosable="false">
-      <div class="add-tags">
-        <div class="add-tags__input">
-          <p class="add-tags__label">{{ $t('label.key') }}</p>
-          <a-input autoFocus v-model="newTag.key"></a-input>
+      :maskClosable="false"
+      @cancel="tagsModalVisible = false"
+      v-ctrl-enter="handleAddTag">
+      <a-form :form="newTagsForm" @submit="handleAddTag">
+        <div class="add-tags">
+          <div class="add-tags__input">
+            <p class="add-tags__label">{{ $t('label.key') }}</p>
+            <a-form-item>
+              <a-input
+                autoFocus
+                v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
+            </a-form-item>
+          </div>
+          <div class="add-tags__input">
+            <p class="add-tags__label">{{ $t('label.value') }}</p>
+            <a-form-item>
+              <a-input v-decorator="['value', { rules: [{ required: true, message: this.$t('message.specifiy.tag.value')}] }]" />
+            </a-form-item>
+          </div>
+          <a-button
+            html-type="submit"
+            type="primary"
+            :disabled="!('createTags' in $store.getters.apis)"
+            @click="handleAddTag"
+            :loading="addTagLoading">{{ $t('label.add') }}</a-button>
         </div>
-        <div class="add-tags__input">
-          <p class="add-tags__label">{{ $t('label.value') }}</p>
-          <a-input v-model="newTag.value"></a-input>
-        </div>
-        <a-button type="primary" :disabled="!('createTags' in $store.getters.apis)" @click="() => handleAddTag()" :loading="addTagLoading">{{ $t('label.add') }}</a-button>
-      </div>
+      </a-form>
 
       <a-divider></a-divider>
 
@@ -205,10 +221,6 @@ export default {
       tagsModalVisible: false,
       selectedRule: null,
       tags: [],
-      newTag: {
-        key: null,
-        value: null
-      },
       totalCount: 0,
       page: 1,
       pageSize: 10,
@@ -237,7 +249,8 @@ export default {
           title: this.$t('label.action'),
           scopedSlots: { customRender: 'actions' }
         }
-      ]
+      ],
+      newTagsForm: this.$form.createForm(this)
     }
   },
   computed: {
@@ -361,6 +374,7 @@ export default {
       })
     },
     addRule () {
+      if (this.loading) return
       this.loading = true
       api('createFirewallRule', { ...this.newRule }).then(response => {
         this.$pollJob({
@@ -410,6 +424,8 @@ export default {
     openTagsModal (id) {
       this.selectedRule = id
       this.tagsModalVisible = true
+      this.newTagsForm.resetFields()
+
       api('listTags', {
         resourceId: id,
         resourceType: 'FirewallRule',
@@ -421,38 +437,48 @@ export default {
         this.closeModal()
       })
     },
-    handleAddTag () {
+    handleAddTag (e) {
+      e.preventDefault()
+      if (this.addTagLoading) return
       this.addTagLoading = true
-      api('createTags', {
-        'tags[0].key': this.newTag.key,
-        'tags[0].value': this.newTag.value,
-        resourceIds: this.selectedRule,
-        resourceType: 'FirewallRule'
-      }).then(response => {
-        this.$pollJob({
-          jobId: response.createtagsresponse.jobid,
-          successMessage: this.$t('message.success.add.tag'),
-          successMethod: () => {
-            this.parentToggleLoading()
-            this.openTagsModal(this.selectedRule)
-          },
-          errorMessage: this.$t('message.add.tag.failed'),
-          errorMethod: () => {
-            this.parentToggleLoading()
-            this.closeModal()
-          },
-          loadingMessage: this.$t('message.add.tag.processing'),
-          catchMessage: this.$t('error.fetching.async.job.result'),
-          catchMethod: () => {
-            this.parentFetchData()
-            this.parentToggleLoading()
-            this.closeModal()
-          }
+
+      this.newTagsForm.validateFields((err, values) => {
+        if (err) {
+          this.tagsLoading = false
+          return
+        }
+
+        api('createTags', {
+          'tags[0].key': values.key,
+          'tags[0].value': values.value,
+          resourceIds: this.selectedRule,
+          resourceType: 'FirewallRule'
+        }).then(response => {
+          this.$pollJob({
+            jobId: response.createtagsresponse.jobid,
+            successMessage: this.$t('message.success.add.tag'),
+            successMethod: () => {
+              this.parentToggleLoading()
+              this.openTagsModal(this.selectedRule)
+            },
+            errorMessage: this.$t('message.add.tag.failed'),
+            errorMethod: () => {
+              this.parentToggleLoading()
+              this.closeModal()
+            },
+            loadingMessage: this.$t('message.add.tag.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            catchMethod: () => {
+              this.parentFetchData()
+              this.parentToggleLoading()
+              this.closeModal()
+            }
+          })
+        }).catch(error => {
+          this.$notifyError(error)
+        }).finally(() => {
+          this.addTagLoading = false
         })
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.addTagLoading = false
       })
     },
     handleDeleteTag (tag) {

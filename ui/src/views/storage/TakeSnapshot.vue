@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="take-snapshot">
+  <div class="take-snapshot" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading || actionLoading">
       <a-alert type="warning">
         <span slot="message" v-html="$t('label.header.volume.take.snapshot')" />
@@ -82,6 +82,7 @@
             v-if="handleShowButton()"
             :loading="actionLoading"
             type="primary"
+            ref="submit"
             @click="handleSubmit">
             {{ this.$t('label.ok') }}
           </a-button>
@@ -133,6 +134,7 @@ export default {
   methods: {
     handleSubmit (e) {
       e.preventDefault()
+      if (this.actionLoading) return
       this.form.validateFields((error, values) => {
         if (error) {
           return
@@ -255,13 +257,5 @@ export default {
   font-weight: 500;
   color: rgba(0, 0, 0, 0.85);
   margin-bottom: 12px;
-}
-
-.action-button {
-  text-align: right;
-
-  button {
-    margin-right: 5px;
-  }
 }
 </style>

@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-form :form="form" layout="vertical">
       <a-form-item :label="$t('label.diskoffering')" v-if="resource.type !== 'ROOT'">
         <a-select
@@ -49,7 +49,7 @@
       </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <a-button :loading="loading" type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
@@ -94,6 +94,7 @@ export default {
       })
     },
     handleSubmit (e) {
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
@@ -143,12 +144,6 @@ export default {
 
   @media (min-width: 760px) {
     width: 500px;
-  }
-}
-.action-button {
-  text-align: right;
-  button {
-    margin-right: 5px;
   }
 }
 </style>

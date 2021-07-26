@@ -158,7 +158,10 @@
       v-model="showCreateNetworkModal"
       :title="$t('label.add.new.tier')"
       :maskClosable="false"
-      @ok="handleAddNetworkSubmit">
+      :closable="true"
+      :footer="null"
+      @cancel="showCreateNetworkModal = false"
+      v-ctrl-enter="handleAddNetworkSubmit">
       <a-spin :spinning="modalLoading">
         <a-form @submit.prevent="handleAddNetworkSubmit" :form="form">
           <a-form-item :label="$t('label.name')">
@@ -213,6 +216,10 @@
           <a-alert v-else-if="this.selectedNetworkAcl.name==='default_deny'" type="warning" show-icon>
             <span slot="message" v-html="$t('message.network.acl.default.deny')" />
           </a-alert>
+          <div :span="24" class="action-button">
+            <a-button @click="showCreateNetworkModal = false">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" @click="handleAddNetworkSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-spin>
     </a-modal>
@@ -221,7 +228,10 @@
       v-model="showAddInternalLB"
       :title="$t('label.add.internal.lb')"
       :maskClosable="false"
-      @ok="handleAddInternalLBSubmit">
+      :closable="true"
+      :footer="null"
+      @cancel="showAddInternalLB = false"
+      v-ctrl-enter="handleAddInternalLBSubmit">
       <a-spin :spinning="modalLoading">
         <a-form @submit.prevent="handleAddInternalLBSubmit" :form="form">
           <a-form-item :label="$t('label.name')">
@@ -261,6 +271,11 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+
+          <div :span="24" class="action-button">
+            <a-button @click="showAddInternalLB = false">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" @click="handleAddInternalLBSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-spin>
     </a-modal>
@@ -565,11 +580,14 @@ export default {
       this.networkid = id
     },
     handleAddNetworkSubmit () {
+      if (this.modalLoading) return
       this.fetchLoading = true
+      this.modalLoading = true
 
       this.form.validateFields((errors, values) => {
         if (errors) {
           this.fetchLoading = false
+          this.modalLoading = false
           return
         }
 
@@ -602,15 +620,18 @@ export default {
           this.parentFetchData()
           this.fetchData()
           this.fetchLoading = false
+          this.modalLoading = false
         })
       })
     },
     handleAddInternalLBSubmit () {
+      if (this.modalLoading) return
       this.fetchLoading = true
       this.modalLoading = true
       this.form.validateFields((errors, values) => {
         if (errors) {
           this.fetchLoading = false
+          this.modalLoading = false
           return
         }
         api('createLoadBalancer', {
@@ -629,20 +650,24 @@ export default {
             successMessage: this.$t('message.success.create.internallb'),
             successMethod: () => {
               this.fetchData()
+              this.modalLoading = false
             },
             errorMessage: `${this.$t('message.create.internallb.failed')} ` + response,
             errorMethod: () => {
               this.fetchData()
+              this.modalLoading = false
             },
             loadingMessage: this.$t('message.create.internallb.processing'),
             catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.fetchData()
+              this.modalLoading = false
             }
           })
         }).catch(error => {
           console.error(error)
           this.$message.error(this.$t('message.create.internallb.failed'))
+          this.modalLoading = false
         }).finally(() => {
           this.modalLoading = false
           this.fetchLoading = false
