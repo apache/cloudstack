@@ -1716,6 +1716,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid
         )
+        self.cleanup.append(vpc)
         self.validate_vpc_network(vpc)
 
         nw_off = NetworkOffering.create(
@@ -1723,9 +1724,8 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
             self.services["network_offering"],
             conservemode=False
         )
-        # Enable Network offering
-        nw_off.update(self.apiclient, state='Enabled')
         self.cleanup.append(nw_off)
+        nw_off.update(self.apiclient, state='Enabled')
 
         self.services["network_offering"][
             "supportedservices"] = 'Vpn,Dhcp,Dns,SourceNat,UserData,Lb,StaticNat,NetworkACL'
@@ -1745,9 +1745,8 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
             self.services["network_offering"],
             conservemode=False
         )
-        # Enable Network offering
-        nw_off_no_pf.update(self.apiclient, state='Enabled')
         self.cleanup.append(nw_off_no_pf)
+        nw_off_no_pf.update(self.apiclient, state='Enabled')
 
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
@@ -1762,6 +1761,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
             gateway='10.1.1.1',
             vpcid=vpc.id
         )
+        self.cleanup.append(network_1)
         self.debug("Created network with ID: %s" % network_1.id)
 
         self.debug("deploying VMs in network: %s" % network_1.name)
@@ -1774,6 +1774,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             networkids=[str(network_1.id)]
         )
+        self.cleanup.append(vm_1)
         self.debug("Deployed VM in network: %s" % network_1.id)
         vm_2 = VirtualMachine.create(
             self.apiclient,
@@ -1783,6 +1784,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             networkids=[str(network_1.id)]
         )
+        self.cleanup.append(vm_2)
         self.debug("Deployed another VM in network: %s" % network_1.id)
 
         self.debug("Associating public IP for network: %s" % network_1.name)
@@ -1854,7 +1856,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
         self.assertEqual(
             isinstance(public_ips, list),
             True,
-            "List public Ip for network should list the Ip addr"
+            "List public Ips for network should return a list"
         )
         self.assertEqual(
             public_ips[0].ipaddress,
@@ -1863,22 +1865,24 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
         )
 
         self.debug("Adding NetwrokACl rules to make PF and LB accessible")
-        NetworkACL.create(
+        nw_acl = NetworkACL.create(
             self.apiclient,
             networkid=network_1.id,
             services=self.services["lbrule"],
             traffictype='Ingress'
         )
+        self.cleanup.append(nw_acl)
 
         self.debug(
             "Adding Egress rules to network %s to access internet" %
             (network_1.name))
-        NetworkACL.create(
+        icmp_acl = NetworkACL.create(
             self.apiclient,
             networkid=network_1.id,
             services=self.services["icmp_rule"],
             traffictype='Egress'
         )
+        self.cleanup.append(icmp_acl)
 
         self.debug("Checking if we can SSH into VM_1? - IP: %s" %
                    public_ip_1.ipaddress.ipaddress)
@@ -2008,7 +2012,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to start VMs, %s" % e)
 
-        NATRule.create(
+        nat_rule = NATRule.create(
             self.apiclient,
             vm_1,
             self.services["natrule"],
@@ -2017,14 +2021,16 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
             networkid=network_1.id,
             vpcid=vpc.id
         )
+        self.cleanup.append(nat_rule)
 
         self.debug("Adding NetwrokACl rules to make NAT rule accessible")
-        NetworkACL.create(
+        nat_acl = NetworkACL.create(
             self.apiclient,
             networkid=network_1.id,
             services=self.services["natrule"],
             traffictype='Ingress'
         )
+        self.cleanup.append(nat_acl)
         self.debug("Checking if we can SSH into VM using NAT rule?")
         try:
             ssh_3 = vm_1.get_ssh_client(
@@ -2614,10 +2620,12 @@ class TestRouterOperations(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.vpc_off = VpcOffering.create(
             cls.api_client,
             cls.services["vpc_offering"]
         )
+        cls._cleanup.append(cls.vpc_off)
         cls.vpc_off.update(cls.api_client, state='Enabled')
 
         cls.account = Account.create(
@@ -2637,16 +2645,16 @@ class TestRouterOperations(cloudstackTestCase):
             account=cls.account.name,
             domainid=cls.account.domainid
         )
+        cls._cleanup.append(cls.vpc)
 
         cls.nw_off = NetworkOffering.create(
             cls.api_client,
             cls.services["network_offering"],
             conservemode=False
         )
+        cls._cleanup.append(cls.nw_off)
         # Enable Network offering
         cls.nw_off.update(cls.api_client, state='Enabled')
-        cls._cleanup.append(cls.nw_off)
-        cls._cleanup.append(cls.vpc_off)
 
         cls.network_1 = Network.create(
             cls.api_client,
@@ -2658,6 +2666,7 @@ class TestRouterOperations(cloudstackTestCase):
             gateway='10.1.1.1',
             vpcid=cls.vpc.id
         )
+        cls._cleanup.append(cls.network_1)
         # Spawn an instance in that network
         cls.vm_1 = VirtualMachine.create(
             cls.api_client,
@@ -2667,16 +2676,12 @@ class TestRouterOperations(cloudstackTestCase):
             serviceofferingid=cls.service_offering.id,
             networkids=[str(cls.network_1.id)]
         )
+        cls._cleanup.append(cls.vm_1)
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestRouterOperations, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -2684,7 +2689,7 @@ class TestRouterOperations(cloudstackTestCase):
         return
 
     def tearDown(self):
-        return
+        super(TestRouterOperations, self).tearDown()
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_stop_start_vpc_router(self):
