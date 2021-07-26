@@ -22,11 +22,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import com.cloud.upgrade.SystemVmTemplateRegistration;
+import com.cloud.utils.Pair;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.Hypervisor;
@@ -126,45 +128,21 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
                         throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating template with id " + templateId + " to be marked as 'system'", e);
                     }
                     // update template ID of system Vms
-                    try (PreparedStatement update_templ_id_pstmt = conn
-                            .prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = ? and removed is NULL");) {
-                        update_templ_id_pstmt.setLong(1, templateId);
-                        update_templ_id_pstmt.setString(2, hypervisorAndTemplateName.getKey().toString());
-                        update_templ_id_pstmt.executeUpdate();
-                    } catch (final Exception e) {
-                        LOG.error("updateSystemVmTemplates:Exception while setting template for " + hypervisorAndTemplateName.getKey().toString() + " to " + templateId
-                                + ": " + e.getMessage());
-                        throw new CloudRuntimeException("updateSystemVmTemplates:Exception while setting template for " + hypervisorAndTemplateName.getKey().toString() + " to "
-                                + templateId, e);
-                    }
+                    SystemVmTemplateRegistration.updateSystemVMEntries(conn, templateId,
+                            new Pair<Hypervisor.HypervisorType, String>(hypervisorAndTemplateName.getKey(), hypervisorAndTemplateName.getValue()));
 
-                    // Change value of global configuration parameter
-                    // router.template.* for the corresponding hypervisor
-                    try (PreparedStatement update_pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = ?");) {
-                        update_pstmt.setString(1, hypervisorAndTemplateName.getValue());
-                        update_pstmt.setString(2, SystemVmTemplateRegistration.routerTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()));
-                        update_pstmt.executeUpdate();
-                    } catch (final SQLException e) {
-                        LOG.error("updateSystemVmTemplates:Exception while setting " + SystemVmTemplateRegistration.routerTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()) + " to "
-                                + hypervisorAndTemplateName.getValue() + ": " + e.getMessage());
-                        throw new CloudRuntimeException("updateSystemVmTemplates:Exception while setting "
-                                + SystemVmTemplateRegistration.routerTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()) + " to " + hypervisorAndTemplateName.getValue(), e);
-                    }
+                    // Change value of global configuration parameter router.template.* for the corresponding hypervisor
+                    // Change value of global configuration parameter - minreq.sysvmtemplate.version for the ACS version
+                    Map<String, String> configParams = new HashMap<>();
+                    configParams.put(SystemVmTemplateRegistration.routerTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()), hypervisorAndTemplateName.getValue());
+                    configParams.put("minreq.sysvmtemplate.version", SystemVmTemplateRegistration.CS_MAJOR_VERSION + "." + SystemVmTemplateRegistration.CS_MINOR_VERSION);
 
-                    // Change value of global configuration parameter
-                    // minreq.sysvmtemplate.version for the ACS version
-                    try (PreparedStatement update_pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = ?");) {
-                        update_pstmt.setString(1, "4.16.0");
-                        update_pstmt.setString(2, "minreq.sysvmtemplate.version");
-                        update_pstmt.executeUpdate();
-                    } catch (final SQLException e) {
-                        LOG.error("updateSystemVmTemplates:Exception while setting 'minreq.sysvmtemplate.version' to 4.16.0: " + e.getMessage());
-                        throw new CloudRuntimeException("updateSystemVmTemplates:Exception while setting 'minreq.sysvmtemplate.version' to 4.16.0", e);
-                    }
+                    SystemVmTemplateRegistration.updateConfigurationParams(conn, configParams);
                 } else {
                     if (hypervisorsListInUse.contains(hypervisorAndTemplateName.getKey())) {
                         try {
-                            SystemVmTemplateRegistration.registerTemplates(hypervisorsListInUse);
+                            SystemVmTemplateRegistration.registerTemplates(conn, hypervisorsListInUse);
+                            break;
                         } catch (final Exception e) {
                             throw new CloudRuntimeException(getUpgradedVersion() + hypervisorAndTemplateName.getKey() + " SystemVm template not found. Cannot upgrade system Vms");
                         }

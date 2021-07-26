@@ -1392,7 +1392,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         String MsPublicKey = _configDao.getValue("ssh.publickey");
         String base64EncodedPublicKey = null;
         if (MsPublicKey != null) {
-            // base64EncodedPublicKey = Base64.getEncoder().encodeToString(DBEncryptionUtil.decrypt(MsPrivateKey).getBytes(StandardCharsets.UTF_8));
             base64EncodedPublicKey = Base64.getEncoder().encodeToString(MsPublicKey.getBytes(StandardCharsets.UTF_8));
         }
 

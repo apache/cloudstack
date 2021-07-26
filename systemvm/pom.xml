@@ -138,32 +138,6 @@
                     </execution>
                 </executions>
             </plugin>
-<!--            <plugin>-->
-<!--                <groupId>org.codehaus.mojo</groupId>-->
-<!--                <artifactId>exec-maven-plugin</artifactId>-->
-<!--                <version>1.2.1</version>-->
-<!--&lt;!&ndash;                <activation>&ndash;&gt;-->
-<!--&lt;!&ndash;                    <property>&ndash;&gt;-->
-<!--&lt;!&ndash;                        <name>noredist</name>&ndash;&gt;-->
-<!--&lt;!&ndash;                    </property>&ndash;&gt;-->
-<!--&lt;!&ndash;                </activation>&ndash;&gt;-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <id>package</id>-->
-<!--                        <phase>package</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>exec</goal>-->
-<!--                        </goals>-->
-<!--                        <configuration>-->
-<!--                            <workingDirectory>${basedir}/</workingDirectory>-->
-<!--                            <executable>python</executable>-->
-<!--                            <arguments>-->
-<!--                                <argument>templateConfig.py</argument>-->
-<!--                            </arguments>-->
-<!--                        </configuration>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -204,39 +178,6 @@
                 <mkisofs>genisoimage</mkisofs>
             </properties>
         </profile>
-<!--        <profile>-->
-<!--            <id>systemvm-template-build</id>-->
-<!--            <activation>-->
-<!--                <property>-->
-<!--                    <name>noredist</name>-->
-<!--                </property>-->
-<!--            </activation>-->
-<!--            <build>-->
-<!--                <plugins>-->
-<!--                    <plugin>-->
-<!--                        <groupId>org.codehaus.mojo</groupId>-->
-<!--                        <artifactId>exec-maven-plugin</artifactId>-->
-<!--                        <version>1.2.1</version>-->
-<!--                        <executions>-->
-<!--                            <execution>-->
-<!--                                <id>package</id>-->
-<!--                                <phase>package</phase>-->
-<!--                                <goals>-->
-<!--                                    <goal>exec</goal>-->
-<!--                                </goals>-->
-<!--                                <configuration>-->
-<!--                                    <workingDirectory>${basedir}/</workingDirectory>-->
-<!--                                    <executable>python</executable>-->
-<!--                                    <arguments>-->
-<!--                                        <argument>templateConfig.py</argument>-->
-<!--                                    </arguments>-->
-<!--                                </configuration>-->
-<!--                            </execution>-->
-<!--                        </executions>-->
-<!--                    </plugin>-->
-<!--                </plugins>-->
-<!--            </build>-->
-<!--        </profile>-->
         <profile>
             <id>vmware</id>
             <activation>

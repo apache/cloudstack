@@ -63,17 +63,6 @@ case "$(uname)" in
   Darwin*) sedi='-i ""'
 esac
 
-PYTHON=$(which python)
-if [ -z "$PYTHON" ] ; then
-    PYTHON=$(which python2)
-    if [ -z "$PYTHON" ] ; then
-        PYTHON=$(which python3)
-        if [ -z "$PYTHON" ] ; then
-            echo -e "python not found\n API Docs build failed"
-            exit 2
-        fi
-    fi
-fi
 set -e
 (cd "$DISTDIR/xmldoc"
  cp "$thisdir"/*.java .

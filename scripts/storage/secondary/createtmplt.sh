@@ -110,6 +110,16 @@ create_from_file() {
 
 }
 
+create_from_file_user() {
+  local tmpltfs=$1
+  local tmpltimg=$2
+  local tmpltname=$3
+
+  [ -n "$verbose" ] && echo "Copying to $tmpltfs/$tmpltname...could take a while" >&2
+  sudo cp $tmpltimg /$tmpltfs/$tmpltname
+
+}
+
 tflag=
 nflag=
 fflag=
@@ -118,8 +128,9 @@ hflag=
 hvm=false
 cleanup=false
 dflag=
+cloud=false
 
-while getopts 'vuht:n:f:s:d:S:' OPTION
+while getopts 'vcuht:n:f:s:d:S:' OPTION
 do
   case $OPTION in
   t)	tflag=1
@@ -143,6 +154,8 @@ do
 		;;
   h)	hflag=1
 		hvm="true"
+		;;
+  c)	cloud="true"
 		;;
   u)	cleanup="true"
 		;;
@@ -199,7 +212,14 @@ fi
 
 imgsize=$(ls -l $tmpltimg2| awk -F" " '{print $5}')
 
-create_from_file $tmpltfs $tmpltimg2 $tmpltname
+if [ $cloud ]
+then
+    create_from_file_user $tmpltfs $tmpltimg2 $tmpltname
+    tmpltfs=/tmp/tmpSecStorage/
+else
+    create_from_file $tmpltfs $tmpltimg2 $tmpltname
+fi
+
 
 touch /$tmpltfs/template.properties
 rollback_if_needed $tmpltfs $? "Failed to create template.properties file"
@@ -213,7 +233,7 @@ echo "description=$descr" >> /$tmpltfs/template.properties
 echo "hvm=$hvm" >> /$tmpltfs/template.properties
 echo "size=$imgsize" >> /$tmpltfs/template.properties
 
-if [ "$cleanup" == "true" ]
+if [[ "$cleanup" == "true" && $cloud != "true"]]
 then
   rm -f $tmpltimg
 fi
