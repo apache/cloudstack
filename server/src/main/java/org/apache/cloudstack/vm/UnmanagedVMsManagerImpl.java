@@ -138,6 +138,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
+import org.apache.commons.lang.StringUtils;
 
 public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     public static final String VM_IMPORT_DEFAULT_TEMPLATE_NAME = "system-default-vm-import-dummy-template.iso";
@@ -954,6 +955,11 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import VM: %s. %s", unmanagedInstance.getName(), Strings.nullToEmpty(e.getMessage())));
         }
 
+        String internalCSName = instanceName;
+        if(!StringUtils.isEmpty(unmanagedInstance.getInternalCSName()) && !unmanagedInstance.getInternalCSName().equals(instanceName)){
+            internalCSName = unmanagedInstance.getInternalCSName();
+        }
+
         Map<String, String> allDetails = new HashMap<>(details);
         if (validatedServiceOffering.isDynamic()) {
             allDetails.put(VmDetailConstants.CPU_NUMBER, String.valueOf(validatedServiceOffering.getCpu()));
@@ -1000,7 +1006,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             powerState = VirtualMachine.PowerState.PowerOn;
         }
         try {
-            userVm = userVmManager.importVM(zone, host, template, instanceName, displayName, owner,
+            userVm = userVmManager.importVM(zone, host, template, internalCSName, displayName, owner,
                     null, caller, true, null, owner.getAccountId(), userId,
                     validatedServiceOffering, null, hostName,
                     cluster.getHypervisorType(), allDetails, powerState);
