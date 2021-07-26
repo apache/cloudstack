@@ -20,8 +20,8 @@
 
     <translation-menu class="action"/>
     <header-notice class="action"/>
-    <label class="user-menu-server-info action">
-      <a-icon slot="prefix" type="database""></a-icon>
+    <label class="user-menu-server-info action" v-if="$config.multipleServer">
+      <a-icon slot="prefix" type="database" />
       {{ server.name || server.apiBase || 'Local-Server' }}
     </label>
     <a-dropdown>

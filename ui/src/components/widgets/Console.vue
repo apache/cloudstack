@@ -44,6 +44,9 @@ export default {
   },
   computed: {
     server () {
+      if (!this.$config.multipleServer) {
+        return this.$config.apiBase.replace('/api', '')
+      }
       const serverStorage = Vue.ls.get(SERVER_MANAGER)
       const apiBase = serverStorage.apiBase.replace('/api', '')
       if (!serverStorage.apiHost || serverStorage.apiHost === '/') {

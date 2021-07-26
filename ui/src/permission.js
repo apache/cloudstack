@@ -40,17 +40,18 @@ router.beforeEach((to, from, next) => {
     setDocumentTitle(title)
   }
 
-  const servers = Vue.prototype.$config.servers
-  const serverStorage = Vue.ls.get(SERVER_MANAGER)
-  let apiFullPath = ''
-  if (serverStorage) {
-    apiFullPath = (serverStorage.apiHost || '') + serverStorage.apiBase
+  if (Vue.prototype.$config.multipleServer) {
+    const servers = Vue.prototype.$config.servers
+    const serverStorage = Vue.ls.get(SERVER_MANAGER)
+    let apiFullPath = ''
+    if (serverStorage) {
+      apiFullPath = (serverStorage.apiHost || '') + serverStorage.apiBase
+    }
+    const serverFilter = servers.filter(ser => (ser.apiHost || '') + ser.apiBase === apiFullPath)
+    const server = serverFilter[0] || servers[0]
+    Vue.axios.defaults.baseURL = (server.apiHost || '') + server.apiBase
+    store.dispatch('SetServer', server)
   }
-  const serverFilter = servers.filter(ser => (ser.apiHost || '') + ser.apiBase === apiFullPath)
-  const server = serverFilter[0] || servers[0]
-
-  Vue.axios.defaults.baseURL = (server.apiHost || '') + server.apiBase
-  store.dispatch('SetServer', server)
 
   const validLogin = Vue.ls.get(ACCESS_TOKEN) || Cookies.get('userid') || Cookies.get('userid', { path: '/client' })
   if (validLogin) {

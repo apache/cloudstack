@@ -55,5 +55,6 @@
   },
   "plugins": [],
   "basicZoneEnabled": true,
+  "multipleServer": true,
   "docHelpMappings": {}
 }

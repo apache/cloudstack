@@ -35,7 +35,7 @@
           <a-icon type="safety" />
           {{ $t('label.login.portal') }}
         </span>
-        <a-form-item>
+        <a-form-item v-if="$config.multipleServer">
           <a-select
             size="large"
             :placeholder="$t('server')"
@@ -102,7 +102,7 @@
           <a-icon type="audit" />
           {{ $t('label.login.single.signon') }}
         </span>
-        <a-form-item>
+        <a-form-item v-if="$config.multipleServer">
           <a-select
             size="large"
             :placeholder="$t('server')"
@@ -172,7 +172,10 @@ export default {
     }
   },
   created () {
-    this.server = Vue.ls.get(SERVER_MANAGER) || this.$config.servers[0]
+    if (this.$config.multipleServer) {
+      this.server = Vue.ls.get(SERVER_MANAGER) || this.$config.servers[0]
+    }
+
     this.fetchData()
   },
   methods: {
@@ -215,8 +218,10 @@ export default {
 
       validateFields(validateFieldsKey, { force: true }, (err, values) => {
         if (!err) {
-          this.axios.defaults.baseURL = (this.server.apiHost || '') + this.server.apiBase
-          store.dispatch('SetServer', this.server)
+          if (this.$config.multipleServer) {
+            this.axios.defaults.baseURL = (this.server.apiHost || '') + this.server.apiBase
+            store.dispatch('SetServer', this.server)
+          }
 
           if (customActiveKey === 'cs') {
             const loginParams = { ...values }
