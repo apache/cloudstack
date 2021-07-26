@@ -80,7 +80,7 @@
       <a-button @click="closeModal">
         {{ $t('label.cancel') }}
       </a-button>
-      <a-button type="primary" ref="submit"  @click="handleSubmit">
+      <a-button type="primary" ref="submit" @click="handleSubmit">
         {{ $t('label.ok') }}
       </a-button>
     </div>

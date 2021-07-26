@@ -149,7 +149,7 @@
       :maskClosable="false"
       centered
       :footer="null"
-      v-ctrl-enter="updateTrafficLabel(trafficInEdit)"
+      v-ctrl-enter:[trafficInEdit]="updateTrafficLabel"
     >
       <a-form :form="form">
         <span class="ant-form-text"> {{ $t('message.edit.traffic.type') }} </span>
@@ -475,6 +475,7 @@ export default {
       this.emitPhysicalNetworks()
     },
     updateTrafficLabel (trafficInEdit) {
+      console.log(trafficInEdit)
       this.form.validateFields((err, values) => {
         if (!err) {
           this.showEditTraffic = false
