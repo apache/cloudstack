@@ -74,7 +74,7 @@
     <a-button
       v-if="(('deletePortForwardingRule' in $store.getters.apis) && this.selectedItems.length > 0)"
       type="danger"
-      icon="plus"
+      icon="delete"
       style="width: 100%; margin-bottom: 15px"
       @click="bulkActionConfirmation()">
       {{ $t('label.action.bulk.delete.portforward.rules') }}
@@ -523,15 +523,10 @@ export default {
       this.loading = true
       api('deletePortForwardingRule', { id: rule.id }).then(response => {
         const jobId = response.deleteportforwardingruleresponse.jobid
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('label.portforwarding.rule'),
-          jobid: jobId,
-          description: rule.id,
-          status: 'progress',
-          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
-        })
         eventBus.$emit('update-job-details', jobId, null)
         this.$pollJob({
+          title: this.$t('label.portforwarding.rule'),
+          description: rule.id,
           jobId: jobId,
           successMessage: this.$t('message.success.remove.port.forward'),
           successMethod: () => {
@@ -571,13 +566,11 @@ export default {
           successMessage: this.$t('message.success.add.port.forward'),
           successMethod: () => {
             this.closeModal()
-            this.parentFetchData()
             this.fetchData()
           },
           errorMessage: this.$t('message.add.port.forward.failed'),
           errorMethod: () => {
             this.closeModal()
-            this.parentFetchData()
             this.fetchData()
           },
           loadingMessage: this.$t('message.add.port.forward.processing'),
@@ -647,13 +640,11 @@ export default {
           jobId: response.createtagsresponse.jobid,
           successMessage: this.$t('message.success.add.tag'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
           errorMessage: this.$t('message.add.tag.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },
@@ -681,13 +672,11 @@ export default {
           jobId: response.deletetagsresponse.jobid,
           successMessage: this.$t('message.success.delete.tag'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
           errorMessage: this.$t('message.delete.tag.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },

@@ -444,11 +444,17 @@ export default {
       formModel: {},
       confirmDirty: false,
       firstIndex: 0,
-      modalWidth: '30vw'
+      modalWidth: '30vw',
+      promises: []
     }
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
+  },
+  beforeDestroy () {
+    eventBus.$off('vm-refresh-data')
+    eventBus.$off('async-job-complete')
+    eventBus.$off('exec-action')
   },
   created () {
     eventBus.$on('vm-refresh-data', () => {
@@ -478,7 +484,7 @@ export default {
     })
     eventBus.$on('update-bulk-job-status', (items, action) => {
       for (const item of items) {
-        this.$store.getters.asyncJobIds.map(function (j) {
+        this.$store.getters.headerNotices.map(function (j) {
           if (j.jobid === item.jobid) {
             j.bulkAction = action
           }
@@ -488,7 +494,7 @@ export default {
     eventBus.$on('update-job-details', (jobId, resourceId) => {
       const fullPath = this.$route.fullPath
       const path = this.$route.path
-      var jobs = this.$store.getters.asyncJobIds.map(job => {
+      var jobs = this.$store.getters.headerNotices.map(job => {
         if (job.jobid === jobId) {
           if (resourceId && !path.includes(resourceId)) {
             job.path = path + '/' + resourceId
@@ -498,8 +504,7 @@ export default {
         }
         return job
       })
-
-      this.$store.commit('SET_ASYNC_JOB_IDS', jobs)
+      this.$store.commit('SET_HEADER_NOTICES', jobs)
     })
 
     eventBus.$on('update-resource-state', (selectedItems, resource, state, jobid) => {
@@ -1010,39 +1015,40 @@ export default {
     },
     pollActionCompletion (jobId, action, resourceName, resource, showLoading = true) {
       eventBus.$emit('update-job-details', jobId, resource)
-      this.$pollJob({
-        jobId,
-        name: resourceName,
-        successMethod: result => {
-          this.fetchData()
-          if (this.selectedItems.length > 0) {
-            eventBus.$emit('update-resource-state', this.selectedItems, resource, 'success')
-          }
-          if (action.response) {
-            const description = action.response(result.jobresult)
-            if (description) {
-              this.$notification.info({
-                message: this.$t(action.label),
-                description: (<span domPropsInnerHTML={description}></span>),
-                duration: 0
-              })
+      return new Promise((resolve) => {
+        this.$pollJob({
+          jobId,
+          title: this.$t(action.label),
+          description: resourceName,
+          name: resourceName,
+          successMethod: result => {
+            if (this.selectedItems.length > 0) {
+              eventBus.$emit('update-resource-state', this.selectedItems, resource, 'success')
             }
-          }
-          if ('successMethod' in action) {
-            action.successMethod(this, result)
-          }
-        },
-        errorMethod: () => {
-          this.fetchData()
-          if (this.selectedItems.length > 0) {
-            eventBus.$emit('update-resource-state', this.selectedItems, resource, 'failed')
-          }
-        },
-        loadingMessage: `${this.$t(action.label)} - ${resourceName}`,
-        showLoading: showLoading,
-        catchMessage: this.$t('error.fetching.async.job.result'),
-        action,
-        bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal
+            if (action.response) {
+              const description = action.response(result.jobresult)
+              if (description) {
+                this.$notification.info({
+                  message: this.$t(action.label),
+                  description: (<span domPropsInnerHTML={description}></span>),
+                  duration: 0
+                })
+              }
+            }
+            resolve(true)
+          },
+          errorMethod: () => {
+            if (this.selectedItems.length > 0) {
+              eventBus.$emit('update-resource-state', this.selectedItems, resource, 'failed')
+            }
+            resolve(true)
+          },
+          loadingMessage: `${this.$t(action.label)} - ${resourceName}`,
+          showLoading: showLoading,
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          action,
+          bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal
+        })
       })
     },
     fillEditFormFieldValues () {
@@ -1071,6 +1077,7 @@ export default {
       this.message = {}
     },
     handleSubmit (e) {
+      this.promises = []
       if (!this.dataView && this.currentAction.groupAction && this.selectedRowKeys.length > 0) {
         if (this.selectedRowKeys.length > 0) {
           this.selectedColumns = this.chosenColumns
@@ -1100,18 +1107,17 @@ export default {
             for (const params of paramsList) {
               var resourceName = itemsNameMap[params.id || params.vmsnapshotid || params.username || params.name]
               // Using a method for this since it's an async call and don't want wrong prarms to be passed
-              this.callGroupApi(params, resourceName)
+              this.promises.push(this.callGroupApi(params, resourceName))
             }
             this.$message.info({
               content: this.$t(this.currentAction.label),
               key: this.currentAction.label,
               duration: 3
             })
-            setTimeout(() => {
+            Promise.all(this.promises).finally(() => {
               this.actionLoading = false
-              this.closeAction()
               this.fetchData()
-            }, 500)
+            })
           }
         })
       } else {
@@ -1119,17 +1125,20 @@ export default {
       }
     },
     callGroupApi (params, resourceName) {
-      const action = this.currentAction
-      api(action.api, params).then(json => {
-        this.handleResponse(json, resourceName, this.getDataIdentifier(params), action, false)
-      }).catch(error => {
-        if ([401].includes(error.response.status)) {
-          return
-        }
-        if (this.selectedItems.length !== 0) {
-          this.$notifyError(error)
-          eventBus.$emit('update-resource-state', this.selectedItems, this.getDataIdentifier(params), 'failed')
-        }
+      return new Promise((resolve, reject) => {
+        const action = this.currentAction
+        api(action.api, params).then(json => {
+          resolve(this.handleResponse(json, resourceName, this.getDataIdentifier(params), action, false))
+          this.closeAction()
+        }).catch(error => {
+          if ([401].includes(error.response.status)) {
+            return
+          }
+          if (this.selectedItems.length !== 0) {
+            this.$notifyError(error)
+            eventBus.$emit('update-resource-state', this.selectedItems, this.getDataIdentifier(params), 'failed')
+          }
+        })
       })
     },
     getDataIdentifier (params) {
@@ -1141,17 +1150,11 @@ export default {
       for (const obj in response) {
         if (obj.includes('response')) {
           if (response[obj].jobid) {
-            const jobid = response[obj].jobid
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t(action.label),
-              jobid: jobid,
-              description: resourceName,
-              status: 'progress',
-              bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
+            return new Promise(resolve => {
+              const jobid = response[obj].jobid
+              eventBus.$emit('update-resource-state', this.selectedItems, resource, 'InProgress', jobid)
+              resolve(this.pollActionCompletion(jobid, action, resourceName, resource, showLoading))
             })
-            eventBus.$emit('update-resource-state', this.selectedItems, resource, 'InProgress', jobid)
-            this.pollActionCompletion(jobid, action, resourceName, resource, showLoading)
-            return true
           } else {
             if (this.selectedItems.length > 0) {
               eventBus.$emit('update-resource-state', this.selectedItems, resource, 'success')
@@ -1253,14 +1256,16 @@ export default {
           args = [action.api, params]
         }
         api(...args).then(json => {
-          hasJobId = this.handleResponse(json, resourceName, this.getDataIdentifier(params), action)
-          if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView) {
-            this.$router.go(-1)
-          } else {
-            if (!hasJobId) {
-              this.fetchData()
+          this.handleResponse(json, resourceName, this.getDataIdentifier(params), action).then(jobId => {
+            hasJobId = jobId
+            if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView) {
+              this.$router.go(-1)
+            } else {
+              if (!hasJobId) {
+                this.fetchData()
+              }
             }
-          }
+          })
           this.closeAction()
         }).catch(error => {
           if ([401].includes(error.response.status)) {

@@ -1638,6 +1638,8 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
+              title: title,
+              description: description,
               successMethod: result => {
                 const vm = result.jobresult.virtualmachine
                 const name = vm.displayname || vm.name || vm.id
@@ -1648,22 +1650,15 @@ export default {
                     duration: 0
                   })
                 }
-                eventBus.$emit('vm-refresh-data')
-              },
-              errorMethod: () => {
-                eventBus.$emit('vm-refresh-data')
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
               catchMessage: this.$t('error.fetching.async.job.result'),
               catchMethod: () => {
                 eventBus.$emit('vm-refresh-data')
+              },
+              action: {
+                isFetchData: false
               }
-            })
-            this.$store.dispatch('AddAsyncJob', {
-              title: title,
-              jobid: jobId,
-              description: description,
-              status: 'progress'
             })
           }
           // Sending a refresh in case it hasn't picked up the new VM

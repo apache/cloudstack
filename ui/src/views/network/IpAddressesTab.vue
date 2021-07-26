@@ -29,7 +29,7 @@
       <a-button
         v-if="(('disassociateIpAddress' in $store.getters.apis) && this.selectedRowKeys.length > 0)"
         type="danger"
-        icon="plus"
+        icon="delete"
         style="width: 100%; margin-bottom: 15px"
         @click="bulkActionConfirmation()">
         {{ $t('label.action.bulk.release.public.ip.address') }}
@@ -389,15 +389,10 @@ export default {
         id: ip.id
       }).then(response => {
         const jobId = response.disassociateipaddressresponse.jobid
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('label.action.release.ip'),
-          jobid: jobId,
-          description: ip.id,
-          status: 'progress',
-          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
-        })
         eventBus.$emit('update-job-details', jobId, null)
         this.$pollJob({
+          title: this.$t('label.action.release.ip'),
+          description: ip.id,
           jobId: jobId,
           successMessage: this.$t('message.success.release.ip'),
           successMethod: () => {

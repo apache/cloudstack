@@ -130,6 +130,8 @@ export default {
             if (jobId) {
               this.$pollJob({
                 jobId,
+                title: title,
+                description: description,
                 successMethod: result => {
                   const volumeId = result.jobresult.snapshot.volumeid
                   const snapshotId = result.jobresult.snapshot.id
@@ -141,12 +143,6 @@ export default {
                 },
                 loadingMessage: `${title} ${this.$t('label.in.progress')}`,
                 catchMessage: this.$t('error.fetching.async.job.result')
-              })
-              this.$store.dispatch('AddAsyncJob', {
-                title: title,
-                jobid: jobId,
-                description: description,
-                status: 'progress'
               })
             }
           }).catch(error => {

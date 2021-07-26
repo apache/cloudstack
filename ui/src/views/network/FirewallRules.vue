@@ -57,7 +57,7 @@
     <a-button
       v-if="(('deleteFirewallRule' in $store.getters.apis) && this.selectedItems.length > 0)"
       type="danger"
-      icon="plus"
+      icon="delete"
       style="width: 100%; margin-bottom: 15px"
       @click="bulkActionConfirmation()">
       {{ $t('label.action.bulk.delete.firewall.rules') }}
@@ -331,15 +331,10 @@ export default {
       this.loading = true
       api('deleteFirewallRule', { id: rule.id }).then(response => {
         const jobId = response.deletefirewallruleresponse.jobid
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('label.action.delete.firewall'),
-          jobid: jobId,
-          description: rule.id,
-          status: 'progress',
-          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
-        })
         eventBus.$emit('update-job-details', jobId, null)
         this.$pollJob({
+          title: this.$t('label.action.delete.firewall'),
+          description: rule.id,
           jobId: jobId,
           successMessage: this.$t('message.success.remove.firewall.rule'),
           successMethod: () => {
@@ -438,13 +433,11 @@ export default {
           jobId: response.createtagsresponse.jobid,
           successMessage: this.$t('message.success.add.tag'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
           errorMessage: this.$t('message.add.tag.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },
@@ -473,13 +466,11 @@ export default {
           jobId: response.deletetagsresponse.jobid,
           successMessage: this.$t('message.success.delete.tag'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
           errorMessage: this.$t('message.delete.tag.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },
