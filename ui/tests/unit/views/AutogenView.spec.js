@@ -43,9 +43,6 @@ const mutations = {
 
 store = common.createMockStore(state, {}, mutations)
 i18n = common.createMockI18n('en', mockData.messages)
-const actions = {
-  AddAsyncJob: jest.fn((jobId) => {})
-}
 const spyConsole = {
   log: null,
   warn: null
