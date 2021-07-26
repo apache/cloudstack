@@ -110,7 +110,7 @@ class cloudstackTestCase(unittest.case.TestCase):
         try:
             if not isVmAccessible:
                 self.create_natrule_for_services(vm, public_ip, network)
-            self.setup_webserver(vm)
+            self.setup_webserver(vm, public_ip)
 
             urllib.request.urlretrieve(f"http://{public_ip.ipaddress.ipaddress}/test.html", filename="test.html")
             if not testnegative:
@@ -123,9 +123,12 @@ class cloudstackTestCase(unittest.case.TestCase):
             else:
                 self.debug("Failed to wget from VM=%s http server on public_ip=%s: %s" % (vm.name, public_ip.ipaddress.ipaddress, e))
 
-    def setup_webserver(self, vm):
+    def setup_webserver(self, vm, public_ip=None):
         # Start httpd service on VM first
-        sshClient = vm.get_ssh_client()
+        if public_ip == None:
+            sshClient = vm.get_ssh_client()
+        else:
+            sshClient = vm.get_ssh_client(ipaddress=public_ip.ipaddress.ipaddress)
         # Test to see if we are on a tiny linux box (using busybox)
         res = "apache"
         try:
