@@ -1300,6 +1300,7 @@
 "label.macaddress": "MAC Address",
 "label.macaddress.example": "The MAC Address. Example: 01:23:45:67:89:ab",
 "label.macaddresschanges": "MAC Address Changes",
+"label.maclearning": "MAC Learning",
 "label.macos": "MacOS",
 "label.make.project.owner": "Make account project owner",
 "label.make.user.project.owner": "Make user project owner",

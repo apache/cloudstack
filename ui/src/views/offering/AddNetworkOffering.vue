@@ -162,6 +162,9 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
+        <a-form-item :label="$t('label.maclearning')">
+          <a-switch v-decorator="['maclearning', {initialValue: false}]" />
+        </a-form-item>
         <a-form-item v-if="guestType !== 'l2'">
           <tooltip-label slot="label" :title="$t('label.supportedservices')" :tooltip="apiParams.supportedservices.description"/>
           <div class="supported-services-container" scroll-to="last-child">
@@ -828,14 +831,11 @@ export default {
         if ('egressdefaultpolicy' in values && values.egressdefaultpolicy !== 'allow') {
           params.egressdefaultpolicy = false
         }
-        if (values.promiscuousmode) {
-          params['details[0].promiscuousMode'] = values.promiscuousmode
-        }
-        if (values.macaddresschanges) {
-          params['details[0].macaddresschanges'] = values.macaddresschanges
-        }
-        if (values.forgedtransmits) {
-          params['details[0].forgedtransmits'] = values.forgedtransmits
+        const detailsKey = ['promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'maclearning']
+        for (const key of detailsKey) {
+          if (values[key]) {
+            params['details[0].' + key] = values[key]
+          }
         }
         if (values.ispublic !== true) {
           var domainIndexes = values.domainid
