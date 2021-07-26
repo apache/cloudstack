@@ -1256,7 +1256,13 @@ export default {
           args = [action.api, params]
         }
         api(...args).then(json => {
-          this.handleResponse(json, resourceName, this.getDataIdentifier(params), action).then(jobId => {
+          var response = this.handleResponse(json, resourceName, this.getDataIdentifier(params), action)
+          if (!response) {
+            this.fetchData()
+            this.closeAction()
+            return
+          }
+          response.then(jobId => {
             hasJobId = jobId
             if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView) {
               this.$router.go(-1)
