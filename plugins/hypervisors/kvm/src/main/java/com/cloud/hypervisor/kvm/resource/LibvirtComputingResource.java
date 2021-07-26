@@ -2532,21 +2532,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return cmd;
     }
 
-    /**
-     * Creates guest resources based in VM specification.
-     */
-    protected GuestResourceDef createGuestResourceDef(VirtualMachineTO vmTO) {
-        GuestResourceDef grd = new GuestResourceDef();
-
-        grd.setMemorySize(vmTO.getMaxRam() / 1024);
-        if (vmTO.getMinRam() != vmTO.getMaxRam() && !_noMemBalloon) {
-            grd.setMemBalloning(true);
-            grd.setCurrentMem(vmTO.getMinRam() / 1024);
-        }
-        grd.setVcpuNum(vmTO.getCpus());
-        return grd;
-    }
-
     private void configureGuestIfUefiEnabled(boolean isSecureBoot, String bootMode, GuestDef guest) {
         setGuestLoader(bootMode, SECURE, guest, GuestDef.GUEST_LOADER_SECURE);
         setGuestLoader(bootMode, LEGACY, guest, GuestDef.GUEST_LOADER_LEGACY);
@@ -2626,6 +2611,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         vm.setHvsType(HypervisorType.LXC.toString().toLowerCase());
     }
 
+    /**
+     * Creates guest resources based in VM specification.
+     */
     protected GuestResourceDef createGuestResourceDef(VirtualMachineTO vmTO){
         GuestResourceDef grd = new GuestResourceDef();
 
