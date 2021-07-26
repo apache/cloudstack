@@ -64,7 +64,7 @@ export const pollJobPlugin = {
         status: 'progress'
       })
 
-      options.originalPage = options.originalPage ? options.originalPage : this.$router.currentRoute.path
+      const originalPageOpts = originalPage || this.$router.currentRoute.path
       api('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
         if (result.jobstatus === 1) {
@@ -90,7 +90,7 @@ export const pollJobPlugin = {
 
           // Ensure we refresh on the same / parent page
           const currentPage = this.$router.currentRoute.path
-          const samePage = originalPage === currentPage || originalPage.startsWith(currentPage + '/')
+          const samePage = originalPageOpts === currentPage || originalPageOpts.startsWith(currentPage + '/')
           if (samePage && (!action || !('isFetchData' in action) || (action.isFetchData))) {
             eventBus.$emit('async-job-complete')
           }
