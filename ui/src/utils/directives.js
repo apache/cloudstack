@@ -18,15 +18,16 @@
 import Vue from 'vue'
 
 const ENTER_KEY_CODE = 13
-// let lastFocusElm = null
 
 Vue.directive('ctrlEnter', {
   bind: (el, binding, vnode) => {
     el.addEventListener('keyup', (e) => {
       if (!e.ctrlKey || e.keyCode !== ENTER_KEY_CODE) {
+        e.preventDefault()
         return
       }
 
+      e.preventDefault()
       if (typeof binding.value === 'function') {
         const argument = binding.arg || e
         binding.value(argument)
