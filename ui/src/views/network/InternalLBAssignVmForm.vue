@@ -195,6 +195,9 @@ export default {
       this.$emit('close-action')
     },
     handleSubmit () {
+      if (this.fetchLoading) {
+        return
+      }
       var j = 0
       this.params = {}
       for (var i = 0; i < this.iLb.virtualmachineid.length; i++) {

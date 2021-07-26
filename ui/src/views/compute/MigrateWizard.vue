@@ -177,6 +177,7 @@ export default {
       })
     },
     submitForm () {
+      if (this.loading) return
       this.loading = true
       var isUserVm = true
       if (this.$route.meta.name !== 'vm') {

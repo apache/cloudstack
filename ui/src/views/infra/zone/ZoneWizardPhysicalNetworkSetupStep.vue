@@ -475,7 +475,6 @@ export default {
       this.emitPhysicalNetworks()
     },
     updateTrafficLabel (trafficInEdit) {
-      console.log(trafficInEdit)
       this.form.validateFields((err, values) => {
         if (!err) {
           this.showEditTraffic = false
