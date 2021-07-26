@@ -1315,7 +1315,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             return volume;
 
         } catch (Exception e) {
-            throw new CloudRuntimeException(String.format("Failed to resize volume operation of volume UUID: [%s] due to - %s", volume.getUuid(), e.getMessage()));
+            throw new CloudRuntimeException(String.format("Failed to resize volume operation of volume UUID: [%s] due to - %s", volume.getUuid(), e.getMessage()), e);
         }
     }
 
