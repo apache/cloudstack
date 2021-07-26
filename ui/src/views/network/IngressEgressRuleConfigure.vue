@@ -18,7 +18,7 @@
 <template>
   <div>
 
-    <div>
+    <div v-ctrl-enter="handleAddRule">
       <div style="margin-bottom: 20px;">
         <div class="form__label">{{ $t('label.add.by') }}:</div>
         <a-radio-group @change="resetAllRules" v-model="addType">
@@ -127,8 +127,11 @@
       :title="$t('label.edit.tags')"
       v-model="tagsModalVisible"
       :footer="null"
+      :closable="true"
       :afterClose="closeModal"
-      :maskClosable="false">
+      :maskClosable="false"
+      @cancel="tagsModalVisible = false"
+      v-ctrl-enter="handleAddTag">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>
@@ -147,7 +150,7 @@
               <a-input v-decorator="['value', { rules: [{ required: true, message: this.$t('message.specifiy.tag.value')}] }]" />
             </a-form-item>
           </div>
-          <a-button type="primary" html-type="submit">{{ $t('label.add') }}</a-button>
+          <a-button type="primary">{{ $t('label.add') }}</a-button>
         </a-form>
 
         <a-divider style="margin-top: 0;"></a-divider>
@@ -247,7 +250,8 @@ export default {
           title: this.$t('label.action'),
           scopedSlots: { customRender: 'actions' }
         }
-      ]
+      ],
+      isSubmitted: false
     }
   },
   watch: {
@@ -274,6 +278,8 @@ export default {
       this.rules = this.tabType === 'ingress' ? this.resource.ingressrule : this.resource.egressrule
     },
     handleAddRule () {
+      if (this.isSubmitted) return
+      this.isSubmitted = true
       this.parentToggleLoading()
       api(this.tabType === 'ingress' ? 'authorizeSecurityGroupIngress' : 'authorizeSecurityGroupEgress', {
         securitygroupid: this.resource.id,
@@ -294,21 +300,25 @@ export default {
           successMessage: this.$t('message.success.add.rule'),
           successMethod: () => {
             this.parentToggleLoading()
+            this.isSubmitted = false
           },
           errorMessage: this.$t('message.add.rule.failed'),
           errorMethod: () => {
             this.parentToggleLoading()
+            this.isSubmitted = false
           },
           loadingMessage: this.$t('message.add.rule.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.parentFetchData()
             this.parentToggleLoading()
+            this.isSubmitted = false
           }
         })
       }).catch(error => {
         this.$notifyError(error)
         this.parentToggleLoading()
+        this.isSubmitted = false
       })
     },
     handleDeleteRule (rule) {
@@ -390,6 +400,7 @@ export default {
       })
     },
     handleAddTag (e) {
+      if (this.tagsLoading) return
       this.tagsLoading = true
 
       e.preventDefault()

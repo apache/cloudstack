@@ -115,28 +115,31 @@
         </a-form>
       </template>
     </a-table>
-    <div class="form-action">
+    <div class="form-action" v-ctrl-enter="handleSubmit">
       <a-button
         v-if="!isFixError"
         class="button-prev"
         @click="handleBack">
         {{ $t('label.previous') }}
       </a-button>
-      <a-button class="button-next" type="primary" @click="handleSubmit">
+      <a-button class="button-next" ref="submit" type="primary" @click="handleSubmit">
         {{ $t('label.next') }}
       </a-button>
     </div>
     <a-modal
       :visible="showError"
+      :closable="true"
       :maskClosable="false"
       :title="`${$t('label.error')}!`"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
-      @ok="() => { showError = false }"
-      @cancel="() => { showError = false }"
+      @cancel="showError = false"
+      v-ctrl-enter="showError = false"
       centered
     >
       <span>{{ $t('message.required.add.least.ip') }}</span>
+      <div :span="24" class="action-button">
+        <a-button @click="showError = false">{{ $t('label.cancel') }}</a-button>
+        <a-button type="primary" ref="submit" @click="showError = false">{{ $t('label.ok') }}</a-button>
+      </div>
     </a-modal>
   </div>
 </template>

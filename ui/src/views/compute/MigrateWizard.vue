@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form">
+  <div class="form" v-ctrl-enter="submitForm">
     <a-input-search
       :placeholder="$t('label.search')"
       v-model="searchQuery"
@@ -87,7 +87,7 @@
     </a-pagination>
 
     <div style="margin-top: 20px; display: flex; justify-content:flex-end;">
-      <a-button type="primary" :disabled="!selectedHost.id" @click="submitForm">
+      <a-button type="primary" ref="submit" :disabled="!selectedHost.id" @click="submitForm">
         {{ $t('label.ok') }}
       </a-button>
     </div>
@@ -185,6 +185,7 @@ export default {
       })
     },
     submitForm () {
+      if (this.loading) return
       this.loading = true
       var isUserVm = true
       if (this.$route.meta.name !== 'vm') {
