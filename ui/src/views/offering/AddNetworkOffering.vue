@@ -174,7 +174,7 @@
                   :checkBoxDecorator="'service.' + item.name"
                   :selectOptions="item.provider"
                   :selectDecorator="item.name + '.provider'"
-                  @handle-checkpair-change="handleSupportedServiceChange"/>
+                  @handle-checkselectpair-change="handleSupportedServiceChange"/>
               </a-list-item>
             </a-list>
           </div>

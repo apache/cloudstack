@@ -79,7 +79,9 @@
             v-if="!dataView"
             :searchFilters="searchFilters"
             :searchParams="searchParams"
-            :apiName="apiName"/>
+            :apiName="apiName"
+            @search="onSearch"
+            @change-filter="changeFilter"/>
         </a-col>
       </a-row>
     </a-card>
