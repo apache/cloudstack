@@ -37,6 +37,23 @@
             <a-avatar
               slot="avatar"
               icon="message" />
+            <a-popconfirm
+              :title="$t('label.make') + ' ' + (item.adminsonly ? $t('label.annotation.everyone') : $t('label.annotation.admins.only')) + ' ?'"
+              v-if="['Admin'].includes($store.getters.userInfo.roletype)"
+              slot="actions"
+              key="visibility"
+              @confirm="updateVisibility(item)"
+              :okText="$t('label.yes')"
+              :cancelText="$t('label.no')" >
+              <a-icon
+                type="eye"
+                :style="[{
+                  color: item.adminsonly ? $config.theme['@primary-color'] : $config.theme['@disabled-color']
+                }]" />
+              <span>
+                {{ item.adminsonly ? $t('label.annotation.admins.only') : $t('label.annotation.everyone') }}
+              </span>
+            </a-popconfirm>
           </a-comment>
           <a-button
             v-if="'removeAnnotation' in $store.getters.apis && isAdminOrAnnotationOwner(item)"
@@ -202,6 +219,18 @@ export default {
       const args = {}
       args.id = annotation.id
       api('removeAnnotation', args).catch(error => {
+        this.$notifyError(error)
+      }).finally(e => {
+        this.getAnnotations()
+      })
+    },
+    updateVisibility (annotation) {
+      this.loadingAnnotations = true
+      const args = {
+        id: annotation.id,
+        adminsonly: !annotation.adminsonly
+      }
+      api('updateAnnotationVisibility', args).catch(error => {
         this.$notifyError(error)
       }).finally(e => {
         this.getAnnotations()
