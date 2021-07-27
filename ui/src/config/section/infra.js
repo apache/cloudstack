@@ -37,7 +37,7 @@ export default {
     {
       name: 'infrasummary',
       title: 'label.summary',
-      shortKey: ['k', 'i'],
+      shortKey: ['k', 'b'],
       icon: 'read',
       permission: ['listInfrastructure'],
       component: () => import('@/views/infra/InfraSummary.vue')
@@ -57,7 +57,7 @@ export default {
       name: 'cpusocket',
       title: 'label.cpu.sockets',
       icon: 'inbox',
-      shortKey: ['k', 'c'],
+      shortKey: ['k', 'w'],
       docHelp: 'adminguide/management.html#reporting-cpu-sockets',
       permission: ['listHosts'],
       component: () => import('@/views/infra/CpuSockets.vue')

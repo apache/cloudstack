@@ -21,7 +21,7 @@ export default {
   name: 'cluster',
   title: 'label.clusters',
   icon: 'cluster',
-  shortKey: ['k', 'c'],
+  shortKey: ['k', 'j'],
   permission: ['listClustersMetrics'],
   columns: () => {
     const fields = ['name', 'state', 'allocationstate', 'clustertype', 'hypervisortype', 'hosts']

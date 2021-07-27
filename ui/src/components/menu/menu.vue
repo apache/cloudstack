@@ -125,12 +125,17 @@ export default {
       }
       const on = {
         shortkey: () => {
+          if (this.cachedPath === menu.path) {
+            return
+          }
+
           if (menu.path) {
-            this.$router.push({ path: menu.path })
+            this.cachedPath = menu.path
+            setTimeout(() => this.$router.push({ path: menu.path }))
           }
         }
       }
-      // console.log(menu.meta.shortkey.length)
+
       return (
         <Item vShortkey={menu.meta.shortKey} {...{ key: menu.path, on: on }} >
           <router-link {...{ props }}>

@@ -28,7 +28,7 @@ export default {
       name: 'vm',
       title: 'label.instances',
       icon: 'desktop',
-      shortKey: ['c', 'i'],
+      shortKey: ['c', 't'],
       docHelp: 'adminguide/virtual_machines.html',
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
