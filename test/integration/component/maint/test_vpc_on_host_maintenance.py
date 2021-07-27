@@ -18,7 +18,6 @@
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 import unittest
-from marvin.lib.utils import cleanup_resources
 from marvin.lib.base import (Account,
                              Host,
                              VPC,
@@ -99,8 +98,6 @@ class TestVPCHostMaintenance(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
             for host in cls.hosts:
                 Host.cancelMaintenance(
                     cls.api_client,
@@ -116,7 +113,9 @@ class TestVPCHostMaintenance(cloudstackTestCase):
                         "Failed to cancel maintenance mode on %s" %
                         (host.name))
         except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+            raise Exception("Warning: Exception during resetting hosts maintenance : %s" % e)
+        finally:
+            super(TestVPCHostMaintenance, cls).tearDownClass()
         return
 
     def setUp(self):
