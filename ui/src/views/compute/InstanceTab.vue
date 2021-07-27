@@ -138,7 +138,7 @@
       <a-tab-pane :tab="$t('label.settings')" key="settings">
         <DetailSettings :resource="resource" :loading="loading" />
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.annotations')" key="annotations" v-if="'listAnnotations' in $store.getters.apis">
+      <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
         <AnnotationsTab
           :resource="vm"
           :items="annotations">

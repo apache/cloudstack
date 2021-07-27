@@ -74,8 +74,11 @@
         <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
 
         <span v-if="record.hasannotations">
-          <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}<a-icon style="padding-left: 10px" size="small" type="message" theme="filled"/></router-link>
-          <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
+          <span v-if="record.id">
+            <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+            <router-link :to="{ path: $route.path + '/' + record.id + '?tab=comments' }"><a-icon style="padding-left: 10px" size="small" type="message" theme="filled"/></router-link>
+          </span>
+          <router-link v-else :to="{ path: $route.path + '/' + record.name }" >{{ text }}</router-link>
         </span>
         <span v-else-if="$route.path.startsWith('/globalsetting')">{{ text }}</span>
         <span v-else-if="$route.path.startsWith('/alert')">
@@ -110,31 +113,7 @@
       <span v-else>{{ text }}</span>
     </span>
     <span slot="entityid" slot-scope="text, record" href="javascript:;">
-      <router-link :to="{ path: '/vm' + '/' + record.entityid }" v-if="'VM' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/host' + '/' + record.entityid }" v-else-if="'HOST' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/volume' + '/' + record.entityid }" v-else-if="'VOLUME' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/snapshot' + '/' + record.entityid }" v-else-if="'SNAPSHOT' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/vmsnapshot' + '/' + record.entityid }" v-else-if="'VM_SNAPSHOT' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/vmgroup' + '/' + record.entityid }" v-else-if="'INSTANCE_GROUP' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/guestnetwork' + '/' + record.entityid }" v-else-if="'NETWORK' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/vpc' + '/' + record.entityid }" v-else-if="'VPC' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/publicip' + '/' + record.entityid }" v-else-if="'PUBLIC_IP_ADDRESS' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/vpncustomergateway' + '/' + record.entityid }" v-else-if="'VPN_CUSTOMER_GATEWAY' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/template' + '/' + record.entityid }" v-else-if="'TEMPLATE' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/iso' + '/' + record.entityid }" v-else-if="'ISO' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/ssh' + '/' + record.entityid }" v-else-if="'SSH_KEYPAIR' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/domain' + '/' + record.entityid }" v-else-if="'DOMAIN' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/computeoffering' + '/' + record.entityid }" v-else-if="'SERVICE_OFFERING' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/diskoffering' + '/' + record.entityid }" v-else-if="'DISK_OFFERING' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/networkoffering' + '/' + record.entityid }" v-else-if="'NETWORK_OFFERING' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/pod' + '/' + record.entityid }" v-else-if="'POD' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/zone' + '/' + record.entityid }" v-else-if="'ZONE' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/cluster' + '/' + record.entityid }" v-else-if="'CLUSTER' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/storagepool' + '/' + record.entityid }" v-else-if="'PRIMARY_STORAGE' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/imagestore' + '/' + record.entityid }" v-else-if="'SECONDARY_STORAGE' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/router' + '/' + record.entityid }" v-else-if="'VR' === record.entitytype">{{ text }}</router-link>
-      <router-link :to="{ path: '/systemvm' + '/' + record.entityid }" v-else-if="'SYSTEM_VM' === record.entitytype">{{ text }}</router-link>
-      <span v-else>{{ text }}</span>
+      <router-link :to="{ path: generateCommentsPath(record) }">{{ text }}</router-link>
     </span>
     <span slot="adminsonly" v-if="['Admin'].includes($store.getters.userInfo.roletype)" slot-scope="text, record" href="javascript:;">
       <a-checkbox :checked="record.adminsonly" :value="record.id" v-if="record.userid === $store.getters.userInfo.id" @change="e => updateAdminsOnly(e)" />
@@ -619,6 +598,38 @@ export default {
       }
 
       return record.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ') || text
+    },
+    generateCommentsPath (record) {
+      return '/' + this.entityTypeToPath(record.entitytype) + '/' + record.entityid + '?tab=comments'
+    },
+    entityTypeToPath (entitytype) {
+      switch (entitytype) {
+        case 'VM' : return 'vm'
+        case 'HOST' : return 'host'
+        case 'VOLUME' : return 'volume'
+        case 'SNAPSHOT' : return 'snapshot'
+        case 'VM_SNAPSHOT' : return 'vmsnapshot'
+        case 'INSTANCE_GROUP' : return 'vmgroup'
+        case 'NETWORK' : return 'guestnetwork'
+        case 'VPC' : return 'vpc'
+        case 'PUBLIC_IP_ADDRESS' : return 'publicip'
+        case 'VPN_CUSTOMER_GATEWAY' : return 'vpncustomergateway'
+        case 'TEMPLATE' : return 'template'
+        case 'ISO' : return 'iso'
+        case 'SSH_KEYPAIR' : return 'ssh'
+        case 'DOMAIN' : return 'domain'
+        case 'SERVICE_OFFERING' : return 'computeoffering'
+        case 'DISK_OFFERING' : return 'diskoffering'
+        case 'NETWORK_OFFERING' : return 'networkoffering'
+        case 'POD' : return 'pod'
+        case 'ZONE' : return 'zone'
+        case 'CLUSTER' : return 'cluster'
+        case 'PRIMARY_STORAGE' : return 'storagepool'
+        case 'SECONDARY_STORAGE' : return 'imagestore'
+        case 'VR' : return 'router'
+        case 'SYSTEM_VM' : return 'systemvm'
+        default: return entitytype.toLowerCase().replace('_', '')
+      }
     },
     updateAdminsOnly (e) {
       api('updateAnnotationVisibility', {

@@ -18,11 +18,11 @@
 <template>
 
   <div class="account-center-team" v-if="annotationType && 'listAnnotations' in $store.getters.apis">
-    <a-divider :dashed="true"/>
     <a-spin :spinning="loadingAnnotations">
       <div class="title">
         {{ $t('label.comments') }} ({{ notes.length }})
       </div>
+      <a-divider :dashed="true" />
       <a-list
         v-if="notes.length"
         :dataSource="notes"
@@ -34,38 +34,40 @@
             :content="item.annotation"
             :datetime="$toLocaleDate(item.created)"
             :author="item.username" >
-            <a-button
-              v-if="'removeAnnotation' in $store.getters.apis && isAdminOrAnnotationOwner(item)"
+            <a-avatar
               slot="avatar"
-              type="danger"
-              shape="circle"
-              size="small"
-              @click="deleteNote(item)">
-              <a-icon type="delete"/>
-            </a-button>
+              icon="message" />
           </a-comment>
+          <a-button
+            v-if="'removeAnnotation' in $store.getters.apis && isAdminOrAnnotationOwner(item)"
+            type="danger"
+            icon="delete"
+            shape="circle"
+            size="small"
+            @click="deleteNote(item)" >
+          </a-button>
         </a-list-item>
       </a-list>
 
+      <a-divider :dashed="true" />
       <a-comment v-if="'addAnnotation' in $store.getters.apis">
         <a-avatar
           slot="avatar"
           icon="edit"
           @click="showNotesInput = true" />
-        <div slot="content">
+        <div slot="content" v-ctrl-enter="saveNote">
           <a-textarea
             rows="4"
             @change="handleNoteChange"
             :value="annotation"
             :placeholder="$t('label.add.note')" />
-          <a-checkbox @change="toggleNoteVisibility" v-if="['Admin'].includes(this.$store.getters.userInfo.roletype)">
+          <a-checkbox @change="toggleNoteVisibility" v-if="['Admin'].includes(this.$store.getters.userInfo.roletype)" style="margin-top: 10px">
             {{ $t('label.annotation.admins.only') }}
           </a-checkbox>
           <a-button
-            style="margin-top: 10px"
+            style="margin-top: 10px; float: right"
             @click="saveNote"
-            type="primary"
-          >
+            type="primary" >
             {{ $t('label.save') }}
           </a-button>
         </div>
@@ -105,9 +107,7 @@ export default {
     resource: function (newItem, oldItem) {
       this.resource = newItem
       this.resourceType = this.$route.meta.resourceType
-      this.annotationType = ''
-      this.setAnnotationTypeFromResourceType()
-
+      this.annotationType = this.generateAnnotationType()
       if (this.annotationType) {
         this.getAnnotations()
       }
@@ -117,85 +117,38 @@ export default {
     this.fetchData()
   },
   methods: {
-    setAnnotationTypeFromResourceType () {
+    generateAnnotationType () {
       switch (this.resourceType) {
-        case 'UserVm':
-          this.annotationType = 'VM'
-          break
-        case 'Domain':
-          this.annotationType = 'DOMAIN'
-          break
-        case 'Host':
-          this.annotationType = 'HOST'
-          break
-        case 'Volume':
-          this.annotationType = 'VOLUME'
-          break
-        case 'Snapshot':
-          this.annotationType = 'SNAPSHOT'
-          break
-        case 'VMSnapshot':
-          this.annotationType = 'VM_SNAPSHOT'
-          break
-        case 'VMInstanceGroup':
-          this.annotationType = 'INSTANCE_GROUP'
-          break
-        case 'SSHKeyPair':
-          this.annotationType = 'SSH_KEYPAIR'
-          break
-        case 'Network':
-          this.annotationType = 'NETWORK'
-          break
-        case 'Vpc':
-          this.annotationType = 'VPC'
-          break
-        case 'PublicIpAddress':
-          this.annotationType = 'PUBLIC_IP_ADDRESS'
-          break
-        case 'VPNCustomerGateway':
-          this.annotationType = 'VPN_CUSTOMER_GATEWAY'
-          break
-        case 'Template':
-          this.annotationType = 'TEMPLATE'
-          break
-        case 'ISO':
-          this.annotationType = 'ISO'
-          break
-        case 'ServiceOffering':
-          this.annotationType = 'SERVICE_OFFERING'
-          break
-        case 'DiskOffering':
-          this.annotationType = 'DISK_OFFERING'
-          break
-        case 'NetworkOffering':
-          this.annotationType = 'NETWORK_OFFERING'
-          break
-        case 'Zone':
-          this.annotationType = 'ZONE'
-          break
-        case 'Pod':
-          this.annotationType = 'POD'
-          break
-        case 'Cluster':
-          this.annotationType = 'CLUSTER'
-          break
-        case 'PrimaryStorage':
-          this.annotationType = 'PRIMARY_STORAGE'
-          break
-        case 'SecondaryStorage':
-          this.annotationType = 'SECONDARY_STORAGE'
-          break
-        case 'SystemVm':
-          this.annotationType = 'SYSTEM_VM'
-          break
-        case 'VirtualRouter':
-          this.annotationType = 'VR'
-          break
+        case 'UserVm': return 'VM'
+        case 'Domain': return 'DOMAIN'
+        case 'Host': return 'HOST'
+        case 'Volume': return 'VOLUME'
+        case 'Snapshot': return 'SNAPSHOT'
+        case 'VMSnapshot': return 'VM_SNAPSHOT'
+        case 'VMInstanceGroup': return 'INSTANCE_GROUP'
+        case 'SSHKeyPair': return 'SSH_KEYPAIR'
+        case 'Network': return 'NETWORK'
+        case 'Vpc': return 'VPC'
+        case 'PublicIpAddress': return 'PUBLIC_IP_ADDRESS'
+        case 'VPNCustomerGateway': return 'VPN_CUSTOMER_GATEWAY'
+        case 'Template': return 'TEMPLATE'
+        case 'ISO': return 'ISO'
+        case 'ServiceOffering': return 'SERVICE_OFFERING'
+        case 'DiskOffering': return 'DISK_OFFERING'
+        case 'NetworkOffering': return 'NETWORK_OFFERING'
+        case 'Zone': return 'ZONE'
+        case 'Pod': return 'POD'
+        case 'Cluster': return 'CLUSTER'
+        case 'PrimaryStorage': return 'PRIMARY_STORAGE'
+        case 'SecondaryStorage': return 'SECONDARY_STORAGE'
+        case 'SystemVm': return 'SYSTEM_VM'
+        case 'VirtualRouter': return 'VR'
+        default: return ''
       }
     },
     fetchData () {
       this.resourceType = this.$route.meta.resourceType
-      this.setAnnotationTypeFromResourceType()
+      this.annotationType = this.generateAnnotationType()
       if (this.items.length) {
         this.notes = this.items
       } else {
@@ -236,7 +189,8 @@ export default {
       args.entitytype = this.annotationType
       args.annotation = this.annotation
       args.adminsonly = this.annotationAdminsOnly
-      api('addAnnotation', args).then(json => {
+      api('addAnnotation', args).catch(error => {
+        this.$notifyError(error)
       }).finally(e => {
         this.getAnnotations()
       })
@@ -247,7 +201,8 @@ export default {
       this.loadingAnnotations = true
       const args = {}
       args.id = annotation.id
-      api('removeAnnotation', args).then(json => {
+      api('removeAnnotation', args).catch(error => {
+        this.$notifyError(error)
       }).finally(e => {
         this.getAnnotations()
       })
@@ -292,6 +247,6 @@ export default {
 .comment {
   display: inline-block;
   text-overflow: ellipsis;
-  width: calc(100%);
+  width: calc(95%);
 }
 </style>
