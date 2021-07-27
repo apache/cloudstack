@@ -144,6 +144,7 @@ export default {
         case 'VMSnapshot': return 'VM_SNAPSHOT'
         case 'VMInstanceGroup': return 'INSTANCE_GROUP'
         case 'SSHKeyPair': return 'SSH_KEYPAIR'
+        case 'KubernetesCluster': return 'KUBERNETES_CLUSTER'
         case 'Network': return 'NETWORK'
         case 'Vpc': return 'VPC'
         case 'PublicIpAddress': return 'PUBLIC_IP_ADDRESS'

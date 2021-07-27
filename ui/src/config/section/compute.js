@@ -438,6 +438,7 @@ export default {
         name: 'k8s',
         component: () => import('@/views/compute/KubernetesServiceTab.vue')
       }],
+      resourceType: 'KubernetesCluster',
       actions: [
         {
           api: 'createKubernetesCluster',

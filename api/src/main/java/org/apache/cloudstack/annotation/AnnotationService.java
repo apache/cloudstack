@@ -37,7 +37,7 @@ public interface AnnotationService {
         VM(true), VOLUME(true), SNAPSHOT(true),
         VM_SNAPSHOT(true), INSTANCE_GROUP(true), SSH_KEYPAIR(true),
         NETWORK(true), VPC(true), PUBLIC_IP_ADDRESS(true), VPN_CUSTOMER_GATEWAY(true),
-        TEMPLATE(true), ISO(true),
+        TEMPLATE(true), ISO(true), KUBERNETES_CLUSTER(true),
         SERVICE_OFFERING(false), DISK_OFFERING(false), NETWORK_OFFERING(false),
         ZONE(false), POD(false), CLUSTER(false), HOST(false), DOMAIN(false),
         PRIMARY_STORAGE(false), SECONDARY_STORAGE(false), VR(false), SYSTEM_VM(false);
