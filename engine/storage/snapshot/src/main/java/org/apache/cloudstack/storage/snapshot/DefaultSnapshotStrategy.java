@@ -191,7 +191,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                     break;
                 }
 
-                s_logger.debug(String.format("Snapshot [%s] does not have children, therefore we will delete it and its parents.", snapshotTo));
+                s_logger.debug(String.format("Snapshot [%s] does not have children; therefore, we will delete it and its parents.", snapshotTo));
 
                 SnapshotInfo parent = snapshot.getParent();
                 boolean deleted = false;
@@ -199,7 +199,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                     if (parent.getPath() != null && parent.getPath().equalsIgnoreCase(snapshot.getPath())) {
                         //NOTE: if both snapshots share the same path, it's for xenserver's empty delta snapshot. We can't delete the snapshot on the backend, as parent snapshot still reference to it
                         //Instead, mark it as destroyed in the db.
-                        s_logger.debug(String.format("Snapshot [%s] is an empty delta snapshot, therefore we will only mark it as destroyed in the database.", snapshotTo));
+                        s_logger.debug(String.format("Snapshot [%s] is an empty delta snapshot; therefore, we will only mark it as destroyed in the database.", snapshotTo));
                         snapshot.processEvent(Event.DestroyRequested);
                         snapshot.processEvent(Event.OperationSuccessed);
                         deleted = true;

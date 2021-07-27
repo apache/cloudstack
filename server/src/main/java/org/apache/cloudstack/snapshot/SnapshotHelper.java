@@ -212,7 +212,7 @@ public class SnapshotHelper {
      * Throws a CloudRuntimeException with the volume and the snapshots only in primary storage.
      */
     protected void throwCloudRuntimeExceptionOfSnapshotsOnlyInPrimaryStorage(VolumeVO volumeVo, Set<Long> snapshotIdsOnlyInPrimaryStorage) throws CloudRuntimeException {
-        List<SnapshotVO> snapshots = snapshotDao.listByIds(snapshotIdsOnlyInPrimaryStorage.toArray(new Long[0]));
+        List<SnapshotVO> snapshots = snapshotDao.listByIds(snapshotIdsOnlyInPrimaryStorage.toArray());
 
         String message = String.format("%s is a KVM volume and has snapshots only in primary storage. Snapshots [%s].%s", volumeVo, ReflectionToStringBuilderUtils
                 .reflectOnlySelectedFields(snapshots, ToStringStyle.JSON_STYLE, ",", "uuid", "name"), backupSnapshotAfterTakingSnapshot ? "" : " Consider excluding them to migrate"

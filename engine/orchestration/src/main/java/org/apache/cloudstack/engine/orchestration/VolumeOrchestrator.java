@@ -490,8 +490,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             }
             return result.getVolume();
         } catch (InterruptedException | ExecutionException e) {
-            s_logger.debug("Failed to create volume from snapshot", e);
-            throw new CloudRuntimeException("Failed to create volume from snapshot", e);
+            String message = String.format("Failed to create volume from snapshot [%s] due to [%s].", snapInfo.getTO(), e.getMessage());
+            s_logger.error(message, e);
+            throw new CloudRuntimeException(message, e);
         } finally {
             snapshotHelper.expungeTemporarySnapshot(kvmSnapshotOnlyInPrimaryStorage, snapInfo);
         }

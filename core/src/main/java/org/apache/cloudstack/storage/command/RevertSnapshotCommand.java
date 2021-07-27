@@ -22,11 +22,13 @@ import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 
 public final class RevertSnapshotCommand extends StorageSubSystemCommand {
     private SnapshotObjectTO data;
+    private SnapshotObjectTO dataOnPrimaryStorage;
     private boolean _executeInSequence = false;
 
-    public RevertSnapshotCommand(SnapshotObjectTO data) {
+    public RevertSnapshotCommand(SnapshotObjectTO data, SnapshotObjectTO dataOnPrimaryStorage) {
         super();
         this.data = data;
+        this.dataOnPrimaryStorage = dataOnPrimaryStorage;
     }
 
     protected RevertSnapshotCommand() {
@@ -35,6 +37,10 @@ public final class RevertSnapshotCommand extends StorageSubSystemCommand {
 
     public SnapshotObjectTO getData() {
         return this.data;
+    }
+
+    public SnapshotObjectTO getDataOnPrimaryStorage() {
+        return dataOnPrimaryStorage;
     }
 
     @Override

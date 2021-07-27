@@ -253,9 +253,9 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     }
 
     @Override
-    public List<SnapshotVO> listByIds(Long... ids) {
+    public List<SnapshotVO> listByIds(Object... ids) {
         SearchCriteria<SnapshotVO> sc = snapshotIdsSearch.create();
-        sc.setParameters("id", (Object[]) ids);
+        sc.setParameters("id", ids);
         return listBy(sc, null);
     }
 
