@@ -553,7 +553,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
     @Override
     public String toString() {
-        return String.format("Template {\"id\": %s, \"uniqueName\": \"%s\", \"format\": \"%s\"}", id, uniqueName, format);
+        return String.format("Template {id: %s, uniqueName: \"%s\", format: \"%s\"}", id, uniqueName, format);
     }
 
     public void setRemoved(Date removed) {
