@@ -37,6 +37,7 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
@@ -105,9 +106,9 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
 
     @Override
     public ListResponse<AnnotationResponse> searchForAnnotations(ListAnnotationsCmd cmd) {
-        List<AnnotationVO> annotations = getAnnotationsForApiCmd(cmd);
-        List<AnnotationResponse> annotationResponses = convertAnnotationsToResponses(annotations);
-        return createAnnotationsResponseList(annotationResponses);
+        Pair<List<AnnotationVO>, Integer> annotations = getAnnotationsForApiCmd(cmd);
+        List<AnnotationResponse> annotationResponses = convertAnnotationsToResponses(annotations.first());
+        return createAnnotationsResponseList(annotationResponses, annotations.second());
     }
 
     @Override
@@ -212,7 +213,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         return adminRoles.contains(role.getRoleType());
     }
 
-    private List<AnnotationVO> getAnnotationsForApiCmd(ListAnnotationsCmd cmd) {
+    private Pair<List<AnnotationVO>, Integer> getAnnotationsForApiCmd(ListAnnotationsCmd cmd) {
         List<AnnotationVO> annotations;
         String userUuid = cmd.getUserUuid();
         String entityUuid = cmd.getEntityUuid();
@@ -267,7 +268,9 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
             }
             annotations = annotationDao.listAllAnnotations(userUuid, isCallerAdmin, annotationFilter, keyword);
         }
-        return annotations;
+        List<AnnotationVO> paginated = StringUtils.applyPagination(annotations, cmd.getStartIndex(), cmd.getPageSizeVal());
+        return (paginated != null) ? new Pair<>(paginated, annotations.size()) :
+                new Pair<>(annotations, annotations.size());
     }
 
     private void ensureEntityIsOwnedByTheUser(String entityType, String entityUuid, UserVO callingUser) {
@@ -318,9 +321,9 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         return annotationResponses;
     }
 
-    private ListResponse<AnnotationResponse> createAnnotationsResponseList(List<AnnotationResponse> annotationResponses) {
+    private ListResponse<AnnotationResponse> createAnnotationsResponseList(List<AnnotationResponse> annotationResponses, Integer count) {
         ListResponse<AnnotationResponse> listResponse = new ListResponse<>();
-        listResponse.setResponses(annotationResponses);
+        listResponse.setResponses(annotationResponses, count);
         return listResponse;
     }
 
