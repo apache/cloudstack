@@ -114,6 +114,7 @@
                           {{ $t('label.override.rootdisk.size') }}
                           <a-switch
                             v-model:checked="rootDiskSize"
+                            :default-checked="showRootDiskSizeChanger && rootDiskSizeFixed > 0"
                             :disabled="rootDiskSizeFixed > 0 || template.deployasis"
                             @change="val => { showRootDiskSizeChanger = val }"
                             style="margin-left: 10px;"/>
@@ -123,6 +124,7 @@
                           v-show="showRootDiskSizeChanger"
                           input-decorator="rootdisksize"
                           :preFillContent="dataPreFill"
+                          :isCustomized="true"
                           :minDiskSize="dataPreFill.minrootdisksize"
                           @update-disk-size="updateFieldValue"
                           style="margin-top: 10px;"/>
@@ -201,7 +203,7 @@
                       @handle-search-filter="($event) => handleSearchFilter('serviceOfferings', $event)"
                     ></compute-offering-selection>
                     <compute-selection
-                      v-if="serviceOffering && serviceOffering.iscustomized"
+                      v-if="serviceOffering && (serviceOffering.iscustomized || serviceOffering.iscustomizediops)"
                       cpunumber-input-decorator="cpunumber"
                       cpuspeed-input-decorator="cpuspeed"
                       memory-input-decorator="memory"
@@ -212,6 +214,10 @@
                       :maxCpu="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.maxcpunumber*1 : Number.MAX_SAFE_INTEGER"
                       :minMemory="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.minmemory*1 : 0"
                       :maxMemory="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.maxmemory*1 : Number.MAX_SAFE_INTEGER"
+                      :isCustomized="serviceOffering.iscustomized"
+                      :isCustomizedIOps="'iscustomizediops' in serviceOffering && serviceOffering.iscustomizediops"
+                      @handler-error="handlerError"
+                      @update-iops-value="updateIOPSValue"
                       @update-compute-cpunumber="updateFieldValue"
                       @update-compute-cpuspeed="updateFieldValue"
                       @update-compute-memory="updateFieldValue" />
@@ -261,14 +267,19 @@
                       :loading="loading.diskOfferings"
                       :preFillContent="dataPreFill"
                       :isIsoSelected="tabKey==='isoid'"
+                      @on-selected-disk-size="onSelectDiskSize"
                       @select-disk-offering-item="($event) => updateDiskOffering($event)"
                       @handle-search-filter="($event) => handleSearchFilter('diskOfferings', $event)"
                     ></disk-offering-selection>
                     <disk-size-selection
-                      v-if="diskOffering && diskOffering.iscustomized"
+                      v-if="diskOffering && (diskOffering.iscustomized || diskOffering.iscustomizediops)"
                       input-decorator="size"
                       :preFillContent="dataPreFill"
-                      @update-disk-size="updateFieldValue" />
+                      :diskSelected="diskSelected"
+                      :isCustomized="diskOffering.iscustomized"
+                      @handler-error="handlerError"
+                      @update-disk-size="updateFieldValue"
+                      @update-iops-value="updateIOPSValue"/>
                     <a-form-item class="form-item-hidden">
                       <a-input v-model:value="form.size"/>
                     </a-form-item>
@@ -740,8 +751,13 @@ export default {
       showRootDiskSizeChanger: false,
       securitygroupids: [],
       rootDiskSizeFixed: 0,
-      form: {},
       hasError: false
+      error: false,
+      diskSelected: {},
+      diskIOpsMin: 0,
+      diskIOpsMax: 0,
+      minIOPs: 0,
+      maxIOPs: 0
     }
   },
   computed: {
@@ -938,6 +954,12 @@ export default {
     },
     showSecurityGroupSection () {
       return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
+    },
+    isCustomizedDiskIOPS () {
+      return this.diskSelected?.iscustomizediops || false
+    },
+    isCustomizedIOPS () {
+      return this.serviceOffering?.iscustomizediops || false
     }
   },
   watch: {
@@ -1410,6 +1432,13 @@ export default {
           })
           return
         }
+        if (this.error) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('error.form.message')
+          })
+          return
+        }
 
         this.loading.deploy = true
 
@@ -1460,6 +1489,10 @@ export default {
         if (this.selectedTemplateConfiguration) {
           deployVmData['details[0].configurationId'] = this.selectedTemplateConfiguration.id
         }
+        if (this.isCustomizedIOPS) {
+          deployVmData['details[0].minIops'] = this.minIOPs
+          deployVmData['details[0].maxIops'] = this.maxIOPs
+        }
         // step 4: select disk offering
         if (!this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {
           if (values.multidiskoffering) {
@@ -1477,6 +1510,10 @@ export default {
           if (values.size) {
             deployVmData.size = values.size
           }
+        }
+        if (this.isCustomizedDiskIOPS) {
+          deployVmData['details[0].minIopsDo'] = this.diskIOpsMin
+          deployVmData['details[0].maxIopsDo'] = this.diskIOpsMax
         }
         // step 5: select an affinity group
         deployVmData.affinitygroupids = (values.affinitygroupids || []).join(',')
@@ -1561,6 +1598,8 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
+              title: title,
+              description: description,
               successMethod: result => {
                 const vm = result.jobresult.virtualmachine
                 const name = vm.displayname || vm.name || vm.id
@@ -1571,22 +1610,14 @@ export default {
                     duration: 0
                   })
                 }
-                eventBus.emit('vm-refresh-data')
-              },
-              errorMethod: () => {
-                eventBus.emit('vm-refresh-data')
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
               catchMessage: this.$t('error.fetching.async.job.result'),
-              catchMethod: () => {
-                eventBus.emit('vm-refresh-data')
+                eventBus.$emit('vm-refresh-data')
+              },
+              action: {
+                isFetchData: false
               }
-            })
-            this.$store.dispatch('AddAsyncJob', {
-              title: title,
-              jobid: jobId,
-              description: description,
-              status: 'progress'
             })
           }
           // Sending a refresh in case it hasn't picked up the new VM
@@ -1986,6 +2017,15 @@ export default {
         this.rootDiskSizeFixed = offering.rootdisksize
         this.showRootDiskSizeChanger = false
       }
+    },
+    handlerError (error) {
+      this.error = error
+    },
+    onSelectDiskSize (rowSelected) {
+      this.diskSelected = rowSelected
+    },
+    updateIOPSValue (input, value) {
+      this[input] = value
     }
   }
 }

@@ -26,75 +26,75 @@
       class="form-content"
       :form="form"
       @submit="handleSubmit">
-      <a-form-item
-        v-for="(field, index) in this.fields"
-        :key="index"
-        :label="$t(field.title)"
-        v-if="isDisplayInput(field.display)"
-        v-bind="formItemLayout"
-        :has-feedback="field.switch ? false : true">
-        <a-select
-          v-if="field.select"
-          v-decorator="[field.key, {
-            rules: [
-              {
-                required: field.required,
-                message: $t(field.placeHolder),
-                initialValue: getPrefilled(field.key)
-              }
-            ]
-          }]"
-          :allowClear="true"
-          :autoFocus="index === 0"
-        >
-          <a-select-option
-            v-for="option in field.options"
-            :key="option.id"
-            :value="option.id"
+      <div v-for="(field, index) in this.fields" :key="index">
+        <a-form-item
+          :label="$t(field.title)"
+          v-if="isDisplayInput(field.display)"
+          v-bind="formItemLayout"
+          :has-feedback="field.switch ? false : true">
+          <a-select
+            v-if="field.select"
+            v-decorator="[field.key, {
+              rules: [
+                {
+                  required: field.required,
+                  message: $t(field.placeHolder),
+                  initialValue: getPrefilled(field.key)
+                }
+              ]
+            }]"
+            :allowClear="true"
+            :autoFocus="index === 0"
           >
-            {{ option.name || option.description }}
-          </a-select-option>
-        </a-select>
-        <a-switch
-          v-else-if="field.switch"
-          v-decorator="[field.key]"
-          :default-checked="isChecked(field)"
-          :autoFocus="index === 0"
-        />
-        <a-input
-          v-else-if="field.password"
-          type="password"
-          v-decorator="[field.key, {
-            rules: [
-              {
-                required: field.required,
-                message: $t(field.placeHolder),
-                initialValue: getPrefilled(field.key)
-              }
-            ]
-          }]"
-          :autoFocus="index === 0"
-        />
-        <a-input
-          v-else
-          v-decorator="[field.key, {
-            rules: [
-              {
-                required: field.required,
-                message: $t(field.placeHolder),
-                initialValue: getPrefilled(field.key)
-              },
-              {
-                validator: checkIpFormat,
-                ipV4: field.ipV4,
-                ipV6: field.ipV6,
-                message: $t(field.message)
-              }
-            ]
-          }]"
-          :autoFocus="index === 0"
-        />
-      </a-form-item>
+            <a-select-option
+              v-for="option in field.options"
+              :key="option.id"
+              :value="option.id"
+            >
+              {{ option.name || option.description }}
+            </a-select-option>
+          </a-select>
+          <a-switch
+            v-else-if="field.switch"
+            v-decorator="[field.key]"
+            :default-checked="isChecked(field)"
+            :autoFocus="index === 0"
+          />
+          <a-input
+            v-else-if="field.password"
+            type="password"
+            v-decorator="[field.key, {
+              rules: [
+                {
+                  required: field.required,
+                  message: $t(field.placeHolder),
+                  initialValue: getPrefilled(field.key)
+                }
+              ]
+            }]"
+            :autoFocus="index === 0"
+          />
+          <a-input
+            v-else
+            v-decorator="[field.key, {
+              rules: [
+                {
+                  required: field.required,
+                  message: $t(field.placeHolder),
+                  initialValue: getPrefilled(field.key)
+                },
+                {
+                  validator: checkIpFormat,
+                  ipV4: field.ipV4,
+                  ipV6: field.ipV6,
+                  message: $t(field.message)
+                }
+              ]
+            }]"
+            :autoFocus="index === 0"
+          />
+        </a-form-item>
+      </div>
     </a-form>
     <div class="form-action">
       <a-button
@@ -256,13 +256,13 @@ export default {
     overflow-y: auto;
     padding: 16px 20px 0;
 
-    /deep/.has-error {
+    :deep(.has-error) {
       .ant-form-explain {
         text-align: left;
       }
     }
 
-    /deep/.ant-form-item-control {
+    :deep(.ant-form-item-control) {
       text-align: left;
     }
   }

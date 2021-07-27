@@ -454,13 +454,11 @@ export default {
           successMessage: this.$t('message.success.add.port.forward'),
           successMethod: () => {
             this.closeModal()
-            this.parentFetchData()
             this.fetchData()
           },
           errorMessage: this.$t('message.add.port.forward.failed'),
           errorMethod: () => {
             this.closeModal()
-            this.parentFetchData()
             this.fetchData()
           },
           loadingMessage: this.$t('message.add.port.forward.processing'),
@@ -529,13 +527,11 @@ export default {
           jobId: response.createtagsresponse.jobid,
           successMessage: this.$t('message.success.add.tag'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
           errorMessage: this.$t('message.add.tag.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },
@@ -563,13 +559,11 @@ export default {
           jobId: response.deletetagsresponse.jobid,
           successMessage: this.$t('message.success.delete.tag'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
           errorMessage: this.$t('message.delete.tag.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },

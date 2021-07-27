@@ -328,13 +328,10 @@ export default {
         resourceIds: this.selectedAcl.id,
         resourceType: 'NetworkACL'
       }).then(response => {
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('message.delete.tag.for.networkacl'),
-          jobid: response.deletetagsresponse.jobid,
-          status: 'progress'
-        })
         this.$pollJob({
           jobId: response.deletetagsresponse.jobid,
+          title: this.$t('message.delete.tag.for.networkacl'),
+          description: `${tag.key} = ${tag.value}`,
           successMessage: this.$t('message.success.delete.tag'),
           successMethod: () => {
             this.fetchTags(this.selectedAcl)
@@ -369,13 +366,10 @@ export default {
           resourceIds: this.selectedAcl.id,
           resourceType: 'NetworkACL'
         }).then(response => {
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('message.add.tag.for.networkacl'),
-            jobid: response.createtagsresponse.jobid,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId: response.createtagsresponse.jobid,
+            title: this.$t('message.add.tag.for.networkacl'),
+            description: `${values.key} = ${values.value}`,
             successMessage: this.$t('message.success.add.tag'),
             successMethod: () => {
               this.fetchTags(this.selectedAcl)
@@ -456,13 +450,10 @@ export default {
         data.partialupgrade = false
 
         api('updateNetworkACLItem', {}, 'POST', data).then(response => {
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.edit.acl.rule'),
-            jobid: response.createnetworkaclresponse.jobid,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId: response.createnetworkaclresponse.jobid,
+            title: this.$t('label.edit.acl.rule'),
+            description: this.selectedAcl.id,
             successMessage: this.$t('message.success.edit.acl'),
             successMethod: () => {
               this.fetchData()
@@ -489,13 +480,10 @@ export default {
     handleDeleteRule (id) {
       this.fetchLoading = true
       api('deleteNetworkACL', { id }).then(response => {
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('message.delete.acl.rule'),
-          jobid: response.deletenetworkaclresponse.jobid,
-          status: 'progress'
-        })
         this.$pollJob({
           jobId: response.deletenetworkaclresponse.jobid,
+          title: this.$t('message.delete.acl.rule'),
+          description: id,
           successMessage: this.$t('message.success.delete.acl.rule'),
           successMethod: () => {
             this.fetchData()
@@ -573,13 +561,10 @@ export default {
         previousaclruleid,
         nextaclruleid
       }).then(response => {
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('message.move.acl.order'),
-          jobid: response.moveNetworkAclItemResponse.jobid,
-          status: 'progress'
-        })
         this.$pollJob({
           jobId: response.moveNetworkAclItemResponse.jobid,
+          title: this.$t('message.move.acl.order'),
+          description: id,
           successMessage: this.$t('message.success.move.acl.order'),
           successMethod: () => {
             this.fetchData()

@@ -123,16 +123,11 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiParams = {}
-    var apiConfig = this.$store.getters.apis.importBackupOffering || {}
-    apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('importBackupOffering')
   },
   created () {
     this.fetchData()
   },
-  inject: ['parentFetchData'],
   methods: {
     fetchData () {
       this.fetchZone()
@@ -186,15 +181,9 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
+              title: title,
+              description: values.name,
               successMethod: result => {
-                const successDescription = result.jobresult.backupoffering.name
-                this.$store.dispatch('AddAsyncJob', {
-                  title: title,
-                  jobid: jobId,
-                  description: successDescription,
-                  status: 'progress'
-                })
-                this.parentFetchData()
                 this.closeAction()
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')} ${this.$t('label.for')} ${params.name}`,

@@ -64,7 +64,7 @@
         <a-select
           v-model:value="form.diskofferingid"
           :loading="loading"
-          @change="id => (customDiskOffering = offerings.filter(x => x.id === id)[0].iscustomized || false)"
+          @change="id => onChangeDiskOffering(id)"
         >
           <a-select-option
             v-for="(offering, index) in offerings"
@@ -74,17 +74,62 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item v-if="customDiskOffering" ref="size" name="size">
-        <template #label>
-          {{ $t('label.sizegb') }}
-          <a-tooltip :title="apiParams.size.description">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-          </a-tooltip>
-        </template>
-        <a-input
-          v-model:value="form.size"
-          :placeholder="$t('label.disksize')"/>
-      </a-form-item>
+      <span v-if="customDiskOffering">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.sizegb') }}
+            <a-tooltip :title="apiParams.size.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
+          <a-input
+            v-decorator="['size', {
+              rules: [{ required: true, message: $t('message.error.custom.disk.size') }]}]"
+            :placeholder="$t('label.disksize')"/>
+        </a-form-item>
+      </span>
+      <span v-if="isCustomizedDiskIOps">
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.miniops') }}
+            <a-tooltip :title="apiParams.miniops.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
+          <a-input
+            v-decorator="['miniops', {
+              rules: [{
+                validator: (rule, value, callback) => {
+                  if (value && (isNaN(value) || value <= 0)) {
+                    callback(this.$t('message.error.number'))
+                  }
+                  callback()
+                }
+              }]
+            }]"
+            :placeholder="this.$t('label.miniops')"/>
+        </a-form-item>
+        <a-form-item>
+          <span slot="label">
+            {{ $t('label.maxiops') }}
+            <a-tooltip :title="apiParams.maxiops.description">
+              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </span>
+          <a-input
+            v-decorator="['maxiops', {
+              rules: [{
+                validator: (rule, value, callback) => {
+                  if (value && (isNaN(value) || value <= 0)) {
+                    callback(this.$t('message.error.number'))
+                  }
+                  callback()
+                }
+              }]
+            }]"
+            :placeholder="this.$t('label.maxiops')"/>
+        </a-form-item>
+      </span>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
         <a-button type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -104,15 +149,12 @@ export default {
       zones: [],
       offerings: [],
       customDiskOffering: false,
-      loading: false
+      loading: false,
+      isCustomizedDiskIOps: false
     }
   },
   beforeCreate () {
-    this.apiParams = {}
-    const apiConfig = this.$store.getters.apis.createVolume || {}
-    apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('createVolume')
   },
   created () {
     this.initForm()
@@ -153,6 +195,7 @@ export default {
         this.offerings = json.listdiskofferingsresponse.diskoffering || []
         this.form.diskofferingid = this.offerings[0].id || ''
         this.customDiskOffering = this.offerings[0].iscustomized || false
+        this.isCustomizedDiskIOps = this.offerings[0]?.iscustomizediops || false
       }).finally(() => {
         this.loading = false
       })
@@ -164,24 +207,13 @@ export default {
         api('createVolume', values).then(response => {
           this.$pollJob({
             jobId: response.createvolumeresponse.jobid,
+            title: this.$t('message.success.create.volume'),
+            description: values.name,
             successMessage: this.$t('message.success.create.volume'),
-            successMethod: () => {
-              this.$store.dispatch('AddAsyncJob', {
-                title: this.$t('message.success.create.volume'),
-                jobid: response.createvolumeresponse.jobid,
-                description: values.name,
-                status: 'progress'
-              })
-              this.$emit('refresh-data')
-            },
             errorMessage: this.$t('message.create.volume.failed'),
-            errorMethod: () => {
-              this.$emit('refresh-data')
-            },
             loadingMessage: this.$t('message.create.volume.processing'),
             catchMessage: this.$t('error.fetching.async.job.result')
           })
-          this.$emit('refresh-data')
           this.closeModal()
         }).catch(error => {
           this.$notifyError(error)
@@ -192,6 +224,11 @@ export default {
     },
     closeModal () {
       this.$emit('close-action')
+    },
+    onChangeDiskOffering (id) {
+      const offering = this.offerings.filter(x => x.id === id)
+      this.customDiskOffering = offering[0]?.iscustomized || false
+      this.isCustomizedDiskIOps = offering[0]?.iscustomizediops || false
     }
   }
 }

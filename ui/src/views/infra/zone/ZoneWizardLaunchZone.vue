@@ -51,16 +51,19 @@
           :key="index"
           :title="$t(step.title)"
           :status="step.status">
-          <a-icon v-if="step.status===status.PROCESS" type="loading" slot="icon" />
-          <a-icon v-else-if="step.status===status.FAILED" type="close-circle" slot="icon" />
-          <a-card
-            slot="description"
-            class="step-error"
-            v-if="step.status===status.FAILED"
-          >
-            <div><strong>{{ $t('label.error.something.went.wrong.please.correct.the.following') }}:</strong></div>
-            <div>{{ messageError }}</div>
-          </a-card>
+          <template #icon>
+            <LoadingOutlined v-if="step.status===status.PROCESS" />
+            <CloseCircleOutlined v-else-if="step.status===status.FAILED" />
+          </template>
+          <template #description>
+            <a-card
+              class="step-error"
+              v-if="step.status===status.FAILED"
+            >
+              <div><strong>{{ $t('label.error.something.went.wrong.please.correct.the.following') }}:</strong></div>
+              <div>{{ messageError }}</div>
+            </a-card>
+          </template>
         </a-step>
       </a-steps>
     </a-card>
@@ -2163,11 +2166,11 @@ export default {
     overflow-y: auto;
   }
 
-  /deep/.step-error {
+  :deep(.step-error) {
     color: #f5222d;
     margin-top: 20px;
 
-    /deep/.ant-card-body {
+    :deep(.ant-card-body) {
       padding: 15px;
       text-align: justify;
     }

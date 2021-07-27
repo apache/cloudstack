@@ -127,11 +127,7 @@ export default {
     }
   },
   beforeCreate () {
-    this.apiConfig = this.$store.getters.apis.createSnapshot || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('createSnapshot')
   },
   created () {
     this.initForm()
@@ -180,15 +176,9 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
-              successMethod: result => {
-                const successDescription = result.jobresult.snapshot.name
-                this.$store.dispatch('AddAsyncJob', {
-                  title: title,
-                  jobid: jobId,
-                  description: successDescription,
-                  status: 'progress'
-                })
-              },
+              title: title,
+              description: values.name || this.resource.id,
+              successMethod: result => {},
               loadingMessage: `${title} ${this.$t('label.in.progress.for')} ${description}`,
               catchMessage: this.$t('error.fetching.async.job.result')
             })

@@ -172,12 +172,7 @@ export default {
   },
   created () {
     this.initForm()
-    this.apiConfig = this.$store.getters.apis.createVlanIpRange || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
-    this.fetchData()
+    this.apiParams = this.$getApiParams('createVlanIpRange')
   },
   methods: {
     initForm () {

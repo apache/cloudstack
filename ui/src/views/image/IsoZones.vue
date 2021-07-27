@@ -152,11 +152,7 @@ export default {
     }
   },
   beforeCreate () {
-    this.apiConfigParams = (this.$store.getters.apis.copyIso && this.$store.getters.apis.copyIso.params) || []
-    this.apiParams = {}
-    this.apiConfigParams.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('copyIso')
   },
   created () {
     this.initForm()
@@ -252,15 +248,11 @@ export default {
       this.deleteLoading = true
       api('deleteIso', params).then(json => {
         const jobId = json.deleteisoresponse.jobid
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('label.action.delete.iso'),
-          jobid: jobId,
-          description: this.resource.name,
-          status: 'progress'
-        })
         const singleZone = (this.dataSource.length === 1)
         this.$pollJob({
           jobId,
+          title: this.$t('label.action.delete.iso'),
+          description: this.resource.name,
           successMethod: result => {
             if (singleZone) {
               this.$router.go(-1)
@@ -310,14 +302,10 @@ export default {
         this.copyLoading = true
         api('copyIso', params).then(json => {
           const jobId = json.copytemplateresponse.jobid
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.action.copy.iso'),
-            jobid: jobId,
-            description: this.resource.name,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId,
+            title: this.$t('label.action.copy.iso'),
+            description: this.resource.name,
             successMethod: result => {
               this.fetchData()
             },

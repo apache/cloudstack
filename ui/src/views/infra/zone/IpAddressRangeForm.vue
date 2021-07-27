@@ -29,10 +29,10 @@
       :columns="columns"
       :pagination="false"
       style="margin-bottom: 24px; width: 100%" >
-      <template slot="actions" slot-scope="text, record">
-        <tooltip-button :tooltip="$t('label.delete')" type="danger" icon="delete" @click="onDelete(record.key)" />
+      <template #actions="text, record">
+        <tooltip-button :tooltip="$t('label.delete')" type="danger" icon="delete" @onClick="onDelete(record.key)" />
       </template>
-      <template slot="footer">
+      <template #footer>
         <a-form
           :layout="isMobile() ? 'horizontal': 'inline'"
           :form="form"
@@ -205,7 +205,7 @@ export default {
         {
           title: '',
           dataIndex: 'actions',
-          scopedSlots: { customRender: 'actions' },
+          slots: { customRender: 'actions' },
           width: 70
         }
       ],

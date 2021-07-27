@@ -129,13 +129,11 @@ export default {
               duration: 0
             })
             this.fetchData()
-            this.parentFetchData()
             this.parentToggleLoading()
           },
           errorMessage: this.$t('message.enable.vpn.failed'),
           errorMethod: () => {
             this.fetchData()
-            this.parentFetchData()
             this.parentToggleLoading()
           },
           loadingMessage: this.$t('message.enable.vpn.processing'),
@@ -165,13 +163,11 @@ export default {
           successMessage: this.$t('message.success.disable.vpn'),
           successMethod: () => {
             this.fetchData()
-            this.parentFetchData()
             this.parentToggleLoading()
           },
           errorMessage: this.$t('message.disable.vpn.failed'),
           errorMethod: () => {
             this.fetchData()
-            this.parentFetchData()
             this.parentToggleLoading()
           },
           loadingMessage: this.$t('message.disable.vpn.processing'),

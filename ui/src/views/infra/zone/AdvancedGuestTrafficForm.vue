@@ -199,13 +199,13 @@ export default {
     overflow-y: auto;
     padding: 16px 20px 0;
 
-    /deep/.has-error {
+    :deep(.has-error) {
       .ant-form-explain {
         text-align: left;
       }
     }
 
-    /deep/.ant-form-item-control {
+    :deep(.ant-form-item-control) {
       text-align: left;
     }
   }

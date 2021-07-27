@@ -28,7 +28,7 @@ import lazyUsePlugs from './core/lazy_use'
 import permission from './permission' // permission control
 import filter from './utils/filter' // global filter
 
-import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin } from './utils/plugins'
+import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin, apiMetaUtilPlugin } from './utils/plugins'
 import { VueAxios } from './utils/request'
 import setting from '@/config/settings'
 

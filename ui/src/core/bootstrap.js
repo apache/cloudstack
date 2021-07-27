@@ -30,7 +30,7 @@ import {
   DEFAULT_FIXED_SIDEMENU,
   DEFAULT_CONTENT_WIDTH_TYPE,
   DEFAULT_MULTI_TAB,
-  ASYNC_JOB_IDS
+  HEADER_NOTICES
 } from '@/store/mutation-types'
 
 export default {
@@ -49,6 +49,6 @@ export default {
     store.commit('TOGGLE_MULTI_TAB', window.ls.get(DEFAULT_MULTI_TAB, config.multiTab))
     store.commit('SET_TOKEN', window.ls.get(ACCESS_TOKEN))
     store.commit('SET_PROJECT', window.ls.get(CURRENT_PROJECT))
-    store.commit('SET_ASYNC_JOB_IDS', window.ls.get(ASYNC_JOB_IDS) || [])
+  store.commit('SET_HEADER_NOTICES', Vue.ls.get(HEADER_NOTICES) || [])
   }
 }

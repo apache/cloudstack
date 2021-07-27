@@ -123,11 +123,7 @@ export default {
     }
   },
   beforeCreate () {
-    this.apiParams = {}
-    const apiConfig = this.$store.getters.apis.getUploadParamsForVolume || {}
-    apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('getUploadParamsForVolume')
   },
   created () {
     this.initForm()

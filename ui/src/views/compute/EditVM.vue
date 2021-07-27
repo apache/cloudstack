@@ -138,11 +138,7 @@ export default {
     this.formRef = ref()
     this.form = reactive({})
     this.rules = reactive({})
-    this.apiParams = {}
-    const apiConfig = this.$store.getters.apis.updateVirtualMachine || {}
-    apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('updateVirtualMachine')
   },
   created () {
     this.initForm()

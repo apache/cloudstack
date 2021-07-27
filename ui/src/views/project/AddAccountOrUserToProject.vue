@@ -199,12 +199,7 @@ export default {
     }
     this.apiParams = {}
     for (var api of apis) {
-      const details = {}
-      const apiConfig = this.$store.getters.apis[api]
-      apiConfig.params.forEach(param => {
-        details[param.name] = param
-      })
-      this.apiParams[api] = details
+      this.apiParams[api] = this.$getApiParams(api)
     }
   },
   methods: {
@@ -279,7 +274,6 @@ export default {
             loadingMessage: `Adding Account: ${params.account} to project...`,
             catchMessage: 'Error encountered while fetching async job result'
           })
-          this.$emit('refresh-data')
           this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
@@ -311,7 +305,6 @@ export default {
             loadingMessage: `Adding User ${params.username} to project...`,
             catchMessage: 'Error encountered while fetching async job result'
           })
-          this.$emit('refresh-data')
           this.closeAction()
         }).catch(error => {
           console.log('catch')

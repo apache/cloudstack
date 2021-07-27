@@ -106,11 +106,7 @@ export default {
     this.formRef = ref()
     this.form = reactive({})
     this.rules = reactive({})
-    this.apiConfig = this.$store.getters.apis.createSnapshot || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('createSnapshot')
   },
   created () {
     this.initForm()
@@ -157,6 +153,8 @@ export default {
             if (jobId) {
               this.$pollJob({
                 jobId,
+                title: title,
+                description: description,
                 successMethod: result => {
                   const volumeId = result.jobresult.snapshot.volumeid
                   const snapshotId = result.jobresult.snapshot.id
@@ -168,12 +166,6 @@ export default {
                 },
                 loadingMessage: `${title} ${this.$t('label.in.progress')}`,
                 catchMessage: this.$t('error.fetching.async.job.result')
-              })
-              this.$store.dispatch('AddAsyncJob', {
-                title: title,
-                jobid: jobId,
-                description: description,
-                status: 'progress'
               })
             }
           }).catch(error => {

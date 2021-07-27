@@ -303,6 +303,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String _agentHooksVmOnStopScript = "libvirt-vm-state-change.groovy";
     protected String _agentHooksVmOnStopMethod = "onStop";
 
+    private static final String CONFIG_DRIVE_ISO_DISK_LABEL = "hdd";
+    private static final int CONFIG_DRIVE_ISO_DEVICE_ID = 4;
 
     protected File _qemuSocketsPath;
     private final String _qemuGuestAgentSocketName = "org.qemu.guest_agent.0";
@@ -2754,6 +2756,32 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected KVMStoragePoolManager getPoolManager() {
         return _storagePoolMgr;
+    }
+
+    public void detachAndAttachConfigDriveISO(final Connect conn, final String vmName) {
+        // detach and re-attach configdrive ISO
+        List<DiskDef> disks = getDisks(conn, vmName);
+        DiskDef configdrive = null;
+        for (DiskDef disk : disks) {
+            if (disk.getDeviceType() == DiskDef.DeviceType.CDROM && disk.getDiskLabel() == CONFIG_DRIVE_ISO_DISK_LABEL) {
+                configdrive = disk;
+            }
+        }
+        if (configdrive != null) {
+            try {
+                String result = attachOrDetachISO(conn, vmName, configdrive.getDiskPath(), false, CONFIG_DRIVE_ISO_DEVICE_ID);
+                if (result != null) {
+                    s_logger.warn("Detach ConfigDrive ISO with result: " + result);
+                }
+                result = attachOrDetachISO(conn, vmName, configdrive.getDiskPath(), true, CONFIG_DRIVE_ISO_DEVICE_ID);
+                if (result != null) {
+                    s_logger.warn("Attach ConfigDrive ISO with result: " + result);
+                }
+            } catch (final LibvirtException | InternalErrorException | URISyntaxException e) {
+                final String msg = "Detach and attach ConfigDrive ISO failed due to " + e.toString();
+                s_logger.warn(msg, e);
+            }
+        }
     }
 
     public synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, final Integer diskSeq) throws LibvirtException, URISyntaxException,

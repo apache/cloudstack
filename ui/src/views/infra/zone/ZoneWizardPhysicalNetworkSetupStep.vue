@@ -29,10 +29,10 @@
       :columns="columns"
       :pagination="false"
       style="margin-bottom: 24px; width: 100%">
-      <template slot="name" slot-scope="text, record">
+      <template #name="text, record">
         <a-input :value="text" @change="e => onCellChange(record.key, 'name', e.target.value)" autoFocus />
       </template>
-      <template slot="isolationMethod" slot-scope="text, record">
+      <template #isolationMethod="text, record">
         <a-select
           style="width: 100%"
           :defaultValue="text"
@@ -49,7 +49,7 @@
           <a-select-option value="VCS"> VCS </a-select-option>
         </a-select>
       </template>
-      <template slot="traffics" slot-scope="traffics, record">
+      <template #traffics="traffics, record">
         <div v-for="traffic in traffics" :key="traffic.type">
           <a-tag
             :color="trafficColors[traffic.type]"
@@ -81,30 +81,30 @@
               buttonClass="icon-button"
               icon="plus"
               size="small"
-              @click="trafficAdded" />
+              @onClick="trafficAdded" />
             <tooltip-button
               :tooltip="$t('label.cancel')"
               buttonClass="icon-button"
               type="danger"
               icon="close"
               size="small"
-              @click="() => { addingTrafficForKey = null }" />
+              @onClick="() => { addingTrafficForKey = null }" />
           </div>
           <a-tag
             key="addingTraffic"
             style="margin:2px;"
             v-else
-            @click="addingTraffic(record.key, record.traffics)"
+            @onClick="addingTraffic(record.key, record.traffics)"
           >
             <a-icon type="plus" />
             {{ $t('label.add.traffic') }}
           </a-tag>
         </div>
       </template>
-      <template slot="actions" slot-scope="text, record">
-        <tooltip-button :tooltip="$t('label.delete')" v-if="physicalNetworks.indexOf(record) > 0" type="danger" icon="delete" @click="onDelete(record)" />
+      <template #actions="text, record">
+        <tooltip-button :tooltip="$t('label.delete')" v-if="physicalNetworks.indexOf(record) > 0" type="danger" icon="delete" @onClick="onDelete(record)" />
       </template>
-      <template slot="footer" v-if="isAdvancedZone">
+      <template #footer v-if="isAdvancedZone">
         <a-button
           @click="handleAddPhysicalNetwork">
           {{ $t('label.add.physical.network') }}
@@ -219,26 +219,26 @@ export default {
         title: this.$t('label.network.name'),
         dataIndex: 'name',
         width: 175,
-        scopedSlots: { customRender: 'name' }
+        slots: { customRender: 'name' }
       })
       columns.push({
         title: this.$t('label.isolation.method'),
         dataIndex: 'isolationMethod',
         width: 150,
-        scopedSlots: { customRender: 'isolationMethod' }
+        slots: { customRender: 'isolationMethod' }
       })
       columns.push({
         title: this.$t('label.traffic.types'),
         key: 'traffics',
         dataIndex: 'traffics',
         width: 250,
-        scopedSlots: { customRender: 'traffics' }
+        slots: { customRender: 'traffics' }
       })
       if (this.isAdvancedZone) {
         columns.push({
           title: '',
           dataIndex: 'actions',
-          scopedSlots: { customRender: 'actions' },
+          slots: { customRender: 'actions' },
           width: 70
         })
       }
@@ -507,7 +507,7 @@ export default {
   }
 
   .traffic-select-item {
-    /deep/.icon-button {
+    :deep(.icon-button) {
       margin: 0 0 0 5px;
     }
   }
