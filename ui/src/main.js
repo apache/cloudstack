@@ -26,6 +26,7 @@ import './core/lazy_use'
 import './core/ext'
 import './permission' // permission control
 import './utils/filter' // global filter
+import './utils/focus' // Focus
 import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin } from './utils/plugins'
 import { VueAxios } from './utils/request'
 
