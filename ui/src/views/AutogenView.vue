@@ -383,10 +383,10 @@ export default {
     this.form = reactive({})
     this.rules = reactive({})
   },
-  beforeDestroy () {
-    eventBus.$off('vm-refresh-data')
-    eventBus.$off('async-job-complete')
-    eventBus.$off('exec-action')
+  beforeUnmount () {
+    eventBus.off('vm-refresh-data')
+    eventBus.off('async-job-complete')
+    eventBus.off('exec-action')
   },
   created () {
     eventBus.on('vm-refresh-data', () => {
@@ -394,7 +394,7 @@ export default {
         this.fetchData()
       }
     })
-    eventBus.$on('async-job-complete', (action) => {
+    eventBus.on('async-job-complete', (action) => {
       this.fetchData()
     })
     eventBus.on('exec-action', (action, isGroupAction) => {

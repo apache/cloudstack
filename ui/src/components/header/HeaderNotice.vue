@@ -38,7 +38,13 @@
           </a-list-item>
           <a-list-item v-for="(notice, index) in notices" :key="index">
             <a-list-item-meta :title="notice.title" :description="notice.description">
-              <a-avatar :style="notificationAvatar[notice.status].style" :icon="notificationAvatar[notice.status].icon" slot="avatar"/>
+              <template #avatar>
+                <a-avatar :style="notificationAvatar[notice.status].style">
+                  <template #icon>
+                    <render-icon :icon="notificationAvatar[notice.status].icon" />
+                  </template>
+                </a-avatar>
+              </template>
             </a-list-item-meta>
           </a-list-item>
         </a-list>
@@ -46,7 +52,7 @@
     </template>
     <span @click="showNotifications" class="header-notice-opener">
       <a-badge :count="notices.length">
-        <a-icon class="header-notice-icon" type="bell" />
+        <bell-outlined class="header-notice-icon" />
       </a-badge>
     </span>
   </a-popover>
@@ -80,12 +86,6 @@ export default {
       this.notices = this.notices.filter(x => x.status === 'progress')
       this.$store.commit('SET_HEADER_NOTICES', this.notices)
     }
-  },
-  beforeMount () {
-    clearInterval(this.poller)
-  },
-  created () {
-    this.startPolling()
   },
   mounted () {
     this.notices = (store.getters.headerNotices || []).reverse()

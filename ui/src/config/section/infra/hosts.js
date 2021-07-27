@@ -20,7 +20,7 @@ import store from '@/store'
 export default {
   name: 'host',
   title: 'label.hosts',
-  icon: 'desktop',
+  icon: 'DesktopOutlined',
   permission: ['listHostsMetrics'],
   resourceType: 'Host',
   params: { type: 'routing' },
@@ -47,7 +47,7 @@ export default {
   actions: [
     {
       api: 'addHost',
-      icon: 'plus',
+      icon: 'PlusOutlined',
       label: 'label.add.host',
       docHelp: 'adminguide/installguide/configuration.html#adding-a-host',
       listView: true,
@@ -56,7 +56,7 @@ export default {
     },
     {
       api: 'updateHost',
-      icon: 'edit',
+      icon: 'EditOutlined',
       label: 'label.edit',
       dataView: true,
       args: ['name', 'hosttags', 'oscategoryid'],
@@ -68,7 +68,7 @@ export default {
     },
     {
       api: 'provisionCertificate',
-      icon: 'safety-certificate',
+      icon: 'SafetyCertificateOutlined',
       label: 'label.action.secure.host',
       message: 'message.action.secure.host',
       dataView: true,
@@ -82,7 +82,7 @@ export default {
     },
     {
       api: 'reconnectHost',
-      icon: 'forward',
+      icon: 'ForwardOutlined',
       label: 'label.action.force.reconnect',
       message: 'message.confirm.action.force.reconnect',
       dataView: true,
@@ -90,7 +90,7 @@ export default {
     },
     {
       api: 'updateHost',
-      icon: 'pause-circle',
+      icon: 'PauseCircleOutlined',
       label: 'label.disable.host',
       message: 'message.confirm.disable.host',
       dataView: true,
@@ -99,7 +99,7 @@ export default {
     },
     {
       api: 'updateHost',
-      icon: 'play-circle',
+      icon: 'PlayCircleOutlined',
       label: 'label.enable.host',
       message: 'message.confirm.enable.host',
       dataView: true,
@@ -108,7 +108,7 @@ export default {
     },
     {
       api: 'prepareHostForMaintenance',
-      icon: 'plus-square',
+      icon: 'PlusSquareOutlined',
       label: 'label.action.enable.maintenance.mode',
       message: 'message.action.host.enable.maintenance.mode',
       docHelp: 'adminguide/hosts.html#maintaining-hypervisors-on-hosts',
@@ -117,7 +117,7 @@ export default {
     },
     {
       api: 'cancelHostMaintenance',
-      icon: 'minus-square',
+      icon: 'MinusSquareOutlined',
       label: 'label.action.cancel.maintenance.mode',
       message: 'message.action.cancel.maintenance.mode',
       docHelp: 'adminguide/hosts.html#maintaining-hypervisors-on-hosts',
@@ -126,7 +126,7 @@ export default {
     },
     {
       api: 'configureOutOfBandManagement',
-      icon: 'setting',
+      icon: 'SettingOutlined',
       label: 'label.outofbandmanagement.configure',
       message: 'label.outofbandmanagement.configure',
       docHelp: 'adminguide/hosts.html#out-of-band-management',
@@ -143,7 +143,7 @@ export default {
     },
     {
       api: 'enableOutOfBandManagementForHost',
-      icon: 'plus-circle',
+      icon: 'PlusCircleOutlined',
       label: 'label.outofbandmanagement.enable',
       message: 'label.outofbandmanagement.enable',
       docHelp: 'adminguide/hosts.html#out-of-band-management',
@@ -161,7 +161,7 @@ export default {
     },
     {
       api: 'disableOutOfBandManagementForHost',
-      icon: 'minus-circle',
+      icon: 'MinusCircleOutlined',
       label: 'label.outofbandmanagement.disable',
       message: 'label.outofbandmanagement.disable',
       docHelp: 'adminguide/hosts.html#out-of-band-management',
@@ -179,7 +179,7 @@ export default {
     },
     {
       api: 'issueOutOfBandManagementPowerAction',
-      icon: 'login',
+      icon: 'LoginOutlined',
       label: 'label.outofbandmanagement.action.issue',
       message: 'label.outofbandmanagement.action.issue',
       docHelp: 'adminguide/hosts.html#out-of-band-management',
@@ -200,7 +200,7 @@ export default {
     },
     {
       api: 'changeOutOfBandManagementPassword',
-      icon: 'key',
+      icon: 'KeyOutlined',
       label: 'label.outofbandmanagement.changepassword',
       message: 'label.outofbandmanagement.changepassword',
       docHelp: 'adminguide/hosts.html#out-of-band-management',
@@ -218,7 +218,7 @@ export default {
     },
     {
       api: 'configureHAForHost',
-      icon: 'tool',
+      icon: 'ToolOutlined',
       label: 'label.ha.configure',
       message: 'label.ha.configure',
       docHelp: 'adminguide/reliability.html#ha-for-hosts',
@@ -236,7 +236,7 @@ export default {
     },
     {
       api: 'enableHAForHost',
-      icon: 'eye',
+      icon: 'EyeOutlined',
       label: 'label.ha.enable',
       message: 'label.ha.enable',
       docHelp: 'adminguide/reliability.html#ha-for-hosts',
@@ -254,7 +254,7 @@ export default {
     },
     {
       api: 'disableHAForHost',
-      icon: 'eye-invisible',
+      icon: 'EyeInvisibleOutlined',
       label: 'label.ha.disable',
       message: 'label.ha.disable',
       docHelp: 'adminguide/reliability.html#ha-for-hosts',
@@ -272,7 +272,7 @@ export default {
     },
     {
       api: 'startRollingMaintenance',
-      icon: 'setting',
+      icon: 'SettingOutlined',
       label: 'label.start.rolling.maintenance',
       message: 'label.start.rolling.maintenance',
       docHelp: 'adminguide/hosts.html#kvm-rolling-maintenance',
@@ -289,7 +289,7 @@ export default {
     },
     {
       api: 'deleteHost',
-      icon: 'delete',
+      icon: 'DeleteOutlined',
       label: 'label.action.remove.host',
       docHelp: 'adminguide/hosts.html#removing-hosts',
       dataView: true,

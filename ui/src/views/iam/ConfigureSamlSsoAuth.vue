@@ -17,22 +17,21 @@
 
 <template>
   <div class="form-layout">
-    <a-form :form="form" @submit="handleSubmit" layout="vertical" :loading="loading">
-      <a-form-item :label="$t('label.samlenable')">
+    <a-form
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      layout="vertical"
+      :loading="loading">
+      <a-form-item name="samlEnable" ref="samlEnable" :label="$t('label.samlenable')">
         <a-switch
-          v-decorator="['samlEnable', {
-            initialValue: isSamlEnabled
-          }]"
-          :checked="isSamlEnabled"
-          @change="val => { isSamlEnabled = val }"
+          v-model:checked="form.samlEnable"
           autoFocus
         />
       </a-form-item>
-      <a-form-item :label="$t('label.samlentity')">
+      <a-form-item name="samlEntity" ref="samlEntity" :label="$t('label.samlentity')">
         <a-select
-          v-decorator="['samlEntity', {
-            initialValue: selectedIdp,
-          }]">
+          v-model:value="form.samlEntity">
           <a-select-option v-for="(idp, idx) in idps" :key="idx">
             {{ idp.orgName }}
           </a-select-option>
@@ -46,7 +45,9 @@
   </div>
 </template>
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+
 export default {
   name: 'ConfigureSamlSsoAuth',
   props: {
@@ -57,19 +58,20 @@ export default {
   },
   data () {
     return {
-      selectedIdp: '',
       idps: [],
-      isSamlEnabled: false,
       loading: false
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
+    },
     fetchData () {
       this.IsUserSamlAuthorized()
       this.loading = true
@@ -83,19 +85,16 @@ export default {
       api('listSamlAuthorization', {
         userid: this.resource.id
       }).then(response => {
-        this.isSamlEnabled = response.listsamlauthorizationsresponse.samlauthorization[0].status || false
-        this.selectedIdp = response.listsamlauthorizationsresponse.samlauthorization[0].idpid || ''
+        this.form.samlEnable = response.listsamlauthorizationsresponse.samlauthorization[0].status || false
+        this.form.samlEntity = response.listsamlauthorizationsresponse.samlauthorization[0].idpid || ''
       })
     },
     handleClose () {
       this.$emit('close-action')
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         api('authorizeSamlSso', {
           enable: values.samlEnable,
           userid: this.resource.id,

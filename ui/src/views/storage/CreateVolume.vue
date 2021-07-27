@@ -76,57 +76,38 @@
       </a-form-item>
       <span v-if="customDiskOffering">
         <a-form-item>
-          <span slot="label">
+          <template #label>
             {{ $t('label.sizegb') }}
             <a-tooltip :title="apiParams.size.description">
               <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input
-            v-decorator="['size', {
-              rules: [{ required: true, message: $t('message.error.custom.disk.size') }]}]"
+            v-model:value="form.size"
             :placeholder="$t('label.disksize')"/>
         </a-form-item>
       </span>
       <span v-if="isCustomizedDiskIOps">
         <a-form-item>
-          <span slot="label">
+          <template #label>
             {{ $t('label.miniops') }}
             <a-tooltip :title="apiParams.miniops.description">
               <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input
-            v-decorator="['miniops', {
-              rules: [{
-                validator: (rule, value, callback) => {
-                  if (value && (isNaN(value) || value <= 0)) {
-                    callback(this.$t('message.error.number'))
-                  }
-                  callback()
-                }
-              }]
-            }]"
+            v-model:value="form.miniops"
             :placeholder="this.$t('label.miniops')"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
+          <template #label>
             {{ $t('label.maxiops') }}
             <a-tooltip :title="apiParams.maxiops.description">
               <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input
-            v-decorator="['maxiops', {
-              rules: [{
-                validator: (rule, value, callback) => {
-                  if (value && (isNaN(value) || value <= 0)) {
-                    callback(this.$t('message.error.number'))
-                  }
-                  callback()
-                }
-              }]
-            }]"
+            v-model:value="form.maxiops"
             :placeholder="this.$t('label.maxiops')"/>
         </a-form-item>
       </span>
@@ -163,17 +144,28 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({
-        name: undefined,
-        zoneid: undefined,
-        diskofferingid: undefined,
-        size: undefined
-      })
+      this.form = reactive({})
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.volume.name') }],
         zoneid: [{ required: true, message: this.$t('message.error.zone') }],
         diskofferingid: [{ required: true, message: this.$t('message.error.select') }],
-        size: [{ required: true, message: this.$t('message.error.custom.disk.size') }]
+        size: [{ required: true, message: this.$t('message.error.custom.disk.size') }],
+        miniops: [{
+          validator: async (rule, value) => {
+            if (value && (isNaN(value) || value <= 0)) {
+              return Promise.reject(this.$t('message.error.number'))
+            }
+            return Promise.resolve()
+          }
+        }],
+        maxiops: [{
+          validator: async (rule, value) => {
+            if (value && (isNaN(value) || value <= 0)) {
+              return Promise.reject(this.$t('message.error.number'))
+            }
+            return Promise.resolve()
+          }
+        }]
       })
     },
     fetchData () {

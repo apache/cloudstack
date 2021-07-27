@@ -18,128 +18,116 @@
 <template>
   <div class="form-layout">
     <a-spin :spinning="loading">
-      <a-form :form="form" :loading="loading" @submit="handleSubmit" layout="vertical">
-        <a-form-item>
-          <span slot="label">
+      <a-form
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        :loading="loading"
+        layout="vertical">
+        <a-form-item name="username" ref="username">
+          <template #label>
             {{ $t('label.username') }}
             <a-tooltip :title="apiParams.username.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input
-            v-decorator="['username', {
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
+            v-model:value="form.username"
             :placeholder="apiParams.username.description"
             autoFocus/>
         </a-form-item>
         <a-row :gutter="12">
-          <a-col :md="24" :lg="12">
-            <a-form-item>
-              <span slot="label">
+          <a-col :span="12">
+            <a-form-item name="password" ref="password">
+              <template #label>
                 {{ $t('label.password') }}
                 <a-tooltip :title="apiParams.password.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
                 </a-tooltip>
-              </span>
+              </template>
               <a-input-password
-                v-decorator="['password', {
-                  rules: [{ required: true, message: $t('message.error.required.input') }]
-                }]"
+                v-model:value="form.password"
                 :placeholder="apiParams.password.description"/>
             </a-form-item>
           </a-col>
-          <a-col :md="24" :lg="12">
-            <a-form-item>
-              <span slot="label">
+          <a-col :span="12">
+            <a-form-item name="confirmpassword" ref="confirmpassword">
+              <template #label>
                 {{ $t('label.confirmpassword') }}
                 <a-tooltip :title="apiParams.password.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
                 </a-tooltip>
-              </span>
+              </template>
               <a-input-password
-                v-decorator="['confirmpassword', {
-                  rules: [
-                    { required: true, message: $t('message.error.required.input') },
-                    { validator: validateConfirmPassword }
-                  ]
-                }]"
+                v-model:value="form.confirmpassword"
                 :placeholder="apiParams.password.description"/>
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item>
-          <span slot="label">
+        <a-form-item name="email" ref="email">
+          <template #label>
             {{ $t('label.email') }}
             <a-tooltip :title="apiParams.email.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input
-            v-decorator="['email', {
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
+            v-model:value="form.email"
             :placeholder="apiParams.email.description" />
         </a-form-item>
         <a-row :gutter="12">
-          <a-col :md="24" :lg="12">
-            <a-form-item>
-              <span slot="label">
+          <a-col :span="12">
+            <a-form-item name="firstname" ref="firstname">
+              <template #label>
                 {{ $t('label.firstname') }}
                 <a-tooltip :title="apiParams.firstname.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
                 </a-tooltip>
-              </span>
+              </template>
               <a-input
-                v-decorator="['firstname', {
-                  rules: [{ required: true, message: $t('message.error.required.input') }]
-                }]"
+                v-model:value="form.firstname"
                 :placeholder="apiParams.firstname.description" />
             </a-form-item>
           </a-col>
-          <a-col :md="24" :lg="12">
-            <a-form-item>
-              <span slot="label">
+          <a-col :span="12">
+            <a-form-item name="lastname" ref="lastname">
+              <template #label>
                 {{ $t('label.lastname') }}
                 <a-tooltip :title="apiParams.lastname.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
                 </a-tooltip>
-              </span>
+              </template>
               <a-input
-                v-decorator="['lastname', {
-                  rules: [{ required: true, message: $t('message.error.required.input') }]
-                }]"
+                v-model:value="form.lastname"
                 :placeholder="apiParams.lastname.description" />
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item v-if="this.isAdminOrDomainAdmin() && !domainid">
-          <span slot="label">
+        <a-form-item name="domainid" ref="domainid" v-if="isAdminOrDomainAdmin() && !domainid">
+          <template #label>
             {{ $t('label.domain') }}
             <a-tooltip :title="apiParams.domainid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-select
             :loading="domainLoading"
-            v-decorator="['domainid']"
+            v-model:value="form.domainid"
             :placeholder="apiParams.domainid.description">
             <a-select-option v-for="domain in domainsList" :key="domain.id">
               {{ domain.path || domain.name || domain.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item v-if="!account">
-          <span slot="label">
+        <a-form-item name="account" ref="account" v-if="!account">
+          <template #label>
             {{ $t('label.account') }}
             <a-tooltip :title="apiParams.account.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-select
-            v-decorator="['account', {
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
+            v-model:value="form.account"
             :loading="loadingAccount"
             :placeholder="apiParams.account.description">
             <a-select-option v-for="(item, idx) in accountList" :key="idx">
@@ -147,16 +135,16 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
-          <span slot="label">
+        <a-form-item name="timezone" ref="timezone">
+          <template #label>
             {{ $t('label.timezone') }}
             <a-tooltip :title="apiParams.timezone.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-select
             showSearch
-            v-decorator="['timezone']"
+            v-model:value="form.timezone"
             :loading="timeZoneLoading">
             <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
               {{ opt.name || opt.description }}
@@ -164,20 +152,18 @@
           </a-select>
         </a-form-item>
         <div v-if="'authorizeSamlSso' in $store.getters.apis">
-          <a-form-item :label="$t('label.samlenable')">
-            <a-switch v-decorator="['samlenable']" @change="checked => { this.samlEnable = checked }" />
+          <a-form-item name="samlenable" ref="samlenable" :label="$t('label.samlenable')">
+            <a-switch v-model:checked="form.samlenable" />
           </a-form-item>
-          <a-form-item v-if="samlEnable">
-            <span slot="label">
+          <a-form-item name="samlentity" ref="samlentity" v-if="form.samlenable">
+            <template #label>
               {{ $t('label.samlentity') }}
               <a-tooltip :title="apiParams.entityid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
               </a-tooltip>
-            </span>
+            </template>
             <a-select
-              v-decorator="['samlentity', {
-                initialValue: selectedIdp,
-              }]"
+              v-model:value="form.samlentity"
               :loading="idpLoading">
               <a-select-option v-for="(idp, idx) in idps" :key="idx">
                 {{ idp.orgName }}
@@ -195,6 +181,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
@@ -210,10 +197,8 @@ export default {
       domainLoading: false,
       domainsList: [],
       selectedDomain: '',
-      samlEnable: false,
       idpLoading: false,
       idps: [],
-      selectedIdp: '',
       loadingAccount: false,
       accountList: [],
       account: null,
@@ -221,11 +206,28 @@ export default {
     }
   },
   created () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('createUser', 'authorizeSamlSso')
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        username: [{ required: true, message: this.$t('message.error.required.input') }],
+        password: [{ required: true, message: this.$t('message.error.required.input') }],
+        confirmpassword: [
+          { required: true, message: this.$t('message.error.required.input') },
+          { validator: this.validateConfirmPassword }
+        ],
+        email: [{ required: true, message: this.$t('message.error.required.input') }],
+        firstname: [{ required: true, message: this.$t('message.error.required.input') }],
+        lastname: [{ required: true, message: this.$t('message.error.required.input') }],
+        account: [{ required: true, message: this.$t('message.error.required.input') }],
+        timezone: [{ required: true, message: this.$t('message.error.required.input') }]
+      })
+    },
     fetchData () {
       this.account = this.$route.query && this.$route.query.account ? this.$route.query.account : null
       this.domainid = this.$route.query && this.$route.query.domainid ? this.$route.query.domainid : null
@@ -247,7 +249,7 @@ export default {
         details: 'min'
       }).then(response => {
         this.domainsList = response.listdomainsresponse.domain || []
-        this.selectedDomain = this.domainsList[0].id || ''
+        this.form.domainid = this.domainsList[0].id || ''
       }).catch(error => {
         this.$notification.error({
           message: `${this.$t('label.error')} ${error.response.status}`,
@@ -284,7 +286,7 @@ export default {
       this.idpLoading = true
       api('listIdps').then(response => {
         this.idps = response.listidpsresponse.idp || []
-        this.selectedIdp = this.idps[0].id || ''
+        this.form.samlentity = this.idps[0].id || ''
       }).finally(() => {
         this.idpLoading = false
       })
@@ -295,12 +297,9 @@ export default {
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         const params = {
           username: values.username,
@@ -366,20 +365,19 @@ export default {
         })
       })
     },
-    validateConfirmPassword (rule, value, callback) {
+    async validateConfirmPassword (rule, value) {
       if (!value || value.length === 0) {
-        callback()
+        return Promise.resolve()
       } else if (rule.field === 'confirmpassword') {
-        const form = this.form
         const messageConfirm = this.$t('error.password.not.match')
-        const passwordVal = form.getFieldValue('password')
+        const passwordVal = this.form.password
         if (passwordVal && passwordVal !== value) {
-          callback(messageConfirm)
+          return Promise.reject(messageConfirm)
         } else {
-          callback()
+          return Promise.resolve()
         }
       } else {
-        callback()
+        return Promise.resolve()
       }
     },
     closeAction () {

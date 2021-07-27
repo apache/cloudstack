@@ -751,7 +751,7 @@ export default {
       showRootDiskSizeChanger: false,
       securitygroupids: [],
       rootDiskSizeFixed: 0,
-      hasError: false
+      hasError: false,
       error: false,
       diskSelected: {},
       diskIOpsMin: 0,
@@ -1613,8 +1613,6 @@ export default {
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
               catchMessage: this.$t('error.fetching.async.job.result'),
-                eventBus.$emit('vm-refresh-data')
-              },
               action: {
                 isFetchData: false
               }

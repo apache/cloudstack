@@ -18,76 +18,73 @@
 <template>
   <div class="form-layout">
     <a-spin :spinning="loading">
-      <a-form :form="form" :loading="loading" @submit="handleSubmit" layout="vertical">
-        <a-form-item>
-          <span slot="label">
+      <a-form
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        :loading="loading"
+        layout="vertical">
+        <a-form-item name="username" ref="username">
+          <template #label>
             {{ $t('label.username') }}
             <a-tooltip :title="apiParams.username.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input
-            v-decorator="['username', {
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
+            v-model:value="form.username"
             :placeholder="apiParams.username.description"
             autoFocus />
         </a-form-item>
-        <a-form-item>
-          <span slot="label">
+        <a-form-item name="email" ref="email">
+          <template #label>
             {{ $t('label.email') }}
             <a-tooltip :title="apiParams.email.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input
-            v-decorator="['email', {
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
+            v-model:value="form.email"
             :placeholder="apiParams.email.description" />
         </a-form-item>
         <a-row :gutter="12">
-          <a-col :md="24" :lg="12">
-            <a-form-item>
-              <span slot="label">
+          <a-col :span="12">
+            <a-form-item name="firstname" ref="firstname">
+              <template #label>
                 {{ $t('label.firstname') }}
                 <a-tooltip :title="apiParams.firstname.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
                 </a-tooltip>
-              </span>
+              </template>
               <a-input
-                v-decorator="['firstname', {
-                  rules: [{ required: true, message: $t('message.error.required.input') }]
-                }]"
+                v-model:value="form.firstname"
                 :placeholder="apiParams.firstname.description" />
             </a-form-item>
           </a-col>
-          <a-col :md="24" :lg="12">
-            <a-form-item>
-              <span slot="label">
+          <a-col :span="12">
+            <a-form-item name="lastname" ref="lastname">
+              <template #label>
                 {{ $t('label.lastname') }}
                 <a-tooltip :title="apiParams.lastname.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
                 </a-tooltip>
-              </span>
+              </template>
               <a-input
-                v-decorator="['lastname', {
-                  rules: [{ required: true, message: $t('message.error.required.input') }]
-                }]"
+                v-model:value="form.lastname"
                 :placeholder="apiParams.lastname.description" />
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item>
-          <span slot="label">
+        <a-form-item name="timezone" ref="timezone">
+          <template #label>
             {{ $t('label.timezone') }}
             <a-tooltip :title="apiParams.timezone.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-select
             showSearch
-            v-decorator="['timezone']"
+            v-model:value="form.timezone"
             :loading="timeZoneLoading">
             <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
               {{ opt.name || opt.description }}
@@ -104,6 +101,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
@@ -130,13 +128,23 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('updateUser')
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        username: [{ required: true, message: this.$t('message.error.required.input') }],
+        email: [{ required: true, message: this.$t('message.error.required.input') }],
+        firstname: [{ required: true, message: this.$t('message.error.required.input') }],
+        lastname: [{ required: true, message: this.$t('message.error.required.input') }]
+      })
+    },
     fetchData () {
       this.userId = this.$route.params.id || null
       this.fetchTimeZone()
@@ -166,7 +174,7 @@ export default {
         }
         fieldValue = this.resource[fieldName] ? this.resource[fieldName] : null
         if (fieldValue) {
-          form.getFieldDecorator(field.name, { initialValue: fieldValue })
+          form[field.name] = fieldValue
         }
       })
       this.loading = false
@@ -174,12 +182,9 @@ export default {
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         const params = {
           id: this.userId,
