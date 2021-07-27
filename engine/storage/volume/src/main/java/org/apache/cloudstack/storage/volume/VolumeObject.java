@@ -651,7 +651,7 @@ public class VolumeObject implements VolumeInfo {
     }
 
     protected void updateVolumeInfo(VolumeObjectTO newVolume, VolumeVO volumeVo, boolean setVolumeSize, boolean setFormat) {
-        String previousValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(volumeVo, "path", "size", "format", "poolId");
+        String previousValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeVo, "path", "size", "format", "poolId");
 
         volumeVo.setPath(newVolume.getPath());
         Long newVolumeSize = newVolume.getSize();
@@ -665,14 +665,14 @@ public class VolumeObject implements VolumeInfo {
         volumeVo.setPoolId(getDataStore().getId());
         volumeDao.update(volumeVo.getId(), volumeVo);
 
-        String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(volumeVo, "path", "size", "format", "poolId");
+        String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeVo, "path", "size", "format", "poolId");
         s_logger.debug(String.format("Updated %s from %s to %s ", volumeVo.getVolumeDescription(), previousValues, newValues));
     }
 
    protected void handleProcessEventCopyCmdAnswerNotPrimaryStore(VolumeObjectTO newVolume) {
         VolumeDataStoreVO volStore = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
 
-        String previousValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(volStore, "installPath", "size");
+        String previousValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volStore, "installPath", "size");
 
         volStore.setInstallPath(newVolume.getPath());
         Long newVolumeSize = newVolume.getSize();
@@ -683,8 +683,8 @@ public class VolumeObject implements VolumeInfo {
 
         volumeStoreDao.update(volStore.getId(), volStore);
 
-        String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(volStore, "installPath", "size");
-        s_logger.debug(String.format("Updated volume_store_ref %s from %s to %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(volStore, "id", "volumeId"),
+        String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volStore, "installPath", "size");
+        s_logger.debug(String.format("Updated volume_store_ref %s from %s to %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volStore, "id", "volumeId"),
           previousValues, newValues));
     }
 
@@ -708,15 +708,15 @@ public class VolumeObject implements VolumeInfo {
         }
 
         VolumeDataStoreVO volumeDataStoreVo = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
-        String previousValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(volumeDataStoreVo, "installPath", "checksum");
+        String previousValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeDataStoreVo, "installPath", "checksum");
 
         volumeDataStoreVo.setInstallPath(downloadAnswer.getInstallPath());
         volumeDataStoreVo.setChecksum(downloadAnswer.getCheckSum());
         volumeStoreDao.update(volumeDataStoreVo.getId(), volumeDataStoreVo);
 
-        String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(volumeDataStoreVo, "installPath", "checksum");
+        String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeDataStoreVo, "installPath", "checksum");
         s_logger.debug(String.format("Updated volume_store_ref %s from %s to %s.", ReflectionToStringBuilderUtils.
-          reflectOnlySelectedFieldsAsJson(volumeDataStoreVo, "id", "volumeId"), previousValues, newValues));
+          reflectOnlySelectedFields(volumeDataStoreVo, "id", "volumeId"), previousValues, newValues));
     }
     @Override
     public void incRefCount() {

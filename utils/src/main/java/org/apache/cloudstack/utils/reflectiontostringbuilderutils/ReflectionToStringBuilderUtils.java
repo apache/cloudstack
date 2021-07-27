@@ -38,6 +38,7 @@ import org.reflections.ReflectionUtils;
  */
 public class ReflectionToStringBuilderUtils {
     protected static final Logger LOGGER = Logger.getLogger(ReflectionToStringBuilderUtils.class);
+    private static final ToStringStyle DEFAULT_STYLE = ToStringStyle.JSON_STYLE;
 
     /**
     * Default separator to join objects when the parameter <b>object</b> is a Collection.
@@ -52,8 +53,8 @@ public class ReflectionToStringBuilderUtils {
      * If <b>selectedFields</b> is null, returns an empty String.<br>
      * If <b>object</b> is a Collection, returns a JSON array containing the elements, else, returns the object as JSON.<br>
      */
-    public static String reflectOnlySelectedFieldsAsJson(Object object, String... selectedFields) {
-        String reflection = reflectOnlySelectedFields(object, ToStringStyle.JSON_STYLE, ",", selectedFields);
+    public static String reflectOnlySelectedFields(Object object, String... selectedFields) {
+        String reflection = reflectOnlySelectedFields(object, DEFAULT_STYLE, ",", selectedFields);
 
         if (reflection == null) {
             return null;

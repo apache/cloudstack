@@ -296,37 +296,37 @@ public class ReflectionToStringBuilderUtilsTest extends TestCase {
     }
 
     @Test
-    public void validateReflectOnlySelectedFieldsAsJsonReflectionNullMustReturnNull(){
+    public void validateReflectOnlySelectedFieldsDefaultStyleReflectionNullMustReturnNull(){
         String expectedResult = null;
 
         PowerMockito.spy(ReflectionToStringBuilderUtils.class);
         PowerMockito.when(ReflectionToStringBuilderUtils.reflectOnlySelectedFields(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any())).thenReturn(null);
 
-        String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(new Object(), (String[]) null);
+        String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(new Object(), (String[]) null);
         Assert.assertEquals(expectedResult, result);
     }
 
     @Test
-    public void validateReflectOnlySelectedFieldsAsJsonReflectCollectionMustReturnValue(){
+    public void validateReflectOnlySelectedFieldsDefaultStyleReflectCollectionMustReturnValue(){
         String expectedResult = "[test]";
 
         PowerMockito.spy(ReflectionToStringBuilderUtils.class);
         PowerMockito.when(ReflectionToStringBuilderUtils.reflectOnlySelectedFields(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any())).thenReturn("test");
         PowerMockito.when(ReflectionToStringBuilderUtils.isCollection(Mockito.any())).thenReturn(true);
 
-        String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(new Object());
+        String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(new Object());
         Assert.assertEquals(expectedResult, result);
     }
 
     @Test
-    public void validateReflectOnlySelectedFieldsAsJsonReflectMustReturnValue(){
+    public void validateReflectOnlySelectedFieldsDefaultStyleReflectMustReturnValue(){
         String expectedResult = "test";
 
         PowerMockito.spy(ReflectionToStringBuilderUtils.class);
         PowerMockito.when(ReflectionToStringBuilderUtils.reflectOnlySelectedFields(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any())).thenReturn(expectedResult);
         PowerMockito.when(ReflectionToStringBuilderUtils.isCollection(Mockito.any())).thenReturn(false);
 
-        String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(new Object());
+        String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(new Object());
         Assert.assertEquals(expectedResult, result);
     }
 }

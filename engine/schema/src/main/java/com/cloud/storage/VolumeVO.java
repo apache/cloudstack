@@ -646,6 +646,6 @@ public class VolumeVO implements Volume {
     }
 
     public String getVolumeDescription(){
-        return ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(this, "name", "uuid");
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "name", "uuid");
     }
 }

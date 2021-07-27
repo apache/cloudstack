@@ -975,7 +975,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         IntervalType[] intervalTypes = IntervalType.values();
         List<SnapshotPolicyVO> policies = listPoliciesforVolume(srcVolume.getId());
 
-        s_logger.debug(String.format("Copying snapshot policies %s from volume %s to volume %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFieldsAsJson(policies,
+        s_logger.debug(String.format("Copying snapshot policies %s from volume %s to volume %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(policies,
           "id", "uuid"), srcVolume.getVolumeDescription(), destVolume.getVolumeDescription()));
 
         policies.forEach(policy ->
