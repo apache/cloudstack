@@ -17,7 +17,7 @@
 package org.apache.cloudstack.annotation;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -101,8 +101,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     @Inject
     private VMTemplateDao templateDao;
 
-    private static final List<RoleType> adminRoles = Arrays.asList(RoleType.Admin,
-            RoleType.DomainAdmin, RoleType.ResourceAdmin);
+    private static final List<RoleType> adminRoles = Collections.singletonList(RoleType.Admin);
 
     @Override
     public ListResponse<AnnotationResponse> searchForAnnotations(ListAnnotationsCmd cmd) {

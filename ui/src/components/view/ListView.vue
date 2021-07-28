@@ -628,6 +628,7 @@ export default {
         case 'SECONDARY_STORAGE' : return 'imagestore'
         case 'VR' : return 'router'
         case 'SYSTEM_VM' : return 'systemvm'
+        case 'KUBERNETES_CLUSTER': return 'kubernetes'
         default: return entitytype.toLowerCase().replace('_', '')
       }
     },
