@@ -696,7 +696,7 @@ CREATE VIEW `cloud`.`host_view` AS
     GROUP BY
         `host`.`id`;
 
-ALTER TABLE `cloud`.`annotations` ADD COLUMN `admins_only` tinyint(1) unsigned NOT NULL DEFAULT 0;
+ALTER TABLE `cloud`.`annotations` ADD COLUMN `admins_only` tinyint(1) unsigned NOT NULL DEFAULT 1;
 
 -- Allow annotations for users
 INSERT INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission) VALUES (UUID(), 4, 'listAnnotations', 'ALLOW');
