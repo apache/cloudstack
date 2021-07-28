@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -98,7 +99,7 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
     }
 
     public Boolean isAutoSelect() {
-        return autoSelect != null ? autoSelect : true;
+        return BooleanUtils.isNotFalse(autoSelect);
     }
 
     /////////////////////////////////////////////////////
