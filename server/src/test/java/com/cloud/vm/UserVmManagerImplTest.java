@@ -581,6 +581,8 @@ public class UserVmManagerImplTest {
     @Test
     public void validateCloneCondition() {
         Mockito.when(cloneVMCommand.getTargetVM()).thenReturn(null);
+        Mockito.when(cloneVMCommand.getAccountName()).thenReturn(null);
+        Mockito.when(cloneVMCommand.getDomainId()).thenReturn(null);
         Exception err = null;
         try {
             userVmManagerImpl.checkCloneCondition(cloneVMCommand);
