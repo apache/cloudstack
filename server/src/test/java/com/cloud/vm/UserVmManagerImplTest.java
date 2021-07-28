@@ -32,13 +32,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.exception.*;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
+import org.apache.cloudstack.api.command.user.vm.CloneVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -57,10 +60,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -144,6 +143,9 @@ public class UserVmManagerImplTest {
 
     @Mock
     private VMTemplateDao templateDao;
+
+    @Mock
+    private CloneVMCmd cloneVMCommand;
 
     private long vmId = 1l;
 
@@ -570,5 +572,17 @@ public class UserVmManagerImplTest {
         Mockito.verify(detailsMock, Mockito.times(1)).remove(VmDetailConstants.ENCRYPTED_PASSWORD);
         Mockito.verify(userVmVoMock, Mockito.times(1)).setDetails(detailsMock);
         Mockito.verify(userVmDao, Mockito.times(1)).saveDetails(userVmVoMock);
+    }
+
+    @Test
+    public void validateCloneCondition() {
+        Mockito.when(cloneVMCommand.getTargetVM()).thenReturn(null);
+        Exception err = null;
+        try {
+            userVmManagerImpl.checkCloneCondition(cloneVMCommand);
+        } catch (CloudRuntimeException | ResourceUnavailableException | ResourceAllocationException e) {
+            err = e;
+        }
+        assertTrue(err instanceof CloudRuntimeException);
     }
 }
