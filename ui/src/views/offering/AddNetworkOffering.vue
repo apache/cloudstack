@@ -833,7 +833,7 @@ export default {
         }
         const detailsKey = ['promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'maclearning']
         for (const key of detailsKey) {
-          if (values[key]) {
+          if (values[key] !== undefined && values[key] != null) {
             params['details[0].' + key] = values[key]
           }
         }
