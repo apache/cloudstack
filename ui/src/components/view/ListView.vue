@@ -35,9 +35,9 @@
     </template>
 
     <!--
-    <div slot="expandedRowRender" slot-scope="resource">
-      <info-card :resource="resource" style="margin-left: 0px; width: 50%">
-        <div slot="actions" style="padding-top: 12px">
+    <div #expandedRowRender="resource">
+      <info-card :resource="resource style="margin-left: 0px; width: 50%">
+        <div #actions style="padding-top: 12px">
           <a-tooltip
             v-for="(action, actionIndex) in $route.meta.actions"
             :key="actionIndex"
@@ -261,11 +261,14 @@
     <template #zonename="{ text, record }">
       <router-link v-if="$router.resolve('/zone/' + record.zoneid).name !== '404'" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
-    </template>
-    <template #readonly="{ text, record }">
-      <status :name="text" :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" />
-    </template>
-    <template #created="{ text }">
+    </span>
+    <a #readonly="{ text, record }">
+      <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" />
+    </a>
+    <span #current="{ text, record }">
+      <status :text="record.current ? record.current.toString() : 'false'" />
+    </span>
+    <span #created="{ text }">
       {{ $toLocaleDate(text) }}
     </template>
     <template #sent="{ text }">
