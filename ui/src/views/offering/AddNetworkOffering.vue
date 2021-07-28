@@ -688,7 +688,8 @@ export default {
         var self = this
         var selectedServices = null
         var keys = Object.keys(values)
-        var ignoredKeys = ['state', 'status', 'allocationstate', 'forvpc', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'isolation', 'supportspublicaccess']
+        const detailsKey = ['promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'maclearning']
+        const ignoredKeys = [...detailsKey, 'state', 'status', 'allocationstate', 'forvpc', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'isolation', 'supportspublicaccess']
         keys.forEach(function (key, keyIndex) {
           if (self.isSupportedServiceObject(values[key])) {
             if (selectedServices == null) {
@@ -831,9 +832,8 @@ export default {
         if ('egressdefaultpolicy' in values && values.egressdefaultpolicy !== 'allow') {
           params.egressdefaultpolicy = false
         }
-        const detailsKey = ['promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'maclearning']
         for (const key of detailsKey) {
-          if (values[key] !== undefined && values[key] != null) {
+          if (values[key]) {
             params['details[0].' + key] = values[key]
           }
         }
