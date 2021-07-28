@@ -122,14 +122,10 @@ export default {
 
         api('destroyVirtualMachine', params).then(json => {
           const jobId = json.destroyvirtualmachineresponse.jobid
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.action.destroy.instance'),
-            jobid: jobId,
-            description: this.resource.name,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId,
+            title: this.$t('label.action.destroy.instance'),
+            description: this.resource.name,
             loadingMessage: `${this.$t('message.deleting.vm')} ${this.resource.name}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
             successMessage: `${this.$t('message.success.delete.vm')} ${this.resource.name}`,
@@ -141,7 +137,7 @@ export default {
               }
             },
             action: {
-              api: 'destroyVirtualMachine'
+              isFetchData: false
             }
           })
           this.closeAction()

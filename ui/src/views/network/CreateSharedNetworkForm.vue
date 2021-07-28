@@ -93,7 +93,7 @@
               :filterOption="(input, option) => {
                 return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
-              :loading="zoneLoading"
+              :loading="formPhysicalNetworkLoading"
               :placeholder="this.$t('label.physicalnetworkid')"
               @change="val => { this.handlePhysicalNetworkChange(this.formPhysicalNetworks[val]) }">
               <a-select-option v-for="(opt, optIndex) in this.formPhysicalNetworks" :key="optIndex">
@@ -542,57 +542,67 @@ export default {
       this.fetchPhysicalNetworkData()
     },
     fetchPhysicalNetworkData () {
+      this.formSelectedPhysicalNetwork = {}
+      this.formPhysicalNetworks = []
       if (this.physicalNetworks != null) {
         this.formPhysicalNetworks = this.physicalNetworks
-        if (this.arrayHasItems(this.formPhysicalNetworks)) {
-          this.form.setFieldsValue({
-            physicalnetworkid: 0
-          })
-          this.handlePhysicalNetworkChange(this.formPhysicalNetworks[0])
-        }
+        this.selectFirstPhysicalNetwork()
       } else {
         if (this.selectedZone === null || this.selectedZone === undefined) {
           return
         }
-        const params = {}
-        params.zoneid = this.selectedZone.id
-        this.formPhysicalNetworksLoading = true
+        const promises = []
+        const params = {
+          zoneid: this.selectedZone.id
+        }
+        this.formPhysicalNetworkLoading = true
         api('listPhysicalNetworks', params).then(json => {
-          this.formPhysicalNetworks = []
           var networks = json.listphysicalnetworksresponse.physicalnetwork
           if (this.arrayHasItems(networks)) {
-            for (const i in networks) {
-              this.addPhysicalNetworkForGuestTrafficType(networks[i])
+            for (const network of networks) {
+              promises.push(this.addPhysicalNetworkForGuestTrafficType(network))
             }
           } else {
             this.formPhysicalNetworkLoading = false
           }
         }).finally(() => {
+          if (this.arrayHasItems(promises)) {
+            Promise.all(promises).catch(error => {
+              this.$notifyError(error)
+            }).finally(() => {
+              this.formPhysicalNetworkLoading = false
+              this.selectFirstPhysicalNetwork()
+            })
+          }
         })
+      }
+    },
+    selectFirstPhysicalNetwork () {
+      if (this.arrayHasItems(this.formPhysicalNetworks)) {
+        this.form.setFieldsValue({
+          physicalnetworkid: 0
+        })
+        this.handlePhysicalNetworkChange(this.formPhysicalNetworks[0])
       }
     },
     addPhysicalNetworkForGuestTrafficType (physicalNetwork) {
       const params = {}
       params.physicalnetworkid = physicalNetwork.id
-      api('listTrafficTypes', params).then(json => {
-        var trafficTypes = json.listtraffictypesresponse.traffictype
-        if (this.arrayHasItems(trafficTypes)) {
-          for (const i in trafficTypes) {
-            if (trafficTypes[i].traffictype === 'Guest') {
-              this.formPhysicalNetworks.push(physicalNetwork)
-              break
+      return new Promise((resolve, reject) => {
+        api('listTrafficTypes', params).then(json => {
+          var trafficTypes = json.listtraffictypesresponse.traffictype
+          if (this.arrayHasItems(trafficTypes)) {
+            for (const type of trafficTypes) {
+              if (type.traffictype === 'Guest') {
+                this.formPhysicalNetworks.push(physicalNetwork)
+                break
+              }
             }
           }
-        } else {
-          this.formPhysicalNetworkLoading = false
-        }
-      }).finally(() => {
-        if (this.formPhysicalNetworks.length > 0 && this.isObjectEmpty(this.formSelectedPhysicalNetwork)) {
-          this.form.setFieldsValue({
-            physicalnetworkid: 0
-          })
-          this.handlePhysicalNetworkChange(this.formPhysicalNetworks[0])
-        }
+          resolve()
+        }).catch(error => {
+          reject(error)
+        })
       })
     },
     handlePhysicalNetworkChange (physicalNet) {

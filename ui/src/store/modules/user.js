@@ -32,7 +32,7 @@ import {
   ZONES,
   TIMEZONE_OFFSET,
   USE_BROWSER_TIMEZONE,
-  ASYNC_JOB_IDS,
+  HEADER_NOTICES,
   DOMAIN_STORE,
   DARK_MODE,
   THEME_SETTING
@@ -48,6 +48,7 @@ const user = {
     features: {},
     project: {},
     asyncJobIds: [],
+    headerNotices: [],
     isLdapEnabled: false,
     cloudian: {},
     zones: {},
@@ -90,9 +91,9 @@ const user = {
     SET_FEATURES: (state, features) => {
       state.features = features
     },
-    SET_ASYNC_JOB_IDS: (state, jobsJsonArray) => {
-      Vue.ls.set(ASYNC_JOB_IDS, jobsJsonArray)
-      state.asyncJobIds = jobsJsonArray
+    SET_HEADER_NOTICES: (state, noticeJsonArray) => {
+      Vue.ls.set(HEADER_NOTICES, noticeJsonArray)
+      state.headerNotices = noticeJsonArray
     },
     SET_LDAP: (state, isLdapEnabled) => {
       state.isLdapEnabled = isLdapEnabled
@@ -153,7 +154,7 @@ const user = {
           commit('SET_AVATAR', '')
           commit('SET_INFO', {})
           commit('SET_PROJECT', {})
-          commit('SET_ASYNC_JOB_IDS', [])
+          commit('SET_HEADER_NOTICES', [])
           commit('SET_FEATURES', {})
           commit('SET_LDAP', {})
           commit('SET_CLOUDIAN', {})
@@ -284,7 +285,7 @@ const user = {
         commit('SET_TOKEN', '')
         commit('SET_APIS', {})
         commit('SET_PROJECT', {})
-        commit('SET_ASYNC_JOB_IDS', [])
+        commit('SET_HEADER_NOTICES', [])
         commit('SET_FEATURES', {})
         commit('SET_LDAP', {})
         commit('SET_CLOUDIAN', {})
@@ -292,7 +293,7 @@ const user = {
         commit('SET_DOMAIN_STORE', {})
         Vue.ls.remove(CURRENT_PROJECT)
         Vue.ls.remove(ACCESS_TOKEN)
-        Vue.ls.remove(ASYNC_JOB_IDS)
+        Vue.ls.remove(HEADER_NOTICES)
 
         logout(state.token).then(() => {
           message.destroy()
@@ -306,10 +307,19 @@ const user = {
         })
       })
     },
-    AddAsyncJob ({ commit }, jobJson) {
-      var jobsArray = Vue.ls.get(ASYNC_JOB_IDS, [])
-      jobsArray.push(jobJson)
-      commit('SET_ASYNC_JOB_IDS', jobsArray)
+    AddHeaderNotice ({ commit }, noticeJson) {
+      if (!noticeJson || !noticeJson.title) {
+        return
+      }
+      const noticeArray = Vue.ls.get(HEADER_NOTICES, [])
+      const noticeIdx = noticeArray.findIndex(notice => notice.key === noticeJson.key)
+      if (noticeIdx === -1) {
+        noticeArray.push(noticeJson)
+      } else {
+        noticeArray[noticeIdx] = noticeJson
+      }
+
+      commit('SET_HEADER_NOTICES', noticeArray)
     },
     ProjectView ({ commit }, projectid) {
       return new Promise((resolve, reject) => {
