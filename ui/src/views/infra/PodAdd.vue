@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="loading">
-    <a-form :form="form" layout="vertical" class="form">
+    <a-form v-ctrl-enter="handleSubmit" :form="form" layout="vertical" class="form">
 
       <a-form-item class="form__item" :label="$t('label.zone')">
         <a-select
@@ -100,9 +100,9 @@
 
       <a-divider></a-divider>
 
-      <div class="actions">
+      <div :span="24" class="action-button">
         <a-button @click="() => this.$parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
-        <a-button @click="handleSubmit" type="primary">{{ $t('label.ok') }}</a-button>
+        <a-button @click="handleSubmit" ref="submit" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
 
     </a-form>
@@ -174,6 +174,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) return
 
@@ -262,18 +263,6 @@ export default {
 
       @media (min-width: 760px) {
         width: 400px;
-      }
-    }
-
-  }
-
-  .actions {
-    display: flex;
-    justify-content: flex-end;
-
-    button {
-      &:not(:last-child) {
-        margin-right: 10px;
       }
     }
 

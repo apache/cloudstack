@@ -66,8 +66,11 @@
     <a-modal
       v-model="addIpRangeModal"
       :title="$t('label.add.ip.range')"
+      :closable="true"
       :maskClosable="false"
-      @ok="handleAddIpRange">
+      :footer="null"
+      @cancel="addIpRangeModal = false"
+      v-ctrl-enter="handleAddIpRange">
       <a-form
         :form="form"
         @submit="handleAddIpRange"
@@ -109,6 +112,11 @@
             v-decorator="['endip', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
           </a-input>
         </a-form-item>
+
+        <div :span="24" class="action-button">
+          <a-button @click="addIpRangeModal = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleAddIpRange">{{ $t('label.ok') }}</a-button>
+        </div>
       </a-form>
     </a-modal>
 
@@ -266,6 +274,7 @@ export default {
       })
     },
     handleAddIpRange (e) {
+      if (this.componentLoading) return
       this.form.validateFields((error, values) => {
         if (error) return
 

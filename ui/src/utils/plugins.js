@@ -121,6 +121,13 @@ export const pollJobPlugin = {
               duration: 0
             })
           }
+          store.dispatch('AddHeaderNotice', {
+            key: jobId,
+            title: title,
+            description: description,
+            status: 'failed',
+            duration: 2
+          })
           if (!action || !('isFetchData' in action) || (action.isFetchData)) {
             eventBus.$emit('async-job-complete', action)
           }

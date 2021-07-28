@@ -79,7 +79,9 @@
             v-if="!dataView"
             :searchFilters="searchFilters"
             :searchParams="searchParams"
-            :apiName="apiName"/>
+            :apiName="apiName"
+            @search="onSearch"
+            @change-filter="changeFilter"/>
         </a-col>
       </a-row>
     </a-card>
@@ -124,15 +126,14 @@
         :visible="showAction"
         :closable="true"
         :maskClosable="false"
-        :okText="$t('label.ok')"
-        :cancelText="$t('label.cancel')"
+        :footer="null"
         style="top: 20px;"
         :width="modalWidth"
-        @ok="handleSubmit"
-        @cancel="closeAction"
         :ok-button-props="getOkProps()"
         :cancel-button-props="getCancelProps()"
         :confirmLoading="actionLoading"
+        @cancel="closeAction"
+        v-ctrl-enter="handleSubmit"
         centered
       >
         <span slot="title">
@@ -322,6 +323,11 @@
                   :placeholder="field.description" />
               </span>
             </a-form-item>
+
+            <div :span="24" class="action-button">
+              <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+              <a-button type="primary" @click="handleSubmit" ref="submit">{{ $t('label.ok') }}</a-button>
+            </div>
           </a-form>
         </a-spin>
         <br />
@@ -1077,6 +1083,7 @@ export default {
       this.message = {}
     },
     handleSubmit (e) {
+      if (this.actionLoading) return
       this.promises = []
       if (!this.dataView && this.currentAction.groupAction && this.selectedRowKeys.length > 0) {
         if (this.selectedRowKeys.length > 0) {
@@ -1200,15 +1207,15 @@ export default {
             if (param.name !== key) {
               continue
             }
-            if (!input === undefined || input === null ||
+            if (input === undefined || input === null ||
               (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering'].includes(action.api))) {
               if (param.type === 'boolean') {
                 params[key] = false
               }
               break
             }
-            if (!input && input !== 0 && !['tags'].includes(key)) {
-              continue
+            if (input === '' && !['tags'].includes(key)) {
+              break
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {
               params[key] = action.mapping[key].options[input]

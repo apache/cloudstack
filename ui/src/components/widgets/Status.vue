@@ -103,8 +103,10 @@ export default {
         case 'Successfully Installed':
         case 'ReadWrite':
         case 'True':
+        case 'true':
         case 'Up':
         case 'enabled':
+        case 'PowerOn':
         case 'success':
           status = 'success'
           break
@@ -115,7 +117,9 @@ export default {
         case 'Down':
         case 'Error':
         case 'False':
+        case 'false':
         case 'Stopped':
+        case 'PowerOff':
         case 'failed':
           status = 'error'
           break

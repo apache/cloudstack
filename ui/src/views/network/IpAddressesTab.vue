@@ -112,10 +112,9 @@
       :visible="showAcquireIp"
       :title="$t('label.acquire.new.ip')"
       :closable="true"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
+      :footer="null"
       @cancel="onCloseModal"
-      @ok="acquireIpAddress"
+      v-ctrl-enter="acquireIpAddress"
       centered
       width="450px">
       <a-spin :spinning="acquireLoading">
@@ -131,6 +130,10 @@
               :key="ip.ipaddress">{{ ip.ipaddress }}</a-select-option>
           </a-select>
         </a-form-item>
+        <div :span="24" class="action-button">
+          <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
+          <a-button ref="submit" type="primary" @click="acquireIpAddress">{{ $t('label.ok') }}</a-button>
+        </div>
       </a-spin>
     </a-modal>
     <bulk-action-view
@@ -319,6 +322,7 @@ export default {
       this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
     },
     acquireIpAddress () {
+      if (this.acquireLoading) return
       const params = {}
       if (this.$route.path.startsWith('/vpc')) {
         params.vpcid = this.resource.id

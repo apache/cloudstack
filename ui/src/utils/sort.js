@@ -23,7 +23,7 @@ function filterNumber (value) {
 }
 
 function stringComparator (a, b) {
-  return a.localeCompare(b)
+  return a.toString().localeCompare(b.toString())
 }
 
 function numericComparator (a, b) {
