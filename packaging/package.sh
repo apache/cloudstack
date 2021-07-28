@@ -94,9 +94,6 @@ function packaging() {
     VERSION=$(cd $PWD/../; $MVN org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep --color=none '^[0-9]\.')
     REALVER=$(echo "$VERSION" | cut -d '-' -f 1)
 
-    echo $VERSION
-    echo $REALVER
-
     if [ -n "$5" ]; then
         BRAND="${5}."
     else
@@ -109,8 +106,6 @@ function packaging() {
             BRAND=""
         fi
     fi
-
-    echo $BASEVER
 
     if echo "$VERSION" | grep -q SNAPSHOT ; then
         if [ -n "$4" ] ; then

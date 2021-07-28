@@ -215,7 +215,7 @@ imgsize=$(ls -l $tmpltimg2| awk -F" " '{print $5}')
 if [ $cloud ]
 then
     create_from_file_user $tmpltfs $tmpltimg2 $tmpltname
-    tmpltfs=/tmp/tmpSecStorage/
+    tmpltfs=/tmp/cloud/templates/
 else
     create_from_file $tmpltfs $tmpltimg2 $tmpltname
 fi
@@ -233,7 +233,7 @@ echo "description=$descr" >> /$tmpltfs/template.properties
 echo "hvm=$hvm" >> /$tmpltfs/template.properties
 echo "size=$imgsize" >> /$tmpltfs/template.properties
 
-if [[ "$cleanup" == "true" && $cloud != "true"]]
+if [[ "$cleanup" == "true" ]] && [[ $cloud != "true" ]]
 then
   rm -f $tmpltimg
 fi

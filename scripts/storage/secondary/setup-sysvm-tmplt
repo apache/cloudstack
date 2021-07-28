@@ -102,7 +102,8 @@ if [[ "$destfiles" != "" ]]; then
   failed 2 "Data already exists at destination $destdir"
 fi
 
-tmpfolder=/tmp/tmpSecStorage/
+tmpfolder=/tmp/cloud/templates/
+mkdir -p $tmpfolder
 tmplfile=$tmpfolder/$localfile
 
 sudo touch $tmplfile

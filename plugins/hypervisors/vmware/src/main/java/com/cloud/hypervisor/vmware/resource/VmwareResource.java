@@ -25,7 +25,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.net.URL;
 import java.nio.channels.SocketChannel;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
@@ -273,7 +272,6 @@ import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.mgmt.PropertyMapDynamicBean;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.nicira.nvp.plugin.NiciraNvpApiVersion;
-import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
@@ -424,8 +422,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected static File s_systemVmKeyFile = null;
     private static final Object s_syncLockObjectFetchKeyFile = new Object();
-    protected static final String s_relativePathSystemVmKeyFileInstallDir = "scripts/vm/systemvm/id_rsa.cloud";
-    protected static final String s_defaultPathSystemVmKeyFile = "/usr/share/cloudstack-common/scripts/vm/systemvm/id_rsa.cloud";
+    protected static final String s_defaultPathSystemVmKeyFile = "/var/cloudstack/management/.ssh/id_rsa";
 
     public Gson getGson() {
         return _gson;
@@ -7040,18 +7037,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private static File fetchSystemVmKeyFile() {
-        String filePath = s_relativePathSystemVmKeyFileInstallDir;
+        String filePath = s_defaultPathSystemVmKeyFile;
+        File keyFile = new File(filePath);
         s_logger.debug("Looking for file [" + filePath + "] in the classpath.");
-        URL url = Script.class.getClassLoader().getResource(filePath);
-        File keyFile = null;
-        if (url != null) {
-            keyFile = new File(url.getPath());
-        }
-        if (keyFile == null || !keyFile.exists()) {
-            filePath = s_defaultPathSystemVmKeyFile;
-            keyFile = new File(filePath);
-            s_logger.debug("Looking for file [" + filePath + "] in the classpath.");
-        }
+
         if (!keyFile.exists()) {
             s_logger.error("Unable to locate id_rsa.cloud in your setup at " + keyFile.toString());
         }
