@@ -43,9 +43,12 @@ export default {
       this.value = this.defaultValue
     }
   },
+  created () {
+    this.value = this.defaultValue
+  },
   methods: {
     handleChange (e) {
-      this.$emit('change', e)
+      this.$emit('onChange', e)
     }
   }
 }

@@ -21,20 +21,17 @@
       <a-row>
         <a-col :span="14" style="padding-left: 6px">
           <breadcrumb :resource="resource">
-            <span slot="end">
-              <template slot="title">
-                {{ $t('label.refresh') }}
-              </template>
+            <template #end>
               <a-button
                 style="margin-top: 4px"
                 :loading="loading"
                 shape="round"
                 size="small"
-                icon="reload"
                 @click="fetchData()">
+                <template #icon><ReloadOutlined /></template>
                 {{ $t('label.refresh') }}
               </a-button>
-            </span>
+            </template>
           </breadcrumb>
         </a-col>
         <a-col :span="10">
@@ -123,9 +120,6 @@ export default {
       return actions
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   beforeRouteUpdate (to, from, next) {
     next()
   },
@@ -143,7 +137,7 @@ export default {
         this.fetchData()
       }
     },
-    '$i18n.locale' (to, from) {
+    '$i18n.global.locale' (to, from) {
       if (to !== from) {
         this.fetchData()
       }

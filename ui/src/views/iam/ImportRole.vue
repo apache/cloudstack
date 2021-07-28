@@ -19,76 +19,66 @@
   <div class="form-layout">
     <a-spin :spinning="loading">
       <a-form
-        :form="form"
-        @submit="handleSubmit"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
         layout="vertical">
-        <a-form-item>
-          <span slot="label">
+        <a-form-item name="file" ref="file">
+          <template #label>
             {{ $t('label.rules.file') }}
             <a-tooltip :title="$t('label.rules.file.to.import')">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-upload-dragger
             :multiple="false"
             :fileList="fileList"
             :remove="handleRemove"
             :beforeUpload="beforeUpload"
             @change="handleChange"
-            v-decorator="['file', {
-              rules: [{ required: true, message: $t('message.error.required.input') },
-                      {
-                        validator: checkCsvRulesFile,
-                        message: $t('label.error.rules.file.import')
-                      }
-              ]
-            }]">
+            v-model:value="form.file">
             <p class="ant-upload-drag-icon">
-              <a-icon type="cloud-upload" />
+              <cloud-upload-outlined />
             </p>
             <p class="ant-upload-text" v-if="fileList.length === 0">
               {{ $t('label.rules.file.import.description') }}
             </p>
           </a-upload-dragger>
         </a-form-item>
-        <a-form-item>
-          <span slot="label">
+        <a-form-item name="name" ref="name">
+          <template #label>
             {{ $t('label.name') }}
             <a-tooltip :title="apiParams.name.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input
-            v-decorator="['name', {
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
+            v-model:value="form.name"
             :placeholder="apiParams.name.description"
             autoFocus />
         </a-form-item>
 
-        <a-form-item>
-          <span slot="label">
+        <a-form-item name="description" ref="description">
+          <template #label>
             {{ $t('label.description') }}
             <a-tooltip :title="apiParams.description.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input
-            v-decorator="['description']"
+            v-model:value="form.description"
             :placeholder="apiParams.description.description" />
         </a-form-item>
 
-        <a-form-item>
-          <span slot="label">
+        <a-form-item name="type" ref="type">
+          <template #label>
             {{ $t('label.type') }}
             <a-tooltip :title="apiParams.type.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-select
-            v-decorator="['type', {
-              rules: [{ required: true, message: $t('message.error.select') }]
-            }]"
+            v-model:value="form.type"
             :placeholder="apiParams.type.description">
             <a-select-option v-for="role in defaultRoles" :key="role">
               {{ role }}
@@ -96,22 +86,19 @@
           </a-select>
         </a-form-item>
 
-        <a-form-item>
-          <span slot="label">
+        <a-form-item name="forced" ref="forced">
+          <template #label>
             {{ $t('label.forced') }}
             <a-tooltip :title="apiParams.forced.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
-          <a-switch
-            v-decorator="['forced', {
-              initialValue: false
-            }]" />
+          </template>
+          <a-switch v-model:checked="form.forced" />
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -119,6 +106,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -132,10 +120,27 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('importRole')
   },
+  created () {
+    this.initForm()
+  },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        file: [
+          { required: true, message: this.$t('message.error.required.input') },
+          {
+            validator: this.checkCsvRulesFile,
+            message: this.$t('label.error.rules.file.import')
+          }
+        ],
+        name: [{ required: true, message: this.$t('message.error.required.input') }],
+        type: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
     handleRemove (file) {
       const index = this.fileList.indexOf(file)
       const newFileList = this.fileList.slice()
@@ -158,12 +163,9 @@ export default {
       this.fileList = [file]
       return false
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         for (const key in values) {
           const input = values[key]
@@ -254,23 +256,23 @@ export default {
       })
       return result
     },
-    checkCsvRulesFile (rule, value, callback) {
+    async checkCsvRulesFile (rule, value) {
       if (!value || value === '' || value.file === '') {
-        callback()
+        return Promise.resolve()
       } else {
         if (value.file.type !== 'text/csv') {
-          callback(rule.message)
+          return Promise.reject(rule.message)
         }
 
         this.readCsvFile(value.file).then((validFile) => {
           if (!validFile) {
-            callback(rule.message)
+            return Promise.reject(rule.message)
           } else {
-            callback()
+            return Promise.resolve()
           }
         }).catch((reason) => {
           console.log(reason)
-          callback(rule.message)
+          return Promise.reject(rule.message)
         })
       }
     },

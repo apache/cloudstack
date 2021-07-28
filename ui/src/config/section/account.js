@@ -15,10 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
+
 export default {
   name: 'account',
   title: 'label.accounts',
-  icon: 'team',
+  icon: 'TeamOutlined',
   docHelp: 'adminguide/accounts.html',
   permission: ['listAccounts'],
   columns: ['name', 'state', 'rolename', 'roletype', 'domainpath'],
@@ -31,39 +33,21 @@ export default {
   tabs: [
     {
       name: 'details',
-      component: () => import('@/components/view/DetailsTab.vue')
-    },
-    {
-      name: 'resources',
-      component: () => import('@/components/view/ResourceCountUsage.vue')
-    },
-    {
-      name: 'limits',
-      show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
-      component: () => import('@/components/view/ResourceLimitTab.vue')
-    },
-    {
-      name: 'certificate',
-      component: () => import('@/views/iam/SSLCertificateTab.vue')
-    },
-    {
-      name: 'settings',
-      component: () => import('@/components/view/SettingsTab.vue'),
-      show: (record, route, user) => { return ['Admin'].includes(user.roletype) }
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
     }
   ],
   actions: [
     {
       api: 'createAccount',
-      icon: 'plus',
+      icon: 'PlusOutlined',
       label: 'label.add.account',
       listView: true,
       popup: true,
-      component: () => import('@/views/iam/AddAccount.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/AddAccount.vue')))
     },
     {
       api: 'ldapCreateAccount',
-      icon: 'user-add',
+      icon: 'UserAddOutlined',
       label: 'label.add.ldap.account',
       docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
       listView: true,
@@ -71,11 +55,11 @@ export default {
       show: (record, store) => {
         return store.isLdapEnabled
       },
-      component: () => import('@/views/iam/AddLdapAccount.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/AddLdapAccount.vue')))
     },
     {
       api: 'updateAccount',
-      icon: 'edit',
+      icon: 'EditOutlined',
       label: 'label.action.edit.account',
       dataView: true,
       args: ['newname', 'account', 'domainid', 'networkdomain'],
@@ -90,7 +74,7 @@ export default {
     },
     {
       api: 'updateResourceCount',
-      icon: 'sync',
+      icon: 'SyncOutlined',
       label: 'label.action.update.resource.count',
       message: 'message.update.resource.count',
       dataView: true,
@@ -107,7 +91,7 @@ export default {
     },
     {
       api: 'enableAccount',
-      icon: 'play-circle',
+      icon: 'PlayCircleOutlined',
       label: 'label.action.enable.account',
       message: 'message.enable.account',
       dataView: true,
@@ -120,7 +104,7 @@ export default {
     },
     {
       api: 'disableAccount',
-      icon: 'pause-circle',
+      icon: 'PauseCircleOutlined',
       label: 'label.action.disable.account',
       message: 'message.disable.account',
       dataView: true,
@@ -138,7 +122,7 @@ export default {
     },
     {
       api: 'disableAccount',
-      icon: 'lock',
+      icon: 'LockOutlined',
       label: 'label.action.lock.account',
       message: 'message.lock.account',
       dataView: true,
@@ -156,7 +140,7 @@ export default {
     },
     {
       api: 'uploadSslCert',
-      icon: 'safety-certificate',
+      icon: 'SafetyCertificateOutlined',
       label: 'label.add.certificate',
       dataView: true,
       args: ['name', 'certificate', 'privatekey', 'certchain', 'password', 'account', 'domainid'],
@@ -173,7 +157,7 @@ export default {
     },
     {
       api: 'deleteAccount',
-      icon: 'delete',
+      icon: 'DeleteOutlined',
       label: 'label.action.delete.account',
       message: 'message.delete.account',
       dataView: true,

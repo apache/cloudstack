@@ -41,8 +41,9 @@
             (dataView && action.dataView && ('show' in action ? action.show(resource, $store.getters) : true))
           )" >
         <a-button
-          :type="['DeleteOutlined', 'delete-outlined'].includes(action.icon) ? 'danger' : (['PlusOutlined', 'plus-outlined'].includes(action.icon) ? 'primary' : 'default')"
+          :type="(['PlusOutlined', 'plus-outlined', 'DeleteOutlined', 'delete-outlined'].includes(action.icon) ? 'primary' : 'default')"
           :shape="!dataView && ['PlusOutlined', 'plus-outlined'].includes(action.icon) ? 'round' : 'circle'"
+          :danger="['DeleteOutlined', 'delete-outlined'].includes(action.icon)"
           style="margin-left: 5px"
           :size="size"
           @click="execAction(action)">
@@ -59,7 +60,8 @@
             (!dataView && ((action.listView && ('show' in action ? action.show(resource, $store.getters) : true)) || (action.groupAction && selectedRowKeys.length > 0 && ('groupShow' in action ? action.show(resource, $store.getters) : true)))) ||
             (dataView && action.dataView && ('show' in action ? action.show(resource, $store.getters) : true))
           )"
-        :type="['DeleteOutlined', 'delete-outlined'].includes(action.icon) ? 'danger' : (['PlusOutlined', 'plus-outlined'].includes(action.icon) ? 'primary' : 'default')"
+        :type="(['PlusOutlined', 'plus-outlined', 'DeleteOutlined', 'delete-outlined'].includes(action.icon) ? 'primary' : 'default')"
+        :danger="['DeleteOutlined', 'delete-outlined'].includes(action.icon)"
         :shape="!dataView && ['PlusOutlined', 'plus-outlined', 'UserAddOutlined', 'user-add-outlined'].includes(action.icon) ? 'round' : 'circle'"
         style="margin-left: 5px"
         :size="size"

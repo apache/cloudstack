@@ -19,55 +19,42 @@
   <div class="form-layout">
     <a-spin :spinning="loading">
       <a-form
-        :form="form"
-        @submit="handleSubmit"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
         layout="vertical">
-        <a-form-item v-if="!this.isAdminOrDomainAdmin()">
-          <span slot="label">
+        <a-form-item name="currentpassword" ref="currentpassword" v-if="!this.isAdminOrDomainAdmin()">
+          <template #label>
             {{ $t('label.currentpassword') }}
             <a-tooltip :title="apiParams.currentpassword.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input-password
-            v-decorator="['currentpassword', {
-              rules: [{ required: true, message: $t('message.error.current.password') }]
-            }]"
+            v-model:value="form.currentpassword"
             :placeholder="$t('message.error.current.password')"
             autoFocus />
         </a-form-item>
-        <a-form-item>
-          <span slot="label">
+        <a-form-item name="password" ref="password">
+          <template #label>
             {{ $t('label.new.password') }}
             <a-tooltip :title="apiParams.password.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input-password
-            v-decorator="['password', {
-              rules: [{ required: true, message: $t('message.error.new.password') }]
-            }]"
+            v-model:value="form.password"
             :placeholder="$t('label.new.password')"/>
         </a-form-item>
-        <a-form-item>
-          <span slot="label">
+        <a-form-item name="confirmpassword" ref="confirmpassword">
+          <template #label>
             {{ $t('label.confirmpassword') }}
             <a-tooltip :title="apiParams.password.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
-          </span>
+          </template>
           <a-input-password
-            v-decorator="['confirmpassword', {
-              rules: [
-                {
-                  required: true,
-                  message: $t('message.error.confirm.password')
-                },
-                {
-                  validator: validateTwoPassword
-                }
-              ]
-            }]"
+            v-model:value="form.confirmpassword"
             :placeholder="$t('label.confirmpassword.description')"/>
         </a-form-item>
 
@@ -81,6 +68,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -97,38 +85,49 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('updateUser')
   },
+  created () {
+    this.initForm()
+  },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        currentpassword: [{ required: true, message: this.$t('message.error.current.password') }],
+        password: [{ required: true, message: this.$t('message.error.new.password') }],
+        confirmpassword: [
+          { required: true, message: this.$t('message.error.confirm.password') },
+          { validator: this.validateTwoPassword }
+        ]
+      })
+    },
     isAdminOrDomainAdmin () {
       return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
     },
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null
     },
-    validateTwoPassword (rule, value, callback) {
+    async validateTwoPassword (rule, value) {
       if (!value || value.length === 0) {
-        callback()
+        return Promise.resolve()
       } else if (rule.field === 'confirmpassword') {
         const form = this.form
         const messageConfirm = this.$t('message.validate.equalto')
         const passwordVal = form.getFieldValue('password')
         if (passwordVal && passwordVal !== value) {
-          callback(messageConfirm)
+          return Promise.reject(messageConfirm)
         } else {
-          callback()
+          return Promise.resolve()
         }
       } else {
-        callback()
+        return Promise.resolve()
       }
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         const params = {
           id: this.resource.id,

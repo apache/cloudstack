@@ -92,7 +92,7 @@ export const pollJobPlugin = {
           const currentPage = this.$router.currentRoute.path
           const samePage = originalPage === currentPage || originalPage.startsWith(currentPage + '/')
           if (samePage && (!action || !('isFetchData' in action) || (action.isFetchData))) {
-            eventBus.$emit('async-job-complete')
+            eventBus.emit('async-job-complete')
           }
           successMethod(result)
         } else if (result.jobstatus === 2) {
@@ -123,7 +123,7 @@ export const pollJobPlugin = {
             duration: 0
           })
           if (!action || !('isFetchData' in action) || (action.isFetchData)) {
-            eventBus.$emit('async-job-complete')
+            eventBus.emit('async-job-complete')
           }
           errorMethod(result)
         } else if (result.jobstatus === 0) {
@@ -223,8 +223,8 @@ export const configUtilPlugin = {
 }
 
 export const apiMetaUtilPlugin = {
-  install (Vue) {
-    Vue.prototype.$getApiParams = function () {
+  install (app) {
+    app.config.globalProperties.$getApiParams = function () {
       var apiParams = {}
       for (var argument of arguments) {
         var apiConfig = this.$store.getters.apis[argument] || {}

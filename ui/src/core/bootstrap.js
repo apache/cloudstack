@@ -49,6 +49,6 @@ export default {
     store.commit('TOGGLE_MULTI_TAB', window.ls.get(DEFAULT_MULTI_TAB, config.multiTab))
     store.commit('SET_TOKEN', window.ls.get(ACCESS_TOKEN))
     store.commit('SET_PROJECT', window.ls.get(CURRENT_PROJECT))
-  store.commit('SET_HEADER_NOTICES', Vue.ls.get(HEADER_NOTICES) || [])
+    store.commit('SET_HEADER_NOTICES', window.ls.get(HEADER_NOTICES) || [])
   }
 }

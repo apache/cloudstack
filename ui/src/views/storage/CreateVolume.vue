@@ -79,7 +79,7 @@
           <template #label>
             {{ $t('label.sizegb') }}
             <a-tooltip :title="apiParams.size.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
           <a-input
@@ -92,7 +92,7 @@
           <template #label>
             {{ $t('label.miniops') }}
             <a-tooltip :title="apiParams.miniops.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
           <a-input
@@ -103,7 +103,7 @@
           <template #label>
             {{ $t('label.maxiops') }}
             <a-tooltip :title="apiParams.maxiops.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
           <a-input

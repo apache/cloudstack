@@ -26,47 +26,45 @@
       style="top: 20px;"
       @ok="handleSubmit"
       @cancel="parentCloseAction"
-      :confirmLoading="action.loading"
+      :confirmLoading="actionLoading"
       centered
     >
-      <span slot="title">
+      <template #title>
         {{ $t(action.label) }}
-      </span>
-      <a-spin :spinning="action.loading">
+      </template>
+      <a-spin :spinning="actionLoading">
         <a-form
-          :form="form"
+          :ref="formRef"
+          :model="form"
+          :rules="rules"
           @submit="handleSubmit"
           layout="vertical" >
           <a-alert type="warning" v-if="action.message">
-            <span slot="message" v-html="$t(action.message)" />
+            <template #message>{{ $t(action.message) }}</template>
           </a-alert>
-          <a-form-item
-            v-for="(field, fieldIndex) in action.paramFields"
-            :key="fieldIndex"
-            :v-bind="field.name"
-            v-if="!(action.mapping && field.name in action.mapping && action.mapping[field.name].value)"
-          >
-            <span slot="label">
-              {{ $t('label.' + field.name) }}
-              <a-tooltip :title="field.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+          <template v-for="(field, fieldIndex) in action.paramFields" :key="fieldIndex">
+            <a-form-item
+              :ref="field.name"
+              :name="field.name"
+              :v-bind="field.name"
+              v-if="!(action.mapping && field.name in action.mapping && action.mapping[field.name].value)"
+            >
+              <template #label>
+                {{ $t('label.' + field.name) }}
+                <a-tooltip :title="field.description">
+                  <InfoCircleOutlined style="color: rgba(0,0,0,.45)" />
+                </a-tooltip>
+              </template>
 
-            <span v-if="field.type==='boolean'">
               <a-switch
-                v-decorator="[field.name, {
-                  rules: [{ required: field.required, message: `${$t('message.error.required.input')}` }]
-                }]"
+                v-if="field.type==='boolean'"
+                v-model:checked="form[field.name]"
                 :placeholder="field.description"
               />
-            </span>
-            <span v-else-if="action.mapping && field.name in action.mapping && action.mapping[field.name].options">
               <a-select
+                v-else-if="action.mapping && field.name in action.mapping && action.mapping[field.name].options"
                 :loading="field.loading"
-                v-decorator="[field.name, {
-                  rules: [{ required: field.required, message: $t('message.error.select') }]
-                }]"
+                v-model:value="form[field.name]"
                 :placeholder="field.description"
                 :autoFocus="fieldIndex === firstIndex"
               >
@@ -74,15 +72,11 @@
                   {{ opt }}
                 </a-select-option>
               </a-select>
-            </span>
-            <span
-              v-else-if="field.type==='uuid' || field.name==='account'">
               <a-select
+                v-else-if="field.type==='uuid' || field.name==='account'"
                 showSearch
                 optionFilterProp="children"
-                v-decorator="[field.name, {
-                  rules: [{ required: field.required, message: $t('message.error.select') }]
-                }]"
+                v-model:value="form[field.name]"
                 :loading="field.loading"
                 :placeholder="field.description"
                 :filterOption="(input, option) => {
@@ -94,14 +88,11 @@
                   {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
                 </a-select-option>
               </a-select>
-            </span>
-            <span v-else-if="field.type==='list'">
               <a-select
+                v-else-if="field.type==='list'"
                 :loading="field.loading"
                 mode="multiple"
-                v-decorator="[field.name, {
-                  rules: [{ required: field.required, message: $t('message.error.select') }]
-                }]"
+                v-model:value="form[field.name]"
                 :placeholder="field.description"
                 :autoFocus="fieldIndex === firstIndex"
               >
@@ -109,25 +100,19 @@
                   {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
                 </a-select-option>
               </a-select>
-            </span>
-            <span v-else-if="field.type==='long'">
               <a-input-number
-                v-decorator="[field.name, {
-                  rules: [{ required: field.required, message: `${$t('message.validate.number')}` }]
-                }]"
+                v-else-if="field.type==='long'"
+                v-model:value="form[field.name]"
                 :placeholder="field.description"
                 :autoFocus="fieldIndex === firstIndex"
               />
-            </span>
-            <span v-else>
               <a-input
-                v-decorator="[field.name, {
-                  rules: [{ required: field.required, message: $t('message.error.required.input') }]
-                }]"
+                v-else
+                v-model:value="form[field.name]"
                 :placeholder="field.description"
                 :autoFocus="fieldIndex === firstIndex" />
-            </span>
-          </a-form-item>
+            </a-form-item>
+          </template>
         </a-form>
       </a-spin>
     </a-modal>
@@ -136,6 +121,7 @@
 
 <script>
 import { api } from '@/api'
+import { ref, reactive, toRaw } from 'vue'
 
 export default {
   name: 'DomainActionForm',
@@ -153,31 +139,37 @@ export default {
       default: () => {}
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
+  data () {
+    return {
+      actionLoading: false
+    }
   },
   created () {
+    this.actionLoading = this.action.loading
+    this.formRef = ref()
+    this.form = reactive({})
+    this.rules = reactive({})
+    let isFirstIndexSet = false
     this.firstIndex = 0
-    for (let fieldIndex = 0; fieldIndex < this.action.paramFields.length; fieldIndex++) {
-      const field = this.action.paramFields[fieldIndex]
-      if (!(this.action.mapping && field.name in this.action.mapping && this.action.mapping[field.name].value)) {
+    this.action.paramFields.forEach((field, fieldIndex) => {
+      this.form[field.name] = undefined
+      this.rules[field.name] = []
+      this.setRules(field)
+      if (!isFirstIndexSet && !(this.action.mapping && field.name in this.action.mapping && this.action.mapping[field.name].value)) {
         this.firstIndex = fieldIndex
-        break
+        isFirstIndexSet = true
       }
-    }
+    })
     if (this.action.dataView && this.action.icon === 'edit') {
       this.fillEditFormFieldValues()
     }
   },
   inject: ['parentCloseAction', 'parentFetchData'],
   methods: {
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
-        this.action.loading = true
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
+        this.actionLoading = true
         const params = {}
         if ('id' in this.resource && this.action.params.map(i => { return i.name }).includes('id')) {
           params.id = this.resource.id
@@ -283,12 +275,11 @@ export default {
             description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
           })
         }).finally(f => {
-          this.action.loading = false
+          this.actionLoading = false
         })
       })
     },
     fillEditFormFieldValues () {
-      const form = this.form
       this.action.paramFields.map(field => {
         let fieldName = null
         if (field.type === 'uuid' ||
@@ -301,9 +292,47 @@ export default {
         }
         const fieldValue = this.resource[fieldName] ? this.resource[fieldName] : null
         if (fieldValue) {
-          form.getFieldDecorator(field.name, { initialValue: fieldValue })
+          this.form[field.name] = fieldValue
         }
       })
+    },
+    setRules (field) {
+      let rule = {}
+
+      switch (true) {
+        case (field.type === 'boolean'):
+          break
+        case (this.action.mapping && field.name in this.action.mapping && this.action.mapping[field.name].options):
+          rule.required = field.required
+          rule.message = this.$t('message.error.select')
+          rule.trigger = 'change'
+          this.rules[field.name].push(rule)
+          break
+        case (field.type === 'uuid' || field.name === 'account'):
+          rule.required = field.required
+          rule.message = this.$t('message.error.select')
+          rule.trigger = 'change'
+          this.rules[field.name].push(rule)
+          break
+        case (field.type === 'list'):
+          rule.required = field.required
+          rule.message = this.$t('message.error.select')
+          rule.trigger = 'change'
+          this.rules[field.name].push(rule)
+          break
+        case (field.type === 'long'):
+          rule.required = field.required
+          rule.message = this.$t('message.validate.number')
+          this.rules[field.name].push(rule)
+          break
+        default:
+          rule.required = field.required
+          rule.message = this.$t('message.error.required.input')
+          this.rules[field.name].push(rule)
+          break
+      }
+
+      rule = {}
     }
   }
 }

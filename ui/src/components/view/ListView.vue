@@ -261,14 +261,14 @@
     <template #zonename="{ text, record }">
       <router-link v-if="$router.resolve('/zone/' + record.zoneid).name !== '404'" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
-    </span>
-    <a #readonly="{ text, record }">
+    </template>
+    <template #readonly="{ record }">
       <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" />
-    </a>
-    <span #current="{ text, record }">
+    </template>
+    <template #current="{ record }">
       <status :text="record.current ? record.current.toString() : 'false'" />
-    </span>
-    <span #created="{ text }">
+    </template>
+    <template #created="{ text }">
       {{ $toLocaleDate(text) }}
     </template>
     <template #sent="{ text }">

@@ -24,18 +24,18 @@
           <a-button
             style="margin-left: 12px; margin-top: 4px"
             :loading="loading"
-            icon="reload"
             size="small"
             shape="round"
             @click="fetchData()" >
+            <template #icon><ReloadOutlined /></template>
             {{ $t('label.refresh') }}
           </a-button>
           <a-button
             style="margin-left: 12px; margin-top: 4px"
-            icon="safety-certificate"
             size="small"
             shape="round"
             @click="sslFormVisible = true">
+            <template #icon><SafetyCertificateOutlined /></template>
             {{ $t('label.sslcertificates') }}
           </a-button>
           <a-modal
@@ -51,12 +51,12 @@
 
             <a-form @submit.prevent="handleSslFormSubmit" ref="sslForm" :form="form">
               <a-form-item :required="true">
-                <span slot="label">
+                <template #label>
                   {{ $t('label.root.certificate') }}
                   <a-tooltip placement="bottom" :title="apiParams.name.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                    <InfoCircleOutlined />
                   </a-tooltip>
-                </span>
+                </template>
                 <a-textarea
                   id="rootCert"
                   rows="2"
@@ -75,12 +75,12 @@
                   v-for="(item, index) in intermediateCertificates"
                   :key="`key-${index}`"
                   class="intermediate-certificate">
-                  <span slot="label">
+                  <template #label>
                     {{ $t('label.intermediate.certificate') + ` ${index + 1} ` }}
                     <a-tooltip placement="bottom" :title="apiParams.id.description">
-                      <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                      <InfoCircleOutlined />
                     </a-tooltip>
-                  </span>
+                  </template>
                   <a-textarea
                     :id="`intermediateCert${index}`"
                     rows="2"
@@ -96,18 +96,18 @@
 
               <a-form-item>
                 <a-button @click="addIntermediateCert">
-                  <a-icon type="plus-circle" />
+                  <PlusCircleOutlined />
                   {{ $t('label.add.intermediate.certificate') }}
                 </a-button>
               </a-form-item>
 
               <a-form-item :required="true">
-                <span slot="label">
+                <template #label>
                   {{ $t('label.server.certificate') }}
                   <a-tooltip placement="bottom" :title="apiParams.certificate.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                    <InfoCircleOutlined />
                   </a-tooltip>
-                </span>
+                </template>
                 <a-textarea
                   id="serverCert"
                   rows="2"
@@ -121,12 +121,12 @@
               </a-form-item>
 
               <a-form-item :required="true">
-                <span slot="label">
+                <template #label>
                   {{ $t('label.pkcs.private.certificate') }}
                   <a-tooltip placement="bottom" :title="apiParams.privatekey.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                    <InfoCircleOutlined />
                   </a-tooltip>
-                </span>
+                </template>
                 <a-textarea
                   id="pkcsKey"
                   rows="2"
@@ -140,12 +140,12 @@
               </a-form-item>
 
               <a-form-item :required="true">
-                <span slot="label">
+                <template #label>
                   {{ $t('label.domain.suffix') }}
                   <a-tooltip placement="bottom" :title="apiParams.domainsuffix.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                    <InfoCircleOutlined />
                   </a-tooltip>
-                </span>
+                </template>
                 <a-input
                   id="dnsSuffix"
                   :placeholder="$t('label.domain.suffix')"
@@ -170,27 +170,28 @@
         </a-col>
       </a-card>
     </a-col>
-    <a-col
-      :md="6"
-      style="margin-bottom: 12px"
-      v-for="(section, index) in sections"
-      v-if="routes[section]"
-      :key="index">
-      <chart-card :loading="loading">
-        <div class="chart-card-inner">
-          <router-link :to="{ name: section.substring(0, section.length - 1) }">
-            <h2>{{ $t(routes[section].title) }}</h2>
-            <h2><a-icon :type="routes[section].icon" /> {{ stats[section] }}</h2>
-          </router-link>
-        </div>
-      </chart-card>
-    </a-col>
+    <template v-for="(section, index) in sections" :key="index">
+      <a-col
+        :md="6"
+        style="margin-bottom: 12px"
+        v-if="routes[section]">
+        <chart-card :loading="loading">
+          <div class="chart-card-inner">
+            <router-link :to="{ name: section.substring(0, section.length - 1) }">
+              <h2>{{ $t(routes[section].title) }}</h2>
+              <h2><render-icon :icon="routes[section].icon" /> {{ stats[section] }}</h2>
+            </router-link>
+          </div>
+        </chart-card>
+      </a-col>
+    </template>
   </a-row>
 </template>
 
 <script>
 import { api } from '@/api'
 import router from '@/router'
+import RenderIcon from '@/utils/renderIcon'
 
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 import ChartCard from '@/components/widgets/ChartCard'
@@ -199,7 +200,8 @@ export default {
   name: 'InfraSummary',
   components: {
     Breadcrumb,
-    ChartCard
+    ChartCard,
+    RenderIcon
   },
   data () {
     return {

@@ -41,6 +41,7 @@ app.use(permission)
 app.use(notifierPlugin)
 app.use(toLocaleDatePlugin)
 app.use(configUtilPlugin)
+app.use(apiMetaUtilPlugin)
 app.use(filter)
 
 fetch('config.json').then(response => response.json()).then(config => {

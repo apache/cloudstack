@@ -15,16 +15,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
+
 export default {
   name: 'domain',
   title: 'label.domains',
-  icon: 'block',
+  icon: 'BlockOutlined',
   docHelp: 'adminguide/accounts.html#domains',
   permission: ['listDomains', 'listDomainChildren'],
   resourceType: 'Domain',
   columns: ['name', 'state', 'path', 'parentdomainname', 'level'],
   details: ['name', 'id', 'path', 'parentdomainname', 'level', 'networkdomain'],
-  component: () => import('@/views/iam/DomainView.vue'),
+  component: shallowRef(() => import('@/views/iam/DomainView.vue')),
   related: [{
     name: 'account',
     title: 'label.accounts',
@@ -33,26 +35,26 @@ export default {
   tabs: [
     {
       name: 'domain',
-      component: () => import('@/components/view/InfoCard.vue'),
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/InfoCard.vue'))),
       show: (record, route) => { return route.path === '/domain' }
     },
     {
       name: 'details',
-      component: () => import('@/components/view/DetailsTab.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
     },
     {
       name: 'resources',
       show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) },
-      component: () => import('@/components/view/ResourceCountUsage.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceCountUsage.vue')))
     },
     {
       name: 'limits',
       show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
-      component: () => import('@/components/view/ResourceLimitTab.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceLimitTab.vue')))
     },
     {
       name: 'settings',
-      component: () => import('@/components/view/SettingsTab.vue'),
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue'))),
       show: (record, route, user) => { return ['Admin'].includes(user.roletype) }
     }
   ],
@@ -60,7 +62,7 @@ export default {
   actions: [
     {
       api: 'createDomain',
-      icon: 'plus',
+      icon: 'PlusOutlined',
       label: 'label.add.domain',
       listView: true,
       dataView: false,
@@ -73,7 +75,7 @@ export default {
     },
     {
       api: 'updateDomain',
-      icon: 'edit',
+      icon: 'EditOutlined',
       label: 'label.action.edit.domain',
       listView: true,
       dataView: true,
@@ -91,7 +93,7 @@ export default {
     },
     {
       api: 'updateResourceCount',
-      icon: 'sync',
+      icon: 'SyncOutlined',
       label: 'label.action.update.resource.count',
       message: 'message.update.resource.count.domain',
       listView: true,
@@ -105,7 +107,7 @@ export default {
     },
     {
       api: 'linkDomainToLdap',
-      icon: 'link',
+      icon: 'LinkOutlined',
       label: 'label.link.domain.to.ldap',
       docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
       listView: true,
@@ -125,7 +127,7 @@ export default {
     },
     {
       api: 'deleteDomain',
-      icon: 'delete',
+      icon: 'DeleteOutlined',
       label: 'label.action.delete.domain',
       listView: true,
       dataView: true,

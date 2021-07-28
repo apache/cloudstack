@@ -25,6 +25,7 @@
       shape="circle"
       :size="size"
       :type="type"
+      :danger="danger"
       :disabled="disabled"
       :class="buttonClass"
       :loading="loading"
@@ -40,6 +41,7 @@
       shape="circle"
       :size="size"
       :type="type"
+      :danger="danger"
       :disabled="disabled"
       :class="buttonClass"
       :loading="loading"
@@ -102,6 +104,10 @@ export default {
     copyResource: {
       type: String,
       default: ''
+    },
+    danger: {
+      type: Boolean,
+      default: false
     }
   },
   methods: {

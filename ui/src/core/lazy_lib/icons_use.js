@@ -55,15 +55,18 @@ import {
   DesktopOutlined,
   DoubleLeftOutlined,
   DoubleRightOutlined,
+  DownloadOutlined,
   DragOutlined,
   EditOutlined,
   EnvironmentOutlined,
+  FileProtectOutlined,
   FilterOutlined,
   FilterTwoTone,
   FireOutlined,
   FlagOutlined,
   FolderAddOutlined,
   FolderOutlined,
+  FormOutlined,
   FullscreenOutlined,
   GatewayOutlined,
   GithubOutlined,
@@ -89,6 +92,7 @@ import {
   PaperClipOutlined,
   PauseCircleOutlined,
   PictureOutlined,
+  PlayCircleOutlined,
   PlusOutlined,
   PoweroffOutlined,
   ProjectOutlined,
@@ -167,15 +171,18 @@ export default {
     app.component('DesktopOutlined', DesktopOutlined)
     app.component('DoubleLeftOutlined', DoubleLeftOutlined)
     app.component('DoubleRightOutlined', DoubleRightOutlined)
+    app.component('DownloadOutlined', DownloadOutlined)
     app.component('DragOutlined', DragOutlined)
     app.component('EditOutlined', EditOutlined)
     app.component('EnvironmentOutlined', EnvironmentOutlined)
+    app.component('FileProtectOutlined', FileProtectOutlined)
     app.component('FilterOutlined', FilterOutlined)
     app.component('FilterTwoTone', FilterTwoTone)
     app.component('FireOutlined', FireOutlined)
     app.component('FlagOutlined', FlagOutlined)
     app.component('FolderAddOutlined', FolderAddOutlined)
     app.component('FolderOutlined', FolderOutlined)
+    app.component('FormOutlined', FormOutlined)
     app.component('FullscreenOutlined', FullscreenOutlined)
     app.component('GatewayOutlined', GatewayOutlined)
     app.component('GithubOutlined', GithubOutlined)
@@ -201,6 +208,7 @@ export default {
     app.component('PaperClipOutlined', PaperClipOutlined)
     app.component('PauseCircleOutlined', PauseCircleOutlined)
     app.component('PictureOutlined', PictureOutlined)
+    app.component('PlayCircleOutlined', PlayCircleOutlined)
     app.component('PlusOutlined', PlusOutlined)
     app.component('PoweroffOutlined', PoweroffOutlined)
     app.component('ProjectOutlined', ProjectOutlined)
