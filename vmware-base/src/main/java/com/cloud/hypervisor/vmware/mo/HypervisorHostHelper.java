@@ -1527,14 +1527,11 @@ public class HypervisorHostHelper {
 
         VmwareHelper.setBasicVmConfig(vmConfig, cpuCount, cpuSpeedMHz, cpuReservedMHz, memoryMB, memoryReserveMB, guestOsIdentifier, limitCpuUse, false);
 
-        String recommendedController = host.getRecommendedDiskController(guestOsIdentifier);
         String newRootDiskController = controllerInfo.first();
         String newDataDiskController = controllerInfo.second();
-        if (DiskControllerType.getType(controllerInfo.first()) == DiskControllerType.osdefault) {
-            newRootDiskController = recommendedController;
-        }
-        if (DiskControllerType.getType(controllerInfo.second()) == DiskControllerType.osdefault) {
-            newDataDiskController = recommendedController;
+        String recommendedController = null;
+        if (VmwareHelper.isControllerOsRecommended(newRootDiskController) || VmwareHelper.isControllerOsRecommended(newDataDiskController)) {
+            recommendedController = host.getRecommendedDiskController(guestOsIdentifier);
         }
 
         Pair<String, String> updatedControllerInfo = new Pair<String, String>(newRootDiskController, newDataDiskController);
