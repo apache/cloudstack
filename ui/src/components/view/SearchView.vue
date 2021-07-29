@@ -45,7 +45,8 @@
                 style="min-width: 170px"
                 :ref="formRef"
                 :model="form"
-                layout="vertical">
+                layout="vertical"
+                @finish="handleSubmit">
                 <a-form-item
                   v-for="(field, index) in fields"
                   :key="index"
@@ -90,8 +91,7 @@
                     class="filter-group-button-search"
                     type="primary"
                     size="small"
-                    html-type="submit"
-                    @click="handleSubmit">
+                    html-type="submit">
                     <template #icon><SearchOutlined /></template>
                     {{ $t('label.search') }}
                   </a-button>

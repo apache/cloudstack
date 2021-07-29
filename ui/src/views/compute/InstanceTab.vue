@@ -105,7 +105,8 @@
                 tooltipPlacement="bottom"
                 :tooltip="$t('label.action.delete.nic')"
                 :disabled="!('removeNicFromVirtualMachine' in $store.getters.apis)"
-                type="danger"
+                type="primary"
+                :danger="true"
                 icon="delete-outlined" />
             </a-popconfirm>
           </template>
@@ -240,7 +241,8 @@
             <tooltip-button
               tooltipPlacement="top"
               :tooltip="$t('label.action.release.ip')"
-              type="danger"
+              type="primary"
+              :danger="true"
               icon="delete-outlined" />
             {{ ip.ipaddress }}
           </a-popconfirm>

@@ -40,8 +40,9 @@
               tooltipPlacement="top"
               :tooltip="$t('label.delete.sslcertificate')"
               :disabled="!('deleteSslCert' in $store.getters.apis)"
-              type="danger"
-              icon="delete"
+              type="primary"
+              :danger="true"
+              icon="delete-outlined"
               size="small"
               @onClick="onShowConfirm(record)" />
           </template>

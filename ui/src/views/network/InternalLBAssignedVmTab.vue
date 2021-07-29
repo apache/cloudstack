@@ -38,9 +38,10 @@
       <template #remove="{ record }">
         <tooltip-button
           :tooltip="$t('label.remove.vm.from.lb')"
-          type="danger"
+          type="primary"
+          :danger="true"
           icon="delete-outlined"
-          @click="removeVmFromLB(record)" />
+          @onClick="removeVmFromLB(record)" />
       </template>
       <a-divider />
     </a-table>

@@ -30,7 +30,13 @@
         </div>
         <div class="actions">
           <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag" @click="() => openTagsModal(route)" />
-          <tooltip-button :tooltip="$t('label.delete')" :disabled="!('deleteStaticRoute' in $store.getters.apis)" icon="delete" type="danger" @click="() => handleDelete(route)" />
+          <tooltip-button
+            :tooltip="$t('label.delete')"
+            :disabled="!('deleteStaticRoute' in $store.getters.apis)"
+            icon="delete-outlined"
+            type="primary"
+            :danger="true"
+            @onClick="() => handleDelete(route)" />
         </div>
       </div>
     </div>

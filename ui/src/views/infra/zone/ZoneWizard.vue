@@ -166,7 +166,7 @@ export default {
     onFieldsChanged (data) {
       if (data.zoneType &&
         this.zoneConfig.zoneType &&
-        data.zoneType.value !== this.zoneConfig.zoneType.value) {
+        data.zoneType !== this.zoneConfig.zoneType) {
         this.zoneConfig.physicalNetworks = null
       }
 

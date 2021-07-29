@@ -45,7 +45,8 @@
             <tooltip-button
               tooltipPlacement="bottom"
               :tooltip="$t('label.action.delete.ip.range')"
-              type="danger"
+              type="primary"
+              :danger="true"
               icon="delete-outlined" />
           </a-popconfirm>
         </template>

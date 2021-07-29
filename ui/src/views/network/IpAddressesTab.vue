@@ -75,10 +75,11 @@
           <tooltip-button
             v-if="record.issourcenat !== true && record.forvirtualnetwork === true"
             :tooltip="$t('label.action.release.ip')"
-            type="danger"
-            icon="delete"
+            type="primary"
+            :danger="true"
+            icon="delete-outlined"
             :disabled="!('disassociateIpAddress' in $store.getters.apis)"
-            @click="releaseIpAddress(record)" />
+            @onClick="releaseIpAddress(record)" />
         </template>
       </a-table>
       <a-divider/>

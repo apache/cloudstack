@@ -90,7 +90,13 @@
             <div class="list__actions">
               <tooltip-button :tooltip="$t('label.tags')" icon="tag-outlined" @onClick="() => openTagsModal(acl)" />
               <tooltip-button :tooltip="$t('label.edit')" icon="edit-outlined" @onClick="() => openEditRuleModal(acl)" />
-              <tooltip-button :tooltip="$t('label.delete')" icon="delete-outlined" type="danger" :disabled="!('deleteNetworkACL' in $store.getters.apis)" @onClick="() => handleDeleteRule(acl.id)" />
+              <tooltip-button
+                :tooltip="$t('label.delete')"
+                icon="delete-outlined"
+                type="primary"
+                :danger="true"
+                :disabled="!('deleteNetworkACL' in $store.getters.apis)"
+                @onClick="() => handleDeleteRule(acl.id)" />
             </div>
           </div>
         </transition-group>

@@ -55,9 +55,12 @@ import {
   DesktopOutlined,
   DoubleLeftOutlined,
   DoubleRightOutlined,
+  DownOutlined,
   DownloadOutlined,
   DragOutlined,
   EditOutlined,
+  EyeOutlined,
+  EyeInvisibleOutlined,
   EnvironmentOutlined,
   FileProtectOutlined,
   FilterOutlined,
@@ -87,6 +90,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   MinusCircleOutlined,
+  MinusSquareOutlined,
   MoreOutlined,
   NotificationOutlined,
   PaperClipOutlined,
@@ -107,6 +111,7 @@ import {
   ScheduleOutlined,
   ScissorOutlined,
   SearchOutlined,
+  SettingOutlined,
   ShareAltOutlined,
   StopOutlined,
   SwapOutlined,
@@ -171,9 +176,12 @@ export default {
     app.component('DesktopOutlined', DesktopOutlined)
     app.component('DoubleLeftOutlined', DoubleLeftOutlined)
     app.component('DoubleRightOutlined', DoubleRightOutlined)
+    app.component('DownOutlined', DownOutlined)
     app.component('DownloadOutlined', DownloadOutlined)
     app.component('DragOutlined', DragOutlined)
     app.component('EditOutlined', EditOutlined)
+    app.component('EyeOutlined', EyeOutlined)
+    app.component('EyeInvisibleOutlined', EyeInvisibleOutlined)
     app.component('EnvironmentOutlined', EnvironmentOutlined)
     app.component('FileProtectOutlined', FileProtectOutlined)
     app.component('FilterOutlined', FilterOutlined)
@@ -203,6 +211,7 @@ export default {
     app.component('MenuFoldOutlined', MenuFoldOutlined)
     app.component('MenuUnfoldOutlined', MenuUnfoldOutlined)
     app.component('MinusCircleOutlined', MinusCircleOutlined)
+    app.component('MinusSquareOutlined', MinusSquareOutlined)
     app.component('MoreOutlined', MoreOutlined)
     app.component('NotificationOutlined', NotificationOutlined)
     app.component('PaperClipOutlined', PaperClipOutlined)
@@ -223,6 +232,7 @@ export default {
     app.component('ScheduleOutlined', ScheduleOutlined)
     app.component('ScissorOutlined', ScissorOutlined)
     app.component('SearchOutlined', SearchOutlined)
+    app.component('SettingOutlined', SettingOutlined)
     app.component('ShareAltOutlined', ShareAltOutlined)
     app.component('StopOutlined', StopOutlined)
     app.component('SwapOutlined', SwapOutlined)

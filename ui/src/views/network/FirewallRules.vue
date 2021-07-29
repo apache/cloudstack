@@ -77,11 +77,12 @@
           <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag-outlined" buttonClass="rule-action" @click="() => openTagsModal(record.id)" />
           <tooltip-button
             :tooltip="$t('label.delete')"
-            type="danger"
+            type="primary"
+            :danger="true"
             icon="delete-outlined"
             buttonClass="rule-action"
             :disabled="!('deleteFirewallRule' in $store.getters.apis)"
-            @click="deleteRule(record)" />
+            @onClick="deleteRule(record)" />
         </div>
       </template>
     </a-table>

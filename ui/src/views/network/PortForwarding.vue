@@ -100,11 +100,12 @@
           <tooltip-button :tooltip="$t('label.tags')" icon="tag" buttonClass="rule-action" @click="() => openTagsModal(record.id)" />
           <tooltip-button
             :tooltip="$t('label.remove.rule')"
-            type="danger"
-            icon="delete"
+            type="primary"
+            :danger="true"
+            icon="delete-outlined"
             buttonClass="rule-action"
             :disabled="!('deletePortForwardingRule' in $store.getters.apis)"
-            @click="deleteRule(record)" />
+            @onClick="deleteRule(record)" />
         </div>
       </template>
     </a-table>

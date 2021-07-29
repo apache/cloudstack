@@ -23,7 +23,8 @@
           :ref="formRef"
           :model="form"
           :rules="rules"
-          layout="vertical">
+          layout="vertical"
+          @finish="handleSubmit">
           <a-form-item :label="$t('label.name')" name="name" ref="name">
             <template #label>
               {{ $t('label.name') }}
@@ -371,8 +372,7 @@
             <a-button
               :loading="actionLoading"
               type="primary"
-              htmlType="submit"
-              @click="handleSubmit">
+              htmlType="submit">
               {{ $t('label.ok') }}
             </a-button>
           </div>

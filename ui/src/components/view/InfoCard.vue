@@ -654,7 +654,8 @@
                   <template #avatar>
                     <a-button
                       v-if="'removeAnnotation' in $store.getters.apis"
-                      type="danger"
+                      type="primary"
+                      danger
                       shape="circle"
                       size="small"
                       @click="deleteNote(item)">

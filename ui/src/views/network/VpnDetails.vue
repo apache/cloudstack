@@ -22,7 +22,12 @@
       <p>{{ $t('message.enabled.vpn.ip.sec') }} <strong>{{ remoteAccessVpn.presharedkey }}</strong></p>
       <a-divider/>
       <a-button><router-link :to="{ path: '/vpnuser'}">{{ $t('label.manage.vpn.user') }}</router-link></a-button>
-      <a-button style="margin-left: 10px" type="danger" @click="disableVpn = true" :disabled="!('deleteRemoteAccessVpn' in $store.getters.apis)">
+      <a-button
+        style="margin-left: 10px"
+        type="primary"
+        danger
+        @click="disableVpn = true"
+        :disabled="!('deleteRemoteAccessVpn' in $store.getters.apis)">
         {{ $t('label.disable.vpn') }}
       </a-button>
     </div>

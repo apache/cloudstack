@@ -41,7 +41,8 @@
           style="margin-right: 5px"
           :disabled="!('deleteTemplate' in $store.getters.apis)"
           :title="$t('label.action.delete.template')"
-          type="danger"
+          type="primary"
+          :danger="true"
           icon="delete-outlined"
           @onClick="onShowDeleteModal(record)"/>
       </template>

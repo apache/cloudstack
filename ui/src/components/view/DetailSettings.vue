@@ -99,7 +99,7 @@
               :cancelText="$t('label.no')"
               placement="left"
             >
-              <tooltip-button :tooltip="$t('label.delete')" :disabled="deployasistemplate === true" type="danger" icon="delete" />
+              <tooltip-button :tooltip="$t('label.delete')" :disabled="deployasistemplate === true" type="primary" :danger="true" icon="delete-outlined" />
             </a-popconfirm>
           </div>
         </template>

@@ -50,7 +50,8 @@
           >
             <tooltip-button
               :tooltip="$t('label.action.delete.iso')"
-              type="danger"
+              type="primary"
+              :danger="true"
               icon="delete-outlined" />
           </a-popconfirm>
         </span>

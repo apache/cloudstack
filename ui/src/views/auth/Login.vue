@@ -21,7 +21,8 @@
     id="formLogin"
     class="user-layout-login"
     :model="form"
-    :rules="rules">
+    :rules="rules"
+    @finish="handleSubmit">
     <a-tabs
       :activeKey="customActiveKey"
       size="large"
@@ -100,7 +101,6 @@
         class="login-button"
         :loading="state.loginBtn"
         :disabled="state.loginBtn"
-        @click="handleSubmit"
       >{{ $t('label.login') }}</a-button>
     </a-form-item>
     <translation-menu/>

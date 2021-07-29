@@ -24,25 +24,20 @@
     </a-card>
     <a-form
       class="form-content"
-      :form="form"
-      @submit="handleSubmit">
-      <div v-for="(field, index) in this.fields" :key="index">
+      :ref="formRef"
+      :model="form"
+      :rules="rules">
+      <div v-for="(field, index) in fields" :key="index">
         <a-form-item
+          :name="field.key"
+          :ref="field.key"
           :label="$t(field.title)"
           v-if="isDisplayInput(field.display)"
           v-bind="formItemLayout"
           :has-feedback="field.switch ? false : true">
           <a-select
             v-if="field.select"
-            v-decorator="[field.key, {
-              rules: [
-                {
-                  required: field.required,
-                  message: $t(field.placeHolder),
-                  initialValue: getPrefilled(field.key)
-                }
-              ]
-            }]"
+            v-model:value="form[field.key]"
             :allowClear="true"
             :autoFocus="index === 0"
           >
@@ -56,41 +51,18 @@
           </a-select>
           <a-switch
             v-else-if="field.switch"
-            v-decorator="[field.key]"
-            :default-checked="isChecked(field)"
+            v-model:checked="form[field.key]"
             :autoFocus="index === 0"
           />
           <a-input
             v-else-if="field.password"
             type="password"
-            v-decorator="[field.key, {
-              rules: [
-                {
-                  required: field.required,
-                  message: $t(field.placeHolder),
-                  initialValue: getPrefilled(field.key)
-                }
-              ]
-            }]"
+            v-model:value="form[field.key]"
             :autoFocus="index === 0"
           />
           <a-input
             v-else
-            v-decorator="[field.key, {
-              rules: [
-                {
-                  required: field.required,
-                  message: $t(field.placeHolder),
-                  initialValue: getPrefilled(field.key)
-                },
-                {
-                  validator: checkIpFormat,
-                  ipV4: field.ipV4,
-                  ipV6: field.ipV6,
-                  message: $t(field.message)
-                }
-              ]
-            }]"
+            v-model:value="form[field.key]"
             :autoFocus="index === 0"
           />
         </a-form-item>
@@ -111,6 +83,8 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
+
 export default {
   props: {
     prefillContent: {
@@ -135,11 +109,11 @@ export default {
     }
   },
   created () {
-    this.form = this.$form.createForm(this, {
-      onFieldsChange: (_, changedFields) => {
-        this.$emit('fieldsChanged', changedFields)
-      }
-    })
+    this.initForm()
+  },
+  mounted () {
+    console.log(this.fields)
+    this.fillValue()
   },
   data: () => ({
     formItemLayout: {
@@ -147,45 +121,63 @@ export default {
       wrapperCol: { span: 12 }
     },
     ipV4Regex: /^(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)$/i,
-    ipV6Regex: /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(([0-9A-Fa-f]{1,4}:){0,5}:((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(::([0-9A-Fa-f]{1,4}:){0,5}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/i
+    ipV6Regex: /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(([0-9A-Fa-f]{1,4}:){0,5}:((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(::([0-9A-Fa-f]{1,4}:){0,5}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/i,
+    formModel: {}
   }),
-  mounted () {
-    this.fillValue(true)
-  },
   watch: {
-    fields () {
-      this.fillValue(false)
+    formModel: {
+      deep: true,
+      handler (changedFields) {
+        const fieldsChanged = toRaw(changedFields)
+        this.$emit('fieldsChanged', fieldsChanged)
+      }
     }
   },
   methods: {
-    fillValue (autoFill) {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
+    },
+    fillValue () {
       this.fields.forEach(field => {
+        this.setRules(field)
         const fieldExists = this.isDisplayInput(field.display)
         if (!fieldExists) {
           return
         }
-        const fieldVal = {}
         if (field.key === 'agentUserName' && !this.getPrefilled(field.key)) {
-          fieldVal[field.key] = 'Oracle'
+          this.form[field.key] = 'Oracle'
         } else {
-          fieldVal[field.key] = this.getPrefilled(field.key)
-        }
-        if (autoFill) {
-          this.form.setFieldsValue(fieldVal)
-        } else {
-          this.form.getFieldDecorator(field.key, { initialValue: this.getPrefilled(field.key) })
+          if (field.switch) {
+            this.form[field.key] = this.isChecked(field)
+          } else {
+            this.form[field.key] = this.getPrefilled(field.key)
+          }
         }
       })
+
+      this.formModel = toRaw(this.form)
+    },
+    setRules (field) {
+      this.rules[field.key] = []
+      if (field.required) {
+        this.rules[field.key].push({ required: field.required, message: this.$t(field.placeHolder) })
+      }
+      if (field.ipV4 || field.ipV6) {
+        this.rules[field.key].push({
+          ipV4: field.ipV4,
+          ipV6: field.ipV6,
+          validator: this.checkIpFormat,
+          message: this.$t(field.message)
+        })
+      }
     },
     getPrefilled (key) {
-      return this.prefillContent[key] ? this.prefillContent[key].value : null
+      return this.prefillContent?.[key] || null
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
         if (this.isFixError) {
           this.$emit('submitLaunchZone')
           return
@@ -193,18 +185,18 @@ export default {
         this.$emit('nextPressed')
       })
     },
-    handleBack (e) {
+    handleBack () {
       this.$emit('backPressed')
     },
-    checkIpFormat (rule, value, callback) {
+    async checkIpFormat (rule, value) {
       if (!value || value === '') {
-        callback()
+        return Promise.resolve()
       } else if (rule.ipV4 && !this.ipV4Regex.test(value)) {
-        callback(rule.message)
+        return Promise.reject(rule.message)
       } else if (rule.ipV6 && !this.ipV6Regex.test(value)) {
-        callback(rule.message)
+        return Promise.reject(rule.message)
       } else {
-        callback()
+        return Promise.resolve()
       }
     },
     isDisplayInput (conditions) {
@@ -214,9 +206,9 @@ export default {
       let isShow = false
       Object.keys(conditions).forEach(key => {
         const condition = conditions[key]
-        const fieldVal = this.form.getFieldValue(key)
-          ? this.form.getFieldValue(key)
-          : (this.prefillContent[key] ? this.prefillContent[key].value : null)
+        const fieldVal = this.form[key]
+          ? this.form[key]
+          : (this.prefillContent?.[key] || null)
         if (Array.isArray(condition) && condition.includes(fieldVal)) {
           isShow = true
           return false
@@ -231,8 +223,8 @@ export default {
       return isShow
     },
     isChecked (field) {
-      if (this.prefillContent[field.key] && this.prefillContent[field.key].value) {
-        return this.prefillContent[field.key].value
+      if (this.prefillContent[field.key]) {
+        return this.prefillContent[field.key]
       }
       if (!field.checked) {
         return false

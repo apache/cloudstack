@@ -51,7 +51,8 @@
               <tooltip-button
                 tooltipPlacement="top"
                 :tooltip="$t('label.decline.invitation')"
-                type="danger"
+                type="primary"
+                :danger="true"
                 icon="close-outlined"
                 size="small"
                 @onClick="onShowConfirmRevokeInvitation(record)"/>

@@ -53,8 +53,9 @@
               <tooltip-button
                 tooltipPlacement="top"
                 :tooltip="record.userid ? $t('label.remove.project.user') : $t('label.remove.project.account')"
-                type="danger"
-                icon="delete"
+                type="primary"
+                :danger="true"
+                icon="delete-outlined"
                 size="small"
                 :disabled="!('deleteAccountFromProject' in $store.getters.apis)"
                 @onClick="onShowConfirmDelete(record)" />

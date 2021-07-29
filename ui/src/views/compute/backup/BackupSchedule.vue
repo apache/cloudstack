@@ -61,11 +61,12 @@
         <tooltip-button
           tooltipPlacement="top"
           :tooltip="$t('label.delete')"
-          type="danger"
+          type="primary"
+          :danger="true"
           icon="close-outlined"
           size="small"
           :loading="actionLoading"
-          @click="handleClickDelete(record)"/>
+          @onClick="handleClickDelete(record)"/>
       </template>
     </a-table>
   </div>

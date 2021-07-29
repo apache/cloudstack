@@ -75,7 +75,7 @@
             <template #title>
               {{ $t('label.view') + ' ' + $t('label.host.alerts') }}
             </template>
-            <a-button type="danger" shape="circle">
+            <a-button type="primary" danger shape="circle">
               <router-link :to="{ name: 'host', query: {'state': 'Alert'} }">
                 <DesktopOutlined class="capacity-dashboard-button-icon" />
               </router-link>

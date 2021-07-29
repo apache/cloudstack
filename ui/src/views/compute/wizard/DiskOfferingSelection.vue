@@ -34,12 +34,12 @@
     >
       <template #diskSizeTitle><hdd-outlined /> {{ $t('label.disksize') }}</template>
       <template #iopsTitle><rocket-outlined /> {{ $t('label.minmaxiops') }}</template>
-      <template #diskSize="text, record">
+      <template #diskSize="{ record }">
         <div v-if="record.isCustomized">{{ $t('label.iscustomized') }}</div>
         <div v-else-if="record.diskSize">{{ record.diskSize }} GB</div>
         <div v-else>-</div>
       </template>
-      <template #iops="text, record">
+      <template #iops="{ record }">
         <span v-if="record.miniops && record.maxiops">{{ record.miniops }} - {{ record.maxiops }}</span>
         <span v-else-if="record.miniops && !record.maxiops">{{ record.miniops }}</span>
         <span v-else-if="!record.miniops && record.maxiops">{{ record.maxiops }}</span>

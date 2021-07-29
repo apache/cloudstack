@@ -29,10 +29,10 @@
       :columns="columns"
       :pagination="false"
       style="margin-bottom: 24px; width: 100%">
-      <template #name="text, record">
+      <template #name="{ text, record }">
         <a-input :value="text" @change="e => onCellChange(record.key, 'name', e.target.value)" autoFocus />
       </template>
-      <template #isolationMethod="text, record">
+      <template #isolationMethod="{ text, record }">
         <a-select
           style="width: 100%"
           :defaultValue="text"
@@ -49,15 +49,15 @@
           <a-select-option value="VCS"> VCS </a-select-option>
         </a-select>
       </template>
-      <template #traffics="traffics, record">
-        <div v-for="traffic in traffics" :key="traffic.type">
+      <template #traffics="{ record }">
+        <div v-for="traffic in record.traffics" :key="traffic.type">
           <a-tag
             :color="trafficColors[traffic.type]"
             style="margin:2px"
           >
             {{ traffic.type.toUpperCase() }}
-            <a-icon type="edit" class="traffic-type-action" @click="editTraffic(record.key, traffic, $event)"/>
-            <a-icon type="delete" class="traffic-type-action" @click="deleteTraffic(record.key, traffic, $event)"/>
+            <edit-outlined class="traffic-type-action" @click="editTraffic(record.key, traffic, $event)"/>
+            <delete-outlined class="traffic-type-action" @click="deleteTraffic(record.key, traffic, $event)"/>
           </a-tag>
         </div>
         <div v-if="isShowAddTraffic(record.traffics)">
@@ -79,14 +79,15 @@
             <tooltip-button
               :tooltip="$t('label.add')"
               buttonClass="icon-button"
-              icon="plus"
+              icon="plus-outlined"
               size="small"
               @onClick="trafficAdded" />
             <tooltip-button
               :tooltip="$t('label.cancel')"
               buttonClass="icon-button"
-              type="danger"
-              icon="close"
+              type="primary"
+              :danger="true"
+              icon="close-outlined"
               size="small"
               @onClick="() => { addingTrafficForKey = null }" />
           </div>
@@ -94,15 +95,22 @@
             key="addingTraffic"
             style="margin:2px;"
             v-else
-            @onClick="addingTraffic(record.key, record.traffics)"
           >
-            <a-icon type="plus" />
-            {{ $t('label.add.traffic') }}
+            <a @click="addingTraffic(record.key, record.traffics)">
+              <plus-outlined />
+              {{ $t('label.add.traffic') }}
+            </a>
           </a-tag>
         </div>
       </template>
-      <template #actions="text, record">
-        <tooltip-button :tooltip="$t('label.delete')" v-if="physicalNetworks.indexOf(record) > 0" type="danger" icon="delete" @onClick="onDelete(record)" />
+      <template #actions="{ record }">
+        <tooltip-button
+          :tooltip="$t('label.delete')"
+          v-if="physicalNetworks.indexOf(record) > 0"
+          type="primary"
+          :danger="true"
+          icon="delete-outlined"
+          @onClick="onDelete(record)" />
       </template>
       <template #footer v-if="isAdvancedZone">
         <a-button
@@ -148,17 +156,15 @@
       @cancel="cancelEditTraffic"
       centered
     >
-      <a-form :form="form">
+      <a-form :ref="formRef" :model="form" :rules="rules">
         <span class="ant-form-text"> {{ $t('message.edit.traffic.type') }} </span>
-        <a-form-item v-bind="formItemLayout" style="margin-top:16px;" :label="$t('label.traffic.label')">
-          <a-input
-            v-decorator="['trafficLabel', {
-              rules: [{
-                required: true,
-                message: $t('message.error.traffic.label'),
-              }]
-            }]"
-          />
+        <a-form-item
+          name="trafficLabel"
+          ref="trafficLabel"
+          v-bind="formItemLayout"
+          style="margin-top:16px;"
+          :label="$t('label.traffic.label')">
+          <a-input v-model:value="form.trafficLabel" />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -166,6 +172,7 @@
 </template>
 <script>
 
+import { ref, reactive, toRaw } from 'vue'
 import TooltipButton from '@/components/view/TooltipButton'
 
 export default {
@@ -249,10 +256,10 @@ export default {
       return this.zoneType === 'Advanced'
     },
     zoneType () {
-      return this.prefillContent.zoneType ? this.prefillContent.zoneType.value : null
+      return this.prefillContent?.zoneType || null
     },
     securityGroupsEnabled () {
-      return this.isAdvancedZone && (this.prefillContent.securityGroupsEnabled ? this.prefillContent.securityGroupsEnabled.value : false)
+      return this.isAdvancedZone && (this.prefillContent?.securityGroupsEnabled || false)
     },
     networkOfferingSelected () {
       return this.prefillContent.networkOfferingSelected
@@ -272,10 +279,8 @@ export default {
       return traffics
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
+    this.initForm()
     this.defaultTrafficOptions = ['management', 'guest', 'storage']
     if (this.isAdvancedZone || this.needsPublicTraffic) {
       this.defaultTrafficOptions.push('public')
@@ -314,6 +319,13 @@ export default {
     this.emitPhysicalNetworks()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        trafficLabel: [{ required: true, message: this.$t('message.error.traffic.label') }]
+      })
+    },
     onCellChange (key, dataIndex, value) {
       const physicalNetworks = [...this.physicalNetworks]
       const target = physicalNetworks.find(item => item.key === key)
@@ -410,9 +422,7 @@ export default {
         traffic: traffic
       }
       this.showEditTraffic = true
-      this.form.setFieldsValue({
-        trafficLabel: this.trafficInEdit !== null ? this.trafficInEdit.traffic.label : null
-      })
+      this.form.trafficLabel = this.trafficInEdit?.traffic?.label || null
     },
     deleteTraffic (key, traffic, $event) {
       const trafficKey = this.physicalNetworks.findIndex(network => network.key === key)
@@ -426,12 +436,11 @@ export default {
       this.emitPhysicalNetworks()
     },
     updateTrafficLabel (trafficInEdit) {
-      this.form.validateFields((err, values) => {
-        if (!err) {
-          this.showEditTraffic = false
-          trafficInEdit.traffic.label = values.trafficLabel
-          this.trafficInEdit = null
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
+        this.showEditTraffic = false
+        trafficInEdit.traffic.label = values.trafficLabel
+        this.trafficInEdit = null
       })
       this.emitPhysicalNetworks()
     },

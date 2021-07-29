@@ -16,7 +16,7 @@
 // under the License.
 <template>
   <div>
-    <a-form class="form-layout" :ref="formRef" :model="form" :rules="rules" layout="vertical">
+    <a-form class="form-layout" :ref="formRef" :model="form" :rules="rules" layout="vertical" @finish="handleSubmit">
       <a-form-item ref="name" name="name">
         <template #label>
           {{ $t('label.name') }}
@@ -178,7 +178,7 @@
         <a-button @click="closeModal">
           {{ $t('label.cancel') }}
         </a-button>
-        <a-button type="primary" @click="handleSubmit">
+        <a-button type="primary" html-type="submit">
           {{ $t('label.ok') }}
         </a-button>
       </div>

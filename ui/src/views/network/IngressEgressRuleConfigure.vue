@@ -116,7 +116,8 @@
           <tooltip-button
             :disabled="!('revokeSecurityGroupIngress' in $store.getters.apis) && !('revokeSecurityGroupEgress' in $store.getters.apis)"
             :tooltip="$t('label.delete')"
-            type="danger"
+            type="primary"
+            :danger="true"
             icon="delete-outlined"
             buttonClass="rule-action" />
         </a-popconfirm>

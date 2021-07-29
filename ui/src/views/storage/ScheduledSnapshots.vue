@@ -65,7 +65,8 @@
           <tooltip-button
             tooltipPlacement="top"
             :tooltip="$t('label.delete')"
-            type="danger"
+            type="primary"
+            :danger="true"
             icon="close-outlined"
             size="small"
             :loading="actionLoading"

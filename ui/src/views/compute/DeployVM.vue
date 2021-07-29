@@ -100,7 +100,7 @@
                       :tabList="tabList"
                       :activeTabKey="tabKey"
                       @tabChange="key => onTabChange(key, 'tabKey')">
-                      <p v-if="tabKey === 'templateid'">
+                      <div v-if="tabKey === 'templateid'">
                         {{ $t('message.template.desc') }}
                         <template-iso-selection
                           input-decorator="templateid"
@@ -110,16 +110,15 @@
                           :preFillContent="dataPreFill"
                           @handle-search-filter="($event) => fetchAllTemplates($event)"
                           @update-template-iso="updateFieldValue" />
-                        <span>
+                         <div>
                           {{ $t('label.override.rootdisk.size') }}
                           <a-switch
-                            v-model:checked="rootDiskSize"
-                            :default-checked="showRootDiskSizeChanger && rootDiskSizeFixed > 0"
+                            v-model:checked="form.rootdisksizeitem"
                             :disabled="rootDiskSizeFixed > 0 || template.deployasis"
                             @change="val => { showRootDiskSizeChanger = val }"
                             style="margin-left: 10px;"/>
                           <div v-if="template.deployasis">  {{ $t('message.deployasis') }} </div>
-                        </span>
+                        </div>
                         <disk-size-selection
                           v-show="showRootDiskSizeChanger"
                           input-decorator="rootdisksize"
@@ -128,8 +127,8 @@
                           :minDiskSize="dataPreFill.minrootdisksize"
                           @update-disk-size="updateFieldValue"
                           style="margin-top: 10px;"/>
-                      </p>
-                      <p v-else>
+                      </div>
+                      <div v-else>
                         {{ $t('message.iso.desc') }}
                         <template-iso-selection
                           input-decorator="isoid"
@@ -145,7 +144,7 @@
                             :options="hypervisorSelectOptions"
                             @change="value => hypervisor = value" />
                         </a-form-item>
-                      </p>
+                      </div>
                     </a-card>
                     <a-form-item class="form-item-hidden">
                       <a-input v-model:value="form.templateid" />
@@ -571,7 +570,7 @@
               </a-button>
               <a-dropdown-button style="margin-left: 10px" type="primary" @click="handleSubmit" :loading="loading.deploy">
                 <rocket-outlined />
-                {{ this.$t('label.launch.vm') }}
+                {{ $t('label.launch.vm') }}
                 <template #icon><down-outlined /></template>
                 <template #overlay>
                   <a-menu type="primary" @click="handleSubmitAndStay" theme="dark">
@@ -757,7 +756,8 @@ export default {
       diskIOpsMin: 0,
       diskIOpsMax: 0,
       minIOPs: 0,
-      maxIOPs: 0
+      maxIOPs: 0,
+      formModel: {}
     }
   },
   computed: {
@@ -968,7 +968,7 @@ export default {
         this.resetData()
       }
     },
-    form: {
+    formModel: {
       deep: true,
       handler (instanceConfig) {
         this.instanceConfig = toRaw(instanceConfig)
@@ -1098,6 +1098,7 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
+      this.form = reactive({})
       this.rules = reactive({})
 
       this.rules.zoneid = [{ required: true, message: `${this.$t('message.error.select')}` }]
@@ -1826,6 +1827,7 @@ export default {
         }
       })
       this.fetchAllTemplates()
+      this.formModel = toRaw(this.form)
     },
     onSelectPodId (value) {
       this.podId = value
@@ -2015,6 +2017,8 @@ export default {
         this.rootDiskSizeFixed = offering.rootdisksize
         this.showRootDiskSizeChanger = false
       }
+      this.form.rootdisksizeitem = this.showRootDiskSizeChanger && this.rootDiskSizeFixed > 0
+      this.formModel = toRaw(this.form)
     },
     handlerError (error) {
       this.error = error

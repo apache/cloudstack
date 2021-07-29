@@ -29,87 +29,67 @@
       :columns="columns"
       :pagination="false"
       style="margin-bottom: 24px; width: 100%" >
-      <template #actions="text, record">
-        <tooltip-button :tooltip="$t('label.delete')" type="danger" icon="delete" @onClick="onDelete(record.key)" />
+      <template #actions="{ record }">
+        <tooltip-button
+          :tooltip="$t('label.delete')"
+          type="primary"
+          :danger="true"
+          icon="delete-outlined"
+          @onClick="onDelete(record.key)" />
       </template>
       <template #footer>
         <a-form
           :layout="isMobile() ? 'horizontal': 'inline'"
-          :form="form"
-          @submit="handleAddRange">
+          :ref="formRef"
+          :model="form"
+          :rules="rules"
+          @finish="handleAddRange">
           <a-row :gutter="12">
             <a-col :md="4" :lg="4">
-              <a-form-item>
+              <a-form-item name="gateway" ref="gateway">
                 <a-input
-                  v-decorator="[ 'gateway', {
-                    rules: [{ required: true, message: $t('message.error.gateway') }]
-                  }]"
+                  v-model:value="form.gateway"
                   :placeholder="$t('label.gateway')"
                   autoFocus
                 />
               </a-form-item>
             </a-col>
             <a-col :md="4" :lg="4">
-              <a-form-item>
+              <a-form-item name="netmask" ref="netmask">
                 <a-input
-                  v-decorator="[ 'netmask', {
-                    rules: [{ required: true, message: $t('message.error.netmask') }]
-                  }]"
+                  v-model:value="form.netmask"
                   :placeholder="$t('label.netmask')"
                 />
               </a-form-item>
             </a-col>
             <a-col :md="4" :lg="4">
-              <a-form-item>
+              <a-form-item name="vlan" ref="vlan">
                 <a-input
-                  v-decorator="[ 'vlan', { rules: [{ required: false }] }]"
+                  v-model:value="form.vlan"
                   :placeholder="$t('label.vlan')"
                 />
               </a-form-item>
             </a-col>
             <a-col :md="4" :lg="4">
-              <a-form-item>
+              <a-form-item name="startIp" ref="startIp">
                 <a-input
-                  v-decorator="[ 'startIp', {
-                    rules: [
-                      {
-                        required: true,
-                        message: $t('message.error.startip')
-                      },
-                      {
-                        validator: checkIpFormat,
-                        ipV4: true,
-                        message: $t('message.error.ipv4.address')
-                      }
-                    ]
-                  }]"
+                  v-model:value="form.startIp"
                   :placeholder="$t('label.start.ip')"
                 />
               </a-form-item>
             </a-col>
             <a-col :md="4" :lg="4">
-              <a-form-item>
+              <a-form-item name="endIp" ref="endIp">
                 <a-input
-                  v-decorator="[ 'endIp', {
-                    rules: [
-                      {
-                        required: true,
-                        message: $t('message.error.endip')
-                      },
-                      {
-                        validator: checkIpFormat,
-                        ipV4: true,
-                        message: $t('message.error.ipv4.address')
-                      }]
-                  }]"
+                  v-model:value="form.endIp"
                   :placeholder="$t('label.end.ip')"
                 />
               </a-form-item>
             </a-col>
             <a-col :md="4" :lg="4">
-              <a-form-item :style="{ display: 'inline-block', float: 'right' }">
+              <div :style="{ display: 'inline-block', float: 'right' }">
                 <a-button type="primary" html-type="submit">{{ $t('label.add') }}</a-button>
-              </a-form-item>
+              </div>
             </a-col>
           </a-row>
         </a-form>
@@ -142,6 +122,7 @@
 </template>
 <script>
 
+import { ref, reactive, toRaw } from 'vue'
 import TooltipButton from '@/components/view/TooltipButton'
 import { mixinDevice } from '@/utils/mixin.js'
 
@@ -220,31 +201,55 @@ export default {
       this.ipRanges = this.prefillContent[prefilledIpRangesKey]
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
+  created () {
+    this.initForm()
   },
   methods: {
-    handleAddRange (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (!err) {
-          this.ipRanges.push({
-            key: this.ipRanges.length.toString(),
-            gateway: values.gateway,
-            netmask: values.netmask,
-            vlan: values.vlan,
-            startIp: values.startIp,
-            endIp: values.endIp
-          })
-          this.form.resetFields()
-        }
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        gateway: [{ required: true, message: this.$t('message.error.gateway') }],
+        netmask: [{ required: true, message: this.$t('message.error.netmask') }],
+        startIp: [{
+          required: true,
+          message: this.$t('message.error.startip')
+        },
+        {
+          validator: this.checkIpFormat,
+          ipV4: true,
+          message: this.$t('message.error.ipv4.address')
+        }],
+        endIp: [{
+          required: true,
+          message: this.$t('message.error.startip')
+        },
+        {
+          validator: this.checkIpFormat,
+          ipV4: true,
+          message: this.$t('message.error.ipv4.address')
+        }]
+      })
+    },
+    handleAddRange () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
+        this.ipRanges.push({
+          key: this.ipRanges.length.toString(),
+          gateway: values.gateway,
+          netmask: values.netmask,
+          vlan: values.vlan,
+          startIp: values.startIp,
+          endIp: values.endIp
+        })
+        this.formRef.value.resetFields()
       })
       this.emitIpRanges()
     },
     isValidSetup () {
       return this.ipRanges && this.ipRanges.length > 0
     },
-    handleSubmit (e) {
+    handleSubmit () {
       if (this.isValidSetup()) {
         if (this.isFixError) {
           this.$emit('submitLaunchZone')
@@ -269,15 +274,15 @@ export default {
       trafficRanges[this.traffic + '-ipranges'] = this.ipRanges
       this.$emit('fieldsChanged', trafficRanges)
     },
-    checkIpFormat (rule, value, callback) {
+    async checkIpFormat (rule, value) {
       if (!value || value === '') {
-        callback()
+        return Promise.resolve()
       } else if (rule.ipV4 && !this.ipV4Regex.test(value)) {
-        callback(rule.message)
+        return Promise.reject(rule.message)
       } else if (rule.ipV6 && !this.ipV6Regex.test(value)) {
-        callback(rule.message)
+        return Promise.reject(rule.message)
       } else {
-        callback()
+        return Promise.resolve()
       }
     }
   }

@@ -21,7 +21,7 @@
 
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.zonenamelabel') }}</div>
-        <a-select v-model="zoneId" @change="fetchPods" autoFocus>
+        <a-select v-model:value="zoneId" @change="fetchPods" autoFocus>
           <a-select-option
             v-for="zone in zonesList"
             :value="zone.id"
@@ -33,7 +33,7 @@
 
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.podname') }}</div>
-        <a-select v-model="podId" @change="fetchClusters">
+        <a-select v-model:value="podId" @change="fetchClusters">
           <a-select-option
             v-for="pod in podsList"
             :value="pod.id"
@@ -45,7 +45,7 @@
 
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.clustername') }}</div>
-        <a-select v-model="clusterId" @change="handleChangeCluster">
+        <a-select v-model:value="clusterId" @change="handleChangeCluster">
           <a-select-option
             v-for="cluster in clustersList"
             :value="cluster.id"
@@ -58,34 +58,34 @@
       <div class="form__item required-field">
         <div class="form__label"><span class="required">* </span>{{ selectedClusterHyperVisorType === 'VMware' ? $t('label.esx.host') : $t('label.hostnamelabel') }}</div>
         <span class="required required-label">{{ $t('label.required') }}</span>
-        <a-input v-model="hostname"></a-input>
+        <a-input v-model:value="hostname"></a-input>
       </div>
 
       <div class="form__item required-field" v-if="selectedClusterHyperVisorType !== 'VMware'">
         <div class="form__label"><span class="required">* </span>{{ $t('label.username') }}</div>
         <span class="required required-label">{{ $t('label.required') }}</span>
-        <a-input :placeholder="placeholder.username" v-model="username"></a-input>
+        <a-input :placeholder="placeholder.username" v-model:value="username"></a-input>
       </div>
 
       <div class="form__item required-field" v-if="selectedClusterHyperVisorType !== 'VMware'">
         <div class="form__label"><span class="required">* </span>{{ $t('label.password') }}</div>
         <span class="required required-label">{{ $t('label.required') }}</span>
-        <a-input :placeholder="placeholder.password" type="password" v-model="password"></a-input>
+        <a-input :placeholder="placeholder.password" type="password" v-model:value="password"></a-input>
       </div>
 
       <template v-if="selectedClusterHyperVisorType === 'Ovm3'">
         <div class="form__item">
           <div class="form__label">{{ $t('label.agent.username') }}</div>
-          <a-input v-model="agentusername"></a-input>
+          <a-input v-model:value="agentusername"></a-input>
         </div>
         <div class="form__item required-field">
           <div class="form__label"><span class="required">* </span>{{ $t('label.agent.password') }}</div>
           <span class="required required-label">{{ $t('label.required') }}</span>
-          <a-input type="password" v-model="agentpassword"></a-input>
+          <a-input type="password" v-model:value="agentpassword"></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.agentport') }}</div>
-          <a-input v-model="agentport"></a-input>
+          <a-input v-model:value="agentport"></a-input>
         </div>
       </template>
 
@@ -94,7 +94,7 @@
         <a-select
           mode="tags"
           :placeholder="placeholder.hosttags"
-          v-model="selectedTags"
+          v-model:value="selectedTags"
         >
           <a-select-option v-for="tag in hostTagsList" :key="tag.name">{{ tag.name }}</a-select-option>
         </a-select>

@@ -46,7 +46,8 @@
             <tooltip-button
               tooltipPlacement="top"
               :tooltip="$t('label.remove.project.role')"
-              type="danger"
+              type="primary"
+              :danger="true"
               icon="delete-outlined"
               size="small"
               @onClick="deleteProjectRole(record)" />

@@ -101,9 +101,10 @@
               <div>{{ ip }}</div>
               <tooltip-button
                 :tooltip="$t('label.action.delete.load.balancer')"
-                type="danger"
+                type="primary"
+                :danger="true"
                 icon="delete-outlined"
-                @click="() => handleDeleteInstanceFromRule(instance, record, ip)" />
+                @onClick="() => handleDeleteInstanceFromRule(instance, record, ip)" />
             </div>
           </div>
         </div>
@@ -118,7 +119,12 @@
             :okText="$t('label.yes')"
             :cancelText="$t('label.no')"
           >
-            <tooltip-button :tooltip="$t('label.delete')" :disabled="!('deleteLoadBalancerRule' in $store.getters.apis)" type="danger" icon="delete-outlined" />
+            <tooltip-button
+              :tooltip="$t('label.delete')"
+              :disabled="!('deleteLoadBalancerRule' in $store.getters.apis)"
+              type="primary"
+              :danger="true"
+              icon="delete-outlined" />
           </a-popconfirm>
         </div>
       </template>

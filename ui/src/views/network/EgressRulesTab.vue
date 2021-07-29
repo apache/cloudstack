@@ -78,7 +78,13 @@
         {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : 'All' }}
       </template>
       <template #actions="{ record }">
-        <tooltip-button :tooltip="$t('label.delete')" :disabled="!('deleteEgressFirewallRule' in $store.getters.apis)" type="danger" icon="delete" @click="deleteRule(record)" />
+        <tooltip-button
+          :tooltip="$t('label.delete')"
+          :disabled="!('deleteEgressFirewallRule' in $store.getters.apis)"
+          type="primary"
+          :danger="true"
+          icon="delete-outlined"
+          @onClick="deleteRule(record)" />
       </template>
     </a-table>
     <a-pagination

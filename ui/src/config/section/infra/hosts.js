@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 
 export default {
@@ -37,7 +38,7 @@ export default {
   details: ['name', 'id', 'resourcestate', 'ipaddress', 'hypervisor', 'type', 'clustername', 'podname', 'zonename', 'disconnected', 'created'],
   tabs: [{
     name: 'details',
-    component: () => import('@/components/view/DetailsTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }],
   related: [{
     name: 'vm',
@@ -52,7 +53,7 @@ export default {
       docHelp: 'adminguide/installguide/configuration.html#adding-a-host',
       listView: true,
       popup: true,
-      component: () => import('@/views/infra/HostAdd.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostAdd.vue')))
     },
     {
       api: 'updateHost',
