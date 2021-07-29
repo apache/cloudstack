@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="ldap-account-layout">
+  <div class="ldap-account-layout" v-ctrl-enter="handleSubmit">
     <a-row :gutter="0">
       <a-col :md="24" :lg="16">
         <a-card :bordered="false">
@@ -131,9 +131,9 @@
               </a-form-item>
             </div>
 
-            <div class="card-footer">
+            <div class="action-button">
               <a-button @click="handleClose">{{ $t('label.close') }}</a-button>
-              <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.add') }}</a-button>
+              <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.add') }}</a-button>
             </div>
           </a-form>
         </a-card>
@@ -338,6 +338,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
@@ -465,14 +466,6 @@ export default {
 
   @media (min-width: 1000px) {
     width: 900px;
-  }
-}
-
-.card-footer {
-  text-align: right;
-
-  button + button {
-    margin-left: 8px;
   }
 }
 
