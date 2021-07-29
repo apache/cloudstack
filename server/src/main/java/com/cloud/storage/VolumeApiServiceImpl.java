@@ -2396,10 +2396,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (diskOffering == null) {
             throw new CloudRuntimeException("volume '" + vol.getUuid() + "', has no diskoffering. Migration target cannot be checked.");
         }
-        if (!doesTargetStorageSupportDiskOffering(destPool, diskOffering)) {
-            throw new CloudRuntimeException(String.format("Migration target pool [%s, tags:%s] has no matching tags for volume [%s, uuid:%s, tags:%s]", destPool.getName(),
-                    getStoragePoolTags(destPool), vol.getName(), vol.getUuid(), diskOffering.getTags()));
-        }
 
         if (liveMigrateVolume && State.Running.equals(vm.getState()) &&
                 destPool.getClusterId() != null && srcClusterId != null) {
