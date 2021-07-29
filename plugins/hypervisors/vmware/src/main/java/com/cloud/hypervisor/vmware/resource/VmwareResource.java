@@ -2905,11 +2905,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     int getReservedMemoryMb(VirtualMachineTO vmSpec) {
         if (vmSpec.getDetails().get(VMwareGuru.VmwareReserveMemory.key()).equalsIgnoreCase("true")) {
-            if(!NumberUtils.DOUBLE_ZERO.toString().equals(vmSpec.getDetails().get(VmDetailConstants.RAM_RESERVATION))){
+            if(vmSpec.getDetails().get(VmDetailConstants.RAM_RESERVATION) != null){
                 float reservedMemory = (vmSpec.getMaxRam() * Float.parseFloat(vmSpec.getDetails().get(VmDetailConstants.RAM_RESERVATION)));
                 return (int) (reservedMemory / ResourceType.bytesToMiB);
             }
-            return (int) (vmSpec.getMinRam() / ResourceType.bytesToMiB);
         }
         return 0;
     }

@@ -141,9 +141,6 @@ class VmwareVmImplementer {
                     details.put(VmDetailConstants.NIC_ADAPTER, VirtualEthernetCardType.E1000.toString());
                 }
             }
-            if(StringUtils.isEmpty(details.get(VmDetailConstants.RAM_RESERVATION))){
-                details.put(VmDetailConstants.RAM_RESERVATION, NumberUtils.DOUBLE_ZERO.toString());
-            }
         }
 
         setBootParameters(vm, to, details);
