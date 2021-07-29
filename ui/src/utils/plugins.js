@@ -64,7 +64,7 @@ export const pollJobPlugin = {
         status: 'progress'
       })
 
-      const originalPageOpts = originalPage || this.$router.currentRoute.path
+      options.originalPage = options.originalPage || this.$router.currentRoute.path
       api('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
         if (result.jobstatus === 1) {
