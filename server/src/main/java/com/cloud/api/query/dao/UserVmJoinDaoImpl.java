@@ -82,7 +82,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     @Inject
     private NicExtraDhcpOptionDao _nicExtraDhcpOptionDao;
     @Inject
-    UserStatisticsDao _userStatsDao;
+    UserStatisticsDao userStatsDao;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
@@ -379,11 +379,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     private void addVmRxTxDataToResponse(final UserVmJoinVO userVm, final UserVmResponse userVmResponse) {
         Long bytesReceived = 0L;
         Long bytesSent = 0L;
-        SearchBuilder<UserStatisticsVO> sb = _userStatsDao.createSearchBuilder();
+        SearchBuilder<UserStatisticsVO> sb = userStatsDao.createSearchBuilder();
         sb.and("deviceId", sb.entity().getDeviceId(), Op.EQ);
         SearchCriteria<UserStatisticsVO> sc = sb.create();
         sc.setParameters("deviceId", userVm.getId());
-        for (UserStatisticsVO stat: _userStatsDao.search(sc, null)) {
+        for (UserStatisticsVO stat: userStatsDao.search(sc, null)) {
             bytesReceived += stat.getNetBytesReceived() + stat.getCurrentBytesReceived();
             bytesSent += stat.getNetBytesSent() + stat.getCurrentBytesSent();
         }
