@@ -208,7 +208,7 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
 
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return instanceName;
     }
 }

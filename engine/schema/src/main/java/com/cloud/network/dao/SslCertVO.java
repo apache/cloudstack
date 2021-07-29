@@ -135,9 +135,4 @@ public class SslCertVO implements SslCert {
         return SslCert.class;
     }
 
-    @Override
-    public String getEntityName() {
-        return null;
-    }
-
 }

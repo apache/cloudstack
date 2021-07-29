@@ -643,9 +643,4 @@ public class VolumeVO implements Volume {
     public Class<?> getEntityType() {
         return Volume.class;
     }
-
-    @Override
-    public String getEntityName() {
-        return name;
-    }
 }

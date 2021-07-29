@@ -189,7 +189,7 @@ public class BackupVO implements Backup {
     }
 
     @Override
-    public String getEntityName() {
-        return "backup-" + id;
+    public String getName() {
+        return null;
     }
 }

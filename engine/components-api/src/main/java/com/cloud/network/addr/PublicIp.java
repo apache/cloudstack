@@ -256,8 +256,8 @@ public class PublicIp implements PublicIpAddress {
     }
 
     @Override
-    public String getEntityName() {
-        return _addr.getEntityName();
+    public String getName() {
+        return _addr.getName();
     }
 
     @Override

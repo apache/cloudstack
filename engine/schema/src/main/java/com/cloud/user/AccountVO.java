@@ -220,7 +220,7 @@ public class AccountVO implements Account {
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return accountName;
     }
 }

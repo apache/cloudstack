@@ -602,9 +602,4 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
         return Volume.class;
     }
 
-    @Override
-    public String getEntityName() {
-        return name;
-    }
-
 }

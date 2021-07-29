@@ -155,7 +155,7 @@ public class ConsoleProxyVO extends VMInstanceVO implements ConsoleProxy {
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return instanceName;
     }
 }

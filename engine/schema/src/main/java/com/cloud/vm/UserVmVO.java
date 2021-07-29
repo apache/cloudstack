@@ -127,7 +127,7 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return instanceName;
     }
 }

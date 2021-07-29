@@ -448,7 +448,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return null;
     }
 

@@ -222,7 +222,7 @@ public class VpcGatewayVO implements VpcGateway {
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return null;
     }
 

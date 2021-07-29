@@ -208,7 +208,7 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return null;
     }
 

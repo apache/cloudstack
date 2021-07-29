@@ -238,7 +238,7 @@ public class NicIpAliasVO implements NicIpAlias  {
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return null;
     }
 }

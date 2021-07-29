@@ -102,9 +102,4 @@ public class SecurityGroupVO implements SecurityGroup {
     public Class<?> getEntityType() {
         return SecurityGroup.class;
     }
-
-    @Override
-    public String getEntityName() {
-        return null;
-    }
 }

@@ -189,7 +189,7 @@ public class ProjectInvitationVO implements ProjectInvitation {
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return null;
     }
 }

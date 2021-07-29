@@ -538,11 +538,6 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
-    public String getEntityName() {
-        return getName();
-    }
-
-    @Override
     public long getUpdatedCount() {
         // TODO Auto-generated method stub
         return 0;

@@ -226,7 +226,7 @@ public class EventVO implements Event {
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return null;
     }
 }

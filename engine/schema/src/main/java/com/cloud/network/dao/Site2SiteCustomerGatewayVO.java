@@ -251,9 +251,4 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     public Class<?> getEntityType() {
         return Site2SiteCustomerGateway.class;
     }
-
-    @Override
-    public String getEntityName() {
-        return name;
-    }
 }

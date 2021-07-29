@@ -334,7 +334,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return null;
     }
 

@@ -117,7 +117,7 @@ public class PrivateGatewayProfile implements PrivateGateway {
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return null;
     }
 }

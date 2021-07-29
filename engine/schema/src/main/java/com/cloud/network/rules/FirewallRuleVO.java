@@ -310,7 +310,7 @@ public class FirewallRuleVO implements FirewallRule {
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return null;
     }
 }

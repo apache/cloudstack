@@ -635,11 +635,6 @@ public class NetworkVO implements Network {
     }
 
     @Override
-    public String getEntityName() {
-        return name;
-    }
-
-    @Override
     public boolean isStrechedL2Network() {
         return strechedL2Network;
     }

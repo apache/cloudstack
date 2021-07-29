@@ -633,11 +633,6 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     }
 
     @Override
-    public String getEntityName() {
-        return name;
-    }
-
-    @Override
     public Long getParentTemplateId() {
         return parentTemplateId;
     }

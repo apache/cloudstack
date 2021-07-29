@@ -132,7 +132,7 @@ public class VpnUserVO implements VpnUser {
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return null;
     }
 }

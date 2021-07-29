@@ -135,7 +135,7 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return instanceName;
     }
 }

@@ -186,7 +186,7 @@ public class ResourceTagJoinVO extends BaseViewVO implements ControlledViewEntit
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return null;
     }
 

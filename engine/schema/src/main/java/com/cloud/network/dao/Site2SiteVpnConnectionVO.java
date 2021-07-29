@@ -179,7 +179,7 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, Interna
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return null;
     }
 }

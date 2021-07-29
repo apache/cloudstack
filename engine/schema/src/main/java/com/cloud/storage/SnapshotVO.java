@@ -274,9 +274,4 @@ public class SnapshotVO implements Snapshot {
     public Class<?> getEntityType() {
         return Snapshot.class;
     }
-
-    @Override
-    public String getEntityName() {
-        return name;
-    }
 }

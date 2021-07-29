@@ -142,7 +142,7 @@ public class StaticRouteVO implements StaticRoute {
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return null;
     }
 }

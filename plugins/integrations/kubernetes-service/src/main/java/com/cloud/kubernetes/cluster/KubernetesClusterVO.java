@@ -337,9 +337,4 @@ public class KubernetesClusterVO implements KubernetesCluster {
     public Class<?> getEntityType() {
         return KubernetesCluster.class;
     }
-
-    @Override
-    public String getEntityName() {
-        return name;
-    }
 }

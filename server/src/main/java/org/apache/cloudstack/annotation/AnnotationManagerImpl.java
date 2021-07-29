@@ -459,7 +459,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         String entityName;
         if (entityType.isUserAllowed()) {
             ControlledEntity entity = getEntityFromUuidAndType(entityUuid, entityType);
-            entityName = entity.getEntityName();
+            entityName = entity.getName();
         } else {
             entityName = getInfrastructureEntityName(entityUuid, entityType);
         }

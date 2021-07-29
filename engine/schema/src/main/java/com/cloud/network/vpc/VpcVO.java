@@ -252,11 +252,6 @@ public class VpcVO implements Vpc {
     }
 
     @Override
-    public String getEntityName() {
-        return name;
-    }
-
-    @Override
     public boolean usesDistributedRouter() {
         return usesDistributedRouter;
     }

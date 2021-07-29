@@ -255,7 +255,7 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return accountName;
     }
 

@@ -172,7 +172,7 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return null;
     }
 }

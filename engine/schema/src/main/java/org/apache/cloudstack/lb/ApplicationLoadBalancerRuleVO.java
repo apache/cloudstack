@@ -136,9 +136,4 @@ public class ApplicationLoadBalancerRuleVO extends FirewallRuleVO implements App
     public int getInstancePort() {
         return defaultPortStart;
     }
-
-    @Override
-    public String getEntityName() {
-        return name;
-    }
 }

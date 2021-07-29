@@ -367,7 +367,7 @@ public class IPAddressVO implements IpAddress {
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return address.addr();
     }
 

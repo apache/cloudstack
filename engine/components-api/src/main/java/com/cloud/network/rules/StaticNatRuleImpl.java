@@ -160,7 +160,7 @@ public class StaticNatRuleImpl implements StaticNatRule {
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return null;
     }
 }

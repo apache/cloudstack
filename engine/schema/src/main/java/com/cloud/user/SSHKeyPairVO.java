@@ -134,9 +134,4 @@ public class SSHKeyPairVO implements SSHKeyPair {
     public Class<?> getEntityType() {
         return SSHKeyPair.class;
     }
-
-    @Override
-    public String getEntityName() {
-        return name;
-    }
 }

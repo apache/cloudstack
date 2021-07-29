@@ -123,7 +123,7 @@ public class MonitoringServiceVO implements MonitoringService {
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return null;
     }
 }

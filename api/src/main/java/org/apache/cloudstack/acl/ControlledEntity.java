@@ -30,5 +30,5 @@ public interface ControlledEntity extends OwnedBy, PartOf {
     }
 
     Class<?> getEntityType();
-    String getEntityName();
+    String getName();
 }

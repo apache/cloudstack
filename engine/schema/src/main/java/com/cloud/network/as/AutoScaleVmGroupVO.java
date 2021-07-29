@@ -231,7 +231,7 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
     }
 
     @Override
-    public String getEntityName() {
-        return "autoscalevmgroup-" + id;
+    public String getName() {
+        return null;
     }
 }

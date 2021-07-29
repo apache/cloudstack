@@ -173,7 +173,7 @@ public class ProjectInvitationJoinVO extends BaseViewVO implements ControlledVie
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return null;
     }
 }

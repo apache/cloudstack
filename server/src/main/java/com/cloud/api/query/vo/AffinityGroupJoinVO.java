@@ -209,9 +209,4 @@ public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
         return AffinityGroup.class;
     }
 
-    @Override
-    public String getEntityName() {
-        return name;
-    }
-
 }

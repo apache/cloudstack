@@ -136,7 +136,7 @@ public class Site2SiteVpnGatewayVO implements Site2SiteVpnGateway {
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return null;
     }
 }

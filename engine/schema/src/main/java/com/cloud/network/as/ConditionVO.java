@@ -134,8 +134,8 @@ public class ConditionVO implements Condition, Identity, InternalIdentity {
     }
 
     @Override
-    public String getEntityName() {
-        return "condition-" + id;
+    public String getName() {
+        return null;
     }
 
 }

@@ -199,9 +199,4 @@ public class SnapshotEntityImpl implements SnapshotEntity {
     public Class<?> getEntityType() {
         return Snapshot.class;
     }
-
-    @Override
-    public String getEntityName() {
-        return null;
-    }
 }

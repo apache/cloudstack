@@ -239,8 +239,8 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     }
 
     @Override
-    public String getEntityName() {
-        return "autoscalevmprofile-" + id;
+    public String getName() {
+        return null;
     }
 
 }

@@ -554,7 +554,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     @Override
-    public String getEntityName() {
+    public String getName() {
         return instanceName;
     }
 

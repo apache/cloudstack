@@ -157,8 +157,8 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
     }
 
     @Override
-    public String getEntityName() {
-        return "autoscalepolicy-" + id;
+    public String getName() {
+        return null;
     }
 
 }
