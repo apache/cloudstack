@@ -326,7 +326,7 @@ export default {
       params.dns1 = this.prefillContent.ipv4Dns1.value
       params.dns2 = this.prefillContent.ipv4Dns2 ? this.prefillContent.ipv4Dns2.value : null
       params.ip6dns1 = this.prefillContent.ipv6Dns1 ? this.prefillContent.ipv6Dns1.value : null
-      params.ip6dns2 = this.prefillContent.ipv6Dns1 ? this.prefillContent.ipv6Dns1.value : null
+      params.ip6dns2 = this.prefillContent.ipv6Dns2 ? this.prefillContent.ipv6Dns2.value : null
       params.internaldns1 = this.prefillContent.internalDns1 ? this.prefillContent.internalDns1.value : null
       params.internaldns2 = this.prefillContent.internalDns2 ? this.prefillContent.internalDns2.value : null
       params.domain = this.prefillContent.networkDomain ? this.prefillContent.networkDomain.value : null
