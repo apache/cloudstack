@@ -79,8 +79,10 @@ function packaging() {
 
     DISTRO=$3
 
-    pip3 install requests configparser
-    python3 ./templateConfig.py
+    yum install -y python3-lxml
+    pip3 install configparser
+    pip3 list installed | grep configparser
+    ls -lrt /usr/local/lib/python3.6/site-packages/backports
 
     MVN=$(which mvn)
     if [ -z "$MVN" ] ; then

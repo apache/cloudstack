@@ -23,6 +23,7 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import org.apache.log4j.Logger;
+import org.ini4j.Ini;
 
 import javax.naming.ConfigurationException;
 import java.io.BufferedReader;
@@ -37,6 +38,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -51,6 +53,7 @@ public class SystemVmTemplateRegistration {
     private static final String umountCommand = "sudo umount %s";
     private static final  String hashAlgorithm = "MD5";
     private static final String templatesPath = "/usr/share/cloudstack-management/templates/";
+    private static final String metadataFile = templatesPath + "metadata.ini";
     private static final String TEMPORARY_SECONDARY_STORE = "/tmp/tmpSecStorage";
     private static final String PARENT_TEMPLATE_FOLDER = TEMPORARY_SECONDARY_STORE;
     private static final String PARTIAL_TEMPLATE_FOLDER = "/template/tmpl/1/";
@@ -174,16 +177,26 @@ public class SystemVmTemplateRegistration {
         }
     }
 
-    public static final Map<Hypervisor.HypervisorType, String> NewTemplateNameList = new HashMap<Hypervisor.HypervisorType, String>() {
-        {
-            put(Hypervisor.HypervisorType.KVM, "systemvm-kvm-" + CS_MAJOR_VERSION + "." + CS_MINOR_VERSION);
-            put(Hypervisor.HypervisorType.VMware, "systemvm-vmware-" + CS_MAJOR_VERSION + "." + CS_MINOR_VERSION);
-            put(Hypervisor.HypervisorType.XenServer, "systemvm-xenserver-" + CS_MAJOR_VERSION + "." + CS_MINOR_VERSION);
-            put(Hypervisor.HypervisorType.Hyperv, "systemvm-hyperv-" + CS_MAJOR_VERSION + "." + CS_MINOR_VERSION);
-            put(Hypervisor.HypervisorType.LXC, "systemvm-lxc-" + CS_MAJOR_VERSION + "." + CS_MINOR_VERSION);
-            put(Hypervisor.HypervisorType.Ovm3, "systemvm-ovm3-" + CS_MAJOR_VERSION + "." + CS_MINOR_VERSION);
-        }
-    };
+    public static final List<Hypervisor.HypervisorType> hypervisorList = Arrays.asList(Hypervisor.HypervisorType.KVM,
+            Hypervisor.HypervisorType.VMware,
+            Hypervisor.HypervisorType.XenServer,
+            Hypervisor.HypervisorType.Hyperv,
+            Hypervisor.HypervisorType.LXC,
+            Hypervisor.HypervisorType.Ovm3
+    );
+
+    public static final Map<Hypervisor.HypervisorType, String> NewTemplateNameList = new HashMap<Hypervisor.HypervisorType, String>();
+
+//    public static final Map<Hypervisor.HypervisorType, String> NewTemplateNameList = new HashMap<Hypervisor.HypervisorType, String>() {
+//        {
+//            put(Hypervisor.HypervisorType.KVM, "systemvm-kvm-" + CS_MAJOR_VERSION + "." + CS_MINOR_VERSION);
+//            put(Hypervisor.HypervisorType.VMware, "systemvm-vmware-" + CS_MAJOR_VERSION + "." + CS_MINOR_VERSION);
+//            put(Hypervisor.HypervisorType.XenServer, "systemvm-xenserver-" + CS_MAJOR_VERSION + "." + CS_MINOR_VERSION);
+//            put(Hypervisor.HypervisorType.Hyperv, "systemvm-hyperv-" + CS_MAJOR_VERSION + "." + CS_MINOR_VERSION);
+//            put(Hypervisor.HypervisorType.LXC, "systemvm-lxc-" + CS_MAJOR_VERSION + "." + CS_MINOR_VERSION);
+//            put(Hypervisor.HypervisorType.Ovm3, "systemvm-ovm3-" + CS_MAJOR_VERSION + "." + CS_MINOR_VERSION);
+//        }
+//    };
 
     public static final Map<Hypervisor.HypervisorType, String> routerTemplateConfigurationNames = new HashMap<Hypervisor.HypervisorType, String>() {
         {
@@ -196,38 +209,42 @@ public class SystemVmTemplateRegistration {
         }
     };
 
-    public static final Map<Hypervisor.HypervisorType, String> fileNames = new HashMap<Hypervisor.HypervisorType, String>() {
-        {
-            put(Hypervisor.HypervisorType.KVM, "systemvmtemplate-4.16.0-kvm.qcow2.bz2");
-            put(Hypervisor.HypervisorType.VMware, "systemvmtemplate-4.16.0-vmware.ova");
-            put(Hypervisor.HypervisorType.XenServer, "systemvmtemplate-4.16.0-xen.vhd.bz2");
-            put(Hypervisor.HypervisorType.Hyperv, "systemvmtemplate-4.16.0-hyperv.vhd.zip");
-            put(Hypervisor.HypervisorType.LXC, "systemvmtemplate-4.16.0-kvm.qcow2.bz2");
-            put(Hypervisor.HypervisorType.Ovm3, "systemvmtemplate-4.16.0-ovm.raw.bz2");
-        }
-    };
+    public static final Map<Hypervisor.HypervisorType, String> fileNames = new HashMap<Hypervisor.HypervisorType, String>();
+//    public static final Map<Hypervisor.HypervisorType, String> fileNames = new HashMap<Hypervisor.HypervisorType, String>() {
+//        {
+//            put(Hypervisor.HypervisorType.KVM, "systemvmtemplate-4.16.0-kvm.qcow2.bz2");
+//            put(Hypervisor.HypervisorType.VMware, "systemvmtemplate-4.16.0-vmware.ova");
+//            put(Hypervisor.HypervisorType.XenServer, "systemvmtemplate-4.16.0-xen.vhd.bz2");
+//            put(Hypervisor.HypervisorType.Hyperv, "systemvmtemplate-4.16.0-hyperv.vhd.zip");
+//            put(Hypervisor.HypervisorType.LXC, "systemvmtemplate-4.16.0-kvm.qcow2.bz2");
+//            put(Hypervisor.HypervisorType.Ovm3, "systemvmtemplate-4.16.0-ovm.raw.bz2");
+//        }
+//    };
 
-    public static final Map<Hypervisor.HypervisorType, String> newTemplateUrl = new HashMap<Hypervisor.HypervisorType, String>() {
-        {
-            put(Hypervisor.HypervisorType.KVM, "https://download.cloudstack.org/systemvm/4.16/" + fileNames.get(Hypervisor.HypervisorType.KVM));
-            put(Hypervisor.HypervisorType.VMware, "https://download.cloudstack.org/systemvm/4.16/" + fileNames.get(Hypervisor.HypervisorType.VMware));
-            put(Hypervisor.HypervisorType.XenServer, "https://download.cloudstack.org/systemvm/4.16/" + fileNames.get(Hypervisor.HypervisorType.XenServer));
-            put(Hypervisor.HypervisorType.Hyperv, "https://download.cloudstack.org/systemvm/4.16/" + fileNames.get(Hypervisor.HypervisorType.Hyperv));
-            put(Hypervisor.HypervisorType.LXC, "https://download.cloudstack.org/systemvm/4.16/" + fileNames.get(Hypervisor.HypervisorType.LXC));
-            put(Hypervisor.HypervisorType.Ovm3, "https://download.cloudstack.org/systemvm/4.16/" + fileNames.get(Hypervisor.HypervisorType.Ovm3));
-        }
-    };
+    public static final Map<Hypervisor.HypervisorType, String> newTemplateUrl = new HashMap<Hypervisor.HypervisorType, String>();
+//    public static final Map<Hypervisor.HypervisorType, String> newTemplateUrl = new HashMap<Hypervisor.HypervisorType, String>() {
+//        {
+//            put(Hypervisor.HypervisorType.KVM, "https://download.cloudstack.org/systemvm/4.16/" + fileNames.get(Hypervisor.HypervisorType.KVM));
+//            put(Hypervisor.HypervisorType.VMware, "https://download.cloudstack.org/systemvm/4.16/" + fileNames.get(Hypervisor.HypervisorType.VMware));
+//            put(Hypervisor.HypervisorType.XenServer, "https://download.cloudstack.org/systemvm/4.16/" + fileNames.get(Hypervisor.HypervisorType.XenServer));
+//            put(Hypervisor.HypervisorType.Hyperv, "https://download.cloudstack.org/systemvm/4.16/" + fileNames.get(Hypervisor.HypervisorType.Hyperv));
+//            put(Hypervisor.HypervisorType.LXC, "https://download.cloudstack.org/systemvm/4.16/" + fileNames.get(Hypervisor.HypervisorType.LXC));
+//            put(Hypervisor.HypervisorType.Ovm3, "https://download.cloudstack.org/systemvm/4.16/" + fileNames.get(Hypervisor.HypervisorType.Ovm3));
+//        }
+//    };
 
-    public static final Map<Hypervisor.HypervisorType, String> newTemplateChecksum = new HashMap<Hypervisor.HypervisorType, String>() {
-        {
-            put(Hypervisor.HypervisorType.KVM, "07268f267dc4316dc5f86150346bb8d7");
-            put(Hypervisor.HypervisorType.XenServer, "71d8adb40baa609997acdc3eae15fbde");
-            put(Hypervisor.HypervisorType.VMware, "b356cbbdef67c4eefa8c336328e2b202");
-            put(Hypervisor.HypervisorType.Hyperv, "0982aa1461800ce1538e0cae07e00770");
-            put(Hypervisor.HypervisorType.LXC, "07268f267dc4316dc5f86150346bb8d7");
-            put(Hypervisor.HypervisorType.Ovm3, "8c643d146c82f92843b8a48c7661f800");
-        }
-    };
+    // Read from ini - don't pkg ovs/hyperv -
+    public static final Map<Hypervisor.HypervisorType, String> newTemplateChecksum = new HashMap<Hypervisor.HypervisorType, String>();
+//    public static final Map<Hypervisor.HypervisorType, String> newTemplateChecksum = new HashMap<Hypervisor.HypervisorType, String>() {
+//        {
+//            put(Hypervisor.HypervisorType.KVM, "07268f267dc4316dc5f86150346bb8d7");
+//            put(Hypervisor.HypervisorType.XenServer, "71d8adb40baa609997acdc3eae15fbde");
+//            put(Hypervisor.HypervisorType.VMware, "b356cbbdef67c4eefa8c336328e2b202");
+//            put(Hypervisor.HypervisorType.Hyperv, "0982aa1461800ce1538e0cae07e00770");
+//            put(Hypervisor.HypervisorType.LXC, "07268f267dc4316dc5f86150346bb8d7");
+//            put(Hypervisor.HypervisorType.Ovm3, "8c643d146c82f92843b8a48c7661f800");
+//        }
+//    };
 
     public static final Map<Hypervisor.HypervisorType, Integer> hypervisorGuestOsMap = new HashMap<Hypervisor.HypervisorType, Integer>() {
         {
@@ -415,7 +432,7 @@ public class SystemVmTemplateRegistration {
     }
 
     private static List<String> fetchAllHypervisors(Connection conn, Long zoneId) {
-          List<String> hypervisorList = new ArrayList<>();
+        List<String> hypervisorList = new ArrayList<>();
         try {
             PreparedStatement pstmt = conn.prepareStatement(FETCH_DISTINCT_HYPERVISORS_IN_ZONE);
             if(pstmt != null) {
@@ -470,7 +487,7 @@ public class SystemVmTemplateRegistration {
         // update template ID of system Vms
         try {
             PreparedStatement update_templ_id_pstmt = conn
-                .prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = ? and removed is NULL");
+                    .prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = ? and removed is NULL");
             update_templ_id_pstmt.setLong(1, templateId);
             update_templ_id_pstmt.setString(2, hypervisorAndTemplateName.first().toString());
             update_templ_id_pstmt.executeUpdate();
@@ -584,6 +601,25 @@ public class SystemVmTemplateRegistration {
         }
     }
 
+    public static void parseMetadataFile() {
+        try {
+            Ini ini = new Ini();
+            ini.load(new FileReader(metadataFile));
+            for (Hypervisor.HypervisorType hypervisorType : hypervisorList) {
+                String hypervisor = hypervisorType.name().toLowerCase(Locale.ROOT);
+                Ini.Section section = ini.get(hypervisor);
+                NewTemplateNameList.put(hypervisorType, section.get("templatename"));
+                fileNames.put(hypervisorType, section.get("filename"));
+                newTemplateChecksum.put(hypervisorType, section.get("checksum"));
+                newTemplateUrl.put(hypervisorType, section.get("downloadurl"));
+            }
+
+        } catch (Exception e) {
+            String errMsg = "Failed to parse systemVM template metadata file";
+            LOGGER.error(errMsg);
+            throw new CloudRuntimeException(errMsg);
+        }
+    }
     public static void registerTemplates(Connection conn, Set<Hypervisor.HypervisorType> hypervisorsInUse) {
         GlobalLock lock = GlobalLock.getInternLock("UpgradeDatabase-Lock");
         try {
@@ -639,6 +675,7 @@ public class SystemVmTemplateRegistration {
                     unmountStore();
                 }
             } catch (Exception e) {
+                unmountStore();
                 throw new CloudRuntimeException("Failed to register systemVM template. Upgrade Failed");
             }
         } finally {
