@@ -121,4 +121,9 @@ public class InstanceGroupVO implements InstanceGroup {
     public Class<?> getEntityType() {
         return InstanceGroup.class;
     }
+
+    @Override
+    public String getEntityName() {
+        return name;
+    }
 }

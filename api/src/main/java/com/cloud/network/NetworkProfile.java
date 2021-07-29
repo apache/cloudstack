@@ -306,6 +306,11 @@ public class NetworkProfile implements Network {
     }
 
     @Override
+    public String getEntityName() {
+        return name;
+    }
+
+    @Override
     public boolean isStrechedL2Network() {
         return false;
     }

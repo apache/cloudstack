@@ -553,6 +553,11 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         return VirtualMachine.class;
     }
 
+    @Override
+    public String getEntityName() {
+        return instanceName;
+    }
+
     public VirtualMachine.PowerState getPowerState() {
         return powerState;
     }

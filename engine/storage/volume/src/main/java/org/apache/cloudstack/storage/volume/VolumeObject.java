@@ -851,4 +851,9 @@ public class VolumeObject implements VolumeInfo {
     public Class<?> getEntityType() {
         return Volume.class;
     }
+
+    @Override
+    public String getEntityName() {
+        return getName();
+    }
 }

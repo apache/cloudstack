@@ -560,6 +560,11 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     }
 
     @Override
+    public String getEntityName() {
+        return instanceName;
+    }
+
+    @Override
     public boolean isDisplay() {
         return display;
     }

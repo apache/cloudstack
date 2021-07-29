@@ -308,4 +308,9 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     public Class<?> getEntityType() {
         return SecurityGroup.class;
     }
+
+    @Override
+    public String getEntityName() {
+        return null;
+    }
 }

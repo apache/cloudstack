@@ -14,12 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import store from '@/store'
 
 export default {
   name: 'tools',
   title: 'label.tools',
   icon: 'tool',
-  permission: ['listInfrastructure'],
+  permission: ['listAnnotations'],
   children: [
     {
       name: 'manageinstances',
@@ -27,8 +28,43 @@ export default {
       icon: 'interaction',
       docHelp: 'adminguide/virtual_machines.html#importing-and-unmanaging-virtual-machine',
       resourceType: 'UserVm',
-      permission: ['listUnmanagedInstances'],
+      permission: ['listInfrastructure', 'listUnmanagedInstances'],
       component: () => import('@/views/tools/ManageInstances.vue')
+    },
+    {
+      name: 'comment',
+      title: 'label.comments',
+      icon: 'message',
+      docHelp: 'adminguide/events.html',
+      permission: ['listAnnotations'],
+      columns: () => {
+        const cols = ['entityid', 'entitytype', 'annotation', 'created']
+        if (['Admin'].includes(store.getters.userInfo.roletype)) {
+          cols.push('username', 'adminsonly')
+        }
+        return cols
+      },
+      searchFilters: ['annotation', 'username', 'keyword'],
+      params: () => { return { annotationfilter: 'self' } },
+      filters: () => {
+        const filters = ['self']
+        if (['Admin'].includes(store.getters.userInfo.roletype)) {
+          filters.push('all')
+        }
+        return filters
+      },
+      actions: [
+        {
+          api: 'removeAnnotation',
+          icon: 'delete',
+          label: 'label.remove.annotation',
+          message: 'message.remove.annotation',
+          dataView: false,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
     }
   ]
 }

@@ -857,4 +857,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return VirtualMachine.class;
     }
 
+    @Override
+    public String getEntityName() {
+        return name;
+    }
+
 }

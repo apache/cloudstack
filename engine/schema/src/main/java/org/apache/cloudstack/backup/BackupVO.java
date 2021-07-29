@@ -187,4 +187,9 @@ public class BackupVO implements Backup {
     public Class<?> getEntityType() {
         return Backup.class;
     }
+
+    @Override
+    public String getEntityName() {
+        return "backup-" + id;
+    }
 }

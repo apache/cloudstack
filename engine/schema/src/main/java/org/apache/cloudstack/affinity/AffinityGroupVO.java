@@ -129,4 +129,9 @@ public class AffinityGroupVO implements AffinityGroup {
         return AffinityGroup.class;
     }
 
+    @Override
+    public String getEntityName() {
+        return name;
+    }
+
 }

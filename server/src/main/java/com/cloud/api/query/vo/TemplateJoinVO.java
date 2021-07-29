@@ -485,6 +485,11 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
         return VirtualMachineTemplate.class;
     }
 
+    @Override
+    public String getEntityName() {
+        return name;
+    }
+
     public void setAccountId(long accountId) {
         this.accountId = accountId;
     }

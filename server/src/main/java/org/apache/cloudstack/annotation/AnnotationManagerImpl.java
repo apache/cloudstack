@@ -19,15 +19,34 @@ package org.apache.cloudstack.annotation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -42,6 +61,7 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
@@ -57,6 +77,12 @@ import org.apache.cloudstack.api.command.admin.annotation.UpdateAnnotationVisibi
 import org.apache.cloudstack.api.response.AnnotationResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 
 import static org.apache.commons.lang.StringUtils.isBlank;
@@ -65,7 +91,7 @@ import static org.apache.commons.lang.StringUtils.isNotBlank;
 /**
  * @since 4.11
  */
-public final class AnnotationManagerImpl extends ManagerBase implements AnnotationService, PluggableService {
+public final class AnnotationManagerImpl extends ManagerBase implements AnnotationService, Configurable, PluggableService {
     public static final Logger LOGGER = Logger.getLogger(AnnotationManagerImpl.class);
 
     @Inject
@@ -100,8 +126,48 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     private Site2SiteCustomerGatewayDao customerGatewayDao;
     @Inject
     private VMTemplateDao templateDao;
+    @Inject
+    private DataCenterDao dataCenterDao;
+    @Inject
+    private HostPodDao hostPodDao;
+    @Inject
+    private ClusterDao clusterDao;
+    @Inject
+    private HostDao hostDao;
+    @Inject
+    private PrimaryDataStoreDao primaryDataStoreDao;
+    @Inject
+    private ImageStoreDao imageStoreDao;
+    @Inject
+    private DomainDao domainDao;
+    @Inject
+    private ServiceOfferingDao serviceOfferingDao;
+    @Inject
+    private DiskOfferingDao diskOfferingDao;
+    @Inject
+    private NetworkOfferingDao networkOfferingDao;
 
     private static final List<RoleType> adminRoles = Collections.singletonList(RoleType.Admin);
+    private List<KubernetesClusterHelper> kubernetesClusterHelpers;
+
+    public List<KubernetesClusterHelper> getKubernetesClusterHelpers() {
+        return kubernetesClusterHelpers;
+    }
+
+    public void setKubernetesClusterHelpers(final List<KubernetesClusterHelper> kubernetesClusterHelpers) {
+        this.kubernetesClusterHelpers = kubernetesClusterHelpers;
+    }
+
+    @Override
+    public boolean start() {
+        super.start();
+        return true;
+    }
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        return true;
+    }
 
     @Override
     public ListResponse<AnnotationResponse> searchForAnnotations(ListAnnotationsCmd cmd) {
@@ -307,6 +373,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
             case TEMPLATE:
             case ISO:
                 return templateDao.findByUuid(entityUuid);
+            case KUBERNETES_CLUSTER:
+                return kubernetesClusterHelpers.get(0).findByUuid(entityUuid);
             default:
                 throw new CloudRuntimeException("Invalid entity type " + type);
         }
@@ -339,10 +407,63 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         if (user != null && StringUtils.isNotBlank(user.getUsername())) {
             response.setUsername(user.getUsername());
         }
+        setResponseEntityName(response, annotation.getEntityUuid(), annotation.getEntityType());
         response.setAdminsOnly(annotation.isAdminsOnly());
         response.setObjectName("annotation");
 
         return response;
+    }
+
+    private String getInfrastructureEntityName(String entityUuid, EntityType entityType) {
+        switch (entityType) {
+            case ZONE:
+                DataCenterVO zone = dataCenterDao.findByUuid(entityUuid);
+                return zone != null ? zone.getName() : null;
+            case POD:
+                HostPodVO pod = hostPodDao.findByUuid(entityUuid);
+                return pod != null ? pod.getName() : null;
+            case CLUSTER:
+                ClusterVO cluster = clusterDao.findByUuid(entityUuid);
+                return cluster != null ? cluster.getName() : null;
+            case HOST:
+                HostVO host = hostDao.findByUuid(entityUuid);
+                return host != null ? host.getName() : null;
+            case PRIMARY_STORAGE:
+                StoragePoolVO primaryStorage = primaryDataStoreDao.findByUuid(entityUuid);
+                return primaryStorage != null ? primaryStorage.getName() : null;
+            case SECONDARY_STORAGE:
+                ImageStoreVO imageStore = imageStoreDao.findByUuid(entityUuid);
+                return imageStore != null ? imageStore.getName() : null;
+            case DOMAIN:
+                DomainVO domain = domainDao.findByUuid(entityUuid);
+                return domain != null ? domain.getName() : null;
+            case SERVICE_OFFERING:
+                ServiceOfferingVO offering = serviceOfferingDao.findByUuid(entityUuid);
+                return offering != null ? offering.getName() : null;
+            case DISK_OFFERING:
+                DiskOfferingVO diskOffering = diskOfferingDao.findByUuid(entityUuid);
+                return diskOffering != null ? diskOffering.getName() : null;
+            case NETWORK_OFFERING:
+                NetworkOfferingVO networkOffering = networkOfferingDao.findByUuid(entityUuid);
+                return networkOffering != null ? networkOffering.getName() : null;
+            case VR:
+            case SYSTEM_VM:
+                VMInstanceVO instance = vmInstanceDao.findByUuid(entityUuid);
+                return instance != null ? instance.getInstanceName() : null;
+            default:
+                return null;
+        }
+    }
+
+    private void setResponseEntityName(AnnotationResponse response, String entityUuid, EntityType entityType) {
+        String entityName;
+        if (entityType.isUserAllowed()) {
+            ControlledEntity entity = getEntityFromUuidAndType(entityUuid, entityType);
+            entityName = entity.getEntityName();
+        } else {
+            entityName = getInfrastructureEntityName(entityUuid, entityType);
+        }
+        response.setEntityName(entityName);
     }
 
     @Override public List<Class<?>> getCommands() {
@@ -352,5 +473,15 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         cmdList.add(RemoveAnnotationCmd.class);
         cmdList.add(UpdateAnnotationVisibilityCmd.class);
         return cmdList;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return AnnotationManagerImpl.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[]{};
     }
 }

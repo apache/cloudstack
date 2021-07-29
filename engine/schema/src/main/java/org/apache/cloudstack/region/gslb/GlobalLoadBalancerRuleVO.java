@@ -192,4 +192,9 @@ public class GlobalLoadBalancerRuleVO implements GlobalLoadBalancerRule {
     public Class<?> getEntityType() {
         return GlobalLoadBalancerRule.class;
     }
+
+    @Override
+    public String getEntityName() {
+        return null;
+    }
 }

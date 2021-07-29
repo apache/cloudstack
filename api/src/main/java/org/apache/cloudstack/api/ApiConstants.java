@@ -740,6 +740,7 @@ public class ApiConstants {
     public static final String IAM_GROUPS = "groups";
     public static final String ENTITY_TYPE = "entitytype";
     public static final String ENTITY_ID = "entityid";
+    public static final String ENTITY_NAME = "entityname";
     public static final String EXTERNAL_ID = "externalid";
     public static final String ACCESS_TYPE = "accesstype";
 

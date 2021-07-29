@@ -254,6 +254,11 @@ public class VMSnapshotVO implements VMSnapshot {
     }
 
     @Override
+    public String getEntityName() {
+        return name;
+    }
+
+    @Override
     public long getServiceOfferingId() {
         return serviceOfferingId;
     }

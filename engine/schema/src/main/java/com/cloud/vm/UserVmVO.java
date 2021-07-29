@@ -125,4 +125,9 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     public boolean isUpdateParameters() {
         return updateParameters;
     }
+
+    @Override
+    public String getEntityName() {
+        return instanceName;
+    }
 }

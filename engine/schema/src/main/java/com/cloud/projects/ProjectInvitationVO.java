@@ -187,4 +187,9 @@ public class ProjectInvitationVO implements ProjectInvitation {
     public Class<?> getEntityType() {
         return ProjectInvitation.class;
     }
+
+    @Override
+    public String getEntityName() {
+        return null;
+    }
 }

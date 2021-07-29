@@ -214,4 +214,9 @@ public class SecurityGroupResultObject implements ControlledEntity, InternalIden
     public Class<?> getEntityType() {
         return SecurityGroup.class;
     }
+
+    @Override
+    public String getEntityName() {
+        return null;
+    }
 }

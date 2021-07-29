@@ -14,21 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.acl;
+package com.cloud.kubernetes.cluster;
 
-import com.cloud.domain.PartOf;
-import com.cloud.user.OwnedBy;
+import com.cloud.utils.component.Adapter;
+import org.apache.cloudstack.acl.ControlledEntity;
 
-/**
- * ControlledEntity defines an object for which the access from an
- * access must inherit this interface.
- *
- */
-public interface ControlledEntity extends OwnedBy, PartOf {
-    public enum ACLType {
-        Account, Domain
-    }
+public interface KubernetesClusterHelper extends Adapter {
 
-    Class<?> getEntityType();
-    String getEntityName();
+    ControlledEntity findByUuid(String uuid);
 }

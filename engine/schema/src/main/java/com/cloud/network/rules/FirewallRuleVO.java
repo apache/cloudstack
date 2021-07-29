@@ -308,4 +308,9 @@ public class FirewallRuleVO implements FirewallRule {
     public Class<?> getEntityType() {
         return FirewallRule.class;
     }
+
+    @Override
+    public String getEntityName() {
+        return null;
+    }
 }

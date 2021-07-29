@@ -162,4 +162,9 @@ public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     public Class<?> getEntityType() {
         return InstanceGroup.class;
     }
+
+    @Override
+    public String getEntityName() {
+        return name;
+    }
 }

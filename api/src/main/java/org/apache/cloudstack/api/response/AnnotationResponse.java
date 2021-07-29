@@ -43,6 +43,10 @@ public class AnnotationResponse extends BaseResponse {
     @Param(description = "the (uu)id of the entitiy to which this annotation pertains")
     private String entityUuid;
 
+    @SerializedName(ApiConstants.ENTITY_NAME)
+    @Param(description = "the name of the entitiy to which this annotation pertains")
+    private String entityName;
+
     @SerializedName(ApiConstants.ANNOTATION)
     @Param(description = "the contents of the annotation")
     private String annotation;
@@ -141,5 +145,13 @@ public class AnnotationResponse extends BaseResponse {
 
     public void setAdminsOnly(Boolean adminsOnly) {
         this.adminsOnly = adminsOnly;
+    }
+
+    public String getEntityName() {
+        return entityName;
+    }
+
+    public void setEntityName(String entityName) {
+        this.entityName = entityName;
     }
 }

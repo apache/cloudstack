@@ -358,4 +358,9 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         return FirewallRule.class;
     }
 
+    @Override
+    public String getEntityName() {
+        return null;
+    }
+
 }

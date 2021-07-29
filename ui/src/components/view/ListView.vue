@@ -113,7 +113,10 @@
       <span v-else>{{ text }}</span>
     </span>
     <span slot="entityid" slot-scope="text, record" href="javascript:;">
-      <router-link :to="{ path: generateCommentsPath(record) }">{{ text }}</router-link>
+      <router-link :to="{ path: generateCommentsPath(record) }">{{ record.entityname }}</router-link>
+    </span>
+    <span slot="entitytype" slot-scope="text, record" href="javascript:;">
+      {{ generateHumanReadableEntityType(record) }}
     </span>
     <span slot="adminsonly" v-if="['Admin'].includes($store.getters.userInfo.roletype)" slot-scope="text, record" href="javascript:;">
       <a-checkbox :checked="record.adminsonly" :value="record.id" v-if="record.userid === $store.getters.userInfo.id" @change="e => updateAdminsOnly(e)" />
@@ -601,6 +604,36 @@ export default {
     },
     generateCommentsPath (record) {
       return '/' + this.entityTypeToPath(record.entitytype) + '/' + record.entityid + '?tab=comments'
+    },
+    generateHumanReadableEntityType (record) {
+      switch (record.entitytype) {
+        case 'VM' : return 'Virtual Machine'
+        case 'HOST' : return 'Host'
+        case 'VOLUME' : return 'Volume'
+        case 'SNAPSHOT' : return 'Snapshot'
+        case 'VM_SNAPSHOT' : return 'VM Snapshot'
+        case 'INSTANCE_GROUP' : return 'Instance Group'
+        case 'NETWORK' : return 'Network'
+        case 'VPC' : return 'VPC'
+        case 'PUBLIC_IP_ADDRESS' : return 'Public IP Address'
+        case 'VPN_CUSTOMER_GATEWAY' : return 'VPC Customer Gateway'
+        case 'TEMPLATE' : return 'Template'
+        case 'ISO' : return 'ISO'
+        case 'SSH_KEYPAIR' : return 'SSH Key Pair'
+        case 'DOMAIN' : return 'Domain'
+        case 'SERVICE_OFFERING' : return 'Service Offfering'
+        case 'DISK_OFFERING' : return 'Disk Offering'
+        case 'NETWORK_OFFERING' : return 'Network Offering'
+        case 'POD' : return 'Pod'
+        case 'ZONE' : return 'Zone'
+        case 'CLUSTER' : return 'Cluster'
+        case 'PRIMARY_STORAGE' : return 'Primary Storage'
+        case 'SECONDARY_STORAGE' : return 'Secondary Storage'
+        case 'VR' : return 'Virtual Router'
+        case 'SYSTEM_VM' : return 'System VM'
+        case 'KUBERNETES_CLUSTER': return 'Kubernetes Cluster'
+        default: return record.entitytype.toLowerCase().replace('_', '')
+      }
     },
     entityTypeToPath (entitytype) {
       switch (entitytype) {

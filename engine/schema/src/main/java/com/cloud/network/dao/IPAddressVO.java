@@ -367,6 +367,11 @@ public class IPAddressVO implements IpAddress {
     }
 
     @Override
+    public String getEntityName() {
+        return address.addr();
+    }
+
+    @Override
     public Date getRemoved() {
         return removed;
     }

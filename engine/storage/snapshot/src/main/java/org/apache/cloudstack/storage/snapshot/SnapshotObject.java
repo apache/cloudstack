@@ -449,4 +449,9 @@ public class SnapshotObject implements SnapshotInfo {
     public Class<?> getEntityType() {
         return Snapshot.class;
     }
+
+    @Override
+    public String getEntityName() {
+        return getName();
+    }
 }

@@ -532,4 +532,9 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     public Class<?> getEntityType() {
         return VirtualMachine.class;
     }
+
+    @Override
+    public String getEntityName() {
+        return name;
+    }
 }

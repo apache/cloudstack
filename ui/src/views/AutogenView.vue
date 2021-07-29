@@ -55,7 +55,7 @@
                     {{ $t('label.all') }}
                   </a-select-option>
                   <a-select-option v-for="filter in filters" :key="filter">
-                    {{ $t('label.' + filter) }}
+                    {{ $t('label.' + (['comment'].includes($route.name) ? 'filter.annotations.' : '') + filter) }}
                   </a-select-option>
                 </a-select>
               </a-tooltip>
@@ -812,7 +812,7 @@ export default {
         if (this.apiName === 'listAnnotations') {
           this.columns.map(col => {
             if (col.title === 'label.entityid') {
-              col.title = this.$t('label.annotation.entity.id')
+              col.title = this.$t('label.annotation.entity')
             } else if (col.title === 'label.entitytype') {
               col.title = this.$t('label.annotation.entity.type')
             } else if (col.title === 'label.adminsonly') {
