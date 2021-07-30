@@ -2716,16 +2716,6 @@ describe('Views > AutogenView.vue', () => {
       })
 
       it('check router name when api is called and currentAction.icon = delete and dataView is true', async (done) => {
-        router = common.createMockRouter([{
-          name: 'testRouter26',
-          path: '/test-router-26',
-          meta: {
-            icon: 'test-router-26'
-          }
-        }])
-        wrapper = factory({ router: router })
-        router.push({ name: 'testRouter26', query: { dataView: true } })
-
         const mockData = {
           testapinamecase1response: {
             jobid: 'test-job-id'
@@ -2739,26 +2729,34 @@ describe('Views > AutogenView.vue', () => {
         }
 
         mockAxios.mockResolvedValue(mockData)
-        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
-        await wrapper.vm.$nextTick()
-
-        expect(router.currentRoute.name).toEqual('testRouter26')
-
-        wrapper.setData({
-          currentAction: {
-            icon: 'delete',
-            api: 'testApiNameCase1',
-            loading: false,
-            label: 'labelname',
-            params: [
-              { name: 'column1', type: 'string' }
-            ],
-            paramFields: [
-              { name: 'column1', type: 'string', description: '', required: false }
-            ]
+        router = common.createMockRouter([{
+          name: 'testRouter26',
+          path: '/test-router-26',
+          meta: {
+            icon: 'test-router-26'
+          }
+        }])
+        wrapper = factory({
+          router: router,
+          data: {
+            currentAction: {
+              api: 'testApiNameCase1',
+              icon: 'delete',
+              loading: false,
+              label: 'labelname',
+              params: [
+                { name: 'column1', type: 'string' }
+              ],
+              paramFields: [
+                { name: 'column1', type: 'string', description: '', required: false }
+              ]
+            },
+            resource: {}
           }
         })
-
+        router.push({ name: 'testRouter26', query: { dataView: true } })
+        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
+        await wrapper.vm.$nextTick()
         wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column1-value' })
         const event = document.createEvent('Event')
         await wrapper.vm.execSubmit(event)
