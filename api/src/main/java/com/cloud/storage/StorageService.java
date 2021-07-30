@@ -26,8 +26,8 @@ import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingStoreCmd;
-import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.SyncStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -104,6 +104,8 @@ public interface StorageService {
     ImageStore migrateToObjectStore(String name, String url, String providerName, Map<String, String> details) throws DiscoveryException;
 
     ImageStore updateImageStoreStatus(Long id, Boolean readonly);
+
+    void updateStorageCapabilities(Long poolId, boolean failOnChecks);
 
     StoragePool syncStoragePool(SyncStoragePoolCmd cmd);
 

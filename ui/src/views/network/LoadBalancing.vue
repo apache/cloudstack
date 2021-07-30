@@ -17,7 +17,7 @@
 
 <template>
   <div>
-    <div>
+    <div v-ctrl-enter="handleOpenAddVMModal">
       <div class="form">
         <div class="form__item" ref="newRuleName">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.name') }}</div>
@@ -65,7 +65,7 @@
     <a-button
       v-if="(('deleteLoadBalancerRule' in $store.getters.apis) && this.selectedItems.length > 0)"
       type="danger"
-      icon="plus"
+      icon="delete"
       style="width: 100%; margin-bottom: 15px"
       @click="bulkActionConfirmation()">
       {{ $t('label.action.bulk.delete.load.balancer.rules') }}
@@ -151,9 +151,12 @@
       :title="$t('label.edit.tags')"
       v-model="tagsModalVisible"
       :footer="null"
+      :closable="true"
       :afterClose="closeModal"
       :maskClosable="false"
-      class="tags-modal">
+      class="tags-modal"
+      @cancel="tagsModalVisible = false"
+      v-ctrl-enter="handleAddTag">
       <span v-show="tagsModalLoading" class="modal-loading">
         <a-icon type="loading"></a-icon>
       </span>
@@ -195,7 +198,10 @@
       :footer="null"
       :afterClose="closeModal"
       :maskClosable="false"
-      :okButtonProps="{ props: {htmlType: 'submit'}}">
+      :closable="true"
+      :okButtonProps="{ props: {htmlType: 'submit'}}"
+      @cancel="stickinessModalVisible = false"
+      v-ctrl-enter="handleSubmitStickinessForm">
 
       <span v-show="stickinessModalLoading" class="modal-loading">
         <a-icon type="loading"></a-icon>
@@ -258,7 +264,11 @@
         <a-form-item :label="$t('label.sticky.expire')" v-show="stickinessPolicyMethod === 'SourceBased'">
           <a-input v-decorator="['expire']" />
         </a-form-item>
-        <a-button type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
+
+        <div :span="24" class="action-button">
+          <a-button @click="stickinessModalVisible = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" @submit="handleSubmitStickinessForm">{{ $t('label.ok') }}</a-button>
+        </div>
       </a-form>
     </a-modal>
 
@@ -267,7 +277,10 @@
       v-model="editRuleModalVisible"
       :afterClose="closeModal"
       :maskClosable="false"
-      @ok="handleSubmitEditForm">
+      :closable="true"
+      :footer="null"
+      @cancel="editRuleModalVisible = false"
+      v-ctrl-enter="handleSubmitEditForm">
       <span v-show="editRuleModalLoading" class="modal-loading">
         <a-icon type="loading"></a-icon>
       </span>
@@ -293,21 +306,24 @@
             <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
           </a-select>
         </div>
+        <div :span="24" class="action-button">
+          <a-button @click="() => editRuleModalVisible = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" @click="handleSubmitEditForm">{{ $t('label.ok') }}</a-button>
+        </div>
       </div>
     </a-modal>
 
     <a-modal
       :title="$t('label.add.vms')"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
+      :closable="true"
       v-model="addVmModalVisible"
       class="vm-modal"
       width="60vw"
-      @ok="handleAddNewRule"
       :okButtonProps="{ props:
         {disabled: newRule.virtualmachineid === [] } }"
       @cancel="closeModal"
+      v-ctrl-enter="handleAddNewRule"
     >
       <div>
         <span
@@ -382,6 +398,11 @@
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
           </template>
         </a-pagination>
+      </div>
+
+      <div :span="24" class="action-button">
+        <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
+        <a-button type="primary" @click="handleAddNewRule">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
 
@@ -699,6 +720,7 @@ export default {
       })
     },
     handleAddTag (e) {
+      if (this.tagsModalLoading) return
       this.tagsModalLoading = true
 
       e.preventDefault()
@@ -718,13 +740,11 @@ export default {
             jobId: response.createtagsresponse.jobid,
             successMessage: this.$t('message.success.add.tag'),
             successMethod: () => {
-              this.parentFetchData()
               this.parentToggleLoading()
               this.openTagsModal(this.selectedRule)
             },
             errorMessage: this.$t('message.add.tag.failed'),
             errorMethod: () => {
-              this.parentFetchData()
               this.parentToggleLoading()
               this.closeModal()
             },
@@ -753,13 +773,11 @@ export default {
           jobId: response.deletetagsresponse.jobid,
           successMessage: this.$t('message.success.delete.tag'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
           errorMessage: this.$t('message.delete.tag.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },
@@ -810,14 +828,12 @@ export default {
           jobId: response.createLBStickinessPolicy.jobid,
           successMessage: this.$t('message.success.config.sticky.policy'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
           },
           errorMessage: this.$t('message.config.sticky.policy.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
@@ -842,14 +858,12 @@ export default {
           jobId: response.deleteLBstickinessrruleresponse.jobid,
           successMessage: this.$t('message.success.remove.sticky.policy'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
           },
           errorMessage: this.$t('message.remove.sticky.policy.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
@@ -868,6 +882,7 @@ export default {
       })
     },
     handleSubmitStickinessForm (e) {
+      if (this.stickinessModalLoading) return
       this.stickinessModalLoading = true
       e.preventDefault()
       this.stickinessPolicyForm.validateFields((err, values) => {
@@ -944,6 +959,7 @@ export default {
       this.editRuleDetails.protocol = this.selectedRule.protocol
     },
     handleSubmitEditForm () {
+      if (this.editRuleModalLoading) return
       this.loading = true
       this.editRuleModalLoading = true
       api('updateLoadBalancerRule', {
@@ -954,14 +970,12 @@ export default {
           jobId: response.updateloadbalancerruleresponse.jobid,
           successMessage: this.$t('message.success.edit.rule'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
           },
           errorMessage: this.$t('message.edit.rule.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
@@ -1033,15 +1047,10 @@ export default {
         id: rule.id
       }).then(response => {
         const jobId = response.deleteloadbalancerruleresponse.jobid
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('label.action.delete.load.balancer'),
-          jobid: jobId,
-          description: rule.id,
-          status: 'progress',
-          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
-        })
         eventBus.$emit('update-job-details', jobId, null)
         this.$pollJob({
+          title: this.$t('label.action.delete.load.balancer'),
+          description: rule.id,
           jobId: jobId,
           successMessage: this.$t('message.success.remove.rule'),
           successMethod: () => {
@@ -1049,8 +1058,8 @@ export default {
               eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'success')
             }
             if (this.selectedRowKeys.length === 0) {
-              this.parentFetchData()
               this.parentToggleLoading()
+              this.fetchData()
             }
             this.closeModal()
           },
@@ -1060,8 +1069,8 @@ export default {
               eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'failed')
             }
             if (this.selectedRowKeys.length === 0) {
-              this.parentFetchData()
               this.parentToggleLoading()
+              this.fetchData()
             }
             this.closeModal()
           },
@@ -1069,8 +1078,8 @@ export default {
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             if (this.selectedRowKeys.length === 0) {
-              this.parentFetchData()
               this.parentToggleLoading()
+              this.parentFetchData()
             }
             this.closeModal()
           },
@@ -1083,6 +1092,7 @@ export default {
       })
     },
     handleOpenAddVMModal () {
+      if (this.addVmModalLoading) return
       if (!this.selectedRule) {
         if (!this.newRule.name) {
           this.$refs.newRuleName.classList.add('error')
@@ -1192,14 +1202,12 @@ export default {
           jobId: response.assigntoloadbalancerruleresponse.jobid,
           successMessage: this.$t('message.success.asign.vm'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
           },
           errorMessage: this.$t('message.assign.vm.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.fetchData()
             this.closeModal()
@@ -1216,6 +1224,7 @@ export default {
       })
     },
     handleAddNewRule () {
+      if (this.loading) return
       this.loading = true
 
       if (this.selectedRule) {
