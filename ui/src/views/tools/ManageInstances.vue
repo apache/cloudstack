@@ -744,7 +744,7 @@ export default {
         api('unmanageVirtualMachine', params).then(json => {
           const jobId = json.unmanagevirtualmachineresponse.jobid
           this.$pollJob({
-            jobid: jobId,
+            jobId,
             title: this.$t('label.unmanage.instance'),
             description: vm.name,
             loadingMessage: `${this.$t('label.unmanage.instance')} ${vm.name} ${this.$t('label.in.progress')}`,
