@@ -53,8 +53,7 @@ export const pollJobPlugin = {
         showLoading = true,
         catchMessage = i18n.t('label.error.caught'),
         catchMethod = () => {},
-        action = null,
-        originalPage = null
+        action = null
       } = options
 
       store.dispatch('AddHeaderNotice', {
@@ -64,8 +63,7 @@ export const pollJobPlugin = {
         status: 'progress'
       })
 
-      const originalPageReceive = originalPage || this.$router.currentRoute.path
-      options.originalPage = originalPageReceive
+      options.originalPage = options.originalPage || this.$router.currentRoute.path
       api('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
         if (result.jobstatus === 1) {
@@ -91,7 +89,7 @@ export const pollJobPlugin = {
 
           // Ensure we refresh on the same / parent page
           const currentPage = this.$router.currentRoute.path
-          const samePage = originalPageReceive === currentPage || originalPageReceive.startsWith(currentPage + '/')
+          const samePage = options.originalPage === currentPage || options.originalPage.startsWith(currentPage + '/')
           if (samePage && (!action || !('isFetchData' in action) || (action.isFetchData))) {
             eventBus.$emit('async-job-complete')
           }
