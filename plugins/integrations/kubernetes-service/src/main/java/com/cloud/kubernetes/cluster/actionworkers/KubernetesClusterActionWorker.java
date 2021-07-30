@@ -423,7 +423,8 @@ public class KubernetesClusterActionWorker {
             writer.write(data);
             writer.close();
         } catch (IOException e) {
-            logAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster %s, unable to prepare upgrade script %s", kubernetesCluster.getName(), filename), e);
+            logAndThrow(Level.ERROR, String.format("Kubernetes Cluster %s : Failed to to fetch script %s",
+                kubernetesCluster.getName(), filename), e);
         }
         return file;
     }
@@ -454,6 +455,8 @@ public class KubernetesClusterActionWorker {
         Network network = networkDao.findById(kubernetesCluster.getNetworkId());
         // Since the provider creates IP addresses, don't deploy it unless the underlying network supports it
         if (network.getGuestType() != GuestType.Isolated) {
+            logMessage(Level.INFO, String.format("Skipping adding the provider as %s is not on an isoalted network",
+                kubernetesCluster.getName()), null);
             return true;
         }
         File pkFile = getManagementServerSshPublicKeyFile();
@@ -489,9 +492,6 @@ public class KubernetesClusterActionWorker {
             String msg = String.format("Failed to deploy kubernetes provider: %s : %s", kubernetesCluster.getName(), e.getMessage());
             logAndThrow(Level.ERROR, msg);
             return false;
-        } finally {
-            // Deploying the provider might fail but it can be deployed manually too, so no need to go to an alert state
-            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         }
     }
 
