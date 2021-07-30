@@ -1155,39 +1155,45 @@ export default {
       return dataIdentifier
     },
     handleResponse (response, resourceName, resource, action, showLoading = true) {
-      for (const obj in response) {
-        if (obj.includes('response')) {
-          if (response[obj].jobid) {
-            return new Promise(resolve => {
-              const jobid = response[obj].jobid
-              eventBus.$emit('update-resource-state', this.selectedItems, resource, 'InProgress', jobid)
-              resolve(this.pollActionCompletion(jobid, action, resourceName, resource, showLoading))
-            })
-          } else {
-            if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, resource, 'success')
-              if (resource) {
-                this.selectedItems.filter(item => item === resource)
+      return new Promise(resolve => {
+        let jobId = null
+        for (const obj in response) {
+          if (obj.includes('response')) {
+            if (response[obj].jobid) {
+              jobId = response[obj].jobid
+            } else {
+              if (this.selectedItems.length > 0) {
+                eventBus.$emit('update-resource-state', this.selectedItems, resource, 'success')
+                if (resource) {
+                  this.selectedItems.filter(item => item === resource)
+                }
               }
+              var message = action.successMessage ? this.$t(action.successMessage) : this.$t(action.label) +
+                (resourceName ? ' - ' + resourceName : '')
+              var duration = 2
+              if (action.additionalMessage) {
+                message = message + ' - ' + this.$t(action.successMessage)
+                duration = 5
+              }
+              if (this.selectedItems.length === 0) {
+                this.$message.success({
+                  content: message,
+                  key: action.label + resourceName,
+                  duration: duration
+                })
+              }
+              break
             }
-            var message = action.successMessage ? this.$t(action.successMessage) : this.$t(action.label) +
-              (resourceName ? ' - ' + resourceName : '')
-            var duration = 2
-            if (action.additionalMessage) {
-              message = message + ' - ' + this.$t(action.successMessage)
-              duration = 5
-            }
-            break
           }
+          if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
+            this.$store.dispatch('UpdateConfiguration')
+          }
+          if (jobId) {
+            eventBus.$emit('update-resource-state', this.selectedItems, resource, 'InProgress', jobId)
+            resolve(this.pollActionCompletion(jobId, action, resourceName, resource, showLoading))
+          }
+          resolve(false)
         }
-        if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
-          this.$store.dispatch('UpdateConfiguration')
-        }
-        if (jobId) {
-          return resolve(this.pollActionCompletion(jobId, action, resourceName, showLoading))
-        }
-
-        return resolve(false)
       })
     },
     execSubmit (e) {
