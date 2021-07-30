@@ -80,7 +80,7 @@ override_dh_auto_install:
 	cp client/target/cloud-client-ui-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/cloudstack-$(VERSION).jar
 	cp client/target/lib/*jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/
 	cp -r systemvm/dist/systemvm-templates/* $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/
-    rm -rf $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/md5sum.txt
+	rm -rf $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/md5sum.txt
 
 	# nast hack for a couple of configuration files
 	mv $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/cloudstack-limits.conf $(DESTDIR)/$(SYSCONFDIR)/security/limits.d/
