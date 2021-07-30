@@ -15,7 +15,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
  
 
 # $Id: createtmplt.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/secondary/createtmplt.sh $
@@ -212,7 +211,7 @@ fi
 
 imgsize=$(ls -l $tmpltimg2| awk -F" " '{print $5}')
 
-if [ $cloud ]
+if [ "$cloud" == "true" ]
 then
     create_from_file_user $tmpltfs $tmpltimg2 $tmpltname
     tmpltfs=/tmp/cloud/templates/
