@@ -4665,6 +4665,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throw (ConcurrentOperationException)jobResult;
                 } else if (jobResult instanceof InsufficientServerCapacityException) {
                     throw (InsufficientServerCapacityException)jobResult;
+                } else if (jobResult instanceof RuntimeException) {
+                    throw (RuntimeException)jobResult;
                 } else if (jobResult instanceof Throwable) {
                     s_logger.error("Unhandled exception", (Throwable)jobResult);
                     throw new RuntimeException("Unhandled exception", (Throwable)jobResult);
