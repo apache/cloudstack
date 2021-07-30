@@ -20,7 +20,7 @@
     <a-button
       v-if="(('deleteTemplate' in $store.getters.apis) && this.selectedRowKeys.length > 0)"
       type="danger"
-      icon="plus"
+      icon="delete"
       style="width: 100%; margin-bottom: 15px"
       @click="bulkActionConfirmation()">
       {{ $t('label.action.bulk.delete.templates') }}
@@ -78,11 +78,10 @@
       :visible="showCopyActionForm"
       :closable="true"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
-      @ok="handleCopyTemplateSubmit"
-      @cancel="onCloseModal"
+      :footer="null"
       :confirmLoading="copyLoading"
+      @cancel="onCloseModal"
+      v-ctrl-enter="handleCopyTemplateSubmit"
       centered>
       <a-spin :spinning="copyLoading">
         <a-form
@@ -114,6 +113,11 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+
+          <div :span="24" class="action-button">
+            <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" ref="submit" @click="handleCopyTemplateSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-spin>
     </a-modal>
@@ -123,8 +127,8 @@
       :visible="showDeleteTemplate"
       :closable="true"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
+      :footer="null"
+      v-ctrl-enter="deleteTemplate"
       :width="showTable ? modalWidth : '30vw'"
       @ok="selectedItems.length > 0 ? deleteTemplates() : deleteTemplate(currentRecord)"
       @cancel="onCloseModal"
@@ -152,8 +156,12 @@
       </a-table>
       <a-spin :spinning="deleteLoading">
         <a-form-item :label="$t('label.isforced')" style="margin-bottom: 0;">
-          <a-switch v-model="forcedDelete"></a-switch>
+          <a-switch v-model="forcedDelete" autoFocus></a-switch>
         </a-form-item>
+        <div :span="24" class="action-button">
+          <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="deleteTemplate">{{ $t('label.ok') }}</a-button>
+        </div>
       </a-spin>
     </a-modal>
     <bulk-action-progress
@@ -382,17 +390,12 @@ export default {
       this.deleteLoading = true
       api('deleteTemplate', params).then(json => {
         const jobId = json.deletetemplateresponse.jobid
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('label.action.delete.template'),
-          jobid: jobId,
-          description: this.resource.name,
-          status: 'progress',
-          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
-        })
         eventBus.$emit('update-job-details', jobId, null)
         const singleZone = (this.dataSource.length === 1)
         this.$pollJob({
           jobId,
+          title: this.$t('label.action.delete.template'),
+          description: this.resource.name,
           successMethod: result => {
             if (singleZone) {
               const isResourcePage = (this.$route.params && this.$route.params.id)
@@ -471,6 +474,7 @@ export default {
     },
     handleCopyTemplateSubmit (e) {
       e.preventDefault()
+      if (this.copyLoading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
@@ -483,15 +487,11 @@ export default {
         this.copyLoading = true
         api('copyTemplate', params).then(json => {
           const jobId = json.copytemplateresponse.jobid
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.action.copy.template'),
-            jobid: jobId,
-            description: this.resource.name,
-            status: 'progress'
-          })
           eventBus.$emit('update-job-details', jobId, null)
           this.$pollJob({
             jobId,
+            title: this.$t('label.action.copy.template'),
+            description: this.resource.name,
             successMethod: result => {
               this.fetchData()
             },

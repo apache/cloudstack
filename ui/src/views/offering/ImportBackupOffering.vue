@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-form
       layout="vertical"
       :form="form"
@@ -72,7 +72,7 @@
       </a-form-item>
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
@@ -107,7 +107,6 @@ export default {
   created () {
     this.fetchData()
   },
-  inject: ['parentFetchData'],
   methods: {
     fetchData () {
       this.fetchZone()
@@ -140,10 +139,12 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
         }
+        this.loading = true
         const params = {}
         for (const key in values) {
           const input = values[key]
@@ -161,24 +162,21 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
+              title: title,
+              description: values.name,
               successMethod: result => {
-                const successDescription = result.jobresult.backupoffering.name
-                this.$store.dispatch('AddAsyncJob', {
-                  title: title,
-                  jobid: jobId,
-                  description: successDescription,
-                  status: 'progress'
-                })
-                this.parentFetchData()
                 this.closeAction()
+                this.loading = false
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')} ${this.$t('label.for')} ${params.name}`,
-              catchMessage: this.$t('error.fetching.async.job.result')
+              catchMessage: this.$t('error.fetching.async.job.result'),
+              catchMethod: () => {
+                this.loading = false
+              }
             })
           }
         }).catch(error => {
           this.$notifyError(error)
-        }).finally(f => {
           this.loading = false
         })
       })
@@ -204,15 +202,6 @@ export default {
 
   @media (min-width: 500px) {
     width: 450px;
-  }
-
-  .action-button {
-    text-align: right;
-    margin-top: 20px;
-
-    button {
-      margin-right: 5px;
-    }
   }
 }
 </style>
