@@ -25,9 +25,6 @@ jest.mock('axios', () => mockAxios)
 let wrapper, i18n, store, mocks, router
 
 const state = {}
-const actions = {
-  AddAsyncJob: jest.fn((jobObject) => {})
-}
 mocks = {
   $message: {
     error: jest.fn((message) => {})
@@ -56,7 +53,7 @@ mocks = {
   })
 }
 i18n = common.createMockI18n('en', mockData.messages)
-store = common.createMockStore(state, actions)
+store = common.createMockStore(state)
 
 const factory = (opts = {}) => {
   i18n = opts.i18n || i18n
@@ -564,7 +561,6 @@ describe('Views > compute > MigrateWizard.vue', () => {
         await wrapper.vm.submitForm()
 
         setTimeout(() => {
-          expect(actions.AddAsyncJob).toHaveBeenCalled()
           expect(mocks.$pollJob).toHaveBeenCalled()
           expect(wrapper.emitted()['close-action'][0]).toEqual([])
 
@@ -572,7 +568,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
         })
       })
 
-      it('check store dispatch `AddAsyncJob` and $pollJob have successMethod() is called with requiresStorageMotion is false', async (done) => {
+      it('check $pollJob have successMethod() is called with requiresStorageMotion is false', async (done) => {
         const mockData = {
           migratevirtualmachineresponse: {
             jobid: 'test-job-id-case-2'
@@ -670,7 +666,6 @@ describe('Views > compute > MigrateWizard.vue', () => {
         await wrapper.vm.submitForm()
 
         setTimeout(() => {
-          expect(actions.AddAsyncJob).toHaveBeenCalled()
           expect(mocks.$pollJob).toHaveBeenCalled()
           expect(wrapper.emitted()['close-action'][0]).toEqual([])
 
@@ -678,7 +673,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
         })
       })
 
-      it('check store dispatch `AddAsyncJob` and $pollJob have errorMethod() is called', async (done) => {
+      it('check $pollJob have errorMethod() is called', async (done) => {
         const mockData = {
           migratesystemvmresponse: {
             jobid: 'test-job-id-case-3'
@@ -713,7 +708,6 @@ describe('Views > compute > MigrateWizard.vue', () => {
         await wrapper.vm.submitForm()
 
         setTimeout(() => {
-          expect(actions.AddAsyncJob).toHaveBeenCalled()
           expect(mocks.$pollJob).toHaveBeenCalled()
           expect(wrapper.emitted()['close-action'][0]).toEqual([])
 
@@ -721,7 +715,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
         })
       })
 
-      it('check store dispatch `AddAsyncJob` and $pollJob have catchMethod() is called', async (done) => {
+      it('check $pollJob have catchMethod() is called', async (done) => {
         const mockData = {
           migratesystemvmresponse: {
             jobid: 'test-job-id-case-4'
@@ -750,7 +744,6 @@ describe('Views > compute > MigrateWizard.vue', () => {
         await wrapper.vm.submitForm()
 
         setTimeout(() => {
-          expect(actions.AddAsyncJob).toHaveBeenCalled()
           expect(mocks.$pollJob).toHaveBeenCalled()
           expect(wrapper.emitted()['close-action'][0]).toEqual([])
 

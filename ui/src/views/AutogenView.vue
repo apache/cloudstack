@@ -1177,19 +1177,18 @@ export default {
               message = message + ' - ' + this.$t(action.successMessage)
               duration = 5
             }
-            this.$message.success({
-              content: message,
-              key: action.label + resourceName,
-              duration: duration
-            })
+            break
           }
-          break
         }
-      }
-      if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
-        this.$store.dispatch('UpdateConfiguration')
-      }
-      return false
+        if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
+          this.$store.dispatch('UpdateConfiguration')
+        }
+        if (jobId) {
+          return resolve(this.pollActionCompletion(jobId, action, resourceName, showLoading))
+        }
+
+        return resolve(false)
+      })
     },
     execSubmit (e) {
       e.preventDefault()
