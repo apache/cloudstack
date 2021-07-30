@@ -605,7 +605,6 @@ describe('Views > compute > MigrateWizard.vue', () => {
         setTimeout(() => {
           expect(mocks.$pollJob).toHaveBeenCalled()
           expect(wrapper.emitted()['close-action'][0]).toEqual([])
-
           done()
         })
       })

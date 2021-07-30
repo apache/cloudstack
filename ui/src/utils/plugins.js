@@ -55,8 +55,7 @@ export const pollJobPlugin = {
         catchMessage = i18n.t('label.error.caught'),
         catchMethod = () => {},
         action = null,
-        bulkAction = false,
-        originalPage = null
+        bulkAction = false
       } = options
 
       store.dispatch('AddHeaderNotice', {
