@@ -57,7 +57,9 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
         return listBy(sc, filter);
     }
 
-    @Override public List<AnnotationVO> listByEntityType(String entityType, String userUuid, boolean isCallerAdmin, String annotationFilter, String callingUserUuid, String keyword) {
+    @Override
+    public List<AnnotationVO> listByEntityType(String entityType, String userUuid, boolean isCallerAdmin,
+                                                         String annotationFilter, String callingUserUuid, String keyword) {
         SearchCriteria<AnnotationVO> sc = AnnotationSearchBuilder.create();
         sc.addAnd("entityType", SearchCriteria.Op.EQ, entityType);
         if (StringUtils.isNotBlank(userUuid)) {
@@ -72,8 +74,9 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
         return listAnnotationsOrderedByCreatedDate(sc);
     }
 
-    @Override public List<AnnotationVO> listByEntity(String entityType, String entityUuid, String userUuid,
-                                                     boolean isCallerAdmin, String annotationFilter, String callingUserUuid, String keyword) {
+    @Override
+    public List<AnnotationVO> listByEntity(String entityType, String entityUuid, String userUuid, boolean isCallerAdmin,
+                                           String annotationFilter, String callingUserUuid, String keyword) {
         SearchCriteria<AnnotationVO> sc = AnnotationSearchBuilder.create();
         sc.addAnd("entityType", SearchCriteria.Op.EQ, entityType);
         sc.addAnd("entityUuid", SearchCriteria.Op.EQ, entityUuid);

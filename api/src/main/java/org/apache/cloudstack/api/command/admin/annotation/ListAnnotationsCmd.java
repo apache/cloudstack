@@ -48,12 +48,12 @@ public class ListAnnotationsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ENTITY_ID, type = CommandType.STRING, description = "the id of the entity for which to show annotations")
     private String entityUuid;
 
-    @Parameter(name = ApiConstants.USER_ID, type = CommandType.STRING,
+    @Parameter(name = ApiConstants.USER_ID, type = CommandType.STRING, since = "4.16.0",
             description = "optional: the id of the user of the annotation", required = false)
     private String userUuid;
 
     @Parameter(name = ApiConstants.ANNOTATION_FILTER,
-            type = CommandType.STRING,
+            type = CommandType.STRING, since = "4.16.0",
             description = "possible values are \"self\" and \"all\". "
                     + "* self : annotations that have been created by the calling user. "
                     + "* all : all the annotations the calling user can access")

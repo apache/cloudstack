@@ -48,7 +48,7 @@ public class AddAnnotationCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ENTITY_ID, type = CommandType.STRING, description = "the id of the entity to annotate")
     private String entityUuid;
 
-    @Parameter(name = ApiConstants.ADMINS_ONLY, type = CommandType.BOOLEAN,
+    @Parameter(name = ApiConstants.ADMINS_ONLY, type = CommandType.BOOLEAN, since = "4.16.0",
             description = "the annotation is visible for admins only")
     private Boolean adminsOnly;
 
