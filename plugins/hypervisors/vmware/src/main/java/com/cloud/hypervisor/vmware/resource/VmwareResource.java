@@ -2909,6 +2909,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 float reservedMemory = (vmSpec.getMaxRam() * Float.parseFloat(vmSpec.getDetails().get(VmDetailConstants.RAM_RESERVATION)));
                 return (int) (reservedMemory / ResourceType.bytesToMiB);
             }
+            return (int) (vmSpec.getMinRam() / ResourceType.bytesToMiB);
         }
         return 0;
     }
