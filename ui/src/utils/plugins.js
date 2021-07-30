@@ -65,6 +65,7 @@ export const pollJobPlugin = {
         status: 'progress'
       })
 
+      options.originalPage = options.originalPage || this.$router.currentRoute.path
       api('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
         if (result.jobstatus === 1) {
@@ -87,8 +88,12 @@ export const pollJobPlugin = {
             status: 'done',
             duration: 2
           })
-          if (!action || !('isFetchData' in action) || (action.isFetchData)) {
-            eventBus.$emit('async-job-complete', action)
+
+          // Ensure we refresh on the same / parent page
+          const currentPage = this.$router.currentRoute.path
+          const samePage = options.originalPage === currentPage || options.originalPage.startsWith(currentPage + '/')
+          if (samePage && (!action || !('isFetchData' in action) || (action.isFetchData))) {
+            eventBus.$emit('async-job-complete')
           }
           successMethod(result)
         } else if (result.jobstatus === 2) {
@@ -115,6 +120,13 @@ export const pollJobPlugin = {
               duration: 0
             })
           }
+          store.dispatch('AddHeaderNotice', {
+            key: jobId,
+            title: title,
+            description: description,
+            status: 'failed',
+            duration: 2
+          })
           if (!action || !('isFetchData' in action) || (action.isFetchData)) {
             eventBus.$emit('async-job-complete', action)
           }

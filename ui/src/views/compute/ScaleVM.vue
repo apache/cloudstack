@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-form class="form">
+  <a-form class="form" v-ctrl-enter="handleSubmit">
     <p v-html="getMessage()"></p>
 
     <div v-if="loading" class="loading">
@@ -33,9 +33,9 @@
 
     <compute-selection
       v-if="selectedOffering && selectedOffering.iscustomized"
-      :cpunumber-input-decorator="cpuNumberKey"
-      :cpuspeed-input-decorator="cpuSpeedKey"
-      :memory-input-decorator="memoryKey"
+      :cpuNumberInputDecorator="cpuNumberKey"
+      :cpuSpeedInputDecorator="cpuSpeedKey"
+      :memoryInputDecorator="memoryKey"
       :computeOfferingId="selectedOffering.id"
       :isConstrained="'serviceofferingdetails' in selectedOffering"
       :minCpu="getMinCpu()"
@@ -48,7 +48,7 @@
 
     <div :span="24" class="action-button">
       <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-      <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+      <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
     </div>
   </a-form>
 </template>
@@ -151,6 +151,7 @@ export default {
       this.$emit('close-action')
     },
     handleSubmit () {
+      if (this.loading) return
       this.loading = true
 
       if ('cpuspeed' in this.selectedOffering && this.selectedOffering.iscustomized) {
@@ -189,15 +190,6 @@ export default {
   width: 90vw;
   @media (min-width: 700px) {
     width: 50vw;
-  }
-}
-
-.action-button {
-  margin-top: 10px;
-  text-align: right;
-
-  button {
-    margin-right: 5px;
   }
 }
 </style>

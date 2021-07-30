@@ -63,7 +63,9 @@
       v-model="modal"
       :title="$t('label.dedicate.vlan.vni.range')"
       :maskClosable="false"
-      @ok="handleSubmit">
+      :footer="null"
+      @cancel="modal = false"
+      v-ctrl-enter="handleSubmit">
       <a-spin :spinning="formLoading">
         <a-form
           :form="form"
@@ -125,6 +127,11 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+
+          <div :span="24" class="action-button">
+            <a-button @click="modal = false">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-spin>
     </a-modal>
@@ -323,6 +330,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.formLoading) return
       this.form.validateFields(errors => {
         if (errors) return
 

@@ -110,6 +110,7 @@ public class ProjectJoinDaoImpl extends GenericDaoBase<ProjectJoinVO, Long> impl
             ownersList.add(ownerDetails);
         }
         response.setOwners(ownersList);
+        response.setCreated(proj.getCreated());
 
         // update tag information
         List<ResourceTagJoinVO> tags = ApiDBUtils.listResourceTagViewByResourceUUID(proj.getUuid(), ResourceObjectType.Project);

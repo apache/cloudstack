@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.VpnUser;
 import com.cloud.user.Account;
 
@@ -110,18 +111,30 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         Account owner = _accountService.getAccount(getEntityOwnerId());
-        boolean result = _ravService.removeVpnUser(owner.getId(), userName, CallContext.current().getCallingAccount());
+        long ownerId = owner.getId();
+        boolean result = _ravService.removeVpnUser(ownerId, userName, CallContext.current().getCallingAccount());
         if (!result) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove vpn user");
+            String errorMessage = String.format("Failed to remove VPN user=[%s]. VPN owner id=[%s].", userName, ownerId);
+            s_logger.error(errorMessage);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMessage);
         }
 
+        boolean appliedVpnUsers = false;
+
         try {
-            if (!_ravService.applyVpnUsers(owner.getId(), userName)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to apply vpn user removal");
-            }
-        }catch (Exception ex) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove vpn user due to resource unavailable");
+            appliedVpnUsers = _ravService.applyVpnUsers(ownerId, userName);
+        } catch (ResourceUnavailableException ex) {
+            String errorMessage = String.format("Failed to refresh VPN user=[%s] due to resource unavailable. VPN owner id=[%s].", userName, ownerId);
+            s_logger.error(errorMessage, ex);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMessage, ex);
         }
+
+        if (!appliedVpnUsers) {
+            String errorMessage = String.format("Failed to refresh VPN user=[%s]. VPN owner id=[%s].", userName, ownerId);
+            s_logger.debug(errorMessage);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMessage);
+        }
+
 
         SuccessResponse response = new SuccessResponse(getCommandName());
         setResponseObject(response);

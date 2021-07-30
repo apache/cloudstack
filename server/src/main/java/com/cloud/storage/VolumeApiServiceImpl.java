@@ -1113,14 +1113,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
              * This will be checked again at the hypervisor level where we can see
              * the actual disk size.
              */
-            if (currentSize > newSize) {
-                VolumeVO vol = _volsDao.findById(cmd.getEntityId());
-                if (vol != null && ImageFormat.QCOW2.equals(vol.getFormat()) && !Volume.State.Allocated.equals(volume.getState())) {
-                    String message = "Unable to shrink volumes of type QCOW2";
-                    s_logger.warn(message);
-                    throw new InvalidParameterValueException(message);
-                }
-            }
             if (currentSize > newSize && !shrinkOk) {
                 throw new InvalidParameterValueException("Going from existing size of " + currentSize + " to size of " + newSize + " would shrink the volume."
                         + "Need to sign off by supplying the shrinkok parameter with value of true.");
@@ -1159,10 +1151,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
 
         if (userVm != null) {
-            if (volume.getVolumeType().equals(Volume.Type.ROOT) && userVm.getPowerState() != VirtualMachine.PowerState.PowerOff && hypervisorType == HypervisorType.VMware) {
-                s_logger.error(" For ROOT volume resize VM should be in Power Off state.");
-                throw new InvalidParameterValueException("VM current state is : " + userVm.getPowerState() + ". But VM should be in " + VirtualMachine.PowerState.PowerOff + " state.");
-            }
             // serialize VM operation
             AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
 
@@ -1379,7 +1367,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             return volume;
         } catch (Exception e) {
-            throw new CloudRuntimeException("Couldn't resize volume: " + volume.getName() + ", " + e.getMessage(), e);
+            throw new CloudRuntimeException(String.format("Failed to resize volume operation of volume UUID: [%s] due to - %s", volume.getUuid(), e.getMessage()), e);
         }
     }
 
@@ -2407,10 +2395,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
         if (diskOffering == null) {
             throw new CloudRuntimeException("volume '" + vol.getUuid() + "', has no diskoffering. Migration target cannot be checked.");
-        }
-        if (!doesTargetStorageSupportDiskOffering(destPool, diskOffering)) {
-            throw new CloudRuntimeException(String.format("Migration target pool [%s, tags:%s] has no matching tags for volume [%s, uuid:%s, tags:%s]", destPool.getName(),
-                    getStoragePoolTags(destPool), vol.getName(), vol.getUuid(), diskOffering.getTags()));
         }
 
         if (liveMigrateVolume && State.Running.equals(vm.getState()) &&
