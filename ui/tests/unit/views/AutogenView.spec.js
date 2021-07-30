@@ -111,123 +111,123 @@ describe('Views > AutogenView.vue', () => {
     }
   })
 
-  // describe('Navigation Guard', () => {
-  //   it('check beforeRouteUpdate() is called', () => {
-  //     router = common.createMockRouter([{
-  //       name: 'testRouter1',
-  //       path: '/test-router-1',
-  //       meta: {
-  //         icon: 'test-router-1'
-  //       }
-  //     }])
-  //     wrapper = factory({ router: router })
-  //     router.push({ name: 'testRouter1' })
-  //
-  //     const beforeRouteUpdate = wrapper.vm.$options.beforeRouteUpdate
-  //     const nextFun = jest.fn()
-  //
-  //     beforeRouteUpdate[0].call(wrapper.vm, {}, {}, nextFun)
-  //
-  //     wrapper.vm.$nextTick(() => {
-  //       expect(wrapper.vm.currentPath).toEqual('/test-router-1')
-  //       expect(nextFun).toHaveBeenCalled()
-  //     })
-  //   })
-  //
-  //   it('check beforeRouteLeave() is called', () => {
-  //     router = common.createMockRouter([{
-  //       name: 'testRouter1',
-  //       path: '/test-router-1',
-  //       meta: {
-  //         icon: 'test-router-1'
-  //       }
-  //     }])
-  //     wrapper = factory({ router: router })
-  //     router.push({ name: 'testRouter1' })
-  //
-  //     const beforeRouteLeave = wrapper.vm.$options.beforeRouteLeave
-  //     const nextFun = jest.fn()
-  //
-  //     beforeRouteLeave[0].call(wrapper.vm, {}, {}, nextFun)
-  //
-  //     wrapper.vm.$nextTick(() => {
-  //       expect(wrapper.vm.currentPath).toEqual('/test-router-1')
-  //       expect(nextFun).toHaveBeenCalled()
-  //     })
-  //   })
-  // })
-  //
-  // describe('Watchers', () => {
-  //   describe('$route', () => {
-  //     it('The wrapper data does not change when $router do not change', () => {
-  //       wrapper = factory()
-  //
-  //       const spy = jest.spyOn(wrapper.vm, 'fetchData')
-  //
-  //       wrapper.setData({
-  //         page: 2,
-  //         itemCount: 10
-  //       })
-  //
-  //       wrapper.vm.$nextTick(() => {
-  //         expect(wrapper.vm.page).toEqual(2)
-  //         expect(wrapper.vm.itemCount).toEqual(10)
-  //         expect(spy).not.toBeCalled()
-  //       })
-  //     })
-  //
-  //     it('The wrapper data changes when $router changes', () => {
-  //       router = common.createMockRouter([{
-  //         name: 'testRouter2',
-  //         path: '/test-router-2',
-  //         meta: {
-  //           icon: 'test-router-2'
-  //         }
-  //       }])
-  //       wrapper = factory({ router: router })
-  //
-  //       const spy = jest.spyOn(wrapper.vm, 'fetchData')
-  //
-  //       wrapper.setData({
-  //         page: 2,
-  //         itemCount: 10
-  //       })
-  //
-  //       router.push({ name: 'testRouter2' })
-  //
-  //       wrapper.vm.$nextTick(() => {
-  //         expect(wrapper.vm.page).toEqual(1)
-  //         expect(wrapper.vm.itemCount).toEqual(0)
-  //         expect(spy).toBeCalled()
-  //       })
-  //     })
-  //   })
-  //
-  //   describe('$i18n.locale', () => {
-  //     it('Test language and fetchData() when not changing locale', () => {
-  //       wrapper = factory()
-  //
-  //       const spy = jest.spyOn(wrapper.vm, 'fetchData')
-  //
-  //       wrapper.vm.$nextTick(() => {
-  //         expect(wrapper.vm.$t('labelname')).toEqual('test-name-en')
-  //         expect(spy).not.toBeCalled()
-  //       })
-  //     })
-  //
-  //     it('Test languages and fetchData() when changing locale', async () => {
-  //       wrapper = factory()
-  //
-  //       i18n.locale = 'de'
-  //       const spy = jest.spyOn(wrapper.vm, 'fetchData')
-  //
-  //       wrapper.vm.$nextTick(() => {
-  //         expect(wrapper.vm.$t('labelname')).toEqual('test-name-de')
-  //         expect(spy).toBeCalled()
-  //       })
-  //     })
-  //   })
-  // })
+  describe('Navigation Guard', () => {
+    it('check beforeRouteUpdate() is called', () => {
+      router = common.createMockRouter([{
+        name: 'testRouter1',
+        path: '/test-router-1',
+        meta: {
+          icon: 'test-router-1'
+        }
+      }])
+      wrapper = factory({ router: router })
+      router.push({ name: 'testRouter1' })
+
+      const beforeRouteUpdate = wrapper.vm.$options.beforeRouteUpdate
+      const nextFun = jest.fn()
+
+      beforeRouteUpdate[0].call(wrapper.vm, {}, {}, nextFun)
+
+      wrapper.vm.$nextTick(() => {
+        expect(wrapper.vm.currentPath).toEqual('/test-router-1')
+        expect(nextFun).toHaveBeenCalled()
+      })
+    })
+
+    it('check beforeRouteLeave() is called', () => {
+      router = common.createMockRouter([{
+        name: 'testRouter1',
+        path: '/test-router-1',
+        meta: {
+          icon: 'test-router-1'
+        }
+      }])
+      wrapper = factory({ router: router })
+      router.push({ name: 'testRouter1' })
+
+      const beforeRouteLeave = wrapper.vm.$options.beforeRouteLeave
+      const nextFun = jest.fn()
+
+      beforeRouteLeave[0].call(wrapper.vm, {}, {}, nextFun)
+
+      wrapper.vm.$nextTick(() => {
+        expect(wrapper.vm.currentPath).toEqual('/test-router-1')
+        expect(nextFun).toHaveBeenCalled()
+      })
+    })
+  })
+
+  describe('Watchers', () => {
+    describe('$route', () => {
+      it('The wrapper data does not change when $router do not change', () => {
+        wrapper = factory()
+
+        const spy = jest.spyOn(wrapper.vm, 'fetchData')
+
+        wrapper.setData({
+          page: 2,
+          itemCount: 10
+        })
+
+        wrapper.vm.$nextTick(() => {
+          expect(wrapper.vm.page).toEqual(2)
+          expect(wrapper.vm.itemCount).toEqual(10)
+          expect(spy).not.toBeCalled()
+        })
+      })
+
+      it('The wrapper data changes when $router changes', () => {
+        router = common.createMockRouter([{
+          name: 'testRouter2',
+          path: '/test-router-2',
+          meta: {
+            icon: 'test-router-2'
+          }
+        }])
+        wrapper = factory({ router: router })
+
+        const spy = jest.spyOn(wrapper.vm, 'fetchData')
+
+        wrapper.setData({
+          page: 2,
+          itemCount: 10
+        })
+
+        router.push({ name: 'testRouter2' })
+
+        wrapper.vm.$nextTick(() => {
+          expect(wrapper.vm.page).toEqual(1)
+          expect(wrapper.vm.itemCount).toEqual(0)
+          expect(spy).toBeCalled()
+        })
+      })
+    })
+
+    describe('$i18n.locale', () => {
+      it('Test language and fetchData() when not changing locale', () => {
+        wrapper = factory()
+
+        const spy = jest.spyOn(wrapper.vm, 'fetchData')
+
+        wrapper.vm.$nextTick(() => {
+          expect(wrapper.vm.$t('labelname')).toEqual('test-name-en')
+          expect(spy).not.toBeCalled()
+        })
+      })
+
+      it('Test languages and fetchData() when changing locale', async () => {
+        wrapper = factory()
+
+        i18n.locale = 'de'
+        const spy = jest.spyOn(wrapper.vm, 'fetchData')
+
+        wrapper.vm.$nextTick(() => {
+          expect(wrapper.vm.$t('labelname')).toEqual('test-name-de')
+          expect(spy).toBeCalled()
+        })
+      })
+    })
+  })
 
   describe('Methods', () => {
     describe('fetchData()', () => {
