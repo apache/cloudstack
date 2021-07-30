@@ -21,6 +21,7 @@
       <a-col :md="24" :lg="17">
         <a-card :bordered="true" :title="this.$t('label.newinstance')">
           <a-form
+            v-ctrl-enter="handleSubmit"
             :form="form"
             @submit="handleSubmit"
             layout="vertical"
@@ -199,9 +200,9 @@
                     ></compute-offering-selection>
                     <compute-selection
                       v-if="serviceOffering && (serviceOffering.iscustomized || serviceOffering.iscustomizediops)"
-                      cpunumber-input-decorator="cpunumber"
-                      cpuspeed-input-decorator="cpuspeed"
-                      memory-input-decorator="memory"
+                      cpuNumberInputDecorator="cpunumber"
+                      cpuSpeedInputDecorator="cpuspeed"
+                      memoryInputDecorator="memory"
                       :preFillContent="dataPreFill"
                       :computeOfferingId="instanceConfig.computeofferingid"
                       :isConstrained="'serviceofferingdetails' in serviceOffering"
@@ -613,7 +614,7 @@
               <a-button @click="() => this.$router.back()" :disabled="loading.deploy">
                 {{ this.$t('label.cancel') }}
               </a-button>
-              <a-dropdown-button style="margin-left: 10px" type="primary" @click="handleSubmit" :loading="loading.deploy">
+              <a-dropdown-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit" :loading="loading.deploy">
                 <a-icon type="rocket" />
                 {{ this.$t('label.launch.vm') }}
                 <a-icon slot="icon" type="down" />
@@ -1435,6 +1436,7 @@ export default {
     handleSubmit (e) {
       console.log('wizard submit')
       e.preventDefault()
+      if (this.loading.deploy) return
       this.form.validateFields(async (err, values) => {
         if (err) {
           if (err.licensesaccepted) {
@@ -1641,6 +1643,8 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
+              title: title,
+              description: description,
               successMethod: result => {
                 const vm = result.jobresult.virtualmachine
                 const name = vm.displayname || vm.name || vm.id
@@ -1651,22 +1655,15 @@ export default {
                     duration: 0
                   })
                 }
-                eventBus.$emit('vm-refresh-data')
-              },
-              errorMethod: () => {
-                eventBus.$emit('vm-refresh-data')
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
               catchMessage: this.$t('error.fetching.async.job.result'),
               catchMethod: () => {
                 eventBus.$emit('vm-refresh-data')
+              },
+              action: {
+                isFetchData: false
               }
-            })
-            this.$store.dispatch('AddAsyncJob', {
-              title: title,
-              jobid: jobId,
-              description: description,
-              status: 'progress'
             })
           }
           // Sending a refresh in case it hasn't picked up the new VM

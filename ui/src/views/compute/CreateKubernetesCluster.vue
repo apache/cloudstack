@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :form="form"
@@ -233,7 +233,7 @@
         </div>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -423,6 +423,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
@@ -460,23 +461,15 @@ export default {
 
         api('createKubernetesCluster', params).then(json => {
           const jobId = json.createkubernetesclusterresponse.jobid
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.kubernetes.cluster.create'),
-            jobid: jobId,
-            description: values.name,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId,
+            title: this.$t('label.kubernetes.cluster.create'),
+            description: values.name,
             loadingMessage: `${this.$t('label.kubernetes.cluster.create')} ${values.name} ${this.$t('label.in.progress')}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
-            successMessage: this.$t('message.success.create.kubernetes.cluter') + ' ' + values.name,
-            successMethod: result => {
-              this.$emit('refresh-data')
-            }
+            successMessage: this.$t('message.success.create.kubernetes.cluter') + ' ' + values.name
           })
           this.closeAction()
-          this.$emit('refresh-data')
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
@@ -497,14 +490,6 @@ export default {
 
     @media (min-width: 700px) {
       width: 550px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

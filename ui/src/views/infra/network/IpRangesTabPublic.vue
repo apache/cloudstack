@@ -85,7 +85,8 @@
       v-model="accountModal"
       v-if="selectedItem"
       :maskClosable="false"
-      @ok="accountModal = false">
+      :footer="null"
+      @cancel="accountModal = false">
       <div>
         <div style="margin-bottom: 10px;">
           <div class="list__label">{{ $t('label.account') }}</div>
@@ -100,6 +101,10 @@
           <div>{{ selectedItem.forsystemvms }}</div>
         </div>
       </div>
+
+      <div :span="24" class="action-button">
+        <a-button @click="accountModal = false">{{ $t('label.close') }}</a-button>
+      </div>
     </a-modal>
 
     <a-modal
@@ -107,7 +112,9 @@
       :maskClosable="false"
       v-model="addAccountModal"
       :title="$t('label.add.account')"
-      @ok="handleAddAccount">
+      :footer="null"
+      @cancel="addAccountModal = false"
+      v-ctrl-enter="handleAddAccount">
       <a-spin :spinning="domainsLoading">
         <div style="margin-bottom: 10px;">
           <div class="list__label">{{ $t('label.account') }}:</div>
@@ -123,6 +130,11 @@
             </a-select-option>
           </a-select>
         </div>
+
+        <div :span="24" class="action-button">
+          <a-button @click="addAccountModal = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleAddAccount">{{ $t('label.ok') }}</a-button>
+        </div>
       </a-spin>
     </a-modal>
 
@@ -130,7 +142,9 @@
       v-model="addIpRangeModal"
       :title="$t('label.add.ip.range')"
       :maskClosable="false"
-      @ok="handleAddIpRange">
+      :footer="null"
+      @cancel="addIpRangeModal = false"
+      v-ctrl-enter="handleAddIpRange">
       <a-form
         :form="form"
         @submit="handleAddIpRange"
@@ -196,6 +210,11 @@
               </a-select>
             </a-form-item>
           </a-spin>
+        </div>
+
+        <div :span="24" class="action-button">
+          <a-button @click="addIpRangeModal = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleAddIpRange">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-modal>
@@ -357,6 +376,7 @@ export default {
       })
     },
     handleAddAccount () {
+      if (this.domainsLoading) return
       this.domainsLoading = true
 
       if (this.addIpRangeModal === true) {
@@ -421,6 +441,7 @@ export default {
       })
     },
     handleAddIpRange (e) {
+      if (this.componentLoading) return
       this.form.validateFields((error, values) => {
         if (error) return
 

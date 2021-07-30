@@ -299,7 +299,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#how-to-dynamically-scale-cpu-and-ram',
           dataView: true,
           show: (record) => { return ['Stopped'].includes(record.state) || (['Running'].includes(record.state) && record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') },
-          disabled: (record) => { return !record.isdynamicallyscalable },
+          disabled: (record) => { return record.state === 'Running' && !record.isdynamicallyscalable },
           popup: true,
           component: () => import('@/views/compute/ScaleVM.vue')
         },

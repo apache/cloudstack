@@ -173,13 +173,9 @@ export default {
         } else {
           jobId = response.migratevirtualmachine.jobid
         }
-        this.$store.dispatch('AddAsyncJob', {
-          title: `${this.$t('label.migrating')} ${this.resource.name}`,
-          jobid: jobId,
-          description: this.resource.name,
-          status: 'progress'
-        })
         this.$pollJob({
+          title: `${this.$t('label.migrating')} ${this.resource.name}`,
+          description: this.resource.name,
           jobId: jobId,
           successMessage: `${this.$t('message.success.migrating')} ${this.resource.name}`,
           successMethod: () => {
