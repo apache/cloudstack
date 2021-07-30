@@ -613,10 +613,8 @@ describe('Views > compute > MigrateWizard.vue', () => {
         await wrapper.vm.submitForm()
 
         setTimeout(() => {
-          expect(actions.AddAsyncJob).toHaveBeenCalled()
           expect(mocks.$pollJob).toHaveBeenCalled()
           expect(wrapper.emitted()['close-action'][0]).toEqual([])
-
           done()
         })
       })
