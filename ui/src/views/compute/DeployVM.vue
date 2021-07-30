@@ -802,8 +802,8 @@ export default {
       diskSelected: {},
       diskIOpsMin: 0,
       diskIOpsMax: 0,
-      minIOPs: 0,
-      maxIOPs: 0
+      minIops: 0,
+      maxIops: 0
     }
   },
   computed: {
@@ -1532,8 +1532,8 @@ export default {
           deployVmData['details[0].configurationId'] = this.selectedTemplateConfiguration.id
         }
         if (this.isCustomizedIOPS) {
-          deployVmData['details[0].minIops'] = this.minIOPs
-          deployVmData['details[0].maxIops'] = this.maxIOPs
+          deployVmData['details[0].minIops'] = this.minIops
+          deployVmData['details[0].maxIops'] = this.maxIops
         }
         // step 4: select disk offering
         if (!this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {
