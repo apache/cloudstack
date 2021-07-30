@@ -146,9 +146,10 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         final String clusterTokenKey = "{{ k8s_control_node.cluster.token }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
-        String sshKeyPair = kubernetesCluster.getKeyPair();
-        if (!Strings.isNullOrEmpty(sshKeyPair)) {
-            SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
+        List<String> sshKeyPairs = null;
+        sshKeyPairs.add(kubernetesCluster.getKeyPair());
+        if (!Strings.isNullOrEmpty(sshKeyPairs.get(0))) {
+            SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPairs.get(0));
             if (sshkp != null) {
                 pubKey += "\n  - \"" + sshkp.getPublicKey() + "\"";
             }
@@ -371,9 +372,11 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             logAndThrow(Level.ERROR, "Failed to read Kubernetes node configuration file", e);
         }
         String base64UserData = Base64.encodeBase64String(k8sNodeConfig.getBytes(StringUtils.getPreferredCharset()));
+        List<String> keypairs = null;
+        keypairs.add(kubernetesCluster.getKeyPair());
         nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
-                Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(), null, null, addrs, null, null, null, customParameterMap, null, null, null, null, true);
+                Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, keypairs, null, addrs, null, null, null, customParameterMap, null, null, null, null, true);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created node VM : %s, %s in the Kubernetes cluster : %s", hostName, nodeVm.getUuid(), kubernetesCluster.getName()));
         }

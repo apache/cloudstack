@@ -294,7 +294,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.user.SSHKeyPair;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
 import com.cloud.user.UserStatisticsVO;
@@ -862,16 +861,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Vm " + userVm + " should be stopped to do SSH Key reset");
         }
 
-        if (cmd.getName() == null && cmd.getNames() == null) {
-            throw new InvalidParameterValueException("No keypair name given");
-        }
-
         String keypairnames = "";
-        SSHKeyPairVO s = null;
-        if (cmd.getName() != null) {
-            s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
-            keypairnames = keypairnames + cmd.getName();
-        }
 
         List<SSHKeyPairVO> s_list = null;
         if (cmd.getNames() != null) {
@@ -883,7 +873,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 keypairnames = keypairnames + keypairname;
             }
         }
-        if (s_list == null && s == null) {
+        if (s_list == null) {
             throw new InvalidParameterValueException("Any key pair with the given names does not exist for account " + owner.getAccountName()
                     + " in specified domain id");
         }
@@ -891,12 +881,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _accountMgr.checkAccess(caller, null, true, userVm);
 
         String sshPublicKey = "";
-
-        if (s != null) {
-            sshPublicKey = s.getPublicKey();
-            sshPublicKey = sshPublicKey + "/n";
-            s_logger.info("the public key for single ssh is " + sshPublicKey);
-        }
 
         if (s_list != null) {
             for (SSHKeyPairVO s_each : s_list) {
@@ -3286,7 +3270,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "deploying Vm", create = true)
     public UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList,
             Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod,
-            String userData, String sshKeyPair, List<String> sshKeyPairs, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList,
+            String userData, List<String> sshKeyPairs, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList,
             Map<String, String> customParametes, String customId, Map<String, Map<Integer, String>> dhcpOptionMap,
             Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap, Map<String, String> userVmOVFProperties, boolean dynamicScalingEnabled) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException,
     StorageUnavailableException, ResourceAllocationException {
@@ -3336,7 +3320,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod,
-                userData, sshKeyPair, sshKeyPairs, hypervisor, caller, requestedIps, defaultIps, displayVm, keyboard, affinityGroupIdList, customParametes, customId, dhcpOptionMap,
+                userData, sshKeyPairs, hypervisor, caller, requestedIps, defaultIps, displayVm, keyboard, affinityGroupIdList, customParametes, customId, dhcpOptionMap,
                 dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, dynamicScalingEnabled);
 
     }
@@ -3345,7 +3329,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "deploying Vm", create = true)
     public UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList,
             List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
-            HTTPMethod httpmethod, String userData, String sshKeyPair, List<String> sshKeyPairs, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard,
+            HTTPMethod httpmethod, String userData, List<String> sshKeyPairs, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard,
             List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap,
             Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap, Map<String, String> userVmOVFProperties, boolean dynamicScalingEnabled) throws InsufficientCapacityException, ConcurrentOperationException,
     ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
@@ -3447,7 +3431,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod,
-                userData, sshKeyPair, sshKeyPairs, hypervisor, caller, requestedIps, defaultIps, displayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, dataDiskTemplateToDiskOfferingMap,
+                userData, sshKeyPairs, hypervisor, caller, requestedIps, defaultIps, displayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, dataDiskTemplateToDiskOfferingMap,
                 userVmOVFProperties, dynamicScalingEnabled);
     }
 
@@ -3455,7 +3439,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "deploying Vm", create = true)
     public UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner,
             String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod, String userData,
-            String sshKeyPair, List<String> sshKeyPairs, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayvm, String keyboard, List<Long> affinityGroupIdList,
+            List<String> sshKeyPairs, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayvm, String keyboard, List<Long> affinityGroupIdList,
             Map<String, String> customParametrs, String customId, Map<String, Map<Integer, String>> dhcpOptionsMap, Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
             Map<String, String> userVmOVFPropertiesMap, boolean dynamicScalingEnabled) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException,
     StorageUnavailableException, ResourceAllocationException {
@@ -3507,7 +3491,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         verifyExtraDhcpOptionsNetwork(dhcpOptionsMap, networkList);
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, diskSize, networkList, null, group, httpmethod, userData,
-                sshKeyPair, sshKeyPairs, hypervisor, caller, requestedIps, defaultIps, displayvm, keyboard, affinityGroupIdList, customParametrs, customId, dhcpOptionsMap,
+                sshKeyPairs, hypervisor, caller, requestedIps, defaultIps, displayvm, keyboard, affinityGroupIdList, customParametrs, customId, dhcpOptionsMap,
                 dataDiskTemplateToDiskOfferingMap, userVmOVFPropertiesMap, dynamicScalingEnabled);
     }
 
@@ -3624,7 +3608,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @DB
     private UserVm createVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate tmplt, String hostName, String displayName, Account owner,
                                         Long diskOfferingId, Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, HTTPMethod httpmethod, String userData,
-                                        String sshKeyPair, List<String> sshKeyPairs, HypervisorType hypervisor, Account caller, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean isDisplayVm, String keyboard,
+                                        List<String> sshKeyPairs, HypervisorType hypervisor, Account caller, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean isDisplayVm, String keyboard,
                                         List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap,
                                         Map<Long, DiskOffering> datadiskTemplateToDiskOfferringMap,
                                         Map<String, String> userVmOVFPropertiesMap, boolean dynamicScalingEnabled) throws InsufficientCapacityException, ResourceUnavailableException,
@@ -3823,17 +3807,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // given
         String sshPublicKey = "";
         String keypairnames = "";
-        if (sshKeyPair != null && !sshKeyPair.equals("")) {
-            s_logger.info("keypair name is    " + sshKeyPair);
-            SSHKeyPair pair = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
-            if (pair == null) {
-                throw new InvalidParameterValueException("A key pair with name '" + pair.getName() + "' was not found.");
-            }
-            sshPublicKey = sshPublicKey + pair.getPublicKey();
-            sshPublicKey = sshPublicKey + "/n";
-            keypairnames = keypairnames + sshKeyPair;
-            s_logger.info("publickey is    " + sshPublicKey);
-        }
 
         if (sshKeyPairs != null) {
             for (String sshkeypair : sshKeyPairs) {
@@ -3848,11 +3821,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("A key pair with name '" + pair.getName() + "' was not found.");
                 }
                 else {
-                    s_logger.info("publickey is    " + pair.getPublicKey());
+                    s_logger.info("publickey is " + pair.getPublicKey());
                     sshPublicKey = sshPublicKey + pair.getPublicKey();
                     sshPublicKey = sshPublicKey + "/n";
                 }
             }
+        }
+        else {
+            throw new InvalidParameterValueException("Keypairs was not found.");
         }
 
         LinkedHashMap<String, List<NicProfile>> networkNicMap = new LinkedHashMap<>();
@@ -5480,7 +5456,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long size = cmd.getSize();
         String group = cmd.getGroup();
         String userData = cmd.getUserData();
-        String sshKeyPairName = cmd.getSSHKeyPairName();
         List<String> sshKeyPairNames = cmd.getSSHKeyPairNames();
         Boolean displayVm = cmd.isDisplayVm();
         String keyboard = cmd.getKeyboard();
@@ -5491,14 +5466,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
             } else {
                 vm = createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(cmd), owner, name, displayName, diskOfferingId,
-                        size , group , cmd.getHypervisor(), cmd.getHttpMethod(), userData, sshKeyPairName, sshKeyPairNames, cmd.getIpToNetworkMap(), addrs, displayVm , keyboard , cmd.getAffinityGroupIdList(),
+                        size , group , cmd.getHypervisor(), cmd.getHttpMethod(), userData, sshKeyPairNames, cmd.getIpToNetworkMap(), addrs, displayVm , keyboard , cmd.getAffinityGroupIdList(),
                         cmd.getDetails(), cmd.getCustomId(), cmd.getDhcpOptionsMap(),
                         dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, dynamicScalingEnabled);
             }
         } else {
             if (zone.isSecurityGroupEnabled())  {
                 vm = createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, getSecurityGroupIdList(cmd), owner, name,
-                        displayName, diskOfferingId, size, group, cmd.getHypervisor(), cmd.getHttpMethod(), userData, sshKeyPairName, sshKeyPairNames, cmd.getIpToNetworkMap(), addrs, displayVm, keyboard,
+                        displayName, diskOfferingId, size, group, cmd.getHypervisor(), cmd.getHttpMethod(), userData, sshKeyPairNames, cmd.getIpToNetworkMap(), addrs, displayVm, keyboard,
                         cmd.getAffinityGroupIdList(), cmd.getDetails(), cmd.getCustomId(), cmd.getDhcpOptionsMap(),
                         dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, dynamicScalingEnabled);
 
@@ -5507,7 +5482,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
                 }
                 vm = createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, name, displayName, diskOfferingId, size, group,
-                        cmd.getHypervisor(), cmd.getHttpMethod(), userData, sshKeyPairName, sshKeyPairNames, cmd.getIpToNetworkMap(), addrs, displayVm, keyboard, cmd.getAffinityGroupIdList(), cmd.getDetails(),
+                        cmd.getHypervisor(), cmd.getHttpMethod(), userData, sshKeyPairNames, cmd.getIpToNetworkMap(), addrs, displayVm, keyboard, cmd.getAffinityGroupIdList(), cmd.getDetails(),
                         cmd.getCustomId(), cmd.getDhcpOptionsMap(), dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, dynamicScalingEnabled);
             }
         }

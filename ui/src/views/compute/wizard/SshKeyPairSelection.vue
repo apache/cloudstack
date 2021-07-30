@@ -26,14 +26,11 @@
       :loading="loading"
       :columns="columns"
       :dataSource="tableSource"
-      :rowSelection="rowSelection"
-      :customRow="onClickRow"
       :pagination="false"
+      :rowSelection="rowSelection"
       size="middle"
       :scroll="{ y: 225 }"
     >
-      <template v-slot:account><a-icon type="user" /> {{ $t('label.account') }}</template>
-      <template v-slot:domain><a-icon type="block" /> {{ $t('label.domain') }}</template>
     </a-table>
     <div style="display: block; text-align: right;">
       <a-pagination
@@ -67,8 +64,8 @@ export default {
       default: () => 0
     },
     value: {
-      type: String,
-      default: ''
+      type: Array,
+      default: () => []
     },
     loading: {
       type: Boolean,
@@ -103,8 +100,7 @@ export default {
           width: '30%'
         }
       ],
-      selectedRowKeys: [this.$t('label.noselect')],
-      dataItems: [],
+      selectedRowKeys: [],
       oldZoneId: null,
       options: {
         page: 1,
@@ -116,7 +112,6 @@ export default {
   computed: {
     tableSource () {
       const dataItems = []
-
       if (this.options.page === 1) {
         dataItems.push({
           key: this.$t('label.noselect'),
@@ -125,7 +120,6 @@ export default {
           domain: '-'
         })
       }
-
       this.items.map((item) => {
         dataItems.push({
           key: item.name,
@@ -134,14 +128,16 @@ export default {
           domain: item.domain
         })
       })
-
+      console.table(dataItems)
       return dataItems
     },
     rowSelection () {
       return {
-        type: 'radio',
-        selectedRowKeys: this.selectedRowKeys,
-        onChange: this.onSelectRow
+        type: 'checkbox',
+        onChange: (selectedRowKeys, selectedRows) => {
+          console.table(selectedRowKeys)
+          this.$emit('select-ssh-key-pair-item', selectedRows)
+        }
       }
     }
   },
@@ -153,25 +149,21 @@ export default {
     },
     loading () {
       if (!this.loading) {
-        if (this.preFillContent.keypair) {
-          this.selectedRowKeys = [this.preFillContent.keypair]
-          this.$emit('select-ssh-key-pair-item', this.preFillContent.keypair)
+        if (this.preFillContent.keypairs) {
+          this.selectedRowKeys = this.preFillContent.keypairs
+          this.$emit('select-ssh-key-pair-item', this.selectedRowKeys)
         } else {
           if (this.oldZoneId === this.zoneId) {
             return
           }
           this.oldZoneId = this.zoneId
-          this.selectedRowKeys = [this.$t('label.noselect')]
-          this.$emit('select-ssh-key-pair-item', this.$t('label.noselect'))
+          this.selectedRowKeys = []
+          this.$emit('select-ssh-key-pair-item', this.selectedRowKeys)
         }
       }
     }
   },
   methods: {
-    onSelectRow (value) {
-      this.selectedRowKeys = value
-      this.$emit('select-ssh-key-pair-item', value[0])
-    },
     handleSearch (value) {
       this.filter = value
       this.options.page = 1
@@ -188,16 +180,6 @@ export default {
       this.options.page = page
       this.options.pageSize = pageSize
       this.$emit('handle-search-filter', this.options)
-    },
-    onClickRow (record) {
-      return {
-        on: {
-          click: () => {
-            this.selectedRowKeys = [record.key]
-            this.$emit('select-ssh-key-pair-item', record.key)
-          }
-        }
-      }
     }
   }
 }

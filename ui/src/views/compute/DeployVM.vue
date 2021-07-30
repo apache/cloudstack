@@ -356,7 +356,7 @@
                       :items="options.sshKeyPairs"
                       :row-count="rowCount.sshKeyPairs"
                       :zoneId="zoneId"
-                      :value="sshKeyPair ? sshKeyPair.name : ''"
+                      :value="keyPairs"
                       :loading="loading.sshKeyPairs"
                       :preFillContent="dataPreFill"
                       @select-ssh-key-pair-item="($event) => updateSshKeyPairs($event)"
@@ -702,7 +702,7 @@ export default {
         templateid: null,
         templatename: null,
         keyboard: null,
-        keypair: null,
+        keypairs: [],
         group: null,
         affinitygroupids: [],
         affinitygroup: [],
@@ -764,7 +764,7 @@ export default {
       networks: [],
       networksAdd: [],
       zone: {},
-      sshKeyPair: {},
+      sshKeyPairs: [],
       templateFilter: [
         'featured',
         'community',
@@ -825,6 +825,9 @@ export default {
     },
     affinityGroupIds () {
       return _.map(this.affinityGroups, 'id')
+    },
+    keyPairs () {
+      return _.map(this.sshKeyPairs, 'name')
     },
     params () {
       return {
@@ -1049,7 +1052,7 @@ export default {
       this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
       this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
       this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
-      this.sshKeyPair = _.find(this.options.sshKeyPairs, (option) => option.name === instanceConfig.keypair)
+      this.sshKeyPairs = _.filter(this.options.sshKeyPairs, (option) => _.includes(instanceConfig.keypairs, option.name))
 
       if (this.zone) {
         this.vm.zoneid = this.zone.id
@@ -1127,6 +1130,10 @@ export default {
       if (this.affinityGroups) {
         this.vm.affinitygroup = this.affinityGroups
       }
+      if (this.sshKeyPairs) {
+        console.log(this.sshKeyPairs)
+        this.vm.keypairs = this.sshKeyPairs.map((sshKeyPair) => { return sshKeyPair.name })
+      }
     }
   },
   serviceOffering (oldValue, newValue) {
@@ -1164,7 +1171,7 @@ export default {
     this.form.getFieldDecorator('affinitygroupids', { initialValue: [], preserve: true })
     this.form.getFieldDecorator('networkids', { initialValue: [], preserve: true })
     this.form.getFieldDecorator('defaultnetworkid', { initialValue: undefined, preserve: true })
-    this.form.getFieldDecorator('keypair', { initialValue: undefined, preserve: true })
+    this.form.getFieldDecorator('keypairs', { initialValue: [], preserve: true })
     this.form.getFieldDecorator('cpunumber', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('cpuSpeed', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('memory', { initialValue: undefined, preserve: true })
@@ -1402,15 +1409,9 @@ export default {
     updateNetworkConfig (networks) {
       this.networkConfig = networks
     },
-    updateSshKeyPairs (name) {
-      if (name === this.$t('label.noselect')) {
-        this.form.setFieldsValue({
-          keypair: undefined
-        })
-        return
-      }
+    updateSshKeyPairs (names) {
       this.form.setFieldsValue({
-        keypair: name
+        keypairs: names
       })
     },
     escapePropertyKey (key) {
@@ -1608,7 +1609,9 @@ export default {
           }
         }
         // step 7: select ssh key pair
-        deployVmData.keypair = values.keypair
+        const KEYPAIRS = values.keypairs.map((keypair) => { return keypair.name })
+        deployVmData.keypairs = KEYPAIRS.join(',')
+        // deployVmData.keypairs = values.keypairs.map((keypair) => { return keypair.name })
         if (values.name) {
           deployVmData.name = values.name
           deployVmData.displayname = values.name
