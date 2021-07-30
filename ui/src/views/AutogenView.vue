@@ -1271,6 +1271,7 @@ export default {
           }
           response.then(jobId => {
             hasJobId = jobId
+            console.log(hasJobId, action.icon)
             if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView) {
               this.$router.go(-1)
             } else {

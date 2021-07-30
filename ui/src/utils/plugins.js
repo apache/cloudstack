@@ -92,7 +92,7 @@ export const pollJobPlugin = {
 
           // Ensure we refresh on the same / parent page
           const currentPage = this.$router.currentRoute.path
-          const samePage = originalPage === currentPage || originalPage.startsWith(currentPage + '/')
+          const samePage = options.originalPage === currentPage || options.originalPage.startsWith(currentPage + '/')
           if (samePage && (!action || !('isFetchData' in action) || (action.isFetchData))) {
             eventBus.$emit('async-job-complete')
           }

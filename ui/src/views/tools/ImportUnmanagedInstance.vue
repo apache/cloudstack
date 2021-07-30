@@ -149,7 +149,7 @@
                 <a-form-item>
                   <tooltip-label slot="label" :title="$t('label.disk.selection')" :tooltip="apiParams.datadiskofferinglist.description"/>
                 </a-form-item>
-                <a-form-item :title="$t('label.rootdisk')">
+                <a-form-item :label="$t('label.rootdisk')">
                   <a-select
                     v-decorator="['rootdiskid', {
                       rules: [{ required: true, message: $t('message.error.input.value'), }],

@@ -1588,7 +1588,7 @@ describe('Views > AutogenView.vue', () => {
     })
 
     describe('pollActionCompletion()', () => {
-      it('check $notification, fetchData() when pollActionCompletion() is called with action is empty', (done) => {
+      it('check $notification when pollActionCompletion() is called with action is empty', (done) => {
         const mockData = {
           queryasyncjobresultresponse: {
             jobstatus: 1,
@@ -1597,18 +1597,15 @@ describe('Views > AutogenView.vue', () => {
             }
           }
         }
-
+        mockAxios.mockResolvedValue(mockData)
         wrapper = factory()
 
         const jobId = 'test-job-id'
         const action = {}
-        const spy = jest.spyOn(wrapper.vm, 'fetchData')
 
-        mockAxios.mockResolvedValue(mockData)
         wrapper.vm.pollActionCompletion(jobId, action)
 
         setTimeout(() => {
-          expect(spy).toHaveBeenCalled()
           expect(mocks.$notification.info).not.toHaveBeenCalled()
           expect(mockAxios).toHaveBeenCalled()
           expect(mockAxios).toHaveBeenCalledWith({
@@ -1626,7 +1623,7 @@ describe('Views > AutogenView.vue', () => {
         })
       })
 
-      it('check $notification, fetchData() when pollActionCompletion() is called with action is not empty', (done) => {
+      it('check $notification when pollActionCompletion() is called with action is not empty', (done) => {
         const mockData = {
           queryasyncjobresultresponse: {
             jobstatus: 1,
@@ -1635,9 +1632,8 @@ describe('Views > AutogenView.vue', () => {
             }
           }
         }
-
+        mockAxios.mockResolvedValue(mockData)
         wrapper = factory()
-
         const jobId = 'test-job-id'
         const action = {
           label: 'labelname',
@@ -1645,61 +1641,15 @@ describe('Views > AutogenView.vue', () => {
             return jobResult.name
           }
         }
-        const spy = jest.spyOn(wrapper.vm, 'fetchData')
-
-        mockAxios.mockResolvedValue(mockData)
         wrapper.vm.pollActionCompletion(jobId, action)
 
         setTimeout(() => {
-          expect(spy).toHaveBeenCalled()
           expect(mocks.$notification.info).toHaveBeenCalled()
           expect(mocks.$notification.info).toHaveLastReturnedWith({
             message: 'test-name-en',
             description: 'test-description',
             duration: 0
           })
-          expect(mockAxios).toHaveBeenCalled()
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'queryAsyncJobResult',
-              jobId: jobId,
-              response: 'json'
-            }
-          })
-
-          done()
-        })
-      })
-
-      it('check fetchData() is called when $pollJob error response', (done) => {
-        const mockData = {
-          queryasyncjobresultresponse: {
-            jobstatus: 2,
-            jobresult: {
-              errortext: 'test-error-message'
-            }
-          }
-        }
-
-        wrapper = factory()
-
-        const jobId = 'test-job-id'
-        const action = {
-          label: 'labelname',
-          response: (jobResult) => {
-            return jobResult.name
-          }
-        }
-        const spy = jest.spyOn(wrapper.vm, 'fetchData')
-
-        mockAxios.mockResolvedValue(mockData)
-        wrapper.vm.pollActionCompletion(jobId, action)
-
-        setTimeout(() => {
-          expect(spy).toHaveBeenCalled()
           expect(mockAxios).toHaveBeenCalled()
           expect(mockAxios).toHaveBeenCalledWith({
             url: '/',
