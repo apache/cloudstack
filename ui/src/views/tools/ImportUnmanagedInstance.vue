@@ -538,7 +538,7 @@ export default {
     updateComputeOffering (id) {
       this.updateFieldValue('computeofferingid', id)
       this.computeOffering = this.computeOfferings.filter(x => x.id === id)[0]
-      if (!this.computeOffering.iscustomizediops) {
+      if (this.computeOffering && !this.computeOffering.iscustomizediops) {
         this.updateFieldValue(this.minIopsKey, undefined)
         this.updateFieldValue(this.maxIopsKey, undefined)
       }
