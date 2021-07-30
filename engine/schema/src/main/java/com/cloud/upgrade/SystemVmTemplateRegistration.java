@@ -186,18 +186,10 @@ public class SystemVmTemplateRegistration {
     );
 
     public static final Map<Hypervisor.HypervisorType, String> NewTemplateNameList = new HashMap<Hypervisor.HypervisorType, String>();
-
-//    public static final Map<Hypervisor.HypervisorType, String> NewTemplateNameList = new HashMap<Hypervisor.HypervisorType, String>() {
-//        {
-//            put(Hypervisor.HypervisorType.KVM, "systemvm-kvm-" + CS_MAJOR_VERSION + "." + CS_MINOR_VERSION);
-//            put(Hypervisor.HypervisorType.VMware, "systemvm-vmware-" + CS_MAJOR_VERSION + "." + CS_MINOR_VERSION);
-//            put(Hypervisor.HypervisorType.XenServer, "systemvm-xenserver-" + CS_MAJOR_VERSION + "." + CS_MINOR_VERSION);
-//            put(Hypervisor.HypervisorType.Hyperv, "systemvm-hyperv-" + CS_MAJOR_VERSION + "." + CS_MINOR_VERSION);
-//            put(Hypervisor.HypervisorType.LXC, "systemvm-lxc-" + CS_MAJOR_VERSION + "." + CS_MINOR_VERSION);
-//            put(Hypervisor.HypervisorType.Ovm3, "systemvm-ovm3-" + CS_MAJOR_VERSION + "." + CS_MINOR_VERSION);
-//        }
-//    };
-
+    public static final Map<Hypervisor.HypervisorType, String> fileNames = new HashMap<Hypervisor.HypervisorType, String>();
+    public static final Map<Hypervisor.HypervisorType, String> newTemplateUrl = new HashMap<Hypervisor.HypervisorType, String>();
+    public static final Map<Hypervisor.HypervisorType, String> newTemplateChecksum = new HashMap<Hypervisor.HypervisorType, String>();
+    
     public static final Map<Hypervisor.HypervisorType, String> routerTemplateConfigurationNames = new HashMap<Hypervisor.HypervisorType, String>() {
         {
             put(Hypervisor.HypervisorType.KVM, "router.template.kvm");
@@ -208,43 +200,6 @@ public class SystemVmTemplateRegistration {
             put(Hypervisor.HypervisorType.Ovm3, "router.template.ovm3");
         }
     };
-
-    public static final Map<Hypervisor.HypervisorType, String> fileNames = new HashMap<Hypervisor.HypervisorType, String>();
-//    public static final Map<Hypervisor.HypervisorType, String> fileNames = new HashMap<Hypervisor.HypervisorType, String>() {
-//        {
-//            put(Hypervisor.HypervisorType.KVM, "systemvmtemplate-4.16.0-kvm.qcow2.bz2");
-//            put(Hypervisor.HypervisorType.VMware, "systemvmtemplate-4.16.0-vmware.ova");
-//            put(Hypervisor.HypervisorType.XenServer, "systemvmtemplate-4.16.0-xen.vhd.bz2");
-//            put(Hypervisor.HypervisorType.Hyperv, "systemvmtemplate-4.16.0-hyperv.vhd.zip");
-//            put(Hypervisor.HypervisorType.LXC, "systemvmtemplate-4.16.0-kvm.qcow2.bz2");
-//            put(Hypervisor.HypervisorType.Ovm3, "systemvmtemplate-4.16.0-ovm.raw.bz2");
-//        }
-//    };
-
-    public static final Map<Hypervisor.HypervisorType, String> newTemplateUrl = new HashMap<Hypervisor.HypervisorType, String>();
-//    public static final Map<Hypervisor.HypervisorType, String> newTemplateUrl = new HashMap<Hypervisor.HypervisorType, String>() {
-//        {
-//            put(Hypervisor.HypervisorType.KVM, "https://download.cloudstack.org/systemvm/4.16/" + fileNames.get(Hypervisor.HypervisorType.KVM));
-//            put(Hypervisor.HypervisorType.VMware, "https://download.cloudstack.org/systemvm/4.16/" + fileNames.get(Hypervisor.HypervisorType.VMware));
-//            put(Hypervisor.HypervisorType.XenServer, "https://download.cloudstack.org/systemvm/4.16/" + fileNames.get(Hypervisor.HypervisorType.XenServer));
-//            put(Hypervisor.HypervisorType.Hyperv, "https://download.cloudstack.org/systemvm/4.16/" + fileNames.get(Hypervisor.HypervisorType.Hyperv));
-//            put(Hypervisor.HypervisorType.LXC, "https://download.cloudstack.org/systemvm/4.16/" + fileNames.get(Hypervisor.HypervisorType.LXC));
-//            put(Hypervisor.HypervisorType.Ovm3, "https://download.cloudstack.org/systemvm/4.16/" + fileNames.get(Hypervisor.HypervisorType.Ovm3));
-//        }
-//    };
-
-    // Read from ini - don't pkg ovs/hyperv -
-    public static final Map<Hypervisor.HypervisorType, String> newTemplateChecksum = new HashMap<Hypervisor.HypervisorType, String>();
-//    public static final Map<Hypervisor.HypervisorType, String> newTemplateChecksum = new HashMap<Hypervisor.HypervisorType, String>() {
-//        {
-//            put(Hypervisor.HypervisorType.KVM, "07268f267dc4316dc5f86150346bb8d7");
-//            put(Hypervisor.HypervisorType.XenServer, "71d8adb40baa609997acdc3eae15fbde");
-//            put(Hypervisor.HypervisorType.VMware, "b356cbbdef67c4eefa8c336328e2b202");
-//            put(Hypervisor.HypervisorType.Hyperv, "0982aa1461800ce1538e0cae07e00770");
-//            put(Hypervisor.HypervisorType.LXC, "07268f267dc4316dc5f86150346bb8d7");
-//            put(Hypervisor.HypervisorType.Ovm3, "8c643d146c82f92843b8a48c7661f800");
-//        }
-//    };
 
     public static final Map<Hypervisor.HypervisorType, Integer> hypervisorGuestOsMap = new HashMap<Hypervisor.HypervisorType, Integer>() {
         {
