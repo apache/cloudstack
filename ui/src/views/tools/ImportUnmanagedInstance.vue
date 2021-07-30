@@ -697,7 +697,10 @@ export default {
             description: name,
             loadingMessage: `${this.$t('label.import.instance')} ${name} ${this.$t('label.in.progress')}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
-            successMessage: this.$t('message.success.import.instance') + ' ' + name
+            successMessage: this.$t('message.success.import.instance') + ' ' + name,
+            successMethod: result => {
+              this.$emit('refresh-data')
+            }
           })
           this.closeAction()
         }).catch(error => {
