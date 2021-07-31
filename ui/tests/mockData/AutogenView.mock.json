@@ -195,6 +195,56 @@
       ],
       "response": []
     },
+    "testApiNameCase7": {
+      "params": [
+        {
+          "name": "column2",
+          "type": "string"
+        },
+        {
+          "name": "column1",
+          "type": "string"
+        },
+        {
+          "name": "column3",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "id",
+          "type": "string"
+        }
+      ],
+      "response": []
+    },
+    "testApiNameCase8": {
+      "params": [
+        {
+          "name": "column2",
+          "type": "string"
+        },
+        {
+          "name": "column1",
+          "type": "string"
+        },
+        {
+          "name": "column3",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "id",
+          "type": "string"
+        }
+      ],
+      "response": []
+    },
     "listTemplates": {
       "params": {},
       "response": []

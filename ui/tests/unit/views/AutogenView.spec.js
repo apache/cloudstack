@@ -755,6 +755,11 @@ describe('Views > AutogenView.vue', () => {
       })
 
       it('check $notifyError is called when api is called with throw error', (done) => {
+        const errorMock = {
+          response: {},
+          message: 'Error: throw exception error'
+        }
+        mockAxios.mockRejectedValue(errorMock)
         router = common.createMockRouter([{
           name: 'testRouter22',
           path: '/test-router-22',
@@ -765,13 +770,7 @@ describe('Views > AutogenView.vue', () => {
         }])
 
         wrapper = factory({ router: router })
-
-        const errorMock = {
-          response: {},
-          message: 'Error: throw exception error'
-        }
         router.push({ name: 'testRouter22' })
-        mockAxios.mockRejectedValue(errorMock)
 
         setTimeout(() => {
           expect(mocks.$notifyError).toHaveBeenCalledTimes(1)
@@ -781,6 +780,13 @@ describe('Views > AutogenView.vue', () => {
       })
 
       it('check $notifyError is called and router path = /exception/404 when api is called with throw error', (done) => {
+        const errorMock = {
+          response: {
+            status: 430
+          },
+          message: 'Error: Request Header Fields Too Large'
+        }
+        mockAxios.mockRejectedValue(errorMock)
         router = common.createMockRouter([{
           name: 'testRouter23',
           path: '/test-router-23',
@@ -791,15 +797,7 @@ describe('Views > AutogenView.vue', () => {
         }])
 
         wrapper = factory({ router: router })
-
-        const errorMock = {
-          response: {
-            status: 430
-          },
-          message: 'Error: Request Header Fields Too Large'
-        }
         router.push({ name: 'testRouter23' })
-        mockAxios.mockRejectedValue(errorMock)
 
         setTimeout(() => {
           expect(mocks.$notifyError).toHaveBeenCalledTimes(1)
@@ -811,6 +809,13 @@ describe('Views > AutogenView.vue', () => {
       })
 
       it('check $notifyError is called and router path = /exception/500 when api is called with throw error', (done) => {
+        const errorMock = {
+          response: {
+            status: 530
+          },
+          message: 'Error: Site is frozen'
+        }
+        mockAxios.mockRejectedValue(errorMock)
         router = common.createMockRouter([{
           name: 'testRouter23',
           path: '/test-router-23',
@@ -821,15 +826,7 @@ describe('Views > AutogenView.vue', () => {
         }])
 
         wrapper = factory({ router: router })
-
-        const errorMock = {
-          response: {
-            status: 530
-          },
-          message: 'Error: Site is frozen'
-        }
         router.push({ name: 'testRouter23' })
-        mockAxios.mockRejectedValue(errorMock)
 
         setTimeout(() => {
           expect(mocks.$notifyError).toHaveBeenCalledTimes(1)
@@ -1075,74 +1072,64 @@ describe('Views > AutogenView.vue', () => {
 
       it('check currentAction params and paramsField when execAction() is called', () => {
         wrapper = factory()
-
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.execAction({
-            api: 'testApiNameCase5'
-          })
-
-          expect(wrapper.vm.currentAction.params).toEqual([
-            { name: 'column1', type: 'string' },
-            { name: 'column2', type: 'string' },
-            { name: 'column3', type: 'string' },
-            { name: 'name', type: 'string' },
-            { name: 'id', type: 'string' }
-          ])
-          expect(wrapper.vm.currentAction.paramFields).toEqual([])
-          expect(wrapper.vm.showAction).toBeTruthy()
+        wrapper.vm.$nextTick()
+        wrapper.vm.execAction({
+          api: 'testApiNameCase5'
         })
+        expect(wrapper.vm.currentAction.params).toEqual([
+          { name: 'id', type: 'string' },
+          { name: 'name', type: 'string' },
+          { name: 'column1', type: 'string' },
+          { name: 'column2', type: 'string' },
+          { name: 'column3', type: 'string' }
+        ])
+        expect(wrapper.vm.currentAction.paramFields).toEqual([])
+        expect(wrapper.vm.showAction).toBeTruthy()
       })
 
       it('check currentAction params and paramsField when execAction() is called with args is exists', () => {
         wrapper = factory()
-
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.execAction({
-            api: 'testApiNameCase5',
-            args: ['column1', 'column2', 'column3']
-          })
-
-          expect(wrapper.vm.currentAction.params).toEqual([
-            { name: 'column1', type: 'string' },
-            { name: 'column2', type: 'string' },
-            { name: 'column3', type: 'string' },
-            { name: 'name', type: 'string' },
-            { name: 'id', type: 'string' }
-          ])
-          expect(wrapper.vm.currentAction.paramFields).toEqual([
-            { name: 'column1', type: 'string' },
-            { name: 'column2', type: 'string' },
-            { name: 'column3', type: 'string' }
-          ])
-          expect(wrapper.vm.showAction).toBeTruthy()
+        wrapper.vm.execAction({
+          api: 'testApiNameCase7',
+          args: ['column1', 'column2', 'column3']
         })
+        expect(wrapper.vm.currentAction.params).toEqual([
+          { name: 'id', type: 'string' },
+          { name: 'name', type: 'string' },
+          { name: 'column1', type: 'string' },
+          { name: 'column2', type: 'string' },
+          { name: 'column3', type: 'string' }
+        ])
+        expect(wrapper.vm.currentAction.paramFields).toEqual([
+          { name: 'column1', type: 'string' },
+          { name: 'column2', type: 'string' },
+          { name: 'column3', type: 'string' }
+        ])
+        expect(wrapper.vm.showAction).toBeTruthy()
       })
 
       it('check currentAction params and paramsField when execAction() is called with args is function', () => {
         wrapper = factory()
-
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.execAction({
-            api: 'testApiNameCase5',
-            resource: { id: 'test-id-value', name: 'test-name-value' },
-            args: (record, store) => {
-              return ['Admin'].includes(store.userInfo.roletype) ? ['column1', 'column2', 'column3'] : ['id', 'name']
-            }
-          })
-
-          expect(wrapper.vm.currentAction.params).toEqual([
-            { name: 'column1', type: 'string' },
-            { name: 'column2', type: 'string' },
-            { name: 'column3', type: 'string' },
-            { name: 'name', type: 'string' },
-            { name: 'id', type: 'string' }
-          ])
-          expect(wrapper.vm.currentAction.paramFields).toEqual([
-            { name: 'id', type: 'string' },
-            { name: 'name', type: 'string' }
-          ])
-          expect(wrapper.vm.showAction).toBeTruthy()
+        wrapper.vm.$nextTick()
+        wrapper.vm.execAction({
+          api: 'testApiNameCase8',
+          resource: { id: 'test-id-value', name: 'test-name-value' },
+          args: (record, store) => {
+            return ['Admin'].includes(store.userInfo.roletype) ? ['column1', 'column2', 'column3'] : ['id', 'name']
+          }
         })
+        expect(wrapper.vm.currentAction.params).toEqual([
+          { name: 'id', type: 'string' },
+          { name: 'name', type: 'string' },
+          { name: 'column1', type: 'string' },
+          { name: 'column2', type: 'string' },
+          { name: 'column3', type: 'string' }
+        ])
+        expect(wrapper.vm.currentAction.paramFields).toEqual([
+          { name: 'id', type: 'string' },
+          { name: 'name', type: 'string' }
+        ])
+        expect(wrapper.vm.showAction).toBeTruthy()
       })
 
       it('check currentAction paramsField and listUuidOpts() is called when execAction() is called', () => {
@@ -1553,11 +1540,10 @@ describe('Views > AutogenView.vue', () => {
           response: {},
           stack: 'Error: throw exception error'
         }
-
+        mockAxios.mockRejectedValue(errorMock)
         wrapper = factory()
 
         spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
-        mockAxios.mockRejectedValue(errorMock)
         wrapper.setData({
           apiName: 'testApiNameCase1'
         })
@@ -2072,7 +2058,6 @@ describe('Views > AutogenView.vue', () => {
         })
 
         spyConsole.warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
-        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           const event = document.createEvent('Event')
@@ -2110,7 +2095,7 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
+        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           const event = document.createEvent('Event')
@@ -2160,7 +2145,7 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
+        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           const event = document.createEvent('Event')
@@ -2208,7 +2193,7 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
+        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('column1', { initialValue: null })
@@ -2257,7 +2242,7 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
+        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('column1', { initialValue: null })
@@ -2310,7 +2295,7 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
+        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('column1', { initialValue: 1 })
@@ -2368,7 +2353,7 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
+        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('column1', { initialValue: [1, 2] })
@@ -2420,7 +2405,7 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
+        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('account', { initialValue: 'test-account-value' })
@@ -2472,7 +2457,7 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
+        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('keypair', { initialValue: 'test-keypair-value' })
@@ -2528,7 +2513,7 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
+        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('keypair', { initialValue: 1 })
@@ -2580,7 +2565,7 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
+        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column-value' })
@@ -2632,7 +2617,7 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
+        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column1-value' })
@@ -2691,7 +2676,7 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
+        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column1-value' })
@@ -2755,7 +2740,7 @@ describe('Views > AutogenView.vue', () => {
           }
         })
         router.push({ name: 'testRouter26', query: { dataView: true } })
-        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
+        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
         await wrapper.vm.$nextTick()
         wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column1-value' })
         const event = document.createEvent('Event')
@@ -2802,7 +2787,7 @@ describe('Views > AutogenView.vue', () => {
         }
 
         mockAxios.mockResolvedValue(mockData)
-        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
+        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         await wrapper.vm.$nextTick()
         wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column1-value' })
@@ -2847,7 +2832,7 @@ describe('Views > AutogenView.vue', () => {
         }
 
         mockAxios.mockResolvedValue(mockData)
-        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
+        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         await wrapper.vm.$nextTick()
         wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column1-value' })
