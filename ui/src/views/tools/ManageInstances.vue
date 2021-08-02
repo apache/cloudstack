@@ -743,14 +743,10 @@ export default {
         var params = { id: vm.id }
         api('unmanageVirtualMachine', params).then(json => {
           const jobId = json.unmanagevirtualmachineresponse.jobid
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.unmanage.instance'),
-            jobid: jobId,
-            description: vm.name,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId,
+            title: this.$t('label.unmanage.instance'),
+            description: vm.name,
             loadingMessage: `${this.$t('label.unmanage.instance')} ${vm.name} ${this.$t('label.in.progress')}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
             successMessage: this.$t('message.success.unmanage.instance') + ' ' + vm.name,
