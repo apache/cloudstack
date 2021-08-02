@@ -59,7 +59,8 @@ setup(name="Marvin",
           "retries",
           "PyCrypt",
           "kubernetes",
-          "urllib3"
+          "urllib3",
+          "setuptools >= 40.3.0"
       ],
       py_modules=['marvin.marvinPlugin'],
       zip_safe=False,
