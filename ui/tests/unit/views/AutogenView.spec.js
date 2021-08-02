@@ -2095,7 +2095,6 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           const event = document.createEvent('Event')
@@ -2145,7 +2144,6 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           const event = document.createEvent('Event')
@@ -2193,7 +2191,6 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('column1', { initialValue: null })
@@ -2242,7 +2239,6 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('column1', { initialValue: null })
@@ -2295,8 +2291,6 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
-
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('column1', { initialValue: 1 })
           const event = document.createEvent('Event')
@@ -2353,8 +2347,6 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
-
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('column1', { initialValue: [1, 2] })
           const event = document.createEvent('Event')
@@ -2405,8 +2397,6 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
-
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('account', { initialValue: 'test-account-value' })
           const event = document.createEvent('Event')
@@ -2457,7 +2447,6 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('keypair', { initialValue: 'test-keypair-value' })
@@ -2513,7 +2502,6 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('keypair', { initialValue: 1 })
@@ -2565,7 +2553,6 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column-value' })
@@ -2617,7 +2604,6 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column1-value' })
@@ -2676,7 +2662,6 @@ describe('Views > AutogenView.vue', () => {
           }
         }
         mockAxios.mockResolvedValue(mockData)
-        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         wrapper.vm.$nextTick(() => {
           wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column1-value' })
@@ -2740,7 +2725,6 @@ describe('Views > AutogenView.vue', () => {
           }
         })
         router.push({ name: 'testRouter26', query: { dataView: true } })
-        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
         await wrapper.vm.$nextTick()
         wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column1-value' })
         const event = document.createEvent('Event')
@@ -2787,7 +2771,6 @@ describe('Views > AutogenView.vue', () => {
         }
 
         mockAxios.mockResolvedValue(mockData)
-        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         await wrapper.vm.$nextTick()
         wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column1-value' })
@@ -2832,7 +2815,6 @@ describe('Views > AutogenView.vue', () => {
         }
 
         mockAxios.mockResolvedValue(mockData)
-        // spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
         await wrapper.vm.$nextTick()
         wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column1-value' })
