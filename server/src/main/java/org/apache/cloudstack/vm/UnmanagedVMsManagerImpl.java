@@ -957,11 +957,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import VM: %s. %s", unmanagedInstance.getName(), Strings.nullToEmpty(e.getMessage())));
         }
 
-        String internalCSName = instanceName;
-        if(!StringUtils.isEmpty(unmanagedInstance.getInternalCSName()) && !unmanagedInstance.getInternalCSName().equals(instanceName)){
-            internalCSName = unmanagedInstance.getInternalCSName();
+        String internalCSName = unmanagedInstance.getInternalCSName();
+        if(StringUtils.isEmpty(internalCSName)){
+            internalCSName = instanceName;
         }
-
         Map<String, String> allDetails = new HashMap<>(details);
         if (validatedServiceOffering.isDynamic()) {
             allDetails.put(VmDetailConstants.CPU_NUMBER, String.valueOf(validatedServiceOffering.getCpu()));
