@@ -135,7 +135,6 @@ export default {
           }
         }
       }
-
       return (
         <Item vShortkey={menu.meta.shortKey} {...{ key: menu.path, on: on }} >
           <router-link {...{ props }}>
@@ -158,8 +157,26 @@ export default {
         </Item>
       )
     },
+    renderAllShortkey (menu) {
+      const on = {
+        shortkey: () => {
+          if (this.cachedPath === menu.path) {
+            return
+          }
+
+          if (menu.path) {
+            this.cachedPath = menu.path
+            setTimeout(() => this.$router.push({ path: menu.path }))
+          }
+        }
+      }
+      return (
+        <span vShortkey={menu.meta.shortKey} {...{ key: menu.path, on: on }} class="none" ></span>
+      )
+    },
     renderSubMenu (menu) {
       const itemArr = []
+      const shortkeyArr = [] // list of all shortkeys
       const on = {
         click: () => {
           this.handleClickParentMenu(menu)
@@ -171,6 +188,7 @@ export default {
       if (!menu.hideChildrenInMenu) {
         menu.children.forEach(item => itemArr.push(this.renderItem(item)))
       }
+      menu.children.forEach(item => shortkeyArr.push(this.renderAllShortkey(item)))
       return (
         <SubMenu {...{ key: menu.path }}>
           <span slot="title">
@@ -189,6 +207,7 @@ export default {
                 ''
               )
             }
+            {shortkeyArr}
           </span>
           {itemArr}
         </SubMenu>
@@ -258,5 +277,8 @@ export default {
   margin: 5px;
   text-shadow: 2px 2px 3px rgba(255,255,255,0.1);
   box-shadow: 3px 2px 1px rgba(0, 0, 0, 0.5), -1px -1px 2px  rgba(0, 0, 0, 0.9);
+}
+.none {
+  display: none;
 }
 </style>

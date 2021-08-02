@@ -264,7 +264,7 @@ export default {
       name: 'publicip',
       title: 'label.public.ip.addresses',
       icon: 'environment',
-      shortKey: ['n', 'i'],
+      shortKey: ['n', 'd'],
       docHelp: 'adminguide/networking_and_traffic.html#reserving-public-ip-addresses-and-vlans-for-accounts',
       permission: ['listPublicIpAddresses'],
       resourceType: 'PublicIpAddress',
