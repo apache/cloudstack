@@ -20,7 +20,8 @@
     <a-form
       class="form-content"
       :form="form"
-      @submit="handleSubmit">
+      @submit="handleSubmit"
+      v-ctrl-enter="handleSubmit">
       <a-form-item>
         <a-radio-group
           v-decorator="['zoneType', {
@@ -71,7 +72,7 @@
       </a-form-item>
     </a-form>
     <div class="form-action">
-      <a-button type="primary" @click="handleSubmit" class="button-next">
+      <a-button ref="submit" type="primary" @click="handleSubmit" class="button-next">
         {{ $t('label.next') }}
       </a-button>
     </div>

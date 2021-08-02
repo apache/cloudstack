@@ -2128,7 +2128,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
-        final Filter searchFilter = new Filter(IPAddressVO.class, "address", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        final Filter searchFilter = new Filter(IPAddressVO.class, "address", false, null, null);
         final SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
         Long domainId = null;
         Boolean isRecursive = null;
@@ -2214,7 +2214,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc2.setParameters("ids", freeAddrIds.toArray());
             addrs.addAll(_publicIpAddressDao.search(sc2, searchFilter)); // Allocated + Free
         }
-
+        List<? extends IpAddress> wPagination = com.cloud.utils.StringUtils.applyPagination(addrs, cmd.getStartIndex(), cmd.getPageSizeVal());
+        if (wPagination != null) {
+            return new Pair<List<? extends IpAddress>, Integer>(wPagination, addrs.size());
+        }
         return new Pair<>(addrs, addrs.size());
     }
 

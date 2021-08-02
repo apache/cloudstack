@@ -116,8 +116,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
                 String result = null;
                 for (int i = 1; i <= _heartBeatUpdateMaxTries; i++) {
-                    Script cmd = createHeartBeatCommand(primaryStoragePool);
-                    cmd.add("-h", hostPrivateIp);
+                    Script cmd = createHeartBeatCommand(primaryStoragePool, hostPrivateIp, true);
                     result = cmd.execute();
 
                     s_logger.debug(String.format("The command (%s), to the pool [%s], has the result [%s].", cmd.toString(), uuid, result));
@@ -137,8 +136,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
                 if (result != null) {
                     s_logger.warn(String.format("Write heartbeat for pool [%s] failed: %s; stopping cloudstack-agent.", uuid, result));
-                    Script cmd = createHeartBeatCommand(primaryStoragePool);
-                    cmd.add("-c");
+                    Script cmd = createHeartBeatCommand(primaryStoragePool, null, false);
                     result = cmd.execute();
                 }
             }
@@ -152,11 +150,20 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
     }
 
-    private Script createHeartBeatCommand(NfsStoragePool primaryStoragePool) {
+    private Script createHeartBeatCommand(NfsStoragePool primaryStoragePool, String hostPrivateIp, boolean hostValidation) {
         Script cmd = new Script(s_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
         cmd.add("-i", primaryStoragePool._poolIp);
         cmd.add("-p", primaryStoragePool._poolMountSourcePath);
         cmd.add("-m", primaryStoragePool._mountDestPath);
+
+        if (hostValidation) {
+            cmd.add("-h", hostPrivateIp);
+        }
+
+        if (!hostValidation) {
+            cmd.add("-c");
+        }
+
         return cmd;
     }
 

@@ -20,7 +20,7 @@
     <a-button
       v-if="(('deleteIso' in $store.getters.apis) && this.selectedItems.length > 0)"
       type="danger"
-      icon="plus"
+      icon="delete"
       style="width: 100%; margin-bottom: 15px"
       @click="bulkActionConfirmation()">
       {{ $t(message.title) }}
@@ -88,11 +88,10 @@
       :visible="showCopyActionForm"
       :closable="true"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
-      @ok="handleCopyIsoSubmit"
-      @cancel="onCloseCopyForm"
+      :footer="null"
       :confirmLoading="copyLoading"
+      @cancel="onCloseCopyForm"
+      v-ctrl-enter="handleCopyIsoSubmit"
       centered>
       <a-spin :spinning="copyLoading">
         <a-form
@@ -124,6 +123,11 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+
+          <div :span="24" class="action-button">
+            <a-button @click="onCloseCopyForm">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" ref="submit" @click="handleCopyIsoSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-spin>
     </a-modal>
@@ -334,17 +338,12 @@ export default {
       this.deleteLoading = true
       api('deleteIso', params).then(json => {
         const jobId = json.deleteisoresponse.jobid
-        this.$store.dispatch('AddAsyncJob', {
-          title: this.$t('label.action.delete.iso'),
-          jobid: jobId,
-          description: this.resource.name,
-          status: 'progress',
-          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
-        })
         eventBus.$emit('update-job-details', jobId, null)
         const singleZone = (this.dataSource.length === 1)
         this.$pollJob({
           jobId,
+          title: this.$t('label.action.delete.iso'),
+          description: this.resource.name,
           successMethod: result => {
             if (singleZone) {
               if (this.selectedItems.length === 0) {
@@ -403,6 +402,7 @@ export default {
     },
     handleCopyIsoSubmit (e) {
       e.preventDefault()
+      if (this.copyLoading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
@@ -415,15 +415,11 @@ export default {
         this.copyLoading = true
         api('copyIso', params).then(json => {
           const jobId = json.copytemplateresponse.jobid
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.action.copy.iso'),
-            jobid: jobId,
-            description: this.resource.name,
-            status: 'progress'
-          })
           eventBus.$emit('update-job-details', jobId, null)
           this.$pollJob({
             jobId,
+            title: this.$t('label.action.copy.iso'),
+            description: this.resource.name,
             successMethod: result => {
               this.fetchData()
             },

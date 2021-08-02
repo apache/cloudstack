@@ -23,6 +23,8 @@ import org.apache.cloudstack.api.InternalIdentity;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
 
+import java.util.Date;
+
 /**
  * Describes network offering
  *
@@ -141,4 +143,6 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     boolean isSupportingPublicAccess();
 
     String getServicePackage();
+
+    Date getCreated();
 }
