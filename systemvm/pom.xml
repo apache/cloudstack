@@ -163,6 +163,44 @@
                     </arguments>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>com.googlecode.maven-download-plugin</groupId>
+                <artifactId>download-maven-plugin</artifactId>
+                <version>1.6.3</version>
+                <executions>
+                    <execution>
+                        <id>download-checksums</id>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://download.cloudstack.org/systemvm/4.16/md5sum.txt</url>
+                            <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.2.1</version>
+                <executions>
+                    <execution>
+                        <id>systemvm-template-metadata</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>${basedir}/</workingDirectory>
+                            <executable>python3</executable>
+                            <arguments>
+                                <argument>templateConfig.py</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     <profiles>
@@ -240,47 +278,6 @@
                                 <configuration>
                                     <url>https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-xen.vhd.bz2</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>download-checksums</id>
-                                <goals>
-                                    <goal>wget</goal>
-                                </goals>
-                                <configuration>
-                                    <url>https://download.cloudstack.org/systemvm/4.16/md5sum.txt</url>
-                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>download-tgz-sha512sum</id>
-                                <goals>
-                                    <goal>wget</goal>
-                                </goals>
-                                <configuration>
-                                    <url>https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-vmware.ova</url>
-                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <version>1.2.1</version>
-                        <executions>
-                            <execution>
-                                <id>systemvm-templpate-metadata</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <workingDirectory>${basedir}/</workingDirectory>
-                                    <executable>python3</executable>
-                                    <arguments>
-                                        <argument>templateConfig.py</argument>
-                                    </arguments>
                                 </configuration>
                             </execution>
                         </executions>
