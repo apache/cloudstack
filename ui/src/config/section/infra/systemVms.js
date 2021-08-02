@@ -30,7 +30,10 @@ export default {
       label: 'label.action.start.systemvm',
       message: 'message.action.start.systemvm',
       dataView: true,
-      show: (record) => { return record.state === 'Stopped' }
+      show: (record) => { return record.state === 'Stopped' },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     },
     {
       api: 'stopSystemVm',
@@ -39,7 +42,10 @@ export default {
       message: 'message.action.stop.systemvm',
       dataView: true,
       show: (record) => { return record.state === 'Running' },
-      args: ['forced']
+      args: ['forced'],
+      groupAction: true,
+      popup: true,
+      groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
     },
     {
       api: 'rebootSystemVm',
@@ -48,7 +54,10 @@ export default {
       message: 'message.action.reboot.systemvm',
       dataView: true,
       show: (record) => { return record.state === 'Running' },
-      args: ['forced']
+      args: ['forced'],
+      groupAction: true,
+      popup: true,
+      groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
     },
     {
       api: 'scaleSystemVm',
@@ -121,7 +130,10 @@ export default {
       label: 'label.action.destroy.systemvm',
       message: 'message.action.destroy.systemvm',
       dataView: true,
-      show: (record) => { return ['Running', 'Error', 'Stopped'].includes(record.state) }
+      show: (record) => { return ['Running', 'Error', 'Stopped'].includes(record.state) },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     }
   ]
 }

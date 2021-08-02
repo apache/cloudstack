@@ -36,9 +36,6 @@ const state = {
 store = common.createMockStore(state)
 i18n = common.createMockI18n('en', mockData.messages)
 
-const actions = {
-  AddAsyncJob: jest.fn((jobId) => {})
-}
 const spyConsole = {
   log: null,
   warn: null
@@ -2814,8 +2811,8 @@ describe('Views > AutogenView.vue', () => {
         }, 1000)
       })
 
-      it('check pollActionCompletion() and action AddAsyncJob is called when api is called and response have jobId result', async (done) => {
-        store = common.createMockStore(state, actions)
+      it('check pollActionCompletion() is called when api is called and response have jobId result', async (done) => {
+        store = common.createMockStore(state)
         wrapper = factory({
           store: store,
           data: {
@@ -2851,14 +2848,13 @@ describe('Views > AutogenView.vue', () => {
         wrapper.vm.execSubmit(event)
 
         setTimeout(() => {
-          expect(actions.AddAsyncJob).toHaveBeenCalled()
           expect(spyPollAction).toHaveBeenCalled()
 
           done()
         })
       })
 
-      it('check $notification when api is called and response have not jobId result', async (done) => {
+      it('check $message, fetchData() is called when api response have not jobId result', async (done) => {
         wrapper = factory({
           data: {
             showAction: true,
@@ -2888,6 +2884,7 @@ describe('Views > AutogenView.vue', () => {
           }
         }
 
+        const spyFetchData = jest.spyOn(wrapper.vm, 'fetchData')
         mockAxios.mockResolvedValue(mockData)
         spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
 
@@ -2903,6 +2900,7 @@ describe('Views > AutogenView.vue', () => {
             key: 'labelnametest-name-value',
             duration: 2
           })
+          expect(spyFetchData).toHaveBeenCalled()
 
           done()
         })

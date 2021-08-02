@@ -20,6 +20,7 @@
     <a-spin :spinning="loading" v-if="!isSubmitted">
       <p v-html="$t('message.desc.create.ssh.key.pair')"></p>
       <a-form
+        v-ctrl-enter="handleSubmit"
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
@@ -61,7 +62,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -94,17 +95,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.createSSHKeyPair || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
-    this.apiConfig = this.$store.getters.apis.registerSSHKeyPair || {}
-    this.apiConfig.params.forEach(param => {
-      if (!(param.name in this.apiParams)) {
-        this.apiParams[param.name] = param
-      }
-    })
+    this.apiParams = this.$getApiParams('createSSHKeyPair', 'registerSSHKeyPair')
   },
   created () {
     this.domains = [
@@ -154,6 +145,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
@@ -223,14 +215,6 @@ export default {
 
     @media (min-width: 600px) {
       width: 450px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

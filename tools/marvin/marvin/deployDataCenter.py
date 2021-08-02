@@ -71,9 +71,9 @@ class DeployDataCenters(object):
                 ts = strftime("%b_%d_%Y_%H_%M_%S", localtime())
                 dc_file_path = "dc_entries_" + str(ts) + ".obj"
 
-            file_to_write = open(dc_file_path, 'w')
+            file_to_write = open(dc_file_path, 'wb')
             if file_to_write:
-                pickle.dump(self.__cleanUp, file_to_write)
+                pickle.dump(self.__cleanUp, file_to_write, protocol=0)
                 print("\n=== Data Center Settings are dumped to %s===" % dc_file_path)
                 self.__tcRunLogger.debug("\n=== Data Center Settings are dumped to %s===" % dc_file_path)
         except Exception as e:

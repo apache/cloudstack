@@ -31,7 +31,7 @@ export default {
       params: { isrecursive: 'true' },
       columns: ['name', 'displaytext', 'cpunumber', 'cpuspeed', 'memory', 'domain', 'zone', 'order'],
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'domain', 'zone', 'created', 'dynamicscalingenabled']
+        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'domain', 'zone', 'created', 'dynamicscalingenabled']
         if (store.getters.apis.createServiceOffering &&
           store.getters.apis.createServiceOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')
@@ -76,7 +76,10 @@ export default {
         label: 'label.action.delete.service.offering',
         message: 'message.action.delete.service.offering',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
-        dataView: true
+        dataView: true,
+        groupAction: true,
+        popup: true,
+        groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
     },
     {
@@ -112,7 +115,10 @@ export default {
         message: 'message.action.delete.system.service.offering',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
-        params: { issystem: 'true' }
+        params: { issystem: 'true' },
+        groupAction: true,
+        popup: true,
+        groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
     },
     {
@@ -124,7 +130,7 @@ export default {
       params: { isrecursive: 'true' },
       columns: ['name', 'displaytext', 'disksize', 'domain', 'zone', 'order'],
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'tags', 'domain', 'zone', 'created']
+        var fields = ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'tags', 'domain', 'zone', 'created']
         if (store.getters.apis.createDiskOffering &&
           store.getters.apis.createDiskOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')
@@ -165,7 +171,10 @@ export default {
         label: 'label.action.delete.disk.offering',
         message: 'message.action.delete.disk.offering',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
-        dataView: true
+        dataView: true,
+        groupAction: true,
+        popup: true,
+        groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
     },
     {
@@ -190,7 +199,10 @@ export default {
         label: 'label.action.delete.backup.offering',
         message: 'message.action.delete.backup.offering',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
-        dataView: true
+        dataView: true,
+        groupAction: true,
+        popup: true,
+        groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
     },
     {
@@ -234,7 +246,10 @@ export default {
           state: {
             value: (record) => { return 'Enabled' }
           }
-        }
+        },
+        groupAction: true,
+        popup: true,
+        groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Enabled' } }) }
       }, {
         api: 'updateNetworkOffering',
         icon: 'pause-circle',
@@ -247,7 +262,10 @@ export default {
           state: {
             value: (record) => { return 'Disabled' }
           }
-        }
+        },
+        groupAction: true,
+        popup: true,
+        groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Disabled' } }) }
       }, {
         api: 'updateNetworkOffering',
         icon: 'lock',
@@ -262,7 +280,10 @@ export default {
         label: 'label.remove.network.offering',
         message: 'message.confirm.remove.network.offering',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
-        dataView: true
+        dataView: true,
+        groupAction: true,
+        popup: true,
+        groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
     },
     {
@@ -306,7 +327,10 @@ export default {
           state: {
             value: (record) => { return 'Enabled' }
           }
-        }
+        },
+        groupAction: true,
+        popup: true,
+        groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Enabled' } }) }
       }, {
         api: 'updateVPCOffering',
         icon: 'pause-circle',
@@ -319,7 +343,10 @@ export default {
           state: {
             value: (record) => { return 'Disabled' }
           }
-        }
+        },
+        groupAction: true,
+        popup: true,
+        groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Disabled' } }) }
       }, {
         api: 'updateVPCOffering',
         icon: 'lock',
@@ -332,7 +359,10 @@ export default {
         icon: 'delete',
         label: 'label.remove.vpc.offering',
         message: 'message.confirm.remove.vpc.offering',
-        dataView: true
+        dataView: true,
+        groupAction: true,
+        popup: true,
+        groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
     }
   ]

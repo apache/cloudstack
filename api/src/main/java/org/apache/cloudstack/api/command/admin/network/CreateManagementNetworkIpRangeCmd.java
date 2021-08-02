@@ -62,22 +62,19 @@ public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.GATEWAY,
             type = CommandType.STRING,
             required = true,
-            description = "The gateway for the management network.",
-            validations = {ApiArgValidator.NotNullOrEmpty})
+            description = "The gateway for the management network.")
     private String gateway;
 
     @Parameter(name = ApiConstants.NETMASK,
             type = CommandType.STRING,
             required = true,
-            description = "The netmask for the management network.",
-            validations = {ApiArgValidator.NotNullOrEmpty})
+            description = "The netmask for the management network.")
     private String netmask;
 
     @Parameter(name = ApiConstants.START_IP,
             type = CommandType.STRING,
             required = true,
-            description = "The starting IP address.",
-            validations = {ApiArgValidator.NotNullOrEmpty})
+            description = "The starting IP address.")
     private String startIp;
 
     @Parameter(name = ApiConstants.END_IP,
