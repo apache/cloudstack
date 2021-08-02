@@ -39,16 +39,16 @@ public class KubernetesClusterVmMapVO implements KubernetesClusterVmMap {
     @Column(name = "vm_id")
     long vmId;
 
-    @Column(name = "master")
-    boolean master;
+    @Column(name = "control_node")
+    boolean controlNode;
 
     public KubernetesClusterVmMapVO() {
     }
 
-    public KubernetesClusterVmMapVO(long clusterId, long vmId, boolean master) {
+    public KubernetesClusterVmMapVO(long clusterId, long vmId, boolean controlNode) {
         this.vmId = vmId;
         this.clusterId = clusterId;
-        this.master = master;
+        this.controlNode = controlNode;
     }
 
 
@@ -76,11 +76,11 @@ public class KubernetesClusterVmMapVO implements KubernetesClusterVmMap {
     }
 
     @Override
-    public boolean isMaster() {
-        return master;
+    public boolean isControlNode() {
+        return controlNode;
     }
 
-    public void setMaster(boolean master) {
-        this.master = master;
+    public void setControlNode(boolean controlNode) {
+        this.controlNode = controlNode;
     }
 }

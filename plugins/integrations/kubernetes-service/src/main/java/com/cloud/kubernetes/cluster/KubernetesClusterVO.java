@@ -370,9 +370,9 @@ public class KubernetesClusterVO implements KubernetesCluster {
     }
 
     public KubernetesClusterVO(String name, String description, long zoneId, long kubernetesVersionId, long serviceOfferingId, long templateId,
-        long networkId, long domainId, long accountId, long masterNodeCount, long nodeCount, State state, String keyPair, long cores,
+        long networkId, long domainId, long accountId, long controlNodeCount, long nodeCount, State state, String keyPair, long cores,
         long memory, Long nodeRootDiskSize, String endpoint, boolean autoscalingEnabled, Long minSize, Long maxSize) {
-        this(name, description, zoneId, kubernetesVersionId, serviceOfferingId, templateId, networkId, domainId, accountId, masterNodeCount,
+        this(name, description, zoneId, kubernetesVersionId, serviceOfferingId, templateId, networkId, domainId, accountId, controlNodeCount,
             nodeCount, state, keyPair, cores, memory, nodeRootDiskSize, endpoint);
         this.autoscalingEnabled = autoscalingEnabled;
         this.minSize = minSize;

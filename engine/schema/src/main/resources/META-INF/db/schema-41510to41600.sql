@@ -30,7 +30,7 @@ ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `autoscaling_enabled` tinyin
 ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `minsize` bigint;
 ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `maxsize` bigint;
 
-ALTER TABLE `cloud`.`kubernetes_cluster_vm_map` ADD COLUMN `master` tinyint(1) unsigned NOT NULL DEFAULT 0;
+ALTER TABLE `cloud`.`kubernetes_cluster_vm_map` ADD COLUMN `control_node` tinyint(1) unsigned NOT NULL DEFAULT 0;
 
 -- Adding dynamic scalable flag for service offering table
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `dynamic_scaling_enabled` tinyint(1) unsigned NOT NULL DEFAULT 1  COMMENT 'true(1) if VM needs to be dynamically scalable of cpu or memory';
