@@ -455,7 +455,7 @@ public class KubernetesClusterActionWorker {
         Network network = networkDao.findById(kubernetesCluster.getNetworkId());
         // Since the provider creates IP addresses, don't deploy it unless the underlying network supports it
         if (network.getGuestType() != GuestType.Isolated) {
-            logMessage(Level.INFO, String.format("Skipping adding the provider as %s is not on an isoalted network",
+            logMessage(Level.INFO, String.format("Skipping adding the provider as %s is not on an isolated network",
                 kubernetesCluster.getName()), null);
             return true;
         }
