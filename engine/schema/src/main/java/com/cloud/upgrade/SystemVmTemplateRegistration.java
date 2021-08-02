@@ -52,8 +52,11 @@ public class SystemVmTemplateRegistration {
     private static final String mountCommand = "sudo mount -t nfs %s %s";
     private static final String umountCommand = "sudo umount %s";
     private static final  String hashAlgorithm = "MD5";
-    private static final String templatesPath = "/usr/share/cloudstack-management/templates/";
-    private static final String metadataFile = templatesPath + "metadata.ini";
+    private static final String relativeTemplatePath = "./systemvm/dist/systemvm-templates/";
+    private static final String AbsolutetemplatesPath = "/usr/share/cloudstack-management/templates/";
+    private static final String templatesPath = fetchTemplatesPath();
+    private static final String metadataFileName = "metadata.ini";
+    private static final String metadataFile = templatesPath + metadataFileName;
     private static final String TEMPORARY_SECONDARY_STORE = "/tmp/tmpSecStorage";
     private static final String PARENT_TEMPLATE_FOLDER = TEMPORARY_SECONDARY_STORE;
     private static final String PARTIAL_TEMPLATE_FOLDER = "/template/tmpl/1/";
@@ -286,6 +289,27 @@ public class SystemVmTemplateRegistration {
         return templateId;
     }
 
+    private static String fetchTemplatesPath() {
+            String filePath = relativeTemplatePath + metadataFileName;
+            LOGGER.debug("Looking for file [" + filePath + "] in the classpath.");
+            File metaFile = new File(filePath);
+            String templatePath = null;
+            if (metaFile.exists()) {
+                templatePath = relativeTemplatePath;
+            }
+            if (templatePath == null) {
+                filePath = AbsolutetemplatesPath + metadataFileName;
+                metaFile = new File(filePath);
+                templatePath = AbsolutetemplatesPath;
+                LOGGER.debug("Looking for file [" + filePath + "] in the classpath.");
+                if (!metaFile.exists()) {
+                    String errMsg = String.format("Unable to locate metadata file in your setup at %s", filePath.toString());
+                    LOGGER.error(errMsg);
+                    throw new CloudRuntimeException(errMsg);
+                }
+            }
+        return templatePath;
+    }
 
     private static String getHypervisorName(String name) {
         if (name.equals("xenserver")) {
@@ -570,7 +594,7 @@ public class SystemVmTemplateRegistration {
             }
 
         } catch (Exception e) {
-            String errMsg = "Failed to parse systemVM template metadata file";
+            String errMsg = String.format("Failed to parse systemVM template metadata file: %s", metadataFile);
             LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
