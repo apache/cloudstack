@@ -81,8 +81,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     private static final String LIST_CLUSTERID_FOR_HOST_TAG = "SELECT cluster_id FROM host JOIN (%s) AS tags ON host.id = tags.host_id;";
 
-    private static final String LIST_HOST_IDS_BY_COMPUTETAGS = "SELECT host_id, COUNT(tag) AS tag_count "
-                                                             + "FROM host_tags "
+    private static final String LIST_HOST_IDS_BY_COMPUTETAGS = "SELECT filtered.host_id, COUNT(filtered.tag) AS tag_count "
+                                                             + "FROM (SELECT host_id, tag FROM host_tags GROUP BY host_id,tag) AS filtered "
                                                              + "WHERE tag IN(%s) "
                                                              + "GROUP BY host_id "
                                                              + "HAVING tag_count = %s ";
