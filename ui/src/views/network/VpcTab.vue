@@ -70,7 +70,7 @@
           </template>
         </a-pagination>
         <a-modal
-          v-model="modals.networkAcl"
+          :visible="modals.networkAcl"
           :title="$t('label.add.acl.list')"
           :maskClosable="false"
           @ok="handleNetworkAclFormSubmit">
@@ -131,7 +131,7 @@
         </a-pagination>
 
         <a-modal
-          v-model="modals.gateway"
+          :visible="modals.gateway"
           :title="$t('label.add.new.gateway')"
           :maskClosable="false"
           @ok="handleGatewayFormSubmit">
@@ -262,7 +262,7 @@
           </template>
         </a-pagination>
         <a-modal
-          v-model="modals.vpnConnection"
+          :visible="modals.vpnConnection"
           :title="$t('label.create.vpn.connection')"
           :maskClosable="false"
           @ok="handleVpnConnectionFormSubmit">

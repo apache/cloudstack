@@ -112,7 +112,6 @@ export default {
     this.initForm()
   },
   mounted () {
-    console.log(this.fields)
     this.fillValue()
   },
   data: () => ({

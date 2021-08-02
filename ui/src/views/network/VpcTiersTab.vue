@@ -157,7 +157,7 @@
     </a-list>
 
     <a-modal
-      v-model="showCreateNetworkModal"
+      :visible="showCreateNetworkModal"
       :title="$t('label.add.new.tier')"
       :maskClosable="false"
       @ok="handleAddNetworkSubmit">
@@ -213,7 +213,7 @@
     </a-modal>
 
     <a-modal
-      v-model="showAddInternalLB"
+      :visible="showAddInternalLB"
       :title="$t('label.add.internal.lb')"
       :maskClosable="false"
       @ok="handleAddInternalLBSubmit">

@@ -33,7 +33,7 @@
     </div>
 
     <a-modal
-      v-model="disableVpn"
+      :visible="disableVpn"
       :footer="null"
       oncancel="disableVpn = false"
       :title="$t('label.disable.vpn')"
@@ -55,7 +55,7 @@
     </a-button>
 
     <a-modal
-      v-model="enableVpn"
+      :visible="enableVpn"
       :footer="null"
       onCancel="enableVpn = false"
       :title="$t('label.enable.vpn')"

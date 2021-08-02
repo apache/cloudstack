@@ -126,7 +126,7 @@
 
     <a-modal
       :title="$t('label.edit.tags')"
-      v-model="tagsModalVisible"
+      :visible="tagsModalVisible"
       :footer="null"
       :afterClose="closeModal"
       :maskClosable="false">

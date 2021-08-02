@@ -80,13 +80,13 @@
         </a-col>
         <a-col :md="8" v-if="isCustomizedIOps">
           <a-form-item :label="$t('label.miniops')">
-            <a-input-number v-model="minIOps" @change="updateIOpsValue" />
+            <a-input-number v-model:value="minIOps" @change="updateIOpsValue" />
             <p v-if="errorMinIOps" style="color: red"> {{ $t(errorMinIOps) }} </p>
           </a-form-item>
         </a-col>
         <a-col :md="8" v-if="isCustomizedIOps">
           <a-form-item :label="$t('label.maxiops')">
-            <a-input-number v-model="maxIOps" @change="updateIOpsValue" />
+            <a-input-number v-model:value="maxIOps" @change="updateIOpsValue" />
             <p v-if="errorMaxIOps" style="color: red"> {{ $t(errorMaxIOps) }} </p>
           </a-form-item>
         </a-col>

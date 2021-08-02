@@ -20,9 +20,11 @@
     <a-button
       :disabled="!('dedicateGuestVlanRange' in $store.getters.apis)"
       type="dashed"
-      icon="plus"
       style="width: 100%"
-      @click="handleOpenModal">{{ $t('label.dedicate.vlan.vni.range') }}</a-button>
+      @click="handleOpenModal">
+      <template #icon><plus-outlined /></template>
+      {{ $t('label.dedicate.vlan.vni.range') }}
+    </a-button>
     <a-table
       size="small"
       style="overflow-y: auto; margin-top: 20px;"
@@ -31,7 +33,7 @@
       :dataSource="items"
       :pagination="false"
       :rowKey="record => record.id">
-      <template slot="actions" slot-scope="record">
+      <template #actions="{record}">
         <a-popconfirm
           :title="`${$t('label.delete')}?`"
           @confirm="handleDelete(record)"
@@ -39,7 +41,12 @@
           :cancelText="$t('label.no')"
           placement="top"
         >
-          <tooltip-button :tooltip="$t('label.delete')" :disabled="!('releaseDedicatedGuestVlanRange' in $store.getters.apis)" icon="delete" type="danger" />
+          <tooltip-button
+            :tooltip="$t('label.delete')"
+            :disabled="!('releaseDedicatedGuestVlanRange' in $store.getters.apis)"
+            icon="delete-outlined"
+            type="primary"
+            :danger="true" />
         </a-popconfirm>
       </template>
     </a-table>
@@ -54,54 +61,44 @@
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
 
     <a-modal
-      v-model="modal"
+      :visible="modal"
       :title="$t('label.dedicate.vlan.vni.range')"
       :maskClosable="false"
       @ok="handleSubmit">
       <a-spin :spinning="formLoading">
         <a-form
-          :form="form"
-          @submit="handleSubmit"
+          :ref="formRef"
+          :model="form"
+          :rules="rules"
+          @finish="handleSubmit"
           layout="vertical" >
-          <a-form-item :label="$t('label.vlanrange')">
-            <a-input
-              v-decorator="['range', {
-                rules: [{ required: true, message: `${$t('label.required')}` }]
-              }]"
-              autoFocus
-            ></a-input>
+          <a-form-item name="range" ref="range" :label="$t('label.vlanrange')">
+            <a-input v-model:value="form.range" autoFocus />
           </a-form-item>
 
-          <a-form-item :label="$t('label.scope')">
-            <a-select defaultValue="account" v-model="selectedScope" @change="handleScopeChange">
+          <a-form-item name="scope" ref="scope" :label="$t('label.scope')">
+            <a-select v-model:value="form.scope" @change="handleScopeChange">
               <a-select-option value="account">{{ $t('label.account') }}</a-select-option>
               <a-select-option value="project">{{ $t('label.project') }}</a-select-option>
             </a-select>
           </a-form-item>
 
-          <a-form-item :label="$t('label.domain')">
-            <a-select
-              @change="handleDomainChange"
-              v-decorator="['domain', {
-                rules: [{ required: true, message: `${$t('label.required')}` }]
-              }]"
-            >
-              <a-select-option v-for="domain in domains" :key="domain.id" :value="domain.id">{{ domain.path || domain.name || domain.description }}</a-select-option>
+          <a-form-item name="domain" ref="domain" :label="$t('label.domain')">
+            <a-select @change="handleDomainChange" v-model:value="form.domain">
+              <a-select-option v-for="domain in domains" :key="domain.id" :value="domain.id">
+                {{ domain.path || domain.name || domain.description }}
+              </a-select-option>
             </a-select>
           </a-form-item>
 
-          <a-form-item :label="$t('label.account')" v-if="selectedScope === 'account'">
-            <a-select
-              v-decorator="['account', {
-                rules: [{ required: true, message: `${$t('label.required')}` }]
-              }]"
-            >
+          <a-form-item name="account" ref="account" :label="$t('label.account')" v-if="form.scope === 'account'">
+            <a-select v-model:value="form.account">
               <a-select-option
                 v-for="account in accounts"
                 :key="account.id"
@@ -111,12 +108,8 @@
             </a-select>
           </a-form-item>
 
-          <a-form-item :label="$t('label.project')" v-if="selectedScope === 'project'">
-            <a-select
-              v-decorator="['project', {
-                rules: [{ required: true, message: `${$t('label.required')}` }]
-              }]"
-            >
+          <a-form-item name="project" ref="project" :label="$t('label.project')" v-if="form.scope === 'project'">
+            <a-select v-model:value="form.project">
               <a-select-option
                 v-for="project in projects"
                 :key="project.id"
@@ -128,11 +121,11 @@
         </a-form>
       </a-spin>
     </a-modal>
-
   </a-spin>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipButton from '@/components/view/TooltipButton'
 
@@ -161,7 +154,6 @@ export default {
       accounts: [],
       projects: [],
       modal: false,
-      selectedScope: 'account',
       totalCount: 0,
       page: 1,
       pageSize: 10,
@@ -185,10 +177,8 @@ export default {
       ]
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
+    this.initForm()
     this.fetchData()
   },
   watch: {
@@ -199,6 +189,18 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        scope: 'account'
+      })
+      this.rules = reactive({
+        range: [{ required: true, message: this.$t('label.required') }],
+        domain: [{ required: true, message: this.$t('label.required') }],
+        account: [{ required: true, message: this.$t('label.required') }],
+        project: [{ required: true, message: this.$t('label.required') }]
+      })
+    },
     fetchData () {
       this.form.resetFields()
       this.formLoading = true
@@ -275,13 +277,9 @@ export default {
         this.projects = response.listprojectsresponse.project
           ? response.listprojectsresponse.project : []
         if (this.projects.length > 0) {
-          this.form.setFieldsValue({
-            project: this.projects[0].id
-          })
+          this.form.project = this.projects[0].id
         } else {
-          this.form.setFieldsValue({
-            project: null
-          })
+          this.form.project = null
         }
         this.formLoading = false
       }).catch(error => {
@@ -323,12 +321,10 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields(errors => {
-        if (errors) return
-
+      this.formRef.value.validate().then(() => {
         this.formLoading = true
         this.parentStartLoading()
-        const fieldValues = this.form.getFieldsValue()
+        const fieldValues = toRaw(this.form)
 
         api('dedicateGuestVlanRange', {
           physicalnetworkid: this.resource.id,
@@ -347,12 +343,12 @@ export default {
       })
     },
     fetchBasedOnScope (e) {
-      if (e === 'account') this.fetchAccounts(this.form.getFieldValue('domain'))
-      if (e === 'project') this.fetchProjects(this.form.getFieldValue('domain'))
+      if (e === 'account') this.fetchAccounts(this.form.domain)
+      if (e === 'project') this.fetchProjects(this.form.domain)
     },
     handleDomainChange () {
       setTimeout(() => {
-        this.fetchBasedOnScope(this.selectedScope)
+        this.fetchBasedOnScope(this.form.scope)
       }, 100)
     },
     handleScopeChange (e) {

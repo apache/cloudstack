@@ -127,7 +127,7 @@
 
     <a-modal
       :title="$t('label.edit.tags')"
-      v-model="tagsModalVisible"
+      :visible="tagsModalVisible"
       :footer="null"
       :maskClosable="false"
       :afterClose="closeModal">
@@ -138,11 +138,11 @@
       <div class="add-tags">
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.key') }}</p>
-          <a-input autoFocus v-model="newTag.key"></a-input>
+          <a-input autoFocus v-model:value="newTag.key"></a-input>
         </div>
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.value') }}</p>
-          <a-input v-model="newTag.value"></a-input>
+          <a-input v-model:value="newTag.value"></a-input>
         </div>
         <a-button type="primary" @click="() => handleAddTag()">{{ $t('label.add') }}</a-button>
       </div>
@@ -165,7 +165,7 @@
       :maskClosable="false"
       :okText="$t('label.ok')"
       :cancelText="$t('label.cancel')"
-      v-model="addVmModalVisible"
+      :visible="addVmModalVisible"
       class="vm-modal"
       width="60vw"
       @ok="addRule"
@@ -179,7 +179,7 @@
           <strong>{{ $t('label.select.tier') }} </strong>
           <a-select
             :autoFocu="'vpcid' in resource && !('associatednetworkid' in resource)"
-            v-model="selectedTier"
+            v-model:value="selectedTier"
             @change="fetchVirtualMachines()"
             :placeholder="$t('label.select.tier')" >
             <a-select-option
@@ -194,7 +194,7 @@
           :autoFocu="!('vpcid' in resource && !('associatednetworkid' in resource))"
           class="input-search"
           :placeholder="$t('label.search')"
-          v-model="searchQuery"
+          v-model:value="searchQuery"
           allowClear
           @search="onSearch" />
         <a-table
@@ -214,7 +214,7 @@
             <a-select
               style="display: block"
               v-else-if="!addVmModalNicLoading && newRule.virtualmachineid === record.id"
-              v-model="newRule.vmguestip"
+              v-model:value="newRule.vmguestip"
             >
               <a-select-option v-for="(nic, nicIndex) in nics" :key="nic" :value="nic">
                 {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}

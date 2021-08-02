@@ -17,7 +17,7 @@
 
 <template>
   <a-modal
-    v-model="dedicatedDomainModal"
+    :visible="dedicatedDomainModal"
     :title="label"
     :maskClosable="false"
     :okText="$t('label.ok')"

@@ -142,7 +142,7 @@ export default {
     },
     getTooltip (state) {
       if (!(state && this.displayText)) {
-        return
+        return ''
       }
       if (this.$route.path === '/vmsnapshot' || this.$route.path.includes('/vmsnapshot/')) {
         return 'message.vmsnapshot.state.' + state.toLowerCase()

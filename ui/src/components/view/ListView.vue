@@ -315,7 +315,7 @@
         :autoFocus="true"
         :defaultValue="record.value"
         :disabled="!('updateConfiguration' in $store.getters.apis)"
-        v-model="editableValue"
+        v-model:value="editableValue"
         @keydown.esc="editableValueKey = null"
         @pressEnter="saveValue(record)">
       </a-input>

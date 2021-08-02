@@ -41,7 +41,7 @@
       </div>
     </div>
 
-    <a-modal :title="$('label.edit.tags')" v-model:value="tagsModalVisible" :footer="null" :maskClosable="false">
+    <a-modal :title="$('label.edit.tags')" :visible="tagsModalVisible" :footer="null" :maskClosable="false">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>

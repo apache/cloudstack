@@ -30,6 +30,7 @@ import {
   BlockOutlined,
   BuildOutlined,
   BulbOutlined,
+  BranchesOutlined,
   CalendarOutlined,
   CameraOutlined,
   CaretDownOutlined,
@@ -98,6 +99,7 @@ import {
   PictureOutlined,
   PlayCircleOutlined,
   PlusOutlined,
+  PlusSquareOutlined,
   PoweroffOutlined,
   ProjectOutlined,
   QuestionCircleOutlined,
@@ -151,6 +153,7 @@ export default {
     app.component('BlockOutlined', BlockOutlined)
     app.component('BuildOutlined', BuildOutlined)
     app.component('BulbOutlined', BulbOutlined)
+    app.component('BranchesOutlined', BranchesOutlined)
     app.component('CalendarOutlined', CalendarOutlined)
     app.component('CameraOutlined', CameraOutlined)
     app.component('CaretDownOutlined', CaretDownOutlined)
@@ -219,6 +222,7 @@ export default {
     app.component('PictureOutlined', PictureOutlined)
     app.component('PlayCircleOutlined', PlayCircleOutlined)
     app.component('PlusOutlined', PlusOutlined)
+    app.component('PlusSquareOutlined', PlusSquareOutlined)
     app.component('PoweroffOutlined', PoweroffOutlined)
     app.component('ProjectOutlined', ProjectOutlined)
     app.component('QuestionCircleOutlined', QuestionCircleOutlined)

@@ -26,7 +26,7 @@
         </a-alert>
         <p class="modal-form__label">{{ $t('label.storagepool') }}</p>
         <a-select
-          v-model="selectedStoragePool"
+          v-model:value="selectedStoragePool"
           style="width: 100%;"
           :autoFocus="storagePools.length > 0">
           <a-select-option v-for="(storagePool, index) in storagePools" :value="storagePool.id" :key="index">
@@ -37,11 +37,11 @@
           <p class="modal-form__label" @click="replaceDiskOffering = !replaceDiskOffering" style="cursor:pointer;">
             {{ $t('label.usenewdiskoffering') }}
           </p>
-          <a-checkbox v-model="replaceDiskOffering" />
+          <a-checkbox v-model:checked="replaceDiskOffering" />
 
           <template v-if="replaceDiskOffering">
             <p class="modal-form__label">{{ $t('label.newdiskoffering') }}</p>
-            <a-select v-model="selectedDiskOffering" style="width: 100%;">
+            <a-select v-model:value="selectedDiskOffering" style="width: 100%;">
               <a-select-option v-for="(diskOffering, index) in diskOfferings" :value="diskOffering.id" :key="index">
                 {{ diskOffering.displaytext }}
               </a-select-option>

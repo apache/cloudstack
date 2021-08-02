@@ -16,7 +16,13 @@
 // under the License.
 <template>
   <div>
-    <a-form class="form-layout" :ref="formRef" :model="form" :rules="rules" layout="vertical" @finish="handleSubmit">
+    <a-form
+      class="form-layout"
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      layout="vertical"
+      @finish="handleSubmit">
       <a-form-item ref="name" name="name">
         <template #label>
           {{ $t('label.name') }}

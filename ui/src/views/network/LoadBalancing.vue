@@ -147,7 +147,7 @@
 
     <a-modal
       :title="$t('label.edit.tags')"
-      v-model:visible="tagsModalVisible"
+      :visible="tagsModalVisible"
       :footer="null"
       :afterClose="closeModal"
       :maskClosable="false"
@@ -189,7 +189,7 @@
 
     <a-modal
       :title="$t('label.configure.sticky.policy')"
-      v-model:visible="stickinessModalVisible"
+      :visible="stickinessModalVisible"
       :footer="null"
       :afterClose="closeModal"
       :maskClosable="false"
@@ -212,7 +212,7 @@
           :label="$t('label.sticky.name')"
           v-show="stickinessPolicyMethod === 'LbCookie' || stickinessPolicyMethod ===
             'AppCookie' || stickinessPolicyMethod === 'SourceBased'">
-          <a-input v-model="stickinessPolicyForm.name" />
+          <a-input v-model:value="stickinessPolicyForm.name" />
         </a-form-item>
         <a-form-item
           :label="$t('label.sticky.cookie-name')"
@@ -262,7 +262,7 @@
 
     <a-modal
       :title="$t('label.edit.rule')"
-      v-model:visible="editRuleModalVisible"
+      :visible="editRuleModalVisible"
       :afterClose="closeModal"
       :maskClosable="false"
       @ok="handleSubmitEditForm">
@@ -299,7 +299,7 @@
       :maskClosable="false"
       :okText="$t('label.ok')"
       :cancelText="$t('label.cancel')"
-      v-model:visible="addVmModalVisible"
+      :visible="addVmModalVisible"
       class="vm-modal"
       width="60vw"
       @ok="handleAddNewRule"

@@ -23,7 +23,7 @@
           <a-input-search
             size="default"
             :placeholder="$t('label.search')"
-            v-model="searchQuery"
+            v-model:value="searchQuery"
             @search="onSearch"
           >
             <template #prefix><SearchOutlined /></template>

@@ -88,7 +88,7 @@
               </a-tooltip>
             </template>
             <a-input
-              v-model="form.ip6cidr"
+              v-model:value="form.ip6cidr"
               :placeholder="apiParams.ip6cidr.description"/>
           </a-form-item>
           <a-form-item name="ip6gateway" ref="ip6gateway">
