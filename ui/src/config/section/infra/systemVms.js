@@ -18,7 +18,7 @@
 export default {
   name: 'systemvm',
   title: 'label.system.vms',
-  icon: 'thunderbolt',
+  icon: 'thunderbolt-outlined',
   docHelp: 'adminguide/systemvm.html',
   permission: ['listSystemVms'],
   columns: ['name', 'state', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'hostname', 'zonename'],
@@ -26,7 +26,7 @@ export default {
   actions: [
     {
       api: 'startSystemVm',
-      icon: 'caret-right',
+      icon: 'caret-right-outlined',
       label: 'label.action.start.systemvm',
       message: 'message.action.start.systemvm',
       dataView: true,
@@ -34,7 +34,7 @@ export default {
     },
     {
       api: 'stopSystemVm',
-      icon: 'poweroff',
+      icon: 'poweroff-outlined',
       label: 'label.action.stop.systemvm',
       message: 'message.action.stop.systemvm',
       dataView: true,
@@ -43,7 +43,7 @@ export default {
     },
     {
       api: 'rebootSystemVm',
-      icon: 'sync',
+      icon: 'sync-outlined',
       label: 'label.action.reboot.systemvm',
       message: 'message.action.reboot.systemvm',
       dataView: true,
@@ -51,7 +51,7 @@ export default {
     },
     {
       api: 'scaleSystemVm',
-      icon: 'arrows-alt',
+      icon: 'arrows-alt-outlined',
       label: 'label.change.service.offering',
       message: 'message.confirm.scale.up.system.vm',
       dataView: true,
@@ -66,7 +66,7 @@ export default {
     },
     {
       api: 'migrateSystemVm',
-      icon: 'drag',
+      icon: 'drag-outlined',
       label: 'label.action.migrate.systemvm',
       message: 'message.migrate.systemvm.confirm',
       dataView: true,
@@ -84,7 +84,7 @@ export default {
     },
     {
       api: 'runDiagnostics',
-      icon: 'reconciliation',
+      icon: 'reconciliation-outlined',
       label: 'label.action.run.diagnostics',
       dataView: true,
       show: (record) => { return record.state === 'Running' },
@@ -101,7 +101,7 @@ export default {
     },
     {
       api: 'getDiagnosticsData',
-      icon: 'download',
+      icon: 'download-outlined',
       label: 'label.action.get.diagnostics',
       dataView: true,
       show: (record) => { return record.state === 'Running' },
@@ -115,7 +115,7 @@ export default {
     },
     {
       api: 'destroySystemVm',
-      icon: 'delete',
+      icon: 'delete-outlined',
       label: 'label.action.destroy.systemvm',
       message: 'message.action.destroy.systemvm',
       dataView: true,

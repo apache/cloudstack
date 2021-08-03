@@ -17,14 +17,17 @@
 
 <template>
   <a-spin :spinning="loading">
-    <a-form :form="form" layout="vertical" class="form">
+    <a-form
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      layout="vertical"
+      class="form"
+      @finish="handleSubmit">
 
-      <a-form-item class="form__item" :label="$t('label.zone')">
+      <a-form-item name="zoneid" ref="zoneid" class="form__item" :label="$t('label.zone')">
         <a-select
-          v-decorator="['zoneid', {
-            initialValue: this.zoneId,
-            rules: [{ required: true, message: `${$t('label.required')}` }] }
-          ]"
+          v-model:value="form.zoneid"
           autoFocus>
           <a-select-option
             v-for="zone in zonesList"
@@ -35,54 +38,38 @@
         </a-select>
       </a-form-item>
 
-      <a-form-item class="form__item" :label="$t('label.podname')">
+      <a-form-item name="name" ref="name" class="form__item" :label="$t('label.podname')">
         <a-input
           :placeholder="placeholder.name"
-          v-decorator="[
-            'name',
-            {
-              rules: [{ required: true, message: `${$t('label.required')}` }]
-            }]"
+          v-model:value="form.name"
         />
       </a-form-item>
 
-      <a-form-item class="form__item" :label="$t('label.reservedsystemgateway')">
+      <a-form-item name="gateway" ref="gateway" class="form__item" :label="$t('label.reservedsystemgateway')">
         <a-input
           :placeholder="placeholder.gateway"
-          v-decorator="[
-            'gateway',
-            {
-              rules: [{ required: true, message: `${$t('label.required')}` }]
-            }]"
+          v-model:value="form.gateway"
         />
       </a-form-item>
 
-      <a-form-item class="form__item" :label="$t('label.reservedsystemnetmask')">
+      <a-form-item name="netmask" ref="netmask" class="form__item" :label="$t('label.reservedsystemnetmask')">
         <a-input
           :placeholder="placeholder.netmask"
-          v-decorator="[
-            'netmask',
-            {
-              rules: [{ required: true, message: `${$t('label.required')}` }]
-            }]"
+          v-model:value="form.netmask"
         />
       </a-form-item>
 
-      <a-form-item class="form__item" :label="$t('label.reservedsystemstartip')">
+      <a-form-item name="startip" ref="startip" class="form__item" :label="$t('label.reservedsystemstartip')">
         <a-input
           :placeholder="placeholder.startip"
-          v-decorator="[
-            'startip',
-            {
-              rules: [{ required: true, message: `${$t('label.required')}` }]
-            }]"
+          v-model:value="form.startip"
         />
       </a-form-item>
 
-      <a-form-item class="form__item" :label="$t('label.reservedsystemendip')">
+      <a-form-item name="endip" ref="endip" class="form__item" :label="$t('label.reservedsystemendip')">
         <a-input
           :placeholder="placeholder.endip"
-          v-decorator="['endip']"
+          v-model:value="form.endip"
         />
       </a-form-item>
 
@@ -101,8 +88,8 @@
       <a-divider></a-divider>
 
       <div class="actions">
-        <a-button @click="() => this.$parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
-        <a-button @click="handleSubmit" type="primary">{{ $t('label.ok') }}</a-button>
+        <a-button @click="() => $parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
+        <a-button html-type="submit" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
 
     </a-form>
@@ -110,6 +97,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import DedicateDomain from '../../components/view/DedicateDomain'
 
@@ -129,7 +117,6 @@ export default {
     return {
       loading: false,
       zonesList: [],
-      zoneId: null,
       showDedicated: false,
       dedicatedDomainId: null,
       dedicatedAccount: null,
@@ -144,13 +131,22 @@ export default {
       }
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        zoneid: [{ required: true, message: this.$t('label.required') }],
+        name: [{ required: true, message: this.$t('label.required') }],
+        gateway: [{ required: true, message: this.$t('label.required') }],
+        netmask: [{ required: true, message: this.$t('label.required') }],
+        startip: [{ required: true, message: this.$t('label.required') }]
+      })
+    },
     fetchData () {
       this.fetchZones()
     },
@@ -158,7 +154,7 @@ export default {
       this.loading = true
       api('listZones').then(response => {
         this.zonesList = response.listzonesresponse.zone || []
-        this.zoneId = this.zonesList[0].id
+        this.form.zoneid = this.zonesList[0].id
         this.params = this.$store.getters.apis.createPod.params
         Object.keys(this.placeholder).forEach(item => { this.returnPlaceholder(item) })
       }).catch(error => {
@@ -174,8 +170,8 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         this.loading = true
         api('createPod', {

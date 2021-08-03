@@ -18,18 +18,14 @@
 <template>
   <div class="form-layout">
     <a-spin :spinning="loading">
-      <a-form :form="form" layout="vertical">
-        <a-form-item :label="$t('label.name')">
-          <a-input v-decorator="['name']" autoFocus />
+      <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical" @finish="handleSubmit">
+        <a-form-item name="name" ref="name" :label="$t('label.name')">
+          <a-input v-model:value="form.name" autoFocus />
         </a-form-item>
-        <a-form-item :label="$t('label.providername')">
+        <a-form-item name="" ref="" :label="$t('label.providername')">
           <a-select
-            v-decorator="[
-              'provider',
-              {
-                initialValue: 'NFS'
-              }]"
-            @change="val => { this.provider = val }"
+            v-model:value="form.provider"
+            @change="val => { form.provider = val }"
           >
             <a-select-option
               :value="prov"
@@ -38,17 +34,9 @@
             >{{ prov }}</a-select-option>
           </a-select>
         </a-form-item>
-        <div v-if="provider !== 'Swift'">
-          <a-form-item :label="$t('label.zone')">
-            <a-select
-              v-decorator="[
-                'zone',
-                {
-                  initialValue: this.zoneSelected,
-                  rules: [{ required: true, message: `${$t('label.required')}`}]
-                }]"
-              @change="val => { zoneSelected = val }"
-            >
+        <div v-if="form.provider !== 'Swift'">
+          <a-form-item name="zone" ref="zone" :label="$t('label.zone')">
+            <a-select v-model:value="form.zone">
               <a-select-option
                 :value="zone.id"
                 v-for="(zone) in zones"
@@ -56,108 +44,51 @@
               >{{ zone.name }}</a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item :label="$t('label.server')">
-            <a-input
-              v-decorator="[
-                'server',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"
-            />
+          <a-form-item name="server" ref="server" :label="$t('label.server')">
+            <a-input v-model:value="form.server" />
           </a-form-item>
-          <a-form-item :label="$t('label.path')">
-            <a-input
-              v-decorator="[
-                'path',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"
-            />
+          <a-form-item name="path" ref="path" :label="$t('label.path')">
+            <a-input v-model:value="form.path" />
           </a-form-item>
         </div>
-        <div v-if="provider === 'SMB/CIFS'">
-          <a-form-item :label="$t('label.smbusername')">
-            <a-input
-              v-decorator="[
-                'smbUsername',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"
-            />
+        <div v-if="form.provider === 'SMB/CIFS'">
+          <a-form-item name="smbUsername" ref="smbUsername" :label="$t('label.smbusername')">
+            <a-input v-model:value="form.smbUsername" />
           </a-form-item>
-          <a-form-item :label="$t('label.smbpassword')">
-            <a-input-password
-              v-decorator="[
-                'smbPassword',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"
-            />
+          <a-form-item name="smbPassword" ref="smbPassword" :label="$t('label.smbpassword')">
+            <a-input-password v-model:value="form.smbPassword" />
           </a-form-item>
-          <a-form-item :label="$t('label.smbdomain')">
-            <a-input
-              v-decorator="[
-                'smbDomain',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"
-            />
+          <a-form-item name="smbDomain" ref="smbDomain" :label="$t('label.smbdomain')">
+            <a-input v-model:value="form.smbDomain" />
           </a-form-item>
         </div>
-        <div v-if="provider === 'Swift'">
-          <a-form-item :label="$t('label.url')">
-            <a-input
-              v-decorator="[
-                'url',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"
-            />
+        <div v-if="form.provider === 'Swift'">
+          <a-form-item name="url" ref="url" :label="$t('label.url')">
+            <a-input v-model:value="form.url" />
           </a-form-item>
-          <a-form-item :label="$t('label.account')">
-            <a-input
-              v-decorator="[
-                'account',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"
-            />
+          <a-form-item name="account" ref="account" :label="$t('label.account')">
+            <a-input v-model:value="form.account" />
           </a-form-item>
-          <a-form-item :label="$t('label.username')">
-            <a-input
-              v-decorator="[
-                'username',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"
-            />
+          <a-form-item name="username" ref="username" :label="$t('label.username')">
+            <a-input v-model:value="form.username" />
           </a-form-item>
-          <a-form-item :label="$t('label.key')">
-            <a-input
-              v-decorator="[
-                'key',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"
-            />
+          <a-form-item name="key" ref="key" :label="$t('label.key')">
+            <a-input v-model:value="form.key" />
           </a-form-item>
-          <a-form-item :label="$t('label.storagepolicy')">
-            <a-input
-              v-decorator="[
-                'storagepolicy'
-              ]"
-            />
+          <a-form-item name="storagepolicy" ref="storagepolicy" :label="$t('label.storagepolicy')">
+            <a-input v-model:value="form.storagepolicy" />
           </a-form-item>
         </div>
         <div class="actions">
           <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
   </div>
 </template>
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -172,19 +103,33 @@ export default {
   data () {
     return {
       providers: ['NFS', 'SMB/CIFS', 'Swift'],
-      provider: '',
       zones: [],
-      zoneSelected: '',
       loading: false
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        provider: 'NFS'
+      })
+      this.rules = reactive({
+        zone: [{ required: true, message: this.$t('label.required') }],
+        server: [{ required: true, message: this.$t('label.required') }],
+        path: [{ required: true, message: this.$t('label.required') }],
+        smbUsername: [{ required: true, message: this.$t('label.required') }],
+        smbPassword: [{ required: true, message: this.$t('label.required') }],
+        smbDomain: [{ required: true, message: this.$t('label.required') }],
+        url: [{ required: true, message: this.$t('label.required') }],
+        account: [{ required: true, message: this.$t('label.required') }],
+        username: [{ required: true, message: this.$t('label.required') }],
+        key: [{ required: true, message: this.$t('label.required') }]
+      })
+    },
     fetchData () {
       this.listZones()
     },
@@ -196,7 +141,7 @@ export default {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           if (this.zones.length > 0) {
-            this.zoneSelected = this.zones[0].id || ''
+            this.form.zone = this.zones[0].id || ''
           }
         }
       })
@@ -226,10 +171,8 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         var data = {
           name: values.name

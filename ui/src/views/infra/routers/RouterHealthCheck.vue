@@ -22,7 +22,8 @@
       banner
       :message="$t('message.action.router.health.checks.disabled.warning')" />
     <div v-else>
-      <a-button :disabled="!('getRouterHealthCheckResults' in $store.getters.apis)" type="primary" icon="play-circle" style="width: 100%; margin-bottom: 15px" @click="showGetHelathCheck">
+      <a-button :disabled="!('getRouterHealthCheckResults' in $store.getters.apis)" type="primary" style="width: 100%; margin-bottom: 15px" @click="showGetHelathCheck">
+        <template #icon><play-circle-outlined /></template>
         {{ $t('label.action.router.health.checks') }}
       </a-button>
       <a-table
@@ -32,13 +33,13 @@
         :pagination="false"
         :rowKey="record => record.checkname"
         size="large">
-        <template slot="status" slot-scope="record">
+        <template #status="{record}">
           <status class="status" :text="record.success === true ? 'True' : 'False'" displayText />
         </template>
       </a-table>
 
       <a-modal
-        v-if="'getRouterHealthCheckResults' in $store.getters.apis"
+        v-if="'getRouterHealthCheckResults' in $store.getters.apis && showGetHealthChecksForm"
         style="top: 20px;"
         :title="$t('label.action.router.health.checks')"
         :visible="showGetHealthChecksForm"
@@ -51,18 +52,20 @@
         centered>
         <a-spin :spinning="loading">
           <a-form
-            :form="form"
+            :ref="formRef"
+            :model="form"
+            :rules="rules"
             @submit="handleGetHealthChecksSubmit"
             layout="vertical">
-            <a-form-item>
-              <span slot="label">
+            <a-form-item name="performfreshchecks" ref="performfreshchecks">
+              <template #label>
                 {{ $t('label.perform.fresh.checks') }}
                 <a-tooltip :title="apiParams.performfreshchecks.description">
-                  <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
                 </a-tooltip>
-              </span>
+              </template>
               <a-switch
-                v-decorator="[$t('performfreshchecks')]"
+                v-decorator="form.performfreshchecks"
                 :placeholder="apiParams.performfreshchecks.description"
                 autoFocus/>
             </a-form-item>
@@ -74,6 +77,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
 
@@ -119,7 +123,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('getRouterHealthCheckResults')
   },
   watch: {
@@ -128,14 +131,19 @@ export default {
     }
   },
   created () {
+    this.initForm()
     this.updateResource(this.resource)
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
+    },
     updateResource (resource) {
       if (!resource) {
         return
       }
-      this.resource = resource
       if (!resource.id) {
         return
       }
@@ -149,10 +157,8 @@ export default {
     },
     handleGetHealthChecksSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.onCloseGetHealthChecksForm()
         this.checkConfigurationAndGetHealthChecks(values.performfreshchecks)
       })

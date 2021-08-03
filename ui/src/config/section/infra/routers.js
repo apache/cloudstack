@@ -15,10 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
+
 export default {
   name: 'router',
   title: 'label.virtual.routers',
-  icon: 'fork',
+  icon: 'fork-outlined',
   docHelp: 'adminguide/systemvm.html#virtual-router',
   permission: ['listRouters'],
   params: { projectid: '-1' },
@@ -27,14 +29,14 @@ export default {
   details: ['name', 'id', 'version', 'requiresupgrade', 'guestnetworkname', 'vpcname', 'publicip', 'guestipaddress', 'linklocalip', 'serviceofferingname', 'networkdomain', 'isredundantrouter', 'redundantstate', 'hostname', 'account', 'zonename', 'created'],
   tabs: [{
     name: 'details',
-    component: () => import('@/components/view/DetailsTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }, {
     name: 'nics',
-    component: () => import('@/views/network/NicsTable.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/views/network/NicsTable.vue')))
   }, {
     name: 'router.health.checks',
     show: (record, route, user) => { return ['Running'].includes(record.state) && ['Admin'].includes(user.roletype) },
-    component: () => import('@views/infra/routers/RouterHealthCheck.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@views/infra/routers/RouterHealthCheck.vue')))
   }],
   related: [{
     name: 'vm',
@@ -45,7 +47,7 @@ export default {
   actions: [
     {
       api: 'startRouter',
-      icon: 'caret-right',
+      icon: 'caret-right-outlined',
       label: 'label.action.start.router',
       message: 'message.action.start.router',
       dataView: true,
@@ -53,7 +55,7 @@ export default {
     },
     {
       api: 'stopRouter',
-      icon: 'poweroff',
+      icon: 'poweroff-outlined',
       label: 'label.action.stop.router',
       message: 'message.action.stop.router',
       dataView: true,
@@ -62,7 +64,7 @@ export default {
     },
     {
       api: 'rebootRouter',
-      icon: 'sync',
+      icon: 'sync-outlined',
       label: 'label.action.reboot.router',
       message: 'message.action.reboot.router',
       dataView: true,
@@ -70,7 +72,7 @@ export default {
     },
     {
       api: 'scaleSystemVm',
-      icon: 'arrows-alt',
+      icon: 'arrows-alt-outlined',
       label: 'label.change.service.offering',
       message: 'message.confirm.scale.up.router.vm',
       dataView: true,
@@ -91,7 +93,7 @@ export default {
     },
     {
       api: 'upgradeRouterTemplate',
-      icon: 'fullscreen',
+      icon: 'fullscreen-outlined',
       label: 'label.upgrade.router.newer.template',
       message: 'message.confirm.upgrade.router.newer.template',
       docHelp: 'adminguide/systemvm.html#upgrading-virtual-routers',
@@ -101,7 +103,7 @@ export default {
     },
     {
       api: 'migrateSystemVm',
-      icon: 'drag',
+      icon: 'drag-outlined',
       label: 'label.action.migrate.router',
       message: 'message.migrate.router.confirm',
       dataView: true,
@@ -119,7 +121,7 @@ export default {
     },
     {
       api: 'runDiagnostics',
-      icon: 'reconciliation',
+      icon: 'reconciliation-outlined',
       label: 'label.action.run.diagnostics',
       dataView: true,
       show: (record, store) => { return ['Running'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
@@ -136,7 +138,7 @@ export default {
     },
     {
       api: 'getDiagnosticsData',
-      icon: 'download',
+      icon: 'download-outlined',
       label: 'label.action.get.diagnostics',
       dataView: true,
       show: (record, store) => { return ['Running'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
@@ -150,7 +152,7 @@ export default {
     },
     {
       api: 'destroyRouter',
-      icon: 'delete',
+      icon: 'delete-outlined',
       label: 'label.destroy.router',
       message: 'message.confirm.destroy.router',
       dataView: true,

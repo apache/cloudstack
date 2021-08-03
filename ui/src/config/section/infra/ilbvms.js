@@ -18,7 +18,7 @@
 export default {
   name: 'ilbvm',
   title: 'label.internal.lb',
-  icon: 'share-alt',
+  icon: 'share-alt-outlined',
   permission: ['listInternalLoadBalancerVMs'],
   params: { projectid: '-1' },
   columns: ['name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'version', 'hostname', 'account', 'zonename', 'requiresupgrade'],
@@ -26,7 +26,7 @@ export default {
   actions: [
     {
       api: 'startInternalLoadBalancerVM',
-      icon: 'caret-right',
+      icon: 'caret-right-outlined',
       label: 'label.action.start.router',
       message: 'message.confirm.start.lb.vm',
       dataView: true,
@@ -34,7 +34,7 @@ export default {
     },
     {
       api: 'stopInternalLoadBalancerVM',
-      icon: 'poweroff',
+      icon: 'poweroff-outlined',
       label: 'label.action.stop.router',
       dataView: true,
       args: ['forced'],
@@ -42,7 +42,7 @@ export default {
     },
     {
       api: 'migrateSystemVm',
-      icon: 'drag',
+      icon: 'drag-outlined',
       label: 'label.action.migrate.router',
       dataView: true,
       show: (record) => { return record.state === 'Running' },

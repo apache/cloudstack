@@ -48,6 +48,7 @@ import {
   CloudUploadOutlined,
   ClusterOutlined,
   CodeOutlined,
+  CompassOutlined,
   CopyOutlined,
   DashboardOutlined,
   DatabaseOutlined,
@@ -70,6 +71,7 @@ import {
   FlagOutlined,
   FolderAddOutlined,
   FolderOutlined,
+  ForkOutlined,
   FormOutlined,
   FullscreenOutlined,
   GatewayOutlined,
@@ -98,6 +100,7 @@ import {
   PauseCircleOutlined,
   PictureOutlined,
   PlayCircleOutlined,
+  PlusCircleOutlined,
   PlusOutlined,
   PlusSquareOutlined,
   PoweroffOutlined,
@@ -106,6 +109,7 @@ import {
   ReadOutlined,
   ReconciliationOutlined,
   ReloadOutlined,
+  RightCircleOutlined,
   RocketOutlined,
   SafetyCertificateOutlined,
   SafetyOutlined,
@@ -119,6 +123,7 @@ import {
   SwapOutlined,
   SyncOutlined,
   TeamOutlined,
+  ThunderboltOutlined,
   TranslationOutlined,
   UsbOutlined,
   UserAddOutlined,
@@ -171,6 +176,7 @@ export default {
     app.component('CloudUploadOutlined', CloudUploadOutlined)
     app.component('ClusterOutlined', ClusterOutlined)
     app.component('CodeOutlined', CodeOutlined)
+    app.component('CompassOutlined', CompassOutlined)
     app.component('CopyOutlined', CopyOutlined)
     app.component('DashboardOutlined', DashboardOutlined)
     app.component('DatabaseOutlined', DatabaseOutlined)
@@ -193,6 +199,7 @@ export default {
     app.component('FlagOutlined', FlagOutlined)
     app.component('FolderAddOutlined', FolderAddOutlined)
     app.component('FolderOutlined', FolderOutlined)
+    app.component('ForkOutlined', ForkOutlined)
     app.component('FormOutlined', FormOutlined)
     app.component('FullscreenOutlined', FullscreenOutlined)
     app.component('GatewayOutlined', GatewayOutlined)
@@ -221,6 +228,7 @@ export default {
     app.component('PauseCircleOutlined', PauseCircleOutlined)
     app.component('PictureOutlined', PictureOutlined)
     app.component('PlayCircleOutlined', PlayCircleOutlined)
+    app.component('PlusCircleOutlined', PlusCircleOutlined)
     app.component('PlusOutlined', PlusOutlined)
     app.component('PlusSquareOutlined', PlusSquareOutlined)
     app.component('PoweroffOutlined', PoweroffOutlined)
@@ -229,6 +237,7 @@ export default {
     app.component('ReadOutlined', ReadOutlined)
     app.component('ReconciliationOutlined', ReconciliationOutlined)
     app.component('ReloadOutlined', ReloadOutlined)
+    app.component('RightCircleOutlined', RightCircleOutlined)
     app.component('RocketOutlined', RocketOutlined)
     app.component('SafetyCertificateOutlined', SafetyCertificateOutlined)
     app.component('SafetyOutlined', SafetyOutlined)
@@ -242,6 +251,7 @@ export default {
     app.component('SwapOutlined', SwapOutlined)
     app.component('SyncOutlined', SyncOutlined)
     app.component('TeamOutlined', TeamOutlined)
+    app.component('ThunderboltOutlined', ThunderboltOutlined)
     app.component('TranslationOutlined', TranslationOutlined)
     app.component('UsbOutlined', UsbOutlined)
     app.component('UserAddOutlined', UserAddOutlined)
