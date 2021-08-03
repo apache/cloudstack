@@ -87,7 +87,7 @@ class TestAnnotations(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cleanup_resources(cls.apiclient, cls.cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
