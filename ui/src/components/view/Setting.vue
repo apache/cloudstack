@@ -21,7 +21,7 @@
       <a-radio-group
         class="setting-group"
         name="themeGroup"
-        :default-value="layoutMode"
+        v-model="layoutMode"
         @change="switchLayoutMode">
         <setting-item
           view-type="radio-group"
@@ -115,6 +115,10 @@
         class="setting-action-btn"
         icon="copy"
         @click="saveSetting">{{ $t('label.save.setting') }}</a-button>
+      <a-button
+        class="setting-action-btn"
+        icon="undo"
+        @click="resetSetting">{{ $t('label.reset.to.default') }}</a-button>
     </div>
   </div>
 </template>
@@ -141,7 +145,8 @@ export default {
       navTextColorPick: this.$store.getters.themeSetting['@navigation-text-color'] || this.$config.theme['@navigation-text-color'],
       projectNavBgColorPick: this.$store.getters.themeSetting['@project-nav-background-color'] || this.$config.theme['@project-nav-background-color'],
       projectNavTextColorPick: this.$store.getters.themeSetting['@project-nav-text-color'] || this.$config.theme['@project-nav-text-color'],
-      uiSettings: {}
+      uiSettings: {},
+      originalSetting: {}
     }
   },
   computed: {
@@ -219,19 +224,15 @@ export default {
   },
   methods: {
     fetchData () {
+      this.originalSetting = Object.assign({}, this.$config.theme)
       this.layoutMode = 'light'
       if (this.$store.getters.darkMode) {
         this.layoutMode = 'dark'
       }
       this.uiSettings = this.$config.theme
     },
-    switchLayoutMode (e) {
-      this.layoutMode = e.target.value
-      if (this.layoutMode === 'dark') {
-        this.$store.dispatch('SetDarkMode', true)
-      } else if (this.layoutMode === 'light') {
-        this.$store.dispatch('SetDarkMode', false)
-      }
+    switchLayoutMode () {
+      this.$store.dispatch('SetDarkMode', (this.layoutMode === 'dark'))
     },
     switchColor (e) {
       this.colorPick = e.target.value
@@ -254,6 +255,21 @@ export default {
         loading()
         this.$message.success(this.$t('label.success'))
       }, 1000)
+    },
+    resetSetting () {
+      this.layoutMode = 'light'
+      this.colorPick = this.originalSetting['@primary-color']
+      this.navBgColorPick = this.originalSetting['@navigation-background-color']
+      this.navTextColorPick = this.originalSetting['@navigation-text-color']
+      this.projectNavBgColorPick = this.originalSetting['@project-nav-background-color']
+      this.projectNavTextColorPick = this.originalSetting['@project-nav-text-color']
+
+      this.$store.dispatch('SetThemeSetting', {})
+      this.switchLayoutMode()
+
+      this.$config.theme = this.originalSetting
+      window.less.modifyVars(this.$config.theme)
+      this.$message.success(this.$t('label.success'))
     },
     formatConfig (obj, dep) {
       dep = dep || 1
@@ -384,6 +400,7 @@ export default {
 
   &-btn {
     width: 100%;
+    margin-bottom: 5px;
   }
 }
 </style>
