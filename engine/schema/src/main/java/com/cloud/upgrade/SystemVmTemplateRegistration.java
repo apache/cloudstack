@@ -52,7 +52,7 @@ public class SystemVmTemplateRegistration {
     private static final String mountCommand = "sudo mount -t nfs %s %s";
     private static final String umountCommand = "sudo umount %s";
     private static final  String hashAlgorithm = "MD5";
-    private static final String relativeTemplatePath = "./systemvm/dist/systemvm-templates/";
+    private static final String relativeTemplatePath = "./engine/schema/dist/systemvm-templates/";
     private static final String AbsolutetemplatesPath = "/usr/share/cloudstack-management/templates/";
     private static final String templatesPath = fetchTemplatesPath();
     private static final String metadataFileName = "metadata.ini";
@@ -61,6 +61,7 @@ public class SystemVmTemplateRegistration {
     private static final String PARENT_TEMPLATE_FOLDER = TEMPORARY_SECONDARY_STORE;
     private static final String PARTIAL_TEMPLATE_FOLDER = "/template/tmpl/1/";
     private static final String FETCH_FOLDER_NAME = "SELECT id FROM vm_template ORDER BY id DESC LIMIT 1;";
+    // TODO: filter out only zones with NFS based 'Image' stores - to rule out image cache scenario
     private static final String FETCH_DISTINCT_ELIGIBLE_ZONES = "SELECT DISTINCT(data_center_id) FROM `cloud`.`image_store` WHERE protocol = \"nfs\" AND removed is null";
     private static final String FETCH_DISTINCT_HYPERVISORS_IN_ZONE = "SELECT DISTINCT(hypervisor_type) FROM `cloud`.`cluster` where removed is null and data_center_id=?";
     private static final String FETCH_IMAGE_STORE_PER_ZONE = "SELECT url,id FROM `cloud`.`image_store` WHERE data_center_id=? AND removed IS NULL LIMIT 1";

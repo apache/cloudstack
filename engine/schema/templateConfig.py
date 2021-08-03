@@ -53,7 +53,6 @@ def fetchChecksum(checksumData, hypervisor):
     for line in checksumData:
         hypervisor = getGenericName(hypervisor)
         if hypervisor in line:
-            print(type(line.split(" ")[0]))
             return str(line.split(" ")[0])
 
 def createMetadataFile():
