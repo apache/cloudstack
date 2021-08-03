@@ -18,7 +18,7 @@
 export default {
   name: 'event',
   title: 'label.events',
-  icon: 'schedule',
+  icon: 'ScheduleOutlined',
   docHelp: 'adminguide/events.html',
   permission: ['listEvents'],
   columns: ['level', 'type', 'state', 'description', 'username', 'account', 'domain', 'created'],
@@ -32,7 +32,7 @@ export default {
   actions: [
     {
       api: 'archiveEvents',
-      icon: 'book',
+      icon: 'BookOutlined',
       label: 'label.archive.events',
       message: 'message.confirm.archive.selected.events',
       docHelp: 'adminguide/events.html#deleting-and-archiving-events-and-alerts',
@@ -51,7 +51,7 @@ export default {
     },
     {
       api: 'deleteEvents',
-      icon: 'delete',
+      icon: 'DeleteOutlined',
       label: 'label.delete.events',
       message: 'message.confirm.remove.selected.events',
       docHelp: 'adminguide/events.html#deleting-and-archiving-events-and-alerts',
