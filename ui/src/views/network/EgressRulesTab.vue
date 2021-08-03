@@ -69,7 +69,7 @@
       :pagination="false"
       :rowKey="record => record.id">
       <template slot="protocol" slot-scope="record">
-        {{ record.protocol | capitalise }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template slot="startport" slot-scope="record">
         {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : 'All' }}
@@ -165,7 +165,6 @@ export default {
   },
   filters: {
     capitalise: val => {
-      if (val === 'all') return this.$t('label.all')
       return val.toUpperCase()
     }
   },
@@ -192,6 +191,10 @@ export default {
       }).finally(() => {
         this.loading = false
       })
+    },
+    getCapitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
     },
     deleteRule (rule) {
       this.loading = true
