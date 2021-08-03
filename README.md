@@ -60,7 +60,7 @@ via Github pull requests.
 * Design [documents](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Design)
 * API [documentation](https://cloudstack.apache.org/api.html)
 * How to [contribute](CONTRIBUTING.md)
-* [YouTube channel](https://www.youtube.com/ApacheCloudStack)
+* You can find some interesting videos at the [Apache CloudStack](https://www.youtube.com/ApacheCloudStack) YouTube channel
 
 ## Getting Involved and Contributing
 
