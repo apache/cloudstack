@@ -1409,13 +1409,14 @@ export default {
     },
     handleSubmit (e) {
       console.log('wizard submit')
+      const options = {
+        scroll: {
+          offsetTop: 100
+        }
+      }
       e.preventDefault()
-      this.form.validateFieldsAndScroll(async (err, values) => {
+      this.form.validateFieldsAndScroll(options, async (err, values) => {
         if (err) {
-          // err.zoneid.errors[0].field.focus()
-          if (err.zoneid) {
-            err.zoneid.errors[0].field.$el.focus()
-          }
           if (err.licensesaccepted) {
             this.$notification.error({
               message: this.$t('message.license.agreements.not.accepted'),
@@ -1423,7 +1424,7 @@ export default {
             })
             return
           }
-          console.log(err.zoneid.errors[0])
+          // console.log(err.zoneid.errors[0])
           this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('error.form.message')
