@@ -17,7 +17,12 @@
 
 <template>
   <a-spin :spinning="loading">
-    <a-form class="form" :form="form" @submit="handleSubmit" layout="vertical">
+    <a-form
+      class="form"
+      :form="form"
+      @submit="handleSubmit"
+      v-ctrl-enter="handleSubmit"
+      layout="vertical">
       <a-form-item>
         <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
         <a-input
@@ -113,7 +118,7 @@
       </span>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </a-spin>
@@ -172,6 +177,7 @@ export default {
       })
     },
     handleSubmit (e) {
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
@@ -213,14 +219,6 @@ export default {
 
   @media (min-width: 500px) {
     width: 400px;
-  }
-}
-
-.action-button {
-  text-align: right;
-
-  button {
-    margin-right: 5px;
   }
 }
 </style>

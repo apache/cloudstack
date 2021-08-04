@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form">
+  <div class="form" v-ctrl-enter="submitData">
     <div v-if="loading" class="loading">
       <a-icon type="loading"></a-icon>
     </div>
@@ -87,13 +87,10 @@
         </div>
       </template>
     </template>
-    <div class="actions">
-      <a-button @click="closeModal">
-        {{ $t('label.cancel') }}
-      </a-button>
-      <a-button type="primary" @click="submitData">
-        {{ $t('label.ok') }}
-      </a-button>
+
+    <div :span="24" class="action-button">
+      <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
+      <a-button type="primary" ref="submit" @click="submitData">{{ $t('label.ok') }}</a-button>
     </div>
   </div>
 </template>
@@ -230,6 +227,7 @@ export default {
       this.$parent.$parent.close()
     },
     submitData () {
+      if (this.loading) return
       let variableKey = ''
       let variableValue = ''
       if (this.selectedShareWith === this.$t('label.account')) {
@@ -291,16 +289,6 @@ export default {
       margin-bottom: 5px;
     }
 
-  }
-  .actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 20px;
-    button {
-      &:not(:last-child) {
-        margin-right: 10px;
-      }
-    }
   }
 
   .required {

@@ -96,7 +96,15 @@
       </draggable>
     </div>
 
-    <a-modal :title="$t('label.edit.tags')" v-model="tagsModalVisible" :footer="null" :maskClosable="false">
+    <a-modal
+      v-if="tagsModalVisible"
+      :title="$t('label.edit.tags')"
+      v-model="tagsModalVisible"
+      :footer="null"
+      :closable="true"
+      :maskClosable="false"
+      @cancel="tagsModalVisible = false"
+      v-ctrl-enter="handleAddTag">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>
@@ -115,7 +123,7 @@
               <a-input v-decorator="['value', { rules: [{ required: true, message: $t('message.specifiy.tag.value')}] }]" />
             </a-form-item>
           </div>
-          <a-button type="primary" html-type="submit">{{ $t('label.add') }}</a-button>
+          <a-button ref="submit" type="primary" @click="handleAddTag">{{ $t('label.add') }}</a-button>
         </a-form>
 
         <a-divider style="margin-top: 0;"></a-divider>
@@ -132,7 +140,15 @@
       </div>
 
     </a-modal>
-    <a-modal :title="ruleModalTitle" :maskClosable="false" v-model="ruleModalVisible" @ok="handleRuleModalForm">
+    <a-modal
+      v-if="ruleModalVisible"
+      :title="ruleModalTitle"
+      :closable="true"
+      :maskClosable="false"
+      :footer="null"
+      v-model="ruleModalVisible"
+      @cancel="ruleModalVisible = false"
+      v-ctrl-enter="handleRuleModalForm">
       <a-form :form="ruleForm" @submit="handleRuleModalForm">
         <a-form-item :label="$t('label.number')">
           <a-input-number autoFocus style="width: 100%" v-decorator="['number']" />
@@ -190,6 +206,11 @@
             :autosize="{ minRows: 2 }"
             :placeholder="$t('label.acl.reason.description')" />
         </a-form-item>
+
+        <div :span="24" class="action-button">
+          <a-button @click="() => { ruleModalVisible = false } ">{{ $t('label.cancel') }}</a-button>
+          <a-button ref="submit" type="primary" @click="handleRuleModalForm">{{ $t('label.ok') }}</a-button>
+        </div>
       </a-form>
     </a-modal>
   </a-spin>
@@ -343,6 +364,7 @@ export default {
       })
     },
     handleAddTag (e) {
+      if (this.tagsLoading) return
       this.tagsLoading = true
 
       e.preventDefault()
@@ -500,6 +522,7 @@ export default {
       })
     },
     handleRuleModalForm (e) {
+      if (this.fetchLoading) return
       if (this.ruleFormMode === 'edit') {
         this.handleEditRule(e)
         return

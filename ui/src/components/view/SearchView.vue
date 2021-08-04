@@ -133,7 +133,6 @@ export default {
       default: () => {}
     }
   },
-  inject: ['parentSearch', 'parentChangeFilter'],
   data () {
     return {
       searchQuery: null,
@@ -419,7 +418,7 @@ export default {
     onSearch (value) {
       this.paramsFilter = {}
       this.searchQuery = value
-      this.parentSearch({ searchQuery: this.searchQuery })
+      this.$emit('search', { searchQuery: this.searchQuery })
     },
     onClear () {
       this.searchFilters.map(item => {
@@ -432,7 +431,7 @@ export default {
       this.inputValue = null
       this.searchQuery = null
       this.paramsFilter = {}
-      this.parentSearch(this.paramsFilter)
+      this.$emit('search', this.paramsFilter)
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -455,7 +454,7 @@ export default {
             this.paramsFilter['tags[0].value'] = this.inputValue
           }
         }
-        this.parentSearch(this.paramsFilter)
+        this.$emit('search', this.paramsFilter)
       })
     },
     handleKeyChange (e) {
@@ -465,7 +464,7 @@ export default {
       this.inputValue = e.target.value
     },
     changeFilter (filter) {
-      this.parentChangeFilter(filter)
+      this.$emit('change-filter', filter)
     }
   }
 }

@@ -18,16 +18,15 @@
 <template>
   <div>
     <a-modal
+      centered
       :visible="showAction"
       :closable="true"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
-      style="top: 20px;"
-      @ok="handleSubmit"
-      @cancel="parentCloseAction"
       :confirmLoading="action.loading"
-      centered
+      :footer="null"
+      @cancel="parentCloseAction"
+      style="top: 20px;"
+      v-ctrl-enter="handleSubmit"
     >
       <span slot="title">
         {{ $t(action.label) }}
@@ -123,6 +122,11 @@
                 :autoFocus="fieldIndex === firstIndex" />
             </span>
           </a-form-item>
+
+          <div :span="24" class="action-button">
+            <a-button @click="parentCloseAction">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-spin>
     </a-modal>
@@ -172,6 +176,7 @@ export default {
   methods: {
     handleSubmit (e) {
       e.preventDefault()
+      if (this.action.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return

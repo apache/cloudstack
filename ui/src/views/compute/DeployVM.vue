@@ -21,6 +21,7 @@
       <a-col :md="24" :lg="17">
         <a-card :bordered="true" :title="this.$t('label.newinstance')">
           <a-form
+            v-ctrl-enter="handleSubmit"
             :form="form"
             @submit="handleSubmit"
             layout="vertical"
@@ -199,9 +200,9 @@
                     ></compute-offering-selection>
                     <compute-selection
                       v-if="serviceOffering && (serviceOffering.iscustomized || serviceOffering.iscustomizediops)"
-                      cpunumber-input-decorator="cpunumber"
-                      cpuspeed-input-decorator="cpuspeed"
-                      memory-input-decorator="memory"
+                      cpuNumberInputDecorator="cpunumber"
+                      cpuSpeedInputDecorator="cpuspeed"
+                      memoryInputDecorator="memory"
                       :preFillContent="dataPreFill"
                       :computeOfferingId="instanceConfig.computeofferingid"
                       :isConstrained="'serviceofferingdetails' in serviceOffering"
@@ -613,7 +614,7 @@
               <a-button @click="() => this.$router.back()" :disabled="loading.deploy">
                 {{ this.$t('label.cancel') }}
               </a-button>
-              <a-dropdown-button style="margin-left: 10px" type="primary" @click="handleSubmit" :loading="loading.deploy">
+              <a-dropdown-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit" :loading="loading.deploy">
                 <a-icon type="rocket" />
                 {{ this.$t('label.launch.vm') }}
                 <a-icon slot="icon" type="down" />
@@ -801,8 +802,8 @@ export default {
       diskSelected: {},
       diskIOpsMin: 0,
       diskIOpsMax: 0,
-      minIOPs: 0,
-      maxIOPs: 0
+      minIops: 0,
+      maxIops: 0
     }
   },
   computed: {
@@ -1434,6 +1435,7 @@ export default {
     handleSubmit (e) {
       console.log('wizard submit')
       e.preventDefault()
+      if (this.loading.deploy) return
       this.form.validateFields(async (err, values) => {
         if (err) {
           if (err.licensesaccepted) {
@@ -1530,8 +1532,8 @@ export default {
           deployVmData['details[0].configurationId'] = this.selectedTemplateConfiguration.id
         }
         if (this.isCustomizedIOPS) {
-          deployVmData['details[0].minIops'] = this.minIOPs
-          deployVmData['details[0].maxIops'] = this.maxIOPs
+          deployVmData['details[0].minIops'] = this.minIops
+          deployVmData['details[0].maxIops'] = this.maxIops
         }
         // step 4: select disk offering
         if (!this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {

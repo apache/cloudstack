@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div>
+  <div v-ctrl-enter="handleSubmit">
     <a-card
       class="ant-form-text"
       style="text-align: justify; margin: 10px 0; padding: 20px;"
@@ -121,6 +121,7 @@
       <a-button
         class="button-next"
         type="primary"
+        ref="submit"
         @click="handleSubmit">
         {{ $t('label.next') }}
       </a-button>
@@ -129,24 +130,26 @@
       :visible="showError"
       :title="`${$t('label.error')}!`"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
-      @ok="() => { showError = false }"
+      :closable="true"
+      :footer="null"
       @cancel="() => { showError = false }"
+      v-ctrl-enter="showError = false"
       centered
     >
       <span>{{ $t('message.required.traffic.type') }}</span>
+      <div :span="24" class="action-button">
+        <a-button @click="showError = false">{{ $t('label.cancel') }}</a-button>
+        <a-button type="primary" ref="submit" @click="showError = false">{{ $t('label.ok') }}</a-button>
+      </div>
     </a-modal>
     <a-modal
       :title="$t('label.edit.traffic.type')"
       :visible="showEditTraffic"
       :closable="true"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
-      @ok="updateTrafficLabel(trafficInEdit)"
-      @cancel="cancelEditTraffic"
       centered
+      :footer="null"
+      v-ctrl-enter:[trafficInEdit]="updateTrafficLabel"
     >
       <a-form :form="form">
         <span class="ant-form-text"> {{ $t('message.edit.traffic.type') }} </span>
@@ -175,6 +178,11 @@
             </a-select>
           </a-form-item>
         </span>
+
+        <div :span="24" class="action-button">
+          <a-button @click="cancelEditTraffic">{{ this.$t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="updateTrafficLabel(trafficInEdit)">{{ this.$t('label.ok') }}</a-button>
+        </div>
       </a-form>
     </a-modal>
   </div>
