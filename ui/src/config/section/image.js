@@ -314,7 +314,7 @@ export default {
       name: 'kubernetesiso',
       title: 'label.kubernetes.isos',
       icon: kubernetes,
-      shortKey: ['i', 'k'],
+      shortKey: ['i', 'm'],
       docHelp: 'plugins/cloudstack-kubernetes-service.html#kubernetes-supported-versions',
       permission: ['listKubernetesSupportedVersions'],
       columns: ['name', 'state', 'semanticversion', 'isostate', 'mincpunumber', 'minmemory', 'zonename'],

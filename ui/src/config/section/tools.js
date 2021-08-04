@@ -19,12 +19,14 @@ export default {
   name: 'tools',
   title: 'label.tools',
   icon: 'tool',
+  shortKey: ['shift', 'x'],
   permission: ['listInfrastructure'],
   children: [
     {
       name: 'manageinstances',
       title: 'label.action.import.export.instances',
       icon: 'interaction',
+      shortKey: ['x', 'a'],
       docHelp: 'adminguide/virtual_machines.html#importing-and-unmanaging-virtual-machine',
       resourceType: 'UserVm',
       permission: ['listUnmanagedInstances'],
