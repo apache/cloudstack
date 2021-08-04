@@ -991,8 +991,13 @@ export default {
         params.isofilter = 'executable'
       } else if (possibleApi === 'listHosts') {
         params.type = 'routing'
-      } else if (possibleApi === 'listNetworkOfferings' && this.resource && this.resource.type) {
-        params.guestiptype = this.resource.type
+      } else if (possibleApi === 'listNetworkOfferings' && this.resource) {
+        if (this.resource.type) {
+          params.guestiptype = this.resource.type
+        }
+        if (!this.resource.vpcid) {
+          params.forvpc = false
+        }
       }
       api(possibleApi, params).then(json => {
         param.loading = false
