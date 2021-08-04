@@ -279,7 +279,6 @@ class CsRedundant(object):
             CsHelper.execute(cmd2)
             dev = interface.get_device()
 
-        cmd = "%s -C %s" % (self.CONNTRACKD_BIN, self.CONNTRACKD_CONF)
         CsHelper.service("conntrackd", "restart")
         CsHelper.service("ipsec", "stop")
         CsHelper.service("xl2tpd", "stop")
