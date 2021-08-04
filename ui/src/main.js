@@ -29,6 +29,7 @@ import './utils/filter' // global filter
 import './utils/shortkey' // keyboard shortcuts
 import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin, apiMetaUtilPlugin } from './utils/plugins'
 import { VueAxios } from './utils/request'
+import './utils/directives'
 
 Vue.config.productionTip = false
 Vue.use(VueAxios, router)

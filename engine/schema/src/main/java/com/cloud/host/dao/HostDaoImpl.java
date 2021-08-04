@@ -79,6 +79,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     private static final Logger state_logger = Logger.getLogger(ResourceState.class);
 
     private static final String LIST_CLUSTERID_FOR_HOST_TAG = "select distinct cluster_id from host join host_tags on host.id = host_tags.host_id and host_tags.tag = ?";
+    private static final String GET_HOSTS_OF_ACTIVE_VMS = "select h.id " +
+            "from vm_instance vm " +
+            "join host h on (vm.host_id=h.id) " +
+            "where vm.service_offering_id= ? and vm.state not in (\"Destroyed\", \"Expunging\", \"Error\") group by h.id";
 
     protected SearchBuilder<HostVO> TypePodDcStatusSearch;
 
@@ -1188,6 +1192,27 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 result.add(rs.getLong(1));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + sql, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + sql, e);
+        }
+    }
+
+    @Override
+    public List<HostVO> listHostsWithActiveVMs(long offeringId) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        List<HostVO> result = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(GET_HOSTS_OF_ACTIVE_VMS);
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+            pstmt.setLong(1, offeringId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                result.add(toEntityBean(rs, false));
             }
             return result;
         } catch (SQLException e) {

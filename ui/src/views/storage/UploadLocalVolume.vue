@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <span v-if="uploadPercentage > 0">
       <a-icon type="loading" />
       {{ $t('message.upload.file.processing') }}
@@ -96,7 +96,7 @@
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button :loading="loading" type="primary" ref="submit" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -154,6 +154,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
@@ -169,6 +170,7 @@ export default {
           }
           params[key] = input
         }
+        this.loading = true
         api('getUploadParamsForVolume', params).then(json => {
           this.uploadParams = (json.postuploadvolumeresponse && json.postuploadvolumeresponse.getuploadparams) ? json.postuploadvolumeresponse.getuploadparams : ''
           const { fileList } = this
@@ -183,7 +185,6 @@ export default {
           fileList.forEach(file => {
             formData.append('files[]', file)
           })
-          this.loading = true
           this.uploadPercentage = 0
           axios.post(this.uploadParams.postURL,
             formData,
@@ -229,14 +230,6 @@ export default {
 
     @media (min-width: 700px) {
       width: 550px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

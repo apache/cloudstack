@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-form
       :form="form"
       layout="vertical"
@@ -154,7 +154,7 @@
       </a-row>
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="onCloseAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
@@ -207,6 +207,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields(async (err, values) => {
         if (err) {
           return
@@ -412,16 +413,3 @@ export default {
   }
 }
 </script>
-
-<style scoped lang="less">
-.form-layout {
-  .action-button {
-    text-align: right;
-    margin-top: 20px;
-
-    button {
-      margin-right: 5px;
-    }
-  }
-}
-</style>

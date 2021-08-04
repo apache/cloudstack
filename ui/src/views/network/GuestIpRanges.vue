@@ -73,8 +73,8 @@
       :visible="showCreateForm"
       :title="$t('label.add.ip.range')"
       :maskClosable="false"
+      :closable="true"
       :footer="null"
-      :cancelText="$t('label.cancel')"
       @cancel="() => { showCreateForm = false }"
       centered
       width="auto">
