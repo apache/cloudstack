@@ -39,6 +39,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -347,7 +348,15 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
                 LOGGER.error(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
-            accountService.checkAccess(callingUser, entity);
+            if (type == EntityType.NETWORK && entity instanceof NetworkVO &&
+                    ((NetworkVO) entity).getAclType() == ControlledEntity.ACLType.Domain) {
+                NetworkVO network = (NetworkVO) entity;
+                DomainVO domain = domainDao.findById(network.getDomainId());
+                AccountVO account = accountDao.findById(callingUser.getAccountId());
+                accountService.checkAccess(account, domain);
+            } else {
+                accountService.checkAccess(callingUser, entity);
+            }
         } catch (IllegalArgumentException e) {
             LOGGER.error("Could not parse entity type " + entityType, e);
         }
