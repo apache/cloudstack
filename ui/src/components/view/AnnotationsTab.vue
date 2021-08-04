@@ -85,7 +85,7 @@
             style="margin-top: 10px; float: right"
             @click="saveNote"
             type="primary" >
-            {{ $t('label.save') }}
+            {{ $t('label.submit') }}
           </a-button>
         </div>
       </a-comment>
