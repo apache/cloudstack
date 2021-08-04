@@ -19,8 +19,10 @@ package com.cloud.api.query.dao;
 import java.util.List;
 
 
+import com.cloud.user.AccountManager;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -43,6 +45,8 @@ public class InstanceGroupJoinDaoImpl extends GenericDaoBase<InstanceGroupJoinVO
 
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private AccountManager accountManager;
 
     protected InstanceGroupJoinDaoImpl() {
 
@@ -59,7 +63,8 @@ public class InstanceGroupJoinDaoImpl extends GenericDaoBase<InstanceGroupJoinVO
         groupResponse.setId(group.getUuid());
         groupResponse.setName(group.getName());
         groupResponse.setCreated(group.getCreated());
-        groupResponse.setHasAnnotation(annotationDao.hasAnnotations(group.getUuid(), AnnotationService.EntityType.INSTANCE_GROUP.name()));
+        groupResponse.setHasAnnotation(annotationDao.hasAnnotations(group.getUuid(), AnnotationService.EntityType.INSTANCE_GROUP.name(),
+                accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         ApiResponseHelper.populateOwner(groupResponse, group);
 

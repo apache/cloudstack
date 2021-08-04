@@ -20,12 +20,14 @@ import java.util.EnumSet;
 import java.util.List;
 
 
+import com.cloud.user.AccountManager;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ResourceLimitAndCountResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -47,6 +49,8 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
 
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private AccountManager accountManager;
 
     protected DomainJoinDaoImpl() {
 
@@ -81,7 +85,8 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         domainResponse.setCreated(domain.getCreated());
         domainResponse.setNetworkDomain(domain.getNetworkDomain());
 
-        domainResponse.setHasAnnotation(annotationDao.hasAnnotations(domain.getUuid(), AnnotationService.EntityType.DOMAIN.name()));
+        domainResponse.setHasAnnotation(annotationDao.hasAnnotations(domain.getUuid(), AnnotationService.EntityType.DOMAIN.name(),
+                accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         if (details.contains(DomainDetails.all) || details.contains(DomainDetails.resource)) {
             boolean fullView = (view == ResponseView.Full && domain.getId() == Domain.ROOT_DOMAIN);

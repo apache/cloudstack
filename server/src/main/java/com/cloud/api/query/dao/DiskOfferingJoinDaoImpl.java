@@ -23,10 +23,12 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.server.ResourceTag;
+import com.cloud.user.AccountManager;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -48,6 +50,8 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
     VsphereStoragePolicyDao _vsphereStoragePolicyDao;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private AccountManager accountManager;
 
     private final SearchBuilder<DiskOfferingJoinVO> dofIdSearch;
     private final Attribute _typeAttr;
@@ -104,7 +108,8 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         diskOfferingResponse.setZoneId(offering.getZoneUuid());
         diskOfferingResponse.setZone(offering.getZoneName());
 
-        diskOfferingResponse.setHasAnnotation(annotationDao.hasAnnotations(offering.getUuid(), AnnotationService.EntityType.DISK_OFFERING.name()));
+        diskOfferingResponse.setHasAnnotation(annotationDao.hasAnnotations(offering.getUuid(), AnnotationService.EntityType.DISK_OFFERING.name(),
+                accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         diskOfferingResponse.setTags(offering.getTags());
         diskOfferingResponse.setCustomized(offering.isCustomized());

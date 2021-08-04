@@ -260,7 +260,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             addTagInformation(template, templateResponse);
         }
 
-        templateResponse.setHasAnnotation(annotationDao.hasAnnotations(template.getUuid(), AnnotationService.EntityType.TEMPLATE.name()));
+        templateResponse.setHasAnnotation(annotationDao.hasAnnotations(template.getUuid(), AnnotationService.EntityType.TEMPLATE.name(),
+                _accountService.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         templateResponse.setDirectDownload(template.isDirectDownload());
         templateResponse.setDeployAsIs(template.isDeployAsIs());
@@ -360,7 +361,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         }
 
         if (templateResponse.hasAnnotation() == null) {
-            templateResponse.setHasAnnotation(annotationDao.hasAnnotations(template.getUuid(), AnnotationService.EntityType.TEMPLATE.name()));
+            templateResponse.setHasAnnotation(annotationDao.hasAnnotations(template.getUuid(), AnnotationService.EntityType.TEMPLATE.name(),
+                    _accountService.isRootAdmin(CallContext.current().getCallingAccount().getId())));
         }
 
         return templateResponse;
@@ -450,7 +452,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 isoResponse.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
         }
-        isoResponse.setHasAnnotation(annotationDao.hasAnnotations(iso.getUuid(), AnnotationService.EntityType.ISO.name()));
+        isoResponse.setHasAnnotation(annotationDao.hasAnnotations(iso.getUuid(), AnnotationService.EntityType.ISO.name(),
+                _accountService.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         isoResponse.setDirectDownload(iso.isDirectDownload());
 

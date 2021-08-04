@@ -644,7 +644,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 }
             }
         }
-        response.setHasAnnotation(annotationDao.hasAnnotations(kubernetesCluster.getUuid(), AnnotationService.EntityType.KUBERNETES_CLUSTER.name()));
+        response.setHasAnnotation(annotationDao.hasAnnotations(kubernetesCluster.getUuid(),
+                AnnotationService.EntityType.KUBERNETES_CLUSTER.name(), accountService.isRootAdmin(caller.getId())));
         response.setVirtualMachines(vmResponses);
         return response;
     }

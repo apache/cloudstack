@@ -21,10 +21,12 @@ import java.util.Map;
 
 import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
+import com.cloud.user.AccountManager;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -46,6 +48,8 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
     VsphereStoragePolicyDao _vsphereStoragePolicyDao;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private AccountManager accountManager;
 
     private SearchBuilder<ServiceOfferingJoinVO> sofIdSearch;
 
@@ -138,7 +142,8 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         long rootDiskSizeInGb = (long) offering.getRootDiskSize() / GB_TO_BYTES;
         offeringResponse.setRootDiskSize(rootDiskSizeInGb);
 
-        offeringResponse.setHasAnnotation(annotationDao.hasAnnotations(offering.getUuid(), AnnotationService.EntityType.SERVICE_OFFERING.name()));
+        offeringResponse.setHasAnnotation(annotationDao.hasAnnotations(offering.getUuid(), AnnotationService.EntityType.SERVICE_OFFERING.name(),
+                accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         return offeringResponse;
     }
