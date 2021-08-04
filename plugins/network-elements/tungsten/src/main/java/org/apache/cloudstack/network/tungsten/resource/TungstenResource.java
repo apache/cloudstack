@@ -40,6 +40,7 @@ import net.juniper.tungsten.api.types.FirewallRule;
 import net.juniper.tungsten.api.types.FloatingIp;
 import net.juniper.tungsten.api.types.FloatingIpPool;
 import net.juniper.tungsten.api.types.InstanceIp;
+import net.juniper.tungsten.api.types.InterfaceRouteTable;
 import net.juniper.tungsten.api.types.Loadbalancer;
 import net.juniper.tungsten.api.types.LoadbalancerHealthmonitor;
 import net.juniper.tungsten.api.types.LoadbalancerListener;
@@ -48,6 +49,8 @@ import net.juniper.tungsten.api.types.LoadbalancerPool;
 import net.juniper.tungsten.api.types.LogicalRouter;
 import net.juniper.tungsten.api.types.NetworkPolicy;
 import net.juniper.tungsten.api.types.Project;
+import net.juniper.tungsten.api.types.RouteTable;
+import net.juniper.tungsten.api.types.RouteType;
 import net.juniper.tungsten.api.types.SecurityGroup;
 import net.juniper.tungsten.api.types.SequenceType;
 import net.juniper.tungsten.api.types.ServiceGroup;
@@ -60,8 +63,12 @@ import net.juniper.tungsten.api.types.VirtualNetworkPolicyType;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenFirewallPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenFirewallRuleCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenInterfaceStaticRouteCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkSubnetCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenPolicyRuleCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRouteTableToInterfaceCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRouteTableToNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenSecondaryIpAddressCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenSecurityGroupRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenVmToSecurityGroupCommand;
@@ -77,10 +84,12 @@ import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFirewallPo
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFirewallRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIpPoolCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenInterfaceRouteTableCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenLogicalRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkLoadbalancerCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkPolicyCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkRouteTableCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenProjectCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenSecurityGroupCommand;
@@ -120,7 +129,11 @@ import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenAddressGroup
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenApplicationPolicySetCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenFirewallPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenFirewallRuleCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenInterfaceRouteTableCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenInterfaceRouteTableStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNetworkCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNetworkRouteTableCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNetworkRouteTableStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNicCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenPolicyRuleCommand;
@@ -131,9 +144,15 @@ import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenVmCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ReleaseTungstenFloatingIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenFirewallPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenFirewallRuleCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenInterfaceRouteTableCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenInterfaceStaticRouteCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkRouteTableCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkSubnetCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenPolicyRuleCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRouteTableFromInterfaceCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRouteTableFromNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenSecondaryIpAddressCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenSecurityGroupRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenTagCommand;
@@ -440,6 +459,38 @@ public class TungstenResource implements ServerResource {
             return executeRequest((UpdateTungstenVrouterConfigCommand) cmd, numRetries);
         } else if (cmd instanceof UpdateTungstenDefaultSecurityGroupCommand) {
             return executeRequest((UpdateTungstenDefaultSecurityGroupCommand) cmd, numRetries);
+        } else if (cmd instanceof CreateTungstenNetworkRouteTableCommand) {
+            return executeRequest((CreateTungstenNetworkRouteTableCommand) cmd, numRetries);
+        } else if (cmd instanceof AddTungstenNetworkStaticRouteCommand) {
+            return executeRequest((AddTungstenNetworkStaticRouteCommand) cmd, numRetries);
+        } else if (cmd instanceof RemoveTungstenNetworkStaticRouteCommand) {
+            return executeRequest((RemoveTungstenNetworkStaticRouteCommand) cmd, numRetries);
+        } else if (cmd instanceof ListTungstenNetworkRouteTableCommand) {
+            return executeRequest((ListTungstenNetworkRouteTableCommand) cmd, numRetries);
+        } else if (cmd instanceof ListTungstenNetworkRouteTableStaticRouteCommand) {
+            return executeRequest((ListTungstenNetworkRouteTableStaticRouteCommand) cmd, numRetries);
+        } else if (cmd instanceof RemoveTungstenNetworkRouteTableCommand) {
+            return executeRequest((RemoveTungstenNetworkRouteTableCommand) cmd, numRetries);
+        } else if (cmd instanceof AddTungstenRouteTableToNetworkCommand) {
+            return executeRequest((AddTungstenRouteTableToNetworkCommand) cmd, numRetries);
+        } else if (cmd instanceof RemoveTungstenRouteTableFromNetworkCommand) {
+            return executeRequest((RemoveTungstenRouteTableFromNetworkCommand) cmd, numRetries);
+        } else if (cmd instanceof CreateTungstenInterfaceRouteTableCommand) {
+            return executeRequest((CreateTungstenInterfaceRouteTableCommand) cmd, numRetries);
+        } else if (cmd instanceof RemoveTungstenInterfaceStaticRouteCommand) {
+            return executeRequest((RemoveTungstenInterfaceStaticRouteCommand) cmd, numRetries);
+        } else if (cmd instanceof ListTungstenInterfaceRouteTableCommand) {
+            return executeRequest((ListTungstenInterfaceRouteTableCommand) cmd, numRetries);
+        } else if (cmd instanceof ListTungstenInterfaceRouteTableStaticRouteCommand) {
+            return executeRequest((ListTungstenInterfaceRouteTableStaticRouteCommand) cmd, numRetries);
+        } else if (cmd instanceof RemoveTungstenInterfaceRouteTableCommand) {
+            return executeRequest((RemoveTungstenInterfaceRouteTableCommand) cmd, numRetries);
+        } else if (cmd instanceof AddTungstenRouteTableToInterfaceCommand) {
+            return executeRequest((AddTungstenRouteTableToInterfaceCommand) cmd, numRetries);
+        } else if (cmd instanceof RemoveTungstenRouteTableFromInterfaceCommand) {
+            return executeRequest((RemoveTungstenRouteTableFromInterfaceCommand) cmd, numRetries);
+        } else if (cmd instanceof AddTungstenInterfaceStaticRouteCommand) {
+            return executeRequest((AddTungstenInterfaceStaticRouteCommand) cmd, numRetries);
         }
 
         s_logger.debug("Received unsupported command " + cmd.toString());
@@ -2038,6 +2089,227 @@ public class TungstenResource implements ServerResource {
         if (isUpdated)
             return new TungstenAnswer(cmd, true, "Update Tungsten-Fabric default security group is successfully");
         else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(CreateTungstenNetworkRouteTableCommand cmd, int numRetries) {
+        ApiObjectBase apiObjectBase = tungstenApi.createNetworkRouteTable(cmd.getName(), cmd.getUuid());
+        if (apiObjectBase != null) {
+            return new TungstenAnswer(cmd, apiObjectBase, true, "Tungsten-Fabric network route tables was created.");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(CreateTungstenInterfaceRouteTableCommand cmd, int numRetries) {
+        ApiObjectBase apiObjectBase = tungstenApi.createInterfaceRouteTable(cmd.getName(), cmd.getUuid());
+        if (apiObjectBase != null) {
+            return new TungstenAnswer(cmd, apiObjectBase, true, "Tungsten-Fabric interface route tables was created.");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(AddTungstenNetworkStaticRouteCommand cmd, int numRetries) {
+        RouteType routeType = tungstenApi.addNetworkStaticRoute(cmd.getRouteTableUuid(), cmd.getRoutePrefix(),
+                cmd.getRouteNextHop(), cmd.getRouteNextHopType(), cmd.getCommunities());
+        if (routeType != null) {
+            return new TungstenAnswer(cmd, routeType, true, "Tungsten-Fabric network static route was added");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(AddTungstenInterfaceStaticRouteCommand cmd, int numRetries) {
+        RouteType routeType = tungstenApi.addInterfaceStaticRoute(cmd.getRouteTableUuid(), cmd.getRoutePrefix(),
+                cmd.getCommunities());
+        if (routeType != null) {
+            return new TungstenAnswer(cmd, routeType, true, "Tungsten-Fabric interface static route was added");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(RemoveTungstenNetworkStaticRouteCommand cmd, int numRetries) {
+        RouteType routeType = tungstenApi.removeNetworkStaticRoute(cmd.getRouteTableUuid(), cmd.getRoutePrefix());
+        if (routeType != null) {
+            return new TungstenAnswer(cmd, routeType, true, "Tungsten-Fabric network static route was removed");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(RemoveTungstenInterfaceStaticRouteCommand cmd, int numRetries) {
+        RouteType routeType = tungstenApi.removeInterfaceStaticRoute(cmd.getRouteTableUuid(), cmd.getRoutePrefix());
+        if (routeType != null) {
+            return new TungstenAnswer(cmd, routeType, true, "Tungsten-Fabric interface static route was removed");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(ListTungstenNetworkRouteTableCommand cmd, int numRetries) {
+        List<RouteTable> routeTables = (List<RouteTable>) tungstenApi.listTungstenNetworkRouteTable(
+                cmd.getTungstenNetworkRouteTableUuid());
+        if (cmd.getNetworkUuid() != null) {
+            routeTables = tungstenApi.filterTungstenRouteTableByNetwork(routeTables, cmd.getNetworkUuid(), cmd.isAttachedToNetwork());
+        }
+        if (routeTables != null) {
+            return new TungstenAnswer(cmd, routeTables, true, "Tungsten-Fabric network route table is listed");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(ListTungstenInterfaceRouteTableCommand cmd, int numRetries) {
+        List<InterfaceRouteTable> routeTables = (List<InterfaceRouteTable>) tungstenApi.listTungstenInterfaceRouteTable(
+                cmd.getTungstenInterfaceRouteTableUuid());
+        if (cmd.getVmUuid() != null) {
+            routeTables = tungstenApi.filterTungstenRouteTableByInterface(routeTables, cmd.getVmUuid(), cmd.isAttachedToInterface());
+        }
+        if (routeTables != null) {
+            return new TungstenAnswer(cmd, routeTables, true, "Tungsten-Fabric interface route table is listed");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(ListTungstenNetworkRouteTableStaticRouteCommand cmd, int numRetries) {
+        List<RouteType> networkStaticRoutes = tungstenApi.listNetworkRouteTableStaticRoute(
+                cmd.getTungstenRouteTableUuid(), cmd.getRoutePrefix());
+        if (networkStaticRoutes != null) {
+            return new TungstenAnswer(cmd, true, "Tungsten-Fabric network route table static routes are listed", networkStaticRoutes);
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(ListTungstenInterfaceRouteTableStaticRouteCommand cmd, int numRetries) {
+        List<RouteType> interfaceStaticRoutes = tungstenApi.listInterfaceRouteTableStaticRoute(
+                cmd.getTungstenRouteTableUuid(), cmd.getRoutePrefix());
+        if (interfaceStaticRoutes != null) {
+            return new TungstenAnswer(cmd, true, "Tungsten-Fabric interface route table static routes are listed", interfaceStaticRoutes);
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(RemoveTungstenNetworkRouteTableCommand cmd, int numRetries) {
+        boolean result = tungstenApi.removeNetworkRouteTable(cmd.getRouteTableUuid());
+        if (result) {
+            return new TungstenAnswer(cmd, true, "Tungsten-Fabric network route table was removed");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(RemoveTungstenInterfaceRouteTableCommand cmd, int numRetries) {
+        boolean result = tungstenApi.removeInterfaceRouteTable(cmd.getRouteTableUuid());
+        if (result) {
+            return new TungstenAnswer(cmd, true, "Tungsten-Fabric interface route table was removed");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(AddTungstenRouteTableToNetworkCommand cmd, int numRetries) {
+        RouteTable routeTable = tungstenApi.addRouteTableToNetwork(cmd.getNetworkUuid(), cmd.getRouteTableUuid());
+        if (routeTable != null) {
+            return new TungstenAnswer(cmd, routeTable, true, "Tungsten-Fabric route table was added to a network");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(AddTungstenRouteTableToInterfaceCommand cmd, int numRetries) {
+        InterfaceRouteTable interfaceRouteTable = tungstenApi.addRouteTableToInterface(cmd.getVmUuid(),
+                cmd.getRouteTableUuid());
+        if (interfaceRouteTable != null) {
+            return new TungstenAnswer(cmd, interfaceRouteTable, true, "Tungsten-Fabric route table was added to a interface");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(RemoveTungstenRouteTableFromNetworkCommand cmd, int numRetries) {
+        boolean result = tungstenApi.removeRouteTableFromNetwork(cmd.getNetworkUuid(), cmd.getRouteTableUuid());
+        if (result) {
+            return new TungstenAnswer(cmd, true, "Tungsten-Fabric route table was removed from a network");
+        } else {
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new TungstenAnswer(cmd, new IOException());
+            }
+        }
+    }
+
+    private Answer executeRequest(RemoveTungstenRouteTableFromInterfaceCommand cmd, int numRetries) {
+        boolean result = tungstenApi.removeRouteTableFromInterface(cmd.getVmUuid(), cmd.getRouteTableUuid());
+        if (result) {
+            return new TungstenAnswer(cmd, true, "Tungsten-Fabric route table was removed from a interface");
+        } else {
             if (numRetries > 0) {
                 return retry(cmd, --numRetries);
             } else {

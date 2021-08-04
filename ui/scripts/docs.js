@@ -633,6 +633,14 @@ cloudStack.docs = {
         desc: 'Specify whether this offering is for Tungsten-Fabric SDN',
         externalLink: ''
     },
+    helpTungstenCommunities: {
+        desc: 'Each attribute is indicated as string. 1. String with two integers separated by ‘:’. E.g. ‘64512:123’ 2. Well-known community as string. Possible values are ‘no-export’ ‘accept-own’ ‘no-advertise’ ‘no-export- subconfed’ ‘no-reoriginate’',
+        externalLink: ''
+    },
+    helpTungstenInterfaceCommunities: {
+        desc: 'Each attribute is indicated as string. 1. String with two integers separated by ‘:’. E.g. ‘64512:123’ 2. Well-known community as string. Possible values are ‘no-export’ ‘accept-own’ ‘no-advertise’ ‘no-export- subconfed’ ‘no-reoriginate’',
+        externalLink: ''
+    },
     helpNetworkOfferingSystemOffering: {
         desc: 'Choose the system service offering that you want the virtual routers to use in this network',
         externalLink: ''

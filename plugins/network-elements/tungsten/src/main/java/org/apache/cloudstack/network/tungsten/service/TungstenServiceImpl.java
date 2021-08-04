@@ -92,13 +92,18 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
+import net.juniper.tungsten.api.ApiObjectBase;
+import net.juniper.tungsten.api.ApiPropertyBase;
 import net.juniper.tungsten.api.types.AddressGroup;
 import net.juniper.tungsten.api.types.ApplicationPolicySet;
 import net.juniper.tungsten.api.types.FirewallPolicy;
 import net.juniper.tungsten.api.types.FloatingIp;
+import net.juniper.tungsten.api.types.InterfaceRouteTable;
 import net.juniper.tungsten.api.types.NetworkPolicy;
 import net.juniper.tungsten.api.types.PolicyEntriesType;
 import net.juniper.tungsten.api.types.PolicyRuleType;
+import net.juniper.tungsten.api.types.RouteTable;
+import net.juniper.tungsten.api.types.RouteType;
 import net.juniper.tungsten.api.types.ServiceGroup;
 import net.juniper.tungsten.api.types.Tag;
 import net.juniper.tungsten.api.types.TagType;
@@ -111,8 +116,12 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenFirewallPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenFirewallRuleCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenInterfaceStaticRouteCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkSubnetCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenPolicyRuleCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRouteTableToInterfaceCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRouteTableToNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenSecondaryIpAddressCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenSecurityGroupRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenVmToSecurityGroupCommand;
@@ -125,8 +134,10 @@ import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFirewallPo
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFirewallRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIpPoolCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenInterfaceRouteTableCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkPolicyCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkRouteTableCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenProjectCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenSecurityGroupCommand;
@@ -158,7 +169,11 @@ import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenAddressGroup
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenApplicationPolicySetCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenFirewallPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenFirewallRuleCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenInterfaceRouteTableCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenInterfaceRouteTableStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNetworkCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNetworkRouteTableCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNetworkRouteTableStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNicCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenPolicyRuleCommand;
@@ -168,9 +183,15 @@ import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenTagTypeComma
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenVmCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenFirewallPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenFirewallRuleCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenInterfaceRouteTableCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenInterfaceStaticRouteCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkRouteTableCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkSubnetCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenPolicyRuleCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRouteTableFromInterfaceCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRouteTableFromNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenSecondaryIpAddressCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenSecurityGroupRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenTagCommand;
@@ -187,7 +208,11 @@ import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricAddress
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricApplicationPolicySetResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricFirewallPolicyResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricFirewallRuleResponse;
+import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricInterfaceRouteTableResponse;
+import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricInterfaceStaticRouteResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricNetworkResponse;
+import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricNetworkRouteTableResponse;
+import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricNetworkStaticRouteResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricNicResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricPolicyResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricRuleResponse;
@@ -2308,6 +2333,185 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
         }
 
         return true;
+    }
+
+    @Override
+    public TungstenFabricNetworkRouteTableResponse createTungstenFabricNetworkRouteTable(final long zoneId,
+        final String networkRouteTableName) {
+        TungstenCommand tungstenCommand = new CreateTungstenNetworkRouteTableCommand(networkRouteTableName);
+        TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
+        if (tungstenAnswer.getResult()) {
+            return new TungstenFabricNetworkRouteTableResponse((RouteTable) tungstenAnswer.getApiObjectBase());
+        }
+        return null;
+    }
+
+    @Override
+    public TungstenFabricInterfaceRouteTableResponse createTungstenFabricInterfaceRouteTable(final long zoneId,
+        final String interfaceRouteTableName) {
+        TungstenCommand tungstenCommand = new CreateTungstenInterfaceRouteTableCommand(interfaceRouteTableName);
+        TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
+        if (tungstenAnswer.getResult()) {
+            return new TungstenFabricInterfaceRouteTableResponse((InterfaceRouteTable) tungstenAnswer.getApiObjectBase());
+        }
+        return null;
+    }
+
+    @Override
+    public List<TungstenFabricNetworkRouteTableResponse> listTungstenFabricNetworkRouteTables(final long zoneId,
+        final String networkRouteTableUuid, final String networkUuid, final boolean isAttachedToNetwork) {
+        TungstenCommand tungstenCommand = new ListTungstenNetworkRouteTableCommand(networkRouteTableUuid, networkUuid, isAttachedToNetwork);
+        TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
+        if (tungstenAnswer.getResult()) {
+            List<TungstenFabricNetworkRouteTableResponse> routeTableRespones = new ArrayList<>();
+            for(ApiObjectBase item : tungstenAnswer.getApiObjectBaseList()) {
+                routeTableRespones.add(new TungstenFabricNetworkRouteTableResponse((RouteTable) item));
+            }
+            return routeTableRespones;
+        }
+        return null;
+    }
+
+    @Override
+    public List<TungstenFabricInterfaceRouteTableResponse> listTungstenFabricInterfaceRouteTables(final long zoneId,
+        final String interfaceRouteTableUuid, final String vmUuid, final boolean isAttachedToInterface) {
+        TungstenCommand tungstenCommand = new ListTungstenInterfaceRouteTableCommand(interfaceRouteTableUuid,
+                vmUuid, isAttachedToInterface);
+        TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
+        if (tungstenAnswer.getResult()) {
+            List<TungstenFabricInterfaceRouteTableResponse> routeTableRespones = new ArrayList<>();
+            for(ApiObjectBase item : tungstenAnswer.getApiObjectBaseList()) {
+                routeTableRespones.add(new TungstenFabricInterfaceRouteTableResponse((InterfaceRouteTable) item));
+            }
+            return routeTableRespones;
+        }
+        return null;
+    }
+
+    @Override
+    public TungstenFabricNetworkStaticRouteResponse addTungstenFabricNetworkStaticRoute(final long zoneId,
+        final String networkRouteTableUuid, final String routePrefix, final String routeNextHop,
+        final String routeNextHopType, final String communities) {
+        TungstenCommand tungstenCommand = new AddTungstenNetworkStaticRouteCommand(networkRouteTableUuid, routePrefix,
+                routeNextHop, routeNextHopType, communities);
+        TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
+        if (tungstenAnswer.getResult()) {
+            return new TungstenFabricNetworkStaticRouteResponse((RouteType) tungstenAnswer.getApiPropertyBase());
+        }
+        return null;
+    }
+
+    @Override
+    public TungstenFabricInterfaceStaticRouteResponse addTungstenFabricInterfaceStaticRoute(final long zoneId,
+        final String interfaceRouteTableUuid, final String routePrefix, final String communities) {
+        TungstenCommand tungstenCommand = new AddTungstenInterfaceStaticRouteCommand(interfaceRouteTableUuid,
+                routePrefix, communities);
+        TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
+        if (tungstenAnswer.getResult()) {
+            return new TungstenFabricInterfaceStaticRouteResponse((RouteType) tungstenAnswer.getApiPropertyBase());
+        }
+        return null;
+    }
+
+    @Override
+    public List<TungstenFabricNetworkStaticRouteResponse> listTungstenFabricNetworkStaticRoute(final long zoneId,
+        final String networkRouteTableUuid, final String routePrefix) {
+        TungstenCommand tungstenCommand = new ListTungstenNetworkRouteTableStaticRouteCommand(
+                networkRouteTableUuid, routePrefix);
+        TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
+        if (tungstenAnswer.getResult()) {
+            List<TungstenFabricNetworkStaticRouteResponse> networkStaticRouteResponses = new ArrayList<>();
+            for(ApiPropertyBase item : tungstenAnswer.getApiPropertyBaseList()) {
+                networkStaticRouteResponses.add(new TungstenFabricNetworkStaticRouteResponse((RouteType) item));
+            }
+            return networkStaticRouteResponses;
+        }
+        return null;
+    }
+
+    @Override
+    public List<TungstenFabricInterfaceStaticRouteResponse> listTungstenFabricInterfaceStaticRoute(final long zoneId,
+        final String interfaceRouteTableUuid, final String routePrefix) {
+        TungstenCommand tungstenCommand = new ListTungstenInterfaceRouteTableStaticRouteCommand(
+                interfaceRouteTableUuid, routePrefix);
+        TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
+        if (tungstenAnswer.getResult()) {
+            List<TungstenFabricInterfaceStaticRouteResponse> interfaceStaticRouteResponses = new ArrayList<>();
+            for(ApiPropertyBase item : tungstenAnswer.getApiPropertyBaseList()) {
+                interfaceStaticRouteResponses.add(new TungstenFabricInterfaceStaticRouteResponse((RouteType) item));
+            }
+            return interfaceStaticRouteResponses;
+        }
+        return null;
+    }
+
+    @Override
+    public TungstenFabricNetworkStaticRouteResponse removeTungstenFabricNetworkStaticRoute(final long zoneId,
+        final String routeTableUuid, final String routePrefix) {
+        TungstenCommand tungstenCommand = new RemoveTungstenNetworkStaticRouteCommand(routeTableUuid, routePrefix);
+        TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
+        if (tungstenAnswer.getResult()) {
+            return new TungstenFabricNetworkStaticRouteResponse((RouteType) tungstenAnswer.getApiPropertyBase());
+        }
+        return null;
+    }
+
+    @Override
+    public TungstenFabricInterfaceStaticRouteResponse removeTungstenFabricInterfaceStaticRoute(final long zoneId,
+        final String routeTableUuid, final String routePrefix) {
+        TungstenCommand tungstenCommand = new RemoveTungstenInterfaceStaticRouteCommand(routeTableUuid, routePrefix);
+        TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
+        if (tungstenAnswer.getResult()) {
+            return new TungstenFabricInterfaceStaticRouteResponse((RouteType) tungstenAnswer.getApiPropertyBase());
+        }
+        return null;
+    }
+
+    @Override
+    public boolean removeTungstenFabricNetworkRouteTable(final long zoneId, final String routeTableUuid) {
+        TungstenCommand tungstenCommand = new RemoveTungstenNetworkRouteTableCommand(routeTableUuid);
+        TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
+        return tungstenAnswer.getResult();
+    }
+
+    @Override
+    public boolean removeTungstenFabricInterfaceRouteTable(final long zoneId, final String routeTableUuid) {
+        TungstenCommand tungstenCommand = new RemoveTungstenInterfaceRouteTableCommand(routeTableUuid);
+        TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
+        return tungstenAnswer.getResult();
+    }
+
+    @Override
+    public TungstenFabricNetworkRouteTableResponse addTungstenFabricRouteTableToNetwork(final long zoneId,
+        final String networkUuid, final String routeTableUuid) {
+        TungstenCommand tungstenCommand = new AddTungstenRouteTableToNetworkCommand(networkUuid, routeTableUuid);
+        TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
+        return new TungstenFabricNetworkRouteTableResponse(tungstenAnswer.getApiObjectBase().getUuid(),
+                tungstenAnswer.getApiObjectBase().getName());
+    }
+
+    @Override
+    public TungstenFabricInterfaceRouteTableResponse addTungstenFabricRouteTableToInterface(final long zoneId,
+        final String vmUuid, final String routeTableUuid) {
+        TungstenCommand tungstenCommand = new AddTungstenRouteTableToInterfaceCommand(routeTableUuid, vmUuid);
+        TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
+        return new TungstenFabricInterfaceRouteTableResponse((InterfaceRouteTable) tungstenAnswer.getApiObjectBase());
+    }
+
+    @Override
+    public boolean removeTungstenFabricRouteTableFromNetwork(final long zoneId, final String networkUuid,
+        final String routeTableUuid) {
+        TungstenCommand tungstenCommand = new RemoveTungstenRouteTableFromNetworkCommand(networkUuid, routeTableUuid);
+        TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
+        return tungstenAnswer.getResult();
+    }
+
+    @Override
+    public boolean removeTungstenFabricRouteTableFromInterface(final long zoneId, final String vmUuid,
+        final String routeTableUuid) {
+        TungstenCommand tungstenCommand = new RemoveTungstenRouteTableFromInterfaceCommand(vmUuid, routeTableUuid);
+        TungstenAnswer tungstenAnswer = tungstenFabricUtils.sendTungstenCommand(tungstenCommand, zoneId);
+        return tungstenAnswer.getResult();
     }
 
     private List<String> getListIpAddressFromNic(Nic nic) {

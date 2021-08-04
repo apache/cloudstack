@@ -28,27 +28,33 @@ public class TungstenAnswer extends Answer {
     ApiObjectBase apiObjectBase;
     List<? extends ApiObjectBase> apiObjectBaseList;
     ApiPropertyBase apiPropertyBase;
+    List<? extends ApiPropertyBase> apiPropertyBaseList;
 
     public TungstenAnswer(final Command command, final boolean success, final String details) {
         super(command, success, details);
     }
 
     public TungstenAnswer(final Command command, ApiObjectBase apiObjectBase, final boolean success,
-        final String details) {
+                          final String details) {
         super(command, success, details);
         setApiObjectBase(apiObjectBase);
     }
 
     public TungstenAnswer(final Command command, ApiPropertyBase apiPropertyBase, final boolean success,
-        final String details) {
+                          final String details) {
         super(command, success, details);
-        setApiObjectBase(apiObjectBase);
+        setApiPropertyBase(apiPropertyBase);
     }
 
     public TungstenAnswer(final Command command, List<? extends ApiObjectBase> apiObjectBaseList, final boolean success,
-        final String details) {
+                          final String details) {
         super(command, success, details);
         setApiObjectBaseList(apiObjectBaseList);
+    }
+
+    public TungstenAnswer(final Command command, final boolean success, String details, List<? extends ApiPropertyBase> apiPropertyBaseList) {
+        super(command, success, details);
+        setApiPropertyBaseList(apiPropertyBaseList);
     }
 
     public TungstenAnswer(final Command command, final Exception e) {
@@ -77,5 +83,13 @@ public class TungstenAnswer extends Answer {
 
     public void setApiPropertyBase(ApiPropertyBase apiPropertyBase) {
         this.apiPropertyBase = apiPropertyBase;
+    }
+
+    public List<? extends ApiPropertyBase> getApiPropertyBaseList() {
+        return apiPropertyBaseList;
+    }
+
+    public void setApiPropertyBaseList(List<? extends ApiPropertyBase> apiPropertyBaseList) {
+        this.apiPropertyBaseList = apiPropertyBaseList;
     }
 }

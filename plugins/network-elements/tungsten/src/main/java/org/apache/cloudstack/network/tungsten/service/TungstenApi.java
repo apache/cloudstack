@@ -30,6 +30,7 @@ import net.juniper.tungsten.api.types.ActionListType;
 import net.juniper.tungsten.api.types.AddressGroup;
 import net.juniper.tungsten.api.types.AddressType;
 import net.juniper.tungsten.api.types.ApplicationPolicySet;
+import net.juniper.tungsten.api.types.CommunityAttributes;
 import net.juniper.tungsten.api.types.ConfigRoot;
 import net.juniper.tungsten.api.types.Domain;
 import net.juniper.tungsten.api.types.FatFlowProtocols;
@@ -45,6 +46,7 @@ import net.juniper.tungsten.api.types.FloatingIpPool;
 import net.juniper.tungsten.api.types.GlobalSystemConfig;
 import net.juniper.tungsten.api.types.GlobalVrouterConfig;
 import net.juniper.tungsten.api.types.InstanceIp;
+import net.juniper.tungsten.api.types.InterfaceRouteTable;
 import net.juniper.tungsten.api.types.IpamSubnetType;
 import net.juniper.tungsten.api.types.KeyValuePairs;
 import net.juniper.tungsten.api.types.Loadbalancer;
@@ -68,6 +70,9 @@ import net.juniper.tungsten.api.types.PortMap;
 import net.juniper.tungsten.api.types.PortMappings;
 import net.juniper.tungsten.api.types.PortType;
 import net.juniper.tungsten.api.types.Project;
+import net.juniper.tungsten.api.types.RouteTable;
+import net.juniper.tungsten.api.types.RouteTableType;
+import net.juniper.tungsten.api.types.RouteType;
 import net.juniper.tungsten.api.types.SecurityGroup;
 import net.juniper.tungsten.api.types.SequenceType;
 import net.juniper.tungsten.api.types.ServiceGroup;
@@ -93,6 +98,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 public class TungstenApi {
 
@@ -2584,6 +2590,405 @@ public class TungstenApi {
         }
     }
 
+    public RouteTable createNetworkRouteTable(String networkRouteTableName, String networkRouteTableUuid) {
+        try {
+            RouteTable routeTable = new RouteTable();
+            routeTable.setUuid(networkRouteTableUuid);
+            routeTable.setName(networkRouteTableName);
+            routeTable.setDisplayName(networkRouteTableName);
+            routeTable.setRoutes(new RouteTableType());
+            Status status = apiConnector.create(routeTable);
+            if (status.isSuccess()) {
+                return (RouteTable) apiConnector.findById(RouteTable.class, routeTable.getUuid());
+            } else {
+                return null;
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public InterfaceRouteTable createInterfaceRouteTable(String interfaceRouteTableName, String interfaceRouteTableUuid) {
+        try {
+            InterfaceRouteTable interfaceRouteTable = new InterfaceRouteTable();
+            interfaceRouteTable.setUuid(interfaceRouteTableUuid);
+            interfaceRouteTable.setName(interfaceRouteTableName);
+            interfaceRouteTable.setDisplayName(interfaceRouteTableName);
+            interfaceRouteTable.setRoutes(new RouteTableType());
+            Status status = apiConnector.create(interfaceRouteTable);
+            if (status.isSuccess()) {
+                return (InterfaceRouteTable) apiConnector.findById(InterfaceRouteTable.class,
+                        interfaceRouteTable.getUuid());
+            } else {
+                return null;
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public boolean removeNetworkRouteTable(String networkRouteTableUuid) {
+        try {
+            RouteTable routeTable = (RouteTable) apiConnector.findById(RouteTable.class, networkRouteTableUuid);
+            if (routeTable == null) {
+                return false;
+            } else {
+                Status status = apiConnector.delete(routeTable);
+                return status.isSuccess();
+            }
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean removeInterfaceRouteTable(String interfaceRouteTableUuid) {
+        try {
+            InterfaceRouteTable interfaceRouteTable = (InterfaceRouteTable) apiConnector.findById(
+                    InterfaceRouteTable.class, interfaceRouteTableUuid);
+            if (interfaceRouteTable == null) {
+                return false;
+            } else {
+                Status status = apiConnector.delete(interfaceRouteTable);
+                return status.isSuccess();
+            }
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public List<? extends ApiObjectBase> listTungstenNetworkRouteTable(String networkRouteTableUuid) {
+        try {
+            if (networkRouteTableUuid != null) {
+                RouteTable routeTable = (RouteTable) apiConnector.findById(
+                        RouteTable.class, networkRouteTableUuid);
+                return routeTable == null ? new ArrayList<>() : Arrays.asList(routeTable);
+            }
+            return getTungstenListObject(RouteTable.class);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public List<? extends ApiObjectBase> listTungstenInterfaceRouteTable(String interfaceRouteTableUuid) {
+        try {
+            if (interfaceRouteTableUuid != null) {
+                InterfaceRouteTable interfaceRouteTable = (InterfaceRouteTable) apiConnector.findById(
+                        InterfaceRouteTable.class, interfaceRouteTableUuid);
+                return interfaceRouteTable == null ? new ArrayList<>() : Arrays.asList(interfaceRouteTable);
+            }
+            return getTungstenListObject(InterfaceRouteTable.class);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public List<RouteTable> filterTungstenRouteTableByNetwork(List<RouteTable> routeTables, String networkUuid, boolean isAttachedToNetwork) {
+        List<RouteTable> routeTablesAttachedToNetwork = new ArrayList<>();
+        boolean networkFounded = false;
+        for (RouteTable item : routeTables) {
+            if (item.getVirtualNetworkBackRefs() != null) {
+                for (ObjectReference<ApiPropertyBase> virtualNetwork : item.getVirtualNetworkBackRefs()) {
+                    if (virtualNetwork.getUuid().equals(networkUuid)) {
+                        networkFounded = true;
+                    }
+                }
+                if (networkFounded) {
+                    routeTablesAttachedToNetwork.add(item);
+                    networkFounded = false;
+                }
+            }
+        }
+        if (isAttachedToNetwork) {
+            return routeTablesAttachedToNetwork;
+        } else {
+            routeTables.removeAll(routeTablesAttachedToNetwork);
+            return routeTables;
+        }
+    }
+
+    public List<InterfaceRouteTable> filterTungstenRouteTableByInterface(List<InterfaceRouteTable> routeTables, String vmUuid, boolean isAttachedToInterface) {
+        List<InterfaceRouteTable> routeTablesAttachedToInterface = new ArrayList<>();
+        boolean interfaceFounded = false;
+        VirtualMachineInterface vmi = getGuestInterfaceFromGuestVm(vmUuid);
+        if(vmi != null) {
+            for (InterfaceRouteTable item : routeTables) {
+                if (item.getVirtualMachineInterfaceBackRefs() != null) {
+                    for (ObjectReference<ApiPropertyBase> vmInterface : item.getVirtualMachineInterfaceBackRefs()) {
+                        if (vmInterface.getUuid().equals(vmi.getUuid())) {
+                            interfaceFounded = true;
+                        }
+                    }
+                    if (interfaceFounded) {
+                        routeTablesAttachedToInterface.add(item);
+                        interfaceFounded = false;
+                    }
+                }
+            }
+        }
+        if (isAttachedToInterface) {
+            return routeTablesAttachedToInterface;
+        } else {
+            routeTables.removeAll(routeTablesAttachedToInterface);
+            return routeTables;
+        }
+    }
+
+    public RouteType addNetworkStaticRoute(String routeTableUuid, String routePrefix,
+                                           String routeNextHop, String routeNextHopType, String routeCommunities) {
+        try {
+            RouteTable routeTable = (RouteTable) apiConnector.findById(RouteTable.class, routeTableUuid);
+            if (routeTable == null) {
+                return null;
+            } else {
+                RouteType routeType = new RouteType();
+                routeType.setPrefix(routePrefix);
+                routeType.setNextHop(routeNextHop);
+                routeType.setNextHopType(routeNextHopType);
+                if (routeCommunities != null) {
+                    List<String> communities = getValidTungstenCommunities(routeCommunities);
+                    routeType.setCommunityAttributes(new CommunityAttributes(communities));
+                }
+                routeTable.getRoutes().addRoute(routeType);
+                Status status = apiConnector.update(routeTable);
+                if (status.isSuccess()) {
+                    return routeType;
+                } else {
+                    return null;
+                }
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public RouteType addInterfaceStaticRoute(String routeTableUuid, String routePrefix,
+                                             String routeCommunities) {
+        try {
+            InterfaceRouteTable interfaceRouteTable = (InterfaceRouteTable) apiConnector.findById(
+                    InterfaceRouteTable.class, routeTableUuid);
+            if (interfaceRouteTable == null) {
+                return null;
+            } else {
+                RouteType routeType = new RouteType();
+                routeType.setPrefix(routePrefix);
+                if (routeCommunities != null) {
+                    List<String> communities = getValidTungstenCommunities(routeCommunities);
+                    routeType.setCommunityAttributes(new CommunityAttributes(communities));
+                }
+                interfaceRouteTable.getRoutes().addRoute(routeType);
+                Status status = apiConnector.update(interfaceRouteTable);
+                if (status.isSuccess()) {
+                    return routeType;
+                } else {
+                    return null;
+                }
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public List<RouteType> listNetworkRouteTableStaticRoute(String routeTableUuid, String routePrefix) {
+        try {
+            RouteTable routeTable = (RouteTable) apiConnector.findById(RouteTable.class, routeTableUuid);
+            if (routeTable == null) {
+                return null;
+            } else {
+                if (routePrefix == null) {
+                    return (routeTable.getRoutes() != null && routeTable.getRoutes().getRoute() != null) ?
+                            routeTable.getRoutes().getRoute() : new ArrayList<>();
+                } else {
+                    for (RouteType item : routeTable.getRoutes().getRoute()) {
+                        if (item.getPrefix().equals(routePrefix)) {
+                            return Arrays.asList(item);
+                        }
+                    }
+                    return null;
+                }
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public List<RouteType> listInterfaceRouteTableStaticRoute(String routeTableUuid, String routePrefix) {
+        try {
+            InterfaceRouteTable interfaceRouteTable = (InterfaceRouteTable) apiConnector.findById(
+                    InterfaceRouteTable.class, routeTableUuid);
+            if (interfaceRouteTable == null) {
+                return null;
+            } else {
+                if (routePrefix == null) {
+                    return (interfaceRouteTable.getRoutes() != null && interfaceRouteTable.getRoutes().getRoute() != null) ?
+                            interfaceRouteTable.getRoutes().getRoute() : new ArrayList<>();
+                } else {
+                    for (RouteType item : interfaceRouteTable.getRoutes().getRoute()) {
+                        if (item.getPrefix().equals(routePrefix)) {
+                            return Arrays.asList(item);
+                        }
+                    }
+                    return null;
+                }
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public RouteType removeNetworkStaticRoute(String routeTableUuid, String routePrefix) {
+        try {
+            RouteTable routeTable = (RouteTable) apiConnector.findById(RouteTable.class, routeTableUuid);
+            RouteType foundedRouteType = null;
+            if (routeTable == null) {
+                return null;
+            } else {
+                for (RouteType routeType : routeTable.getRoutes().getRoute()) {
+                    if (routeType.getPrefix().equals(routePrefix)) {
+                        foundedRouteType = routeType;
+                        break;
+                    }
+                }
+                if (foundedRouteType == null) {
+                    return null;
+                } else {
+                    routeTable.getRoutes().getRoute().remove(foundedRouteType);
+                    Status status = apiConnector.update(routeTable);
+                    if (status.isSuccess()) {
+                        return foundedRouteType;
+                    } else {
+                        return null;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public RouteType removeInterfaceStaticRoute(String routeTableUuid, String routePrefix) {
+        try {
+            InterfaceRouteTable interfaceRouteTable = (InterfaceRouteTable) apiConnector.findById(
+                    InterfaceRouteTable.class, routeTableUuid);
+            RouteType foundedRouteType = null;
+            if (interfaceRouteTable == null) {
+                return null;
+            } else {
+                for (RouteType routeType : interfaceRouteTable.getRoutes().getRoute()) {
+                    if (routeType.getPrefix().equals(routePrefix)) {
+                        foundedRouteType = routeType;
+                        break;
+                    }
+                }
+                if (foundedRouteType == null) {
+                    return null;
+                } else {
+                    interfaceRouteTable.getRoutes().getRoute().remove(foundedRouteType);
+                    Status status = apiConnector.update(interfaceRouteTable);
+                    if (status.isSuccess()) {
+                        return foundedRouteType;
+                    } else {
+                        return null;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public RouteTable addRouteTableToNetwork(String networkUuid, String routeTableUuid) {
+        try {
+            VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
+            RouteTable routeTable = (RouteTable) apiConnector.findById(RouteTable.class, routeTableUuid);
+            if (virtualNetwork == null || routeTable == null) {
+                return null;
+            }
+            virtualNetwork.addRouteTable(routeTable);
+            Status status = apiConnector.update(virtualNetwork);
+            if (status.isSuccess()) {
+                return routeTable;
+            }
+            return null;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public InterfaceRouteTable addRouteTableToInterface(String vmUuid, String routeTableUuid) {
+        try {
+            VirtualMachineInterface virtualMachineInterface = null;
+            VirtualMachine virtualMachine = (VirtualMachine) apiConnector.findById(VirtualMachine.class, vmUuid);
+            if(virtualMachine == null && virtualMachine.getVirtualMachineInterfaceBackRefs() == null) {
+                return null;
+            }
+            for(ObjectReference<ApiPropertyBase> item : virtualMachine.getVirtualMachineInterfaceBackRefs()) {
+                VirtualMachineInterface vmi = (VirtualMachineInterface) apiConnector.findById(
+                        VirtualMachineInterface.class, item.getUuid());
+                if(vmi.getName().startsWith("vmi")) {
+                    virtualMachineInterface = vmi;
+                }
+            }
+            InterfaceRouteTable interfaceRouteTable = (InterfaceRouteTable) apiConnector.findById(
+                    InterfaceRouteTable.class, routeTableUuid);
+            if (virtualMachineInterface == null || interfaceRouteTable == null) {
+                return null;
+            }
+            virtualMachineInterface.addInterfaceRouteTable(interfaceRouteTable);
+            Status status = apiConnector.update(virtualMachineInterface);
+            if (status.isSuccess()) {
+                return interfaceRouteTable;
+            }
+            return null;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public boolean removeRouteTableFromNetwork(String networkUuid, String routeTableUuid) {
+        try {
+            VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
+            RouteTable routeTable = (RouteTable) apiConnector.findById(RouteTable.class, routeTableUuid);
+            if (virtualNetwork == null || routeTable == null) {
+                return false;
+            }
+            virtualNetwork.removeRouteTable(routeTable);
+            Status status = apiConnector.update(virtualNetwork);
+            return status.isSuccess();
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean removeRouteTableFromInterface(String vmUuid, String routeTableUuid) {
+        try {
+            VirtualMachine virtualMachine = (VirtualMachine) apiConnector.findById(VirtualMachine.class, vmUuid);
+            if (virtualMachine == null) {
+                return false;
+            }
+            if (virtualMachine.getVirtualMachineInterfaceBackRefs() == null){
+                return false;
+            }
+            VirtualMachineInterface virtualMachineInterface = null;
+            for(ObjectReference<ApiPropertyBase> item : virtualMachine.getVirtualMachineInterfaceBackRefs()) {
+                VirtualMachineInterface vmi = (VirtualMachineInterface) apiConnector.findById(
+                        VirtualMachineInterface.class, item.getUuid());
+                if(vmi.getName().startsWith("vmi")) {
+                    virtualMachineInterface = vmi;
+                }
+            }
+            InterfaceRouteTable interfaceRouteTable = (InterfaceRouteTable) apiConnector.findById(
+                    InterfaceRouteTable.class, routeTableUuid);
+            if (virtualMachineInterface == null || interfaceRouteTable == null) {
+                return false;
+            }
+            virtualMachineInterface.removeInterfaceRouteTable(interfaceRouteTable);
+            Status status = apiConnector.update(virtualMachineInterface);
+            return status.isSuccess();
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     private List<? extends ApiObjectBase> getTungstenListObject(Class<? extends ApiObjectBase> cls) {
         try {
             List resultList = new ArrayList();
@@ -2628,5 +3033,41 @@ public class TungstenApi {
         }
 
         return new ArrayList<>();
+    }
+
+    private List<String> getValidTungstenCommunities(String routeCommunities) {
+        List<String> validCommunities = new ArrayList<>();
+        List<String> communities = Arrays.asList(routeCommunities.split(","));
+        for (String item : communities) {
+            if (item.equals(TungstenUtils.NO_ADVERTISE) || item.equals(TungstenUtils.NO_EXPORT) ||
+                    item.equals(TungstenUtils.NO_EXPORT_SUBCONFED) || item.equals(TungstenUtils.ACCEPT_OWN) ||
+                    item.equals(TungstenUtils.NO_REORIGINATE)) {
+                validCommunities.add(item);
+            }
+            final Pattern pattern = Pattern.compile("^[0-9]+:[0-9]+$");
+            if (pattern.matcher(item).matches()) {
+                validCommunities.add(item);
+            }
+        }
+        return validCommunities;
+    }
+
+    private VirtualMachineInterface getGuestInterfaceFromGuestVm(String vmUuid) {
+        try {
+            VirtualMachine virtualMachine = (VirtualMachine) apiConnector.findById(VirtualMachine.class, vmUuid);
+            if (virtualMachine == null && virtualMachine.getVirtualMachineInterfaceBackRefs() == null) {
+                return null;
+            }
+            for(ObjectReference<ApiPropertyBase> item : virtualMachine.getVirtualMachineInterfaceBackRefs()) {
+                VirtualMachineInterface vmi = (VirtualMachineInterface) apiConnector.findById(
+                        VirtualMachineInterface.class, item.getUuid());
+                if(vmi.getName().startsWith("vmi")) {
+                    return vmi;
+                }
+            }
+        } catch (IOException e) {
+            return null;
+        }
+        return null;
     }
 }

@@ -40,6 +40,12 @@ public class TungstenUtils {
     public static final String EGRESS_RULE = "egress";
     public static final String LOCAL = "local";
 
+    public static final String NO_EXPORT = "no-export";
+    public static final String NO_EXPORT_SUBCONFED = "no-export-subconfed";
+    public static final String ACCEPT_OWN = "accept-own";
+    public static final String NO_ADVERTISE = "no-advertise";
+    public static final String NO_REORIGINATE = "no-reoriginate";
+
     public static final int MAX_CIDR = 32;
     public static final int MAX_IPV6_CIDR = 128;
     public static final int DNS_SERVICE_PORT = 53;

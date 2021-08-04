@@ -27,7 +27,11 @@ import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricAddress
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricApplicationPolicySetResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricFirewallPolicyResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricFirewallRuleResponse;
+import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricInterfaceRouteTableResponse;
+import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricInterfaceStaticRouteResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricNetworkResponse;
+import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricNetworkRouteTableResponse;
+import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricNetworkStaticRouteResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricNicResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricPolicyResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricRuleResponse;
@@ -161,6 +165,53 @@ public interface TungstenService {
 
     TungstenFabricFirewallPolicyResponse removeTungstenFirewallRule(final long zoneId, final String firewallPolicyUuid,
         final String firewallRuleUuid);
+
+    TungstenFabricNetworkRouteTableResponse createTungstenFabricNetworkRouteTable(final long zoneId,
+        final String networkRouteTableName);
+
+    TungstenFabricInterfaceRouteTableResponse createTungstenFabricInterfaceRouteTable(final long zoneId,
+        final String interfaceRouteTableName);
+
+    TungstenFabricNetworkStaticRouteResponse addTungstenFabricNetworkStaticRoute(final long zoneId,
+        final String networkRouteTableUuid, final String routePrefix, final String routeNextHop,
+        final String routeNextHopType, final String communities);
+
+    List<TungstenFabricInterfaceRouteTableResponse> listTungstenFabricInterfaceRouteTables(final long zoneId,
+        final String interfaceRouteTableUuid, final String vmiUuid, final boolean isAttachedToInterface);
+
+    TungstenFabricNetworkStaticRouteResponse removeTungstenFabricNetworkStaticRoute(final long zoneId,
+        final String routeTableUuid, final String routePrefix);
+
+    TungstenFabricInterfaceStaticRouteResponse addTungstenFabricInterfaceStaticRoute(final long zoneId,
+        final String interfaceRouteTableUuid, final String routePrefix, final String communities);
+
+    List<TungstenFabricNetworkRouteTableResponse> listTungstenFabricNetworkRouteTables(final long zoneId,
+        final String networkRouteTableUuid, final String networkUuid, final boolean isAttachedToNetwork);
+
+    List<TungstenFabricInterfaceStaticRouteResponse> listTungstenFabricInterfaceStaticRoute(final long zoneId,
+        final String interfaceRouteTableUuid, final String routePrefix);
+
+    List<TungstenFabricNetworkStaticRouteResponse> listTungstenFabricNetworkStaticRoute(final long zoneId,
+        final String networkRouteTableUuid, final String routePrefix);
+
+    TungstenFabricInterfaceStaticRouteResponse removeTungstenFabricInterfaceStaticRoute(final long zoneId,
+        final String routeTableUuid, final String routePrefix);
+
+    boolean removeTungstenFabricNetworkRouteTable(final long zoneId, final String routeTableUuid);
+
+    boolean removeTungstenFabricInterfaceRouteTable(final long zoneId, final String routeTableUuid);
+
+    TungstenFabricNetworkRouteTableResponse addTungstenFabricRouteTableToNetwork(final long zoneId,
+        final String networkUuid, final String routeTableUuid);
+
+    TungstenFabricInterfaceRouteTableResponse addTungstenFabricRouteTableToInterface(final long zoneId,
+        final String vmInterfaceUuid, final String routeTableUuid);
+
+    boolean removeTungstenFabricRouteTableFromNetwork(final long zoneId, final String networkUuid,
+        final String routeTableUuid);
+
+    boolean removeTungstenFabricRouteTableFromInterface(final long zoneId, final String interfaceUuid,
+        final String routeTableUuid);
 
     void subscribeTungstenEvent();
 
