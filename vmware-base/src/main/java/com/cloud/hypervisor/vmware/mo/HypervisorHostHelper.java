@@ -527,17 +527,9 @@ public class HypervisorHostHelper {
     }
 
     /**
-     * @param ethPortProfileName
-     * @param namePrefix
-     * @param hostMo
-     * @param vlanId
-     * @param networkRateMbps
-     * @param networkRateMulticastMbps
-     * @param timeOutMs
-     * @param vSwitchType
-     * @param numPorts
-     * @param details
-     * @return
+     * Prepares network (for non-standard virtual switch) for the VM NIC based on the parameters.
+     * Can create a new portgroup or update an existing.
+     * @return Pair of network's ManagedObjectReference and name
      * @throws Exception
      */
 
@@ -959,6 +951,11 @@ public class HypervisorHostHelper {
                     !newPortSetting.getSecurityPolicy().getMacChanges().isValue().equals(currentPortSetting.getSecurityPolicy().getMacChanges().isValue())) {
                 specMatches = false;
             }
+        }
+        if (currentPortSetting.getMacManagementPolicy() != null && newPortSetting.getMacManagementPolicy() != null &&
+                currentPortSetting.getMacManagementPolicy().getMacLearningPolicy() != null && newPortSetting.getMacManagementPolicy().getMacLearningPolicy() != null &&
+                currentPortSetting.getMacManagementPolicy().getMacLearningPolicy().isEnabled() != newPortSetting.getMacManagementPolicy().getMacLearningPolicy().isEnabled()) {
+            specMatches = false;
         }
 
         VmwareDistributedVirtualSwitchVlanSpec oldVlanSpec = currentPortSetting.getVlan();
