@@ -33,4 +33,4 @@ for suite in "${TESTS[@]}" ; do
   time nosetests --with-xunit --xunit-file=integration-test-results/$suite.xml --with-marvin --marvin-config=setup/dev/advanced.cfg test/integration/$suite.py -s -a tags=advanced,required_hardware=false --zone=Sandbox-simulator --hypervisor=simulator || true ;
 done
 
-python ./tools/travis/xunit-reader.py integration-test-results/
+python3 ./tools/travis/xunit-reader.py integration-test-results/

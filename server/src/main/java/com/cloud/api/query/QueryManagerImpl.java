@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 
 import com.cloud.storage.dao.VMTemplateDetailsDao;
+import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -118,6 +119,8 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.commons.collections.CollectionUtils;
@@ -186,6 +189,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.dao.RouterHealthCheckResultDao;
+import com.cloud.network.dao.RouterHealthCheckResultVO;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
@@ -231,6 +235,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -419,10 +424,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private PrimaryDataStoreDao _storagePoolDao;
 
     @Inject
+    private StoragePoolDetailsDao _storagePoolDetailsDao;
+
+    @Inject
     private ProjectInvitationDao projectInvitationDao;
 
     @Inject
     private UserDao userDao;
+
+    @Inject
+    private VirtualMachineManager virtualMachineManager;
 
     /*
      * (non-Javadoc)
@@ -1258,7 +1269,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<DomainRouterResponse> searchForRouters(ListRoutersCmd cmd) {
         Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(), cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getClusterId(),
-                cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), cmd.getVersion());
+                cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), cmd.getVersion(), cmd.isHealthCheckFailed());
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
         if (VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value()) {
@@ -1278,7 +1289,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd) {
         Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(), cmd.getState(), cmd.getZoneId(), cmd.getPodId(), null, cmd.getHostId(),
-                cmd.getKeyword(), cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), null);
+                cmd.getKeyword(), cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), null, null);
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
         if (VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value()) {
@@ -1297,7 +1308,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     private Pair<List<DomainRouterJoinVO>, Integer> searchForRoutersInternal(BaseListProjectAndAccountResourcesCmd cmd, Long id, String name, String state, Long zoneId, Long podId, Long clusterId,
-            Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc, String role, String version) {
+            Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc, String role, String version, Boolean isHealthCheckFailed) {
 
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1339,6 +1350,27 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (networkId != null) {
             sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        }
+
+        List<Long> routersWithFailures = null;
+        if (isHealthCheckFailed != null) {
+            GenericSearchBuilder<RouterHealthCheckResultVO, Long> routerHealthCheckResultSearch = routerHealthCheckResultDao.createSearchBuilder(Long.class);
+            routerHealthCheckResultSearch.and("checkResult", routerHealthCheckResultSearch.entity().getCheckResult(), SearchCriteria.Op.EQ);
+            routerHealthCheckResultSearch.selectFields(routerHealthCheckResultSearch.entity().getRouterId());
+            routerHealthCheckResultSearch.done();
+            SearchCriteria<Long> ssc = routerHealthCheckResultSearch.create();
+            ssc.setParameters("checkResult", false);
+            routersWithFailures = routerHealthCheckResultDao.customSearch(ssc, null);
+
+            if (routersWithFailures != null && ! routersWithFailures.isEmpty()) {
+                if (isHealthCheckFailed) {
+                    sb.and("routerId", sb.entity().getId(), SearchCriteria.Op.IN);
+                } else {
+                    sb.and("routerId", sb.entity().getId(), SearchCriteria.Op.NIN);
+                }
+            } else if (isHealthCheckFailed) {
+                return new Pair<List<DomainRouterJoinVO>, Integer>(Collections.emptyList(), 0);
+            }
         }
 
         SearchCriteria<DomainRouterJoinVO> sc = sb.create();
@@ -1397,6 +1429,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (version != null) {
             sc.setParameters("version", "Cloudstack Release " + version + "%");
+        }
+
+        if (routersWithFailures != null && ! routersWithFailures.isEmpty()) {
+            sc.setParameters("routerId", routersWithFailures.toArray(new Object[routersWithFailures.size()]));
         }
 
         // search VR details by ids
@@ -1901,6 +1937,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (caps != null) {
                 boolean quiescevm = Boolean.parseBoolean(caps.get(DataStoreCapabilities.VOLUME_SNAPSHOT_QUIESCEVM.toString()));
                 vr.setNeedQuiescevm(quiescevm);
+
+                boolean supportsStorageSnapshot = Boolean.parseBoolean(caps.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString()));
+                vr.setSupportsStorageSnapshot(supportsStorageSnapshot);
             }
         }
         response.setResponses(volumeResponses, result.second());
@@ -2386,7 +2425,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (store != null) {
                 DataStoreDriver driver = store.getDriver();
                 if (driver != null && driver.getCapabilities() != null) {
-                    poolResponse.setCaps(driver.getCapabilities());
+                    Map<String, String> caps = driver.getCapabilities();
+                    if (Storage.StoragePoolType.NetworkFilesystem.toString().equals(poolResponse.getType()) &&
+                        HypervisorType.VMware.toString().equals(poolResponse.getHypervisor())) {
+                        StoragePoolVO pool = _storagePoolDao.findPoolByUUID(poolResponse.getId());
+                        StoragePoolDetailVO detail = _storagePoolDetailsDao.findDetail(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString());
+                        if (detail != null) {
+                            caps.put(Storage.Capability.HARDWARE_ACCELERATION.toString(), detail.getValue());
+                        }
+                    }
+                    poolResponse.setCaps(caps);
                 }
             }
         }
@@ -2955,16 +3003,21 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             _accountMgr.checkAccess(caller, null, true, vmInstance);
 
             currentVmOffering = _srvOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
-            sc.addAnd("id", SearchCriteria.Op.NEQ, currentVmOffering.getId());
+            if (! currentVmOffering.isDynamic()) {
+                sc.addAnd("id", SearchCriteria.Op.NEQ, currentVmOffering.getId());
+            }
 
-            // 1. Only return offerings with the same storage type
-            sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, currentVmOffering.isUseLocalStorage());
+            boolean isRootVolumeUsingLocalStorage = virtualMachineManager.isRootVolumeOnLocalStorage(vmId);
 
-            // 2.In case vm is running return only offerings greater than equal to current offering compute.
+            // 1. Only return offerings with the same storage type than the storage pool where the VM's root volume is allocated
+            sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, isRootVolumeUsingLocalStorage);
+
+            // 2.In case vm is running return only offerings greater than equal to current offering compute and offering's dynamic scalability should match
             if (vmInstance.getState() == VirtualMachine.State.Running) {
                 sc.addAnd("cpu", Op.GTEQ, currentVmOffering.getCpu());
                 sc.addAnd("speed", Op.GTEQ, currentVmOffering.getSpeed());
                 sc.addAnd("ramSize", Op.GTEQ, currentVmOffering.getRamSize());
+                sc.addAnd("dynamicScalingEnabled", Op.EQ, currentVmOffering.isDynamicScalingEnabled());
             }
         }
 
@@ -3443,11 +3496,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 domain = _domainDao.findById(Domain.ROOT_DOMAIN);
             }
 
-            // List<HypervisorType> hypers = null;
-            // if (!isIso) {
-            // hypers = _resourceMgr.listAvailHypervisorInZone(null, null);
-            // }
-
             setIdsListToSearchCriteria(sc, ids);
 
             // add criteria for project or not
@@ -3495,17 +3543,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 }
             }
 
-            if (!isIso) {
-                // add hypervisor criteria for template case
-                if (hypers != null && !hypers.isEmpty()) {
-                    String[] relatedHypers = new String[hypers.size()];
-                    for (int i = 0; i < hypers.size(); i++) {
-                        relatedHypers[i] = hypers.get(i).toString();
-                    }
-                    sc.addAnd("hypervisorType", SearchCriteria.Op.IN, relatedHypers);
-                }
-            }
-
             // control different template filters
             if (templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community) {
                 sc.addAnd("publicTemplate", SearchCriteria.Op.EQ, true);
@@ -3548,62 +3585,78 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 }
                 sc.addAnd("publicTemplate", SearchCriteria.Op.SC, scc);
             }
+        }
 
-            // add tags criteria
-            if (tags != null && !tags.isEmpty()) {
-                SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
-                for (Map.Entry<String, String> entry : tags.entrySet()) {
-                    SearchCriteria<TemplateJoinVO> scTag = _templateJoinDao.createSearchCriteria();
-                    scTag.addAnd("tagKey", SearchCriteria.Op.EQ, entry.getKey());
-                    scTag.addAnd("tagValue", SearchCriteria.Op.EQ, entry.getValue());
-                    if (isIso) {
-                        scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, ResourceObjectType.ISO);
-                    } else {
-                        scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, ResourceObjectType.Template);
-                    }
-                    scc.addOr("tagKey", SearchCriteria.Op.SC, scTag);
+        return templateChecks(isIso, hypers, tags, name, keyword, hyperType, onlyReady, bootable, zoneId, showDomr,
+                showRemovedTmpl, parentTemplateId, showUnique, searchFilter, sc);
+
+    }
+
+    private Pair<List<TemplateJoinVO>, Integer> templateChecks(boolean isIso, List<HypervisorType> hypers, Map<String, String> tags, String name, String keyword,
+                                                               HypervisorType hyperType, boolean onlyReady, Boolean bootable, Long zoneId, boolean showDomr,
+                                                               boolean showRemovedTmpl, Long parentTemplateId, Boolean showUnique,
+                                                               Filter searchFilter, SearchCriteria<TemplateJoinVO> sc) {
+        if (!isIso) {
+            // add hypervisor criteria for template case
+            if (hypers != null && !hypers.isEmpty()) {
+                String[] relatedHypers = new String[hypers.size()];
+                for (int i = 0; i < hypers.size(); i++) {
+                    relatedHypers[i] = hypers.get(i).toString();
                 }
-                sc.addAnd("tagKey", SearchCriteria.Op.SC, scc);
+                sc.addAnd("hypervisorType", SearchCriteria.Op.IN, relatedHypers);
             }
+        }
 
-            // other criteria
-
-            if (keyword != null) {
-                sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            } else if (name != null) {
-                sc.addAnd("name", SearchCriteria.Op.EQ, name);
+        // add tags criteria
+        if (tags != null && !tags.isEmpty()) {
+            SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
+            for (Map.Entry<String, String> entry : tags.entrySet()) {
+                SearchCriteria<TemplateJoinVO> scTag = _templateJoinDao.createSearchCriteria();
+                scTag.addAnd("tagKey", SearchCriteria.Op.EQ, entry.getKey());
+                scTag.addAnd("tagValue", SearchCriteria.Op.EQ, entry.getValue());
+                if (isIso) {
+                    scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, ResourceObjectType.ISO);
+                } else {
+                    scTag.addAnd("tagResourceType", SearchCriteria.Op.EQ, ResourceObjectType.Template);
+                }
+                scc.addOr("tagKey", SearchCriteria.Op.SC, scTag);
             }
+            sc.addAnd("tagKey", SearchCriteria.Op.SC, scc);
+        }
 
-            if (isIso) {
-                sc.addAnd("format", SearchCriteria.Op.EQ, "ISO");
+        // other criteria
 
-            } else {
-                sc.addAnd("format", SearchCriteria.Op.NEQ, "ISO");
-            }
+        if (keyword != null) {
+            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+        } else if (name != null) {
+            sc.addAnd("name", SearchCriteria.Op.EQ, name);
+        }
 
-            if (!hyperType.equals(HypervisorType.None)) {
-                sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hyperType);
-            }
+        SearchCriteria.Op op = isIso ? Op.EQ : Op.NEQ;
+        sc.addAnd("format", op, "ISO");
 
-            if (bootable != null) {
-                sc.addAnd("bootable", SearchCriteria.Op.EQ, bootable);
-            }
+        if (!hyperType.equals(HypervisorType.None)) {
+            sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hyperType);
+        }
 
-            if (onlyReady) {
-                SearchCriteria<TemplateJoinVO> readySc = _templateJoinDao.createSearchCriteria();
-                readySc.addOr("state", SearchCriteria.Op.EQ, TemplateState.Ready);
-                readySc.addOr("format", SearchCriteria.Op.EQ, ImageFormat.BAREMETAL);
-                SearchCriteria<TemplateJoinVO> isoPerhostSc = _templateJoinDao.createSearchCriteria();
-                isoPerhostSc.addAnd("format", SearchCriteria.Op.EQ, ImageFormat.ISO);
-                isoPerhostSc.addAnd("templateType", SearchCriteria.Op.EQ, TemplateType.PERHOST);
-                readySc.addOr("templateType", SearchCriteria.Op.SC, isoPerhostSc);
-                sc.addAnd("state", SearchCriteria.Op.SC, readySc);
-            }
+        if (bootable != null) {
+            sc.addAnd("bootable", SearchCriteria.Op.EQ, bootable);
+        }
 
-            if (!showDomr) {
-                // excluding system template
-                sc.addAnd("templateType", SearchCriteria.Op.NEQ, Storage.TemplateType.SYSTEM);
-            }
+        if (onlyReady) {
+            SearchCriteria<TemplateJoinVO> readySc = _templateJoinDao.createSearchCriteria();
+            readySc.addOr("state", SearchCriteria.Op.EQ, TemplateState.Ready);
+            readySc.addOr("format", SearchCriteria.Op.EQ, ImageFormat.BAREMETAL);
+            SearchCriteria<TemplateJoinVO> isoPerhostSc = _templateJoinDao.createSearchCriteria();
+            isoPerhostSc.addAnd("format", SearchCriteria.Op.EQ, ImageFormat.ISO);
+            isoPerhostSc.addAnd("templateType", SearchCriteria.Op.EQ, TemplateType.PERHOST);
+            readySc.addOr("templateType", SearchCriteria.Op.SC, isoPerhostSc);
+            sc.addAnd("state", SearchCriteria.Op.SC, readySc);
+        }
+
+        if (!showDomr) {
+            // excluding system template
+            sc.addAnd("templateType", SearchCriteria.Op.NEQ, Storage.TemplateType.SYSTEM);
         }
 
         if (zoneId != null) {
@@ -3648,7 +3701,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // VMTemplateDaoImpl.searchForTemplates and understand why we need to
         // specially handle ISO. The original logic is very twisted and no idea
         // about what the code was doing.
-
     }
 
     // findTemplatesByIdOrTempZonePair returns the templates with the given ids if showUnique is true, or else by the TempZonePair
@@ -3736,10 +3788,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 throw new CloudRuntimeException("Resource type not supported.");
         }
         if (CallContext.current().getCallingAccount().getType() != Account.ACCOUNT_TYPE_ADMIN) {
-            final List<String> userBlacklistedSettings = Stream.of(QueryService.UserVMBlacklistedDetails.value().split(","))
+            final List<String> userDenyListedSettings = Stream.of(QueryService.UserVMDeniedDetails.value().split(","))
                     .map(item -> (item).trim())
                     .collect(Collectors.toList());
-            for (final String detail : userBlacklistedSettings) {
+            for (final String detail : userDenyListedSettings) {
                 if (options.containsKey(detail)) {
                     options.remove(detail);
                 }
@@ -4114,13 +4166,18 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             throw new CloudRuntimeException("Router health checks are not enabled for router " + routerId);
         }
 
-        if (cmd.shouldPerformFreshChecks() && !routerService.performRouterHealthChecks(routerId)) {
-            throw new CloudRuntimeException("Unable to perform fresh checks on router.");
+        if (cmd.shouldPerformFreshChecks()) {
+            Pair<Boolean, String> healthChecksresult = routerService.performRouterHealthChecks(routerId);
+            if (healthChecksresult == null) {
+                throw new CloudRuntimeException("Failed to initiate fresh checks on router.");
+            } else if (!healthChecksresult.first()) {
+                throw new CloudRuntimeException("Unable to perform fresh checks on router - " + healthChecksresult.second());
+            }
         }
 
         List<RouterHealthCheckResult> result = new ArrayList<>(routerHealthCheckResultDao.getHealthCheckResults(routerId));
         if (result == null || result.size() == 0) {
-            throw new CloudRuntimeException("Database had no entries for health checks for router. This could happen for " +
+            throw new CloudRuntimeException("No health check results found for the router. This could happen for " +
                     "a newly created router. Please wait for periodic results to populate or manually call for checks to execute.");
         }
 
@@ -4134,6 +4191,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMBlacklistedDetails, UserVMReadOnlyUIDetails, SortKeyAscending, AllowUserViewAllDomainAccounts};
+        return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMDeniedDetails, UserVMReadOnlyDetails, SortKeyAscending, AllowUserViewAllDomainAccounts};
     }
 }

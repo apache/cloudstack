@@ -32,9 +32,6 @@ def merge(dbag, data):
                 remove_keys.add(key)
                 break
 
-        if data['remove'] and key not in remove_keys:
-            remove_keys.add(key)
-
         for remove_key in remove_keys:
             del(dbag[remove_key])
 

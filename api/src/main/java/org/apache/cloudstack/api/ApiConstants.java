@@ -256,6 +256,7 @@ public class ApiConstants {
     public static final String OLD_FORMAT = "oldformat";
     public static final String OP = "op";
     public static final String OS_CATEGORY_ID = "oscategoryid";
+    public static final String OS_CATEGORY_NAME = "oscategoryname";
     public static final String OS_ID = "osid";
     public static final String OS_TYPE_ID = "ostypeid";
     public static final String OS_DISPLAY_NAME = "osdisplayname";
@@ -339,6 +340,7 @@ public class ApiConstants {
     public static final String SNAPSHOT_POLICY_ID = "snapshotpolicyid";
     public static final String SNAPSHOT_TYPE = "snapshottype";
     public static final String SNAPSHOT_QUIESCEVM = "quiescevm";
+    public static final String SUPPORTS_STORAGE_SNAPSHOT = "supportsstoragesnapshot";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
     public static final String START_DATE = "startdate";
     public static final String START_ID = "startid";
@@ -355,6 +357,7 @@ public class ApiConstants {
     public static final String SWAP_OWNER = "swapowner";
     public static final String SYSTEM_VM_TYPE = "systemvmtype";
     public static final String TAGS = "tags";
+    public static final String STORAGE_TAGS = "storagetags";
     public static final String TARGET_IQN = "targetiqn";
     public static final String TEMPLATE_FILTER = "templatefilter";
     public static final String TEMPLATE_ID = "templateid";
@@ -628,12 +631,14 @@ public class ApiConstants {
     public static final String GUEST_IP = "guestip";
     public static final String REMOVED = "removed";
     public static final String COMPLETED = "completed";
+    public static final String IKE_VERSION = "ikeversion";
     public static final String IKE_POLICY = "ikepolicy";
     public static final String ESP_POLICY = "esppolicy";
     public static final String IKE_LIFETIME = "ikelifetime";
     public static final String ESP_LIFETIME = "esplifetime";
     public static final String DPD = "dpd";
     public static final String FORCE_ENCAP = "forceencap";
+    public static final String SPLIT_CONNECTIONS = "splitconnections";
     public static final String FOR_VPC = "forvpc";
     public static final String SHRINK_OK = "shrinkok";
     public static final String NICIRA_NVP_DEVICE_ID = "nvpdeviceid";
@@ -707,6 +712,7 @@ public class ApiConstants {
     public static final String UCS_BLADE_DN = "bladedn";
     public static final String UCS_BLADE_ID = "bladeid";
     public static final String VM_GUEST_IP = "vmguestip";
+    public static final String HEALTHCHECK_FAILED = "healthchecksfailed";
     public static final String HEALTHCHECK_RESPONSE_TIMEOUT = "responsetimeout";
     public static final String HEALTHCHECK_INTERVAL_TIME = "intervaltime";
     public static final String HEALTHCHECK_HEALTHY_THRESHOLD = "healthythreshold";
@@ -802,6 +808,8 @@ public class ApiConstants {
     public static final String ROUTER_HEALTH_CHECKS = "healthchecks";
     public static final String ROUTER_CHECK_NAME = "checkname";
     public static final String ROUTER_CHECK_TYPE = "checktype";
+    public static final String ROUTER_IP = "routerip";
+    public static final String ROUTER_IPV6 = "routeripv6";
     public static final String LAST_UPDATED = "lastupdated";
     public static final String PERFORM_FRESH_CHECKS = "performfreshchecks";
     public static final String CACHE_MODE = "cachemode";
@@ -818,6 +826,7 @@ public class ApiConstants {
     public static final String KUBERNETES_VERSION_ID = "kubernetesversionid";
     public static final String KUBERNETES_VERSION_NAME = "kubernetesversionname";
     public static final String MASTER_NODES = "masternodes";
+    public static final String CONTROL_NODES = "controlnodes";
     public static final String MIN_SEMANTIC_VERSION = "minimumsemanticversion";
     public static final String MIN_KUBERNETES_VERSION_ID = "minimumkubernetesversionid";
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
@@ -831,6 +840,9 @@ public class ApiConstants {
     public static final String CROSS_ZONES = "crossZones";
     public static final String TEMPLATETYPE = "templatetype";
     public static final String SOURCETEMPLATEID = "sourcetemplateid";
+    public static final String DYNAMIC_SCALING_ENABLED = "dynamicscalingenabled";
+
+    public static final String POOL_TYPE ="pooltype";
 
     public enum BootType {
         UEFI, BIOS;

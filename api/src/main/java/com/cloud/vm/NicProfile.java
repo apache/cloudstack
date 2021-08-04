@@ -175,6 +175,10 @@ public class NicProfile implements InternalIdentity, Serializable {
         this.deviceId = deviceId;
     }
 
+    public void setDeviceId(Integer deviceId) {
+        this.deviceId = deviceId;
+    }
+
     public String getName() {
         return name;
     }

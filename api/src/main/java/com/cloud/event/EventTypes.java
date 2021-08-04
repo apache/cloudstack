@@ -104,6 +104,7 @@ public class EventTypes {
     public static final String EVENT_VM_EXPUNGE = "VM.EXPUNGE";
     public static final String EVENT_VM_IMPORT = "VM.IMPORT";
     public static final String EVENT_VM_UNMANAGE = "VM.UNMANAGE";
+    public static final String EVENT_VM_RECOVER = "VM.RECOVER";
 
     // Domain Router
     public static final String EVENT_ROUTER_CREATE = "ROUTER.CREATE";
@@ -373,6 +374,7 @@ public class EventTypes {
     // Primary storage pool
     public static final String EVENT_ENABLE_PRIMARY_STORAGE = "ENABLE.PS";
     public static final String EVENT_DISABLE_PRIMARY_STORAGE = "DISABLE.PS";
+    public static final String EVENT_SYNC_STORAGE_POOL = "SYNC.STORAGE.POOL";
 
     // VPN
     public static final String EVENT_REMOTE_ACCESS_VPN_CREATE = "VPN.REMOTE.ACCESS.CREATE";

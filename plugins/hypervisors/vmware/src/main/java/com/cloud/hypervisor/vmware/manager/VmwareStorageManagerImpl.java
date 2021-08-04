@@ -647,7 +647,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
 
             // 4 MB is the minimum requirement for VM memory in VMware
-            vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), null);
+            String vmxFormattedVirtualHardwareVersion = VirtualMachineMO.getVmxFormattedVirtualHardwareVersion(vmMo.getVirtualHardwareVersion());
+            vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), vmxFormattedVirtualHardwareVersion);
             clonedVm = vmMo.getRunningHost().findVmOnHyperHost(workerVmName);
             if (clonedVm == null) {
                 String msg = "Unable to create dummy VM to export volume. volume path: " + volumePath;
@@ -965,7 +966,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             if (clonedWorkerVMNeeded) {
                 // 4 MB is the minimum requirement for VM memory in VMware
-                vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), null);
+                String vmxFormattedVirtualHardwareVersion = VirtualMachineMO.getVmxFormattedVirtualHardwareVersion(vmMo.getVirtualHardwareVersion());
+                vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()), vmxFormattedVirtualHardwareVersion);
                 clonedVm = vmMo.getRunningHost().findVmOnHyperHost(workerVmName);
                 if (clonedVm == null) {
                     String msg = "Unable to create dummy VM to export volume. volume path: " + volumePath;

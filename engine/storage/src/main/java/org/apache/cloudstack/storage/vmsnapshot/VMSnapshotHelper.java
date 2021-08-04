@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.api.VMSnapshotTO;
+import com.cloud.storage.Storage;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
@@ -35,4 +36,8 @@ public interface VMSnapshotHelper {
     List<VolumeObjectTO> getVolumeTOList(Long vmId);
 
     VMSnapshotTO getSnapshotWithParents(VMSnapshotVO snapshot);
+
+    Long getStoragePoolForVM(Long vmId);
+
+    Storage.StoragePoolType getStoragePoolType(Long poolId);
 }

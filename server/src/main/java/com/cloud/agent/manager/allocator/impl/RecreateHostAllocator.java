@@ -45,7 +45,6 @@ import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.dao.HostDao;
-import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -122,21 +121,7 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
         }
 
         for (PodCluster p : pcs) {
-            if (p.getPod().getAllocationState() != Grouping.AllocationState.Enabled) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Pod name: " + p.getPod().getName() + ", podId: " + p.getPod().getId() + " is in " + p.getPod().getAllocationState().name() +
-                        " state, skipping this and trying other pods");
-                }
-                continue;
-            }
             Long clusterId = p.getCluster() == null ? null : p.getCluster().getId();
-            if (p.getCluster() != null && p.getCluster().getAllocationState() != Grouping.AllocationState.Enabled) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Cluster name: " + p.getCluster().getName() + ", clusterId: " + clusterId + " is in " + p.getCluster().getAllocationState().name() +
-                        " state, skipping this and trying other pod-clusters");
-                }
-                continue;
-            }
             DataCenterDeployment newPlan = new DataCenterDeployment(plan.getDataCenterId(), p.getPod().getId(), clusterId, null, null, null);
             hosts = super.allocateTo(vm, newPlan, type, avoid, returnUpTo);
             if (hosts != null && !hosts.isEmpty()) {

@@ -171,9 +171,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 requiresHVM = true;
             }
             if (deployAsIs) {
-                GuestOS deployAsIsGuestOs = ApiDBUtils.findGuestOSByDisplayName(DeployAsIsConstants.DEFAULT_GUEST_OS_DEPLOY_AS_IS);
                 s_logger.info("Setting default guest OS for deploy-as-is template while the template registration is not completed");
-                guestOSId = deployAsIsGuestOs.getId();
+                guestOSId = getDefaultDeployAsIsGuestOsId();
             }
         }
 
@@ -292,7 +291,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         }
 
         Map details = cmd.getDetails();
-        if (hypervisorType == HypervisorType.VMware) {
+        if (cmd.isDeployAsIs()) {
             if (MapUtils.isNotEmpty(details)) {
                 if (details.containsKey(VmDetailConstants.ROOT_DISK_CONTROLLER)) {
                     s_logger.info("Ignoring the rootDiskController detail provided, as we honour what is defined in the template");
@@ -338,18 +337,28 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 params.isExtractable(), params.getFormat(), params.getGuestOSId(), zoneList,
                 params.getHypervisorType(), params.getChecksum(), params.isBootable(), params.getTemplateTag(), owner,
                 params.getDetails(), params.isSshKeyEnabled(), params.getImageStoreUuid(),
-                params.isDynamicallyScalable(), params.isRoutingType() ? TemplateType.ROUTING : TemplateType.USER, params.isDirectDownload(), false);
+                params.isDynamicallyScalable(), params.isRoutingType() ? TemplateType.ROUTING : TemplateType.USER, params.isDirectDownload(), params.isDeployAsIs());
+    }
+
+    private Long getDefaultDeployAsIsGuestOsId() {
+        GuestOS deployAsIsGuestOs = ApiDBUtils.findGuestOSByDisplayName(DeployAsIsConstants.DEFAULT_GUEST_OS_DEPLOY_AS_IS);
+        return deployAsIsGuestOs.getId();
     }
 
     @Override
     public TemplateProfile prepare(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException {
+        Long osTypeId = cmd.getOsTypeId();
+        if (osTypeId == null) {
+            s_logger.info("Setting the default guest OS for deploy-as-is templates while the template upload is not completed");
+            osTypeId = getDefaultDeployAsIsGuestOsId();
+        }
         UploadParams params = new TemplateUploadParams(CallContext.current().getCallingUserId(), cmd.getName(),
                 cmd.getDisplayText(), cmd.getBits(), BooleanUtils.toBoolean(cmd.isPasswordEnabled()),
                 BooleanUtils.toBoolean(cmd.getRequiresHvm()), BooleanUtils.toBoolean(cmd.isPublic()),
-                BooleanUtils.toBoolean(cmd.isFeatured()), BooleanUtils.toBoolean(cmd.isExtractable()), cmd.getFormat(), cmd.getOsTypeId(),
+                BooleanUtils.toBoolean(cmd.isFeatured()), BooleanUtils.toBoolean(cmd.isExtractable()), cmd.getFormat(), osTypeId,
                 cmd.getZoneId(), HypervisorType.getType(cmd.getHypervisor()), cmd.getChecksum(),
                 cmd.getTemplateTag(), cmd.getEntityOwnerId(), cmd.getDetails(), BooleanUtils.toBoolean(cmd.isSshKeyEnabled()),
-                BooleanUtils.toBoolean(cmd.isDynamicallyScalable()), BooleanUtils.toBoolean(cmd.isRoutingType()));
+                BooleanUtils.toBoolean(cmd.isDynamicallyScalable()), BooleanUtils.toBoolean(cmd.isRoutingType()), cmd.isDeployAsIs());
         return prepareUploadParamsInternal(params);
     }
 
@@ -478,6 +487,10 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             throw new InvalidParameterValueException("Please specify a valid template.");
         }
 
+        if (template.getState() == VirtualMachineTemplate.State.NotUploaded || template.getState() == VirtualMachineTemplate.State.UploadInProgress) {
+            throw new InvalidParameterValueException("The template is either getting uploaded or it may be initiated shortly, please wait for it to be completed");
+        }
+
         return new TemplateProfile(userId, template, zoneId);
     }
 
@@ -515,6 +528,10 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         if (template.getFormat() != ImageFormat.ISO) {
             throw new InvalidParameterValueException("Please specify a valid iso.");
+        }
+
+        if (template.getState() == VirtualMachineTemplate.State.NotUploaded || template.getState() == VirtualMachineTemplate.State.UploadInProgress) {
+            throw new InvalidParameterValueException("The iso is either getting uploaded or it may be initiated shortly, please wait for it to be completed");
         }
 
         return new TemplateProfile(userId, template, zoneId);

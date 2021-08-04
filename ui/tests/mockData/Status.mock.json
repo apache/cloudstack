@@ -1,0 +1,38 @@
+{
+  "messages": {
+    "en": {
+      "state.running": "Running",
+      "state.migrating": "Migrating",
+      "state.stopped": "Stopped",
+      "state.starting": "Starting",
+      "state.stopping": "Stopping",
+      "state.suspended": "Suspended",
+      "state.pending": "Pending",
+      "state.expunging": "Expunging",
+      "state.error": "Error",
+      "message.publicip.state.allocated": "Allocated",
+      "message.publicip.state.created": "Created",
+      "message.vmsnapshot.state.active": "Active",
+      "message.vm.state.active": "Active",
+      "message.volume.state.active": "Active",
+      "message.guestnetwork.state.active": "Active",
+      "message.publicip.state.active": "Active",
+      "Created": "Created",
+      "Active": "Active",
+      "Allocated": "Allocated",
+      "Error": "Error",
+      "Expunging": "Expunging",
+      "Suspended": "Suspended",
+      "Pending": "Pending",
+      "Running": "Running",
+      "Starting": "Starting",
+      "Another": "Another",
+      "Ready": "Ready",
+      "Disabled": "Disabled",
+      "Migrating": "Migrating",
+      "Stopping": "Stopping",
+      "Alert": "Alert",
+      "Stopped": "Stopped"
+    }
+  }
+}

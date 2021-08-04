@@ -39,12 +39,17 @@ public class UseLocalForRootAllocator extends LocalStoragePoolAllocator implemen
 
     @Override
     public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+        return allocateToPool(dskCh, vmProfile, plan, avoid, returnUpTo, false);
+    }
+
+    @Override
+    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
         DataCenterVO dc = _dcDao.findById(plan.getDataCenterId());
         if (!dc.isLocalStorageEnabled()) {
             return null;
         }
 
-        return super.allocateToPool(dskCh, vmProfile, plan, avoid, returnUpTo);
+        return super.allocateToPool(dskCh, vmProfile, plan, avoid, returnUpTo, bypassStorageTypeCheck);
     }
 
     @Override

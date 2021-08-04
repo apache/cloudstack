@@ -34,6 +34,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.upgrade.dao.DbUpgrade;
+import com.cloud.upgrade.dao.DbUpgradeSystemVmTemplate;
 import com.cloud.upgrade.dao.Upgrade217to218;
 import com.cloud.upgrade.dao.Upgrade218to22;
 import com.cloud.upgrade.dao.Upgrade218to224DomainVlans;
@@ -69,6 +70,8 @@ import com.cloud.upgrade.dao.Upgrade41200to41300;
 import com.cloud.upgrade.dao.Upgrade41300to41310;
 import com.cloud.upgrade.dao.Upgrade41310to41400;
 import com.cloud.upgrade.dao.Upgrade41400to41500;
+import com.cloud.upgrade.dao.Upgrade41500to41510;
+import com.cloud.upgrade.dao.Upgrade41510to41600;
 import com.cloud.upgrade.dao.Upgrade420to421;
 import com.cloud.upgrade.dao.Upgrade421to430;
 import com.cloud.upgrade.dao.Upgrade430to440;
@@ -193,6 +196,9 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 .next("4.13.0.0", new Upgrade41300to41310())
                 .next("4.13.1.0", new Upgrade41310to41400())
                 .next("4.14.0.0", new Upgrade41400to41500())
+                .next("4.14.1.0", new Upgrade41400to41500())
+                .next("4.15.0.0", new Upgrade41500to41510())
+                .next("4.15.1.0", new Upgrade41510to41600())
                 .build();
     }
 
@@ -232,10 +238,41 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
     }
 
+    private void updateSystemVmTemplates(DbUpgrade[] upgrades) {
+        for (int i = upgrades.length - 1; i >= 0; i--) {
+            DbUpgrade upgrade = upgrades[i];
+            if (upgrade instanceof DbUpgradeSystemVmTemplate) {
+                TransactionLegacy txn = TransactionLegacy.open("Upgrade");
+                txn.start();
+                try {
+                    Connection conn;
+                    try {
+                        conn = txn.getConnection();
+                    } catch (SQLException e) {
+                        String errorMessage = "Unable to upgrade the database";
+                        s_logger.error(errorMessage, e);
+                        throw new CloudRuntimeException(errorMessage, e);
+                    }
+                    ((DbUpgradeSystemVmTemplate)upgrade).updateSystemVmTemplates(conn);
+                    txn.commit();
+                    break;
+                } catch (CloudRuntimeException e) {
+                    String errorMessage = "Unable to upgrade the database";
+                    s_logger.error(errorMessage, e);
+                    throw new CloudRuntimeException(errorMessage, e);
+                } finally {
+                    txn.close();
+                }
+            }
+        }
+    }
+
     protected void upgrade(CloudStackVersion dbVersion, CloudStackVersion currentVersion) {
         s_logger.info("Database upgrade must be performed from " + dbVersion + " to " + currentVersion);
 
         final DbUpgrade[] upgrades = calculateUpgradePath(dbVersion, currentVersion);
+
+        updateSystemVmTemplates(upgrades);
 
         for (DbUpgrade upgrade : upgrades) {
             VersionVO version;

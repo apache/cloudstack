@@ -1,0 +1,52 @@
+{
+  "apiBase": "/client/api",
+  "docBase": "http://docs.cloudstack.apache.org/en/latest",
+  "appTitle": "CloudStack",
+  "footer": "Licensed under the <a href='http://www.apache.org/licenses/' target='_blank'>Apache License</a>, Version 2.0.",
+  "logo": "assets/logo.svg",
+  "banner": "assets/banner.svg",
+  "error": {
+    "403": "assets/403.png",
+    "404": "assets/404.png",
+    "500": "assets/500.png"
+  },
+  "theme": {
+    "@logo-background-color": "#ffffff",
+    "@navigation-background-color": "#ffffff",
+    "@project-nav-background-color": "#001529",
+    "@project-nav-text-color": "rgba(255, 255, 255, 0.65)",
+    "@navigation-text-color": "rgba(0, 0, 0, 0.65)",
+    "@primary-color": "#1890ff",
+    "@link-color": "#1890ff",
+    "@link-hover-color": "#40a9ff",
+    "@loading-color": "#1890ff",
+    "@processing-color": "#1890ff",
+    "@success-color": "#52c41a",
+    "@warning-color": "#faad14",
+    "@error-color": "#f5222d",
+    "@font-size-base": "14px",
+    "@heading-color": "rgba(0, 0, 0, 0.85)",
+    "@text-color": "rgba(0, 0, 0, 0.65)",
+    "@text-color-secondary": "rgba(0, 0, 0, 0.45)",
+    "@disabled-color": "rgba(0, 0, 0, 0.25)",
+    "@border-color-base": "#d9d9d9",
+    "@border-radius-base": "4px",
+    "@box-shadow-base": "0 2px 8px rgba(0, 0, 0, 0.15)",
+    "@logo-width": "256px",
+    "@logo-height": "64px",
+    "@banner-width": "700px",
+    "@banner-height": "110px",
+    "@error-width": "256px",
+    "@error-height": "256px"
+  },
+  "keyboardOptions": {
+    "us": "label.standard.us.keyboard",
+    "uk": "label.uk.keyboard",
+    "fr": "label.french.azerty.keyboard",
+    "jp": "label.japanese.keyboard",
+    "sc": "label.simplified.chinese.keyboard"
+  },
+  "plugins": [],
+  "basicZoneEnabled": true,
+  "docHelpMappings": {}
+}

@@ -1,3 +1,15 @@
+cloudstack (4.16.0.0-SNAPSHOT) unstable; urgency=low
+
+  * Update the version to 4.16.0.0-SNAPSHOT
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Tue, 11 Jan 2021 10:51:02 +0000
+
+cloudstack (4.15.0.0) unstable; urgency=low
+
+  * Update the version to 4.15.0.0
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Wed, 23 Dec 2020 16:32:25 +0000
+
 cloudstack (4.15.0.0-SNAPSHOT) unstable; urgency=low
 
   * Update the version to 4.15.0.0-SNAPSHOT

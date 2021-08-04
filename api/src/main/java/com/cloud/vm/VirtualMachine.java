@@ -20,6 +20,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Displayable;
@@ -186,6 +188,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
         }
     }
 
+    static final Set<Type> systemVMs = new HashSet<>(Arrays.asList(VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm));
     static final String IsDynamicScalingEnabled = "enable.dynamic.scaling";
 
     public enum Event {
@@ -338,5 +341,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
 
     @Override
     boolean isDisplay();
+
+    boolean isDynamicallyScalable();
 
 }

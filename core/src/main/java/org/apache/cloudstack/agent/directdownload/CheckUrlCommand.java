@@ -23,14 +23,20 @@ import com.cloud.agent.api.Command;
 
 public class CheckUrlCommand extends Command {
 
+    private String format;
     private String url;
+
+    public String getFormat() {
+        return format;
+    }
 
     public String getUrl() {
         return url;
     }
 
-    public CheckUrlCommand(final String url) {
+    public CheckUrlCommand(final String format,final String url) {
         super();
+        this.format = format;
         this.url = url;
     }
 

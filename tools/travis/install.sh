@@ -37,8 +37,23 @@ export JAVA_HOME=$(readlink -f /usr/lib/jvm/java-11-openjdk-amd64/bin/java | sed
 mvn -v
 
 if [ $TEST_SEQUENCE_NUMBER -eq 1 ]; then
+   # npm lint, test and build
+   cd ui && npm install && npm run lint && npm run test:unit && npm run build
+   cd $DIR
+
+# TODO reinstate this when the systemvm code is fully ported to python3 (or some other processing system)
    # Pylint/pep8 systemvm python codebase
-   cd systemvm/test && bash -x runtests.sh
+#   python3 -m pip install --user --upgrade setuptools pycodestyle pylint flask nose
+#   pip install virtualenv
+#   sudo virtualenv -p `which python2` py2
+#   source py2/bin/activate
+#   cd $DIR
+#   which python
+#   which python2
+#   python --version
+#   python2 -m pip install --user --upgrade setuptools pycodestyle pylint flask nose
+#   cd systemvm/test && bash -x runtests.sh
+
    # Build noredist
    git clone https://github.com/rhtyd/cloudstack-nonoss.git nonoss && cd nonoss && bash -x install-non-oss.sh
    cd $DIR && echo $DIR
@@ -51,10 +66,10 @@ else
 fi
 
 # Install mysql-connector-python
-pip install --user --upgrade http://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-2.0.4.zip#md5=3df394d89300db95163f17c843ef49df 2>&1 > /dev/null
+python3 -m pip install --user --upgrade http://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-2.0.4.zip#md5=3df394d89300db95163f17c843ef49df 2>&1 > /dev/null
 
 # Install marvin
-pip install --user --upgrade tools/marvin/dist/Marvin-*.tar.gz
+python3 -m pip install --user --upgrade tools/marvin/dist/Marvin-*.tar.gz
 
 # Deploy the database
 mvn -q -Pdeveloper -pl developer -Ddeploydb

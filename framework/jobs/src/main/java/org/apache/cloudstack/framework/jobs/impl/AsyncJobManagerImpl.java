@@ -257,9 +257,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     @DB
     public void completeAsyncJob(final long jobId, final Status jobStatus, final int resultCode, final String resultObject) {
+        String resultObj = null;
         if (s_logger.isDebugEnabled()) {
-            String resultObj = obfuscatePassword(resultObject, HidePassword.value());
-            resultObj = convertHumanReadableJson(resultObj);
+            resultObj = convertHumanReadableJson(obfuscatePassword(resultObject, HidePassword.value()));
             s_logger.debug("Complete async job-" + jobId + ", jobStatus: " + jobStatus + ", resultCode: " + resultCode + ", result: " + resultObj);
         }
 
@@ -268,7 +268,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         if (job == null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("job-" + jobId + " no longer exists, we just log completion info here. " + jobStatus + ", resultCode: " + resultCode + ", result: " +
-                    resultObject);
+                    resultObj);
             }
             // still purge item from queue to avoid any blocking
             _queueMgr.purgeAsyncJobQueueItemId(jobId);
@@ -1097,6 +1097,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     final List<SnapshotDetailsVO> snapshotList = _snapshotDetailsDao.findDetails(AsyncJob.Constants.MS_ID, Long.toString(msid), false);
                     for (final SnapshotDetailsVO snapshotDetailsVO : snapshotList) {
                         SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotDetailsVO.getResourceId(), DataStoreRole.Primary);
+                        if (snapshot == null) {
+                            _snapshotDetailsDao.remove(snapshotDetailsVO.getId());
+                            continue;
+                        }
                         snapshotSrv.processEventOnSnapshotObject(snapshot, Snapshot.Event.OperationFailed);
                         _snapshotDetailsDao.removeDetail(snapshotDetailsVO.getResourceId(), AsyncJob.Constants.MS_ID);
                     }

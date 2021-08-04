@@ -90,7 +90,7 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
         }
 
         if (commandNames.contains(commandName)) {
-            throw new PermissionDeniedException("The API is blacklisted. Role type=" + roleType.toString() + " is not allowed to request the api: " + commandName);
+            throw new PermissionDeniedException("The API is denied. Role type=" + roleType.toString() + " is not allowed to request the api: " + commandName);
         } else {
             throw new UnavailableCommandException("The API " + commandName + " does not exist or is not available for this account.");
         }

@@ -76,6 +76,7 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachine;
 import com.google.common.base.Strings;
 
 @ResourceWrapper(handles =  MigrateCommand.class)
@@ -96,6 +97,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     @Override
     public Answer execute(final MigrateCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final String vmName = command.getVmName();
+        final Map<String, Boolean> vlanToPersistenceMap = command.getVlanToPersistenceMap();
         final String destinationUri = createMigrationURI(command.getDestinationIp(), libvirtComputingResource);
         final List<MigrateDiskInfo> migrateDiskInfoList = command.getMigrateDiskInfoList();
 
@@ -155,6 +157,14 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             // delete the metadata of vm snapshots before migration
             vmsnapshots = libvirtComputingResource.cleanVMSnapshotMetadata(dm);
 
+            // Verify Format of backing file
+            for (DiskDef disk : disks) {
+                if (disk.getDeviceType() == DiskDef.DeviceType.DISK
+                        && disk.getDiskFormatType() == DiskDef.DiskFmtType.QCOW2) {
+                    libvirtComputingResource.setBackingFileFormat(disk.getDiskPath());
+                }
+            }
+
             Map<String, MigrateCommand.MigrateDiskInfo> mapMigrateStorage = command.getMigrateStorage();
             // migrateStorage is declared as final because the replaceStorage method may mutate mapMigrateStorage, but
             // migrateStorage's value should always only be associated with the initial state of mapMigrateStorage.
@@ -171,6 +181,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
 
             dconn = libvirtUtilitiesHelper.retrieveQemuConnection(destinationUri);
+
+            if (to.getType() == VirtualMachine.Type.User) {
+                libvirtComputingResource.detachAndAttachConfigDriveISO(conn, vmName);
+            }
 
             //run migration in thread so we can monitor it
             s_logger.info("Live migration of instance " + vmName + " initiated to destination host: " + dconn.getURI());
@@ -276,11 +290,12 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         } else {
             libvirtComputingResource.destroyNetworkRulesForVM(conn, vmName);
             for (final InterfaceDef iface : ifaces) {
+                String vlanId = libvirtComputingResource.getVlanIdFromBridgeName(iface.getBrName());
                 // We don't know which "traffic type" is associated with
                 // each interface at this point, so inform all vif drivers
                 final List<VifDriver> allVifDrivers = libvirtComputingResource.getAllVifDrivers();
                 for (final VifDriver vifDriver : allVifDrivers) {
-                    vifDriver.unplug(iface);
+                    vifDriver.unplug(iface, libvirtComputingResource.shouldDeleteBridge(vlanToPersistenceMap, vlanId));
                 }
             }
         }

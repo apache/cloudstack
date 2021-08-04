@@ -78,7 +78,7 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
                 index == 0 ? "true" : "false",
                 KubernetesVersionManagerImpl.compareSemanticVersions(upgradeVersion.getSemanticVersion(), "1.15.0") < 0 ? "true" : "false",
                 Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType()));
-        return SshHelper.sshExecute(publicIpAddress, nodeSshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+        return SshHelper.sshExecute(nodeAddress, nodeSshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
                 cmdStr,
                 10000, 10000, 10 * 60 * 1000);
     }
@@ -123,9 +123,9 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
             if (!KubernetesClusterUtil.uncordonKubernetesClusterNode(kubernetesCluster, publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, getManagementServerSshPublicKeyFile(), vm, upgradeTimeoutTime, 15000)) {
                 logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to uncordon Kubernetes node on VM : %s", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
             }
-            if (i == 0) { // Wait for master to get in Ready state
+            if (i == 0) { // Wait for control node to get in Ready state
                 if (!KubernetesClusterUtil.isKubernetesClusterNodeReady(kubernetesCluster, publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, getManagementServerSshPublicKeyFile(), hostName, upgradeTimeoutTime, 15000)) {
-                    logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to get master Kubernetes node on VM : %s in ready state", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
+                    logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to get control Kubernetes node on VM : %s in ready state", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
                 }
             }
             if (LOGGER.isInfoEnabled()) {

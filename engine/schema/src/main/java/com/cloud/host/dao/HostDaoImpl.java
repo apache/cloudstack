@@ -79,14 +79,18 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     private static final Logger status_logger = Logger.getLogger(Status.class);
     private static final Logger state_logger = Logger.getLogger(ResourceState.class);
 
-    private static final String LIST_CLUSTERID_FOR_HOST_TAG = "SELECT cluster_id FROM host JOIN (%s) AS tags ON host.id = tags.host_id;";
-
     private static final String LIST_HOST_IDS_BY_COMPUTETAGS = "SELECT filtered.host_id, COUNT(filtered.tag) AS tag_count "
                                                              + "FROM (SELECT host_id, tag FROM host_tags GROUP BY host_id,tag) AS filtered "
                                                              + "WHERE tag IN(%s) "
                                                              + "GROUP BY host_id "
                                                              + "HAVING tag_count = %s ";
     private static final String SEPARATOR = ",";
+    private static final String LIST_CLUSTERID_FOR_HOST_TAG = "select distinct cluster_id from host join host_tags on host.id = host_tags.host_id and host_tags.tag = ?";
+    private static final String GET_HOSTS_OF_ACTIVE_VMS = "select h.id " +
+            "from vm_instance vm " +
+            "join host h on (vm.host_id=h.id) " +
+            "where vm.service_offering_id= ? and vm.state not in (\"Destroyed\", \"Expunging\", \"Error\") group by h.id";
+
 
     protected SearchBuilder<HostVO> TypePodDcStatusSearch;
 
@@ -471,13 +475,27 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public List<HostVO> listByDataCenterId(long id) {
+        return listByDataCenterIdAndState(id, ResourceState.Enabled);
+    }
+
+    @Override
+    public List<HostVO> listByDataCenterIdAndState(long id, ResourceState state) {
+        SearchCriteria<HostVO> sc = scHostsFromZoneUpRouting(id);
+        sc.setParameters("resourceState", state);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<HostVO> listDisabledByDataCenterId(long id) {
+        return listByDataCenterIdAndState(id, ResourceState.Disabled);
+    }
+
+    private SearchCriteria<HostVO> scHostsFromZoneUpRouting(long id) {
         SearchCriteria<HostVO> sc = DcSearch.create();
         sc.setParameters("dc", id);
         sc.setParameters("status", Status.Up);
         sc.setParameters("type", Host.Type.Routing);
-        sc.setParameters("resourceState", ResourceState.Enabled);
-
-        return listBy(sc);
+        return sc;
     }
 
     @Override
@@ -1229,6 +1247,27 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         List<String> questionMarks = new ArrayList();
         offeringTags.forEach((tag) -> { questionMarks.add("?"); });
         return String.format(this.LIST_HOST_IDS_BY_COMPUTETAGS, String.join(",", questionMarks),questionMarks.size());
+    }
+
+    @Override
+    public List<HostVO> listHostsWithActiveVMs(long offeringId) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        List<HostVO> result = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(GET_HOSTS_OF_ACTIVE_VMS);
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+            pstmt.setLong(1, offeringId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                result.add(toEntityBean(rs, false));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + sql, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + sql, e);
+        }
     }
 
     @Override

@@ -1,0 +1,237 @@
+#cloud-config
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+---
+ssh_authorized_keys:
+  {{ k8s.ssh.pub.key }}
+
+write-files:
+  - path: /opt/bin/setup-kube-system
+    permissions: 0700
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+
+      if [[ -f "/home/core/success" ]]; then
+      echo "Already provisioned!"
+      exit 0
+      fi
+
+      ISO_MOUNT_DIR=/mnt/k8sdisk
+      BINARIES_DIR=${ISO_MOUNT_DIR}/
+      K8S_CONFIG_SCRIPTS_COPY_DIR=/tmp/k8sconfigscripts/
+      ATTEMPT_ONLINE_INSTALL=false
+      setup_complete=false
+
+      OFFLINE_INSTALL_ATTEMPT_SLEEP=15
+      MAX_OFFLINE_INSTALL_ATTEMPTS=100
+      offline_attempts=1
+      MAX_SETUP_CRUCIAL_CMD_ATTEMPTS=3
+      EJECT_ISO_FROM_OS={{ k8s.eject.iso }}
+      crucial_cmd_attempts=1
+      iso_drive_path=""
+      while true; do
+        if (( "$offline_attempts" > "$MAX_OFFLINE_INSTALL_ATTEMPTS" )); then
+          echo "Warning: Offline install timed out!"
+          break
+        fi
+        set +e
+        output=`blkid -o device -t TYPE=iso9660`
+        set -e
+        if [ "$output" != "" ]; then
+          while read -r line; do
+            if [ ! -d "${ISO_MOUNT_DIR}" ]; then
+              mkdir "${ISO_MOUNT_DIR}"
+            fi
+            retval=0
+            set +e
+            mount -o ro "${line}" "${ISO_MOUNT_DIR}"
+            retval=$?
+            set -e
+            if [ $retval -eq 0 ]; then
+              if [ -d "$BINARIES_DIR" ]; then
+                iso_drive_path="${line}"
+                break
+              else
+                umount "${line}" && rmdir "${ISO_MOUNT_DIR}"
+              fi
+            fi
+          done <<< "$output"
+        fi
+        if [ -d "$BINARIES_DIR" ]; then
+          break
+        fi
+        echo "Waiting for Binaries directory $BINARIES_DIR to be available, sleeping for $OFFLINE_INSTALL_ATTEMPT_SLEEP seconds, attempt: $offline_attempts"
+        sleep $OFFLINE_INSTALL_ATTEMPT_SLEEP
+        offline_attempts=$[$offline_attempts + 1]
+      done
+
+      if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
+        export PATH=$PATH:/opt/bin
+      fi
+
+      if [ -d "$BINARIES_DIR" ]; then
+        ### Binaries available offline ###
+        echo "Installing binaries from ${BINARIES_DIR}"
+        mkdir -p /opt/cni/bin
+        tar -f "${BINARIES_DIR}/cni/cni-plugins-amd64.tgz" -C /opt/cni/bin -xz
+
+        mkdir -p /opt/bin
+        tar -f "${BINARIES_DIR}/cri-tools/crictl-linux-amd64.tar.gz" -C /opt/bin -xz
+
+        mkdir -p /opt/bin
+        cd /opt/bin
+        cp -a ${BINARIES_DIR}/k8s/{kubeadm,kubelet,kubectl} /opt/bin
+        chmod +x {kubeadm,kubelet,kubectl}
+
+        sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/kubelet.service > /etc/systemd/system/kubelet.service
+        mkdir -p /etc/systemd/system/kubelet.service.d
+        sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/10-kubeadm.conf > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+
+        output=`ls ${BINARIES_DIR}/docker/`
+        if [ "$output" != "" ]; then
+          while read -r line; do
+            crucial_cmd_attempts=1
+            while true; do
+              if (( "$crucial_cmd_attempts" > "$MAX_SETUP_CRUCIAL_CMD_ATTEMPTS" )); then
+                echo "Loading docker image ${BINARIES_DIR}/docker/$line failed!"
+                break;
+              fi
+              retval=0
+              set +e
+              docker load < "${BINARIES_DIR}/docker/$line"
+              retval=$?
+              set -e
+              if [ $retval -eq 0 ]; then
+                break;
+              fi
+              crucial_cmd_attempts=$[$crucial_cmd_attempts + 1]
+            done
+          done <<< "$output"
+          setup_complete=true
+        fi
+        umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"
+        if [ "$EJECT_ISO_FROM_OS" = true ] && [ "$iso_drive_path" != "" ]; then
+          eject "${iso_drive_path}"
+        fi
+      fi
+      if [ "$setup_complete" = false ] && [ "$ATTEMPT_ONLINE_INSTALL" = true ]; then
+        ###  Binaries not available offline ###
+        RELEASE="v1.16.3"
+        CNI_VERSION="v0.7.5"
+        CRICTL_VERSION="v1.16.0"
+        echo "Warning: ${BINARIES_DIR} not found. Will get binaries and docker images from Internet."
+        mkdir -p /opt/cni/bin
+        curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz" | tar -C /opt/cni/bin -xz
+
+        mkdir -p /opt/bin
+        curl -L "https://github.com/kubernetes-incubator/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-amd64.tar.gz" | tar -C /opt/bin -xz
+
+        mkdir -p /opt/bin
+        cd /opt/bin
+        curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/amd64/{kubeadm,kubelet,kubectl}
+        chmod +x {kubeadm,kubelet,kubectl}
+
+        curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > /etc/systemd/system/kubelet.service
+        mkdir -p /etc/systemd/system/kubelet.service.d
+        curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+      fi
+
+      systemctl enable kubelet && systemctl start kubelet
+      modprobe br_netfilter && sysctl net.bridge.bridge-nf-call-iptables=1
+
+      if [ -d "$BINARIES_DIR" ] && [ "$ATTEMPT_ONLINE_INSTALL" = true ]; then
+        crucial_cmd_attempts=1
+        while true; do
+          if (( "$crucial_cmd_attempts" > "$MAX_SETUP_CRUCIAL_CMD_ATTEMPTS" )); then
+            echo "Warning: kubeadm pull images failed after multiple tries!"
+            break;
+          fi
+          retval=0
+          set +e
+          kubeadm config images pull
+          retval=$?
+          set -e
+          if [ $retval -eq 0 ]; then
+            break;
+          fi
+          crucial_cmd_attempts=$[$crucial_cmd_attempts + 1]
+        done
+      fi
+
+  - path: /opt/bin/deploy-kube-system
+    permissions: 0700
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+
+      if [[ -f "/home/core/success" ]]; then
+      echo "Already provisioned!"
+      exit 0
+      fi
+
+      if [[ $(systemctl is-active setup-kube-system) != "inactive" ]]; then
+        echo "setup-kube-system is running!"
+        exit 1
+      fi
+      modprobe ip_vs
+      modprobe ip_vs_wrr
+      modprobe ip_vs_sh
+      modprobe nf_conntrack_ipv4
+      if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
+        export PATH=$PATH:/opt/bin
+      fi
+      kubeadm join {{ k8s_control_node.join_ip }}:6443 --token {{ k8s_control_node.cluster.token }} --control-plane --certificate-key {{ k8s_control_node.cluster.ha.certificate.key }} --discovery-token-unsafe-skip-ca-verification
+
+      sudo touch /home/core/success
+      echo "true" > /home/core/success
+
+coreos:
+  units:
+    - name: docker.service
+      command: start
+      enable: true
+
+    - name: setup-kube-system.service
+      command: start
+      content: |
+        [Unit]
+        Requires=docker.service
+        After=docker.service
+
+        [Service]
+        Type=simple
+        StartLimitInterval=0
+        ExecStart=/opt/bin/setup-kube-system
+
+    - name: deploy-kube-system.service
+      command: start
+      content: |
+        [Unit]
+        After=setup-kube-system.service
+
+        [Service]
+        Type=simple
+        StartLimitInterval=0
+        Restart=on-failure
+        ExecStartPre=/usr/bin/curl -k https://{{ k8s_control_node.join_ip }}:6443/version
+        ExecStart=/opt/bin/deploy-kube-system
+
+  update:
+    group: stable
+    reboot-strategy: off

@@ -20,6 +20,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,7 +68,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
         if (s_apiNameDiscoveryResponseMap == null) {
             long startTime = System.nanoTime();
             s_apiNameDiscoveryResponseMap = new HashMap<String, ApiDiscoveryResponse>();
-            Set<Class<?>> cmdClasses = new HashSet<Class<?>>();
+            Set<Class<?>> cmdClasses = new LinkedHashSet<Class<?>>();
             for (PluggableService service : _services) {
                 s_logger.debug(String.format("getting api commands of service: %s", service.getClass().getName()));
                 cmdClasses.addAll(service.getCommands());

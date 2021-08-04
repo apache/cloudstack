@@ -1288,7 +1288,7 @@ UPDATE `cloud`.`account` SET `cloud`.`account`.`default`=1 WHERE id IN (1,2);
 UPDATE `cloud_usage`.`account` SET `default`=1 WHERE id IN (1,2);
 UPDATE `cloud`.`user` SET `cloud`.`user`.`default`=1 WHERE id IN (1,2);
 
-ALTER VIEW `cloud`.`user_view` AS
+CREATE OR REPLACE VIEW `cloud`.`user_view` AS
     select 
         user.id,
         user.uuid,

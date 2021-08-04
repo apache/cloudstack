@@ -71,6 +71,7 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         }
 
         domainResponse.setState(domain.getState().toString());
+        domainResponse.setCreated(domain.getCreated());
         domainResponse.setNetworkDomain(domain.getNetworkDomain());
 
         if (details.contains(DomainDetails.all) || details.contains(DomainDetails.resource)) {

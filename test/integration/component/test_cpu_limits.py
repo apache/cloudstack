@@ -435,7 +435,7 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
         users = {self.child_domain_1: self.child_do_admin_1,
                  self.child_domain_2: self.child_do_admin_2
                  }
-        for domain, admin in users.items():
+        for domain, admin in list(users.items()):
             self.account = admin
             self.domain = domain
 
@@ -510,7 +510,7 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
         users = {self.child_domain_1: self.child_do_admin_1,
                  self.child_domain_2: self.child_do_admin_2
                  }
-        for domain, admin in users.items():
+        for domain, admin in list(users.items()):
             self.account = admin
             self.domain = domain
 
@@ -570,7 +570,7 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
         users = {self.child_domain_1: self.child_do_admin_1,
                  self.child_domain_2: self.child_do_admin_2
                  }
-        for domain, admin in users.items():
+        for domain, admin in list(users.items()):
             self.account = admin
             self.domain = domain
 
@@ -633,7 +633,7 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
         users = {self.child_domain_1: self.child_do_admin_1,
                  self.child_domain_2: self.child_do_admin_2
                  }
-        for domain, admin in users.items():
+        for domain, admin in list(users.items()):
             self.account = admin
             self.domain = domain
 

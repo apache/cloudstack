@@ -19,11 +19,22 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.cloudstack.storage.configdrive.ConfigDrive;
+import org.apache.commons.collections.MapUtils;
+import org.apache.log4j.Logger;
+import org.libvirt.Connect;
+import org.libvirt.LibvirtException;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
-import com.cloud.agent.api.to.DpdkTO;
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.exception.InternalErrorException;
@@ -36,14 +47,6 @@ import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Volume;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
-import org.libvirt.Connect;
-import org.libvirt.LibvirtException;
-
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
 
 @ResourceWrapper(handles =  PrepareForMigrationCommand.class)
 public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapper<PrepareForMigrationCommand, Answer, LibvirtComputingResource> {
@@ -86,7 +89,12 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
             final DiskTO[] volumes = vm.getDisks();
             for (final DiskTO volume : volumes) {
                 if (volume.getType() == Volume.Type.ISO) {
-                    libvirtComputingResource.getVolumePath(conn, volume);
+                    final DataTO data = volume.getData();
+                    if (data != null && data.getPath() != null && data.getPath().startsWith(ConfigDrive.CONFIGDRIVEDIR)) {
+                        libvirtComputingResource.getVolumePath(conn, volume, vm.isConfigDriveOnHostCache());
+                    } else {
+                        libvirtComputingResource.getVolumePath(conn, volume);
+                    }
                 }
             }
 

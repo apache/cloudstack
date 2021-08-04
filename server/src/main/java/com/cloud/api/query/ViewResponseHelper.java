@@ -242,14 +242,7 @@ public class ViewResponseHelper {
         Hashtable<Long, HostResponse> vrDataList = new Hashtable<Long, HostResponse>();
         // Initialise the vrdatalist with the input data
         for (HostJoinVO vr : hosts) {
-            HostResponse vrData = vrDataList.get(vr.getId());
-            if (vrData == null) {
-                // first time encountering this vm
-                vrData = ApiDBUtils.newHostResponse(vr, details);
-            } else {
-                // update tags
-                vrData = ApiDBUtils.fillHostDetails(vrData, vr);
-            }
+            HostResponse vrData = ApiDBUtils.newHostResponse(vr, details);
             vrDataList.put(vr.getId(), vrData);
         }
         return new ArrayList<HostResponse>(vrDataList.values());
@@ -259,14 +252,7 @@ public class ViewResponseHelper {
         Hashtable<Long, HostForMigrationResponse> vrDataList = new Hashtable<Long, HostForMigrationResponse>();
         // Initialise the vrdatalist with the input data
         for (HostJoinVO vr : hosts) {
-            HostForMigrationResponse vrData = vrDataList.get(vr.getId());
-            if (vrData == null) {
-                // first time encountering this vm
-                vrData = ApiDBUtils.newHostForMigrationResponse(vr, details);
-            } else {
-                // update tags
-                vrData = ApiDBUtils.fillHostForMigrationDetails(vrData, vr);
-            }
+            HostForMigrationResponse vrData = ApiDBUtils.newHostForMigrationResponse(vr, details);
             vrDataList.put(vr.getId(), vrData);
         }
         return new ArrayList<HostForMigrationResponse>(vrDataList.values());
@@ -288,16 +274,17 @@ public class ViewResponseHelper {
             vrDataList.put(vr.getId(), vrData);
 
             VolumeStats vs = null;
-            if (vr.getFormat() == ImageFormat.VHD || vr.getFormat() == ImageFormat.QCOW2) {
-                vs = ApiDBUtils.getVolumeStatistics(vrData.getPath());
-            }
-            else if (vr.getFormat() == ImageFormat.OVA) {
+            if (vr.getFormat() == ImageFormat.VHD || vr.getFormat() == ImageFormat.QCOW2 || vr.getFormat() == ImageFormat.RAW) {
+                if (vrData.getPath() != null) {
+                    vs = ApiDBUtils.getVolumeStatistics(vrData.getPath());
+                }
+            } else if (vr.getFormat() == ImageFormat.OVA) {
                 if (vrData.getChainInfo() != null) {
                     vs = ApiDBUtils.getVolumeStatistics(vrData.getChainInfo());
                 }
             }
 
-            if (vs != null){
+            if (vs != null) {
                 long vsz = vs.getVirtualSize();
                 long psz = vs.getPhysicalSize() ;
                 double util = (double)psz/vsz;

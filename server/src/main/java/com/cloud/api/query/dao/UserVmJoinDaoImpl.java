@@ -222,8 +222,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 userVmResponse.setDiskKbsWrite((long)vmStats.getDiskWriteKBs());
                 userVmResponse.setDiskIORead((long)vmStats.getDiskReadIOs());
                 userVmResponse.setDiskIOWrite((long)vmStats.getDiskWriteIOs());
-                userVmResponse.setMemoryKBs((long)vmStats.getMemoryKBs());
-                userVmResponse.setMemoryIntFreeKBs((long)vmStats.getIntFreeMemoryKBs());
+                long totalMemory = (long)vmStats.getMemoryKBs();
+                long freeMemory = (long)vmStats.getIntFreeMemoryKBs();
+                long correctedFreeMemory = freeMemory >= totalMemory ? 0 : freeMemory;
+                userVmResponse.setMemoryKBs(totalMemory);
+                userVmResponse.setMemoryIntFreeKBs(correctedFreeMemory);
                 userVmResponse.setMemoryTargetKBs((long)vmStats.getTargetMemoryKBs());
 
             }
@@ -274,6 +277,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                     nicResponse.setType(userVm.getGuestType().toString());
                 }
                 nicResponse.setIsDefault(userVm.isDefaultNic());
+                nicResponse.setDeviceId(String.valueOf(userVm.getNicDeviceId()));
                 List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(userVm.getNicId());
                 if (secondaryIps != null) {
                     List<NicSecondaryIpResponse> ipList = new ArrayList<NicSecondaryIpResponse>();
@@ -336,16 +340,21 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 userVmResponse.setBootType("Bios");
                 userVmResponse.setBootMode("legacy");
             }
-            // Remove blacklisted settings if user is not admin
+
+            if (userVm.getPoolType() != null) {
+                userVmResponse.setPoolType(userVm.getPoolType().toString());
+            }
+
+            // Remove deny listed settings if user is not admin
             if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                String[] userVmSettingsToHide = QueryService.UserVMBlacklistedDetails.value().split(",");
+                String[] userVmSettingsToHide = QueryService.UserVMDeniedDetails.value().split(",");
                 for (String key : userVmSettingsToHide) {
                     resourceDetails.remove(key.trim());
                 }
             }
             userVmResponse.setDetails(resourceDetails);
             if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                userVmResponse.setReadOnlyUIDetails(QueryService.UserVMReadOnlyUIDetails.value());
+                userVmResponse.setReadOnlyDetails(QueryService.UserVMReadOnlyDetails.value());
             }
         }
 
@@ -429,6 +438,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             }
             /*17: default*/
             nicResponse.setIsDefault(uvo.isDefaultNic());
+            nicResponse.setDeviceId(String.valueOf(uvo.getNicDeviceId()));
             List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(uvo.getNicId());
             if (secondaryIps != null) {
                 List<NicSecondaryIpResponse> ipList = new ArrayList<NicSecondaryIpResponse>();

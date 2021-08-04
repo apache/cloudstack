@@ -32,6 +32,7 @@ public class IpAddress {
     private Integer nicDevId;
     private boolean newNic;
     private String nwType;
+    private boolean isPrivateGateway;
 
     public IpAddress() {
         // Empty constructor for (de)serialization
@@ -131,6 +132,14 @@ public class IpAddress {
 
     public void setNewNic(boolean newNic) {
         this.newNic = newNic;
+    }
+
+    public boolean isPrivateGateway() {
+        return isPrivateGateway;
+    }
+
+    public void setPrivateGateway(boolean isPrivateGateway) {
+        this.isPrivateGateway = isPrivateGateway;
     }
 
 }

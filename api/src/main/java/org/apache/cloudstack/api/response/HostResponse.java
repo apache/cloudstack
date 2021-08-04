@@ -103,16 +103,29 @@ public class HostResponse extends BaseResponse {
     @Param(description = "the CPU speed of the host")
     private Long cpuSpeed;
 
+    @Deprecated
     @SerializedName("cpuallocated")
     @Param(description = "the amount of the host's CPU currently allocated")
     private String cpuAllocated;
+
+    @SerializedName("cpuallocatedvalue")
+    @Param(description = "the amount of the host's CPU currently allocated in MHz")
+    private Long cpuAllocatedValue;
+
+    @SerializedName("cpuallocatedpercentage")
+    @Param(description = "the amount of the host's CPU currently allocated in percentage")
+    private String cpuAllocatedPercentage;
+
+    @SerializedName("cpuallocatedwithoverprovisioning")
+    @Param(description = "the amount of the host's CPU currently allocated after applying the cpu.overprovisioning.factor")
+    private String cpuAllocatedWithOverprovisioning;
 
     @SerializedName("cpuused")
     @Param(description = "the amount of the host's CPU currently used")
     private String cpuUsed;
 
     @SerializedName("cpuwithoverprovisioning")
-    @Param(description = "the amount of the host's CPU after applying the cpu.overprovisioning.factor ")
+    @Param(description = "the amount of the host's CPU after applying the cpu.overprovisioning.factor")
     private String cpuWithOverprovisioning;
 
     @SerializedName(ApiConstants.CPU_LOAD_AVERAGE)
@@ -136,9 +149,18 @@ public class HostResponse extends BaseResponse {
     @Param(description = "the amount of the host's memory after applying the mem.overprovisioning.factor")
     private String memWithOverprovisioning;
 
+    @Deprecated
     @SerializedName("memoryallocated")
     @Param(description = "the amount of the host's memory currently allocated")
     private long memoryAllocated;
+
+    @SerializedName("memoryallocatedpercentage")
+    @Param(description = "the amount of the host's memory currently allocated in percentage")
+    private String memoryAllocatedPercentage;
+
+    @SerializedName("memoryallocatedbytes")
+    @Param(description = "the amount of the host's memory currently allocated in bytes")
+    private Long memoryAllocatedBytes;
 
     @SerializedName("memoryused")
     @Param(description = "the amount of the host's memory currently used")
@@ -325,12 +347,20 @@ public class HostResponse extends BaseResponse {
         this.cpuSpeed = cpuSpeed;
     }
 
-    public String getCpuAllocated() {
-        return cpuAllocated;
-    }
-
     public void setCpuAllocated(String cpuAllocated) {
         this.cpuAllocated = cpuAllocated;
+    }
+
+    public void setCpuAllocatedValue(Long cpuAllocatedValue) {
+        this.cpuAllocatedValue = cpuAllocatedValue;
+    }
+
+    public void setCpuAllocatedPercentage(String cpuAllocatedPercentage) {
+        this.cpuAllocatedPercentage = cpuAllocatedPercentage;
+    }
+
+    public void setCpuAllocatedWithOverprovisioning(String cpuAllocatedWithOverprovisioning) {
+        this.cpuAllocatedWithOverprovisioning = cpuAllocatedWithOverprovisioning;
     }
 
     public void setCpuUsed(String cpuUsed) {
@@ -588,6 +618,10 @@ public class HostResponse extends BaseResponse {
         return cpuUsed;
     }
 
+    public String getCpuAllocated() {
+        return cpuAllocated;
+    }
+
     public Double getAverageLoad() {
         return cpuloadaverage;
     }
@@ -606,6 +640,14 @@ public class HostResponse extends BaseResponse {
 
     public long getMemoryAllocated() {
         return memoryAllocated;
+    }
+
+    public void setMemoryAllocatedPercentage(String memoryAllocatedPercentage) {
+        this.memoryAllocatedPercentage = memoryAllocatedPercentage;
+    }
+
+    public void setMemoryAllocatedBytes(Long memoryAllocatedBytes) {
+        this.memoryAllocatedBytes = memoryAllocatedBytes;
     }
 
     public Long getMemoryUsed() {

@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 import com.cloud.vm.VirtualMachine.State;
 
 @Entity
-@Table(name = ("security_group_vm_map"))
+@Table(name = "security_group_vm_map")
 @SecondaryTables({@SecondaryTable(name = "nics", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "instance_id", referencedColumnName = "instance_id")}),
     @SecondaryTable(name = "vm_instance", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "instance_id", referencedColumnName = "id")}),
     @SecondaryTable(name = "security_group", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "security_group_id", referencedColumnName = "id")})})
