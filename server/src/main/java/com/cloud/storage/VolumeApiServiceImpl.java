@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -813,7 +814,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     private VolumeVO commitVolume(final CreateVolumeCmd cmd, final Account caller, final Account owner, final Boolean displayVolume, final Long zoneId, final Long diskOfferingId,
-            final Storage.ProvisioningType provisioningType, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume, final String userSpecifiedName, final String uuid, final Map<String, String> details) {
+                                  final Storage.ProvisioningType provisioningType, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume, final String userSpecifiedName, final String uuid, final Map<String, String> details) {
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
@@ -1276,7 +1277,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     private VolumeVO orchestrateResizeVolume(long volumeId, long currentSize, long newSize, Long newMinIops, Long newMaxIops, Integer newHypervisorSnapshotReserve, Long newDiskOfferingId,
-            boolean shrinkOk) {
+                                             boolean shrinkOk) {
         final VolumeVO volume = _volsDao.findById(volumeId);
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
         StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
@@ -1635,6 +1636,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long newMinIops = cmd.getMinIops();
         Long newMaxIops = cmd.getMaxIops();
         Integer newHypervisorSnapshotReserve = null;
+        boolean autoMigrateVolume = cmd.getAutoMigrate();
 
         boolean volumeMigrateRequired = false;
         boolean volumeResizeRequired = false;
@@ -1702,10 +1704,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (!suitableStoragePools.stream().anyMatch(p -> (p.getId() == existingStoragePool.getId()))) {
             volumeMigrateRequired = true;
+            if (!autoMigrateVolume) {
+                throw new InvalidParameterValueException("Failed to change offering for volume since automigrate is set to false but volume needs to migrated");
+            }
+
             if (VolumeTagsStoragePoolStrictness.valueIn(volume.getDataCenterId())) {
-                for (StoragePool suitableStoragePool : suitableStoragePools) {
-                    if (doesTargetStorageSupportDiskOffering(suitableStoragePool, newDiskOffering)) {
-                        suitableStoragePools.remove(suitableStoragePool);
+                for (Iterator<? extends StoragePool> iterator = suitableStoragePools.iterator(); iterator.hasNext(); ) {
+                    StoragePool suitableStoragePool = iterator.next();
+                    if (!doesTargetStorageSupportDiskOffering(suitableStoragePool, newDiskOffering)) {
+                        iterator.remove();
                     }
                 }
             }
@@ -1742,7 +1749,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (volumeMigrateRequired) {
                     s_logger.warn(String.format("Volume change offering operation succeeded for volume ID: %s but volume resize operation failed, so please try resize volume operation separately", volume.getUuid()));
                 } else {
-                    throw new CloudRuntimeException(String.format("Volume change offering operation succeeded for volume ID: %s but volume resize operation failed, so please try resize volume operation separately", volume.getUuid()));
+                    throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume ID: %s due to resize volume operation failed", volume.getUuid()));
                 }
             }
         }
@@ -2779,10 +2786,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // OfflineVmwareMigration: check storage tags on disk(offering)s in comparison to destination storage pool
         // OfflineVmwareMigration: if no match return a proper error now
-        if (VolumeTagsStoragePoolStrictness.valueIn(destPool.getDataCenterId()) && !doesTargetStorageSupportDiskOffering(destPool, diskOffering)) {
-            throw new CloudRuntimeException(String.format("Migration target pool [%s, tags:%s] has no matching tags for volume [%s, uuid:%s, tags:%s]", destPool.getName(),
-                    getStoragePoolTags(destPool), vol.getName(), vol.getUuid(), diskOffering.getTags()));
-        }
 
         if (liveMigrateVolume && State.Running.equals(vm.getState()) &&
                 destPool.getClusterId() != null && srcClusterId != null) {
@@ -2822,6 +2825,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         DiskOfferingVO newDiskOffering = retrieveAndValidateNewDiskOffering(cmd);
         validateConditionsToReplaceDiskOfferingOfVolume(vol, newDiskOffering, destPool);
+        if (newDiskOffering != null) {
+            if (VolumeTagsStoragePoolStrictness.valueIn(destPool.getDataCenterId()) && !doesTargetStorageSupportDiskOffering(destPool, newDiskOffering)) {
+                throw new CloudRuntimeException(String.format("Migration target pool [%s, tags:%s] has no matching tags for volume [%s, uuid:%s, tags:%s]", destPool.getName(),
+                        getStoragePoolTags(destPool), vol.getName(), vol.getUuid(), newDiskOffering.getTags()));
+            }
+        } else {
+            if (VolumeTagsStoragePoolStrictness.valueIn(destPool.getDataCenterId()) && !doesTargetStorageSupportDiskOffering(destPool, diskOffering)) {
+                throw new CloudRuntimeException(String.format("Migration target pool [%s, tags:%s] has no matching tags for volume [%s, uuid:%s, tags:%s]", destPool.getName(),
+                        getStoragePoolTags(destPool), vol.getName(), vol.getUuid(), diskOffering.getTags()));
+            }
+        }
+
         if (vm != null) {
             // serialize VM operation
             AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
@@ -4028,7 +4043,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     public Outcome<Volume> resizeVolumeThroughJobQueue(final Long vmId, final long volumeId, final long currentSize, final long newSize, final Long newMinIops, final Long newMaxIops,
-            final Integer newHypervisorSnapshotReserve, final Long newServiceOfferingId, final boolean shrinkOk) {
+                                                       final Integer newHypervisorSnapshotReserve, final Long newServiceOfferingId, final boolean shrinkOk) {
         final CallContext context = CallContext.current();
         final User callingUser = context.getCallingUser();
         final Account callingAccount = context.getCallingAccount();
@@ -4122,7 +4137,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     public Outcome<Snapshot> takeVolumeSnapshotThroughJobQueue(final Long vmId, final Long volumeId, final Long policyId, final Long snapshotId, final Long accountId, final boolean quiesceVm,
-            final Snapshot.LocationType locationType, final boolean asyncBackup) {
+                                                               final Snapshot.LocationType locationType, final boolean asyncBackup) {
 
         final CallContext context = CallContext.current();
         final User callingUser = context.getCallingUser();

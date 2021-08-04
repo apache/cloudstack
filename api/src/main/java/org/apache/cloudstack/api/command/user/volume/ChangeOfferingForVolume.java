@@ -100,8 +100,8 @@ public class ChangeOfferingForVolume extends BaseAsyncCmd implements UserCmd {
         return maxIops;
     }
 
-    public Boolean getAutoMigrate() {
-        return autoMigrate;
+    public boolean getAutoMigrate() {
+        return autoMigrate == null ? true : autoMigrate;
     }
 
     @Override
