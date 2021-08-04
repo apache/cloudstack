@@ -17,7 +17,7 @@
 
 import { axios } from '@/utils/request'
 
-export function api (command, args = {}, method = 'GET', data = {}) {
+export async function api (command, args = {}, method = 'GET', data = {}) {
   let params = {}
   args.command = command
   args.response = 'json'
@@ -29,14 +29,73 @@ export function api (command, args = {}, method = 'GET', data = {}) {
     })
   }
 
-  return axios({
-    params: {
-      ...args
-    },
-    url: '/',
-    method,
-    data: params || {}
-  })
+  const exemptedAPIs = ['listLdapConfigurations', 'listCapabilities', 'listIdps', 'listApis', 'listInfrastructure', 'listAndSwitchSamlAccount']
+
+  if ('page' in args || exemptedAPIs.includes(command) || !command.startsWith('list')) {
+    return axios({
+      params: {
+        ...args
+      },
+      url: '/',
+      method,
+      data: params || {}
+    })
+  }
+
+  const pagesize = 10
+  let page = 1
+  let items = []
+  let done = false
+  let response = null
+
+  while (!done) {
+    args.page = page
+    args.pagesize = pagesize
+    await axios({
+      params: {
+        ...args
+      },
+      url: '/',
+      method,
+      data: params || {}
+    }).then(json => {
+      var responseName
+      var objectName
+      for (const key in json) {
+        if (key.includes('response')) {
+          responseName = key
+          break
+        }
+      }
+      for (const key in json[responseName]) {
+        if (key === 'count') {
+          continue
+        }
+        objectName = key
+        break
+      }
+      if (json[responseName][objectName]) {
+        items = items.concat(json[responseName][objectName])
+        console.log(command, page, responseName, objectName, items.length, json[responseName].count, 'WIP')
+      }
+      if (!json[responseName].count || json[responseName].count === items.length || !json[responseName][objectName]) {
+        console.log(command, page, responseName, objectName, items.length, json[responseName].count, 'DONE')
+        done = true
+        json[responseName][objectName] = items
+        console.log(json)
+        response = new Promise((resolve) => {
+          resolve(json)
+        })
+        return
+      }
+      page++
+    }).catch(error => {
+      response = new Promise((resolve, reject) => {
+        reject(error)
+      })
+    })
+  }
+  return response
 }
 
 export function login (arg) {
