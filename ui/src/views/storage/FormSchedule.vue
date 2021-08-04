@@ -90,7 +90,12 @@
                       required: true,
                       message: `${this.$t('message.error.select')}`
                     }]
-                  }]" >
+                  }]"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
                   <a-select-option v-for="(opt, optIndex) in dayOfWeek" :key="optIndex">
                     {{ opt.name || opt.description }}
                   </a-select-option>
@@ -105,7 +110,12 @@
                       required: true,
                       message: `${this.$t('message.error.select')}`
                     }]
-                  }]">
+                  }]"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
                   <a-select-option v-for="opt in dayOfMonth" :key="opt.name">
                     {{ opt.name }}
                   </a-select-option>
@@ -130,14 +140,18 @@
             <a-col :md="24" :lg="24">
               <a-form-item :label="$t('label.timezone')">
                 <a-select
-                  showSearch
                   v-decorator="['timezone', {
                     rules: [{
                       required: true,
                       message: `${this.$t('message.error.select')}`
                     }]
                   }]"
-                  :loading="fetching">
+                  :loading="fetching"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
                   <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
                     {{ opt.name || opt.description }}
                   </a-select-option>

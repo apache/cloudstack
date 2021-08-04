@@ -155,7 +155,12 @@
           <a-select
             :defaultValue="addNetworkData.network"
             @change="e => addNetworkData.network = e"
-            autoFocus>
+            autoFocus
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               v-for="network in addNetworkData.allNetworks"
               :key="network.id"
@@ -189,11 +194,15 @@
         <div class="modal-form">
           <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
           <a-select
-            showSearch
             v-if="editNicResource.type==='Shared'"
             v-model="editIpAddressValue"
             :loading="listIps.loading"
-            :autoFocus="editNicResource.type==='Shared'">
+            :autoFocus="editNicResource.type==='Shared'"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
               {{ ip.ipaddress }}
             </a-select-option>
@@ -228,11 +237,15 @@
       <div class="modal-form">
         <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
         <a-select
-          showSearch
           v-if="editNicResource.type==='Shared'"
           v-model="newSecondaryIp"
           :loading="listIps.loading"
-          :autoFocus="editNicResource.type==='Shared'">
+          :autoFocus="editNicResource.type==='Shared'"
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
             {{ ip.ipaddress }}
           </a-select-option>

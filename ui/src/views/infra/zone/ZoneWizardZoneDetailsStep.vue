@@ -205,7 +205,6 @@
         has-feedback>
         <a-select
           :loading="hypervisors === null"
-          showSearch
           v-decorator="['hypervisor',{
             rules: [{
               required: true,
@@ -214,7 +213,11 @@
             }]
           }]"
           :placeholder="$t('message.error.hypervisor.type')"
-        >
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option v-for="hypervisor in hypervisors" :key="hypervisor.name">
             {{ hypervisor.name }}
           </a-select-option>
@@ -234,7 +237,11 @@
             }]
           }]"
           :placeholder="$t('message.error.network.offering')"
-        >
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="networkOffering in availableNetworkOfferings"
             :key="networkOffering.id">
@@ -289,7 +296,11 @@
             }]
           }]"
           :placeholder="$t('message.error.select.domain.to.dedicate')"
-        >
+          showSearch
+          optionFilterProp="children"
+          :filterOption="(input, option) => {
+            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option v-for="dom in domains" :key="dom.id">
             {{ dom.path }}
           </a-select-option>

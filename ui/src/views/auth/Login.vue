@@ -87,7 +87,13 @@
           {{ $t('label.login.single.signon') }}
         </span>
         <a-form-item>
-          <a-select v-decorator="['idp', { initialValue: selectedIdp } ]">
+          <a-select
+            v-decorator="['idp', { initialValue: selectedIdp } ]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="(idp, idx) in idps" :key="idx" :value="idp.id">
               {{ idp.orgName }}
             </a-select-option>

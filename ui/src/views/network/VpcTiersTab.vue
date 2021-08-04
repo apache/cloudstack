@@ -173,7 +173,12 @@
           <a-form-item :label="$t('label.networkofferingid')">
             <a-select
               v-decorator="['networkOffering',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"
-              @change="val => { this.handleNetworkOfferingChange(val) }">
+              @change="val => { this.handleNetworkOfferingChange(val) }"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id">
                 {{ item.displaytext || item.name || item.description }}
               </a-select-option>
@@ -204,7 +209,12 @@
           <a-form-item :label="$t('label.aclid')">
             <a-select
               v-decorator="['acl',{rules: [{ required: true, message: `${$t('label.required')}` }]}]"
-              @change="val => { this.handleNetworkAclChange(val) }">
+              @change="val => { this.handleNetworkAclChange(val) }"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="item in networkAclList" :key="item.id" :value="item.id">
                 <strong>{{ item.name }}</strong> ({{ item.description }})
               </a-select-option>
@@ -265,7 +275,12 @@
                 {
                   initialValue: 'Source',
                   rules: [{ required: true, message: `${$t('label.required')}`}]
-                }]">
+                }]"
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="(key, idx) in Object.keys(algorithms)" :key="idx" :value="algorithms[key]">
                 {{ key }}
               </a-select-option>

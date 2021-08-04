@@ -69,7 +69,12 @@
             v-decorator="['type', {
               rules: [{ required: true, message: $t('message.error.select') }]
             }]"
-            :placeholder="apiParams.type.description">
+            :placeholder="apiParams.type.description"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="role in defaultRoles" :key="role">
               {{ role }}
             </a-select-option>

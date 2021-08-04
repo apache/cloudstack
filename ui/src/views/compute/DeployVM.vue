@@ -142,7 +142,10 @@
                               rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
                             }]"
                             :options="hypervisorSelectOptions"
-                            @change="value => this.hypervisor = value" />
+                            @change="value => this.hypervisor = value"
+                            showSearch
+                            optionFilterProp="children"
+                            :filterOption="filterOption" />
                         </a-form-item>
                       </p>
                     </a-card>
@@ -483,7 +486,9 @@
                           :autoFocus="vm.templateid && ['KVM', 'VMware'].includes(hypervisor) && !template.deployasis"
                           v-decorator="['boottype']"
                           @change="fetchBootModes"
-                        >
+                          showSearch
+                          optionFilterProp="children"
+                          :filterOption="filterOption" >
                           <a-select-option v-for="bootType in options.bootTypes" :key="bootType.id">
                             {{ bootType.description }}
                           </a-select-option>
@@ -491,7 +496,10 @@
                       </a-form-item>
                       <a-form-item :label="$t('label.bootmode')">
                         <a-select
-                          v-decorator="['bootmode']">
+                          v-decorator="['bootmode']"
+                          showSearch
+                          optionFilterProp="children"
+                          :filterOption="filterOption" >
                           <a-select-option v-for="bootMode in options.bootModes" :key="bootMode.id">
                             {{ bootMode.description }}
                           </a-select-option>
@@ -555,6 +563,9 @@
                       <a-select
                         v-decorator="['keyboard']"
                         :options="keyboardSelectOptions"
+                        showSearch
+                        optionFilterProp="children"
+                        :filterOption="filterOption"
                       ></a-select>
                     </a-form-item>
                     <a-form-item :label="$t('label.action.start.instance')">

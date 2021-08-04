@@ -30,7 +30,11 @@
                 initialValue: 'NFS'
               }]"
             @change="val => { this.provider = val }"
-          >
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               :value="prov"
               v-for="(prov,idx) in providers"
@@ -48,7 +52,11 @@
                   rules: [{ required: true, message: `${$t('label.required')}`}]
                 }]"
               @change="val => { zoneSelected = val }"
-            >
+              showSearch
+              optionFilterProp="children"
+              :filterOption="(input, option) => {
+                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option
                 :value="zone.id"
                 v-for="(zone) in zones"
