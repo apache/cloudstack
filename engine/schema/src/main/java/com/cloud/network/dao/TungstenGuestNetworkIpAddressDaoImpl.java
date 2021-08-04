@@ -49,10 +49,17 @@ public class TungstenGuestNetworkIpAddressDaoImpl extends GenericDaoBase<Tungste
     }
 
     @Override
-    public List<String> listByNetworkId(long networkId) {
+    public List<String> listGuestIpAddressByNetworkId(long networkId) {
         SearchCriteria<String> searchCriteria = NetworkSearch.create();
         searchCriteria.setParameters("network_id", networkId);
         return customSearch(searchCriteria, null);
+    }
+
+    @Override
+    public List<TungstenGuestNetworkIpAddressVO> listByNetworkId(final long networkId) {
+        SearchCriteria<TungstenGuestNetworkIpAddressVO> searchCriteria = AllFieldsSearch.create();
+        searchCriteria.setParameters("network_id", networkId);
+        return listBy(searchCriteria);
     }
 
     @Override
@@ -60,6 +67,14 @@ public class TungstenGuestNetworkIpAddressDaoImpl extends GenericDaoBase<Tungste
         SearchCriteria<TungstenGuestNetworkIpAddressVO> searchCriteria = AllFieldsSearch.create();
         searchCriteria.setParameters("network_id", networkId);
         searchCriteria.setParameters("public_ip_address", publicIp);
+        return findOneBy(searchCriteria);
+    }
+
+    @Override
+    public TungstenGuestNetworkIpAddressVO findByNetworkAndGuestIpAddress(final long networkId, final String guestIp) {
+        SearchCriteria<TungstenGuestNetworkIpAddressVO> searchCriteria = AllFieldsSearch.create();
+        searchCriteria.setParameters("network_id", networkId);
+        searchCriteria.setParameters("guest_ip_address", guestIp);
         return findOneBy(searchCriteria);
     }
 }

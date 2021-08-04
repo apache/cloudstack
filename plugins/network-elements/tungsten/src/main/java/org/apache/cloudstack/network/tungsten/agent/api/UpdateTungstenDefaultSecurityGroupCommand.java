@@ -16,20 +16,14 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
-public class RemoveTungstenSecurityGroupRuleCommand extends TungstenCommand {
-    private final String securityGroupUuid;
-    private final String securityGroupRuleUuid;
+public class UpdateTungstenDefaultSecurityGroupCommand extends TungstenCommand {
+    private final String projectFqn;
 
-    public RemoveTungstenSecurityGroupRuleCommand(String securityGroupUuid, String securityGroupRuleUuid) {
-        this.securityGroupUuid = securityGroupUuid;
-        this.securityGroupRuleUuid = securityGroupRuleUuid;
+    public UpdateTungstenDefaultSecurityGroupCommand(final String projectFqn) {
+        this.projectFqn = projectFqn;
     }
 
-    public String getSecurityGroupUuid() {
-        return securityGroupUuid;
-    }
-
-    public String getSecurityGroupRuleUuid() {
-        return securityGroupRuleUuid;
+    public String getProjectFqn() {
+        return projectFqn;
     }
 }

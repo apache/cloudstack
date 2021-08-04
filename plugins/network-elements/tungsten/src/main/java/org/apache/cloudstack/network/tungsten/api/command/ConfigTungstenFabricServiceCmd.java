@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.command;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -97,57 +98,68 @@ public class ConfigTungstenFabricServiceCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(final TransactionStatus status) {
-                NetworkOfferingVO networkOfferingVO = networkOfferingDao.findByUniqueName(
-                    DefaultTungstenFarbicNetworkOffering);
-                if (networkOfferingVO == null) {
-                    networkOfferingVO = new NetworkOfferingVO(DefaultTungstenFarbicNetworkOffering,
-                        "Default offering for Tungsten-Fabric Network", Networks.TrafficType.Guest, false, false, null,
-                        null, true, NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated, true,
-                        false, false, false, true, false);
-                    networkOfferingVO.setForTungsten(true);
-                    networkOfferingVO.setState(NetworkOffering.State.Enabled);
-                    networkOfferingDao.persist(networkOfferingVO);
-
-                    Map<Network.Service, Network.Provider> tungstenServiceProvider = new HashMap<>();
-                    tungstenServiceProvider.put(Network.Service.Dhcp, Network.Provider.Tungsten);
-                    tungstenServiceProvider.put(Network.Service.Dns, Network.Provider.Tungsten);
-                    tungstenServiceProvider.put(Network.Service.UserData, Network.Provider.Tungsten);
-                    tungstenServiceProvider.put(Network.Service.SourceNat, Network.Provider.Tungsten);
-                    tungstenServiceProvider.put(Network.Service.StaticNat, Network.Provider.Tungsten);
-                    tungstenServiceProvider.put(Network.Service.Connectivity, Network.Provider.Tungsten);
-                    tungstenServiceProvider.put(Network.Service.Firewall, Network.Provider.Tungsten);
-                    tungstenServiceProvider.put(Network.Service.Lb, Network.Provider.Tungsten);
-                    tungstenServiceProvider.put(Network.Service.PortForwarding, Network.Provider.Tungsten);
-
-                    for (Network.Service service : tungstenServiceProvider.keySet()) {
-                        NetworkOfferingServiceMapVO networkOfferingServiceMapVO = new NetworkOfferingServiceMapVO(
-                            networkOfferingVO.getId(), service, tungstenServiceProvider.get(service));
-                        networkOfferingServiceMapDao.persist(networkOfferingServiceMapVO);
-                    }
+        DataCenter dataCenter = _entityMgr.findById(DataCenter.class, zoneId);
+        if (dataCenter.isSecurityGroupEnabled()) {
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(final TransactionStatus status) {
+                    Network managementNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Management);
+                    NetworkServiceMapVO managementNetworkServiceMapVO = new NetworkServiceMapVO(managementNetwork.getId(),
+                        Network.Service.Connectivity, Network.Provider.Tungsten);
+                    networkServiceMapDao.persist(managementNetworkServiceMapVO);
                 }
+            });
+        } else {
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(final TransactionStatus status) {
+                    NetworkOfferingVO networkOfferingVO = networkOfferingDao.findByUniqueName(
+                        DefaultTungstenFarbicNetworkOffering);
+                    if (networkOfferingVO == null) {
+                        networkOfferingVO = new NetworkOfferingVO(DefaultTungstenFarbicNetworkOffering,
+                            "Default offering for Tungsten-Fabric Network", Networks.TrafficType.Guest, false, false,
+                            null, null, true, NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated,
+                            true, false, false, false, true, false);
+                        networkOfferingVO.setForTungsten(true);
+                        networkOfferingVO.setState(NetworkOffering.State.Enabled);
+                        networkOfferingDao.persist(networkOfferingVO);
 
-                PhysicalNetworkServiceProviderVO physicalNetworkServiceProvider =
-                    physicalNetworkServiceProviderDao.findByServiceProvider(
-                    physicalNetworkId, Network.Provider.Tungsten.getName());
-                physicalNetworkServiceProvider.setState(PhysicalNetworkServiceProvider.State.Enabled);
-                physicalNetworkServiceProviderDao.persist(physicalNetworkServiceProvider);
+                        Map<Network.Service, Network.Provider> tungstenServiceProvider = new HashMap<>();
+                        tungstenServiceProvider.put(Network.Service.Dhcp, Network.Provider.Tungsten);
+                        tungstenServiceProvider.put(Network.Service.Dns, Network.Provider.Tungsten);
+                        tungstenServiceProvider.put(Network.Service.UserData, Network.Provider.Tungsten);
+                        tungstenServiceProvider.put(Network.Service.SourceNat, Network.Provider.Tungsten);
+                        tungstenServiceProvider.put(Network.Service.StaticNat, Network.Provider.Tungsten);
+                        tungstenServiceProvider.put(Network.Service.Connectivity, Network.Provider.Tungsten);
+                        tungstenServiceProvider.put(Network.Service.Firewall, Network.Provider.Tungsten);
+                        tungstenServiceProvider.put(Network.Service.Lb, Network.Provider.Tungsten);
+                        tungstenServiceProvider.put(Network.Service.PortForwarding, Network.Provider.Tungsten);
+                        tungstenServiceProvider.put(Network.Service.SecurityGroup, Network.Provider.Tungsten);
 
-                Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId,
-                    Networks.TrafficType.Public);
-                NetworkServiceMapVO publicNetworkServiceMapVO = new NetworkServiceMapVO(publicNetwork.getId(),
-                    Network.Service.Connectivity, Network.Provider.Tungsten);
-                networkServiceMapDao.persist(publicNetworkServiceMapVO);
+                        for (Network.Service service : tungstenServiceProvider.keySet()) {
+                            NetworkOfferingServiceMapVO networkOfferingServiceMapVO = new NetworkOfferingServiceMapVO(
+                                networkOfferingVO.getId(), service, tungstenServiceProvider.get(service));
+                            networkOfferingServiceMapDao.persist(networkOfferingServiceMapVO);
+                        }
+                    }
 
-                Network managementNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId,
-                    Networks.TrafficType.Management);
-                NetworkServiceMapVO managementNetworkServiceMapVO = new NetworkServiceMapVO(managementNetwork.getId(),
-                    Network.Service.Connectivity, Network.Provider.Tungsten);
-                networkServiceMapDao.persist(managementNetworkServiceMapVO);
-            }
-        });
+                    PhysicalNetworkServiceProviderVO physicalNetworkServiceProvider = physicalNetworkServiceProviderDao.findByServiceProvider(
+                        physicalNetworkId, Network.Provider.Tungsten.getName());
+                    physicalNetworkServiceProvider.setState(PhysicalNetworkServiceProvider.State.Enabled);
+                    physicalNetworkServiceProviderDao.persist(physicalNetworkServiceProvider);
+
+                    Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Public);
+                    NetworkServiceMapVO publicNetworkServiceMapVO = new NetworkServiceMapVO(publicNetwork.getId(),
+                        Network.Service.Connectivity, Network.Provider.Tungsten);
+                    networkServiceMapDao.persist(publicNetworkServiceMapVO);
+
+                    Network managementNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Management);
+                    NetworkServiceMapVO managementNetworkServiceMapVO = new NetworkServiceMapVO(managementNetwork.getId(),
+                        Network.Service.Connectivity, Network.Provider.Tungsten);
+                    networkServiceMapDao.persist(managementNetworkServiceMapVO);
+                }
+            });
+        }
 
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setDisplayText("configured Tungsten-Fabric service successfully");

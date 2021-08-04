@@ -16,20 +16,20 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
-public class GetTungstenNetworkCommand extends TungstenCommand {
-    private final String projectFqn;
-    private final String name;
+public class GetTungstenNetworkDnsCommand extends TungstenCommand {
+    private final String uuid;
+    private final String subnetName;
 
-    public GetTungstenNetworkCommand(final String projectFqn, final String name) {
-        this.projectFqn = projectFqn;
-        this.name = name;
+    public GetTungstenNetworkDnsCommand(final String uuid, final String subnetName) {
+        this.uuid = uuid;
+        this.subnetName = subnetName;
     }
 
-    public String getProjectFqn() {
-        return projectFqn;
+    public String getUuid() {
+        return uuid;
     }
 
-    public String getName() {
-        return name;
+    public String getSubnetName() {
+        return subnetName;
     }
 }

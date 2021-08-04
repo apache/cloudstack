@@ -2030,7 +2030,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         List<String> lbIps = _appLbRuleDao.listLbIpsBySourceIpNetworkId(network.getId());
         ips.addAll(lbIps);
         //Get ips used by tungsten
-        List<String> tfIps = tungstenGuestNetworkIpAddressDao.listByNetworkId(network.getId());
+        List<String> tfIps = tungstenGuestNetworkIpAddressDao.listGuestIpAddressByNetworkId(network.getId());
         ips.addAll(tfIps);
         return ips;
     }

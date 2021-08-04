@@ -39,7 +39,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.IpAddress;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -1046,13 +1045,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final String errorMsg = "The pod cannot be deleted because ";
 
-        // If pod is in tungsten zone release tungsten dns address
-        if(isTungstenZone(pod.getDataCenterId())) {
-            String podCidr = pod.getCidrAddress() + "/" + pod.getCidrSize();
-            String tungstenDnsAddress = NetUtils.getTungstenDnsAddress(podCidr);
-            _privateIpAddressDao.releaseIpAddress(tungstenDnsAddress, pod.getDataCenterId(), null);
-        }
-
         // Check if there are allocated private IP addresses in the pod
         if (_privateIpAddressDao.countIPs(podId, pod.getDataCenterId(), true) != 0) {
             throw new CloudRuntimeException(errorMsg + "there are private IP addresses allocated in this pod.");
@@ -1667,9 +1659,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
                 if (!Strings.isNullOrEmpty(startIp)) {
                     _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal, false, null);
-                    // If zone is tungsten check if tungsten dns address is in ip range and mark it as allocated
-                    if(isTungstenZone(zoneId) && NetUtils.isIpInRange(NetUtils.getTungstenDnsAddress(cidr), startIp, endIpFinal))
-                        _privateIpAddressDao.mark(zoneId, pod.getId(), NetUtils.getTungstenDnsAddress(cidr));
                 }
 
                 final String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(_configDao.getValue(Config.ControlCidr.key()));
@@ -4240,18 +4229,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                 }
 
-                // Get vlan cidr address
-                String vlanCidr = NetUtils.getCidrFromGatewayAndNetmask(vlanGateway, vlanNetmask);
-                // If zone is tungsten check if tungsten dns address is in ip range and mark it as allocated
-                if(isTungstenZone(zoneId) && NetUtils.isIpInRange(NetUtils.getTungstenDnsAddress(vlanCidr), startIP, endIP)){
-                    IPAddressVO ipAddress = _publicIpAddressDao.findByIpAndDcId(zoneId, NetUtils.getTungstenDnsAddress(vlanCidr));
-                    if(ipAddress != null){
-                        ipAddress.setState(IpAddress.State.Allocated);
-                        ipAddress.setAllocatedTime(new java.util.Date());
-                        _publicIpAddressDao.update(ipAddress.getId(), ipAddress);
-                    }
-                }
-
                 if (vlanOwner != null) {
                     // This VLAN is account-specific, so create an AccountVlanMapVO
                     // entry
@@ -4303,18 +4280,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // Check for domain wide pool. It will have an entry for domain_vlan_map.
         if (domainVlan != null && !domainVlan.isEmpty()) {
             isDomainSpecific = true;
-        }
-
-        // If zone is tungsten check if tungsten dns address is in ip range and mark it as free
-        if(isTungstenZone(vlanRange.getDataCenterId())){
-            String vlanCidr = NetUtils.getCidrFromGatewayAndNetmask(vlanRange.getVlanGateway(), vlanRange.getVlanNetmask());
-            String tungstenDnsAddress = NetUtils.getTungstenDnsAddress(vlanCidr);
-            IPAddressVO ipAddress = _publicIpAddressDao.findByIpAndDcId(vlanRange.getDataCenterId(), tungstenDnsAddress);
-            if(ipAddress != null){
-                ipAddress.setState(IpAddress.State.Free);
-                ipAddress.setAllocatedTime(null);
-                _publicIpAddressDao.update(ipAddress.getId(), ipAddress);
-            }
         }
 
         // Check if the VLAN has any allocated public IPs

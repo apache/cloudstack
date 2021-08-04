@@ -1881,12 +1881,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         Set<Long> availableIps = _networkModel.getAvailableIps(network, requestedIp);
 
-        //Remove tungsten dns address from availableIps list
-        if(network.getBroadcastDomainType().equals(BroadcastDomainType.Tungsten)){
-            String tungstenDnsAddress = NetUtils.getTungstenDnsAddress(network.getCidr());
-            availableIps.remove(NetUtils.ip2Long(tungstenDnsAddress));
-        }
-
         if (availableIps == null || availableIps.isEmpty()) {
             s_logger.debug("There are no free ips in the  network " + network);
             return null;

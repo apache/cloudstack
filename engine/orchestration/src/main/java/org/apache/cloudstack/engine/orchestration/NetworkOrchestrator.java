@@ -420,12 +420,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         tungstenProvider.add(Provider.Tungsten);
         final Map<Network.Service, Set<Network.Provider>> defaultTungstenSharedSGEnabledNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
+        defaultTungstenSharedSGEnabledNetworkOfferingProviders.put(Service.Connectivity, tungstenProvider);
         defaultTungstenSharedSGEnabledNetworkOfferingProviders.put(Service.Dhcp, tungstenProvider);
         defaultTungstenSharedSGEnabledNetworkOfferingProviders.put(Service.Dns, tungstenProvider);
         defaultTungstenSharedSGEnabledNetworkOfferingProviders.put(Service.UserData, tungstenProvider);
-        final Set<Provider> sgTungstenProviders = new HashSet<Provider>();
-        sgTungstenProviders.add(Provider.SecurityGroupProvider);
-        defaultTungstenSharedSGEnabledNetworkOfferingProviders.put(Service.SecurityGroup, sgTungstenProviders);
+        defaultTungstenSharedSGEnabledNetworkOfferingProviders.put(Service.SecurityGroup, tungstenProvider);
 
         final Map<Network.Service, Set<Network.Provider>> defaultIsolatedSourceNatEnabledNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
         defaultProviders.clear();

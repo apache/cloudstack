@@ -16,20 +16,22 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
-public class RemoveTungstenSecurityGroupRuleCommand extends TungstenCommand {
-    private final String securityGroupUuid;
-    private final String securityGroupRuleUuid;
+import java.util.List;
 
-    public RemoveTungstenSecurityGroupRuleCommand(String securityGroupUuid, String securityGroupRuleUuid) {
-        this.securityGroupUuid = securityGroupUuid;
-        this.securityGroupRuleUuid = securityGroupRuleUuid;
+public class RemoveTungstenVmFromSecurityGroupCommand extends TungstenCommand {
+    private final String nicUuid;
+    private final List<String> securityGroupUuidList;
+
+    public RemoveTungstenVmFromSecurityGroupCommand(String nicUuid, List<String> securityGroupUuidList) {
+        this.nicUuid = nicUuid;
+        this.securityGroupUuidList = securityGroupUuidList;
     }
 
-    public String getSecurityGroupUuid() {
-        return securityGroupUuid;
+    public String getNicUuid() {
+        return nicUuid;
     }
 
-    public String getSecurityGroupRuleUuid() {
-        return securityGroupRuleUuid;
+    public List<String> getSecurityGroupUuidList() {
+        return securityGroupUuidList;
     }
 }

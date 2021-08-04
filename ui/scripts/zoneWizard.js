@@ -374,7 +374,13 @@
 
             configureGuestTraffic: function(args) {
                 if(args.groupedData.physicalNetworks[0].isolationMethod == "TF") {
-                    return false;
+                    if (args.data['network-model'] == 'Advanced' && args.data["zone-advanced-sg-enabled"] == "on") {
+                        $('.setup-guest-traffic').removeClass('basic');
+                        $('.setup-guest-traffic').addClass('advanced');
+                        return true;
+                    } else {
+                        return false;
+                    }
                 } else if ((args.data['network-model'] == 'Basic') || (args.data['network-model'] == 'Advanced' && args.data["zone-advanced-sg-enabled"] == "on")) {
                     $('.setup-guest-traffic').addClass('basic');
                     $('.setup-guest-traffic').removeClass('advanced');
@@ -3063,9 +3069,7 @@
                             // TODO : need make a UI to add tungsten fabric provider && for zone instead of physical network
                             // tungsten zone will have tungsten public network by default
                             // add tungsten fabric provider with physical network have tungsten public network
-                            if (thisPhysicalNetwork.isolationmethods == "TF"
-                                && thisPhysicalNetwork.returnedTrafficTypes.filter(traffic => traffic.traffictype == "Public").length > 0)
-                            {
+                            if (thisPhysicalNetwork.isolationmethods == "TF") {
                                 tungstenZone = true;
                                 tungstenPhysicalNetworkId = thisPhysicalNetwork.id;
                             }
@@ -3696,55 +3700,105 @@
                                                         } else { //args.data.zone.sgEnabled == true  //Advanced SG-enabled zone
                                                             message(_l('message.enabling.security.group.provider'));
 
-                                                            // get network service provider ID of Security Group
-                                                            var securityGroupProviderId;
-                                                            $.ajax({
-                                                                url: createURL("listNetworkServiceProviders&name=SecurityGroupProvider&physicalNetworkId=" + thisPhysicalNetwork.id),
-                                                                dataType: "json",
-                                                                async: false,
-                                                                success: function (json) {
-                                                                    var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
-                                                                    if (items != null && items.length > 0) {
-                                                                        securityGroupProviderId = items[0].id;
+                                                            if (tungstenZone && tungstenPhysicalNetworkId == thisPhysicalNetwork.id) {
+                                                                var tungstenProviderId;
+                                                                $.ajax({
+                                                                    url: createURL("listNetworkServiceProviders&name=Tungsten&physicalNetworkId=" + thisPhysicalNetwork.id),
+                                                                    dataType: "json",
+                                                                    async: false,
+                                                                    success: function (json) {
+                                                                        var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+                                                                        if (items != null && items.length > 0) {
+                                                                            tungstenProviderId = items[0].id;
+                                                                        }
                                                                     }
+                                                                });
+                                                                if (tungstenProviderId == null) {
+                                                                    alert("error: listNetworkServiceProviders API doesn't return tungsten provider ID");
+                                                                    return;
                                                                 }
-                                                            });
-                                                            if (securityGroupProviderId == null) {
-                                                                alert("error: listNetworkServiceProviders API doesn't return security group provider ID");
-                                                                return;
-                                                            }
 
-                                                            $.ajax({
-                                                                url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + securityGroupProviderId),
-                                                                dataType: "json",
-                                                                async: false,
-                                                                success: function(json) {
-                                                                    var enableSecurityGroupProviderIntervalID = setInterval(function() {
-                                                                        $.ajax({
-                                                                            url: createURL("queryAsyncJobResult&jobId=" + json.updatenetworkserviceproviderresponse.jobid),
-                                                                            dataType: "json",
-                                                                            success: function(json) {
-                                                                                var result = json.queryasyncjobresultresponse;
-                                                                                if (result.jobstatus == 0) {
-                                                                                    return; //Job has not completed
-                                                                                } else {
-                                                                                    clearInterval(enableSecurityGroupProviderIntervalID);
+                                                                $.ajax({
+                                                                    url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + tungstenProviderId),
+                                                                    dataType: "json",
+                                                                    async: false,
+                                                                    success: function(json) {
+                                                                        var enableTungstenFabricProviderIntervalID = setInterval(function() {
+                                                                            $.ajax({
+                                                                                url: createURL("queryAsyncJobResult&jobId=" + json.updatenetworkserviceproviderresponse.jobid),
+                                                                                dataType: "json",
+                                                                                success: function(json) {
+                                                                                    var result = json.queryasyncjobresultresponse;
+                                                                                    if (result.jobstatus == 0) {
+                                                                                        return; //Job has not completed
+                                                                                    } else {
+                                                                                        clearInterval(enableTungstenFabricProviderIntervalID);
 
-                                                                                    if (result.jobstatus == 1) { //Security group provider has been enabled successfully
-                                                                                        //don't need to do anything here
-                                                                                    } else if (result.jobstatus == 2) {
-                                                                                        alert("failed to enable security group provider. Error: " + _s(result.jobresult.errortext));
+                                                                                        if (result.jobstatus == 1) { //Tungsten-Fabric provider has been enabled successfully
+                                                                                        } else if (result.jobstatus == 2) {
+                                                                                            alert("failed to enable Tungsten-Fabric provider. Error: " + _s(result.jobresult.errortext));
+                                                                                        }
                                                                                     }
+                                                                                },
+                                                                                error: function(XMLHttpResponse) {
+                                                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                                                    alert("failed to enable Tungsten-Fabric provider. Error: " + errorMsg);
                                                                                 }
-                                                                            },
-                                                                            error: function(XMLHttpResponse) {
-                                                                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                                                                alert("failed to enable security group provider. Error: " + errorMsg);
-                                                                            }
-                                                                        });
-                                                                    }, g_queryAsyncJobResultInterval);
+                                                                            });
+                                                                        }, g_queryAsyncJobResultInterval);
+                                                                    }
+                                                                });
+                                                            } else {
+                                                                // get network service provider ID of Security Group
+                                                                var securityGroupProviderId;
+                                                                $.ajax({
+                                                                    url: createURL("listNetworkServiceProviders&name=SecurityGroupProvider&physicalNetworkId=" + thisPhysicalNetwork.id),
+                                                                    dataType: "json",
+                                                                    async: false,
+                                                                    success: function (json) {
+                                                                        var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+                                                                        if (items != null && items.length > 0) {
+                                                                            securityGroupProviderId = items[0].id;
+                                                                        }
+                                                                    }
+                                                                });
+                                                                if (securityGroupProviderId == null) {
+                                                                    alert("error: listNetworkServiceProviders API doesn't return security group provider ID");
+                                                                    return;
                                                                 }
-                                                            });
+
+                                                                $.ajax({
+                                                                    url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + securityGroupProviderId),
+                                                                    dataType: "json",
+                                                                    async: false,
+                                                                    success: function(json) {
+                                                                        var enableSecurityGroupProviderIntervalID = setInterval(function() {
+                                                                            $.ajax({
+                                                                                url: createURL("queryAsyncJobResult&jobId=" + json.updatenetworkserviceproviderresponse.jobid),
+                                                                                dataType: "json",
+                                                                                success: function(json) {
+                                                                                    var result = json.queryasyncjobresultresponse;
+                                                                                    if (result.jobstatus == 0) {
+                                                                                        return; //Job has not completed
+                                                                                    } else {
+                                                                                        clearInterval(enableSecurityGroupProviderIntervalID);
+
+                                                                                        if (result.jobstatus == 1) { //Security group provider has been enabled successfully
+                                                                                            //don't need to do anything here
+                                                                                        } else if (result.jobstatus == 2) {
+                                                                                            alert("failed to enable security group provider. Error: " + _s(result.jobresult.errortext));
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                error: function(XMLHttpResponse) {
+                                                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                                                    alert("failed to enable security group provider. Error: " + errorMsg);
+                                                                                }
+                                                                            });
+                                                                        }, g_queryAsyncJobResultInterval);
+                                                                    }
+                                                                });
+                                                            }
                                                         }
                                                     } else if (result.jobstatus == 2) {
                                                         alert("failed to enable physical network. Error: " + _s(result.jobresult.errortext));
@@ -4143,24 +4197,13 @@
                             });
                         }
                     } else if (args.data.zone.networkType == "Advanced" && args.data.zone.sgEnabled == true) { // Advanced SG-enabled zone doesn't have public traffic type
-                        stepFns.configureStorageTraffic({
-                            data: args.data
-                        });
                         if (tungstenZone == true) {
-                            $.ajax({
-                                url: createURL("createTungstenManagementNetwork&podId=" + args.data.returnedPod.id),
-                                dataType: "json",
-                                async: false,
-                                success: function(json) {
-
-                                },
-                                error : function(XMLHttpResponse) {
-                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                                    error('createTungstenManagementNetwork', errorMsg, {
-                                        fn: 'createTungstenManagementNetwork',
-                                        args: args
-                                    });
-                                }
+                            stepFns.createTungstenPublicNetwork({
+                                data : args.data
+                            });
+                        } else {
+                            stepFns.configureStorageTraffic({
+                                data: args.data
                             });
                         }
                     } else { //basic zone without public traffic type , skip to next step
@@ -4177,26 +4220,6 @@
                 },
 
                 createTungstenPublicNetwork: function(args) {
-                    $.ajax({
-                        url: createURL('configTungstenFabricService'),
-                        data: {
-                            zoneid: args.data.returnedZone.id,
-                            physicalnetworkid: tungstenPhysicalNetworkId
-                        },
-                        type: "POST",
-                        async: false,
-                        success: function (json) {
-
-                        },
-                        error: function (XMLHttpResponse) {
-                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                            error('configTungstenFabricService', errorMsg, {
-                                fn: 'configTungstenFabricService',
-                                args: args
-                            });
-                        }
-                    });
-
                     $.ajax({
                         url: createURL('createTungstenFabricProvider'),
                         data: {
@@ -4223,16 +4246,20 @@
                     });
 
                     $.ajax({
-                        url: createURL("createTungstenFabricPublicNetwork&zoneId=" + args.data.returnedZone.id),
-                        dataType: "json",
+                        url: createURL('configTungstenFabricService'),
+                        data: {
+                            zoneid: args.data.returnedZone.id,
+                            physicalnetworkid: tungstenPhysicalNetworkId
+                        },
+                        type: "POST",
                         async: false,
-                        success: function(json) {
+                        success: function (json) {
 
                         },
-                        error : function(XMLHttpResponse) {
+                        error: function (XMLHttpResponse) {
                             var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                            error('createTungstenFabricPublicNetwork', errorMsg, {
-                                fn: 'createTungstenFabricPublicNetwork',
+                            error('configTungstenFabricService', errorMsg, {
+                                fn: 'configTungstenFabricService',
                                 args: args
                             });
                         }
@@ -4254,11 +4281,33 @@
                         }
                     });
 
-                    stepFns.configureStorageTraffic({
-                        data: $.extend(args.data, {
-                            returnedPublicTraffic: returnedPublicVlanIpRanges
-                        })
-                    });
+                    if (args.data.zone.sgEnabled == true) {
+                        stepFns.configureStorageTraffic({
+                            data: args.data
+                        });
+                    } else {
+                        $.ajax({
+                            url: createURL("createTungstenFabricPublicNetwork&zoneId=" + args.data.returnedZone.id),
+                            dataType: "json",
+                            async: false,
+                            success: function(json) {
+
+                            },
+                            error : function(XMLHttpResponse) {
+                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                error('createTungstenFabricPublicNetwork', errorMsg, {
+                                    fn: 'createTungstenFabricPublicNetwork',
+                                    args: args
+                                });
+                            }
+                        });
+
+                        stepFns.configureStorageTraffic({
+                            data: $.extend(args.data, {
+                                returnedPublicTraffic: returnedPublicVlanIpRanges
+                            })
+                        });
+                    }
                 },
 
                 configureStorageTraffic: function(args) {

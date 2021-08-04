@@ -784,6 +784,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 }
             });
 
+            _messageBus.publish(_name, MESSAGE_ASSIGN_NIC_SECONDARY_IP_EVENT, PublishScope.LOCAL, id);
+
             return getNicSecondaryIp(id);
         } else {
             return null;
@@ -896,6 +898,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 _nicSecondaryIpDao.remove(ipVO.getId());
             }
         });
+
+        _messageBus.publish(_name, MESSAGE_RELEASE_NIC_SECONDARY_IP_EVENT, PublishScope.LOCAL, ipVO);
 
         return true;
     }

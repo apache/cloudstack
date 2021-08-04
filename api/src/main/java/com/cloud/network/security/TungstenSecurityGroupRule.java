@@ -14,22 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.network.tungsten.agent.api;
+package com.cloud.network.security;
 
-public class RemoveTungstenSecurityGroupRuleCommand extends TungstenCommand {
-    private final String securityGroupUuid;
-    private final String securityGroupRuleUuid;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-    public RemoveTungstenSecurityGroupRuleCommand(String securityGroupUuid, String securityGroupRuleUuid) {
-        this.securityGroupUuid = securityGroupUuid;
-        this.securityGroupRuleUuid = securityGroupRuleUuid;
-    }
-
-    public String getSecurityGroupUuid() {
-        return securityGroupUuid;
-    }
-
-    public String getSecurityGroupRuleUuid() {
-        return securityGroupRuleUuid;
-    }
+public interface TungstenSecurityGroupRule extends Identity, InternalIdentity {
 }

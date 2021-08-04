@@ -24,13 +24,14 @@ public class CreateTungstenVirtualMachineCommand extends TungstenCommand {
     private final String nicUuid;
     private final long nicId;
     private final String ip;
+    private final String ipv6;
     private final String mac;
     private final String vmType;
     private final String trafficType;
     private final String host;
 
     public CreateTungstenVirtualMachineCommand(final String projectFqn, final String vnUuid, final String vmUuid,
-        final String vmName, final String nicUuid, final long nicId, final String ip, final String mac,
+        final String vmName, final String nicUuid, final long nicId, final String ip, final String ipv6, final String mac,
         final String vmType, final String trafficType, final String host) {
         this.projectFqn = projectFqn;
         this.vnUuid = vnUuid;
@@ -39,6 +40,7 @@ public class CreateTungstenVirtualMachineCommand extends TungstenCommand {
         this.nicUuid = nicUuid;
         this.nicId = nicId;
         this.ip = ip;
+        this.ipv6 = ipv6;
         this.mac = mac;
         this.vmType = vmType;
         this.trafficType = trafficType;
@@ -71,6 +73,10 @@ public class CreateTungstenVirtualMachineCommand extends TungstenCommand {
 
     public String getIp() {
         return ip;
+    }
+
+    public String getIpv6() {
+        return ipv6;
     }
 
     public String getMac() {

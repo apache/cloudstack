@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.Networks;
 import org.apache.cloudstack.managed.context.ManagedContext;
 
 import com.cloud.agent.api.SecurityGroupRulesCmd;
@@ -179,7 +180,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
             if (agentId != null) {
                 NicVO nic = _nicDao.findFirstNicForVM(vm.getId());
                 List<String> nicSecIps = null;
-                if (nic != null) {
+                if (nic != null && !nic.getBroadcastUri().equals(Networks.BroadcastDomainType.Tungsten.toUri("tf"))) {
                     if (nic.getSecondaryIp()) {
                         nicSecIps = _nicSecIpDao.getSecondaryIpAddressesForNic(nic.getId());
                     }

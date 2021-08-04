@@ -278,7 +278,7 @@ public class TungstenApiTest {
 
         s_logger.debug("Add a Tungsten-Fabric security group rule to the security group added earlier");
         boolean result = tungstenApi.addTungstenSecurityGroupRule(tungstenSecurityGroupUuid, tungstenSecurityGroupRuleUuid,
-                "ingress", 80, 90, "10.0.0.0/24", "10.0.0.0", 24, "tcp");
+                "ingress", 80, 90, "10.0.0.0/24", "IPv4", "tcp");
         assertTrue(result);
     }
 
@@ -320,12 +320,11 @@ public class TungstenApiTest {
 
         s_logger.debug("Add a Tungsten-Fabric security group rule to the security group added earlier");
         boolean result = tungstenApi.addTungstenSecurityGroupRule(tungstenSecurityGroupUuid, tungstenSecurityGroupRuleUuid,
-                "ingress", 80, 90, "10.0.0.0/24", "10.0.0.0", 24, "tcp");
+                "ingress", 80, 90, "10.0.0.0/24", "IPv4", "tcp");
         assertTrue(result);
 
         s_logger.debug("Delete the Tungsten-Fabric security group rule added earlier");
-        assertTrue(tungstenApi.removeTungstenSecurityGroupRule(tungstenSecurityGroupUuid,
-                tungstenSecurityGroupRuleUuid, "ingress"));
+        assertTrue(tungstenApi.removeTungstenSecurityGroupRule(tungstenSecurityGroupUuid, tungstenSecurityGroupRuleUuid));
     }
 
     @Test

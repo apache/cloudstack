@@ -106,8 +106,22 @@ DROP TABLE IF EXISTS `cloud`.`tungsten_guest_network_ip_address`;
 CREATE TABLE `cloud`.`tungsten_guest_network_ip_address` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `network_id` bigint unsigned NOT NULL COMMENT 'network id',
-  `public_ip_address` varchar(15) NOT NULL COMMENT 'ip public_ip_address',
+  `public_ip_address` varchar(15) COMMENT 'ip public_ip_address',
   `guest_ip_address` varchar(15) NOT NULL COMMENT 'ip guest_ip_address',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_tungsten_guest_network_ip_address__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud`.`tungsten_security_group_rule`;
+CREATE TABLE `cloud`.`tungsten_security_group_rule` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40) NOT NULL COMMENT 'rule uuid',
+  `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',
+  `security_group_id` bigint unsigned NOT NULL COMMENT 'security group id',
+  `rule_type` varchar(40) NOT NULL COMMENT 'rule type',
+  `rule_target` varchar(40) NOT NULL COMMENT 'rule target',
+  `ether_type` varchar(40) NOT NULL COMMENT 'ether type',
+  `default_rule` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if security group is default',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_tungsten_security_group_rule__security_group_id` FOREIGN KEY (`security_group_id`) REFERENCES `security_group`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

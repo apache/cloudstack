@@ -17,10 +17,12 @@
 package org.apache.cloudstack.network.tungsten.service;
 
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
 import com.cloud.network.Network;
 import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.vm.VMInstanceVO;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricAddressGroupResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricApplicationPolicySetResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricFirewallPolicyResponse;
@@ -161,6 +163,16 @@ public interface TungstenService {
         final String firewallRuleUuid);
 
     void subscribeTungstenEvent();
+
+    boolean createSharedNetwork(Network network, Vlan vlan);
+
+    boolean addTungstenVmSecurityGroup(VMInstanceVO vm);
+
+    boolean removeTungstenVmSecurityGroup(VMInstanceVO vm);
+
+    void allocateDnsIpAddress(Network network, Pod pod, String subnetName);
+
+    void deallocateDnsIpAddress(Network network, Pod pod, String subnetName);
 
     String MESSAGE_APPLY_NETWORK_POLICY_EVENT = "Message.ApplyNetworkPolicy.Event";
     String MESSAGE_SYNC_TUNGSTEN_DB_WITH_DOMAINS_AND_PROJECTS_EVENT =

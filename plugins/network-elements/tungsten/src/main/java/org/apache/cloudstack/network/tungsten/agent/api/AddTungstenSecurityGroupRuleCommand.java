@@ -22,22 +22,20 @@ public class AddTungstenSecurityGroupRuleCommand extends TungstenCommand {
     private final String securityGroupRuleType;
     private final int startPort;
     private final int endPort;
-    private final String cidr;
-    private final String ipPrefix;
-    private final int ipPrefixLen;
+    private final String target;
+    private final String etherType;
     private final String protocol;
 
     public AddTungstenSecurityGroupRuleCommand(String tungstenSecurityGroupUuid, String tungstenGroupRuleUuid,
                                                String securityGroupRuleType, int startPort, int endPort,
-                                               String cidr, String ipPrefix, int ipPrefixLen, String protocol) {
+                                               String target, String etherType, String protocol) {
         this.tungstenSecurityGroupUuid = tungstenSecurityGroupUuid;
         this.tungstenGroupRuleUuid = tungstenGroupRuleUuid;
         this.securityGroupRuleType = securityGroupRuleType;
         this.startPort = startPort;
         this.endPort = endPort;
-        this.cidr = cidr;
-        this.ipPrefix = ipPrefix;
-        this.ipPrefixLen = ipPrefixLen;
+        this.target = target;
+        this.etherType = etherType;
         this.protocol = protocol;
     }
 
@@ -61,16 +59,12 @@ public class AddTungstenSecurityGroupRuleCommand extends TungstenCommand {
         return endPort;
     }
 
-    public String getCidr() {
-        return cidr;
+    public String getTarget() {
+        return target;
     }
 
-    public String getIpPrefix() {
-        return ipPrefix;
-    }
-
-    public int getIpPrefixLen() {
-        return ipPrefixLen;
+    public String getEtherType() {
+        return etherType;
     }
 
     public String getProtocol() {

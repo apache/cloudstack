@@ -58,7 +58,6 @@ public interface SecurityGroupService {
 
     String MESSAGE_CREATE_TUNGSTEN_SECURITY_GROUP_EVENT = "Message.CreateTungstenSecurityGroup.Event";
     String MESSAGE_DELETE_TUNGSTEN_SECURITY_GROUP_EVENT = "Message.DeleteTungstenSecurityGroup.Event";
-    String MESSAGE_ADD_VM_TO_SECURITY_GROUPS_EVENT = "Message.AddVmToSecurityGroups.Event";
     String MESSAGE_ADD_SECURITY_GROUP_RULE_EVENT = "Message.AddSecurityGroupRule.Event";
     String MESSAGE_REMOVE_SECURITY_GROUP_RULE_EVENT = "Message.RemoveSecurityGroupRule.Event";
 }

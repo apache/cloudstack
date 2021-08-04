@@ -14,22 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.network.tungsten.agent.api;
+package com.cloud.network.security.dao;
 
-public class RemoveTungstenSecurityGroupRuleCommand extends TungstenCommand {
-    private final String securityGroupUuid;
-    private final String securityGroupRuleUuid;
+import com.cloud.network.security.TungstenSecurityGroupRuleVO;
+import com.cloud.utils.db.GenericDao;
 
-    public RemoveTungstenSecurityGroupRuleCommand(String securityGroupUuid, String securityGroupRuleUuid) {
-        this.securityGroupUuid = securityGroupUuid;
-        this.securityGroupRuleUuid = securityGroupRuleUuid;
-    }
+import java.util.List;
 
-    public String getSecurityGroupUuid() {
-        return securityGroupUuid;
-    }
+public interface TungstenSecurityGroupRuleDao extends GenericDao<TungstenSecurityGroupRuleVO, Long> {
+    TungstenSecurityGroupRuleVO findDefaultSecurityRule(long securityGroupId, String ruleType, String etherType);
 
-    public String getSecurityGroupRuleUuid() {
-        return securityGroupRuleUuid;
-    }
+    TungstenSecurityGroupRuleVO findBySecurityGroupAndRuleTypeAndRuleTarget(long securityGroupId, String ruleType,
+        String ruleTarget);
+
+    List<TungstenSecurityGroupRuleVO> listByRuleTarget(String ruleTarget);
 }

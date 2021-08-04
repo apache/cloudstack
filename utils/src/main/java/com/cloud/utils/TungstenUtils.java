@@ -27,22 +27,28 @@ import java.util.List;
 public class TungstenUtils {
     private static final String defaultVhostInterface = "vhost0";
     private static final String defaultForwardingMode = "l3";
-    private static final String proxyVm = "proxyvm";
-    private static final String secstoreVm = "secstorevm";
-    private static final String userVm = "userVm";
-    private static final String guestType = "guest";
-    private static final String publicType = "public";
-    private static final String managementType = "management";
-    private static final String controlType = "control";
+    private static final String proxyVm = "ConsoleProxy";
+    private static final String secstoreVm = "SecondaryStorageVm";
+    private static final String userVm = "User";
+    private static final String guestType = "Guest";
+    private static final String publicType = "Public";
+    private static final String managementType = "Management";
+    private static final String sharedNetwork = "sharedNetwork";
+    private static final String securityGroup = "securityGroup";
 
     public static final String INGRESS_RULE = "ingress";
     public static final String EGRESS_RULE = "egress";
+    public static final String LOCAL = "local";
 
     public static final int MAX_CIDR = 32;
+    public static final int MAX_IPV6_CIDR = 128;
     public static final int DNS_SERVICE_PORT = 53;
     public static final int NTP_SERVICE_PORT = 123;
     public static final int WEB_SERVICE_PORT = 8080;
+    public static final String IPV4 = "IPv4";
+    public static final String IPV6 = "IPv6";
     public static final String ALL_IP4_PREFIX = "0.0.0.0";
+    public static final String ALL_IP6_PREFIX = "::";
     public static final String ANY = "any";
     public static final String DENY_ACTION = "deny";
     public static final String PASS_ACTION = "pass";
@@ -65,7 +71,7 @@ public class TungstenUtils {
     }
 
     public static String getVmiName(String trafficType, String vmType, String vmName, long nicId) {
-        if (nicId != 0 && trafficType == getGuestType())
+        if (nicId != 0 && trafficType == guestType)
             return "vmi" + trafficType + vmType + nicId;
         else
             return "vmi" + trafficType + vmType + vmName;
@@ -76,6 +82,17 @@ public class TungstenUtils {
             return "instanceIp" + trafficType + vmType + nicId;
         else
             return "instanceIp" + trafficType + vmType + vmName;
+    }
+
+    public static String getV6InstanceIpName(String trafficType, String vmType, String vmName, long nicId) {
+        if (nicId != 0 && trafficType == getGuestType())
+            return "instanceV6Ip" + trafficType + vmType + nicId;
+        else
+            return "instanceV6Ip" + trafficType + vmType + vmName;
+    }
+
+    public static String getSecondaryInstanceIpName(long nicSecondaryIpId) {
+        return "instanceIpSecondaryIp" + nicSecondaryIpId;
     }
 
     public static String getLogicalRouterName(long networkId) {
@@ -96,6 +113,10 @@ public class TungstenUtils {
 
     public static String getGuestNetworkName(String networkName) {
         return networkName + "-" + RandomStringUtils.random(6, true, true);
+    }
+
+    public static String getSharedNetworkName(long networkId) {
+        return sharedNetwork + networkId;
     }
 
     public static String getManagementNetworkName(long mvnId) {
@@ -132,6 +153,10 @@ public class TungstenUtils {
 
     public static String getVgwName(long zoneId) {
         return "vgw" + zoneId;
+    }
+
+    public static String getSgVgwName(long networkId) {
+        return "sgvgw" + networkId;
     }
 
     public static String getVrfNetworkName(List<String> networkQualifiedName) {
@@ -188,6 +213,14 @@ public class TungstenUtils {
         return "subnet-name" + networkId;
     }
 
+    public static String getIPV4SubnetName(long networkId) {
+        return "subnet-name-IPV4" + networkId;
+    }
+
+    public static String getIPV6SubnetName(long networkId) {
+        return "subnet-name-IPV6" + networkId;
+    }
+
     public static String getLoadBalancerVmiName(long publicIpId) {
         return "loadbalancer-vmi" + publicIpId;
     }
@@ -242,20 +275,9 @@ public class TungstenUtils {
 
     public static String getEthertTypeFromCidr(String cidr) {
         if (NetUtils.isValidIp4Cidr(cidr)) {
-            return "IPv4";
+            return IPV4;
         } else {
-            return "IPv6";
-        }
-    }
-
-    public static String getTungstenAccessControl(String securityGroupRuleType) {
-        switch (securityGroupRuleType) {
-            case INGRESS_RULE:
-                return "ingress-access-control-list";
-            case EGRESS_RULE:
-                return "egress-access-control-list";
-            default:
-                return null;
+            return IPV6;
         }
     }
 
@@ -266,12 +288,28 @@ public class TungstenUtils {
             case NetUtils.UDP_PROTO:
                 return NetUtils.UDP_PROTO;
             case NetUtils.ICMP_PROTO:
-                if(NetUtils.isValidIp4Cidr(cidr))
+                if (NetUtils.isValidIp4Cidr(cidr))
                     return NetUtils.ICMP_PROTO;
                 else
                     return NetUtils.ICMP6_PROTO;
             default:
                 return NetUtils.ANY_PROTO;
         }
+    }
+
+    public static String getSecurityGroupName(String name, long accountId) {
+        return securityGroup + name + accountId;
+    }
+
+    public static String getSingleIpAddressCidr(String ipAddress) {
+        if (NetUtils.isValidIp4(ipAddress)) {
+            return ipAddress + "/" + MAX_CIDR;
+        }
+
+        if (NetUtils.isValidIp6(ipAddress)) {
+            return ipAddress + "/" + MAX_IPV6_CIDR;
+        }
+
+        return null;
     }
 }

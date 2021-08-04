@@ -19,16 +19,16 @@ package org.apache.cloudstack.network.tungsten.agent.api;
 import java.util.List;
 
 public class AddTungstenVmToSecurityGroupCommand extends TungstenCommand {
-    private final String vmUuid;
+    private final String nicUuid;
     private final List<String> securityGroupUuidList;
 
-    public AddTungstenVmToSecurityGroupCommand(String vmUuid, List<String> securityGroupUuidList) {
-        this.vmUuid = vmUuid;
+    public AddTungstenVmToSecurityGroupCommand(String nicUuid, List<String> securityGroupUuidList) {
+        this.nicUuid = nicUuid;
         this.securityGroupUuidList = securityGroupUuidList;
     }
 
-    public String getVmUuid() {
-        return vmUuid;
+    public String getNicUuid() {
+        return nicUuid;
     }
 
     public List<String> getSecurityGroupUuidList() {

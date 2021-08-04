@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.Networks;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupEgressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupIngressCmd;
@@ -1439,6 +1440,12 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         }
 
         NicVO nic = _nicDao.findById(nicId);
+
+        // Tungsten-Fabric will handle security group by themselves
+        if (nic.getBroadcastUri().equals(Networks.BroadcastDomainType.Tungsten.toUri("tf"))) {
+            return true;
+        }
+
         long vmId = nic.getInstanceId();
         UserVm vm = _userVMDao.findById(vmId);
         if (vm == null || vm.getType() != VirtualMachine.Type.User) {

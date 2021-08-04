@@ -16,16 +16,16 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.service;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.TungstenUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import net.juniper.tungsten.api.ApiConnector;
 import net.juniper.tungsten.api.ApiObjectBase;
 import net.juniper.tungsten.api.ApiPropertyBase;
 import net.juniper.tungsten.api.ObjectReference;
 import net.juniper.tungsten.api.Status;
-import net.juniper.tungsten.api.types.AccessControlList;
-import net.juniper.tungsten.api.types.AclRuleType;
 import net.juniper.tungsten.api.types.ActionListType;
 import net.juniper.tungsten.api.types.AddressGroup;
 import net.juniper.tungsten.api.types.AddressType;
@@ -59,7 +59,6 @@ import net.juniper.tungsten.api.types.LoadbalancerPoolType;
 import net.juniper.tungsten.api.types.LoadbalancerType;
 import net.juniper.tungsten.api.types.LogicalRouter;
 import net.juniper.tungsten.api.types.MacAddressesType;
-import net.juniper.tungsten.api.types.MatchConditionType;
 import net.juniper.tungsten.api.types.NetworkIpam;
 import net.juniper.tungsten.api.types.NetworkPolicy;
 import net.juniper.tungsten.api.types.PolicyEntriesType;
@@ -111,6 +110,8 @@ public class TungstenApi {
     public static final String TUNGSTEN_DEFAULT_POLICY_MANAGEMENT = "default-policy-management";
     public static final String TUNGSTEN_GLOBAL_SYSTEM_CONFIG = "default-global-system-config";
     public static final String TUNGSTEN_GLOBAL_VROUTER_CONFIG = "default-global-vrouter-config";
+    public static final String TUNGSTEN_LOCAL_SECURITY_GROUP = "local";
+    public static final String TUNGSTEN_DEFAULT_SECURITY_GROUP = "default";
 
     private String hostname;
     private String port;
@@ -207,7 +208,7 @@ public class TungstenApi {
             virtualMachine.setUuid(vmUuid);
             Status status = apiConnector.create(virtualMachine);
             status.ifFailure(errorHandler);
-            return (VirtualMachine) apiConnector.findByFQN(VirtualMachine.class, getFqnName(virtualMachine));
+            return (VirtualMachine) apiConnector.findById(VirtualMachine.class, virtualMachine.getUuid());
         } catch (IOException e) {
             S_LOGGER.error("Unable to create Tungsten-Fabric vm " + vmUuid, e);
             return null;
@@ -2335,73 +2336,33 @@ public class TungstenApi {
     }
 
     public boolean addTungstenSecurityGroupRule(String tungstenSecurityGroupUuid, String securityGroupRuleUuid,
-        String securityGroupRuleType, int startPort, int endPort, String cidr, String ipPrefix, int ipPrefixLen,
-        String protocol) {
+        String securityGroupRuleType, int startPort, int endPort, String target, String etherType, String protocol) {
         try {
             SecurityGroup securityGroup = (SecurityGroup) getTungstenObject(SecurityGroup.class,
                 tungstenSecurityGroupUuid);
             if (securityGroup == null) {
                 return false;
             }
-            for (ObjectReference<ApiPropertyBase> accessControl : securityGroup.getAccessControlLists()) {
-                AccessControlList accessControlList = (AccessControlList) getTungstenObject(AccessControlList.class,
-                    accessControl.getUuid());
-                if (accessControlList.getName().equals(TungstenUtils.getTungstenAccessControl(securityGroupRuleType))) {
-                    AclRuleType aclRuleType = createAclRuleType(securityGroupRuleUuid, securityGroupRuleType, startPort,
-                        endPort, cidr, ipPrefix, ipPrefixLen, protocol);
-                    PolicyRuleType policyRuleType = createPolicyRuleType(aclRuleType.getMatchCondition(),
-                        securityGroupRuleUuid);
-                    accessControlList.getEntries().addAclRule(aclRuleType);
-                    if (securityGroup.getEntries() == null) {
-                        securityGroup.setEntries(new PolicyEntriesType(new ArrayList<>(Arrays.asList(policyRuleType))));
-                    } else {
-                        securityGroup.getEntries().addPolicyRule(policyRuleType);
-                    }
-                    Status accessControlListStatus = apiConnector.update(accessControlList);
-                    if (!accessControlListStatus.isSuccess()) {
-                        return false;
-                    }
-                    Status securityGroupStatus = apiConnector.update(securityGroup);
-                    return securityGroupStatus.isSuccess();
-                }
+
+            PolicyEntriesType policyEntriesType = securityGroup.getEntries();
+            if (policyEntriesType == null) {
+                policyEntriesType = new PolicyEntriesType();
+                securityGroup.setEntries(policyEntriesType);
             }
 
+            PolicyRuleType policyRuleType = createPolicyRuleType(securityGroupRuleUuid, securityGroupRuleType,
+                startPort, endPort, target, etherType, protocol);
+
+            policyEntriesType.addPolicyRule(policyRuleType);
+            Status status = apiConnector.update(securityGroup);
+            status.ifFailure(errorHandler);
+            return status.isSuccess();
         } catch (IOException e) {
             return false;
         }
-        return false;
     }
 
-    public boolean removeTungstenSecurityGroupRule(String tungstenSecurityGroupUuid, String securityGroupRuleUuid,
-        String securityGroupRuleType) {
-        try {
-            SecurityGroup securityGroup = (SecurityGroup) getTungstenObject(SecurityGroup.class,
-                tungstenSecurityGroupUuid);
-            if (securityGroup == null) {
-                return false;
-            }
-            for (ObjectReference<ApiPropertyBase> accessControl : securityGroup.getAccessControlLists()) {
-                AccessControlList accessControlList = (AccessControlList) getTungstenObject(AccessControlList.class,
-                    accessControl.getUuid());
-                if (accessControlList.getName().equals(TungstenUtils.getTungstenAccessControl(securityGroupRuleType))) {
-                    List<AclRuleType> existingAclList = accessControlList.getEntries().getAclRule();
-                    accessControlList.getEntries().clearAclRule();
-                    for (AclRuleType aclRuleType : existingAclList) {
-                        if (!aclRuleType.getRuleUuid().equals(securityGroupRuleUuid)) {
-                            accessControlList.getEntries().addAclRule(aclRuleType);
-                        }
-                    }
-                    Status status = apiConnector.update(accessControlList);
-                    return status.isSuccess();
-                }
-            }
-        } catch (IOException e) {
-            return false;
-        }
-        return true;
-    }
-
-    public boolean removeTungstenPolicyRule(String tungstenSecurityGroupUuid, String securityGroupRuleUuid) {
+    public boolean removeTungstenSecurityGroupRule(String tungstenSecurityGroupUuid, String securityGroupRuleUuid) {
         try {
             SecurityGroup securityGroup = (SecurityGroup) getTungstenObject(SecurityGroup.class,
                 tungstenSecurityGroupUuid);
@@ -2422,72 +2383,202 @@ public class TungstenApi {
         }
     }
 
-    public AclRuleType createAclRuleType(String securityGroupRuleUuid, String securityGroupRuleType, int startPort,
-        int endPort, String cidr, String ipPrefix, int ipPrefixLen, String protocol) {
-        String tungstenProtocol = TungstenUtils.getTungstenProtocol(protocol, cidr);
-        String tungstenEthertType = TungstenUtils.getEthertTypeFromCidr(cidr);
-        AddressType addressType = new AddressType(new SubnetType(ipPrefix, ipPrefixLen), null, null, null);
-
-        MatchConditionType matchConditionType = new MatchConditionType();
-        matchConditionType.setSrcPort(new PortType(0, 65535));
-        matchConditionType.setDstPort(new PortType(startPort, endPort));
-        if (securityGroupRuleType.equals(TungstenUtils.INGRESS_RULE)) {
-            matchConditionType.setSrcAddress(addressType);
-            matchConditionType.setDstAddress(new AddressType(null, null, "local", null));
-        } else if (securityGroupRuleType.equals(TungstenUtils.EGRESS_RULE)) {
-            matchConditionType.setDstAddress(addressType);
-            matchConditionType.setSrcAddress(new AddressType(null, null, "local", null));
+    public PolicyRuleType createPolicyRuleType(String securityGroupRuleUuid, String securityGroupRuleType,
+        int startPort, int endPort, String target, String etherType, String protocol) {
+        AddressType addressType;
+        String tungstenProtocol;
+        String tungstenEthertType;
+        if (NetUtils.isValidIp4Cidr(target) || NetUtils.isValidIp6Cidr(target)) {
+            Pair<String, Integer> pair = NetUtils.getCidr(target);
+            addressType = new AddressType(new SubnetType(pair.first(), pair.second()));
+            tungstenProtocol = TungstenUtils.getTungstenProtocol(protocol, target);
+            tungstenEthertType = TungstenUtils.getEthertTypeFromCidr(target);
+        } else {
+            addressType = new AddressType(null, null, target);
+            tungstenProtocol = etherType.equals(TungstenUtils.IPV4) ?
+                TungstenUtils.getTungstenProtocol(protocol, NetUtils.ALL_IP4_CIDRS) :
+                TungstenUtils.getTungstenProtocol(protocol, NetUtils.ALL_IP6_CIDRS);
+            tungstenEthertType = etherType;
         }
-        matchConditionType.setProtocol(tungstenProtocol);
-        matchConditionType.setEthertype(tungstenEthertType);
-        AclRuleType aclRuleType = new AclRuleType(matchConditionType);
-        aclRuleType.setDirection(TungstenUtils.ONE_WAY_DIRECTION);
-        aclRuleType.setRuleUuid(securityGroupRuleUuid);
-        return aclRuleType;
-    }
 
-    public PolicyRuleType createPolicyRuleType(MatchConditionType matchConditionType, String securityGroupRuleUuid) {
         PolicyRuleType policyRuleType = new PolicyRuleType();
         policyRuleType.setDirection(TungstenUtils.ONE_WAY_DIRECTION);
-        policyRuleType.setProtocol(matchConditionType.getProtocol());
-        policyRuleType.setEthertype(matchConditionType.getEthertype());
+        policyRuleType.setProtocol(tungstenProtocol);
+        policyRuleType.setEthertype(tungstenEthertType);
         policyRuleType.setRuleUuid(securityGroupRuleUuid);
-        policyRuleType.addSrcPorts(matchConditionType.getSrcPort());
-        policyRuleType.addDstPorts(matchConditionType.getDstPort());
-        policyRuleType.addDstAddresses(matchConditionType.getDstAddress());
-        policyRuleType.addSrcAddresses(matchConditionType.getSrcAddress());
+
+        if (securityGroupRuleType.equals(TungstenUtils.INGRESS_RULE)) {
+            policyRuleType.addSrcAddresses(addressType);
+            policyRuleType.addSrcPorts(new PortType(0, 65535));
+            policyRuleType.addDstAddresses(new AddressType(null, null, TUNGSTEN_LOCAL_SECURITY_GROUP, null));
+            policyRuleType.addDstPorts(new PortType(startPort, endPort));
+        } else if (securityGroupRuleType.equals(TungstenUtils.EGRESS_RULE)) {
+            policyRuleType.addSrcPorts(new PortType(0, 65535));
+            policyRuleType.addSrcAddresses(new AddressType(null, null, TUNGSTEN_LOCAL_SECURITY_GROUP, null));
+            policyRuleType.addDstAddresses(addressType);
+            policyRuleType.addDstPorts(new PortType(startPort, endPort));
+
+        }
+
         return policyRuleType;
     }
 
-    public boolean addInstanceToSecurityGroup(String vmUuid, List<String> securityGroupUuidList) {
+    public boolean addInstanceToSecurityGroup(String nicUuid, List<String> securityGroupUuidList) {
         try {
-            VirtualMachine vm = (VirtualMachine) apiConnector.findById(VirtualMachine.class, vmUuid);
-            if (vm == null) {
-                return false;
-            }
-
-            VirtualMachineInterface vmi = null;
-            for (ObjectReference obj : vm.getVirtualMachineInterfaceBackRefs()) {
-                VirtualMachineInterface tungstenVmi = (VirtualMachineInterface) apiConnector.findById(
-                    VirtualMachineInterface.class, obj.getUuid());
-                if (tungstenVmi.getName().startsWith("vmi")) {
-                    vmi = tungstenVmi;
-                    break;
-                }
-            }
-
+            VirtualMachineInterface vmi = (VirtualMachineInterface) apiConnector.findById(VirtualMachineInterface.class,
+                nicUuid);
             if (vmi == null) {
                 return false;
             }
+
             for (String securityGroupUuid : securityGroupUuidList) {
                 SecurityGroup tungstenSecurityGroup = (SecurityGroup) apiConnector.findById(SecurityGroup.class,
                     securityGroupUuid);
                 if (tungstenSecurityGroup != null) {
                     vmi.addSecurityGroup(tungstenSecurityGroup);
-                    apiConnector.update(vmi);
                 }
             }
-            return true;
+
+            vmi.setPortSecurityEnabled(true);
+            Status status = apiConnector.update(vmi);
+            status.ifFailure(errorHandler);
+            return status.isSuccess();
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean removeInstanceFromSecurityGroup(String nicUuid, List<String> securityGroupUuidList) {
+        try {
+            VirtualMachineInterface vmi = (VirtualMachineInterface) apiConnector.findById(VirtualMachineInterface.class,
+                nicUuid);
+            if (vmi == null) {
+                return false;
+            }
+
+            for (String securityGroupUuid : securityGroupUuidList) {
+                SecurityGroup tungstenSecurityGroup = (SecurityGroup) apiConnector.findById(SecurityGroup.class,
+                    securityGroupUuid);
+                if (tungstenSecurityGroup != null) {
+                    vmi.removeSecurityGroup(tungstenSecurityGroup);
+                }
+            }
+
+            vmi.setPortSecurityEnabled(false);
+            Status status = apiConnector.update(vmi);
+            status.ifFailure(errorHandler);
+            return status.isSuccess();
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean addSecondaryIpAddress(String networkUuid, String nicUuid, String iiName, String address) {
+        try {
+            VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
+            VirtualMachineInterface virtualMachineInterface = (VirtualMachineInterface) apiConnector.findById(
+                VirtualMachineInterface.class, nicUuid);
+            InstanceIp instanceIp = new InstanceIp();
+            instanceIp.setName(iiName);
+            instanceIp.setVirtualNetwork(virtualNetwork);
+            instanceIp.setVirtualMachineInterface(virtualMachineInterface);
+            instanceIp.setAddress(address);
+            if (NetUtils.isValidIp6(address)) {
+                instanceIp.setFamily("v6");
+            }
+            instanceIp.setSecondary(true);
+            Status status = apiConnector.create(instanceIp);
+            status.ifFailure(errorHandler);
+            return status.isSuccess();
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean removeSecondaryIpAddress(String iiName) {
+        try {
+            InstanceIp instanceIp = (InstanceIp) apiConnector.find(InstanceIp.class, null, iiName);
+            if (instanceIp != null) {
+                Status status = apiConnector.delete(instanceIp);
+                status.ifFailure(errorHandler);
+                return status.isSuccess();
+            } else {
+                return true;
+            }
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public String getTungstenNetworkDns(String uuid, String subnetName) {
+        try {
+            VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, uuid);
+            if (virtualNetwork != null) {
+                List<ObjectReference<VnSubnetsType>> objectReferenceList = virtualNetwork.getNetworkIpam();
+                if (objectReferenceList != null) {
+                    for (ObjectReference<VnSubnetsType> objectReference : objectReferenceList) {
+                        VnSubnetsType vnSubnetsType = objectReference.getAttr();
+                        if (vnSubnetsType != null) {
+                            List<IpamSubnetType> ipamSubnetTypeList = vnSubnetsType.getIpamSubnets();
+                            if (ipamSubnetTypeList != null) {
+                                for (IpamSubnetType ipamSubnetType : ipamSubnetTypeList) {
+                                    if (ipamSubnetType.getSubnetName().equals(subnetName)) {
+                                        return ipamSubnetType.getDnsServerAddress();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return null;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public boolean updateTungstenDefaultSecurityGroup(String projectFqn) {
+        try {
+            Project project = (Project) getTungstenProjectByFqn(projectFqn);
+            SecurityGroup securityGroup = (SecurityGroup) apiConnector.find(SecurityGroup.class, project,
+                TUNGSTEN_DEFAULT_SECURITY_GROUP);
+            if (securityGroup == null) {
+                return true;
+            }
+
+            PolicyEntriesType policyEntriesType = securityGroup.getEntries();
+            if (policyEntriesType == null) {
+                return false;
+            }
+
+            List<PolicyRuleType> policyRuleTypeList = policyEntriesType.getPolicyRule();
+            if (policyRuleTypeList == null || policyRuleTypeList.size() != 4) {
+                return true;
+            }
+
+            for (PolicyRuleType policyRuleType : policyRuleTypeList) {
+                List<AddressType> addressTypeList = policyRuleType.getSrcAddresses();
+                if (addressTypeList.size() != 1) {
+                    return true;
+                }
+
+                AddressType addressType = addressTypeList.get(0);
+                if (!addressType.getSecurityGroup().equals(TUNGSTEN_LOCAL_SECURITY_GROUP)) {
+                    if (policyRuleType.getEthertype().equals(TungstenUtils.IPV4)) {
+                        addressType.setSecurityGroup(null);
+                        addressType.setSubnet(new SubnetType(TungstenUtils.ALL_IP4_PREFIX, 0));
+                    }
+
+                    if (policyRuleType.getEthertype().equals(TungstenUtils.IPV6)) {
+                        addressType.setSecurityGroup(null);
+                        addressType.setSubnet(new SubnetType(TungstenUtils.ALL_IP6_PREFIX, 0));
+                    }
+                }
+            }
+
+            Status status = apiConnector.update(securityGroup);
+            status.ifFailure(errorHandler);
+            return status.isSuccess();
         } catch (IOException e) {
             return false;
         }

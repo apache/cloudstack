@@ -982,10 +982,11 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         defaultSharedSGNetworkOfferingProviders.put(Service.SecurityGroup, Provider.SecurityGroupProvider);
 
         final Map<Network.Service, Network.Provider> defaultTungstenSharedSGNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
+        defaultTungstenSharedSGNetworkOfferingProviders.put(Service.Connectivity, Provider.Tungsten);
         defaultTungstenSharedSGNetworkOfferingProviders.put(Service.Dhcp, Provider.Tungsten);
         defaultTungstenSharedSGNetworkOfferingProviders.put(Service.Dns, Provider.Tungsten);
         defaultTungstenSharedSGNetworkOfferingProviders.put(Service.UserData, Provider.Tungsten);
-        defaultTungstenSharedSGNetworkOfferingProviders.put(Service.SecurityGroup, Provider.SecurityGroupProvider);
+        defaultTungstenSharedSGNetworkOfferingProviders.put(Service.SecurityGroup, Provider.Tungsten);
 
         final Map<Network.Service, Network.Provider> defaultIsolatedSourceNatEnabledNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
