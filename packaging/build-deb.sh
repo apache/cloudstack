@@ -155,9 +155,6 @@ fi
 dch -b -v "${VERSION}~${DISTCODE}" -u low -m "Apache CloudStack Release ${VERSION}"
 sed -i '0,/ UNRELEASED;/s// unstable;/g' debian/changelog
 
-apt-get install -y wget python3-lxml python3-pip
-pip3 install configparser
-
 dpkg-checkbuilddeps
 dpkg-buildpackage -uc -us -b
 

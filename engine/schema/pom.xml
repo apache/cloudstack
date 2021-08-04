@@ -90,9 +90,10 @@
                         </goals>
                         <configuration>
                             <workingDirectory>${basedir}/</workingDirectory>
-                            <executable>python3</executable>
+                            <executable>bash</executable>
                             <arguments>
-                                <argument>templateConfig.py</argument>
+                                <argument>templateConfig.sh</argument>
+                                <armument>${project.version}</armument>
                             </arguments>
                         </configuration>
                     </execution>

@@ -287,7 +287,7 @@ public class SystemVmTemplateRegistration {
             }
             return sb.toString();
         } catch (IOException e) {
-            String errMsg = String.format("Failed to calculate Checksum of template file: %s ", file.getName());
+            String errMsg = String.format("Failed to calculate Checksum of template file: %s due to: %s ", file.getName(), e);
             LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
