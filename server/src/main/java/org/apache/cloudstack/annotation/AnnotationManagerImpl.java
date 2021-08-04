@@ -186,7 +186,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     public AnnotationResponse addAnnotation(String text, EntityType type, String uuid, boolean adminsOnly) {
         UserVO userVO = getCallingUserFromContext();
         String userUuid = userVO.getUuid();
-        checkAnnotationPermissions(userUuid, type, userVO);
+        checkAnnotationPermissions(uuid, type, userVO);
 
         AnnotationVO annotation = new AnnotationVO(text, type, uuid, adminsOnly);
         annotation.setUserUuid(userUuid);
@@ -342,6 +342,11 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         try {
             EntityType type = EntityType.valueOf(entityType);
             ControlledEntity entity = getEntityFromUuidAndType(entityUuid, type);
+            if (entity == null) {
+                String errMsg = String.format("Could not find an entity with type: %s and ID: %s", entityType, entityUuid);
+                LOGGER.error(errMsg);
+                throw new CloudRuntimeException(errMsg);
+            }
             accountService.checkAccess(callingUser, entity);
         } catch (IllegalArgumentException e) {
             LOGGER.error("Could not parse entity type " + entityType, e);
