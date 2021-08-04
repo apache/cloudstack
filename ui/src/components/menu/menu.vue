@@ -125,14 +125,19 @@ export default {
       }
       const on = {
         shortkey: () => {
+          const show = this.$store.getters.showshortkeys
           if (this.cachedPath === menu.path) {
             return
           }
 
           if (menu.path) {
             this.cachedPath = menu.path
-            setTimeout(() => this.$router.push({ path: menu.path }))
+            setTimeout(() => {
+              this.$store.dispatch('SetShowKeyboardShortkeys', false)
+              this.$router.push({ path: menu.path })
+            })
           }
+          setTimeout(() => this.$store.dispatch('SetShowKeyboardShortkeys', show), 500)
         }
       }
       return (
