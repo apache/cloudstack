@@ -144,7 +144,14 @@
             <p>{{ $t('message.add.new.gateway.to.vpc') }}</p>
             <a-form @submit.prevent="handleGatewayFormSubmit" :form="gatewayForm">
               <a-form-item :label="$t('label.physicalnetworkid')">
-                <a-select v-decorator="['physicalnetwork']" autoFocus>
+                <a-select
+                  v-decorator="['physicalnetwork']"
+                  autoFocus
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
                   <a-select-option v-for="item in physicalnetworks" :key="item.id" :value="item.id">
                     {{ item.name }}
                   </a-select-option>
@@ -185,7 +192,13 @@
                 <a-checkbox v-decorator="['nat']"></a-checkbox>
               </a-form-item>
               <a-form-item :label="$t('label.aclid')">
-                <a-select v-decorator="['acl']">
+                <a-select
+                  v-decorator="['acl']"
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
                   <a-select-option v-for="item in networkAcls" :key="item.id" :value="item.id">
                     <strong>{{ item.name }}</strong> ({{ item.description }})
                   </a-select-option>
@@ -276,7 +289,14 @@
           <a-spin :spinning="modals.vpnConnectionLoading">
             <a-form @submit.prevent="handleVpnConnectionFormSubmit" :form="vpnConnectionForm">
               <a-form-item :label="$t('label.vpncustomergatewayid')">
-                <a-select v-decorator="['vpncustomergateway']" autoFocus>
+                <a-select
+                  v-decorator="['vpncustomergateway']"
+                  autoFocus
+                  showSearch
+                  optionFilterProp="children"
+                  :filterOption="(input, option) => {
+                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
                   <a-select-option v-for="item in vpncustomergateways" :key="item.id" :value="item.id">
                     {{ item.name }}
                   </a-select-option>
