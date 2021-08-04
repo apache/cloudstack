@@ -400,7 +400,9 @@ public interface ManagementService {
      * @return Pair<List<? extends StoragePool>, List<? extends StoragePool>> List of storage pools in cluster and list
      *         of pools with enough capacity.
      */
-    Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(Long volumeId);
+    Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolumeForListing(Long volumeId);
+
+    Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(Long volumeId, Long newDiskOfferingId, boolean keepSourceStoragePool);
 
     String[] listEventTypes();
 

@@ -2312,7 +2312,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public boolean storagePoolHasEnoughIops(List<Volume> requestedVolumes, StoragePool pool) {
+    public boolean storagePoolHasEnoughIops(List<Pair<Volume, DiskProfile>> requestedVolumes, StoragePool pool) {
         if (requestedVolumes == null || requestedVolumes.isEmpty() || pool == null) {
             return false;
         }
@@ -2330,8 +2330,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         long requestedIops = 0;
 
-        for (Volume requestedVolume : requestedVolumes) {
+        for (Pair<Volume, DiskProfile> volumeDiskProfilePair : requestedVolumes) {
+            Volume requestedVolume = volumeDiskProfilePair.first();
+            DiskProfile diskProfile = volumeDiskProfilePair.second();
             Long minIops = requestedVolume.getMinIops();
+            if (requestedVolume.getDiskOfferingId() != diskProfile.getDiskOfferingId()) {
+                DiskOffering newDiskOffering = _diskOfferingDao.findById(diskProfile.getDiskOfferingId());
+                minIops = newDiskOffering.getMinIops();
+            }
 
             if (minIops != null && minIops > 0) {
                 requestedIops += minIops;
@@ -2344,13 +2350,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public boolean storagePoolHasEnoughSpace(List<Volume> volumes, StoragePool pool) {
-        return storagePoolHasEnoughSpace(volumes, pool, null);
+    public boolean storagePoolHasEnoughSpace(List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs, StoragePool pool) {
+        return storagePoolHasEnoughSpace(volumeDiskProfilePairs, pool, null);
     }
 
     @Override
-    public boolean storagePoolHasEnoughSpace(List<Volume> volumes, StoragePool pool, Long clusterId) {
-        if (volumes == null || volumes.isEmpty()) {
+    public boolean storagePoolHasEnoughSpace(List<Pair<Volume, DiskProfile>> volumeDiskProfilesList, StoragePool pool, Long clusterId) {
+        if (volumeDiskProfilesList == null || volumeDiskProfilesList.isEmpty()) {
             return false;
         }
 
@@ -2367,10 +2373,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         long allocatedSizeWithTemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, null);
         long totalAskingSize = 0;
 
-        for (Volume volume : volumes) {
+        for (Pair<Volume, DiskProfile> volumeDiskProfilePair : volumeDiskProfilesList) {
             // refreshing the volume from the DB to get latest hv_ss_reserve (hypervisor snapshot reserve) field
             // I could have just assigned this to "volume", but decided to make a new variable for it so that it
-            // might be clearer that this "volume" in "volumes" still might have an old value for hv_ss_reverse.
+            // might be clearer that this "volume" in "volumeDiskProfilesList" still might have an old value for hv_ss_reverse.
+            Volume volume = volumeDiskProfilePair.first();
+            DiskProfile diskProfile = volumeDiskProfilePair.second();
             VolumeVO volumeVO = _volumeDao.findById(volume.getId());
 
             if (volumeVO.getHypervisorSnapshotReserve() == null) {
@@ -2398,7 +2406,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             // A ready-state volume is already allocated in a pool, so the asking size is zero for it.
             // In case the volume is moving across pools or is not ready yet, the asking size has to be computed.
             if ((volumeVO.getState() != Volume.State.Ready) || (volumeVO.getPoolId() != pool.getId())) {
-                totalAskingSize += getDataObjectSizeIncludingHypervisorSnapshotReserve(volumeVO, poolVO);
+                totalAskingSize += getDataObjectSizeIncludingHypervisorSnapshotReserve(volumeVO, diskProfile, poolVO);
 
                 totalAskingSize += getAskingSizeForTemplateBasedOnClusterAndStoragePool(volumeVO.getTemplateId(), clusterId, poolVO);
             }
@@ -2427,14 +2435,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public boolean isStoragePoolCompliantWithStoragePolicy(List<Volume> volumes, StoragePool pool) throws StorageUnavailableException {
+    public boolean isStoragePoolCompliantWithStoragePolicy(List<Pair<Volume, DiskProfile>> volumes, StoragePool pool) throws StorageUnavailableException {
         if (CollectionUtils.isEmpty(volumes)) {
             return false;
         }
         List<Pair<Volume, Answer>> answers = new ArrayList<Pair<Volume, Answer>>();
 
-        for (Volume volume : volumes) {
+        for (Pair<Volume, DiskProfile> volumeDiskProfilePair : volumes) {
             String storagePolicyId = null;
+            Volume volume = volumeDiskProfilePair.first();
+            DiskProfile diskProfile = volumeDiskProfilePair.second();
             if (volume.getVolumeType() == Type.ROOT) {
                 Long vmId = volume.getInstanceId();
                 if (vmId != null) {
@@ -2442,7 +2452,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     storagePolicyId = _serviceOfferingDetailsDao.getDetail(vm.getServiceOfferingId(), ApiConstants.STORAGE_POLICY);
                 }
             } else {
-                storagePolicyId = _diskOfferingDetailsDao.getDetail(volume.getDiskOfferingId(), ApiConstants.STORAGE_POLICY);
+                storagePolicyId = _diskOfferingDetailsDao.getDetail(diskProfile.getDiskOfferingId(), ApiConstants.STORAGE_POLICY);
             }
             if (StringUtils.isNotEmpty(storagePolicyId)) {
                 VsphereStoragePolicyVO storagePolicyVO = _vsphereStoragePolicyDao.findById(Long.parseLong(storagePolicyId));
@@ -2556,7 +2566,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return 0;
     }
 
-    private long getDataObjectSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool) {
+    private long getDataObjectSizeIncludingHypervisorSnapshotReserve(Volume volume, DiskProfile diskProfile, StoragePool pool) {
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
         DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
 
@@ -2564,7 +2574,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
 
             VolumeInfo volumeInfo = volFactory.getVolume(volume.getId());
-
+            if (volume.getDiskOfferingId() != diskProfile.getDiskOfferingId()) {
+                return diskProfile.getSize();
+            }
             return primaryStoreDriver.getDataObjectSizeIncludingHypervisorSnapshotReserve(volumeInfo, pool);
         }
 

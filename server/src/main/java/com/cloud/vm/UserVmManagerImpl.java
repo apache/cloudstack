@@ -6711,7 +6711,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
                 if (hypervisorType.equals(HypervisorType.VMware)) {
                     try {
-                        boolean isStoragePoolStoragepolicyCompliance = storageManager.isStoragePoolCompliantWithStoragePolicy(Arrays.asList(volume), pool);
+                        DiskOffering diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+                        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, _volsDao.getHypervisorType(volume.getId()));
+                        Pair<Volume, DiskProfile> volumeDiskProfilePair = new Pair<>(volume, diskProfile);
+                        boolean isStoragePoolStoragepolicyCompliance = storageManager.isStoragePoolCompliantWithStoragePolicy(Arrays.asList(volumeDiskProfilePair), pool);
                         if (!isStoragePoolStoragepolicyCompliance) {
                             throw new CloudRuntimeException(String.format("Storage pool %s is not storage policy compliance with the volume %s", pool.getUuid(), volume.getUuid()));
                         }

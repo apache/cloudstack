@@ -42,6 +42,8 @@ public class DiskProfile {
     private Long iopsReadRate;
     private Long iopsWriteRate;
     private String cacheMode;
+    private Long minIops;
+    private Long maxIops;
 
     private HypervisorType hyperType;
 

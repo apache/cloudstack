@@ -1401,6 +1401,12 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 }
 
                 List<Volume> allVolumes = new ArrayList<>();
+                List<Pair<Volume, DiskProfile>> volumeDiskProfilePair = new ArrayList<>();
+                for (Volume volume: allVolumes) {
+                    DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+                    DiskProfile diskProfile = new DiskProfile(volume, diskOffering, _volsDao.getHypervisorType(volume.getId()));
+                    volumeDiskProfilePair.add(new Pair<>(volume, diskProfile));
+                }
                 allVolumes.addAll(volumesOrderBySizeDesc);
                 for (StoragePool storagePool : suitablePools) {
                     haveEnoughSpace = false;
@@ -1410,7 +1416,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                         hostCanAccessPool = true;
                         if (potentialHost.getHypervisorType() == HypervisorType.VMware) {
                             try {
-                                boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolCompliantWithStoragePolicy(allVolumes, storagePool);
+                                boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolCompliantWithStoragePolicy(volumeDiskProfilePair, storagePool);
                                 if (!isStoragePoolStoragepolicyComplaince) {
                                     continue;
                                 }
@@ -1446,10 +1452,15 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                                 else
                                     requestVolumes = new ArrayList<Volume>();
                                 requestVolumes.add(vol);
-
+                                List<Pair<Volume, DiskProfile>> volumeDiskProfilePair = new ArrayList<>();
+                                for (Volume volume: requestVolumes) {
+                                    DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+                                    DiskProfile diskProfile = new DiskProfile(volume, diskOffering, _volsDao.getHypervisorType(volume.getId()));
+                                    volumeDiskProfilePair.add(new Pair<>(volume, diskProfile));
+                                }
                                 if (potentialHost.getHypervisorType() == HypervisorType.VMware) {
                                     try {
-                                        boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolCompliantWithStoragePolicy(requestVolumes, potentialSPool);
+                                        boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolCompliantWithStoragePolicy(volumeDiskProfilePair, potentialSPool);
                                         if (!isStoragePoolStoragepolicyComplaince) {
                                             continue;
                                         }
@@ -1459,8 +1470,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                                     }
                                 }
 
-                                if (!_storageMgr.storagePoolHasEnoughIops(requestVolumes, potentialSPool) ||
-                                        !_storageMgr.storagePoolHasEnoughSpace(requestVolumes, potentialSPool, potentialHost.getClusterId()))
+                                if (!_storageMgr.storagePoolHasEnoughIops(volumeDiskProfilePair, potentialSPool) ||
+                                        !_storageMgr.storagePoolHasEnoughSpace(volumeDiskProfilePair, potentialSPool, potentialHost.getClusterId()))
                                     continue;
                                 volumeAllocationMap.put(potentialSPool, requestVolumes);
                             }

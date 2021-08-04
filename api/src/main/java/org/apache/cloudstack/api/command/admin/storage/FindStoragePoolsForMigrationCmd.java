@@ -73,7 +73,7 @@ public class FindStoragePoolsForMigrationCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        Pair<List<? extends StoragePool>, List<? extends StoragePool>> pools = _mgr.listStoragePoolsForMigrationOfVolume(getId());
+        Pair<List<? extends StoragePool>, List<? extends StoragePool>> pools = _mgr.listStoragePoolsForMigrationOfVolumeForListing(getId());
         ListResponse<StoragePoolResponse> response = new ListResponse<StoragePoolResponse>();
         List<StoragePoolResponse> poolResponses = new ArrayList<StoragePoolResponse>();
 
