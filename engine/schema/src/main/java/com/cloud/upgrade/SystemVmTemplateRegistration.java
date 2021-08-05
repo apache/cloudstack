@@ -75,8 +75,8 @@ public class SystemVmTemplateRegistration {
     private static final String UPDATE_CONFIGURATION_TABLE = "UPDATE `cloud`.`configuration` SET value = ? WHERE name = ?";
     private static final String UPDATE_TEMPLATE_TABLE_ON_FAILURE = "UPDATE vm_template set removed = ?, state = 'Inactive' where id = ?";
     private static final String DELETE_TEMPLATE_REF_RECORD_ON_FAILURE = "DELETE from template_store_ref where template_id = ?";
-    public static final String CS_MAJOR_VERSION = "4.16";
-    public static final String CS_MINOR_VERSION = "0";
+    public static String CS_MAJOR_VERSION = "4.16";
+    public static String CS_MINOR_VERSION = "0";
 
 
     private static class SystemVMTemplateDetails {
