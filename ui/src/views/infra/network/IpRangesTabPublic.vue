@@ -268,7 +268,7 @@ export default {
         },
         {
           title: this.$t('label.action'),
-          scopedSlots: { customRender: 'actions' }
+          slots: { customRender: 'actions' }
         }
       ]
     }
@@ -278,7 +278,7 @@ export default {
       this.columns.splice(5, 0,
         {
           title: this.$t('label.account'),
-          scopedSlots: { customRender: 'account' }
+          slots: { customRender: 'account' }
         }
       )
     } else {

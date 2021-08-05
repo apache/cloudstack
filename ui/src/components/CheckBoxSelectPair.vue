@@ -76,7 +76,7 @@ export default {
   created () {
     this.fields = {}
     this.fields[this.checkBoxDecorator] = false
-    this.fields[this.selectDecorator] = null
+    this.fields[this.selectDecorator] = this.selectedOption ? this.selectedOption : this.getSelectInitialValue()
   },
   methods: {
     arrayHasItems (array) {

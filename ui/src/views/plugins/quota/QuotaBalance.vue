@@ -26,10 +26,10 @@
       :pagination="false"
       :scroll="{ y: '55vh' }"
     >
-      <template slot="quota" slot-scope="text">
+      <template #quota="{ text }">
         <span v-if="text!==null">{{ `${currency} ${text}` }}</span>
       </template>
-      <template slot="credit" slot-scope="text">
+      <template #credit="{ text }">
         <span v-if="text!==null">{{ `${currency} ${text}` }}</span>
       </template>
     </a-table>
@@ -68,19 +68,19 @@ export default {
           title: this.$t('label.date'),
           dataIndex: 'date',
           width: 'calc(100% / 3)',
-          scopedSlots: { customRender: 'date' }
+          slots: { customRender: 'date' }
         },
         {
           title: this.$t('label.quota.value'),
           dataIndex: 'quota',
           width: 'calc(100% / 3)',
-          scopedSlots: { customRender: 'quota' }
+          slots: { customRender: 'quota' }
         },
         {
           title: this.$t('label.credit'),
           dataIndex: 'credit',
           width: 'calc(100% / 3)',
-          scopedSlots: { customRender: 'credit' }
+          slots: { customRender: 'credit' }
         }
       ]
     }

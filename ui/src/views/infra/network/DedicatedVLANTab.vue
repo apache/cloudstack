@@ -172,7 +172,7 @@ export default {
         },
         {
           title: this.$t('label.action'),
-          scopedSlots: { customRender: 'actions' }
+          slots: { customRender: 'actions' }
         }
       ]
     }

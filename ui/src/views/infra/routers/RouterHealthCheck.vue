@@ -108,7 +108,7 @@ export default {
         },
         {
           title: this.$t('label.router.health.check.success'),
-          scopedSlots: { customRender: 'status' }
+          slots: { customRender: 'status' }
         },
         {
           title: this.$t('label.router.health.check.last.updated'),

@@ -50,6 +50,7 @@ import {
   CodeOutlined,
   CompassOutlined,
   CopyOutlined,
+  CreditCardOutlined,
   DashboardOutlined,
   DatabaseOutlined,
   DeleteOutlined,
@@ -89,6 +90,7 @@ import {
   LockOutlined,
   LoginOutlined,
   LogoutOutlined,
+  MailOutlined,
   MedicineBoxOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -99,6 +101,7 @@ import {
   PaperClipOutlined,
   PauseCircleOutlined,
   PictureOutlined,
+  PieChartOutlined,
   PlayCircleOutlined,
   PlusCircleOutlined,
   PlusOutlined,
@@ -179,6 +182,7 @@ export default {
     app.component('CodeOutlined', CodeOutlined)
     app.component('CompassOutlined', CompassOutlined)
     app.component('CopyOutlined', CopyOutlined)
+    app.component('CreditCardOutlined', CreditCardOutlined)
     app.component('DashboardOutlined', DashboardOutlined)
     app.component('DatabaseOutlined', DatabaseOutlined)
     app.component('DeleteOutlined', DeleteOutlined)
@@ -218,6 +222,7 @@ export default {
     app.component('LockOutlined', LockOutlined)
     app.component('LoginOutlined', LoginOutlined)
     app.component('LogoutOutlined', LogoutOutlined)
+    app.component('MailOutlined', MailOutlined)
     app.component('MedicineBoxOutlined', MedicineBoxOutlined)
     app.component('MenuFoldOutlined', MenuFoldOutlined)
     app.component('MenuUnfoldOutlined', MenuUnfoldOutlined)
@@ -228,6 +233,7 @@ export default {
     app.component('PaperClipOutlined', PaperClipOutlined)
     app.component('PauseCircleOutlined', PauseCircleOutlined)
     app.component('PictureOutlined', PictureOutlined)
+    app.component('PieChartOutlined', PieChartOutlined)
     app.component('PlayCircleOutlined', PlayCircleOutlined)
     app.component('PlusCircleOutlined', PlusCircleOutlined)
     app.component('PlusOutlined', PlusOutlined)

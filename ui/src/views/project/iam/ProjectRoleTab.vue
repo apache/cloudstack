@@ -142,7 +142,7 @@ export default {
         title: this.$t('label.name'),
         dataIndex: 'name',
         width: '35%',
-        scopedSlots: { customRender: 'name' }
+        slots: { customRender: 'name' }
       },
       {
         title: this.$t('label.description'),
@@ -152,7 +152,7 @@ export default {
         title: this.$t('label.action'),
         dataIndex: 'action',
         width: 100,
-        scopedSlots: { customRender: 'action' }
+        slots: { customRender: 'action' }
       }
     ]
   },
