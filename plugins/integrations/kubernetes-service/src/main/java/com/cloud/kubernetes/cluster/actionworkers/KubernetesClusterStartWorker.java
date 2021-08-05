@@ -571,12 +571,6 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (!isKubernetesClusterDashboardServiceRunning(true, startTimeoutTime)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s in usable state as unable to get Dashboard service running for the cluster", kubernetesCluster.getName()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
         }
-        retrieveScriptFiles();
-        copyScripts(publicIpAddress, sshPort);
-        if (!createCloudStackSecret(keys)) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
-                kubernetesCluster.getName()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
-        }
         deployProvider();
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         return true;

@@ -113,12 +113,6 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
             }
             try {
                 int port = (sshPort == CLUSTER_NODES_DEFAULT_START_SSH_PORT) ? sshPort + i : sshPort;
-                retrieveScriptFiles();
-                copyScripts(publicIpAddress, port);
-                if (!createCloudStackSecret(keys)) {
-                    logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
-                        kubernetesCluster.getName()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
-                }
                 deployProvider();
                 result = runInstallScriptOnVM(vm, i);
             } catch (Exception e) {

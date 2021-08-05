@@ -135,6 +135,7 @@ public class KubernetesClusterActionWorker {
 
     protected final String deploySecretsScriptFilename = "deploy-cloudstack-secret";
     protected final String deployProviderScriptFilename = "deploy-provider";
+    protected final String scriptPath = "/opt/bin/";
     protected File deploySecretsScriptFile;
     protected File deployProviderScriptFile;
     protected KubernetesClusterManagerImpl manager;
@@ -402,10 +403,10 @@ public class KubernetesClusterActionWorker {
         sshPort = publicIpSshPort.second();
 
         try {
+            final String command = String.format("sudo %s/%s -u '%s' -k '%s' -s '%s'",
+                scriptPath, deploySecretsScriptFilename, ApiServiceConfiguration.ApiServletPath.value(), keys[0], keys[1]);
             Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
-                pkFile, null, String.format("sudo /opt/bin/deploy-cloudstack-secret -u '%s' -k '%s' -s '%s'",
-                    ApiServiceConfiguration.ApiServletPath.value(), keys[0], keys[1]),
-                    10000, 10000, 60000);
+                pkFile, null, command, 10000, 10000, 60000);
             return result.first();
         } catch (Exception e) {
             String msg = String.format("Failed to add cloudstack-secret to Kubernetes cluster: %s", kubernetesCluster.getName());
@@ -440,10 +441,10 @@ public class KubernetesClusterActionWorker {
                     "~/", deploySecretsScriptFile.getAbsolutePath(), "0755");
             SshHelper.scpTo(nodeAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
                     "~/", deployProviderScriptFile.getAbsolutePath(), "0755");
-            String cmdStr = String.format("sudo mv ~/%s /opt/bin/%s", deploySecretsScriptFile.getName(), deploySecretsScriptFilename);
+            String cmdStr = String.format("sudo mv ~/%s %s/%s", deploySecretsScriptFile.getName(), scriptPath, deploySecretsScriptFilename);
             SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
                 cmdStr, 10000, 10000, 10 * 60 * 1000);
-            cmdStr = String.format("sudo mv ~/%s /opt/bin/%s", deployProviderScriptFile.getName(), deployProviderScriptFilename);
+            cmdStr = String.format("sudo mv ~/%s %s/%s", deployProviderScriptFile.getName(), scriptPath, deployProviderScriptFilename);
             SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
                 cmdStr, 10000, 10000, 10 * 60 * 1000);
         } catch (Exception e) {
@@ -465,7 +466,7 @@ public class KubernetesClusterActionWorker {
         sshPort = publicIpSshPort.second();
 
         try {
-            String command = "sudo /opt/bin/deploy-provider";
+            String command = String.format("sudo %s/%s", scriptPath, deployProviderScriptFilename);
             Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
                 pkFile, null, command, 10000, 10000, 60000);
 
