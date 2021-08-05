@@ -44,6 +44,8 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -282,6 +284,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private ClusterVSMMapDao _clusterVSMMapDao;
     @Inject
     private UserVmDetailsDao userVmDetailsDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     private final long _nodeId = ManagementServerNode.getManagementServerId();
 
@@ -963,6 +967,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 if (dr != null) {
                     _dedicatedDao.remove(dr.getId());
                 }
+
+                // Remove comments (if any)
+                annotationDao.removeByEntityType(AnnotationService.EntityType.HOST.name(), host.getUuid());
             }
         });
 
@@ -1035,6 +1042,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         if (dr != null) {
                             _dedicatedDao.remove(dr.getId());
                         }
+                        // Remove comments (if any)
+                        annotationDao.removeByEntityType(AnnotationService.EntityType.CLUSTER.name(), cluster.getUuid());
                     }
 
                 }

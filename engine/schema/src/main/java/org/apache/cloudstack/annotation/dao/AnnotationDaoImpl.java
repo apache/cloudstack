@@ -111,4 +111,12 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
                 isCallerAdmin, "all", null, null);
         return CollectionUtils.isNotEmpty(annotations);
     }
+
+    @Override
+    public boolean removeByEntityType(String entityType, String entityUuid) {
+        SearchCriteria<AnnotationVO> sc = AnnotationSearchBuilder.create();
+        sc.addAnd("entityType", SearchCriteria.Op.EQ, entityType);
+        sc.addAnd("entityUuid", SearchCriteria.Op.EQ, entityUuid);
+        return remove(sc) > 0;
+    }
 }
