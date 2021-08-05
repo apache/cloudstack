@@ -110,6 +110,7 @@ export default {
         case 'false':
         case 'Stopped':
         case 'ReadOnly':
+        case 'Off':
           status = 'error'
           break
         case 'Migrating':
