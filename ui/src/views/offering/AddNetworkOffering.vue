@@ -108,63 +108,88 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item :label="$t('label.promiscuousmode')">
-          <a-radio-group
-            v-decorator="['promiscuousmode', {
-              initialValue: promiscuousMode
-            }]"
-            buttonStyle="solid"
-            @change="selected => { handlePromiscuousModeChange(selected.target.value) }">
-            <a-radio-button value="">
-              {{ $t('label.none') }}
-            </a-radio-button>
-            <a-radio-button value="true">
-              {{ $t('label.accept') }}
-            </a-radio-button>
-            <a-radio-button value="false">
-              {{ $t('label.reject') }}
-            </a-radio-button>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item :label="$t('label.macaddresschanges')">
-          <a-radio-group
-            v-decorator="['macaddresschanges', {
-              initialValue: macAddressChanges
-            }]"
-            buttonStyle="solid"
-            @change="selected => { handleMacAddressChangesChange(selected.target.value) }">
-            <a-radio-button value="">
-              {{ $t('label.none') }}
-            </a-radio-button>
-            <a-radio-button value="true">
-              {{ $t('label.accept') }}
-            </a-radio-button>
-            <a-radio-button value="false">
-              {{ $t('label.reject') }}
-            </a-radio-button>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item :label="$t('label.forgedtransmits')">
-          <a-radio-group
-            v-decorator="['forgedtransmits', {
-              initialValue: forgedTransmits
-            }]"
-            buttonStyle="solid"
-            @change="selected => { handleForgedTransmitsChange(selected.target.value) }">
-            <a-radio-button value="">
-              {{ $t('label.none') }}
-            </a-radio-button>
-            <a-radio-button value="true">
-              {{ $t('label.accept') }}
-            </a-radio-button>
-            <a-radio-button value="false">
-              {{ $t('label.reject') }}
-            </a-radio-button>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item :label="$t('label.maclearning')">
-          <a-switch v-decorator="['maclearning', {initialValue: false}]" />
-        </a-form-item>
+        <a-row :gutter="12" v-if="guestType !== 'shared'">
+          <a-col :md="12" :lg="12">
+            <a-form-item>
+              <tooltip-label slot="label" :title="$t('label.promiscuousmode')" :tooltip="$t('message.network.offering.promiscuous.mode')"/>
+              <a-radio-group
+                v-decorator="['promiscuousmode', {
+                  initialValue: promiscuousMode
+                }]"
+                buttonStyle="solid"
+                @change="selected => { handlePromiscuousModeChange(selected.target.value) }">
+                <a-radio-button value="">
+                  {{ $t('label.none') }}
+                </a-radio-button>
+                <a-radio-button value="true">
+                  {{ $t('label.accept') }}
+                </a-radio-button>
+                <a-radio-button value="false">
+                  {{ $t('label.reject') }}
+                </a-radio-button>
+              </a-radio-group>
+            </a-form-item>
+            <a-form-item>
+              <tooltip-label slot="label" :title="$t('label.macaddresschanges')" :tooltip="$t('message.network.offering.mac.address.changes')"/>
+              <a-radio-group
+                v-decorator="['macaddresschanges', {
+                  initialValue: macAddressChanges
+                }]"
+                buttonStyle="solid"
+                @change="selected => { handleMacAddressChangesChange(selected.target.value) }">
+                <a-radio-button value="">
+                  {{ $t('label.none') }}
+                </a-radio-button>
+                <a-radio-button value="true">
+                  {{ $t('label.accept') }}
+                </a-radio-button>
+                <a-radio-button value="false">
+                  {{ $t('label.reject') }}
+                </a-radio-button>
+              </a-radio-group>
+            </a-form-item>
+          </a-col>
+          <a-col :md="12" :lg="12">
+            <a-form-item>
+              <tooltip-label slot="label" :title="$t('label.forgedtransmits')" :tooltip="$t('message.network.offering.forged.transmits')"/>
+              <a-radio-group
+                v-decorator="['forgedtransmits', {
+                  initialValue: forgedTransmits
+                }]"
+                buttonStyle="solid"
+                @change="selected => { handleForgedTransmitsChange(selected.target.value) }">
+                <a-radio-button value="">
+                  {{ $t('label.none') }}
+                </a-radio-button>
+                <a-radio-button value="true">
+                  {{ $t('label.accept') }}
+                </a-radio-button>
+                <a-radio-button value="false">
+                  {{ $t('label.reject') }}
+                </a-radio-button>
+              </a-radio-group>
+            </a-form-item>
+            <a-form-item>
+              <tooltip-label slot="label" :title="$t('label.maclearning')" :tooltip="$t('message.network.offering.mac.learning')"/>
+              <a-radio-group
+                v-decorator="['maclearning', {
+                  initialValue: forgedTransmits
+                }]"
+                buttonStyle="solid"
+                @change="selected => { handleForgedTransmitsChange(selected.target.value) }">
+                <a-radio-button value="">
+                  {{ $t('label.none') }}
+                </a-radio-button>
+                <a-radio-button value="true">
+                  {{ $t('label.accept') }}
+                </a-radio-button>
+                <a-radio-button value="false">
+                  {{ $t('label.reject') }}
+                </a-radio-button>
+              </a-radio-group>
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item v-if="guestType !== 'l2'">
           <tooltip-label slot="label" :title="$t('label.supportedservices')" :tooltip="apiParams.supportedservices.description"/>
           <div class="supported-services-container" scroll-to="last-child">
