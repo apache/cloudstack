@@ -86,10 +86,7 @@ class TestAnnotations(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestAnnotations, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -100,13 +97,8 @@ class TestAnnotations(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            #Clean up
-            cleanup_resources(self.apiclient, self.cleanup)
-            self.cleanAnnotations()
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        self.cleanAnnotations()
+        super(TestAnnotations, self).tearDown()
 
     def cleanAnnotations(self):
         """Remove annotations"""
