@@ -1444,7 +1444,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    # was tags = ["advanced", "advancedns", "smoke", "basic"]
+    @attr(tags = ["TODO"], required_hardware="true")
     def test_01_Browser_template_Life_cycle_tpath(self):
         """
         Test Browser_template_Life_cycle
@@ -1506,7 +1507,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 #            self.fail("Exception occurred  : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    # was tags = ["advanced", "advancedns", "smoke", "basic"]
+    @attr(tags = ["TODO"], required_hardware="true")
     def test_02_SSVM_Life_Cycle_With_Browser_Template_TPath(self):
         """
         Test SSVM_Life_Cycle_With_Browser_template_TPath 
@@ -1572,7 +1574,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.fail("Exception occurred  : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    # was tags = ["advanced", "advancedns", "smoke", "basic"]
+    @attr(tags = ["TODO"], required_hardware="true")
     def test_04_Browser_template_ResetVM_With_Deleted_Template(self):
         """
         Test Browser_template_upload_ResetVM_With_Deleted_Template
@@ -1593,7 +1596,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.fail("Exception occurred  : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    # was tags = ["advanced", "advancedns", "smoke", "basic"]
+    @attr(tags = ["TODO"], required_hardware="true")
     def test_05_Browser_Upload_Template_with_all_API_parameters(self):
         """
         Test Browser_Upload_Template with all API parameters
@@ -1619,9 +1623,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.fail("Exception occurred  : %s" % e)
         return
 
-
-
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    # was tags = ["advanced", "advancedns", "smoke", "basic"]
+    @attr(tags = ["TODO"], required_hardware="true")
     def test_06_Browser_Upload_template_resource_limits(self):
         """
         Test Browser Upload Template Resource limits
@@ -1644,7 +1647,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.fail("Exception occurred  : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    # was tags = ["advanced", "advancedns", "smoke", "basic"]
+    @attr(tags = ["TODO"], required_hardware="true")
     def test_07_Browser_Upload_template_secondary_storage_resource_limits(self):
         """
         Test Browser_Upload_Template Secondary Storage Resource limits
@@ -1674,7 +1678,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.fail("Exception occurred  : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    # was tags = ["advanced", "advancedns", "smoke", "basic"]
+    @attr(tags = ["TODO"], required_hardware="true")
     def test_08_Browser_Upload_template_resource_limits_after_deletion(self):
         """
         Test Browser_Upload_Template Resource limits after template deletion
@@ -1694,7 +1699,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.fail("Exceptione occurred  : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    # was tags = ["advanced", "advancedns", "smoke", "basic"]
+    @attr(tags = ["TODO"], required_hardware="true")
     def test_09_Browser_Upload_Volume_secondary_storage_resource_limits_after_deletion(self):
         """
         Test Browser_Upload_Template Secondary Storage Resource limits after template deletion
