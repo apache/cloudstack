@@ -1174,6 +1174,7 @@ public class HypervisorHostHelper {
         details.put(NetworkOffering.Detail.PromiscuousMode, NetworkOrchestrationService.PromiscuousMode.value().toString());
         details.put(NetworkOffering.Detail.MacAddressChanges, NetworkOrchestrationService.MacAddressChanges.value().toString());
         details.put(NetworkOffering.Detail.ForgedTransmits, NetworkOrchestrationService.ForgedTransmits.value().toString());
+        details.put(NetworkOffering.Detail.MacLearning, NetworkOrchestrationService.MacLearning.value().toString());
         return details;
     }
 

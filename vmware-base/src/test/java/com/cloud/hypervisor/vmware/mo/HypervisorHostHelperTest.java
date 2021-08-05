@@ -42,6 +42,7 @@ import com.cloud.offering.NetworkOffering;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.BoolPolicy;
 import com.vmware.vim25.ClusterConfigInfoEx;
+import com.vmware.vim25.DVSMacManagementPolicy;
 import com.vmware.vim25.DatacenterConfigInfo;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.DVPortgroupConfigInfo;
@@ -806,6 +807,7 @@ public class HypervisorHostHelperTest {
         details.put(NetworkOffering.Detail.PromiscuousMode, "false");
         details.put(NetworkOffering.Detail.ForgedTransmits, "false");
         details.put(NetworkOffering.Detail.MacAddressChanges, "false");
+        details.put(NetworkOffering.Detail.MacLearning, "false");
         return details;
     }
 
@@ -841,6 +843,15 @@ public class HypervisorHostHelperTest {
         assertFalse(secPolicy.getAllowPromiscuous().isValue());
         assertTrue(secPolicy.getForgedTransmits().isValue());
         assertTrue(secPolicy.getMacChanges().isValue());
+    }
+
+    @Test
+    public void testDVSMacManagementPolicyDefault() {
+        DVSMacManagementPolicy macManagementPolicy = HypervisorHostHelper.createDVSMacManagementPolicy(null);
+        assertFalse(macManagementPolicy.isAllowPromiscuous());
+        assertTrue(macManagementPolicy.isForgedTransmits());
+        assertTrue(macManagementPolicy.isMacChanges());
+        assertFalse(macManagementPolicy.getMacLearningPolicy().isEnabled());
     }
 
     @Test
