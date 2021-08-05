@@ -114,10 +114,9 @@
               <tooltip-label slot="label" :title="$t('label.promiscuousmode')" :tooltip="$t('message.network.offering.promiscuous.mode')"/>
               <a-radio-group
                 v-decorator="['promiscuousmode', {
-                  initialValue: promiscuousMode
+                  initialValue: ''
                 }]"
-                buttonStyle="solid"
-                @change="selected => { handlePromiscuousModeChange(selected.target.value) }">
+                buttonStyle="solid">
                 <a-radio-button value="">
                   {{ $t('label.none') }}
                 </a-radio-button>
@@ -133,10 +132,9 @@
               <tooltip-label slot="label" :title="$t('label.macaddresschanges')" :tooltip="$t('message.network.offering.mac.address.changes')"/>
               <a-radio-group
                 v-decorator="['macaddresschanges', {
-                  initialValue: macAddressChanges
+                  initialValue: ''
                 }]"
-                buttonStyle="solid"
-                @change="selected => { handleMacAddressChangesChange(selected.target.value) }">
+                buttonStyle="solid">
                 <a-radio-button value="">
                   {{ $t('label.none') }}
                 </a-radio-button>
@@ -154,10 +152,9 @@
               <tooltip-label slot="label" :title="$t('label.forgedtransmits')" :tooltip="$t('message.network.offering.forged.transmits')"/>
               <a-radio-group
                 v-decorator="['forgedtransmits', {
-                  initialValue: forgedTransmits
+                  initialValue: ''
                 }]"
-                buttonStyle="solid"
-                @change="selected => { handleForgedTransmitsChange(selected.target.value) }">
+                buttonStyle="solid">
                 <a-radio-button value="">
                   {{ $t('label.none') }}
                 </a-radio-button>
@@ -173,10 +170,9 @@
               <tooltip-label slot="label" :title="$t('label.maclearning')" :tooltip="$t('message.network.offering.mac.learning')"/>
               <a-radio-group
                 v-decorator="['maclearning', {
-                  initialValue: forgedTransmits
+                  initialValue: ''
                 }]"
-                buttonStyle="solid"
-                @change="selected => { handleForgedTransmitsChange(selected.target.value) }">
+                buttonStyle="solid">
                 <a-radio-button value="">
                   {{ $t('label.none') }}
                 </a-radio-button>
@@ -436,9 +432,6 @@ export default {
       hasAdvanceZone: false,
       requiredNetworkOfferingExists: false,
       guestType: 'isolated',
-      promiscuousMode: '',
-      macAddressChanges: '',
-      forgedTransmits: '',
       selectedDomains: [],
       selectedZones: [],
       forVpc: false,
@@ -517,15 +510,6 @@ export default {
     },
     handleGuestTypeChange (val) {
       this.guestType = val
-    },
-    handlePromiscuousModeChange (val) {
-      this.promiscuousMode = val
-    },
-    handleMacAddressChangesChange (val) {
-      this.macAddressChanges = val
-    },
-    handleForgedTransmitsChange (val) {
-      this.forgedTransmits = val
     },
     fetchSupportedServiceData () {
       const params = {}
