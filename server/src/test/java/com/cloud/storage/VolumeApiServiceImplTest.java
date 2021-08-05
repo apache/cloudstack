@@ -37,6 +37,8 @@ import java.util.concurrent.ExecutionException;
 
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -158,6 +160,8 @@ public class VolumeApiServiceImplTest {
     private VMTemplateDao templateDao;
     @Mock
     private ServiceOfferingJoinDao serviceOfferingJoinDao;
+    @Mock
+    private ServiceOfferingDao serviceOfferingDao;
 
     private DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     private Class<?> _detachCmdClass = detachCmd.getClass();
@@ -570,6 +574,27 @@ public class VolumeApiServiceImplTest {
     @Test
     public void validateConditionsToReplaceDiskOfferingOfVolumeTestRootVolume() {
         Mockito.lenient().when(volumeVoMock.getVolumeType()).thenReturn(Type.ROOT);
+        Mockito.doReturn(vmInstanceMockId).when(volumeVoMock).getInstanceId();
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        when(_vmInstanceDao.findById(anyLong())).thenReturn(vm);
+        when(vm.getServiceOfferingId()).thenReturn(1L);
+        ServiceOfferingVO serviceOfferingVO = Mockito.mock(ServiceOfferingVO.class);
+        serviceOfferingVO.setDiskOfferingStrictness(false);
+        when(serviceOfferingDao.findById(anyLong())).thenReturn(serviceOfferingVO);
+
+        volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVoMock, newDiskOfferingMock, storagePoolMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateConditionsToReplaceDiskOfferingOfVolumeTestRootVolumeWithDiskOfferingStrictnessTrue() {
+        Mockito.lenient().when(volumeVoMock.getVolumeType()).thenReturn(Type.ROOT);
+        Mockito.doReturn(vmInstanceMockId).when(volumeVoMock).getInstanceId();
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        when(_vmInstanceDao.findById(anyLong())).thenReturn(vm);
+        when(vm.getServiceOfferingId()).thenReturn(1L);
+        ServiceOfferingVO serviceOfferingVO = Mockito.mock(ServiceOfferingVO.class);
+        when(serviceOfferingDao.findById(anyLong())).thenReturn(serviceOfferingVO);
+        when(serviceOfferingVO.getDiskOfferingStrictness()).thenReturn(true);
 
         volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVoMock, newDiskOfferingMock, storagePoolMock);
     }
@@ -1129,7 +1154,7 @@ public class VolumeApiServiceImplTest {
         when(template.getFormat()).thenReturn(imageFormat);
         when(templateDao.findByIdIncludingRemoved(Mockito.anyLong())).thenReturn(template);
 
-        //boolean result = volumeApiServiceImpl.isNotPossibleToResize(volume);
-        //Assert.assertEquals(expectedIsNotPossibleToResize, result);
+        boolean result = volumeApiServiceImpl.isNotPossibleToResize(volume, diskOffering);
+        Assert.assertEquals(expectedIsNotPossibleToResize, result);
     }
 }

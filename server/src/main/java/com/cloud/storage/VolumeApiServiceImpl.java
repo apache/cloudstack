@@ -2939,7 +2939,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException(String.format("Target Storage [id=%s] tags [%s] does not match new disk offering [id=%s] tags [%s].", destPool.getUuid(),
                     getStoragePoolTags(destPool), newDiskOffering.getUuid(), newDiskOffering.getTags()));
         }
-        if (volume.volumeType.equals(Volume.Type.ROOT)) {
+        if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
             VMInstanceVO vm = null;
             if (volume.getInstanceId() != null) {
                 vm = _vmInstanceDao.findById(volume.getInstanceId());
@@ -2947,7 +2947,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (vm != null) {
                 ServiceOfferingVO serviceOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
                 if (serviceOffering != null && serviceOffering.getDiskOfferingStrictness()) {
-                    throw new InvalidParameterValueException(String.format("Disk offering cannot be changed to the volume %s since existing disk offering is strictly associated with the volume"));
+                    throw new InvalidParameterValueException(String.format("Disk offering cannot be changed to the volume %s since existing disk offering is strictly associated with the volume", volume.getUuid()));
                 }
             }
         }
