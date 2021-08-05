@@ -1756,7 +1756,8 @@ class TestVMDeployVPC(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    # was tags=["advanced", "intervlan"]
+    @attr(tags=["TODO"], required_hardware="true")
     def test_07_delete_network_with_rules(self):
         """ Test delete network that has PF/staticNat/LB rules/Network Acl
         """
