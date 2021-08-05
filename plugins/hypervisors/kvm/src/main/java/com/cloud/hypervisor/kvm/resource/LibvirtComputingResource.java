@@ -4507,7 +4507,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private void setCpuTopology(CpuModeDef cmd, int vcpus, Map<String, String> details) {
         if (!enableManuallySettingCpuTopologyOnKvmVm) {
-            s_logger.info(String.format("Skipping manually setting CPU topology on VM's XML due to it is disabled in agent.properties {\"property\": \"%s\", \"value\": %s}.",
+            s_logger.debug(String.format("Skipping manually setting CPU topology on VM's XML due to it is disabled in agent.properties {\"property\": \"%s\", \"value\": %s}.",
               AgentProperties.ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM.getName(), enableManuallySettingCpuTopologyOnKvmVm));
             return;
         }
