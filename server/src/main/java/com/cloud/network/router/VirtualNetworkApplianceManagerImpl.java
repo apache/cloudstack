@@ -20,12 +20,14 @@ package com.cloud.network.router;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -1938,6 +1940,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (Boolean.valueOf(_configDao.getValue("system.vm.random.password"))) {
             buf.append(" vmpassword=").append(_configDao.getValue("system.vm.password"));
         }
+        String MsPublicKey = _configDao.getValue("ssh.publickey");
+        String base64EncodedPublicKey = null;
+        if (MsPublicKey != null) {
+            base64EncodedPublicKey = Base64.getEncoder().encodeToString(MsPublicKey.getBytes(StandardCharsets.UTF_8));
+        }
+
+        buf.append(" authorized_key=").append(base64EncodedPublicKey);
 
         NicProfile controlNic = null;
         String defaultDns1 = null;
