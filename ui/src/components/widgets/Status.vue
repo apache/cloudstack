@@ -97,6 +97,7 @@ export default {
         case 'true':
         case 'Up':
         case 'enabled':
+        case 'On':
           status = 'success'
           break
         case 'Alert':
