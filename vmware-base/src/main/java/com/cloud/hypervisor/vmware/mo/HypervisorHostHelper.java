@@ -838,7 +838,7 @@ public class HypervisorHostHelper {
     private static boolean isMacLearningPolicyDifferent(VMwareDVSPortSetting currentPortSetting, VMwareDVSPortSetting newPortSetting) {
         return (currentPortSetting.getMacManagementPolicy() != null && newPortSetting.getMacManagementPolicy() != null &&
                 currentPortSetting.getMacManagementPolicy().getMacLearningPolicy() != null && newPortSetting.getMacManagementPolicy().getMacLearningPolicy() != null &&
-                currentPortSetting.getMacManagementPolicy().getMacLearningPolicy().isEnabled() != newPortSetting.getMacManagementPolicy().getMacLearningPolicy().isEnabled())
+                currentPortSetting.getMacManagementPolicy().getMacLearningPolicy().isEnabled() != newPortSetting.getMacManagementPolicy().getMacLearningPolicy().isEnabled());
     }
 
     public static boolean isSpecMatch(DVPortgroupConfigInfo currentDvPortgroupInfo, DVPortgroupConfigSpec newDvPortGroupSpec) {
