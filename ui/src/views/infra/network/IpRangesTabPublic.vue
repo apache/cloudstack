@@ -170,12 +170,12 @@
         </a-form-item>
         <div class="form__item" v-if="!basicGuestNetwork">
           <div style="color: black;">{{ $t('label.set.reservation') }}</div>
-          <a-switch @change="handleShowAccountFields"></a-switch>
+          <a-switch @change="handleShowAccountFields" />
         </div>
         <div v-if="showAccountFields && !basicGuestNetwork" style="margin-top: 20px;">
           <div v-html="$t('label.set.reservation.desc')"></div>
           <a-form-item name="forsystemvms" ref="forsystemvms" :label="$t('label.system.vms')" class="form__item">
-            <a-switch v-model:checked="form.forsystemvms"></a-switch>
+            <a-switch v-model:checked="form.forsystemvms" />
           </a-form-item>
           <a-spin :spinning="domainsLoading">
             <a-form-item name="account" ref="account" :label="$t('label.account')" class="form__item">

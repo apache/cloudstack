@@ -146,7 +146,7 @@ export default {
   methods: {
     filterOption (input, option) {
       return (
-        option.componentOptions.children[0].text.toUpperCase().indexOf(input.toUpperCase()) >= 0
+        option.children[0].children.toUpperCase().indexOf(input.toUpperCase()) >= 0
       )
     },
     updateResource (resource) {

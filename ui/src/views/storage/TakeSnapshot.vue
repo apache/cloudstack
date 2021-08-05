@@ -41,7 +41,7 @@
           </a-col>
           <a-col :md="24" :lg="24">
             <a-form-item :label="$t('label.asyncbackup')" name="asyncbackup" ref="asyncbackup">
-              <a-switch v-model:value="form.asyncbackup" />
+              <a-switch v-model:checked="form.asyncbackup" />
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="24" v-if="quiescevm" name="quiescevm" ref="quiescevm">

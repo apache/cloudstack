@@ -84,8 +84,7 @@
         </a-col>
         <a-col :md="12" :lg="12">
           <a-form-item name="dedicated" ref="dedicated" :label="$t('label.dedicated')">
-            <a-switch
-              v-model:checked="form.dedicated" />
+            <a-switch v-model:checked="form.dedicated" />
           </a-form-item>
         </a-col>
       </a-row>

@@ -196,9 +196,7 @@
         ref="localstorageenabled"
         :label="$t('label.local.storage.enabled')"
         v-bind="formItemLayout">
-        <a-switch
-          v-model:checked="form.localstorageenabled"
-        />
+        <a-switch v-model:checked="form.localstorageenabled" />
       </a-form-item>
       <a-form-item
         name="localstorageenabledforsystemvm"

@@ -32,7 +32,7 @@
               <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
-          <a-switch v-model:value="form.expunge" :auto-focus="true" />
+          <a-switch v-model:checked="form.expunge" :auto-focus="true" />
         </a-form-item>
 
         <a-form-item v-if="volumes.length > 0">

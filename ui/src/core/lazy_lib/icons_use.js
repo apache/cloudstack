@@ -119,6 +119,7 @@ import {
   SearchOutlined,
   SettingOutlined,
   ShareAltOutlined,
+  ShoppingOutlined,
   StopOutlined,
   SwapOutlined,
   SyncOutlined,
@@ -247,6 +248,7 @@ export default {
     app.component('SearchOutlined', SearchOutlined)
     app.component('SettingOutlined', SettingOutlined)
     app.component('ShareAltOutlined', ShareAltOutlined)
+    app.component('ShoppingOutlined', ShoppingOutlined)
     app.component('StopOutlined', StopOutlined)
     app.component('SwapOutlined', SwapOutlined)
     app.component('SyncOutlined', SyncOutlined)

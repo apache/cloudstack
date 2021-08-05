@@ -53,9 +53,9 @@
         </template>
         <a-select
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }"
           :loading="osTypes.loading"
           v-model:value="form.ostypeid">
@@ -92,7 +92,7 @@
         <this.formRef.value.validate()omplete
           v-model:value="form.group"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }"
           :options="groups.opts" />
       </a-form-item>

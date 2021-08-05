@@ -70,7 +70,7 @@
         </a-form-item>
 
         <a-form-item ref="directdownload" name="directdownload" v-if="allowed && currentForm !== 'Upload'" :label="$t('label.directdownload')">
-          <a-switch v-model:value="form.directdownload"/>
+          <a-switch v-model:checked="form.directdownload"/>
         </a-form-item>
 
         <a-form-item ref="zoneid" name="zoneid" :label="$t('label.zoneid')">

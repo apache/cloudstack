@@ -446,7 +446,7 @@
                 <template #description v-if="zoneSelected">
                   <span>
                     {{ $t('label.isadvanced') }}
-                    <a-switch @change="val => { showDetails = val }" :checked="showDetails" style="margin-left: 10px"/>
+                    <a-switch v-model:checked="showDetails" style="margin-left: 10px"/>
                   </span>
                   <div style="margin-top: 15px" v-show="showDetails">
                     <div
@@ -476,9 +476,7 @@
                       v-if="zoneSelected && ((tabKey === 'isoid' && hypervisor === 'VMware') || (tabKey === 'templateid' && template && template.hypervisor === 'VMware'))"
                       name="bootintosetup"
                       ref="bootintosetup">
-                      <a-switch
-                        v-model:checked="form.bootintosetup">
-                      </a-switch>
+                      <a-switch v-model:checked="form.bootintosetup" />
                     </a-form-item>
                     <a-form-item :label="$t('label.userdata')" name="userdata" ref="userdata">
                       <a-textarea
@@ -561,8 +559,7 @@
               <a-form-item>
                 <a-switch
                   class="form-item-hidden"
-                  v-model:value="form.stayonpage"
-                ></a-switch>
+                  v-model:checked="form.stayonpage" />
               </a-form-item>
               <!-- ToDo extract as component -->
               <a-button @click="() => $router.back()" :disabled="loading.deploy">

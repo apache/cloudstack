@@ -65,7 +65,7 @@
                 </a-tooltip>
               </template>
               <a-switch
-                v-decorator="form.performfreshchecks"
+                v-model:checked="form.performfreshchecks"
                 :placeholder="apiParams.performfreshchecks.description"
                 autoFocus/>
             </a-form-item>

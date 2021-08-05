@@ -19,46 +19,41 @@
   <div class="form-layout">
     <a-form
       layout="vertical"
-      :form="form"
-      @submit="handleSubmit">
-      <a-form-item>
-        <span slot="label">
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      @finish="handleSubmit">
+      <a-form-item name="name" ref="name">
+        <template #label>
           {{ $t('label.name') }}
           <a-tooltip :title="apiParams.name.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
           </a-tooltip>
-        </span>
+        </template>
         <a-input
           autoFocus
-          v-decorator="['name', {
-            rules: [{ required: true, message: $t('message.error.required.input') }]
-          }]"/>
+          v-model:value="form.name"/>
       </a-form-item>
-      <a-form-item>
-        <span slot="label">
+      <a-form-item name="description" ref="description">
+        <template #label>
           {{ $t('label.description') }}
           <a-tooltip :title="apiParams.description.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
           </a-tooltip>
-        </span>
-        <a-input
-          v-decorator="['description', {
-            rules: [{ required: true, message: $t('message.error.required.input') }]
-          }]"/>
+        </template>
+        <a-input v-model:value="form.description"/>
       </a-form-item>
-      <a-form-item>
-        <span slot="label">
+      <a-form-item name="zoneid" ref="zoneid">
+        <template #label>
           {{ $t('label.zoneid') }}
           <a-tooltip :title="apiParams.zoneid.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
           </a-tooltip>
-        </span>
+        </template>
         <a-select
           showSearch
           allowClear
-          v-decorator="['zoneid', {
-            rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
-          }]"
+          v-model:value="form.zoneid"
           :loading="zones.loading"
           @change="onChangeZone">
           <a-select-option v-for="zone in zones.opts" :key="zone.name">
@@ -66,44 +61,41 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item>
-        <span slot="label">
+      <a-form-item name="externalid" ref="externalid">
+        <template #label>
           {{ $t('label.externalid') }}
           <a-tooltip :title="apiParams.externalid.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
           </a-tooltip>
-        </span>
+        </template>
         <a-select
           allowClear
-          v-decorator="['externalid', {
-            rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
-          }] "
+          v-model:value="form.externalid"
           :loading="externals.loading">
           <a-select-option v-for="opt in externals.opts" :key="opt.id">
             {{ opt.name }}
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item>
-        <span slot="label">
+      <a-form-item name="allowuserdrivenbackups" ref="allowuserdrivenbackups">
+        <template #label>
           {{ $t('label.allowuserdrivenbackups') }}
           <a-tooltip :title="apiParams.allowuserdrivenbackups.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
           </a-tooltip>
-        </span>
-        <a-switch
-          v-decorator="['allowuserdrivenbackups']"
-          :default-checked="true"/>
+        </template>
+        <a-switch v-model:checked="form.allowuserdrivenbackups"/>
       </a-form-item>
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading" type="primary" html-type="submit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -122,13 +114,25 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('importBackupOffering')
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        allowuserdrivenbackups: true
+      })
+      this.rules = reactive({
+        name: [{ required: true, message: this.$t('message.error.required.input') }],
+        description: [{ required: true, message: this.$t('message.error.required.input') }],
+        zoneid: [{ required: true, message: this.$t('message.error.select') }],
+        externalid: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
     fetchData () {
       this.fetchZone()
     },
@@ -136,7 +140,6 @@ export default {
       this.zones.loading = true
       api('listZones', { available: true }).then(json => {
         this.zones.opts = json.listzonesresponse.zone || []
-        this.$forceUpdate()
       }).catch(error => {
         this.$notifyError(error)
       }).finally(f => {
@@ -151,7 +154,6 @@ export default {
       this.externals.loading = true
       api('listBackupProviderOfferings', { zoneid: zoneId }).then(json => {
         this.externals.opts = json.listbackupproviderofferingsresponse.backupoffering || []
-        this.$forceUpdate()
       }).catch(error => {
         this.$notifyError(error)
       }).finally(f => {
@@ -160,10 +162,8 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         for (const key in values) {
           const input = values[key]

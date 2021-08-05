@@ -16,21 +16,19 @@
 // under the License.
 
 <template>
-  <div>
-    <a-checkbox v-decorator="[checkBoxDecorator, {}]" class="pair-checkbox" @change="handleCheckChange">
+  <div class="checkbox-group">
+    <a-checkbox v-model:checked="fields[checkBoxDecorator]" class="pair-checkbox" @change="handleCheckChange">
       {{ checkBoxLabel }}
     </a-checkbox>
-    <a-form-item class="pair-select-container" :label="selectLabel" v-if="this.checked">
+    <a-form-item name="selectDecorator" ref="selectDecorator" class="pair-select-container" :label="selectLabel" v-if="checked">
       <a-select
-        v-decorator="[selectDecorator, {
-          initialValue: selectedOption ? selectedOption : this.getSelectInitialValue()
-        }]"
+        v-model:value="fields[selectDecorator]"
         showSearch
-        optionFilterProp="children"
+        optionFilterProp="label"
         :filterOption="(input, option) => {
-          return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }"
-        @change="val => { this.handleSelectChange(val) }">
+        @change="val => { handleSelectChange(val) }">
         <a-select-option v-for="(opt) in selectOptions" :key="opt.name" :disabled="opt.enabled === false">
           {{ opt.name || opt.description }}
         </a-select-option>
@@ -75,6 +73,11 @@ export default {
       selectedOption: ''
     }
   },
+  created () {
+    this.fields = {}
+    this.fields[this.checkBoxDecorator] = false
+    this.fields[this.selectDecorator] = null
+  },
   methods: {
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
@@ -97,13 +100,13 @@ export default {
 </script>
 
 <style scoped lang="scss">
-  .pair-checkbox {
-    width: 180px;
-  }
-  .pair-select-container {
-    position: relative;
-    float: right;
-    margin-bottom: -5px;
-    width: 20vw;
+  .checkbox-group {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    align-items: center;
+
+    .pair-select-container {
+      width: 18vw;
+    }
   }
 </style>

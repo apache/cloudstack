@@ -280,7 +280,7 @@
                 </a-select>
               </a-form-item>
               <a-form-item :label="$t('label.passive')" ref="passive" name="passive">
-                <a-checkbox v-model:value="vpnConnectionForm.passive"></a-checkbox>
+                <a-checkbox v-model:checked="vpnConnectionForm.passive"></a-checkbox>
               </a-form-item>
             </a-form>
           </a-spin>

@@ -119,7 +119,7 @@
         <a-form layout="vertical">
           <a-alert :message="$t('message.action.delete.template')" type="warning" />
           <a-form-item ref="forcedDelete" name="forcedDelete" :label="$t('label.isforced')" style="margin-bottom: 0;">
-            <a-switch v-model:checked="forcedDelete"></a-switch>
+            <a-switch v-model:checked="forcedDelete" />
           </a-form-item>
         </a-form>
       </a-spin>

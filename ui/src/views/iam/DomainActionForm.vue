@@ -75,12 +75,12 @@
               <a-select
                 v-else-if="field.type==='uuid' || field.name==='account'"
                 showSearch
-                optionFilterProp="children"
+                optionFilterProp="label"
                 v-model:value="form[field.name]"
                 :loading="field.loading"
                 :placeholder="field.description"
                 :filterOption="(input, option) => {
-                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
                 :autoFocus="fieldIndex === firstIndex"
               >

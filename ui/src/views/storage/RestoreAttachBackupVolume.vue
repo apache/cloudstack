@@ -17,13 +17,11 @@
 
 <template>
   <div class="form-layout">
-    <a-form layout="vertical" :form="form">
-      <a-form-item :label="$t('label.volume')">
+    <a-form layout="vertical" :ref="formRef" :model="form" :rules="rules" @finish="handleSubmit">
+      <a-form-item name="volumeid" ref="volumeid" :label="$t('label.volume')">
         <a-select
           allowClear
-          v-decorator="['volumeid', {
-            rules: [{ required: true, message: `${$t('message.error.select')}` }]
-          }]"
+          v-model:value="form.volumeid"
           :loading="volumeOptions.loading"
           autoFocus>
           <a-select-option
@@ -33,13 +31,11 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item :label="$t('label.vm')">
+      <a-form-item name="virtualmachineid" ref="virtualmachineid" :label="$t('label.vm')">
         <a-select
           showSearch
           allowClear
-          v-decorator="['virtualmachineid', {
-            rules: [{ required: true, message: `${$t('message.error.select')}` }]
-          }]"
+          v-model:value="form.virtualmachineid"
           :loading="virtualMachineOptions.loading">
           <a-select-option
             v-for="(opt) in virtualMachineOptions.opts"
@@ -50,13 +46,14 @@
       </a-form-item>
       <div :span="24" class="action-button">
         <a-button :loading="loading || actionLoading" @click="closeAction">{{ $t('label.cancel') }}</a-button>
-        <a-button :loading="loading || actionLoading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <a-button :loading="loading || actionLoading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -84,14 +81,20 @@ export default {
       actionLoading: false
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
+    this.initForm()
     this.fetchData()
   },
   inject: ['parentFetchData'],
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        volumeid: [{ required: true, message: this.$t('message.error.select') }],
+        virtualmachineid: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
     fetchData () {
       this.fetchVirtualMachine()
       this.fetchVolumes()
@@ -128,10 +131,8 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
 
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         params.backupid = this.resource.id
         params.volumeid = values.volumeid

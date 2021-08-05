@@ -39,9 +39,9 @@
             <a-select
               v-model:value="form.podid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="podsLoading"
               :placeholder="apiParams.podid.description"
@@ -63,9 +63,9 @@
               id="cluster-selection"
               v-model:value="form.clusterid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="clustersLoading"
               :placeholder="apiParams.clusterid.description"
@@ -86,9 +86,9 @@
               id="host-selection"
               v-model:value="form.hostid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="hostsLoading"
               :placeholder="apiParams.hostid.description">
@@ -106,9 +106,7 @@
               <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
-          <a-switch
-            v-model:checked="form.bootintosetup">
-          </a-switch>
+          <a-switch v-model:checked="form.bootintosetup" />
         </a-form-item>
 
         <div :span="24" class="action-button">
