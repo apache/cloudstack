@@ -20,17 +20,7 @@ export default {
   name: 'tools',
   title: 'label.tools',
   icon: 'tool',
-  permission: ['listAnnotations'],
   children: [
-    {
-      name: 'manageinstances',
-      title: 'label.action.import.export.instances',
-      icon: 'interaction',
-      docHelp: 'adminguide/virtual_machines.html#importing-and-unmanaging-virtual-machine',
-      resourceType: 'UserVm',
-      permission: ['listInfrastructure', 'listUnmanagedInstances'],
-      component: () => import('@/views/tools/ManageInstances.vue')
-    },
     {
       name: 'comment',
       title: 'label.comments',
@@ -65,6 +55,15 @@ export default {
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
+    },
+    {
+      name: 'manageinstances',
+      title: 'label.action.import.export.instances',
+      icon: 'interaction',
+      docHelp: 'adminguide/virtual_machines.html#importing-and-unmanaging-virtual-machine',
+      resourceType: 'UserVm',
+      permission: ['listInfrastructure', 'listUnmanagedInstances'],
+      component: () => import('@/views/tools/ManageInstances.vue')
     }
   ]
 }

@@ -470,10 +470,13 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     }
 
     private void setResponseEntityName(AnnotationResponse response, String entityUuid, EntityType entityType) {
-        String entityName;
+        String entityName = null;
         if (entityType.isUserAllowed()) {
             ControlledEntity entity = getEntityFromUuidAndType(entityUuid, entityType);
-            entityName = entity.getName();
+            if (entity != null) {
+                LOGGER.debug(String.format("Could not find an entity with type: %s and ID: %s", entityType.name(), entityUuid));
+                entityName = entity.getName();
+            }
         } else {
             entityName = getInfrastructureEntityName(entityUuid, entityType);
         }
