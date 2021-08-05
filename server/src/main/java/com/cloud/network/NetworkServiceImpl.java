@@ -2159,19 +2159,19 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             long vmId = nic.getInstanceId();
             VMInstanceVO vm = _vmDao.findById(vmId);
             if (vm == null) {
-                s_logger.error("VM for nic " + nic.getId() + " not found with Vm Id:" + vmId);
+                s_logger.error(String.format("Cannot replug NIC: %s as VM for it is not found with ID: %d", nic, vmId);
                 continue;
             }
             if (!Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType())) {
-                s_logger.debug("VM is not on VMware");
+                s_logger.debug(String.format("Cannot replug NIC: %s for VM: %s as it is not on VMware", nic, vm));
                 continue;
             }
             if (!VirtualMachine.Type.User.equals(vm.getType())) {
-                s_logger.debug("VM is not a User VM");
+                s_logger.debug(String.format("Cannot replug NIC: %s for VM: %s as it is not a user VM", nic, vm));
                 continue;
             }
             if (!VirtualMachine.State.Running.equals(vm.getState())) {
-                s_logger.debug("VM is not in running state");
+                s_logger.debug(String.format("Cannot replug NIC: %s for VM: %s as it is not in running state", nic, vm));
                 continue;
             }
             Host host = _hostDao.findById(vm.getHostId());

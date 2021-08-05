@@ -835,6 +835,12 @@ public class HypervisorHostHelper {
         }
     }
 
+    private static boolean isMacLearningPolicyDifferent(VMwareDVSPortSetting currentPortSetting, VMwareDVSPortSetting newPortSetting) {
+        return (currentPortSetting.getMacManagementPolicy() != null && newPortSetting.getMacManagementPolicy() != null &&
+                currentPortSetting.getMacManagementPolicy().getMacLearningPolicy() != null && newPortSetting.getMacManagementPolicy().getMacLearningPolicy() != null &&
+                currentPortSetting.getMacManagementPolicy().getMacLearningPolicy().isEnabled() != newPortSetting.getMacManagementPolicy().getMacLearningPolicy().isEnabled())
+    }
+
     public static boolean isSpecMatch(DVPortgroupConfigInfo currentDvPortgroupInfo, DVPortgroupConfigSpec newDvPortGroupSpec) {
         String dvPortGroupName = newDvPortGroupSpec.getName();
         s_logger.debug("Checking if configuration of dvPortGroup [" + dvPortGroupName + "] has changed.");
@@ -952,9 +958,7 @@ public class HypervisorHostHelper {
                 specMatches = false;
             }
         }
-        if (currentPortSetting.getMacManagementPolicy() != null && newPortSetting.getMacManagementPolicy() != null &&
-                currentPortSetting.getMacManagementPolicy().getMacLearningPolicy() != null && newPortSetting.getMacManagementPolicy().getMacLearningPolicy() != null &&
-                currentPortSetting.getMacManagementPolicy().getMacLearningPolicy().isEnabled() != newPortSetting.getMacManagementPolicy().getMacLearningPolicy().isEnabled()) {
+        if (isMacLearningPolicyDifferent(currentPortSetting, newPortSetting)) {
             specMatches = false;
         }
 
@@ -1219,31 +1223,16 @@ public class HypervisorHostHelper {
     }
 
     public static DVSMacManagementPolicy createDVSMacManagementPolicy(Map<NetworkOffering.Detail, String> nicDetails) {
-        DVSMacManagementPolicy macManagementPolicy = new DVSMacManagementPolicy();
-        macManagementPolicy.setAllowPromiscuous(false);
-        macManagementPolicy.setForgedTransmits(false);
-        macManagementPolicy.setMacChanges(false);
-        DVSMacLearningPolicy macLearningPolicy = new DVSMacLearningPolicy();
-        macLearningPolicy.setEnabled(false);
-
         if (nicDetails == null) {
             nicDetails = getDefaultSecurityDetails();
         }
-        if (nicDetails.containsKey(NetworkOffering.Detail.PromiscuousMode)) {
-            macManagementPolicy.setAllowPromiscuous(Boolean.valueOf(nicDetails.get(NetworkOffering.Detail.PromiscuousMode)));
-        }
-        if (nicDetails.containsKey(NetworkOffering.Detail.ForgedTransmits)) {
-            macManagementPolicy.setForgedTransmits(Boolean.valueOf(nicDetails.get(NetworkOffering.Detail.ForgedTransmits)));
-        }
-        if (nicDetails.containsKey(NetworkOffering.Detail.MacAddressChanges)) {
-            macManagementPolicy.setMacChanges(Boolean.valueOf(nicDetails.get(NetworkOffering.Detail.MacAddressChanges)));
-        }
-        if (nicDetails.containsKey(NetworkOffering.Detail.MacLearning)) {
-            macLearningPolicy.setEnabled(Boolean.parseBoolean(nicDetails.get(NetworkOffering.Detail.MacLearning)));
-        }
+        DVSMacManagementPolicy macManagementPolicy = new DVSMacManagementPolicy();
+        macManagementPolicy.setAllowPromiscuous(Boolean.valueOf(nicDetails.getOrDefault(NetworkOffering.Detail.PromiscuousMode, "false")));
+        macManagementPolicy.setForgedTransmits(Boolean.valueOf(nicDetails.getOrDefault(NetworkOffering.Detail.ForgedTransmits, "false")));
+        macManagementPolicy.setMacChanges(Boolean.valueOf(nicDetails.getOrDefault(NetworkOffering.Detail.MacAddressChanges, "false")));
+        DVSMacLearningPolicy macLearningPolicy = new DVSMacLearningPolicy();
+        macLearningPolicy.setEnabled(Boolean.parseBoolean(nicDetails.getOrDefault(NetworkOffering.Detail.MacLearning, "false")));
         macManagementPolicy.setMacLearningPolicy(macLearningPolicy);
-
-
         return macManagementPolicy;
     }
 
