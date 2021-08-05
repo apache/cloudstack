@@ -1732,7 +1732,8 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         self.api_client.restartVPC(cmd)
         self.debug("Restarted VPC with ID - %s" % vpc.id)
 
-    @attr(tags=["advanced", "isonw"], required_hardware="true")
+    # was tags=["advanced", "isonw"]
+    @attr(tags=["TODO"], required_hardware="true")
     def test_configdrive_isolated_network(self):
         """Test Configdrive as provider for isolated Networks
            to provide userdata and password reset functionality
