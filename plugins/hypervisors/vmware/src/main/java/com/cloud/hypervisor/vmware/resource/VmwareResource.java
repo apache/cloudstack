@@ -422,7 +422,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected static File s_systemVmKeyFile = null;
     private static final Object s_syncLockObjectFetchKeyFile = new Object();
-    protected static final String s_defaultPathSystemVmKeyFile = "/var/cloudstack/management/.ssh/id_rsa";
+    private static final String homeDir = System.getProperty("user.home");
+    protected static final String s_defaultPathSystemVmKeyFile =  homeDir + "/.ssh/id_rsa";
 
     public Gson getGson() {
         return _gson;
