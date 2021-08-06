@@ -744,12 +744,10 @@ class VirtualMachine:
         if response[0] == FAIL:
             raise Exception(response[1])
 
-    def clone(self, apiclient, forced=None):
+    def clone(self, apiclient):
         """"Clone the instance"""
         cmd = cloneVirtualMachine.cloneVirtualMachineCmd()
-        cmd.id = self.id
-        if forced:
-            cmd.forced =forced
+        cmd.virtualmachineid = self.id
         apiclient.cloneVirtualMachine(cmd)
         response = self.getState(apiclient, VirtualMachine.RUNNING)
         if (response[0] == FAIL):
