@@ -300,10 +300,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Inject
     private EndPointSelector selector;
 
-    private final static String VMWARE_TOOLS_ISO = "vmware-tools.iso";
-    private final static String XS_TOOLS_ISO = "xs-tools.iso";
-
-
     private TemplateAdapter getAdapter(HypervisorType type) {
         TemplateAdapter adapter = null;
         if (type == HypervisorType.BareMetal) {
