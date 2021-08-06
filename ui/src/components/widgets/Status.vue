@@ -44,32 +44,32 @@ export default {
     getText () {
       if (this.displayText && this.text) {
         var state = this.text
-        switch (state) {
-          case 'Running':
+        switch (state.toLowerCase()) {
+          case 'running':
             state = this.$t('state.running')
             break
-          case 'Stopped':
+          case 'stopped':
             state = this.$t('state.stopped')
             break
-          case 'Starting':
+          case 'starting':
             state = this.$t('state.starting')
             break
-          case 'Stopping':
+          case 'stopping':
             state = this.$t('state.stopping')
             break
-          case 'Suspended':
+          case 'suspended':
             state = this.$t('state.suspended')
             break
-          case 'Pending':
+          case 'pending':
             state = this.$t('state.pending')
             break
-          case 'Migrating':
+          case 'migrating':
             state = this.$t('state.migrating')
             break
-          case 'Expunging':
+          case 'expunging':
             state = this.$t('state.expunging')
             break
-          case 'Error':
+          case 'error':
             state = this.$t('state.error')
             break
           case 'ReadOnly':
@@ -88,71 +88,71 @@ export default {
     },
     getBadgeStatus (state) {
       var status = 'default'
-      switch (state) {
-        case 'Active':
-        case 'BackedUp':
-        case 'Completed':
-        case 'Connected':
-        case 'Download Complete':
-        case 'Enabled':
-        case 'Implemented':
-        case 'Ready':
-        case 'Running':
-        case 'Setup':
-        case 'Started':
-        case 'Successfully Installed':
-        case 'ReadWrite':
-        case 'True':
-        case 'true':
-        case 'Up':
+      switch (state.toLowerCase()) {
+        case 'active':
+        case 'backedup':
+        case 'completed':
+        case 'connected':
+        case 'download complete':
         case 'enabled':
-        case 'PowerOn':
+        case 'implemented':
+        case 'on':
+        case 'readwrite':
+        case 'ready':
+        case 'running':
+        case 'setup':
+        case 'started':
+        case 'successfully installed':
+        case 'true':
+        case 'up':
         case 'success':
+        case 'poweron':
           status = 'success'
           break
-        case 'Alert':
-        case 'Declined':
-        case 'Disabled':
-        case 'Disconnected':
-        case 'Down':
-        case 'Error':
-        case 'False':
+        case 'alert':
+        case 'declined':
+        case 'disabled':
+        case 'disconnected':
+        case 'down':
+        case 'error':
         case 'false':
-        case 'Stopped':
-        case 'PowerOff':
+        case 'off':
+        case 'readonly':
+        case 'poweroff':
+        case 'stopped':
         case 'failed':
           status = 'error'
           break
-        case 'Migrating':
-        case 'Scaling':
-        case 'Starting':
-        case 'Stopping':
-        case 'Upgrading':
-        case 'InProgress':
+        case 'migrating':
+        case 'scaling':
+        case 'starting':
+        case 'stopping':
+        case 'upgrading':
+        case 'inprogress':
           status = 'processing'
           break
-        case 'Allocated':
+        case 'allocated':
           if (this.$route.path.startsWith('/publicip')) {
             status = 'success'
           } else {
             status = 'warning'
           }
           break
-        case 'Created':
-        case 'Maintenance':
-        case 'Pending':
-        case 'ReadOnly':
+        case 'created':
+        case 'maintenance':
+        case 'pending':
           status = 'warning'
           break
       }
       return status
     },
     getStatusColor (state) {
-      if (state === 'Scheduled') {
-        return 'blue'
+      switch (state.toLowerCase()) {
+        case 'scheduled':
+          return 'blue'
+        default:
+          return null
       }
-
-      return null
     },
     getTooltip (state) {
       if (!(state && this.displayText)) {
