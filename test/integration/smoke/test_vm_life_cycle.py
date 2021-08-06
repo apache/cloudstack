@@ -876,7 +876,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         self.assertEqual(Volume.list(self.apiclient, id=vol1.id), None, "List response contains records when it should not")
 
-    @attr(tags = ["devcloud", "advanced", "smoke", "basic", "sg"], required_hardware="false")
+    @attr(tags = ["clone", "devcloud", "advanced", "smoke", "basic", "sg"], required_hardware="false")
     def test_12_clone_vm_and_volumes(self):
         small_disk_offering = DiskOffering.list(self.apiclient, name='Small')[0];
         small_virtual_machine = VirtualMachine.create(
