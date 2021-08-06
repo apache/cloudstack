@@ -76,7 +76,7 @@ public class SystemVmTemplateRegistration {
     private static final String UPDATE_TEMPLATE_TABLE_ON_FAILURE = "UPDATE vm_template set removed = ?, state = 'Inactive' where id = ?";
     private static final String DELETE_TEMPLATE_REF_RECORD_ON_FAILURE = "DELETE from template_store_ref where template_id = ?";
     public static String CS_MAJOR_VERSION = "4.16";
-    public static String CS_MINOR_VERSION = "0";
+    public static String CS_TINY_VERSION = "0";
 
 
     private static class SystemVMTemplateDetails {
@@ -630,11 +630,10 @@ public class SystemVmTemplateRegistration {
             throw new CloudRuntimeException(msg);
         }
     }
-    public static void registerTemplate(Connection conn, Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName, Long zoneId) {
+    public static void registerTemplate(Connection conn, Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName, Pair<String, Long> storeUrlAndId) {
         Long templateId = null;
         try {
             Hypervisor.HypervisorType hypervisor = hypervisorAndTemplateName.first();
-            Pair<String, Long> storeUrlAndId = getNfsStoreInZone(conn, zoneId);
             mountStore(storeUrlAndId.first());
             final String templateName = UUID.randomUUID().toString();
             Date created = new Date(DateUtil.currentGMTTime().getTime());
@@ -671,7 +670,7 @@ public class SystemVmTemplateRegistration {
             updateDb(conn, details);
             Map<String, String> configParams = new HashMap<>();
             configParams.put(SystemVmTemplateRegistration.routerTemplateConfigurationNames.get(hypervisorAndTemplateName.first()), hypervisorAndTemplateName.second());
-            configParams.put("minreq.sysvmtemplate.version", CS_MAJOR_VERSION + "." + CS_MINOR_VERSION);
+            configParams.put("minreq.sysvmtemplate.version", CS_MAJOR_VERSION + "." + CS_TINY_VERSION);
             updateConfigurationParams(conn, configParams);
             updateSystemVMEntries(conn, templateId, hypervisorAndTemplateName);
         } catch (Exception e) {
@@ -750,6 +749,7 @@ public class SystemVmTemplateRegistration {
                 // Perform Registration if templates not already registered
                 List<Long> zoneIds = getEligibleZoneIds(conn);
                 for (Long zoneId : zoneIds) {
+                    Pair<String, Long> storeUrlAndId = getNfsStoreInZone(conn, zoneId);
                     List<String> hypervisorList = fetchAllHypervisors(conn, zoneId);
                     for (String hypervisor : hypervisorList) {
                         Hypervisor.HypervisorType name = Hypervisor.HypervisorType.getType(hypervisor);
@@ -759,7 +759,7 @@ public class SystemVmTemplateRegistration {
                         if (templateId != -1) {
                             continue;
                         }
-                        registerTemplate(conn, hypervisorAndTemplateName, zoneId);
+                        registerTemplate(conn, hypervisorAndTemplateName, storeUrlAndId);
                     }
                     unmountStore();
                 }

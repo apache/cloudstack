@@ -136,7 +136,7 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
                     // Change value of global configuration parameter - minreq.sysvmtemplate.version for the ACS version
                     Map<String, String> configParams = new HashMap<>();
                     configParams.put(SystemVmTemplateRegistration.routerTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()), hypervisorAndTemplateName.getValue());
-                    configParams.put("minreq.sysvmtemplate.version", SystemVmTemplateRegistration.CS_MAJOR_VERSION + "." + SystemVmTemplateRegistration.CS_MINOR_VERSION);
+                    configParams.put("minreq.sysvmtemplate.version", SystemVmTemplateRegistration.CS_MAJOR_VERSION + "." + SystemVmTemplateRegistration.CS_TINY_VERSION);
 
                     SystemVmTemplateRegistration.updateConfigurationParams(conn, configParams);
                 } else {
