@@ -287,7 +287,7 @@ export default {
 <style scoped lang="less">
 .form-row {
   display: grid;
-  grid-template-columns: 140px 140px 130px 140px 140px 70px;
+  grid-template-columns: 145px 145px 130px 145px 145px 70px;
   justify-content: center;
 
   @media (max-width: 768px) {
