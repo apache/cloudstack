@@ -757,8 +757,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         }
         if (isOnWindows()) {
             scriptPath = scriptPath.replaceAll("\\\\" ,"/" );
-            //systemVmIsoPath = systemVmIsoPath.replaceAll("\\\\" ,"/" );
-            //publicKeyPath = publicKeyPath.replaceAll("\\\\" ,"/" );
             privKeyPath = privKeyPath.replaceAll("\\\\" ,"/" );
         }
 
