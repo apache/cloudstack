@@ -322,7 +322,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             "Determines whether users can expunge or recover their volume", true, ConfigKey.Scope.Account);
 
     public static final ConfigKey<Boolean> VolumeTagsStoragePoolStrictness = new ConfigKey<Boolean>("Advanced", Boolean.class, "volume.tags.storage.pool.strictness", "true",
-            "Determines whether tags on volume needs to be considered while migrating to another storage pool. If true, volume tags will be matched with destination storage pool", true, ConfigKey.Scope.Zone);
+            "Determines whether tags on volume or new disk offering needs to be considered while migrating to another storage pool. If true, volume or new disk offering tags will be matched with destination storage pool", true, ConfigKey.Scope.Zone);
 
     private long _maxVolumeSizeInGb;
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
