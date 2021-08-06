@@ -75,6 +75,7 @@ public class SystemVmTemplateRegistration {
     private static final String UPDATE_CONFIGURATION_TABLE = "UPDATE `cloud`.`configuration` SET value = ? WHERE name = ?";
     private static final String UPDATE_TEMPLATE_TABLE_ON_FAILURE = "UPDATE vm_template set removed = ?, state = 'Inactive' where id = ?";
     private static final String DELETE_TEMPLATE_REF_RECORD_ON_FAILURE = "DELETE from template_store_ref where template_id = ?";
+    private static final Integer SCRIPT_TIMEOUT = 1800000;
     public static String CS_MAJOR_VERSION = "4.16";
     public static String CS_TINY_VERSION = "0";
 
@@ -653,7 +654,7 @@ public class SystemVmTemplateRegistration {
             if (setupTmpltScript == null) {
                 throw new ConfigurationException("Unable to find the createtmplt.sh");
             }
-            Script scr = new Script(setupTmpltScript, 120000, LOGGER);
+            Script scr = new Script(setupTmpltScript, SCRIPT_TIMEOUT, LOGGER);
             scr.add("-u", templateName);
             scr.add("-f", templatesPath + fileNames.get(hypervisorAndTemplateName.first()));
             scr.add("-h", hypervisorAndTemplateName.first().name().toLowerCase(Locale.ROOT));
