@@ -279,45 +279,46 @@ class TestKubernetesCluster(cloudstackTestCase):
         return response
 
 
-    @classmethod
-    def deleteKubernetesClusterAndVerify(cls, cluster_id, verify = True, forced = False):
+
+    def deleteKubernetesClusterAndVerify(self, cluster_id, verify = True, forced = False):
         """Delete Kubernetes cluster and check if it is really deleted"""
 
+        delete_response = {}
         forceDeleted = False
         try:
-            delete_response = cls.deleteKubernetesCluster(cluster_id)
+            delete_response = self.deleteKubernetesCluster(cluster_id)
         except Exception as e:
             if forced:
-                cluster = cls.listKubernetesCluster(cluster_id)
+                cluster = self.listKubernetesCluster(cluster_id)
                 if cluster != None:
                     if cluster.state in ['Starting', 'Running', 'Upgrading', 'Scaling']:
-                        cls.stopKubernetesCluster(cluster_id)
-                        cls.deleteKubernetesCluster(cluster_id)
+                        self.stopKubernetesCluster(cluster_id)
+                        self.deleteKubernetesCluster(cluster_id)
                     else:
                         forceDeleted = True
                         for cluster_vm in cluster.virtualmachines:
                             cmd = destroyVirtualMachine.destroyVirtualMachineCmd()
                             cmd.id = cluster_vm.id
                             cmd.expunge = True
-                            cls.apiclient.destroyVirtualMachine(cmd)
+                            self.apiclient.destroyVirtualMachine(cmd)
                         cmd = deleteNetwork.deleteNetworkCmd()
                         cmd.id = cluster.networkid
                         cmd.forced = True
-                        cls.apiclient.deleteNetwork(cmd)
-                        cls.dbclient.execute("update kubernetes_cluster set state='Destroyed', removed=now() where uuid = '%s';" % cluster.id)
+                        self.apiclient.deleteNetwork(cmd)
+                        self.dbclient.execute("update kubernetes_cluster set state='Destroyed', removed=now() where uuid = '%s';" % cluster.id)
             else:
                 raise Exception("Error: Exception during delete cluster : %s" % e)
 
         if verify == True and forceDeleted == False:
-            cls.assertEqual(
+            self.assertEqual(
                 delete_response.success,
                 True,
                 "Check KubernetesCluster delete response {}, {}".format(delete_response.success, True)
             )
 
-            db_cluster_removed = cls.dbclient.execute("select removed from kubernetes_cluster where uuid = '%s';" % cluster_id)[0][0]
+            db_cluster_removed = self.dbclient.execute("select removed from kubernetes_cluster where uuid = '%s';" % cluster_id)[0][0]
 
-            cls.assertNotEqual(
+            self.assertNotEqual(
                 db_cluster_removed,
                 None,
                 "KubernetesCluster not removed in DB, {}".format(db_cluster_removed)
