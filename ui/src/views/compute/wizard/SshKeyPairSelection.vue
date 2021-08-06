@@ -112,14 +112,6 @@ export default {
   computed: {
     tableSource () {
       const dataItems = []
-      if (this.options.page === 1) {
-        dataItems.push({
-          key: this.$t('label.noselect'),
-          name: this.$t('label.noselect'),
-          account: '-',
-          domain: '-'
-        })
-      }
       this.items.map((item) => {
         dataItems.push({
           key: item.name,

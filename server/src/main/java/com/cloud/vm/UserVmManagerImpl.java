@@ -841,7 +841,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
         Long vmId = cmd.getId();
-
+        
         UserVmVO userVm = _vmDao.findById(cmd.getId());
         if (userVm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine by id" + cmd.getId());
@@ -886,20 +886,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             for (SSHKeyPairVO s_each : s_list) {
                 String publicKey = s_each.getPublicKey();
                 sshPublicKey = sshPublicKey + publicKey;
-                sshPublicKey = sshPublicKey + "/n";
+                sshPublicKey = sshPublicKey + "\n";
                 s_logger.info("the public key for keypair name " + s_each.getName() + " is " + publicKey);
             }
         }
 
         boolean result = resetVMSSHKeyInternal(vmId, sshPublicKey, keypairnames);
 
+        UserVmVO vm = _vmDao.findById(vmId);
+        _vmDao.loadDetails(vm);
+        _vmDao.saveDetails(vm);
         if (!result) {
             throw new CloudRuntimeException("Failed to reset SSH Key for the virtual machine ");
         }
 
-        removeEncryptedPasswordFromUserVmVoDetails(userVm);
+        removeEncryptedPasswordFromUserVmVoDetails(vm);
 
-        return userVm;
+        return vm;
     }
 
     protected void removeEncryptedPasswordFromUserVmVoDetails(UserVmVO userVmVo) {
@@ -946,6 +949,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 s_logger.debug("Vm " + vmInstance + " is stopped, not rebooting it as a part of SSH Key reset");
                 return true;
             }
+            s_logger.info("bb " + userVm.getDetail(VmDetailConstants.KEY_PAIR_NAMES));
             if (rebootVirtualMachine(userId, vmId, false, false) == null) {
                 s_logger.warn("Failed to reboot the vm " + vmInstance);
                 return false;
@@ -3823,7 +3827,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 else {
                     s_logger.info("publickey is " + pair.getPublicKey());
                     sshPublicKey = sshPublicKey + pair.getPublicKey();
-                    sshPublicKey = sshPublicKey + "/n";
+                    sshPublicKey = sshPublicKey + "\n";
                 }
             }
         }

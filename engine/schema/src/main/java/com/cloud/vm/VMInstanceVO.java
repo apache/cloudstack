@@ -492,8 +492,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     public void setDetail(String name, String value) {
         assert (details != null) : "Did you forget to load the details?";
-
-        details.put(name, value);
+        this.details.put(name, value);
     }
 
     public void setDetails(Map<String, String> details) {
