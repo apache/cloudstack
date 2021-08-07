@@ -211,7 +211,7 @@ export default {
       this.form.validateFieldsAndScroll(async (err, values) => {
 =======
       if (this.loading) return
-      this.form.validateFields(async (err, values) => {
+      this.form.validateFieldsAndScroll(async (err, values) => {
 >>>>>>> 0382f2b0387d3ad6e7d5273bd31a4447237adac3
         if (err) {
           return

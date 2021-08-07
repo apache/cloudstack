@@ -102,7 +102,7 @@ export default {
     submitTariff (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((error, values) => {
+      this.form.validateFieldsAndScroll((error, values) => {
         if (error) return
 
         const params = {}

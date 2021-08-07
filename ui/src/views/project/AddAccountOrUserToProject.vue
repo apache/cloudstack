@@ -216,7 +216,7 @@ export default {
     addAccountToProject (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -250,7 +250,7 @@ export default {
     addUserToProject (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
