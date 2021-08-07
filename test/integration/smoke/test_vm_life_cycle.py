@@ -876,7 +876,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         self.assertEqual(Volume.list(self.apiclient, id=vol1.id), None, "List response contains records when it should not")
 
-    @attr(tags = ["clone", "devcloud", "advanced", "smoke", "basic", "sg"], required_hardware="false")
+    @attr(tags = ["clone","devcloud", "advanced", "smoke", "basic", "sg"], required_hardware="false")
     def test_12_clone_vm_and_volumes(self):
         small_disk_offering = DiskOffering.list(self.apiclient, name='Small')[0];
         small_virtual_machine = VirtualMachine.create(
@@ -895,8 +895,8 @@ class TestVMLifeCycle(cloudstackTestCase):
         )
         small_virtual_machine.attach_volume(self.apiclient, vol1)
         self.debug("Clone VM - ID: %s" % small_virtual_machine.id)
-        small_virtual_machine.clone(self.apiclient)
-        self.assertEqual(VirtualMachine.list(self.apiclient, id=small_virtual_machine.id), None, "List response contains records when it should not")
+        clone_response = small_virtual_machine.clone(self.apiclient, small_virtual_machine)
+        self.assertEqual(VirtualMachine.list(self.apiclient, id=clone_response.id), None, "List response contains records when it should not")
 
 class TestSecuredVmMigration(cloudstackTestCase):
 
