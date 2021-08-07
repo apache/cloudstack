@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="take-snapshot">
+  <div class="take-snapshot" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading || actionLoading">
       <a-alert type="warning">
         <span slot="message" v-html="$t('label.header.volume.take.snapshot')" />
@@ -82,6 +82,7 @@
             v-if="handleShowButton()"
             :loading="actionLoading"
             type="primary"
+            ref="submit"
             @click="handleSubmit">
             {{ this.$t('label.ok') }}
           </a-button>
@@ -93,7 +94,7 @@
 
 <script>
 import { api } from '@/api'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'TakeSnapshot',
@@ -124,11 +125,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.createSnapshot || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('createSnapshot')
   },
   mounted () {
     this.quiescevm = this.resource.quiescevm
@@ -137,7 +134,8 @@ export default {
   methods: {
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFieldsAndScroll((error, values) => {
+      if (this.actionLoading) return
+      this.form.validateFields((error, values) => {
         if (error) {
           return
         }
@@ -171,15 +169,9 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
-              successMethod: result => {
-                const successDescription = result.jobresult.snapshot.name
-                this.$store.dispatch('AddAsyncJob', {
-                  title: title,
-                  jobid: jobId,
-                  description: successDescription,
-                  status: 'progress'
-                })
-              },
+              title: title,
+              description: values.name || this.resource.id,
+              successMethod: result => {},
               loadingMessage: `${title} ${this.$t('label.in.progress.for')} ${description}`,
               catchMessage: this.$t('error.fetching.async.job.result')
             })
@@ -265,13 +257,5 @@ export default {
   font-weight: 500;
   color: rgba(0, 0, 0, 0.85);
   margin-bottom: 12px;
-}
-
-.action-button {
-  text-align: right;
-
-  button {
-    margin-right: 5px;
-  }
 }
 </style>

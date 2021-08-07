@@ -76,7 +76,7 @@
                       <a-input ref="input" :value="inputKey" @change="e => inputKey = e.target.value" style="width: 50px; text-align: center" :placeholder="$t('label.key')" />
                       <a-input style=" width: 20px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
                       <a-input :value="inputValue" @change="handleValueChange" style="width: 50px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-                      <tooltip-button icon="close" size="small" @click="inputKey = inputValue = ''" />
+                      <tooltip-button :tooltip="$t('label.clear')" icon="close" size="small" @click="inputKey = inputValue = ''" />
                     </a-input-group>
                   </div>
                 </div>
@@ -112,9 +112,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'SearchView',
+  components: {
+    TooltipButton
+  },
   props: {
     searchFilters: {
       type: Array,
@@ -129,7 +133,6 @@ export default {
       default: () => {}
     }
   },
-  inject: ['parentSearch', 'parentChangeFilter'],
   data () {
     return {
       searchQuery: null,
@@ -415,7 +418,7 @@ export default {
     onSearch (value) {
       this.paramsFilter = {}
       this.searchQuery = value
-      this.parentSearch({ searchQuery: this.searchQuery })
+      this.$emit('search', { searchQuery: this.searchQuery })
     },
     onClear () {
       this.searchFilters.map(item => {
@@ -428,7 +431,7 @@ export default {
       this.inputValue = null
       this.searchQuery = null
       this.paramsFilter = {}
-      this.parentSearch(this.paramsFilter)
+      this.$emit('search', this.paramsFilter)
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -451,7 +454,7 @@ export default {
             this.paramsFilter['tags[0].value'] = this.inputValue
           }
         }
-        this.parentSearch(this.paramsFilter)
+        this.$emit('search', this.paramsFilter)
       })
     },
     handleKeyChange (e) {
@@ -461,7 +464,7 @@ export default {
       this.inputValue = e.target.value
     },
     changeFilter (filter) {
-      this.parentChangeFilter(filter)
+      this.$emit('change-filter', filter)
     }
   }
 }

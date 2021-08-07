@@ -635,6 +635,9 @@ class VirtualMachine:
         if rootdiskcontroller:
             cmd.details[0]["rootDiskController"] = rootdiskcontroller
 
+        if "size" in services:
+            cmd.size = services["size"]
+
         if group:
             cmd.group = group
 
@@ -2295,6 +2298,9 @@ class ServiceOffering:
 
         if "offerha" in services:
             cmd.offerha = services["offerha"]
+
+        if "provisioningtype" in services:
+            cmd.provisioningtype = services["provisioningtype"]
 
         if "dynamicscalingenabled" in services:
             cmd.dynamicscalingenabled = services["dynamicscalingenabled"]

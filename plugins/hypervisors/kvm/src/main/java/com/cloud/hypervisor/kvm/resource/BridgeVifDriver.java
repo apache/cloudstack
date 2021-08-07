@@ -376,7 +376,9 @@ public class BridgeVifDriver extends VifDriverBase {
             command.add("-v", vNetId);
             command.add("-p", pName);
             command.add("-b", brName);
-            command.add("-d", String.valueOf(deleteBr));
+            if (cmdout != null && !cmdout.contains("vxlan")) {
+                command.add("-d", String.valueOf(deleteBr));
+            }
 
             final String result = command.execute();
             if (result != null) {

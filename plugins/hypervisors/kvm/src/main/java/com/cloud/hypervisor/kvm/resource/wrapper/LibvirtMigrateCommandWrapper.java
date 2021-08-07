@@ -76,6 +76,7 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachine;
 import com.google.common.base.Strings;
 
 @ResourceWrapper(handles =  MigrateCommand.class)
@@ -180,6 +181,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
 
             dconn = libvirtUtilitiesHelper.retrieveQemuConnection(destinationUri);
+
+            if (to.getType() == VirtualMachine.Type.User) {
+                libvirtComputingResource.detachAndAttachConfigDriveISO(conn, vmName);
+            }
 
             //run migration in thread so we can monitor it
             s_logger.info("Live migration of instance " + vmName + " initiated to destination host: " + dconn.getURI());

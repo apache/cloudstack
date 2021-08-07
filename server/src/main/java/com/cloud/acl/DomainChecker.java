@@ -105,7 +105,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Override
     public boolean checkAccess(Account caller, Domain domain) throws PermissionDeniedException {
         if (caller.getState() != Account.State.enabled) {
-            throw new PermissionDeniedException(caller + " is disabled.");
+            throw new PermissionDeniedException("Account " + caller.getAccountName() + " is disabled.");
         }
 
         if (domain == null) {
@@ -116,10 +116,10 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 
         if (_accountService.isNormalUser(caller.getId())) {
             if (caller.getDomainId() != domainId) {
-                throw new PermissionDeniedException(caller + " does not have permission to operate within domain id=" + domain.getUuid());
+                throw new PermissionDeniedException("Account " + caller.getAccountName() + " does not have permission to operate within domain id=" + domain.getUuid());
             }
         } else if (!_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
-            throw new PermissionDeniedException(caller + " does not have permission to operate within domain id=" + domain.getUuid());
+            throw new PermissionDeniedException("Account " + caller.getAccountName() + " does not have permission to operate within domain id=" + domain.getUuid());
         }
 
         return true;
@@ -155,7 +155,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                 // account can launch a VM from this template
                 LaunchPermissionVO permission = _launchPermissionDao.findByTemplateAndAccount(template.getId(), caller.getId());
                 if (permission == null) {
-                    throw new PermissionDeniedException(caller + " does not have permission to launch instances from " + template);
+                    throw new PermissionDeniedException("Account " + caller.getAccountName() +
+                            " does not have permission to launch instances from template " + template.getName());
                 }
             } else {
                 // Domain admin and regular user can delete/modify only templates created by them

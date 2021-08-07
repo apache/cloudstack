@@ -89,6 +89,9 @@ public interface CapacityManager {
                     ConfigKey.Scope.ImageStore,
                     null);
 
+    static final ConfigKey<Float> SecondaryStorageCapacityThreshold = new ConfigKey<Float>("Advanced", Float.class, "secondary.storage.capacity.threshold", "0.90",
+            "Percentage (as a value between 0 and 1) of secondary storage capacity threshold.", true);
+
     public boolean releaseVmCapacity(VirtualMachine vm, boolean moveFromReserved, boolean moveToReservered, Long hostId);
 
     void allocateVmCapacity(VirtualMachine vm, boolean fromLastHost);

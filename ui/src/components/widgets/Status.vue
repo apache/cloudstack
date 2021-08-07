@@ -72,6 +72,15 @@ export default {
           case 'Error':
             state = this.$t('state.error')
             break
+          case 'ReadOnly':
+            state = this.$t('state.readonly')
+            break
+          case 'ReadWrite':
+            state = this.$t('state.readwrite')
+            break
+          case 'InProgress':
+            state = this.$t('state.inprogress')
+            break
         }
         return state.charAt(0).toUpperCase() + state.slice(1)
       }
@@ -94,8 +103,11 @@ export default {
         case 'Successfully Installed':
         case 'ReadWrite':
         case 'True':
+        case 'true':
         case 'Up':
         case 'enabled':
+        case 'PowerOn':
+        case 'success':
           status = 'success'
           break
         case 'Alert':
@@ -105,8 +117,10 @@ export default {
         case 'Down':
         case 'Error':
         case 'False':
+        case 'false':
         case 'Stopped':
-        case 'ReadOnly':
+        case 'PowerOff':
+        case 'failed':
           status = 'error'
           break
         case 'Migrating':
@@ -114,6 +128,7 @@ export default {
         case 'Starting':
         case 'Stopping':
         case 'Upgrading':
+        case 'InProgress':
           status = 'processing'
           break
         case 'Allocated':
@@ -126,6 +141,7 @@ export default {
         case 'Created':
         case 'Maintenance':
         case 'Pending':
+        case 'ReadOnly':
           status = 'warning'
           break
       }

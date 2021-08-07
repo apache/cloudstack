@@ -14,19 +14,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.usage.dao;
 
-import java.util.List;
-
-import com.cloud.usage.ExternalPublicIpStatisticsVO;
-import com.cloud.utils.db.GenericDao;
-
-public interface ExternalPublicIpStatisticsDao extends GenericDao<ExternalPublicIpStatisticsVO, Long> {
-
-    ExternalPublicIpStatisticsVO lock(long accountId, long zoneId, String publicIpAddress);
-
-    ExternalPublicIpStatisticsVO findBy(long accountId, long zoneId, String publicIpAddress);
-
-    List<ExternalPublicIpStatisticsVO> listBy(long accountId, long zoneId);
-
+export default {
+  name: 'tools',
+  title: 'label.tools',
+  icon: 'tool',
+  permission: ['listInfrastructure'],
+  children: [
+    {
+      name: 'manageinstances',
+      title: 'label.action.import.export.instances',
+      icon: 'interaction',
+      docHelp: 'adminguide/virtual_machines.html#importing-and-unmanaging-virtual-machine',
+      resourceType: 'UserVm',
+      permission: ['listUnmanagedInstances'],
+      component: () => import('@/views/tools/ManageInstances.vue')
+    }
+  ]
 }
