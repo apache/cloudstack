@@ -1947,7 +1947,7 @@ class TestCloneVM(cloudstackTestCase):
     
     @classmethod
     def setUpClass(cls):
-        testClient = super(TestVMLifeCycle, cls).getClsTestClient()
+        testClient = super(TestCloneVM, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
         cls.hypervisor = testClient.getHypervisorInfo()
@@ -2028,7 +2028,7 @@ class TestCloneVM(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super(TestVMLifeCycle, cls).tearDownClass()
+        super(TestCloneVM, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
