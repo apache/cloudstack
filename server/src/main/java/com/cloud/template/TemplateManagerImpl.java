@@ -1813,6 +1813,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 s_logger.info("successfully created the template with Id: " + templateId);
                 finalTmpProduct = _tmpltDao.findById(templateId);
                 TemplateDataStoreVO srcTmpltStore = _tmplStoreDao.findByStoreTemplate(store.getId(), templateId);
+                try {
+                    srcTmpltStore.getSize();
+                } catch (NullPointerException e) {
+                    srcTmpltStore.setSize(0L);
+                    _tmplStoreDao.update(srcTmpltStore.getId(), srcTmpltStore);
+                }
                 UsageEventVO usageEvent =
                         new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, finalTmpProduct.getAccountId(), zoneId, finalTmpProduct.getId(), finalTmpProduct.getName(), null,
                                 finalTmpProduct.getSourceTemplateId(), srcTmpltStore.getPhysicalSize(), finalTmpProduct.getSize());
