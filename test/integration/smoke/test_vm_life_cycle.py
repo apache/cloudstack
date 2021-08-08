@@ -900,7 +900,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         except Exception as e:
             self.debug("Clone --" + str(e))
             raise e
-        self.assertEqual(VirtualMachine.list(self.apiclient, id=clone_response.id), None, "List response contains records when it should not")
+        self.assertTrue(VirtualMachine.list(self.apiclient, id=clone_response.id) is not None, "vm id should be populated")
 
 class TestSecuredVmMigration(cloudstackTestCase):
 
