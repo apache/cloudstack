@@ -748,6 +748,8 @@ class VirtualMachine:
         """"Clone the instance"""
         cmd = cloneVirtualMachine.cloneVirtualMachineCmd()
         cmd.virtualmachineid = vm.id
+        if vm.id is None:
+            cmd.virtualmachineid = self.id
         response = apiclient.cloneVirtualMachine(cmd)
         temp = self.id
         self.id = response.id

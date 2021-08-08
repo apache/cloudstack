@@ -895,7 +895,11 @@ class TestVMLifeCycle(cloudstackTestCase):
         )
         small_virtual_machine.attach_volume(self.apiclient, vol1)
         self.debug("Clone VM - ID: %s" % small_virtual_machine.id)
-        clone_response = small_virtual_machine.clone(self.apiclient, small_virtual_machine)
+        try:
+            clone_response = small_virtual_machine.clone(self.apiclient, small_virtual_machine)
+        except Exception as e:
+            self.debug("Clone --" + str(e))
+            raise e
         self.assertEqual(VirtualMachine.list(self.apiclient, id=clone_response.id), None, "List response contains records when it should not")
 
 class TestSecuredVmMigration(cloudstackTestCase):
