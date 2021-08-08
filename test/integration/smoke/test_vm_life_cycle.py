@@ -885,7 +885,7 @@ class TestVMLifeCycle(cloudstackTestCase):
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.small_offering.id,
-            rootdisksize=100,)
+            rootdisksize=1,)
         vol1 = Volume.create(
             self.apiclient,
             self.services,
