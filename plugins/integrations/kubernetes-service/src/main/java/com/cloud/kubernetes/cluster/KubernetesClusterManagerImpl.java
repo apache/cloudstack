@@ -33,7 +33,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -200,8 +199,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected VMTemplateDao templateDao;
     @Inject
     protected TemplateJoinDao templateJoinDao;
-    @Inject
-    protected UserDao userDao;
     @Inject
     protected AccountService accountService;
     @Inject
@@ -1273,29 +1270,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         response.setConfigData(configData);
         response.setObjectName("clusterconfig");
         return response;
-    }
-
-    private String[] getServiceUserKeys(Account owner) {
-        if (owner == null) {
-            owner = CallContext.current().getCallingAccount();
-        }
-        String username = owner.getAccountName() + "-" + KUBEADMIN_ACCOUNT_NAME;
-        UserAccount kubeadmin = accountService.getActiveUserAccount(username, owner.getDomainId());
-        String[] keys = null;
-        if (kubeadmin == null) {
-            User kube = userDao.persist(new UserVO(owner.getAccountId(), username, UUID.randomUUID().toString(), owner.getAccountName(),
-                KUBEADMIN_ACCOUNT_NAME, "kubeadmin", null, UUID.randomUUID().toString(), User.Source.UNKNOWN));
-            keys = accountService.createApiKeyAndSecretKey(kube.getId());
-        } else {
-            String apiKey = kubeadmin.getApiKey();
-            String secretKey = kubeadmin.getSecretKey();
-            if (Strings.isNullOrEmpty(apiKey) || Strings.isNullOrEmpty(secretKey)) {
-                keys = accountService.createApiKeyAndSecretKey(kubeadmin.getId());
-            } else {
-                keys = new String[]{apiKey, secretKey};
-            }
-        }
-        return keys;
     }
 
     @Override

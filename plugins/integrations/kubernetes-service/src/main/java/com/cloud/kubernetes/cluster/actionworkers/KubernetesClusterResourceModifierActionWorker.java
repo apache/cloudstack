@@ -623,7 +623,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 if (!result.first()) {
                     logMessage(Level.INFO, "Autoscaling files missing. Adding them now", null);
                     retrieveScriptFiles();
-                    copyAutoscalerScripts(publicIpAddress, sshPort);
+                    copyScripts(publicIpAddress, sshPort);
 
                     if (!createCloudStackSecret(keys)) {
                         logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",

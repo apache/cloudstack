@@ -587,18 +587,6 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return true;
     }
 
-    private void copyAutoscalerScriptsToNodes(String publicIpAddress, int sshPort, List<UserVm> clusterVMs) {
-        for (int i = 0; i < clusterVMs.size(); ++i) {
-            try {
-                // Check for shared networks
-                int port = (sshPort == CLUSTER_NODES_DEFAULT_START_SSH_PORT) ? sshPort + i : sshPort;
-                copyAutoscalerScripts(publicIpAddress, port);
-            } catch (Exception e) {
-                throw new CloudRuntimeException(e);
-            }
-        }
-    }
-
     public boolean startStoppedKubernetesCluster() throws CloudRuntimeException {
         init();
         if (LOGGER.isInfoEnabled()) {
