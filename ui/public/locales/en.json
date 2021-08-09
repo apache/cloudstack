@@ -742,7 +742,7 @@
 "label.deployasis":"Read VM settings from OVA",
 "label.deploymentplanner": "Deployment planner",
 "label.description": "Description",
-"label.desc.importexportinstancewizard": "Import and export instances to /from an existing VMware cluster.",
+"label.desc.importexportinstancewizard": "Import and export instances to/from an existing VMware cluster.",
 "label.destcidr": "Destination CIDR",
 "label.destination": "Destination",
 "label.destinationphysicalnetworkid": "Destination physical network ID",
