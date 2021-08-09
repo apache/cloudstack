@@ -22,8 +22,10 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,11 +42,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import com.cloud.agent.api.GetStoragePoolCapabilitiesAnswer;
 import com.cloud.agent.api.GetStoragePoolCapabilitiesCommand;
+import com.cloud.upgrade.SystemVmTemplateRegistration;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
@@ -2721,6 +2725,40 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             // populate template_store_ref table
             _imageSrv.addSystemVMTemplatesToSecondary(store);
             _imageSrv.handleTemplateSync(store);
+            if (providerName.equals(DataStoreProvider.NFS_IMAGE) && zoneId != null) {
+                List<ImageStoreVO> stores = _imageStoreDao.listAllStoresInZone(zoneId, providerName, DataStoreRole.Image);
+                stores = stores.stream().filter(str -> str.getId() != store.getId()).collect(Collectors.toList());
+                // Check if it's the only/first store in the zone
+                if (stores.size() == 0) {
+                    List<HypervisorType> hypervisorTypes = _clusterDao.getAvailableHypervisorInZone(zoneId);
+                    Set<HypervisorType> hypSet = new HashSet<HypervisorType>(hypervisorTypes);
+                    TransactionLegacy txn = TransactionLegacy.open("AutomaticTemplateRegister");
+                    Connection conn;
+                    try {
+                        conn = txn.getConnection();
+                        Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
+                        for (HypervisorType hypervisorType : hypSet) {
+                            try {
+                                Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName =
+                                        new Pair<>(hypervisorType, SystemVmTemplateRegistration.NewTemplateNameList.get(hypervisorType));
+                                long templateId = SystemVmTemplateRegistration.isTemplateAlreadyRegistered(conn, hypervisorAndTemplateName);
+                                if (templateId != -1) {
+                                    continue;
+                                }
+                                SystemVmTemplateRegistration.registerTemplate(conn, hypervisorAndTemplateName, storeUrlAndId);
+                            } catch (CloudRuntimeException e) {
+                                s_logger.error(String.format("Failed to register systemVM template for hypervisor: %s", hypervisorType.name()));
+                            }
+                        }
+                    } catch (SQLException e) {
+                        s_logger.error("Failed to register systemVM template(s)");
+                    } finally {
+                        SystemVmTemplateRegistration.unmountStore();
+                        txn.commit();
+                        txn.close();
+                    }
+                }
+            }
         }
 
         // associate builtin template with zones associated with this image store

@@ -72,7 +72,6 @@ public class Upgrade41510to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
     @SuppressWarnings("serial")
     public void updateSystemVmTemplates(final Connection conn) {
         LOG.debug("Updating System Vm template IDs");
-        SystemVmTemplateRegistration.parseMetadataFile();
         final Set<Hypervisor.HypervisorType> hypervisorsListInUse = new HashSet<Hypervisor.HypervisorType>();
         try (PreparedStatement pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null"); ResultSet rs = pstmt.executeQuery()) {
             while (rs.next()) {
