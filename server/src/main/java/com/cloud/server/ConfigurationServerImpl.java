@@ -934,7 +934,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         diskOfferingVO = _diskOfferingDao.persistDefaultDiskOffering(diskOfferingVO);
 
         ServiceOfferingVO offering =
-                new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, offerHA, displayText, provisioningType, localStorageRequired, false, tags, false, null, false);
+                new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, offerHA, displayText, false, null, false);
         offering.setUniqueName("Cloud.Com-" + name);
         offering.setDiskOfferingId(diskOfferingVO.getId());
         // leaving the above reference to cloud.com in as it is an identifyer and has no real world relevance

@@ -97,7 +97,6 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -452,7 +451,7 @@ public class UserVmManagerTest {
         boolean ha = false;
         boolean useLocalStorage = false;
 
-        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, Storage.ProvisioningType.THIN, useLocalStorage, false, null, false, null,
+        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, false, null,
                 false);
         return serviceOffering;
     }

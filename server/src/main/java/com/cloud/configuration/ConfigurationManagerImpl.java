@@ -2923,7 +2923,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         tags = com.cloud.utils.StringUtils.cleanupTags(tags);
 
         ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA,
-                limitResourceUse, volatileVm, displayText, typedProvisioningType, localStorageRequired, false, tags, isSystem, vmType,
+                limitResourceUse, volatileVm, displayText, isSystem, vmType,
                 hostTag, deploymentPlanner, dynamicScalingEnabled);
 
         List<ServiceOfferingDetailsVO> detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
@@ -2998,7 +2998,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     detailsVO.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
                 }
             }
-            if (!detailsVO.isEmpty()) {
+            if (CollectionUtils.isNotEmpty(detailsVO)) {
                 for (ServiceOfferingDetailsVO detail : detailsVO) {
                     detail.setResourceId(serviceOffering.getId());
                 }

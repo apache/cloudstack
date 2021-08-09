@@ -155,7 +155,7 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "the vsphere storage policy tagged to the disk offering in case of VMware", since = "4.15")
     private String vsphereStoragePolicy;
 
-    @SerializedName("disksizestrictness")
+    @SerializedName(ApiConstants.DISK_SIZE_STRICTNESS)
     @Param(description = "To allow or disallow the resize operation on the disks created from this disk offering, if the flag is true then resize is not allowed", since = "4.16")
     private Boolean diskSizeStrictness;
 

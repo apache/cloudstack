@@ -936,7 +936,7 @@ public class DatabaseConfig {
 
         ServiceOfferingVO serviceOffering =
             new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText,
-                    provisioningType, useLocalStorage, false, null, false, null, false);
+                    false, null, false);
 
         Long bytesReadRate = Long.parseLong(_currentObjectParams.get("bytesReadRate"));
         if ((bytesReadRate != null) && (bytesReadRate > 0))

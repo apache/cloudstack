@@ -33,7 +33,6 @@ import javax.persistence.Enumerated;
 import javax.persistence.EnumType;
 
 import com.cloud.offering.ServiceOffering;
-import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 
@@ -139,8 +138,7 @@ public class ServiceOfferingVO implements ServiceOffering {
     }
 
     public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText,
-            ProvisioningType provisioningType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vmType, boolean defaultUse) {
-        //super(name, displayText, provisioningType, false, tags, recreatable, useLocalStorage, systemUse, true);
+                             boolean systemUse, VirtualMachine.Type vmType, boolean defaultUse) {
         this.cpu = cpu;
         this.ramSize = ramSize;
         this.speed = speed;
@@ -158,9 +156,8 @@ public class ServiceOfferingVO implements ServiceOffering {
     }
 
     public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA,
-                             boolean limitResourceUse, boolean volatileVm, String displayText, ProvisioningType provisioningType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse,
+                             boolean limitResourceUse, boolean volatileVm, String displayText, boolean systemUse,
                              VirtualMachine.Type vmType, String hostTag, String deploymentPlanner, boolean dynamicScalingEnabled) {
-        //super(name, displayText, provisioningType, false, tags, recreatable, useLocalStorage, systemUse, true);
         this.cpu = cpu;
         this.ramSize = ramSize;
         this.speed = speed;
