@@ -75,7 +75,7 @@
         {{ returnAlgorithmName(record.algorithm) }}
       </template>
       <template #protocol="{record}">
-        {{ capitalise(record.protocol) }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template #stickiness="{record}">
         <a-button @click="() => openStickinessModal(record.id)">
@@ -666,6 +666,10 @@ export default {
       }
       return 'Configure'
     },
+    getCapitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
+    },
     openTagsModal (id) {
       this.tagsModalLoading = true
       this.tagsModalVisible = true
@@ -1169,10 +1173,6 @@ export default {
     onSearch (value) {
       this.searchQuery = value
       this.fetchVirtualMachines()
-    },
-    capitalise (val) {
-      if (val === 'all') return this.$t('label.all')
-      return val.toUpperCase()
     }
   }
 }

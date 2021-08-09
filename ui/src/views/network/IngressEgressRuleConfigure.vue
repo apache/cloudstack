@@ -90,7 +90,7 @@
       :pagination="{ pageSizeOptions: ['10', '20', '40', '80', '100', '200'], showSizeChanger: true}"
       :rowKey="record => record.ruleid">
       <template #protocol="{ record }">
-        {{ capitalise(record.protocol) }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template #account="{ record }">
         <div v-if="record.account && record.securitygroupname">
@@ -276,6 +276,10 @@ export default {
       this.tabType = this.$parent.tab === this.$t('label.ingress.rule') ? 'ingress' : 'egress'
       this.rules = this.tabType === 'ingress' ? this.resource.ingressrule : this.resource.egressrule
     },
+    getCapitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
+    },
     handleAddRule () {
       this.parentToggleLoading()
       api(this.tabType === 'ingress' ? 'authorizeSecurityGroupIngress' : 'authorizeSecurityGroupEgress', {
@@ -459,7 +463,6 @@ export default {
       this.resetRulePorts()
     },
     capitalise (val) {
-      if (val === 'all') return this.$t('label.all')
       return val.toUpperCase()
     }
   }

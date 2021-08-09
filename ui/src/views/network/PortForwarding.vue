@@ -87,7 +87,7 @@
         {{ record.publicport }} - {{ record.publicendport }}
       </template>
       <template #protocol="{record}">
-        {{ capitalise(record.protocol) }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template #vm="{record}">
         <div><a-icon type="desktop"/>
@@ -423,6 +423,10 @@ export default {
         this.loading = false
       })
     },
+    getCapitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
+    },
     deleteRule (rule) {
       this.loading = true
       api('deletePortForwardingRule', { id: rule.id }).then(response => {
@@ -643,10 +647,6 @@ export default {
     onSearch (value) {
       this.searchQuery = value
       this.fetchVirtualMachines()
-    },
-    capitalise (val) {
-      if (val === 'all') return this.$t('label.all')
-      return val.toUpperCase()
     }
   }
 }

@@ -64,7 +64,7 @@
       :pagination="false"
       :rowKey="record => record.id">
       <template #protocol="{ record }">
-        {{ capitalise(record.protocol) }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template #startport="{ record }">
         {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : $t('label.all') }}
@@ -231,6 +231,10 @@ export default {
         this.loading = false
       })
     },
+    getCapitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
+    },
     deleteRule (rule) {
       this.loading = true
       api('deleteFirewallRule', { id: rule.id }).then(response => {
@@ -385,7 +389,6 @@ export default {
       this.fetchData()
     },
     capitalise (val) {
-      if (val === 'all') return 'All'
       return val.toUpperCase()
     }
   }

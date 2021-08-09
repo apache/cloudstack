@@ -69,7 +69,7 @@
       :pagination="false"
       :rowKey="record => record.id">
       <template #protocol="{ record }">
-        {{ capitalise(record.protocol) }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template #startport="{ record }">
         {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : 'All' }}
@@ -192,6 +192,10 @@ export default {
         this.loading = false
       })
     },
+    getCapitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
+    },
     deleteRule (rule) {
       this.loading = true
       api('deleteEgressFirewallRule', { id: rule.id }).then(response => {
@@ -262,7 +266,6 @@ export default {
       this.fetchData()
     },
     capitalise (val) {
-      if (val === 'all') return this.$t('label.all')
       return val.toUpperCase()
     }
   }
