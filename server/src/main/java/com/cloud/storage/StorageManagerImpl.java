@@ -48,6 +48,7 @@ import javax.inject.Inject;
 
 import com.cloud.agent.api.GetStoragePoolCapabilitiesAnswer;
 import com.cloud.agent.api.GetStoragePoolCapabilitiesCommand;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
@@ -2642,6 +2643,29 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return null;
     }
 
+    private String getValidTemplateName(Long zoneId, HypervisorType hType) {
+        String templateName = null;
+        switch (hType) {
+            case XenServer:
+                templateName = VirtualNetworkApplianceManager.RouterTemplateXen.valueIn(zoneId);
+                break;
+            case KVM:
+                templateName = VirtualNetworkApplianceManager.RouterTemplateKvm.valueIn(zoneId);
+                break;
+            case VMware:
+                templateName = VirtualNetworkApplianceManager.RouterTemplateVmware.valueIn(zoneId);
+                break;
+            case Hyperv:
+                templateName = VirtualNetworkApplianceManager.RouterTemplateHyperV.valueIn(zoneId);
+                break;
+            case LXC:
+                templateName = VirtualNetworkApplianceManager.RouterTemplateLxc.valueIn(zoneId);
+                break;
+            default:
+                break;
+        }
+        return templateName;
+    }
     @Override
     public ImageStore discoverImageStore(String name, String url, String providerName, Long zoneId, Map details) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
@@ -2740,11 +2764,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
                         for (HypervisorType hypervisorType : hypSet) {
                             try {
+                                String templateName = getValidTemplateName(zoneId, hypervisorType);
                                 Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName =
-                                        new Pair<>(hypervisorType, SystemVmTemplateRegistration.NewTemplateNameList.get(hypervisorType));
+                                        new Pair<>(hypervisorType, templateName);
                                 long templateId = SystemVmTemplateRegistration.isTemplateAlreadyRegistered(conn, hypervisorAndTemplateName);
                                 if (templateId != -1) {
-                                    continue;
+                                     TemplateDataStoreVO templateVO = _templateStoreDao.findByTemplate(templateId, DataStoreRole.Image);
+                                    if (templateVO != null) {
+                                        if (SystemVmTemplateRegistration.validateIfSeeded(url, templateVO.getInstallPath())) {
+                                            continue;
+                                        }
+                                    }
                                 }
                                 SystemVmTemplateRegistration.registerTemplate(conn, hypervisorAndTemplateName, storeUrlAndId);
                             } catch (CloudRuntimeException e) {
