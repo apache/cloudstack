@@ -876,7 +876,6 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         self.assertEqual(Volume.list(self.apiclient, id=vol1.id), None, "List response contains records when it should not")
 
-
 class TestSecuredVmMigration(cloudstackTestCase):
 
     @classmethod
@@ -1943,3 +1942,129 @@ class TestVAppsVM(cloudstackTestCase):
             cmd = destroyVirtualMachine.destroyVirtualMachineCmd()
             cmd.id = vm.id
             self.apiclient.destroyVirtualMachine(cmd)
+
+class TestCloneVM(cloudstackTestCase):
+    
+    @classmethod
+    def setUpClass(cls):
+        testClient = super(TestCloneVM, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+        cls.hypervisor = testClient.getHypervisorInfo()
+
+        # Get Zone, Domain and templates
+        domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+        cls.services['mode'] = cls.zone.networktype
+
+        # if local storage is enabled, alter the offerings to use localstorage
+        # this step is needed for devcloud
+        if cls.zone.localstorageenabled == True:
+            cls.services["service_offerings"]["tiny"]["storagetype"] = 'local'
+            cls.services["service_offerings"]["small"]["storagetype"] = 'local'
+            cls.services["service_offerings"]["medium"]["storagetype"] = 'local'
+
+        template = get_suitable_test_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"],
+            cls.hypervisor
+        )
+        if template == FAILED:
+            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
+
+        # Set Zones and disk offerings
+        cls.services["small"]["zoneid"] = cls.zone.id
+        cls.services["small"]["template"] = template.id
+
+        cls.services["iso1"]["zoneid"] = cls.zone.id
+
+        # Create VMs, NAT Rules etc
+        cls.account = Account.create(
+            cls.apiclient,
+            cls.services["account"],
+            domainid=domain.id
+        )
+
+        cls.small_offering = ServiceOffering.create(
+            cls.apiclient,
+            cls.services["service_offerings"]["small"]
+        )
+
+        cls.medium_offering = ServiceOffering.create(
+            cls.apiclient,
+            cls.services["service_offerings"]["medium"]
+        )
+        # create small and large virtual machines
+        cls.small_virtual_machine = VirtualMachine.create(
+            cls.apiclient,
+            cls.services["small"],
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            serviceofferingid=cls.small_offering.id,
+            mode=cls.services["mode"]
+        )
+        cls.medium_virtual_machine = VirtualMachine.create(
+            cls.apiclient,
+            cls.services["small"],
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            serviceofferingid=cls.medium_offering.id,
+            mode=cls.services["mode"]
+        )
+        cls.virtual_machine = VirtualMachine.create(
+            cls.apiclient,
+            cls.services["small"],
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            serviceofferingid=cls.small_offering.id,
+            mode=cls.services["mode"]
+        )
+        cls._cleanup = [
+            cls.small_offering,
+            cls.medium_offering,
+            cls.account
+        ]
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestCloneVM, cls).tearDownClass()
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+
+    def tearDown(self):
+        try:
+            # Clean up, terminate the created ISOs
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(tags = ["clone","devcloud", "advanced", "smoke", "basic", "sg"], required_hardware="false")
+    def test_clone_vm_and_volumes(self):
+        small_disk_offering = DiskOffering.list(self.apiclient, name='Small')[0];
+        small_virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services["small"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.small_offering.id,)
+        vol1 = Volume.create(
+            self.apiclient,
+            self.services,
+            account=self.account.name,
+            diskofferingid=small_disk_offering.id,
+            domainid=self.account.domainid,
+            zoneid=self.zone.id
+        )
+        small_virtual_machine.attach_volume(self.apiclient, vol1)
+        self.debug("Clone VM - ID: %s" % small_virtual_machine.id)
+        try:
+            clone_response = small_virtual_machine.clone(self.apiclient, small_virtual_machine)
+        except Exception as e:
+            self.debug("Clone --" + str(e))
+            raise e
+        self.assertTrue(VirtualMachine.list(self.apiclient, id=clone_response.id) is not None, "vm id should be populated")

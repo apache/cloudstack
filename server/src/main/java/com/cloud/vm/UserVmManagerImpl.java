@@ -4638,6 +4638,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public Optional<UserVm> cloneVirtualMachine(CloneVMCmd cmd, VolumeApiService volumeService, SnapshotApiService snapshotService) throws ResourceUnavailableException, ConcurrentOperationException, CloudRuntimeException, InsufficientCapacityException, ResourceAllocationException {
         long vmId = cmd.getEntityId();
         UserVmVO curVm = _vmDao.findById(vmId);
+        Account curVmAccount = _accountDao.findById(curVm.getAccountId());
         // create and attach data disk
         long targetClonedVmId = cmd.getId();
         Account caller = CallContext.current().getCallingAccount();
@@ -4672,7 +4673,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     DataCenterVO dataCenter = _dcDao.findById(zoneId);
                     String volumeName = snapshotEntity.getName() + "-DataDisk-Volume";
                     VolumeVO parentVolume = _volsDao.findByIdIncludingRemoved(snapshotEntity.getVolumeId());
-                    newDatadisk = saveDataDiskVolumeFromSnapShot(caller, true, zoneId,
+                    newDatadisk = saveDataDiskVolumeFromSnapShot(curVmAccount, true, zoneId,
                             diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, volumeName, _uuidMgr.generateUuid(Volume.class, null), new HashMap<>());
                     VolumeVO volumeEntity = (VolumeVO) volumeService.cloneDataVolume(cmd, snapshotEntity.getId(), newDatadisk);
                     createdVolumes.add(volumeEntity);

@@ -744,6 +744,21 @@ class VirtualMachine:
         if response[0] == FAIL:
             raise Exception(response[1])
 
+    def clone(self, apiclient, vm):
+        """"Clone the instance"""
+        cmd = cloneVirtualMachine.cloneVirtualMachineCmd()
+        cmd.virtualmachineid = vm.id
+        if vm.id is None:
+            cmd.virtualmachineid = self.id
+        response = apiclient.cloneVirtualMachine(cmd)
+        temp = self.id
+        self.id = response.id
+        state = self.getState(apiclient, VirtualMachine.RUNNING)
+        self.id = temp
+        if (state[0] == FAIL):
+            raise Exception(state[1])
+        return response
+
     def recover(self, apiclient):
         """Recover the instance"""
         cmd = recoverVirtualMachine.recoverVirtualMachineCmd()
