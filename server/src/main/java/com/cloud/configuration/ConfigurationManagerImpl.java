@@ -411,6 +411,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     protected Set<String> configValuesForValidation;
     private Set<String> weightBasedParametersForValidation;
     private Set<String> overprovisioningFactorsForValidation;
+    public static final String VM_USERDATA_MAX_LENGTH_STRING = "vm.userdata.max.length";
 
     public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.", false, ConfigKey.Scope.Zone, null);
@@ -429,6 +430,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public static final ConfigKey<Boolean> SET_HOST_DOWN_TO_MAINTENANCE = new ConfigKey<Boolean>(Boolean.class, "set.host.down.to.maintenance", "Advanced", "false",
                         "Indicates whether the host in down state can be put into maintenance state so thats its not enabled after it comes back.",
                         true, ConfigKey.Scope.Zone, null);
+
+    public static final ConfigKey<Integer> VM_USERDATA_MAX_LENGTH = new ConfigKey<Integer>("Advanced", Integer.class, VM_USERDATA_MAX_LENGTH_STRING, "32768",
+            "Max length of vm userdata after base64 decoding. Default is 32768 and maximum is 1048576", true);
 
     private static final String IOPS_READ_RATE = "IOPS Read";
     private static final String IOPS_WRITE_RATE = "IOPS Write";
@@ -484,6 +488,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add(StorageManager.STORAGE_POOL_DISK_WAIT.key());
         configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.key());
         configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_MAX_CONNECTIONS.key());
+        configValuesForValidation.add(VM_USERDATA_MAX_LENGTH_STRING);
     }
 
     private void weightBasedParametersForValidation() {
@@ -956,6 +961,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                     if (val > 256) {
                         throw new InvalidParameterValueException("Please enter a value less than 257 for the configuration parameter:" + name);
+                    }
+                }
+                if (VM_USERDATA_MAX_LENGTH_STRING.equalsIgnoreCase(name)) {
+                    if (val > 1048576) {
+                        throw new InvalidParameterValueException("Please enter a value less than 1048576 for the configuration parameter:" + name);
                     }
                 }
             } catch (final NumberFormatException e) {
@@ -6519,6 +6529,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {SystemVMUseLocalStorage, IOPS_MAX_READ_LENGTH, IOPS_MAX_WRITE_LENGTH,
-                BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE};
+                BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE,
+                VM_USERDATA_MAX_LENGTH};
     }
 }
