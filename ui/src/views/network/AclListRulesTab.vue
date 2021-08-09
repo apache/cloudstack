@@ -243,7 +243,6 @@ export default {
   },
   filters: {
     capitalise: val => {
-      if (val === 'all') return this.$t('label.all')
       return val.toUpperCase()
     }
   },

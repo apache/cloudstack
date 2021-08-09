@@ -87,7 +87,7 @@
         {{ record.publicport }} - {{ record.publicendport }}
       </template>
       <template slot="protocol" slot-scope="record">
-        {{ record.protocol | capitalise }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template slot="vm" slot-scope="record">
         <div><a-icon type="desktop"/>
@@ -381,12 +381,6 @@ export default {
       this.fetchData()
     }
   },
-  filters: {
-    capitalise: val => {
-      if (val === 'all') return this.$t('label.all')
-      return val.toUpperCase()
-    }
-  },
   methods: {
     fetchData () {
       this.fetchListTiers()
@@ -428,6 +422,10 @@ export default {
       }).finally(() => {
         this.loading = false
       })
+    },
+    getCapitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
     },
     deleteRule (rule) {
       this.loading = true
