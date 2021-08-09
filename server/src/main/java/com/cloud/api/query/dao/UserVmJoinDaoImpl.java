@@ -376,7 +376,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         return userVmResponse;
     }
 
-    private void addVmRxTxDataToResponse(final UserVmJoinVO userVm, final UserVmResponse userVmResponse) {
+    private void addVmRxTxDataToResponse(UserVmJoinVO userVm, UserVmResponse userVmResponse) {
         Long bytesReceived = 0L;
         Long bytesSent = 0L;
         SearchBuilder<UserStatisticsVO> sb = userStatsDao.createSearchBuilder();

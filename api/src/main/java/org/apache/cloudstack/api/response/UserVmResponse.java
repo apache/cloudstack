@@ -931,12 +931,12 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     public Date getLastUpdated() {
         return lastUpdated;
     }
-    
-    public void setBytesReceived(final Long bytesReceived) {
+
+    public void setBytesReceived(Long bytesReceived) {
         this.bytesReceived = bytesReceived;
     }
 
-    public void setBytesSent(final Long bytesSent) {
+    public void setBytesSent(Long bytesSent) {
         this.bytesSent = bytesSent;
     }
 }

@@ -504,7 +504,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.created = created;
     }
 
-    public void setBytesReceived(final Long bytesReceived) {
+    public void setBytesReceived(Long bytesReceived) {
         this.bytesReceived = bytesReceived;
     }
 
