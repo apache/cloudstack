@@ -83,7 +83,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private Date created;
 
     @SerializedName("lastupdated")
-    @Param(description="the date when this virtual machine was updated last time")
+    @Param(description="the date when this virtual machine was updated last time", since="4.16.0")
     private Date lastUpdated;
 
     @SerializedName(ApiConstants.STATE)
