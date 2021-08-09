@@ -108,6 +108,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
+    @Column(name="update_time")
+    private Date lastUpdated;
+
     @Column(name = "instance_name", updatable = true, nullable = false)
     private String instanceName;
 
@@ -489,6 +492,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public Date getRemoved() {
         return removed;
+    }
+
+    public Date getLastUpdated() {
+        return lastUpdated;
     }
 
     public String getInstanceName() {
