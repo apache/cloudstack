@@ -931,7 +931,7 @@ export default {
 
       this.showAction = true
       for (const param of this.currentAction.paramFields) {
-        if (param.type === 'list' && ['tags', 'hosttags'].includes(param.name)) {
+        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags'].includes(param.name)) {
           param.type = 'string'
         }
         if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
@@ -1185,15 +1185,15 @@ export default {
               break
             }
           }
-          if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
-            this.$store.dispatch('UpdateConfiguration')
-          }
-          if (jobId) {
-            eventBus.$emit('update-resource-state', this.selectedItems, resource, 'InProgress', jobId)
-            resolve(this.pollActionCompletion(jobId, action, resourceName, resource, showLoading))
-          }
-          resolve(false)
         }
+        if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
+          this.$store.dispatch('UpdateConfiguration')
+        }
+        if (jobId) {
+          eventBus.$emit('update-resource-state', this.selectedItems, resource, 'InProgress', jobId)
+          resolve(this.pollActionCompletion(jobId, action, resourceName, resource, showLoading))
+        }
+        resolve(false)
       })
     },
     execSubmit (e) {
@@ -1214,13 +1214,13 @@ export default {
               continue
             }
             if (input === undefined || input === null ||
-              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering'].includes(action.api))) {
+              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering', 'updateServiceOffering'].includes(action.api))) {
               if (param.type === 'boolean') {
                 params[key] = false
               }
               break
             }
-            if (input === '' && !['tags'].includes(key)) {
+            if (input === '' && !['tags', 'hosttags', 'storagetags'].includes(key)) {
               break
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {

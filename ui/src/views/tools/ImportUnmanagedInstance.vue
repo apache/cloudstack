@@ -131,7 +131,9 @@
                 @handle-search-filter="($event) => fetchComputeOfferings($event)" />
               <compute-selection
                 class="row-element"
-                v-if="computeOffering && computeOffering.iscustomized"
+                v-if="computeOffering && (computeOffering.iscustomized || computeOffering.iscustomizediops)"
+                :isCustomized="computeOffering.iscustomized"
+                :isCustomizedIOps="'iscustomizediops' in computeOffering && computeOffering.iscustomizediops"
                 :cpuNumberInputDecorator="cpuNumberKey"
                 :cpuSpeedInputDecorator="cpuSpeedKey"
                 :memoryInputDecorator="memoryKey"
@@ -142,6 +144,7 @@
                 :maxCpu="getMaxCpu()"
                 :minMemory="getMinMemory()"
                 :maxMemory="getMaxMemory()"
+                @update-iops-value="updateFieldValue"
                 @update-compute-cpunumber="updateFieldValue"
                 @update-compute-cpuspeed="updateFieldValue"
                 @update-compute-memory="updateFieldValue" />
@@ -278,6 +281,8 @@ export default {
       cpuNumberKey: 'cpuNumber',
       cpuSpeedKey: 'cpuSpeed',
       memoryKey: 'memory',
+      minIopsKey: 'minIops',
+      maxIopsKey: 'maxIops',
       switches: {},
       loading: false
     }
@@ -296,6 +301,8 @@ export default {
     this.form.getFieldDecorator(this.cpuNumberKey, { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator(this.cpuSpeedKey, { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator(this.memoryKey, { initialValue: undefined, preserve: true })
+    this.form.getFieldDecorator(this.minIopsKey, { initialValue: undefined, preserve: true })
+    this.form.getFieldDecorator(this.maxIopsKey, { initialValue: undefined, preserve: true })
   },
   computed: {
     params () {
@@ -524,8 +531,6 @@ export default {
       })
     },
     updateFieldValue (name, value) {
-      if (name === this.cpuNumberKey) {
-      }
       this.form.setFieldsValue({
         [name]: value
       })
@@ -533,6 +538,10 @@ export default {
     updateComputeOffering (id) {
       this.updateFieldValue('computeofferingid', id)
       this.computeOffering = this.computeOfferings.filter(x => x.id === id)[0]
+      if (this.computeOffering && !this.computeOffering.iscustomizediops) {
+        this.updateFieldValue(this.minIopsKey, undefined)
+        this.updateFieldValue(this.maxIopsKey, undefined)
+      }
     },
     updateMultiDiskOffering (data) {
       this.dataDisksOfferingsMapping = data
@@ -611,6 +620,25 @@ export default {
             }
           }
         }
+        if (this.computeOffering.iscustomizediops) {
+          var iopsDetails = [this.minIopsKey, this.maxIopsKey]
+          for (var iopsDetail of iopsDetails) {
+            if (!values[iopsDetail] || values[iopsDetail] < 0) {
+              this.$notification.error({
+                message: this.$t('message.request.failed'),
+                description: this.$t('message.please.enter.valid.value') + ': ' + this.$t('label.' + iopsDetail.toLowerCase())
+              })
+              return
+            }
+            params['details[0].' + iopsDetail] = values[iopsDetail]
+          }
+          if (values[this.minIopsKey] > values[this.maxIopsKey]) {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('error.form.message')
+            })
+          }
+        }
         var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced']
         if (this.templateType !== 'auto') {
           keys.push('templateid')
@@ -663,14 +691,10 @@ export default {
         const name = this.resource.name
         api('importUnmanagedInstance', params).then(json => {
           const jobId = json.importunmanagedinstanceresponse.jobid
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.import.instance'),
-            jobid: jobId,
-            description: name,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId,
+            title: this.$t('label.import.instance'),
+            description: name,
             loadingMessage: `${this.$t('label.import.instance')} ${name} ${this.$t('label.in.progress')}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
             successMessage: this.$t('message.success.import.instance') + ' ' + name,
