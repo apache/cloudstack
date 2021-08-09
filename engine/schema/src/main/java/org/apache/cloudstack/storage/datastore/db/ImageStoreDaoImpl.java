@@ -140,4 +140,13 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
         sc.addAnd("dcId", SearchCriteria.Op.EQ, zoneId);
         return listBy(sc);
     }
+
+    @Override
+    public List<ImageStoreVO> listAllStoresInZone(long zoneId, String provider, DataStoreRole role) {
+        SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
+        sc.setParameters("data_center_id", zoneId);
+        sc.setParameters("role", role);
+        sc.setParameters("image_provider_name", provider);
+        return listBy(sc);
+    }
 }

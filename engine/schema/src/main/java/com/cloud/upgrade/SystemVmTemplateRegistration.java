@@ -293,7 +293,7 @@ public class SystemVmTemplateRegistration {
         }
     }
 
-    static long isTemplateAlreadyRegistered(Connection conn, Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName) {
+    public static long isTemplateAlreadyRegistered(Connection conn, Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName) {
         long templateId = -1;
         try {
             PreparedStatement pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = ? and removed is null order by id desc limit 1");
@@ -411,33 +411,6 @@ public class SystemVmTemplateRegistration {
             LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
 
-        }
-    }
-    private static String getTemplateFolderName(Connection conn) {
-        Long templateId = null;
-        try {
-            PreparedStatement pstmt = conn.prepareStatement(FETCH_FOLDER_NAME);
-            if(pstmt != null) {
-                ResultSet resultSet = pstmt.executeQuery();
-                while (resultSet.next()) {
-                    templateId = resultSet.getLong(1);
-                }
-            }
-            templateId += 1L;
-        } catch (SQLException e) {
-            String errMsg = "Failed to get folder name";
-            LOGGER.error(errMsg);
-            throw new CloudRuntimeException(errMsg);
-        }
-        return String.valueOf(templateId);
-    }
-
-    private static String getTemplateFolder(Connection conn) {
-        String folderName = getTemplateFolderName(conn);
-        if (folderName != null || !folderName.equals(0)) {
-            return folderName;
-        } else {
-            return "202";
         }
     }
 
@@ -619,7 +592,7 @@ public class SystemVmTemplateRegistration {
         }
     }
 
-    private static void unmountStore() {
+    public static void unmountStore() {
         try {
             LOGGER.info("Unmounting store");
             String umountCmd = String.format(umountCommand, TEMPORARY_SECONDARY_STORE);
