@@ -267,6 +267,26 @@ public class SystemVmTemplateRegistration {
         }
     };
 
+    public static boolean validateIfSeeded(String url, String path) {
+        try {
+            mountStore(url);
+            int lastIdx = path.lastIndexOf('/');
+            String partialDirPath = path.substring(0, lastIdx);
+            String templatePath = TEMPORARY_SECONDARY_STORE + "/" + partialDirPath;
+            File templateProps = new File(templatePath + "/template.properties");
+            if (templateProps.exists()) {
+                LOGGER.info("SystemVM template already seeded, skipping registration");
+                return true;
+            }
+            LOGGER.info("SystemVM template not seeded");
+            return false;
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to verify if the template is seeded");
+        } finally {
+            unmountStore();
+        }
+    }
+
     private static String calculateChecksum(MessageDigest digest, File file) {
         try {
             FileInputStream fis = new FileInputStream(file);
