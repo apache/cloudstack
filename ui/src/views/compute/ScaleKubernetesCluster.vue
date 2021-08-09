@@ -26,7 +26,7 @@
         :ref="formRef"
         :model="form"
         :rules="rules"
-        @submit="handleSubmit"
+        @finish="handleSubmit"
         layout="vertical">
         <a-form-item>
           <template #label>
@@ -65,7 +65,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button :loading="loading" type="primary" html-type="submit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -105,10 +105,7 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({
-        size: undefined,
-        serviceofferingid: undefined
-      })
+      this.form = reactive({})
       this.rules = reactive({
         size: [
           {

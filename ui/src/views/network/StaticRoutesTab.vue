@@ -45,10 +45,10 @@
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>
-        <a-form :ref="tagRef" :model="newTagsForm" :rules="tagRules" class="add-tags" >
+        <a-form :ref="tagRef" :model="newTagsForm" :rules="tagRules" class="add-tags">
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
-            <a-form-item>
+            <a-form-item name="key" ref="key">
               <a-input
                 autoFocus
                 v-model:value="newTagsForm.key" />
@@ -56,7 +56,7 @@
           </div>
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.value') }}</p>
-            <a-form-item>
+            <a-form-item name="value" ref="value">
               <a-input v-model:value="newTagsForm.value" />
             </a-form-item>
           </div>

@@ -24,7 +24,9 @@
       </div>
 
       <a-alert type="warning" style="margin-bottom: 20px">
-        <template #message>{{ $t('message.assign.instance.another') }}</template>
+        <template #message>
+          <label v-html="$t('message.assign.instance.another')"></label>
+        </template>
       </a-alert>
 
       <div class="form__item">

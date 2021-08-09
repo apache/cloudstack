@@ -97,7 +97,7 @@ export default {
       })
       this.rules = reactive({
         srcpool: [{ required: true, message: this.$t('message.error.select') }],
-        destpools: [{ required: true, message: this.$t('message.select.destination.image.stores') }],
+        destpools: [{ type: 'array', required: true, message: this.$t('message.select.destination.image.stores') }],
         migrationtype: [{ required: true, message: this.$t('message.select.migration.policy') }]
       })
     },

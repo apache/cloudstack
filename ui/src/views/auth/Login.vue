@@ -130,50 +130,36 @@ export default {
       }
     }
   },
-  beforeCreate () {
-    this.formRef = ref()
-    this.form = reactive({
-      username: '',
-      password: '',
-      domain: '',
-      idp: ''
-    })
-  },
   created () {
+    this.initForm()
     this.fetchData()
-  },
-  computed: {
-    rules () {
-      let rules = {}
-
-      if (this.customActiveKey === 'cs') {
-        rules = reactive({
-          username: [
-            {
-              required: true,
-              message: this.$t('message.error.username'),
-              trigger: 'change'
-            },
-            {
-              validator: this.handleUsernameOrEmail,
-              trigger: 'change'
-            }
-          ],
-          password: [
-            {
-              required: true,
-              message: this.$t('message.error.password'),
-              trigger: 'change'
-            }
-          ]
-        })
-      }
-
-      return rules
-    }
   },
   methods: {
     ...mapActions(['Login', 'Logout']),
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        username: [
+          {
+            required: true,
+            message: this.$t('message.error.username'),
+            trigger: 'change'
+          },
+          {
+            validator: this.handleUsernameOrEmail,
+            trigger: 'change'
+          }
+        ],
+        password: [
+          {
+            required: true,
+            message: this.$t('message.error.password'),
+            trigger: 'change'
+          }
+        ]
+      })
+    },
     fetchData () {
       api('listIdps').then(response => {
         if (response) {

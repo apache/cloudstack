@@ -207,8 +207,9 @@ export default {
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
         displaytext: [{ required: true, message: this.$t('message.error.description') }],
-        domainid: [{ required: true, message: this.$t('message.error.select') }],
+        domainid: [{ type: 'array', required: true, message: this.$t('message.error.select') }],
         zoneid: [{
+          type: 'array',
           validator: async (rule, value) => {
             if (value && value.length > 1 && value.indexOf(0) !== -1) {
               return Promise.reject(this.$t('message.error.zone.combined'))

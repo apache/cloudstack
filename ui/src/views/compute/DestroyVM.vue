@@ -23,7 +23,7 @@
         :ref="formRef"
         :model="form"
         :rules="rules"
-        @submit="handleSubmit"
+        @finish="handleSubmit"
         layout="vertical">
         <a-form-item v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.allowuserexpungerecovervm">
           <template #label>
@@ -57,7 +57,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button :loading="loading" type="primary" html-type="submit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -84,15 +84,14 @@ export default {
     }
   },
   beforeCreate () {
-    this.formRef = ref()
-    this.form = reactive({
-      expunge: false,
-      volumeids: undefined
-    })
-    this.rules = reactive({})
     this.apiParams = this.$getApiParams('destroyVirtualMachine')
   },
   created () {
+    this.formRef = ref()
+    this.form = reactive({})
+    this.rules = reactive({
+      volumeids: [{ type: 'array' }]
+    })
     this.fetchData()
   },
   methods: {

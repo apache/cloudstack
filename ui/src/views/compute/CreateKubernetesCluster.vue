@@ -22,9 +22,9 @@
         :ref="formRef"
         :model="form"
         :rules="rules"
-        @submit="handleSubmit"
+        @finish="handleSubmit"
         layout="vertical">
-        <a-form-item>
+        <a-form-item name="name" ref="name">
           <template #label>
             {{ $t('label.name') }}
             <a-tooltip :title="apiParams.name.description">
@@ -36,7 +36,7 @@
             :placeholder="apiParams.name.description"
             autoFocus />
         </a-form-item>
-        <a-form-item>
+        <a-form-item name="description" ref="description">
           <template #label>
             {{ $t('label.description') }}
             <a-tooltip :title="apiParams.description.description">
@@ -47,7 +47,7 @@
             v-model:value="form.description"
             :placeholder="apiParams.description.description"/>
         </a-form-item>
-        <a-form-item>
+        <a-form-item name="zoneid" ref="zoneid">
           <template #label>
             {{ $t('label.zoneid') }}
             <a-tooltip :title="apiParams.zoneid.description">
@@ -70,7 +70,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
+        <a-form-item name="kubernetesversionid" ref="kubernetesversionid">
           <template #label>
             {{ $t('label.kubernetesversionid') }}
             <a-tooltip :title="apiParams.kubernetesversionid.description">
@@ -93,7 +93,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
+        <a-form-item name="serviceofferingid" ref="serviceofferingid">
           <template #label>
             {{ $t('label.serviceofferingid') }}
             <a-tooltip :title="apiParams.serviceofferingid.description">
@@ -115,7 +115,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
+        <a-form-item name="noderootdisksize" ref="noderootdisksize">
           <template #label>
             {{ $t('label.noderootdisksize') }}
             <a-tooltip :title="apiParams.noderootdisksize.description">
@@ -126,7 +126,7 @@
             v-model:value="form.noderootdisksize"
             :placeholder="apiParams.noderootdisksize.description"/>
         </a-form-item>
-        <a-form-item>
+        <a-form-item name="networkid" ref="networkid">
           <template #label>
             {{ $t('label.networkid') }}
             <a-tooltip :title="apiParams.networkid.description">
@@ -148,7 +148,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item v-if="selectedKubernetesVersion != null && selectedKubernetesVersion != undefined && selectedKubernetesVersion.supportsha === true">
+        <a-form-item name="haenable" ref="haenable" v-if="selectedKubernetesVersion != null && selectedKubernetesVersion != undefined && selectedKubernetesVersion.supportsha === true">
           <template #label>
             {{ $t('label.haenable') }}
             <a-tooltip :title="apiParams.haenable?.description || ''">
@@ -157,7 +157,7 @@
           </template>
           <a-switch v-model:cheked="form.haenable" />
         </a-form-item>
-        <a-form-item v-if="form.haEnabled">
+        <a-form-item name="masternodes" ref="masternodes" v-if="form.haenable">
           <template #label>
             {{ $t('label.masternodes') }}
             <a-tooltip :title="apiParams.masternodes.description">
@@ -168,7 +168,7 @@
             v-model:value="form.masternodes"
             :placeholder="apiParams.masternodes.description"/>
         </a-form-item>
-        <a-form-item v-if="form.haEnabled">
+        <a-form-item name="externalloadbalanceripaddress" ref="externalloadbalanceripaddress" v-if="form.haenable">
           <template #label>
             {{ $t('label.externalloadbalanceripaddress') }}
             <a-tooltip :title="apiParams.externalloadbalanceripaddress.description">
@@ -179,7 +179,7 @@
             v-model:value="form.externalloadbalanceripaddress"
             :placeholder="apiParams.externalloadbalanceripaddress.description"/>
         </a-form-item>
-        <a-form-item>
+        <a-form-item name="size" ref="size">
           <template #label>
             {{ $t('label.cks.cluster.size') }}
             <a-tooltip :title="apiParams.size.description">
@@ -190,7 +190,7 @@
             v-model:value="form.size"
             :placeholder="apiParams.size.description"/>
         </a-form-item>
-        <a-form-item>
+        <a-form-item name="keypair" ref="keypair">
           <template #label>
             {{ $t('label.keypair') }}
             <a-tooltip :title="apiParams.keypair.description">
@@ -213,7 +213,7 @@
           </a-select>
         </a-form-item>
         <div v-if="$store.getters.features.kubernetesclusterexperimentalfeaturesenabled">
-          <a-form-item :label="$t('label.private.registry')">
+          <a-form-item name="privateregistry" ref="privateregistry" :label="$t('label.private.registry')">
             <template #label>
               {{ $t('label.private.registry') }}
               <a-tooltip :title="apiParams.keprivateregistryypair.description">
@@ -222,8 +222,8 @@
             </template>
             <a-switch v-model:checked="form.privateregistry" />
           </a-form-item>
-          <div v-if="usePrivateRegistry">
-            <a-form-item>
+          <div v-if="form.privateregistry">
+            <a-form-item name="dockerregistryusername" ref="dockerregistryusername">
               <template #label>
                 {{ $t('label.username') }}
                 <a-tooltip :title="apiParams.dockerregistryusername.description">
@@ -234,7 +234,7 @@
                 v-model:value="form.dockerregistryusername"
                 :placeholder="apiParams.dockerregistryusername.description"/>
             </a-form-item>
-            <a-form-item>
+            <a-form-item name="dockerregistrypassword" ref="dockerregistrypassword">
               <template #label>
                 {{ $t('label.password') }}
                 <a-tooltip :title="apiParams.dockerregistrypassword.description">
@@ -245,7 +245,7 @@
                 v-model:value="form.dockerregistrypassword"
                 :placeholder="apiParams.dockerregistrypassword.description"/>
             </a-form-item>
-            <a-form-item>
+            <a-form-item name="dockerregistryurl" ref="dockerregistryurl">
               <template #label>
                 {{ $t('label.url') }}
                 <a-tooltip :title="apiParams.dockerregistryurl.description">
@@ -256,7 +256,7 @@
                 v-model:value="form.dockerregistryurl"
                 :placeholder="apiParams.dockerregistryurl.description"/>
             </a-form-item>
-            <a-form-item>
+            <a-form-item name="dockerregistryemail" ref="dockerregistryemail">
               <template #label>
                 {{ $t('label.email') }}
                 <a-tooltip :title="apiParams.dockerregistryemail.description">
@@ -271,7 +271,7 @@
         </div>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -299,18 +299,13 @@ export default {
       networkLoading: false,
       keyPairs: [],
       keyPairLoading: false,
-      usePrivateRegistry: false,
       loading: false
     }
   },
   beforeCreate () {
-    this.formRef = ref()
-    this.form = reactive({})
-    this.rules = reactive({})
     this.apiParams = this.$getApiParams('createKubernetesCluster')
   },
   created () {
-    this.initForm()
     this.networks = [
       {
         id: null,
@@ -323,29 +318,15 @@ export default {
         name: ''
       }
     ]
+    this.initForm()
     this.fetchData()
   },
   methods: {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        name: undefined,
-        description: undefined,
-        zoneid: undefined,
-        kubernetesversionid: undefined,
-        serviceofferingid: undefined,
-        noderootdisksize: undefined,
-        networkid: undefined,
-        haenable: false,
         masternodes: 2,
-        externalloadbalanceripaddress: undefined,
-        size: 1,
-        keypair: undefined,
-        privateregistry: false,
-        dockerregistryusername: undefined,
-        dockerregistrypassword: undefined,
-        dockerregistryurl: undefined,
-        dockerregistryemail: undefined
+        size: 1
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.kubecluster.name') }],
@@ -353,35 +334,29 @@ export default {
         zoneid: [{ required: true, message: this.$t('message.error.zone.for.cluster') }],
         kubernetesversionid: [{ required: true, message: this.$t('message.error.version.for.cluster') }],
         serviceofferingid: [{ required: true, message: this.$t('message.error.serviceoffering.for.cluster') }],
-        noderootdisksize: [{
-          validator: async (rule, value) => {
-            if (value && (isNaN(value) || value <= 0)) {
-              return Promise.reject(this.this.$t('message.validate.number'))
-            }
-            return Promise.resolve()
-          }
-        }],
+        noderootdisksize: [{ type: 'number', validator: this.validateNumber }],
         masternodes: [
-          { required: true, message: this.$t('message.error.input.value') },
+          {
+            type: 'number',
+            required: true,
+            message: this.$t('message.error.input.value')
+          },
           {
             validator: async (rule, value) => {
               if (value && (isNaN(value) || value < 2)) {
-                return Promise.reject(this.this.$t('message.validate.number'))
+                return Promise.reject(this.$t('message.validate.number'))
               }
               return Promise.resolve()
             }
           }
         ],
         size: [
-          { required: true, message: this.$t('message.error.size.for.cluster') },
           {
-            validator: async (rule, value) => {
-              if (value && (isNaN(value) || value <= 0)) {
-                return Promise.reject(this.this.$t('message.validate.number'))
-              }
-              return Promise.resolve()
-            }
-          }
+            type: 'number',
+            required: true,
+            message: this.$t('message.error.size.for.cluster')
+          },
+          { validator: this.validateNumber }
         ],
         dockerregistryusername: [{ required: true, message: this.$t('label.required') }],
         dockerregistrypassword: [{ required: true, message: this.$t('label.required') }],
@@ -538,7 +513,7 @@ export default {
         if (this.isValidValueForKey(values, 'keypair') && this.arrayHasItems(this.keyPairs) && this.keyPairs[values.keypair].id != null) {
           params.keypair = this.keyPairs[values.keypair].id
         }
-        if (this.usePrivateRegistry) {
+        if (values.privateregistry) {
           params.dockerregistryusername = values.dockerregistryusername
           params.dockerregistrypassword = values.dockerregistrypassword
           params.dockerregistryurl = values.dockerregistryurl
@@ -565,6 +540,12 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    async validateNumber (rule, value) {
+      if (value && (isNaN(value) || value <= 0)) {
+        return Promise.reject(this.$t('message.validate.number'))
+      }
+      return Promise.resolve()
     }
   }
 }

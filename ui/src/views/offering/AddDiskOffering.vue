@@ -390,8 +390,9 @@ export default {
         diskiopswriterate: [{ type: 'number', validator: this.validateNumber }],
         diskiopsmax: [{ type: 'number', validator: this.validateNumber }],
         hypervisorsnapshotreserve: [{ type: 'number', validator: this.validateNumber }],
-        domainid: [{ required: true, message: this.$t('message.error.select') }],
+        domainid: [{ type: 'array', required: true, message: this.$t('message.error.select') }],
         zoneid: [{
+          type: 'array',
           validator: async (rule, value) => {
             if (value && value.length > 1 && value.indexOf(0) !== -1) {
               return Promise.reject(this.$t('message.error.zone.combined'))

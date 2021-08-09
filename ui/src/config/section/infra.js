@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { shallowRef, defineAsyncComponent } from 'vue'
 import zones from '@/config/section/infra/zones'
 import phynetworks from '@/config/section/infra/phynetworks'
 import nsp from '@/config/section/infra/nsp'
@@ -39,7 +38,7 @@ export default {
       title: 'label.summary',
       icon: 'ReadOutlined',
       permission: ['listInfrastructure'],
-      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/InfraSummary.vue')))
+      component: () => import('@/views/infra/InfraSummary.vue')
     },
     zones,
     phynetworks,

@@ -528,8 +528,9 @@ export default {
         displaytext: [{ required: true, message: this.$t('message.error.description') }],
         networkrate: [{ type: 'number', validator: this.validateNumber }],
         serviceofferingid: [{ required: true, message: this.$t('message.error.select') }],
-        domainid: [{ required: true, message: this.$t('message.error.select') }],
+        domainid: [{ type: 'array', required: true, message: this.$t('message.error.select') }],
         zoneid: [{
+          type: 'array',
           validator: async (rule, value) => {
             if (value && value.length > 1 && value.indexOf(0) !== -1) {
               return Promise.reject(this.$t('message.error.zone.combined'))

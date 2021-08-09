@@ -21,7 +21,8 @@
         :ref="formRef"
         :model="form"
         :rules="rules"
-        layout="vertical">
+        layout="vertical"
+        @finish="handleSubmit">
         <a-form-item :label="$t('label.iso.name')" ref="id" name="id">
           <a-select
             :loading="loading"
@@ -42,7 +43,7 @@
       </a-form>
       <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" htmlType="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-spin>
   </div>
@@ -66,22 +67,17 @@ export default {
       isos: []
     }
   },
-  beforeCreate () {
-    this.formRef = ref()
-    this.form = reactive({})
-    this.rules = reactive({})
-  },
   created () {
     this.initForm()
     this.fetchData()
   },
   methods: {
     initForm () {
-      this.form.id = undefined
-      this.form.forced = false
-      this.rules = {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
         id: [{ required: true, message: `${this.$t('label.required')}` }]
-      }
+      })
     },
     fetchData () {
       const isoFiters = ['featured', 'community', 'selfexecutable']
@@ -172,6 +168,7 @@ export default {
 
 .action-button {
   text-align: right;
+
   button {
     margin-right: 5px;
   }

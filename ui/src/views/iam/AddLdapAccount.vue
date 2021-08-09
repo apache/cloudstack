@@ -49,7 +49,7 @@
             :ref="formRef"
             :model="form"
             :rules="rules"
-            @submit="handleSubmit"
+            @finish="handleSubmit"
             layout="vertical" >
             <a-form-item :label="$t('label.filterby')">
               <a-select @change="fetchListLdapUsers" v-model:value="selectedFilter" autoFocus >
@@ -112,7 +112,7 @@
             </a-form-item>
             <div v-if="'authorizeSamlSso' in $store.getters.apis" ref="samlEnable" name="samlEnable">
               <a-form-item :label="$t('label.samlenable')">
-                <a-switch v-model:checked="form.samlEnable" />
+                <a-switch v-model:checked="form.samlEnable" @change="handleEntityRule" />
               </a-form-item>
               <a-form-item v-if="form.samlEnable" :label="$t('label.samlentity')" ref="samlEntity" name="samlEntity">
                 <a-select
@@ -128,7 +128,7 @@
 
             <div class="card-footer">
               <a-button @click="handleClose">{{ $t('label.close') }}</a-button>
-              <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.add') }}</a-button>
+              <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.add') }}</a-button>
             </div>
           </a-form>
         </a-card>
@@ -167,7 +167,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.formRef = ref()
     this.apiLdapCreateAccountConfig = this.$store.getters.apis.ldapCreateAccount || {}
     this.apiImportLdapUsersConfig = this.$store.getters.apis.importLdapUsers || {}
     this.apiParams = {}
@@ -229,45 +228,18 @@ export default {
       }
     ]
     this.selectedFilter = this.filters[0].id
+    this.initForm()
     this.fetchData()
   },
-  computed: {
-    form () {
-      const form = {}
-
-      form.domainid = undefined
-      form.account = undefined
-      form.roleid = undefined
-      form.timezone = undefined
-      form.networkdomain = undefined
-      form.group = undefined
-
-      if ('authorizeSamlSso' in this.$store.getters.apis) {
-        form.samlEnable = false
-
-        if (form.samlEnable) {
-          form.samlEntity = undefined
-        }
-      }
-
-      return reactive(form)
-    },
-    rules () {
-      const rules = {}
-
-      rules.domainid = [{ required: true, message: this.$t('message.error.select') }]
-      rules.roleid = [{ required: true, message: this.$t('message.error.select') }]
-
-      if ('authorizeSamlSso' in this.$store.getters.apis) {
-        if (this.form.samlEnable) {
-          rules.samlEntity = [{ required: true, message: `${this.$t('message.error.select')}` }]
-        }
-      }
-
-      return reactive(rules)
-    }
-  },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        domainid: [{ required: true, message: this.$t('message.error.select') }],
+        roleid: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
     async fetchData () {
       this.timeZoneLoading = true
       this.domainLoading = true
@@ -483,6 +455,13 @@ export default {
         return 'light-row'
       }
       return 'dark-row'
+    },
+    handleEntityRule () {
+      if (this.form.samlEnable) {
+        this.rules.push({
+          samlEntity: [{ required: true, message: `${this.$t('message.error.select')}` }]
+        })
+      }
     }
   }
 }

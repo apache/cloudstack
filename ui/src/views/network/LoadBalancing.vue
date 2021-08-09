@@ -156,7 +156,7 @@
         <loading-outlined />
       </span>
 
-      <a-form :ref="tagRef" :model="newTagsForm" :rules="tagRules" class="add-tags" @submit="handleAddTag">
+      <a-form :ref="tagRef" :model="newTagsForm" :rules="tagRules" class="add-tags" @finish="handleAddTag">
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.key') }}</p>
           <a-form-item ref="key" name="key">
@@ -199,8 +199,13 @@
         <loading-outlined />
       </span>
 
-      <a-form :ref="stickRef" :model="stickinessPolicyForm" :rules="stickRules" @submit="handleSubmitStickinessForm" class="custom-ant-form">
-        <a-form-item :label="$t('label.stickiness.method')">
+      <a-form
+        :ref="stickRef"
+        :model="stickinessPolicyForm"
+        :rules="stickRules"
+        @finish="handleSubmitStickinessForm"
+        class="custom-ant-form">
+        <a-form-item name="methodname" ref="methodname" :label="$t('label.stickiness.method')">
           <a-select autoFocus v-model:value="stickinessPolicyForm.methodname" @change="handleStickinessMethodSelectChange">
             <a-select-option value="LbCookie">{{ $t('label.lb.cookie') }}</a-select-option>
             <a-select-option value="AppCookie">{{ $t('label.app.cookie') }}</a-select-option>
@@ -209,51 +214,57 @@
           </a-select>
         </a-form-item>
         <a-form-item
+          name="name"
+          ref="name"
           :label="$t('label.sticky.name')"
           v-show="stickinessPolicyMethod === 'LbCookie' || stickinessPolicyMethod ===
             'AppCookie' || stickinessPolicyMethod === 'SourceBased'">
           <a-input v-model:value="stickinessPolicyForm.name" />
         </a-form-item>
         <a-form-item
+          name="cookieName"
+          ref="cookieName"
           :label="$t('label.sticky.cookie-name')"
           v-show="stickinessPolicyMethod === 'LbCookie' || stickinessPolicyMethod ===
             'AppCookie'">
           <a-input v-model:value="stickinessPolicyForm.cookieName" />
         </a-form-item>
         <a-form-item
+          name="mode"
+          ref="mode"
           :label="$t('label.sticky.mode')"
           v-show="stickinessPolicyMethod === 'LbCookie' || stickinessPolicyMethod ===
             'AppCookie'">
           <a-input v-model:value="stickinessPolicyForm.mode" />
         </a-form-item>
-        <a-form-item :label="$t('label.sticky.nocache')" v-show="stickinessPolicyMethod === 'LbCookie'">
-          <a-checkbox v-model:value="stickinessPolicyForm.nocache"></a-checkbox>
+        <a-form-item name="nocache" ref="nocache" :label="$t('label.sticky.nocache')" v-show="stickinessPolicyMethod === 'LbCookie'">
+          <a-checkbox v-model:checked="stickinessPolicyForm.nocache"></a-checkbox>
         </a-form-item>
-        <a-form-item :label="$t('label.sticky.indirect')" v-show="stickinessPolicyMethod === 'LbCookie'">
-          <a-checkbox v-model:value="stickinessPolicyForm.indirect"></a-checkbox>
+        <a-form-item name="indirect" ref="indirect" :label="$t('label.sticky.indirect')" v-show="stickinessPolicyMethod === 'LbCookie'">
+          <a-checkbox v-model:checked="stickinessPolicyForm.indirect"></a-checkbox>
         </a-form-item>
-        <a-form-item :label="$t('label.sticky.postonly')" v-show="stickinessPolicyMethod === 'LbCookie'">
-          <a-checkbox v-model:value="stickinessPolicyForm.postonly"></a-checkbox>
+        <a-form-item name="postonly" ref="postonly" :label="$t('label.sticky.postonly')" v-show="stickinessPolicyMethod === 'LbCookie'">
+          <a-checkbox v-model:checked="stickinessPolicyForm.postonly"></a-checkbox>
         </a-form-item>
-        <a-form-item :label="$t('label.domain')" v-show="stickinessPolicyMethod === 'LbCookie'">
+        <a-form-item name="domain" ref="domain" :label="$t('label.domain')" v-show="stickinessPolicyMethod === 'LbCookie'">
           <a-input v-model:value="stickinessPolicyForm.domain" />
         </a-form-item>
-        <a-form-item :label="$t('label.sticky.length')" v-show="stickinessPolicyMethod === 'AppCookie'">
+        <a-form-item name="length" ref="length" :label="$t('label.sticky.length')" v-show="stickinessPolicyMethod === 'AppCookie'">
           <a-input v-model:value="stickinessPolicyForm.length" type="number" />
         </a-form-item>
-        <a-form-item :label="$t('label.sticky.holdtime')" v-show="stickinessPolicyMethod === 'AppCookie'">
+        <a-form-item name="holdtime" ref="holdtime" :label="$t('label.sticky.holdtime')" v-show="stickinessPolicyMethod === 'AppCookie'">
           <a-input v-model:value="stickinessPolicyForm.holdtime" type="number" />
         </a-form-item>
-        <a-form-item :label="$t('label.sticky.request-learn')" v-show="stickinessPolicyMethod === 'AppCookie'">
-          <a-checkbox v-model:value="stickinessPolicyForm.requestLearn"></a-checkbox>
+        <a-form-item name="requestLearn" ref="requestLearn" :label="$t('label.sticky.request-learn')" v-show="stickinessPolicyMethod === 'AppCookie'">
+          <a-checkbox v-model:checked="stickinessPolicyForm.requestLearn"></a-checkbox>
         </a-form-item>
-        <a-form-item :label="$t('label.sticky.prefix')" v-show="stickinessPolicyMethod === 'AppCookie'">
-          <a-checkbox v-model:value="stickinessPolicyForm.prefix"></a-checkbox>
+        <a-form-item name="prefix" ref="prefix" :label="$t('label.sticky.prefix')" v-show="stickinessPolicyMethod === 'AppCookie'">
+          <a-checkbox v-model:checked="stickinessPolicyForm.prefix"></a-checkbox>
         </a-form-item>
-        <a-form-item :label="$t('label.sticky.tablesize')" v-show="stickinessPolicyMethod === 'SourceBased'">
+        <a-form-item name="tablesize" ref="tablesize" :label="$t('label.sticky.tablesize')" v-show="stickinessPolicyMethod === 'SourceBased'">
           <a-input v-model:value="stickinessPolicyForm.tablesize" />
         </a-form-item>
-        <a-form-item :label="$t('label.sticky.expire')" v-show="stickinessPolicyMethod === 'SourceBased'">
+        <a-form-item name="expire" ref="expire" :label="$t('label.sticky.expire')" v-show="stickinessPolicyMethod === 'SourceBased'">
           <a-input v-model:value="stickinessPolicyForm.expire" />
         </a-form-item>
         <a-button type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
@@ -362,7 +373,7 @@
           </template>
 
           <template #action="{text, record, index}" style="text-align: center" :text="text">
-            <a-checkbox :value="record.id" @change="e => fetchNics(e, index)" />
+            <a-checkbox v-model:value="record.id" @change="e => fetchNics(e, index)" />
           </template>
         </a-table>
         <a-pagination
@@ -388,7 +399,7 @@
 </template>
 
 <script>
-import { ref, reactive, toRaw } from 'vue'
+import { ref, reactive, toRaw, nextTick } from 'vue'
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/view/TooltipButton'
@@ -524,7 +535,7 @@ export default {
     }
   },
   created () {
-    this.initTagsForm()
+    this.initTagForm()
     this.initStickForm()
     this.fetchData()
   },
@@ -539,10 +550,7 @@ export default {
   methods: {
     initTagForm () {
       this.tagRef = ref()
-      this.newTagsForm = reactive({
-        key: undefined,
-        value: undefined
-      })
+      this.newTagsForm = reactive({})
       this.tagRules = reactive({
         key: [{ required: true, message: this.$t('message.specifiy.tag.key') }],
         value: [{ required: true, message: this.$t('message.specifiy.tag.value') }]
@@ -550,21 +558,7 @@ export default {
     },
     initStickForm () {
       this.stickRef = ref()
-      this.stickinessPolicyForm = reactive({
-        methodname: undefined,
-        name: undefined,
-        cookieName: undefined,
-        mode: undefined,
-        indirect: undefined,
-        postonly: undefined,
-        domain: undefined,
-        length: undefined,
-        holdtime: undefined,
-        requestLearn: undefined,
-        prefix: undefined,
-        tablesize: undefined,
-        expire: undefined
-      })
+      this.stickinessPolicyForm = reactive({ })
       this.stickRules = reactive({
         name: [{ required: true, message: this.$t('message.error.specify.sticky.name') }]
       })
@@ -689,7 +683,7 @@ export default {
       })
     },
     handleAddTag () {
-      this.tagRef.validate().then(() => {
+      this.tagRef.value.validate().then(() => {
         const values = toRaw(this.newTagsForm)
         this.tagsModalLoading = true
 
@@ -764,7 +758,7 @@ export default {
       if (match && match.stickinesspolicy.length > 0) {
         this.selectedStickinessPolicy = match.stickinesspolicy[0]
         this.stickinessPolicyMethod = this.selectedStickinessPolicy.methodname
-        this.$nextTick(() => {
+        nextTick().then(() => {
           this.stickinessPolicyForm.methodname = this.selectedStickinessPolicy.methodname
           this.stickinessPolicyForm.name = this.selectedStickinessPolicy.name
           this.stickinessPolicyForm.cookieName = this.selectedStickinessPolicy.params['cookie-name']
@@ -845,7 +839,7 @@ export default {
       })
     },
     handleSubmitStickinessForm () {
-      this.stickRef.validate().then(() => {
+      this.stickRef.value.validate().then(() => {
         const values = toRaw(this.stickinessPolicyForm)
         this.stickinessModalLoading = true
         if (values.methodname === 'none') {

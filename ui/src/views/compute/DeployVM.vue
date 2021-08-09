@@ -24,7 +24,7 @@
             :ref="formRef"
             :model="form"
             :rules="rules"
-            @submit="handleSubmit"
+            @finish="handleSubmit"
             layout="vertical"
           >
             <a-steps direction="vertical" size="small">

@@ -22,7 +22,8 @@
       :model="form"
       :rules="rules"
       layout="vertical"
-      :loading="loading">
+      :loading="loading"
+      @finish="handleSubmit">
       <a-form-item name="samlEnable" ref="samlEnable" :label="$t('label.samlenable')">
         <a-switch
           v-model:checked="form.samlEnable"
@@ -39,7 +40,7 @@
       </a-form-item>
       <div class="card-footer">
         <a-button @click="handleClose">{{ $t('label.close') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>

@@ -23,7 +23,8 @@
         :model="form"
         :rules="rules"
         :loading="loading"
-        layout="vertical">
+        layout="vertical"
+        @finish="handleSubmit">
         <a-form-item name="username" ref="username">
           <template #label>
             {{ $t('label.username') }}
@@ -93,7 +94,7 @@
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>

@@ -23,7 +23,7 @@
         :ref="formRef"
         :model="form"
         :rules="rules"
-        @submit="handleSubmit"
+        @finish="handleSubmit"
         layout="vertical">
         <a-form-item>
           <template #label :title="apiParams.name.description">
@@ -85,7 +85,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -133,12 +133,7 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({
-        name: undefined,
-        publickey: undefined,
-        domainid: undefined,
-        account: undefined
-      })
+      this.form = reactive({})
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }]
       })

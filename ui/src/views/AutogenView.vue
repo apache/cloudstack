@@ -153,7 +153,7 @@
             :ref="formRef"
             :model="form"
             :rules="rules"
-            @submit="handleSubmit"
+            @finish="handleSubmit"
             layout="vertical" >
             <div v-for="(field, fieldIndex) in currentAction.paramFields" :key="fieldIndex">
               <a-form-item
@@ -378,17 +378,15 @@ export default {
       firstIndex: 0
     }
   },
-  beforeCreate () {
-    this.formRef = ref()
-    this.form = reactive({})
-    this.rules = reactive({})
-  },
   beforeUnmount () {
     eventBus.off('vm-refresh-data')
     eventBus.off('async-job-complete')
     eventBus.off('exec-action')
   },
   created () {
+    this.formRef = ref()
+    this.form = reactive({})
+    this.rules = reactive({})
     eventBus.on('vm-refresh-data', () => {
       if (this.$route.path === '/vm' || this.$route.path.includes('/vm/')) {
         this.fetchData()
@@ -1192,34 +1190,31 @@ export default {
         case (field.type === 'boolean'):
           rule.required = field.required
           rule.message = this.$t('message.error.required.input')
-          rule.trigger = 'change'
           this.rules[field.name].push(rule)
           break
         case (this.currentAction.mapping && field.name in this.currentAction.mapping && this.currentAction.mapping[field.name].options):
           rule.required = field.required
           rule.message = this.$t('message.error.select')
-          rule.trigger = 'change'
           this.rules[field.name].push(rule)
           break
         case (field.name === 'keypair' || (field.name === 'account' && !['addAccountToProject', 'createAccount'].includes(this.currentAction.api))):
           rule.required = field.required
           rule.message = this.$t('message.error.select')
-          rule.trigger = 'change'
           this.rules[field.name].push(rule)
           break
         case (field.type === 'uuid'):
           rule.required = field.required
           rule.message = this.$t('message.error.select')
-          rule.trigger = 'change'
           this.rules[field.name].push(rule)
           break
         case (field.type === 'list'):
+          rule.type = 'array'
           rule.required = field.required
           rule.message = this.$t('message.error.select')
-          rule.trigger = 'change'
           this.rules[field.name].push(rule)
           break
         case (field.type === 'long'):
+          rule.type = 'number'
           rule.required = field.required
           rule.message = this.$t('message.validate.number')
           this.rules[field.name].push(rule)
@@ -1231,7 +1226,6 @@ export default {
 
           rule = {}
           rule.validator = this.validateTwoPassword
-          rule.trigger = 'change'
           this.rules[field.name].push(rule)
           break
         case (field.name === 'certificate' || field.name === 'privatekey' || field.name === 'certchain'):

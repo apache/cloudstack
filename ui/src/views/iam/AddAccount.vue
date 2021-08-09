@@ -23,7 +23,8 @@
         :model="form"
         :rules="rules"
         :loading="loading"
-        layout="vertical">
+        layout="vertical"
+        @finish="handleSubmit">
         <a-form-item ref="roleid" name="roleid">
           <template #label>
             {{ $t('label.role') }}
@@ -198,8 +199,7 @@
             <a-button
               :loading="loading"
               type="primary"
-              html-type="submit"
-              @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+              html-type="submit">{{ $t('label.ok') }}</a-button>
           </a-form-item>
         </div>
       </a-form>
@@ -229,61 +229,30 @@ export default {
     }
   },
   beforeCreate () {
-    this.formRef = ref()
     this.apiParams = this.$getApiParams('createAccount', 'authorizeSamlSso')
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
-  computed: {
-    form () {
-      const form = {}
-      form.roleid = undefined
-      form.username = undefined
-      form.password = undefined
-      form.confirmpassword = undefined
-      form.email = undefined
-      form.firstname = undefined
-      form.lastname = undefined
-
-      if (this.isAdminOrDomainAdmin()) {
-        form.domain = undefined
-      }
-      form.account = undefined
-      form.timezone = undefined
-      form.networkdomain = undefined
-      if ('authorizeSamlSso' in this.$store.getters.apis) {
-        form.samlenable = false
-
-        if (form.samlenable) {
-          form.samlentity = undefined
-        }
-      }
-
-      return reactive(form)
-    },
-    rules () {
-      const rules = {}
-
-      rules.roleid = [{ required: true, message: this.$t('message.error.select') }]
-      rules.username = [{ required: true, message: this.$t('message.error.required.input') }]
-      rules.password = [{ required: true, message: this.$t('message.error.required.input') }]
-      rules.confirmpassword = [
-        { required: true, message: this.$t('message.error.required.input') },
-        { validator: this.validateConfirmPassword }
-      ]
-      rules.email = [{ required: true, message: this.$t('message.error.required.input') }]
-      rules.firstname = [{ required: true, message: this.$t('message.error.required.input') }]
-      rules.lastname = [{ required: true, message: this.$t('message.error.required.input') }]
-
-      if (this.isAdminOrDomainAdmin()) {
-        rules.domain = [{ required: true, message: this.$t('message.error.select') }]
-      }
-
-      return reactive(rules)
-    }
-  },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        roleid: [{ required: true, message: this.$t('message.error.select') }],
+        username: [{ required: true, message: this.$t('message.error.required.input') }],
+        password: [{ required: true, message: this.$t('message.error.required.input') }],
+        confirmpassword: [
+          { required: true, message: this.$t('message.error.required.input') },
+          { validator: this.validateConfirmPassword }
+        ],
+        email: [{ required: true, message: this.$t('message.error.required.input') }],
+        firstname: [{ required: true, message: this.$t('message.error.required.input') }],
+        lastname: [{ required: true, message: this.$t('message.error.required.input') }],
+        domain: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
     fetchData () {
       this.fetchDomains()
       this.fetchRoles()

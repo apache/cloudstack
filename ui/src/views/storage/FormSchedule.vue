@@ -29,7 +29,7 @@
           :model="form"
           :rules="rules"
           layout="vertical"
-          @submit="handleSubmit">
+          @finish="handleSubmit">
           <a-row :gutter="12">
             <a-col :md="24" :lg="24">
               <a-form-item :label="$t('label.intervaltype')" name="intervaltype" ref="intervaltype">
@@ -160,7 +160,7 @@
               v-if="handleShowButton()"
               :loading="actionLoading"
               type="primary"
-              @click="handleSubmit">
+              html-type="submit">
               {{ $t('label.ok') }}
             </a-button>
           </div>

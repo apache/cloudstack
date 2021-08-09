@@ -37,7 +37,7 @@
           :ref="formRef"
           :model="form"
           :rules="rules"
-          @submit="handleSubmit"
+          @finish="handleSubmit"
           layout="vertical" >
           <a-alert type="warning" v-if="action.message">
             <template #message>{{ $t(action.message) }}</template>
@@ -315,12 +315,14 @@ export default {
           this.rules[field.name].push(rule)
           break
         case (field.type === 'list'):
+          rule.type = 'array'
           rule.required = field.required
           rule.message = this.$t('message.error.select')
           rule.trigger = 'change'
           this.rules[field.name].push(rule)
           break
         case (field.type === 'long'):
+          rule.type = 'number'
           rule.required = field.required
           rule.message = this.$t('message.validate.number')
           this.rules[field.name].push(rule)

@@ -168,7 +168,7 @@
             </a-radio-group>
           </a-form-item>
           <a-form-item
-            v-if="isolatePvlanType=='community' || isolatePvlanType=='isolated'"
+            v-if="form.isolatedpvlantype=='community' || form.isolatedpvlantype=='isolated'"
              name="isolatedpvlanid"
              ref="isolatedpvlanid">
             <template #label>
@@ -269,18 +269,16 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
-      this.rules = reactive({})
-
-      this.rules.name = [{ required: true, message: this.$t('message.error.name') }]
-      this.rules.displaytext = [{ required: true, message: this.$t('message.error.display.text') }]
-      this.rules.zoneid = [{ type: 'number', required: true, message: this.$t('message.error.select') }]
-      this.rules.networkofferingid = [{ type: 'number', required: true, message: this.$t('message.error.select') }]
-
-      if (!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan) {
-        this.rules.vlanid = [{ required: true, message: this.$t('message.please.enter.value') }]
-        this.form.isolatedpvlantype = this.isolatePvlanType
-      }
+      this.form = reactive({
+        isolatedpvlantype: 'none'
+      })
+      this.rules = reactive({
+        name: [{ required: true, message: this.$t('message.error.name') }],
+        displaytext: [{ required: true, message: this.$t('message.error.display.text') }],
+        zoneid: [{ required: true, message: this.$t('message.error.select') }],
+        networkofferingid: [{ required: true, message: this.$t('message.error.select') }],
+        vlanid: [{ required: true, message: this.$t('message.please.enter.value') }]
+      })
     },
     fetchData () {
       this.fetchDomainData()

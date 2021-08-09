@@ -75,7 +75,7 @@
           :maskClosable="false"
           @ok="handleNetworkAclFormSubmit">
           <a-form
-            @submit.prevent="handleNetworkAclFormSubmit"
+            @finish="handleNetworkAclFormSubmit"
             :ref="networkRef"
             :model="networkAclForm"
             :rules="networkRules">
@@ -138,7 +138,7 @@
           <a-spin :spinning="modals.gatewayLoading">
             <p>{{ $t('message.add.new.gateway.to.vpc') }}</p>
             <a-form
-              @submit.prevent="handleGatewayFormSubmit"
+              @finish="handleGatewayFormSubmit"
               :ref="gatewayRef"
               :model="gatewayForm"
               :rules="gatewayRules">
@@ -268,7 +268,7 @@
           @ok="handleVpnConnectionFormSubmit">
           <a-spin :spinning="modals.vpnConnectionLoading">
             <a-form
-              @submit.prevent="handleVpnConnectionFormSubmit"
+              @finish="handleVpnConnectionFormSubmit"
               :ref="vpnRef"
               :model="vpnConnectionForm"
               :rules="vpnRules">

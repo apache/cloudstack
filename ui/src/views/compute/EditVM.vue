@@ -23,7 +23,7 @@
       :ref="formRef"
       :model="form"
       :rules="rules"
-      @submit="handleSubmit">
+      @finish="handleSubmit">
       <a-form-item>
         <template #label>
           {{ $t('label.name') }}
@@ -89,7 +89,7 @@
              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
           </a-tooltip>
         </template>
-        <this.formRef.value.validate()omplete
+        <a-auto-complete
           v-model:value="form.group"
           :filterOption="(input, option) => {
             return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -99,7 +99,7 @@
 
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="onCloseAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading" type="primary" html-type="submit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-form>
   </a-spin>
@@ -135,9 +135,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.formRef = ref()
-    this.form = reactive({})
-    this.rules = reactive({})
     this.apiParams = this.$getApiParams('updateVirtualMachine')
   },
   created () {
@@ -146,12 +143,15 @@ export default {
   },
   methods: {
     initForm () {
-      this.form.name = this.resource.name
-      this.form.displayname = this.resource.displayname
-      this.form.ostypeid = this.resource.ostypeid
-      this.form.isdynamicallyscalable = this.resource.isdynamicallyscalable
-      this.form.haenable = false
-      this.form.group = this.resource.group
+      this.formRef = ref()
+      this.form = reactive({
+        name: this.resource.name,
+        displayname: this.resource.displayname,
+        ostypeid: this.resource.ostypeid,
+        isdynamicallyscalable: this.resource.isdynamicallyscalable,
+        group: this.resource.group
+      })
+      this.rules = reactive({})
     },
     fetchData () {
       this.fetchOsTypes()

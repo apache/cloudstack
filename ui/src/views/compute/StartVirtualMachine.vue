@@ -26,7 +26,7 @@
         :ref="formRef"
         :model="form"
         :rules="rules"
-        @submit="handleSubmit"
+        @finish="handleSubmit"
         layout="vertical">
         <div v-if="$store.getters.userInfo.roletype === 'Admin'">
           <a-form-item>
@@ -111,7 +111,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -142,9 +142,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.formRef = ref()
-    this.form = reactive({})
-    this.rules = reactive({})
     this.apiParams = this.$getApiParams('startVirtualMachine')
   },
   created () {
@@ -157,10 +154,9 @@ export default {
   },
   methods: {
     initForm () {
-      this.form.podid = undefined
-      this.form.clusterid = undefined
-      this.form.hostid = undefined
-      this.form.bootintosetup = undefined
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
     },
     fetchPods () {
       this.pods = []

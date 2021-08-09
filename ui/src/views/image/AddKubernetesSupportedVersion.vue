@@ -22,7 +22,8 @@
         :ref="formRef"
         :model="form"
         :rules="rules"
-        layout="vertical">
+        layout="vertical"
+        @finish="handleSubmit">
         <a-form-item ref="semanticversion" name="semanticversion">
           <template #label>
             {{ $t('label.semanticversion') }}
@@ -115,7 +116,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>

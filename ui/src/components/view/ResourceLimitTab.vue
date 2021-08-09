@@ -20,7 +20,7 @@
     <a-form
       :model="form"
       :rules="rules"
-      @submit="handleSubmit"
+      @finish="handleSubmit"
       layout="vertical"
     >
       <div v-for="(item, index) in dataResource" :key="index">
@@ -42,7 +42,7 @@
           v-if="!($route.meta.name === 'domain' && resource.level === 0)"
           :loading="formLoading"
           type="primary"
-          @click="handleSubmit">{{ $t('label.submit') }}</a-button>
+          html-type="submit">{{ $t('label.submit') }}</a-button>
       </div>
     </a-form>
   </a-spin>

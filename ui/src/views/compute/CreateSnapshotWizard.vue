@@ -22,12 +22,12 @@
         :ref="formRef"
         :model="form"
         :rules="rules"
-        @submit="handleSubmit"
+        @finish="handleSubmit"
         layout="vertical">
-        <a-form-item>
+        <a-form-item name="volumeid" ref="volumeid">
           <template #label :title="apiParams.volumeid.description">
             {{ $t('label.volumeid') }}
-            <a-tooltip>
+            <a-tooltip :title="apiParams.volumeid.description">
               <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
@@ -45,10 +45,10 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
+        <a-form-item name="name" ref="name">
           <template #label :title="apiParams.name.description">
             {{ $t('label.name') }}
-            <a-tooltip>
+            <a-tooltip :title="apiParams.name.description">
               <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
@@ -56,19 +56,19 @@
             v-model:value="form.name"
             :placeholder="apiParams.name.description"/>
         </a-form-item>
-        <a-form-item v-if="isQuiesceVm">
+        <a-form-item name="quiescevm" ref="quiescevm" v-if="isQuiesceVm">
           <template #label :title="apiParams.quiescevm.description">
             {{ $t('label.quiescevm') }}
-            <a-tooltip>
+            <a-tooltip :title="apiParams.quiescevm.description">
               <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
           <a-switch v-model:checked="form.quiescevm"/>
         </a-form-item>
-        <a-form-item>
+        <a-form-item name="asyncbackup" ref="asyncbackup">
           <template #label :title="apiParams.asyncbackup.description">
             {{ $t('label.asyncbackup') }}
-            <a-tooltip>
+            <a-tooltip :title="apiParams.asyncbackup.description">
               <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
@@ -76,7 +76,7 @@
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -103,9 +103,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.formRef = ref()
-    this.form = reactive({})
-    this.rules = reactive({})
     this.apiParams = this.$getApiParams('createSnapshot')
   },
   created () {
@@ -114,14 +111,11 @@ export default {
   },
   methods: {
     initForm () {
-      this.form.volumeid = undefined
-      this.form.name = undefined
-      this.form.quiescevm = false
-      this.form.asyncbackup = false
-
-      this.rules = {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
         volumeid: [{ required: true, message: this.$t('message.error.select') }]
-      }
+      })
     },
     fetchData () {
       this.loading = true

@@ -162,11 +162,6 @@ export default {
       listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
     }
   },
-  beforeCreate () {
-    this.formRef = ref()
-    this.form = reactive({})
-    this.rules = reactive({})
-  },
   created () {
     this.initForm()
     this.fetchTimeZone()
@@ -174,14 +169,17 @@ export default {
   inject: ['refreshSchedule', 'closeSchedule'],
   methods: {
     initForm () {
-      this.form.intervaltype = 'hourly'
-      this.rules = {
+      this.formRef = ref()
+      this.form = reactive({
+        intervaltype: 'hourly'
+      })
+      this.rules = reactive({
         time: [{ type: 'number', required: true, message: this.$t('message.error.required.input') }],
         timeSelect: [{ type: 'object', required: true, message: this.$t('message.error.time') }],
         'day-of-week': [{ type: 'number', required: true, message: `${this.$t('message.error.select')}` }],
         'day-of-month': [{ required: true, message: `${this.$t('message.error.select')}` }],
         timezone: [{ required: true, message: `${this.$t('message.error.select')}` }]
-      }
+      })
     },
     fetchTimeZone (value) {
       this.timeZoneMap = []
