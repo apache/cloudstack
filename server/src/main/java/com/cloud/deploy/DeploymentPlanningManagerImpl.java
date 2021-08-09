@@ -1675,12 +1675,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             for (StoragePoolAllocator allocator : _storagePoolAllocators) {
                 final List<StoragePool> suitablePools = allocator.allocateToPool(diskProfile, vmProfile, plan, avoid, returnUpTo);
                 if (suitablePools != null && !suitablePools.isEmpty()) {
-                    List<StoragePool> pools = new ArrayList<>();
-                    Optional<StoragePool> storagePool = getPreferredStoragePool(suitablePools, vmProfile.getVirtualMachine());
-                    storagePool.ifPresent(pools::add);
-
-                    pools.addAll(suitablePools);
-                    suitableVolumeStoragePools.put(toBeCreated, pools);
+                    checkForPreferredStoragePool(suitablePools, vmProfile.getVirtualMachine(), suitableVolumeStoragePools, toBeCreated);
                     foundPotentialPools = true;
                     break;
                 }
@@ -1719,6 +1714,18 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         }
 
         return new Pair<Map<Volume, List<StoragePool>>, List<Volume>>(suitableVolumeStoragePools, readyAndReusedVolumes);
+    }
+
+    private void checkForPreferredStoragePool(List<StoragePool> suitablePools,
+                                              VirtualMachine vm,
+                                              Map<Volume, List<StoragePool>> suitableVolumeStoragePools,
+                                              VolumeVO toBeCreated) {
+        List<StoragePool> pools = new ArrayList<>();
+        Optional<StoragePool> storagePool = getPreferredStoragePool(suitablePools, vm);
+        storagePool.ifPresent(pools::add);
+
+        pools.addAll(suitablePools);
+        suitableVolumeStoragePools.put(toBeCreated, pools);
     }
 
     private Optional<StoragePool> getMatchingStoragePool(String preferredPoolId, List<StoragePool> storagePools) {
