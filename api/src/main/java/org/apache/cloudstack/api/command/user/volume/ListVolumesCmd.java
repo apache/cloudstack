@@ -92,6 +92,10 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd implements UserCm
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the volume. Possible values are: Ready, Allocated, Destroy, Expunging, Expunged.")
     private String state;
 
+    @Parameter(name = ApiConstants.FOR_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "list volumes of systemvms and routervm", since = "4.16", authorized = {
+            RoleType.Admin})
+    private Boolean forsystemvm;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -134,6 +138,10 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd implements UserCm
 
     public String getStorageId() {
         return storageId;
+    }
+
+    public Boolean getForsystemvm() {
+        return forsystemvm;
     }
 
     @Override
