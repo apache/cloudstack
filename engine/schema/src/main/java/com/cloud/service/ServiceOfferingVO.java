@@ -157,7 +157,7 @@ public class ServiceOfferingVO implements ServiceOffering {
 
     public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA,
                              boolean limitResourceUse, boolean volatileVm, String displayText, boolean systemUse,
-                             VirtualMachine.Type vmType, String hostTag, String deploymentPlanner, boolean dynamicScalingEnabled) {
+                             VirtualMachine.Type vmType, String hostTag, String deploymentPlanner, boolean dynamicScalingEnabled, boolean isCustomized) {
         this.cpu = cpu;
         this.ramSize = ramSize;
         this.speed = speed;
@@ -174,11 +174,15 @@ public class ServiceOfferingVO implements ServiceOffering {
         this.name = name;
         this.displayText = displayText;
         this.dynamicScalingEnabled = dynamicScalingEnabled;
+        this.customized = isCustomized;
     }
 
     public ServiceOfferingVO(ServiceOfferingVO offering) {
         id = offering.getId();
         diskOfferingId = offering.getDiskOfferingId();
+        name = offering.getName();
+        displayText = offering.getDisplayText();
+        customized = true;
         cpu = offering.getCpu();
         ramSize = offering.getRamSize();
         speed = offering.getSpeed();

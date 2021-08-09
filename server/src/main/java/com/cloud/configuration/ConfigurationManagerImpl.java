@@ -2881,7 +2881,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
-                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled(), diskOfferingId, cmd.getDiskOfferingStrictness());
+                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled(), diskOfferingId, cmd.getDiskOfferingStrictness(), cmd.isCustomized());
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
@@ -2892,7 +2892,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
             Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
             Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-            final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID, final boolean dynamicScalingEnabled, final Long diskOfferingId, final boolean diskOfferingStrictness) {
+            final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID, final boolean dynamicScalingEnabled, final Long diskOfferingId, final boolean diskOfferingStrictness, final boolean isCustomized) {
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
 
@@ -2924,7 +2924,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA,
                 limitResourceUse, volatileVm, displayText, isSystem, vmType,
-                hostTag, deploymentPlanner, dynamicScalingEnabled);
+                hostTag, deploymentPlanner, dynamicScalingEnabled, isCustomized);
 
         List<ServiceOfferingDetailsVO> detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
         if (details != null) {

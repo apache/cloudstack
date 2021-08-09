@@ -212,7 +212,7 @@ public class DeploymentPlanningManagerImplTest {
     public void dataCenterAvoidTest() throws InsufficientServerCapacityException, AffinityConflictException {
         ServiceOfferingVO svcOffering =
             new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false, "test dpm",
-                    false, VirtualMachine.Type.User, null, "FirstFitPlanner", true);
+                    false, VirtualMachine.Type.User, null, "FirstFitPlanner", true, false);
         Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
@@ -226,7 +226,7 @@ public class DeploymentPlanningManagerImplTest {
     public void plannerCannotHandleTest() throws InsufficientServerCapacityException, AffinityConflictException {
         ServiceOfferingVO svcOffering =
             new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false, "test dpm",
-                    false, VirtualMachine.Type.User, null, "UserDispersingPlanner", true);
+                    false, VirtualMachine.Type.User, null, "UserDispersingPlanner", true, false);
         Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
@@ -241,7 +241,7 @@ public class DeploymentPlanningManagerImplTest {
     public void emptyClusterListTest() throws InsufficientServerCapacityException, AffinityConflictException {
         ServiceOfferingVO svcOffering =
             new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false, "test dpm",
-                    false, VirtualMachine.Type.User, null, "FirstFitPlanner", true);
+                    false, VirtualMachine.Type.User, null, "FirstFitPlanner", true, false);
         Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);

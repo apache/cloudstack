@@ -134,6 +134,9 @@ public class ServiceOfferingVO implements ServiceOffering {
     public ServiceOfferingVO(ServiceOfferingVO offering) {
         id = offering.getId();
         diskOfferingId = offering.getDiskOfferingId();
+        name = offering.getName();
+        displayText = offering.getDisplayText();
+        customized = true;
         cpu = offering.getCpu();
         ramSize = offering.getRamSize();
         speed = offering.getSpeed();
@@ -144,6 +147,8 @@ public class ServiceOfferingVO implements ServiceOffering {
         volatileVm = offering.isVolatileVm();
         hostTag = offering.getHostTag();
         vmType = offering.getSystemVmType();
+        systemUse = offering.isSystemUse();
+        dynamicScalingEnabled = offering.isDynamicScalingEnabled();
     }
 
     @Override
