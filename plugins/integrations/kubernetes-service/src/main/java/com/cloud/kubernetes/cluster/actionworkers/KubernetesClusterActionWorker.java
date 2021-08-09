@@ -55,6 +55,7 @@ import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -139,12 +140,15 @@ public class KubernetesClusterActionWorker {
     protected String publicIpAddress;
     protected int sshPort;
 
-    protected final String autoscaleScriptFilename = "autoscale-kube-cluster";
-    protected final String deploySecretsScriptFilename = "deploy-cloudstack-secret";
-    protected File autoscaleScriptFile;
-    protected File deploySecretsScriptFile;
-    protected KubernetesClusterManagerImpl manager;
 
+    protected final String deploySecretsScriptFilename = "deploy-cloudstack-secret";
+    protected final String deployProviderScriptFilename = "deploy-provider";
+    protected final String autoscaleScriptFilename = "autoscale-kube-cluster";
+    protected final String scriptPath = "/opt/bin/";
+    protected File deploySecretsScriptFile;
+    protected File deployProviderScriptFile;
+    protected File autoscaleScriptFile;
+    protected KubernetesClusterManagerImpl manager;
     protected String[] keys;
 
     protected KubernetesClusterActionWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
@@ -425,10 +429,10 @@ public class KubernetesClusterActionWorker {
         sshPort = publicIpSshPort.second();
 
         try {
+            final String command = String.format("sudo %s/%s -u '%s' -k '%s' -s '%s'",
+                scriptPath, deploySecretsScriptFilename, ApiServiceConfiguration.ApiServletPath.value(), keys[0], keys[1]);
             Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
-                pkFile, null, String.format("sudo /opt/bin/deploy-cloudstack-secret -u '%s' -k '%s' -s '%s'",
-                    ApiServiceConfiguration.ApiServletPath.value(), keys[0], keys[1]),
-                    10000, 10000, 60000);
+                pkFile, null, command, 10000, 10000, 60000);
             return result.first();
         } catch (Exception e) {
             String msg = String.format("Failed to add cloudstack-secret to Kubernetes cluster: %s", kubernetesCluster.getName());
@@ -446,27 +450,78 @@ public class KubernetesClusterActionWorker {
             writer.write(data);
             writer.close();
         } catch (IOException e) {
-            logAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster %s, unable to prepare upgrade script %s", kubernetesCluster.getName(), filename), e);
+            logAndThrow(Level.ERROR, String.format("Kubernetes Cluster %s : Failed to to fetch script %s",
+                kubernetesCluster.getName(), filename), e);
         }
         return file;
     }
 
     protected void retrieveScriptFiles() {
-        autoscaleScriptFile = retrieveScriptFile(autoscaleScriptFilename);
         deploySecretsScriptFile = retrieveScriptFile(deploySecretsScriptFilename);
+        deployProviderScriptFile = retrieveScriptFile(deployProviderScriptFilename);
+        autoscaleScriptFile = retrieveScriptFile(autoscaleScriptFilename);
     }
 
-    protected void copyAutoscalerScripts(String nodeAddress, final int sshPort) throws Exception {
-        SshHelper.scpTo(nodeAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
-                "~/", autoscaleScriptFile.getAbsolutePath(), "0755");
-        SshHelper.scpTo(nodeAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
-                "~/", deploySecretsScriptFile.getAbsolutePath(), "0755");
-        String cmdStr = String.format("sudo mv ~/%s /opt/bin/%s", autoscaleScriptFile.getName(), autoscaleScriptFilename);
-        SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
-            cmdStr, 10000, 10000, 10 * 60 * 1000);
-        cmdStr = String.format("sudo mv ~/%s /opt/bin/%s", deploySecretsScriptFile.getName(), deploySecretsScriptFilename);
-        SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
-            cmdStr, 10000, 10000, 10 * 60 * 1000);
+    protected void copyScripts(String nodeAddress, final int sshPort) {
+        copyScriptFile(nodeAddress, sshPort, deploySecretsScriptFile, deploySecretsScriptFilename);
+        copyScriptFile(nodeAddress, sshPort, deployProviderScriptFile, deployProviderScriptFilename);
+        copyScriptFile(nodeAddress, sshPort, autoscaleScriptFile, autoscaleScriptFilename);
+    }
+
+    protected void copyScriptFile(String nodeAddress, final int sshPort, File file, String desitnation) {
+        try {
+            SshHelper.scpTo(nodeAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+                "~/", file.getAbsolutePath(), "0755");
+            String cmdStr = String.format("sudo mv ~/%s %s/%s", file.getName(), scriptPath, desitnation);
+            SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+                cmdStr, 10000, 10000, 10 * 60 * 1000);
+        } catch (Exception e) {
+            throw new CloudRuntimeException(e);
+        }
+    }
+
+    protected boolean deployProvider() {
+        Network network = networkDao.findById(kubernetesCluster.getNetworkId());
+        // Since the provider creates IP addresses, don't deploy it unless the underlying network supports it
+        if (network.getGuestType() != GuestType.Isolated) {
+            logMessage(Level.INFO, String.format("Skipping adding the provider as %s is not on an isolated network",
+                kubernetesCluster.getName()), null);
+            return true;
+        }
+        File pkFile = getManagementServerSshPublicKeyFile();
+        Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+        publicIpAddress = publicIpSshPort.first();
+        sshPort = publicIpSshPort.second();
+
+        try {
+            String command = String.format("sudo %s/%s", scriptPath, deployProviderScriptFilename);
+            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                pkFile, null, command, 10000, 10000, 60000);
+
+            // Maybe the file isn't present. Try and copy it
+            if (!result.first()) {
+                logMessage(Level.INFO, "Provider files missing. Adding them now", null);
+                retrieveScriptFiles();
+                copyScripts(publicIpAddress, sshPort);
+
+                if (!createCloudStackSecret(keys)) {
+                    logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
+                        kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                }
+
+                // If at first you don't succeed ...
+                result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                    pkFile, null, command, 10000, 10000, 60000);
+                if (!result.first()) {
+                    throw new CloudRuntimeException(result.second());
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            String msg = String.format("Failed to deploy kubernetes provider: %s : %s", kubernetesCluster.getName(), e.getMessage());
+            logAndThrow(Level.ERROR, msg);
+            return false;
+        }
     }
 
     public void setKeys(String[] keys) {

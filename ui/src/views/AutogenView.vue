@@ -1185,15 +1185,15 @@ export default {
               break
             }
           }
-          if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
-            this.$store.dispatch('UpdateConfiguration')
-          }
-          if (jobId) {
-            eventBus.$emit('update-resource-state', this.selectedItems, resource, 'InProgress', jobId)
-            resolve(this.pollActionCompletion(jobId, action, resourceName, resource, showLoading))
-          }
-          resolve(false)
         }
+        if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
+          this.$store.dispatch('UpdateConfiguration')
+        }
+        if (jobId) {
+          eventBus.$emit('update-resource-state', this.selectedItems, resource, 'InProgress', jobId)
+          resolve(this.pollActionCompletion(jobId, action, resourceName, resource, showLoading))
+        }
+        resolve(false)
       })
     },
     execSubmit (e) {

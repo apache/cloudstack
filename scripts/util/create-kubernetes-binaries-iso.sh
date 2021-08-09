@@ -83,6 +83,11 @@ echo "Downloading kubernetes cluster autoscaler ${AUTOSCALER_URL}"
 autoscaler_conf_file="${working_dir}/autoscaler.yaml"
 curl -sSL ${AUTOSCALER_URL} -o ${autoscaler_conf_file}
 
+PROVIDER_URL="https://raw.githubusercontent.com/apache/cloudstack-kubernetes-provider/main/deployment.yaml"
+echo "Downloading kubernetes cluster provider ${PROVIDER_URL}"
+provider_conf_file="${working_dir}/provider.yaml"
+curl -sSL ${PROVIDER_URL} -o ${provider_conf_file}
+
 echo "Fetching k8s docker images..."
 docker -v
 if [ $? -ne 0 ]; then
@@ -108,9 +113,13 @@ do
   output=`printf "%s\n" ${output} ${images}`
 done
 
-# Don't forget about the autoscaler image !
+# Don't forget about the other image !
 autoscaler_image=`grep "image:" ${autoscaler_conf_file} | cut -d ':' -f2- | tr -d ' '`
 output=`printf "%s\n" ${output} ${autoscaler_image}`
+
+provider_image=`grep "image:" ${provider_conf_file} | cut -d ':' -f2- | tr -d ' '`
+output=`printf "%s\n" ${output} ${provider_image}`
+
 while read -r line; do
     echo "Downloading docker image $line ---"
     sudo docker pull "$line"

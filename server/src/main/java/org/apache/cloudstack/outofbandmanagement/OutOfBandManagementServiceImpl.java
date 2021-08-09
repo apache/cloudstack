@@ -29,6 +29,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.org.Cluster;
+import com.cloud.resource.ResourceState;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Transaction;
@@ -248,6 +249,13 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
         if (hostId == null) {
             return false;
         }
+
+        Host host = hostDao.findById(hostId);
+        if (host == null || host.getResourceState() == ResourceState.Degraded) {
+            LOG.debug(String.format("Host [id=%s, state=] was removed or placed in Degraded state by the Admin.", hostId, host.getResourceState()));
+            return false;
+        }
+
         final OutOfBandManagement outOfBandManagementConfig = outOfBandManagementDao.findByHost(hostId);
         if (outOfBandManagementConfig == null || !outOfBandManagementConfig.isEnabled()) {
             return false;

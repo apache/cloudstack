@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -124,6 +126,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
+import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
@@ -163,8 +166,6 @@ import com.xensource.xenapi.VIF;
 import com.xensource.xenapi.VLAN;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.XenAPIObject;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 /**
  * CitrixResourceBase encapsulates the calls to the XenServer Xapi process to
@@ -222,8 +223,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     private static final Logger s_logger = Logger.getLogger(CitrixResourceBase.class);
     protected static final HashMap<VmPowerState, PowerState> s_powerStatesTable;
 
-    private String xenServer70plusGuestToolsName = "guest-tools.iso";
-    private String xenServerBefore70GuestToolsName = "xs-tools.iso";
+    public static final String XS_TOOLS_ISO_AFTER_70 = "guest-tools.iso";
 
     static {
         s_powerStatesTable = new HashMap<VmPowerState, PowerState>();
@@ -2666,11 +2666,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      * Retrieve the actual ISO 'name-label' to be used.
      * We based our decision on XenServer version.
      * <ul>
-     *  <li> for XenServer 7.0+, we use {@value #xenServer70plusGuestToolsName};
-     *  <li> for versions before 7.0, we use {@value #xenServerBefore70GuestToolsName}.
+     *  <li> for XenServer 7.0+, we use {@value #XS_TOOLS_ISO_AFTER_70};
+     *  <li> for versions before 7.0, we use {@value TemplateManager#XS_TOOLS_ISO}.
      * </ul>
      *
-     * For XCP we always use {@value #xenServerBefore70GuestToolsName}.
      */
     protected String getActualIsoTemplate(Connection conn) throws XenAPIException, XmlRpcException {
         Host host = Host.getByUuid(conn, _host.getUuid());
@@ -2680,9 +2679,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String[] items = xenVersion.split("\\.");
 
         if ((xenBrand.equals("XenServer") || xenBrand.equals("XCP-ng")) && Integer.parseInt(items[0]) >= 7) {
-            return xenServer70plusGuestToolsName;
+            return XS_TOOLS_ISO_AFTER_70;
         }
-        return xenServerBefore70GuestToolsName;
+        return TemplateManager.XS_TOOLS_ISO;
     }
 
     public String getLabel() {

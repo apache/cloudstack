@@ -81,7 +81,6 @@ class TestKubernetesCluster(cloudstackTestCase):
                 endpoint_url = "http://%s:%d/client/api " %(cls.mgtSvrDetails["mgtSvrIp"], cls.mgtSvrDetails["port"])
                 cls.debug("Setting endpointe.url to %s" %(endpoint_url))
                 Configurations.update(cls.apiclient, "endpointe.url", endpoint_url)
-
             cls.initial_configuration_cks_enabled = Configurations.list(cls.apiclient, name="cloud.kubernetes.service.enabled")[0].value
             if cls.initial_configuration_cks_enabled not in ["true", True]:
                 cls.debug("Enabling CloudStack Kubernetes Service plugin and restarting management server")
@@ -387,7 +386,7 @@ class TestKubernetesCluster(cloudstackTestCase):
             self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
             self.fail("Failed to upgrade Kubernetes cluster due to: %s" % e)
 
-        self.verifyKubernetesClusterUpgrade(k8s_cluster, self.kubernetes_version_1_16_3.id)            
+        self.verifyKubernetesClusterUpgrade(k8s_cluster, self.kubernetes_version_1_16_3.id)
         return
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
@@ -448,7 +447,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         except Exception as e:
             self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
             self.fail("Failed to autoscale Kubernetes cluster due to: %s" % e)
-        return    
+        return
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     @skipTestIf("hypervisorNotSupported")
