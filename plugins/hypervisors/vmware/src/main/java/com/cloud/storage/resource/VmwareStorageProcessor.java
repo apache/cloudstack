@@ -96,6 +96,7 @@ import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
 import com.cloud.storage.template.OVAProcessor;
+import com.cloud.template.TemplateManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -2440,7 +2441,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 storeUrl = nfsImageStore.getUrl();
             }
             if (storeUrl == null) {
-                if (!iso.getName().equalsIgnoreCase("vmware-tools.iso")) {
+                if (!iso.getName().equalsIgnoreCase(TemplateManager.VMWARE_TOOLS_ISO)) {
                     String msg = "ISO store root url is not found in AttachIsoCommand";
                     s_logger.error(msg);
                     throw new Exception(msg);

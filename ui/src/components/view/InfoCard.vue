@@ -554,6 +554,12 @@
             <a-icon type="calendar" />{{ $toLocaleDate(resource.created) }}
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.lastupdated">
+          <div class="resource-detail-item__label">{{ $t('label.last.updated') }}</div>
+          <div class="resource-detail-item__details">
+            <a-icon type="calendar" />{{ $toLocaleDate(resource.lastupdated) }}
+          </div>
+        </div>
       </div>
 
       <div class="account-center-tags" v-if="$route.meta.related">

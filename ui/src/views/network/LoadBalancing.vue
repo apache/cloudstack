@@ -83,7 +83,7 @@
         {{ returnAlgorithmName(record.algorithm) }}
       </template>
       <template slot="protocol" slot-scope="record">
-        {{ record.protocol | capitalise }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template slot="stickiness" slot-scope="record">
         <a-button @click="() => openStickinessModal(record.id)">
@@ -597,12 +597,6 @@ export default {
       this.fetchData()
     }
   },
-  filters: {
-    capitalise: val => {
-      if (val === 'all') return this.$t('label.all')
-      return val.toUpperCase()
-    }
-  },
   methods: {
     fetchData () {
       this.fetchListTiers()
@@ -700,6 +694,10 @@ export default {
         return match[0].stickinesspolicy[0].methodname
       }
       return 'Configure'
+    },
+    getCapitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
     },
     openTagsModal (id) {
       this.tagsModalLoading = true

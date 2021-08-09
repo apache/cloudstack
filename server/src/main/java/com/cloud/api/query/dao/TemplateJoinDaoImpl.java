@@ -380,7 +380,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         isoResponse.setCreated(iso.getCreatedOnStore());
         isoResponse.setDynamicallyScalable(iso.isDynamicallyScalable());
         if (iso.getTemplateType() == TemplateType.PERHOST) {
-            // for xs-tools.iso and vmware-tools.iso, we didn't download, but is ready to use.
+            // for TemplateManager.XS_TOOLS_ISO and TemplateManager.VMWARE_TOOLS_ISO, we didn't download, but is ready to use.
             isoResponse.setReady(true);
         } else {
             isoResponse.setReady(iso.getState() == ObjectInDataStoreStateMachine.State.Ready);

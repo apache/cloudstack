@@ -151,8 +151,9 @@
       </span>
       <span v-else>{{ text }}</span>
     </span>
-    <template slot="state" slot-scope="text">
-      <status :text="text ? text : ''" displayText />
+    <template slot="state" slot-scope="text, record">
+      <status v-if="$route.path.startsWith('/host')" :text="getHostState(record)" displayText />
+      <status v-else :text="text ? text : ''" displayText />
     </template>
     <template slot="allocationstate" slot-scope="text">
       <status :text="text ? text : ''" displayText />
@@ -675,6 +676,12 @@ export default {
         const elem = data[index]
         elem.adminsonly = e.target.checked
       })
+    },
+    getHostState (host) {
+      if (host && host.hypervisor === 'KVM' && host.state === 'Up' && host.details && host.details.secured !== 'true') {
+        return 'Unsecure'
+      }
+      return host.state
     }
   }
 }
