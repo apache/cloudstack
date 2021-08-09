@@ -61,11 +61,11 @@ class TestKubernetesCluster(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.testClient = super(TestKubernetesCluster, cls).getClsTestClient()
-        cls.apiclient = cls.testClient.getApiClient()
-        cls.services = cls.testClient.getParsedTestDataConfig()
-        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
-        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        testClient = super(TestKubernetesCluster, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.hypervisor = testClient.getHypervisorInfo()
         cls.mgtSvrDetails = cls.config.__dict__["mgtSvr"][0].__dict__
 
         cls.hypervisorNotSupported = False
@@ -129,7 +129,8 @@ class TestKubernetesCluster(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         if k8s_cluster != None and k8s_cluster.id != None:
-            cls.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
+            clsObj = TestKubernetesCluster()
+            clsObj.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
 
         version_delete_failed = False
         # Delete added Kubernetes supported version
