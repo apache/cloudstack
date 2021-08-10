@@ -293,9 +293,8 @@ export default {
     position: absolute;
     top: 50%;
     transform: translate(50%, -50%);
-    width: 180px;
-    height: 180px;
-    border-radius: 50%;
+    width: 200px;
+    height: 200px;
     box-shadow: 0 0 4px #ccc;
     overflow: hidden;
     img {
