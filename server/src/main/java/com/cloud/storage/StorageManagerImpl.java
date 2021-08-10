@@ -2784,7 +2784,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         s_logger.error("Failed to register systemVM template(s)");
                     } finally {
                         SystemVmTemplateRegistration.unmountStore();
-                        txn.commit();
                         txn.close();
                     }
                 }
