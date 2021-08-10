@@ -26,15 +26,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.deployasis.DeployAsIsConstants;
-import com.cloud.deployasis.TemplateDeployAsIsDetailVO;
-import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.ChildTemplateResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
@@ -43,13 +35,20 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
+import com.cloud.deployasis.DeployAsIsConstants;
+import com.cloud.deployasis.TemplateDeployAsIsDetailVO;
+import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.TemplateType;
@@ -368,7 +367,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         isoResponse.setCreated(iso.getCreatedOnStore());
         isoResponse.setDynamicallyScalable(iso.isDynamicallyScalable());
         if (iso.getTemplateType() == TemplateType.PERHOST) {
-            // for xs-tools.iso and vmware-tools.iso, we didn't download, but is ready to use.
+            // for TemplateManager.XS_TOOLS_ISO and TemplateManager.VMWARE_TOOLS_ISO, we didn't download, but is ready to use.
             isoResponse.setReady(true);
         } else {
             isoResponse.setReady(iso.getState() == ObjectInDataStoreStateMachine.State.Ready);

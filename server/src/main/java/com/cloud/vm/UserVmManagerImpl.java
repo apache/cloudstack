@@ -189,11 +189,13 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
+import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
@@ -340,6 +342,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+
+import static com.cloud.configuration.ConfigurationManagerImpl.VM_USERDATA_MAX_LENGTH;
 
 public class UserVmManagerImpl extends ManagerBase implements UserVmManager, VirtualMachineGuru, UserVmService, Configurable {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
@@ -541,7 +545,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private Map<Long, VmAndCountDetails> vmIdCountMap = new ConcurrentHashMap<>();
 
     private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES;
-    private static final int MAX_HTTP_POST_LENGTH = 16 * MAX_USER_DATA_LENGTH_BYTES;
+    private static final int NUM_OF_2K_BLOCKS = 512;
+    private static final int MAX_HTTP_POST_LENGTH = NUM_OF_2K_BLOCKS * MAX_USER_DATA_LENGTH_BYTES;
 
     @Inject
     private OrchestrationService _orchSrvc;
@@ -977,8 +982,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (vm.getState() == State.Running && vm.getHostId() != null) {
-            collectVmDiskStatistics(vm);
-            collectVmNetworkStatistics(vm);
+            collectVmDiskAndNetworkStatistics(vm, State.Running);
 
             if (forced) {
                 Host vmOnHost = _hostDao.findById(vm.getHostId());
@@ -4471,10 +4475,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (!Base64.isBase64(userData)) {
                 throw new InvalidParameterValueException("User data is not base64 encoded");
             }
-            // If GET, use 4K. If POST, support upto 32K.
+            // If GET, use 4K. If POST, support up to 1M.
             if (httpmethod.equals(HTTPMethod.GET)) {
                 if (userData.length() >= MAX_HTTP_GET_LENGTH) {
                     throw new InvalidParameterValueException("User data is too long for an http GET request");
+                }
+                if (userData.length() > VM_USERDATA_MAX_LENGTH.value()) {
+                    throw new InvalidParameterValueException("User data has exceeded configurable max length : " + VM_USERDATA_MAX_LENGTH.value());
                 }
                 decodedUserData = Base64.decodeBase64(userData.getBytes());
                 if (decodedUserData.length > MAX_HTTP_GET_LENGTH) {
@@ -4483,6 +4490,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             } else if (httpmethod.equals(HTTPMethod.POST)) {
                 if (userData.length() >= MAX_HTTP_POST_LENGTH) {
                     throw new InvalidParameterValueException("User data is too long for an http POST request");
+                }
+                if (userData.length() > VM_USERDATA_MAX_LENGTH.value()) {
+                    throw new InvalidParameterValueException("User data has exceeded configurable max length : " + VM_USERDATA_MAX_LENGTH.value());
                 }
                 decodedUserData = Base64.decodeBase64(userData.getBytes());
                 if (decodedUserData.length > MAX_HTTP_POST_LENGTH) {
@@ -5961,8 +5971,47 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Cannot migrate VM, host with id: " + srcHostId + " for VM not found");
         }
 
+        DeployDestination dest = null;
+        if (destinationHost == null) {
+            dest = chooseVmMigrationDestination(vm, srcHost);
+        } else {
+            dest = checkVmMigrationDestination(vm, srcHost, destinationHost);
+        }
 
-        if (destinationHost.getId() == srcHostId) {
+        // If no suitable destination found then throw exception
+        if (dest == null) {
+            throw new CloudRuntimeException("Unable to find suitable destination to migrate VM " + vm.getInstanceName());
+        }
+
+        collectVmDiskAndNetworkStatistics(vmId, State.Running);
+        _itMgr.migrate(vm.getUuid(), srcHostId, dest);
+        return findMigratedVm(vm.getId(), vm.getType());
+    }
+
+    private DeployDestination chooseVmMigrationDestination(VMInstanceVO vm, Host srcHost) {
+        vm.setLastHostId(null); // Last host does not have higher priority in vm migration
+        final ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, offering, null, null);
+        final Long srcHostId = srcHost.getId();
+        final Host host = _hostDao.findById(srcHostId);
+        final DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null, null);
+        ExcludeList excludes = new ExcludeList();
+        excludes.addHost(srcHostId);
+        try {
+            return _planningMgr.planDeployment(profile, plan, excludes, null);
+        } catch (final AffinityConflictException e2) {
+            s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
+            throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict");
+        } catch (final InsufficientServerCapacityException e3) {
+            throw new CloudRuntimeException("Unable to find a server to migrate the vm to");
+        }
+    }
+
+    private DeployDestination checkVmMigrationDestination(VMInstanceVO vm, Host srcHost, Host destinationHost) throws VirtualMachineMigrationException {
+        if (destinationHost == null) {
+            return null;
+        }
+        if (destinationHost.getId() == srcHost.getId()) {
             throw new InvalidParameterValueException("Cannot migrate VM, VM is already present on this host, please specify valid destination host to migrate the VM");
         }
 
@@ -5983,7 +6032,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("Cannot migrate VM, VM is DPDK enabled VM but destination host is not DPDK enabled");
         }
 
-        checkHostsDedication(vm, srcHostId, destinationHost.getId());
+        checkHostsDedication(vm, srcHost.getId(), destinationHost.getId());
 
         // call to core process
         DataCenterVO dcVO = _dcDao.findById(destinationHost.getDataCenterId());
@@ -6002,19 +6051,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             + " already has max Running VMs(count includes system VMs), cannot migrate to this host");
         }
         //check if there are any ongoing volume snapshots on the volumes associated with the VM.
+        Long vmId = vm.getId();
         s_logger.debug("Checking if there are any ongoing snapshots volumes associated with VM with ID " + vmId);
         if (checkStatusOfVolumeSnapshots(vmId, null)) {
             throw new CloudRuntimeException("There is/are unbacked up snapshot(s) on volume(s) attached to this VM, VM Migration is not permitted, please try again later.");
         }
         s_logger.debug("Found no ongoing snapshots on volumes associated with the vm with id " + vmId);
 
-        UserVmVO uservm = _vmDao.findById(vmId);
-        if (uservm != null) {
-            collectVmDiskStatistics(uservm);
-            collectVmNetworkStatistics(uservm);
-        }
-        _itMgr.migrate(vm.getUuid(), srcHostId, dest);
-        return findMigratedVm(vm.getId(), vm.getType());
+        return dest;
     }
 
     private boolean isOnSupportedHypevisorForMigration(VMInstanceVO vm) {
@@ -6418,7 +6462,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
         }
 
-        if (VM_STORAGE_MIGRATION_SUPPORTING_HYPERVISORS.contains(vm.getHypervisorType())) {
+        if (!VM_STORAGE_MIGRATION_SUPPORTING_HYPERVISORS.contains(vm.getHypervisorType())) {
             throw new InvalidParameterValueException(String.format("Unsupported hypervisor: %s for VM migration, we support XenServer/VMware/KVM only", vm.getHypervisorType()));
         }
 
@@ -7377,11 +7421,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public void prepareStop(VirtualMachineProfile profile) {
-        UserVmVO vm = _vmDao.findById(profile.getId());
-        if (vm != null && vm.getState() == State.Stopping) {
-            collectVmDiskStatistics(vm);
-            collectVmNetworkStatistics(vm);
-        }
+        collectVmDiskAndNetworkStatistics(profile.getId(), State.Stopping);
     }
 
     @Override
@@ -7723,5 +7763,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
         return network;
+    }
+
+    private void collectVmDiskAndNetworkStatistics(Long vmId, State expectedState) {
+        UserVmVO uservm = _vmDao.findById(vmId);
+        if (uservm != null) {
+            collectVmDiskAndNetworkStatistics(uservm, expectedState);
+        } else {
+            s_logger.info(String.format("Skip collecting vm %s disk and network statistics as it is not user vm", uservm));
+        }
+    }
+
+    private void collectVmDiskAndNetworkStatistics(UserVm vm, State expectedState) {
+        if (expectedState == null || expectedState == vm.getState()) {
+            collectVmDiskStatistics(vm);
+            collectVmNetworkStatistics(vm);
+        } else {
+            s_logger.warn(String.format("Skip collecting vm %s disk and network statistics as the expected vm state is %s but actual state is %s", vm, expectedState, vm.getState()));
+        }
     }
 }

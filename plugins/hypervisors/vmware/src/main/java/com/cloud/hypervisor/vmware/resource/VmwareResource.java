@@ -261,6 +261,7 @@ import com.cloud.storage.resource.VmwareStorageProcessor;
 import com.cloud.storage.resource.VmwareStorageProcessor.VmwareStorageProcessorConfigurableFields;
 import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
 import com.cloud.storage.template.TemplateProp;
+import com.cloud.template.TemplateManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
@@ -5181,7 +5182,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             String storeUrl = cmd.getStoreUrl();
             if (storeUrl == null) {
-                if (!cmd.getIsoPath().equalsIgnoreCase("vmware-tools.iso")) {
+                if (!cmd.getIsoPath().equalsIgnoreCase(TemplateManager.VMWARE_TOOLS_ISO)) {
                     String msg = "ISO store root url is not found in AttachIsoCommand";
                     s_logger.error(msg);
                     throw new Exception(msg);
