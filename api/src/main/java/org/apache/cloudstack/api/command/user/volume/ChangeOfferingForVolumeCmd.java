@@ -37,16 +37,16 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
-@APICommand(name = ChangeOfferingForVolume.APINAME,
+@APICommand(name = ChangeOfferingForVolumeCmd.APINAME,
         description = "Change disk offering of the volume and also an option to auto migrate if required to apply the new disk offering",
         responseObject = VolumeResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         since = "4.16")
-public class ChangeOfferingForVolume extends BaseAsyncCmd implements UserCmd {
+public class ChangeOfferingForVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
     public static final String APINAME = "changeOfferingForVolume";
-    public static final Logger s_logger = Logger.getLogger(ChangeOfferingForVolume.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ChangeOfferingForVolumeCmd.class.getName());
     private static final String s_name = "changeofferingforvolumeresponse";
 
     /////////////////////////////////////////////////////

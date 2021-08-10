@@ -43,7 +43,7 @@ import com.cloud.vm.DiskProfile;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolume;
+import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
@@ -1631,7 +1631,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CHANGE_DISK_OFFERING, eventDescription = "Changing disk offering of a volume")
-    public Volume changeDiskOfferingForVolume(ChangeOfferingForVolume cmd) throws ResourceAllocationException {
+    public Volume changeDiskOfferingForVolume(ChangeOfferingForVolumeCmd cmd) throws ResourceAllocationException {
         Long newSize = cmd.getSize();
         Long newMinIops = cmd.getMinIops();
         Long newMaxIops = cmd.getMaxIops();
@@ -1699,7 +1699,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         StoragePoolVO existingStoragePool = _storagePoolDao.findById(volume.getPoolId());
 
-        Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForMigrationOfVolume(volume.getId(), newDiskOffering.getId(), true);
+        Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForMigrationOfVolumeInternal(volume.getId(), newDiskOffering.getId(), true);
         List<? extends StoragePool> suitableStoragePools = poolsPair.second();
 
         if (!suitableStoragePools.stream().anyMatch(p -> (p.getId() == existingStoragePool.getId()))) {

@@ -509,7 +509,7 @@ import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.volume.AddResourceDetailCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolume;
+import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DeleteVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DestroyVolumeCmd;
@@ -1482,9 +1482,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolumeForListing(final Long volumeId) {
+    public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(final Long volumeId) {
 
-        Pair<List<? extends StoragePool>, List<? extends StoragePool>> allPoolsAndSuitablePoolsPair = listStoragePoolsForMigrationOfVolume(volumeId, null, false);
+        Pair<List<? extends StoragePool>, List<? extends StoragePool>> allPoolsAndSuitablePoolsPair = listStoragePoolsForMigrationOfVolumeInternal(volumeId, null, false);
         List<? extends StoragePool> allPools = allPoolsAndSuitablePoolsPair.first();
         List<? extends StoragePool> suitablePools = allPoolsAndSuitablePoolsPair.second();
         List<StoragePool> avoidPools = new ArrayList<>();
@@ -1500,7 +1500,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
     }
 
-    public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(final Long volumeId, Long newDiskOfferingId, boolean keepSourceStoragePool) {
+    public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolumeInternal(final Long volumeId, Long newDiskOfferingId, boolean keepSourceStoragePool) {
         final Account caller = getCaller();
         if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (s_logger.isDebugEnabled()) {
@@ -3536,7 +3536,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(IssueOutOfBandManagementPowerActionCmd.class);
         cmdList.add(ChangeOutOfBandManagementPasswordCmd.class);
         cmdList.add(GetUserKeysCmd.class);
-        cmdList.add(ChangeOfferingForVolume.class);
+        cmdList.add(ChangeOfferingForVolumeCmd.class);
         return cmdList;
     }
 

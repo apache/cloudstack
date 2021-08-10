@@ -3782,6 +3782,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } else {
             diskOffering.setTags(null);
         }
+        _diskOfferingDao.update(diskOffering.getId(), diskOffering);
     }
 
     /**
