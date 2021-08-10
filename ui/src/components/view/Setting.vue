@@ -59,7 +59,7 @@
                 :disabled="layoutMode === 'dark'"
                 type="color"
                 v-model="navBgColorPick"
-                @change="(e) => updateSetting('@navigation-background-color', e.target.value)" />
+                @blur="(e) => updateSetting('@navigation-background-color', e.target.value)" />
             </div>
           </div>
         </a-list-item>
@@ -71,7 +71,7 @@
                 :disabled="layoutMode === 'dark'"
                 type="color"
                 v-model="navBgColorPick"
-                @change="(e) => updateSetting('@navigation-text-color', e.target.value)" />
+                @blur="(e) => updateSetting('@navigation-text-color', e.target.value)" />
             </div>
           </div>
         </a-list-item>
@@ -90,7 +90,7 @@
               <a-input
                 type="color"
                 v-model="projectNavBgColorPick"
-                @change="(e) => updateSetting('@project-nav-background-color', e.target.value)" />
+                @blur="(e) => updateSetting('@project-nav-background-color', e.target.value)" />
             </div>
           </div>
         </a-list-item>
@@ -101,7 +101,7 @@
               <a-input
                 type="color"
                 v-model="projectNavTextColorPick"
-                @change="(e) => updateSetting('@project-nav-text-color', e.target.value)" />
+                @blur="(e) => updateSetting('@project-nav-text-color', e.target.value)" />
             </div>
           </div>
         </a-list-item>
