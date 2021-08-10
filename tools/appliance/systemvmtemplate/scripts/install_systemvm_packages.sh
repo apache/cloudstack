@@ -77,7 +77,9 @@ function install_packages() {
     sharutils genisoimage \
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins strongswan-charon strongswan-starter \
     virt-what open-vm-tools qemu-guest-agent hyperv-daemons cloud-guest-utils \
-    apt-transport-https ca-certificates curl gnupg  gnupg-agent software-properties-common cloud-init
+    apt-transport-https ca-certificates curl gnupg  gnupg-agent software-properties-common
+
+  apt-get install -y python3-json-pointer python3-jsonschema cloud-init
 
   apt-get -y autoremove --purge
   apt-get clean

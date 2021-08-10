@@ -71,7 +71,8 @@
                             <goal>wget</goal>
                         </goals>
                         <configuration>
-                            <url>https://download.cloudstack.org/systemvm/4.16/md5sum.txt</url>
+<!--                            <url>https://download.cloudstack.org/systemvm/4.16/md5sum.txt</url>-->
+                            <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/4.16/md5sum.txt</url>
                             <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                         </configuration>
                     </execution>
@@ -122,7 +123,8 @@
                                     <goal>wget</goal>
                                 </goals>
                                 <configuration>
-                                    <url>https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-kvm.qcow2.bz2</url>
+<!--                                    <url>https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-kvm.qcow2.bz2</url>-->
+                                    <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/4.16/systemvmtemplate-4.16.0-kvm.qcow2.bz2</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                 </configuration>
                             </execution>
@@ -132,7 +134,8 @@
                                     <goal>wget</goal>
                                 </goals>
                                 <configuration>
-                                    <url>https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-vmware.ova</url>
+<!--                                    <url>https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-vmware.ova</url>-->
+                                    <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/4.16/systemvmtemplate-4.16.0-vmware.ova</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                 </configuration>
                             </execution>
@@ -142,7 +145,8 @@
                                     <goal>wget</goal>
                                 </goals>
                                 <configuration>
-                                    <url>https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-xen.vhd.bz2</url>
+<!--                                    <url>https://download.cloudstack.org/systemvm/4.16/systemvmtemplate-4.16.0-xen.vhd.bz2</url>-->
+                                    <url>http://10.0.3.122/systemvmtemplate/custom/cks-debian/4.16/systemvmtemplate-4.16.0-xen.vhd.bz2</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                 </configuration>
                             </execution>
