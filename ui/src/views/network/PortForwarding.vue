@@ -161,7 +161,7 @@
           </a-form-item>
         </div>
 
-        <a-button type="primary" @click="handleAddTag">{{ $t('label.add') }}</a-button>
+        <a-button type="primary" ref="submit" @click="handleAddTag">{{ $t('label.add') }}</a-button>
       </a-form>
 
       <a-divider></a-divider>
@@ -264,7 +264,7 @@
       </div>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" @click="addRule">{{ $t('label.ok') }}</a-button>
+        <a-button type="primary" ref="submit" @click="addRule">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
 
