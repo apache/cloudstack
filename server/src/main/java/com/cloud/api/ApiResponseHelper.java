@@ -2356,6 +2356,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setExternalId(network.getExternalId());
         response.setRedundantRouter(network.isRedundant());
+        response.setCreated(network.getCreated());
         response.setObjectName("network");
         return response;
     }
@@ -2965,6 +2966,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setId(vpc.getUuid());
         response.setName(vpc.getName());
         response.setDisplayText(vpc.getDisplayText());
+        response.setCreated(vpc.getCreated());
         response.setState(vpc.getState().name());
         VpcOffering voff = ApiDBUtils.findVpcOfferingById(vpc.getVpcOfferingId());
         if (voff != null) {

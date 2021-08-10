@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -249,6 +250,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.RESOURCE_ICON)
     @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
     ResourceIconResponse icon;
+
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "the date this network was created", since = "4.16.0")
+    private Date created;
 
     public Boolean getDisplayNetwork() {
         return displayNetwork;
@@ -498,5 +503,13 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @Override
     public void setResourceIconResponse(ResourceIconResponse icon) {
         this.icon = icon;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
     }
 }

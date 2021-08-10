@@ -16,19 +16,14 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item v-if="!this.isAdminOrDomainAdmin()">
-          <span slot="label">
-            {{ $t('label.currentpassword') }}
-            <a-tooltip :title="apiParams.currentpassword.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.currentpassword')" :tooltip="apiParams.currentpassword.description"/>
           <a-input-password
             v-decorator="['currentpassword', {
               rules: [{ required: true, message: $t('message.error.current.password') }]
@@ -37,12 +32,7 @@
             autoFocus />
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.new.password') }}
-            <a-tooltip :title="apiParams.password.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.new.password')" :tooltip="apiParams.password.description"/>
           <a-input-password
             v-decorator="['password', {
               rules: [{ required: true, message: $t('message.error.new.password') }]
@@ -50,12 +40,7 @@
             :placeholder="$t('label.new.password')"/>
         </a-form-item>
         <a-form-item>
-          <span slot="label">
-            {{ $t('label.confirmpassword') }}
-            <a-tooltip :title="apiParams.password.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.confirmpassword')" :tooltip="apiParams.password.description"/>
           <a-input-password
             v-decorator="['confirmpassword', {
               rules: [
@@ -73,7 +58,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -82,9 +67,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ChangeUserPassword',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -98,11 +87,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiParams = {}
-    this.apiConfig = this.$store.getters.apis.updateUser || {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('updateUser')
   },
   methods: {
     isAdminOrDomainAdmin () {
@@ -129,6 +114,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) {
           return
@@ -168,14 +154,6 @@ export default {
 
     @media (min-width: 600px) {
       width: 450px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

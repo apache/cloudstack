@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.user.resource;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -43,9 +42,7 @@ public class ListDetailOptionsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, required = true,
-            description = "the resource type such as UserVm, Template etc.",
-            validations = {ApiArgValidator.NotNullOrEmpty}
-    )
+            description = "the resource type such as UserVm, Template etc.")
     private String resourceType;
 
     @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING,

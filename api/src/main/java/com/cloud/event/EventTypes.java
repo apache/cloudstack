@@ -351,6 +351,10 @@ public class EventTypes {
     // Host
     public static final String EVENT_HOST_RECONNECT = "HOST.RECONNECT";
 
+    // Host on Degraded ResourceState
+    public static final String EVENT_DECLARE_HOST_DEGRADED = "HOST.DECLARE.DEGRADED";
+    public static final String EVENT_CANCEL_HOST_DEGRADED = "HOST.CANCEL.DEGRADED";
+
     // Host Out-of-band management
     public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_ENABLE = "HOST.OOBM.ENABLE";
     public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_DISABLE = "HOST.OOBM.DISABLE";

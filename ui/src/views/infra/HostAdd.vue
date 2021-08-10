@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="loading">
-    <div class="form">
+    <div class="form" v-ctrl-enter="handleSubmitForm">
 
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.zonenamelabel') }}</div>
@@ -116,9 +116,9 @@
 
       <a-divider></a-divider>
 
-      <div class="actions">
+      <div :span="24" class="action-button">
         <a-button @click="() => this.$parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
-        <a-button @click="handleSubmitForm" type="primary">{{ $t('label.ok') }}</a-button>
+        <a-button @click="handleSubmitForm" ref="submit" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
 
     </div>
@@ -252,6 +252,7 @@ export default {
       this.showDedicated = !this.showDedicated
     },
     handleSubmitForm () {
+      if (this.loading) return
       const requiredFields = document.querySelectorAll('.required-field')
 
       requiredFields.forEach(field => {
@@ -319,15 +320,11 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.dedicatehostresponse.jobid,
+          title: this.$t('message.host.dedicated'),
+          description: `${this.$t('label.domainid')} : ${this.dedicatedDomainId}`,
           successMessage: this.$t('message.host.dedicated'),
           successMethod: () => {
             this.loading = false
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.host.dedicated'),
-              jobid: response.dedicatehostresponse.jobid,
-              description: `${this.$t('label.domainid')} : ${this.dedicatedDomainId}`,
-              status: 'progress'
-            })
           },
           errorMessage: this.$t('error.dedicate.host.failed'),
           errorMethod: () => {
@@ -369,15 +366,6 @@ export default {
       width: 85vw;
       @media (min-width: 760px) {
         width: 400px;
-      }
-    }
-  }
-  .actions {
-    display: flex;
-    justify-content: flex-end;
-    button {
-      &:not(:last-child) {
-        margin-right: 10px;
       }
     }
   }

@@ -84,6 +84,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.QueryBuilder;
@@ -118,7 +119,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     @Inject
     private HostPodDao _podDao;
 
-    private String xenServerIsoName = "xs-tools.iso";
+    private String xenServerIsoName = TemplateManager.XS_TOOLS_ISO;
     private String xenServerIsoDisplayText = "XenServer Tools Installer ISO (xen-pv-drv-iso)";
 
     protected XcpServerDiscoverer() {

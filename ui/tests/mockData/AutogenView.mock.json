@@ -34,7 +34,26 @@
       "label.view.console": "view-console-en",
       "error.fetching.async.job.result": "Error encountered while fetching async job result",
       "label.cancel": "cancel",
-      "label.ok": "ok"
+      "label.ok": "ok",
+      "label.close": "close",
+      "label.success": "close",
+      "state.failed": "state.failed",
+      "state.inprogress": "state.inprogress",
+      "label.state": "label.state",
+      "label.hostname": "label.hostname",
+      "label.hostid": "label.hostid",
+      "label.zonename": "label.zonename",
+      "label.zone": "label.zone",
+      "label.zoneid": "label.zoneid",
+      "label.ip": "label.ip",
+      "label.ipaddress": "label.ipaddress",
+      "label.privateip": "label.privateip",
+      "label.linklocalip": "label.linklocalip",
+      "label.size": "label.size",
+      "label.sizegb": "label.sizegb",
+      "label.current": "label.current",
+      "label.created": "label.created",
+      "label.order": "label.order"
     },
     "de": {
       "labelname": "test-name-de",
@@ -70,7 +89,26 @@
       "label.view.console": "view-console-de",
       "error.fetching.async.job.result": "Error encountered while fetching async job result",
       "label.cancel": "cancel",
-      "label.ok": "ok"
+      "label.ok": "ok",
+      "label.close": "close",
+      "label.success": "close",
+      "state.failed": "state.failed",
+      "state.inprogress": "state.inprogress",
+      "label.state": "label.state",
+      "label.hostname": "label.hostname",
+      "label.hostid": "label.hostid",
+      "label.zonename": "label.zonename",
+      "label.zone": "label.zone",
+      "label.zoneid": "label.zoneid",
+      "label.ip": "label.ip",
+      "label.ipaddress": "label.ipaddress",
+      "label.privateip": "label.privateip",
+      "label.linklocalip": "label.linklocalip",
+      "label.size": "label.size",
+      "label.sizegb": "label.sizegb",
+      "label.current": "label.current",
+      "label.created": "label.created",
+      "label.order": "label.order"
     }
   },
   "apis": {
@@ -157,6 +195,56 @@
       ],
       "response": []
     },
+    "testApiNameCase7": {
+      "params": [
+        {
+          "name": "column2",
+          "type": "string"
+        },
+        {
+          "name": "column1",
+          "type": "string"
+        },
+        {
+          "name": "column3",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "id",
+          "type": "string"
+        }
+      ],
+      "response": []
+    },
+    "testApiNameCase8": {
+      "params": [
+        {
+          "name": "column2",
+          "type": "string"
+        },
+        {
+          "name": "column1",
+          "type": "string"
+        },
+        {
+          "name": "column3",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "id",
+          "type": "string"
+        }
+      ],
+      "response": []
+    },
     "listTemplates": {
       "params": {},
       "response": []
@@ -194,5 +282,7 @@
     "roletype": "Normal",
     "account": "test-account",
     "domainid": "test-domain-id"
-  }
+  },
+  "headerNotices": [],
+  "asyncJobIds": []
 }

@@ -73,8 +73,8 @@
       :visible="showCreateForm"
       :title="$t('label.add.ip.range')"
       :maskClosable="false"
+      :closable="true"
       :footer="null"
-      :cancelText="$t('label.cancel')"
       @cancel="() => { showCreateForm = false }"
       centered
       width="auto">
@@ -88,7 +88,7 @@
 <script>
 import { api } from '@/api'
 import CreateVlanIpRange from '@/views/network/CreateVlanIpRange'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 export default {
   name: 'GuestIpRanges',
   components: {

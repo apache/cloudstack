@@ -19,12 +19,14 @@ package org.apache.cloudstack.api.command.admin.offering;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.log4j.Logger;
 
@@ -70,6 +72,20 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
             description = "the ID of the containing zone(s) as comma separated string, all for all zones offerings",
             since = "4.13")
     private String zoneIds;
+
+    @Parameter(name = ApiConstants.STORAGE_TAGS,
+            type = CommandType.STRING,
+            description = "comma-separated list of tags for the service offering, tags should match with existing storage pool tags",
+            authorized = {RoleType.Admin},
+            since = "4.16")
+    private String storageTags;
+
+    @Parameter(name = ApiConstants.HOST_TAGS,
+            type = CommandType.STRING,
+            description = "the host tag for this service offering.",
+            authorized = {RoleType.Admin},
+            since = "4.16")
+    private String hostTags;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -149,6 +165,14 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
             validZoneIds.addAll(_configService.getServiceOfferingZones(id));
         }
         return validZoneIds;
+    }
+
+    public String getStorageTags() {
+        return storageTags;
+    }
+
+    public String getHostTags() {
+        return hostTags;
     }
 
     /////////////////////////////////////////////////////

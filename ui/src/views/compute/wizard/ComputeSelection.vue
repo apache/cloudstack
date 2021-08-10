@@ -19,7 +19,7 @@
   <a-card>
     <a-col>
       <a-row>
-        <a-col :md="colContraned" :lg="colContraned">
+        <a-col :md="colContraned" :lg="colContraned" v-if="isCustomized">
           <a-form-item
             :label="$t('label.cpunumber')"
             :validate-status="errors.cpu.status"
@@ -43,7 +43,7 @@
             </a-row>
           </a-form-item>
         </a-col>
-        <a-col :md="8" :lg="8" v-show="!isConstrained">
+        <a-col :md="8" :lg="8" v-show="!isConstrained" v-if="isCustomized">
           <a-form-item
             :label="$t('label.cpuspeed')"
             :validate-status="errors.cpuspeed.status"
@@ -55,7 +55,7 @@
             />
           </a-form-item>
         </a-col>
-        <a-col :md="colContraned" :lg="colContraned">
+        <a-col :md="colContraned" :lg="colContraned" v-if="isCustomized">
           <a-form-item
             :label="$t('label.memory.mb')"
             :validate-status="errors.memory.status"
@@ -76,6 +76,18 @@
                 />
               </a-col>
             </a-row>
+          </a-form-item>
+        </a-col>
+        <a-col :md="8" v-if="isCustomizedIOps">
+          <a-form-item :label="$t('label.miniops')">
+            <a-input-number v-model="minIOps" @change="updateIOpsValue" />
+            <p v-if="errorMinIOps" style="color: red"> {{ $t(errorMinIOps) }} </p>
+          </a-form-item>
+        </a-col>
+        <a-col :md="8" v-if="isCustomizedIOps">
+          <a-form-item :label="$t('label.maxiops')">
+            <a-input-number v-model="maxIOps" @change="updateIOpsValue" />
+            <p v-if="errorMaxIOps" style="color: red"> {{ $t(errorMaxIOps) }} </p>
           </a-form-item>
         </a-col>
       </a-row>
@@ -111,11 +123,11 @@ export default {
       type: Number,
       default: 256
     },
-    cpunumberInputDecorator: {
+    cpuNumberInputDecorator: {
       type: String,
       default: ''
     },
-    cpuspeedInputDecorator: {
+    cpuSpeedInputDecorator: {
       type: String,
       default: ''
     },
@@ -126,6 +138,14 @@ export default {
     preFillContent: {
       type: Object,
       default: () => {}
+    },
+    isCustomized: {
+      type: Boolean,
+      default: false
+    },
+    isCustomizedIOps: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -146,7 +166,11 @@ export default {
           status: '',
           message: ''
         }
-      }
+      },
+      minIOps: null,
+      maxIOps: null,
+      errorMinIOps: false,
+      errorMaxIOps: false
     }
   },
   computed: {
@@ -162,7 +186,9 @@ export default {
     }
   },
   mounted () {
-    this.fillValue()
+    if (this.isCustomized) {
+      this.fillValue()
+    }
   },
   methods: {
     fillValue () {
@@ -193,10 +219,10 @@ export default {
       if (!this.validateInput('cpu', value)) {
         return
       }
-      this.$emit('update-compute-cpunumber', this.cpunumberInputDecorator, value)
+      this.$emit('update-compute-cpunumber', this.cpuNumberInputDecorator, value)
     },
     updateComputeCpuSpeed (value) {
-      this.$emit('update-compute-cpuspeed', this.cpuspeedInputDecorator, value)
+      this.$emit('update-compute-cpuspeed', this.cpuSpeedInputDecorator, value)
     },
     updateComputeMemory (value) {
       if (!value) this.memoryInputValue = 0
@@ -247,6 +273,34 @@ export default {
       }
 
       return true
+    },
+    updateIOpsValue () {
+      let flag = true
+      this.errorMinIOps = false
+      this.errorMaxIOps = false
+      if (this.minIOps < 0) {
+        this.errorMinIOps = `${this.$t('message.error.limit.value')} 0`
+        flag = false
+      }
+      if (this.maxIOps < 0) {
+        this.errorMaxIOps = `${this.$t('message.error.limit.value')} 0`
+        flag = false
+      }
+
+      if (!flag) {
+        this.$emit('handler-error', true)
+        return
+      }
+
+      if (this.minIOps > this.maxIOps) {
+        this.errorMinIOps = this.$t('message.error.valid.iops.range')
+        this.errorMaxIOps = this.$t('message.error.valid.iops.range')
+        this.$emit('handler-error', true)
+        return
+      }
+      this.$emit('update-iops-value', 'minIops', this.minIOps)
+      this.$emit('update-iops-value', 'maxIops', this.maxIOps)
+      this.$emit('handler-error', false)
     }
   }
 }

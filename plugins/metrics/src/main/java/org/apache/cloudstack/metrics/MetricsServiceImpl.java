@@ -202,6 +202,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             metricsResponse.setDiskRead(vmResponse.getDiskKbsRead());
             metricsResponse.setDiskWrite(vmResponse.getDiskKbsWrite());
             metricsResponse.setDiskIopsTotal(vmResponse.getDiskIORead(), vmResponse.getDiskIOWrite());
+            metricsResponse.setLastUpdated(vmResponse.getLastUpdated());
             metricsResponses.add(metricsResponse);
         }
         return metricsResponses;

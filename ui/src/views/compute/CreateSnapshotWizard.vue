@@ -16,19 +16,14 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
         <a-form-item>
-          <span slot="label" :title="apiParams.volumeid.description">
-            {{ $t('label.volumeid') }}
-            <a-tooltip>
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.volumeid')" :tooltip="apiParams.volumeid.description"/>
           <a-select
             showSearch
             allowClear
@@ -46,37 +41,22 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <span slot="label" :title="apiParams.name.description">
-            {{ $t('label.name') }}
-            <a-tooltip>
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           <a-input
             v-decorator="['name']"
             :placeholder="apiParams.name.description"/>
         </a-form-item>
         <a-form-item v-if="isQuiesceVm">
-          <span slot="label" :title="apiParams.quiescevm.description">
-            {{ $t('label.quiescevm') }}
-            <a-tooltip>
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.quiescevm')" :tooltip="apiParams.quiescevm.description"/>
           <a-switch v-decorator="['quiescevm', { initialValue: false }]"/>
         </a-form-item>
         <a-form-item v-if="!supportsStorageSnapshot">
-          <span slot="label" :title="apiParams.asyncbackup.description">
-            {{ $t('label.asyncbackup') }}
-            <a-tooltip>
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+          <tooltip-label slot="label" :title="$t('label.asyncbackup')" :tooltip="apiParams.asyncbackup.description"/>
           <a-switch v-decorator="['asyncbackup', { initialValue: false }]"/>
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -85,9 +65,13 @@
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateSnapshotWizard',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -104,11 +88,7 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.createSnapshot || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('createSnapshot')
   },
   created () {
     this.fetchData()
@@ -127,6 +107,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
 
+      if (this.loading) return
       this.form.validateFields((err, values) => {
         if (err) return
 
@@ -150,6 +131,8 @@ export default {
             if (jobId) {
               this.$pollJob({
                 jobId,
+                title: title,
+                description: description,
                 successMethod: result => {
                   const volumeId = result.jobresult.snapshot.volumeid
                   const snapshotId = result.jobresult.snapshot.id
@@ -161,12 +144,6 @@ export default {
                 },
                 loadingMessage: `${title} ${this.$t('label.in.progress')}`,
                 catchMessage: this.$t('error.fetching.async.job.result')
-              })
-              this.$store.dispatch('AddAsyncJob', {
-                title: title,
-                jobid: jobId,
-                description: description,
-                status: 'progress'
               })
             }
           }).catch(error => {
@@ -196,12 +173,6 @@ export default {
   width: 80vw;
   @media (min-width: 600px) {
     width: 450px;
-  }
-}
-.action-button {
-  text-align: right;
-  button {
-    margin-right: 5px;
   }
 }
 </style>

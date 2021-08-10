@@ -35,6 +35,12 @@ public interface AlertManager extends Manager, AlertService {
         "Alert", "0.75", "Percentage (as a value between 0 and 1) of allocated storage utilization above which alerts will be sent about low storage available.", true,
         ConfigKey.Scope.Cluster, null);
 
+    public static final ConfigKey<Boolean> AlertSmtpUseStartTLS = new ConfigKey<Boolean>("Advanced", Boolean.class, "alert.smtp.useStartTLS", "false",
+            "If set to true and if we enable security via alert.smtp.useAuth, this will enable StartTLS to secure the conection.", true);
+
+    public static final ConfigKey<String> AlertSmtpEnabledSecurityProtocols = new ConfigKey<String>("Advanced", String.class, "alert.smtp.enabledSecurityProtocols", "",
+            "White-space separated security protocols; ex: \"TLSv1 TLSv1.1\". Supported protocols: SSLv2Hello, SSLv3, TLSv1, TLSv1.1 and TLSv1.2", true);
+
     void clearAlert(AlertType alertType, long dataCenterId, long podId);
 
     void recalculateCapacity();
