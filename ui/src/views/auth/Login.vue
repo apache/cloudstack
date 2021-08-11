@@ -64,7 +64,7 @@
               {rules: [{ required: true, message: $t('message.error.username') }, { validator: handleUsernameOrEmail }], validateTrigger: 'change'}
             ]"
           >
-            <a-icon slot="prefix" type="user" :style="{ color: 'rgba(0,0,0,.25)' }"/>
+            <a-icon slot="prefix" type="user" />
           </a-input>
         </a-form-item>
 
@@ -79,7 +79,7 @@
               {rules: [{ required: true, message: $t('message.error.password') }], validateTrigger: 'blur'}
             ]"
           >
-            <a-icon slot="prefix" type="lock" :style="{ color: 'rgba(0,0,0,.25)' }"/>
+            <a-icon slot="prefix" type="lock" />
           </a-input-password>
         </a-form-item>
 
@@ -93,7 +93,7 @@
               {rules: [{ required: false, message: $t('message.error.domain') }], validateTrigger: 'change'}
             ]"
           >
-            <a-icon slot="prefix" type="block" :style="{ color: 'rgba(0,0,0,.25)' }"/>
+            <a-icon slot="prefix" type="block" />
           </a-input>
         </a-form-item>
 
