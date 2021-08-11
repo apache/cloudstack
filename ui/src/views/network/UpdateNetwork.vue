@@ -40,9 +40,9 @@
             :placeholder="apiParams.displaytext.description"
             autoFocus />
         </a-form-item>
-        <a-form-item>
+        <a-form-item v-if="isUpdatingIsolatedNetwork">
           <tooltip-label slot="label" :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
-          <span v-if="this.networkOffering.id && this.networkOffering.id != this.resource.networkofferingid">
+          <span v-if="networkOffering.id && networkOffering.id != resource.networkofferingid">
             <a-alert type="warning">
               <span slot="message" v-html="$t('message.network.offering.change.warning')" />
             </a-alert>
@@ -59,7 +59,7 @@
             :loading="networkOfferingLoading"
             :placeholder="apiParams.networkofferingid.description"
             @change="val => { networkOffering = networkOfferings[val] }">
-            <a-select-option v-for="(opt, optIndex) in this.networkOfferings" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex">
               {{ opt.displaytext || opt.name }}
             </a-select-option>
           </a-select>
@@ -75,7 +75,7 @@
           <tooltip-label slot="label" :title="$t('label.changecidr')" :tooltip="apiParams.changecidr.description"/>
           <a-switch v-decorator="['changecidr', {}]" />
         </a-form-item>
-        <a-form-item>
+        <a-form-item v-if="isUpdatingIsolatedNetwork">
           <tooltip-label slot="label" :title="$t('label.networkdomain')" :tooltip="apiParams.guestvmcidr.description"/>
           <a-input
             v-decorator="['networkdomain', {}]"
@@ -88,7 +88,7 @@
         </a-form-item>
         <a-form-item v-if="isAdmin()">
           <tooltip-label slot="label" :title="$t('label.displaynetwork')" :tooltip="apiParams.displaynetwork.description"/>
-          <a-switch v-decorator="['displaynetwork', {}]" :defaultChecked="this.resource.displaynetwork" />
+          <a-switch v-decorator="['displaynetwork', {}]" :defaultChecked="resource.displaynetwork" />
         </a-form-item>
         <a-form-item v-if="isAdmin()">
           <tooltip-label slot="label" :title="$t('label.forced')" :tooltip="apiParams.forced.description"/>
@@ -96,7 +96,7 @@
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
         </div>
       </a-form>
@@ -137,8 +137,10 @@ export default {
     this.resourceValues = {
       name: this.resource.name,
       displaytext: this.resource.displaytext,
-      guestvmcidr: this.resource.cidr,
-      networkdomain: this.resource.networkdomain
+      guestvmcidr: this.resource.cidr
+    }
+    if (this.isUpdatingIsolatedNetwork) {
+      this.resourceValues.networkdomain = this.resource.networkdomain
     }
     for (var field in this.resourceValues) {
       var fieldValue = this.resourceValues[field]
@@ -147,6 +149,11 @@ export default {
       }
     }
     this.fetchData()
+  },
+  computed: {
+    isUpdatingIsolatedNetwork () {
+      return this.resource && this.resource.type === 'Isolated'
+    }
   },
   methods: {
     isAdmin () {
@@ -160,6 +167,7 @@ export default {
     },
     fetchNetworkOfferingData () {
       this.networkOfferings = []
+      if (!this.isUpdatingIsolatedNetwork) return
       const params = {
         guestiptype: this.resource.type,
         forvpc: !!this.resource.vpcid
@@ -204,7 +212,9 @@ export default {
             params[field] = fieldValue
           }
         }
-        if (this.networkOfferings && this.networkOfferings[values.networkofferingid]?.id !== this.resource.networkofferingid) {
+        if (values.networkofferingid &&
+          this.networkOfferings &&
+          this.networkOfferings[values.networkofferingid]?.id !== this.resource.networkofferingid) {
           params.networkofferingid = this.networkOfferings[values.networkofferingid].id
         }
         api('updateNetwork', params).then(json => {

@@ -74,7 +74,7 @@ export default {
           label: 'label.update.network',
           dataView: true,
           popup: true,
-          component: () => import('@/views/network/EditNetwork.vue')
+          component: () => import('@/views/network/UpdateNetwork.vue')
         },
         {
           api: 'restartNetwork',
