@@ -45,8 +45,6 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     @Inject
     protected DiskOfferingDetailsDao detailsDao;
 
-    private final SearchBuilder<DiskOfferingVO> PrivateDiskOfferingSearch;
-    private final SearchBuilder<DiskOfferingVO> PublicDiskOfferingSearch;
     protected final SearchBuilder<DiskOfferingVO> UniqueNameSearch;
     private final String SizeDiskOfferingSearch = "SELECT * FROM disk_offering WHERE " +
             "disk_size = ? AND provisioning_type = ? AND removed IS NULL";
@@ -55,27 +53,11 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     protected final static long GB_UNIT_BYTES = 1024 * 1024 * 1024;
 
     protected DiskOfferingDaoImpl() {
-        PrivateDiskOfferingSearch = createSearchBuilder();
-        PrivateDiskOfferingSearch.and("diskSize", PrivateDiskOfferingSearch.entity().getDiskSize(), SearchCriteria.Op.EQ);
-        PrivateDiskOfferingSearch.done();
-
-        PublicDiskOfferingSearch = createSearchBuilder();
-        PublicDiskOfferingSearch.and("system", PublicDiskOfferingSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
-        PublicDiskOfferingSearch.and("removed", PublicDiskOfferingSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        PublicDiskOfferingSearch.done();
-
         UniqueNameSearch = createSearchBuilder();
         UniqueNameSearch.and("name", UniqueNameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
         UniqueNameSearch.done();
 
         _computeOnlyAttr = _allAttributes.get("computeOnly");
-    }
-
-    @Override
-    public List<DiskOfferingVO> findPrivateDiskOffering() {
-        SearchCriteria<DiskOfferingVO> sc = PrivateDiskOfferingSearch.create();
-        sc.setParameters("diskSize", 0);
-        return listBy(sc);
     }
 
     @Override
@@ -99,17 +81,6 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         }
 
         return super.executeList(sql, false, params);
-    }
-
-    @Override
-    public List<DiskOfferingVO> findPublicDiskOfferings() {
-        SearchCriteria<DiskOfferingVO> sc = PublicDiskOfferingSearch.create();
-        sc.setParameters("system", false);
-        List<DiskOfferingVO> offerings = listBy(sc);
-        if(offerings!=null) {
-            offerings.removeIf(o -> (!detailsDao.findDomainIds(o.getId()).isEmpty()));
-        }
-        return offerings;
     }
 
     @Override

@@ -219,7 +219,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     public List<ServiceOfferingVO> createSystemServiceOfferings(String name, String uniqueName, int cpuCount, int ramSize, int cpuSpeed,
             Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText, ProvisioningType provisioningType,
             boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vmType, boolean defaultUse) {
-        DiskOfferingVO diskOfferingVO = new DiskOfferingVO(name, displayText, provisioningType, false, tags, recreatable, false, systemUse, true);
+        DiskOfferingVO diskOfferingVO = new DiskOfferingVO(name, displayText, provisioningType, false, tags, recreatable, false, true);
         diskOfferingVO.setUniqueName(uniqueName);
         diskOfferingVO = diskOfferingDao.persistDefaultDiskOffering(diskOfferingVO);
 
@@ -238,7 +238,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
             useLocal = false;
         }
 
-        diskOfferingVO = new DiskOfferingVO(name + (useLocal ? " - Local Storage" : ""), displayText, provisioningType, false, tags, recreatable, useLocal, systemUse, true);
+        diskOfferingVO = new DiskOfferingVO(name + (useLocal ? " - Local Storage" : ""), displayText, provisioningType, false, tags, recreatable, useLocal, true);
         diskOfferingVO.setUniqueName(uniqueName + (useLocal ? "-Local" : ""));
         diskOfferingVO = diskOfferingDao.persistDefaultDiskOffering(diskOfferingVO);
 

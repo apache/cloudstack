@@ -75,9 +75,6 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name = "use_local_storage")
     private boolean useLocalStorage;
 
-    @Column(name = "system_use")
-    private boolean systemUse;
-
     @Column(name = "customized")
     private boolean customized;
 
@@ -193,7 +190,7 @@ public class DiskOfferingVO implements DiskOffering {
         state = State.Active;
     }
 
-    public DiskOfferingVO(String name, String displayText, Storage.ProvisioningType provisioningType, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage, boolean systemUse,
+    public DiskOfferingVO(String name, String displayText, Storage.ProvisioningType provisioningType, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage,
             boolean customized) {
         computeOnly = true;
         this.name = name;
@@ -202,14 +199,13 @@ public class DiskOfferingVO implements DiskOffering {
         this.tags = tags;
         this.recreatable = recreatable;
         this.useLocalStorage = useLocalStorage;
-        this.systemUse = systemUse;
         this.customized = customized;
         uuid = UUID.randomUUID().toString();
         state = State.Active;
     }
 
     public DiskOfferingVO(long id, String name, String displayText, Storage.ProvisioningType provisioningType, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage,
-            boolean systemUse, boolean customized, boolean customizedIops, Long minIops, Long maxIops) {
+            boolean customized, boolean customizedIops, Long minIops, Long maxIops) {
         this.id = id;
         computeOnly = true;
         this.name = name;
@@ -218,7 +214,6 @@ public class DiskOfferingVO implements DiskOffering {
         this.tags = tags;
         this.recreatable = recreatable;
         this.useLocalStorage = useLocalStorage;
-        this.systemUse = systemUse;
         this.customized = customized;
         this.customizedIops = customizedIops;
         uuid = UUID.randomUUID().toString();
@@ -317,15 +312,6 @@ public class DiskOfferingVO implements DiskOffering {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    @Override
-    public boolean isSystemUse() {
-        return systemUse;
-    }
-
-    public void setSystemUse(boolean systemUse) {
-        this.systemUse = systemUse;
     }
 
     @Override

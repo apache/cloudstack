@@ -156,7 +156,7 @@ public class CloudOrchestrator implements OrchestrationService {
     @Override
     public VirtualMachineEntity createVirtualMachine(String id, String owner, String templateId, String hostName, String displayName, String hypervisor, int cpu,
         int speed, long memory, Long diskSize, List<String> computeTags, List<String> rootDiskTags, Map<String, List<NicProfile>> networkNicMap, DeploymentPlan plan,
-        Long rootDiskSize, Map<String, Map<Integer, String>> extraDhcpOptionMap, Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap, Long diskOfferingId, Long rootDiskOfferingId) throws InsufficientCapacityException {
+        Long rootDiskSize, Map<String, Map<Integer, String>> extraDhcpOptionMap, Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap, Long dataDiskOfferingId, Long rootDiskOfferingId) throws InsufficientCapacityException {
 
         // VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks,
         // vmEntityManager);
@@ -187,7 +187,7 @@ public class CloudOrchestrator implements OrchestrationService {
 
         DiskOfferingVO rootDiskOffering = _diskOfferingDao.findById(rootDiskOfferingId);
         if (rootDiskOffering == null) {
-            throw new InvalidParameterValueException("Unable to find disk offering " + rootDiskOfferingId);
+            throw new InvalidParameterValueException("Unable to find root disk offering " + rootDiskOfferingId);
         }
         rootDiskOfferingInfo.setDiskOffering(rootDiskOffering);
         rootDiskOfferingInfo.setSize(rootDiskSize);
@@ -204,10 +204,10 @@ public class CloudOrchestrator implements OrchestrationService {
             }
         }
 
-        if (diskOfferingId != null) {
-            DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
+        if (dataDiskOfferingId != null) {
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(dataDiskOfferingId);
             if (diskOffering == null) {
-                throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
+                throw new InvalidParameterValueException("Unable to find data disk offering " + dataDiskOfferingId);
             }
             if (!diskOffering.isComputeOnly()) {
                 Long size = null;
@@ -244,7 +244,7 @@ public class CloudOrchestrator implements OrchestrationService {
             for (Entry<Long, DiskOffering> datadiskTemplateToDiskOffering : dataDiskTemplateToDiskOfferingMap.entrySet()) {
                 DiskOffering dataDiskOffering = datadiskTemplateToDiskOffering.getValue();
                 if (dataDiskOffering == null) {
-                    throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
+                    throw new InvalidParameterValueException("Unable to find disk offering " + dataDiskOfferingId);
                 }
                 if (dataDiskOffering.getDiskSize() == 0) { // Custom disk offering is not supported for volumes created from datadisk templates
                     throw new InvalidParameterValueException("Disk offering " + dataDiskOffering + " requires size parameter.");

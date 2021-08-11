@@ -57,8 +57,6 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
 
     String getName();
 
-    boolean isSystemUse();
-
     String getDisplayText();
 
     ProvisioningType getProvisioningType();

@@ -209,7 +209,9 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     private Boolean dynamicScalingEnabled;
 
     @SerializedName(ApiConstants.DISK_OFFERING_STRICTNESS)
-    @Param(description = "True/False to indicate the strictness of the disk offering association with the compute offering. When set to true, override of disk offering is not allowed when VM is deployed and change disk offering is not allowed for the ROOT disk after the VM is deployed", since = "4.16")
+    @Param(description = "True/False to indicate the strictness of the disk offering association with the compute offering. " +
+            "When set to true, override of disk offering is not allowed when VM is deployed and " +
+            "change disk offering is not allowed for the ROOT disk after the VM is deployed", since = "4.16")
     private Boolean diskOfferingStrictness;
 
     @SerializedName(ApiConstants.DISK_OFFERING_ID)
@@ -217,11 +219,11 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     private String diskOfferingId;
 
     @SerializedName("diskofferingname")
-    @Param(description = "name of the disk offering")
+    @Param(description = "name of the disk offering", since = "4.16")
     private String diskOfferingName;
 
     @SerializedName("diskofferingdisplaytext")
-    @Param(description = "the display text of the disk offering")
+    @Param(description = "the display text of the disk offering", since = "4.16")
     private String diskOfferingDisplayText;
 
     public ServiceOfferingResponse() {

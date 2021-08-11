@@ -455,7 +455,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     private ServiceOfferingVO createServiceOfferingForVMImporting(Integer cpus, Integer memory, Integer maxCpuUsage) {
         String name = "Imported-" + cpus + "-" + memory;
 
-        DiskOfferingVO diskOfferingVO = new DiskOfferingVO(name, name, Storage.ProvisioningType.THIN, false, null, false, false, false, true);
+        DiskOfferingVO diskOfferingVO = new DiskOfferingVO(name, name, Storage.ProvisioningType.THIN, false, null, false, false, true);
         diskOfferingVO = diskOfferingDao.persistDefaultDiskOffering(diskOfferingVO);
 
 

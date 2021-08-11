@@ -932,7 +932,7 @@ public class DatabaseConfig {
         } else {
             useLocalStorage = false;
         }
-        DiskOfferingVO diskOfferingVO = new DiskOfferingVO(name, displayText, provisioningType, false, null, false, false, false, true);
+        DiskOfferingVO diskOfferingVO = new DiskOfferingVO(name, displayText, provisioningType, false, null, false, false, true);
 
         ServiceOfferingVO serviceOffering =
             new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText,

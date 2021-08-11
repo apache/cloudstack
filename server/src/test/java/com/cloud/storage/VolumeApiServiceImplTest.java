@@ -1138,7 +1138,6 @@ public class VolumeApiServiceImplTest {
         prepareAndRunTestOfIsNotPossibleToResize(Type.ROOT, 0l, Storage.ImageFormat.QCOW2, false);
     }
 
-    // FR123 update this test case to check service offering strictness
     private void prepareAndRunTestOfIsNotPossibleToResize(Type volumeType, Long rootDisk, Storage.ImageFormat imageFormat, boolean expectedIsNotPossibleToResize) {
         VolumeVO volume = Mockito.mock(VolumeVO.class);
         when(volume.getVolumeType()).thenReturn(volumeType);
