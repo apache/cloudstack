@@ -64,7 +64,7 @@ touch "${kubelet_service_file}"
 if [[ `echo "${2} $VAL" | awk '{print ($1 < $2)}'` == 1 ]]; then
   curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > ${kubelet_service_file}
 else
-  curl -sSL "https://raw.githubusercontent.com/shapeblue/cloudstack-nonoss/cks-deps/cks/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > ${kubelet_service_file}
+  curl -sSL "https://raw.githubusercontent.com/shapeblue/cloudstack-nonoss/main/cks/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > ${kubelet_service_file}
 fi
 
 echo "Downloading 10-kubeadm.conf ${RELEASE}..."
@@ -73,7 +73,7 @@ touch "${kubeadm_conf_file}"
 if [[ `echo "${2} $val" | awk '{print ($1 < $2)}'` == 1 ]]; then
   curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > ${kubeadm_conf_file}
 else
-  curl -sSL "https://raw.githubusercontent.com/shapeblue/cloudstack-nonoss/cks-deps/cks/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > ${kubeadm_conf_file}
+  curl -sSL "https://raw.githubusercontent.com/shapeblue/cloudstack-nonoss/main/cks/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > ${kubeadm_conf_file}
 fi
 
 NETWORK_CONFIG_URL="${5}"
