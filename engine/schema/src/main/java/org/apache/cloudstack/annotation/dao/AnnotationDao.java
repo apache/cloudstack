@@ -30,4 +30,5 @@ public interface AnnotationDao extends GenericDao<AnnotationVO, Long> {
     List<AnnotationVO> listAllAnnotations(String userUuid, boolean isCallerAdmin, String annotationFilter, String keyword);
     boolean hasAnnotations(String entityUuid, String entityType, boolean isCallerAdmin);
     boolean removeByEntityType(String entityType, String entityUuid);
+    AnnotationVO findOneByEntityId(String entityUuid);
 }

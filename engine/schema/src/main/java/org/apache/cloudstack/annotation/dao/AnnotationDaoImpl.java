@@ -119,4 +119,11 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
         sc.addAnd("entityUuid", SearchCriteria.Op.EQ, entityUuid);
         return remove(sc) > 0;
     }
+
+    @Override
+    public AnnotationVO findOneByEntityId(String entityUuid) {
+        SearchCriteria<AnnotationVO> sc = AnnotationSearchBuilder.create();
+        sc.addAnd("entityUuid", SearchCriteria.Op.EQ, entityUuid);
+        return findOneBy(sc);
+    }
 }

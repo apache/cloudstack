@@ -280,13 +280,13 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     }
 
     private Pair<List<AnnotationVO>, Integer> getAnnotationsForApiCmd(ListAnnotationsCmd cmd) {
-        List<AnnotationVO> annotations;
+        List<AnnotationVO> annotations = new ArrayList<>();
         String userUuid = cmd.getUserUuid();
         String entityUuid = cmd.getEntityUuid();
         String entityType = cmd.getEntityType();
         String annotationFilter = isNotBlank(cmd.getAnnotationFilter()) ? cmd.getAnnotationFilter() : "all";
         boolean isCallerAdmin = isCallingUserAdmin();
-        if (org.apache.commons.lang3.StringUtils.isAnyEmpty(entityUuid, entityType) &&
+        if (org.apache.commons.lang3.StringUtils.isAllEmpty(entityUuid, entityType) &&
                 !isCallerAdmin && annotationFilter.equalsIgnoreCase("all")) {
             throw new CloudRuntimeException("Only admins can filter all the annotations");
         }
@@ -295,7 +295,6 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         String keyword = cmd.getKeyword();
 
         if (cmd.getUuid() != null) {
-            annotations = new ArrayList<>();
             String uuid = cmd.getUuid();
             if(LOGGER.isDebugEnabled()) {
                 LOGGER.debug("getting single annotation by uuid: " + uuid);
@@ -309,21 +308,25 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
                 annotations.add(annotationVO);
             }
         } else if (isNotBlank(entityType)) {
-            if(LOGGER.isDebugEnabled()) {
+            if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("getting annotations for type: " + entityType);
             }
             if (isNotBlank(entityUuid)) {
-                if (!isCallerAdmin) {
-                    ensureEntityIsOwnedByTheUser(entityType, entityUuid, callingUser);
-                }
-                if(LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("getting annotations for entity: " + entityUuid);
-                }
-                annotations = annotationDao.listByEntity(entityType, entityUuid, userUuid, isCallerAdmin,
-                        annotationFilter, callingUserUuid, keyword);
+                annotations = getAnnotationsByEntityIdAndType(entityType, entityUuid, userUuid, isCallerAdmin,
+                        annotationFilter, callingUserUuid, keyword, callingUser);
             } else {
-                annotations = annotationDao.listByEntityType(entityType, userUuid, isCallerAdmin,
+                if (!isCallerAdmin) {
+                    throw new CloudRuntimeException("Only admins can filter all the annotations of a certain entity type");
+                }
+                annotations = annotationDao.listByEntityType(entityType, userUuid, true,
                         annotationFilter, callingUserUuid, keyword);
+            }
+        } else if (isNotBlank(entityUuid)) {
+            AnnotationVO annotation = annotationDao.findOneByEntityId(entityUuid);
+            if (annotation != null) {
+                String type = annotation.getEntityType().name();
+                annotations = getAnnotationsByEntityIdAndType(type, entityUuid, userUuid, isCallerAdmin,
+                        annotationFilter, callingUserUuid, keyword, callingUser);
             }
         } else {
             if(LOGGER.isDebugEnabled()) {
@@ -337,6 +340,19 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         List<AnnotationVO> paginated = StringUtils.applyPagination(annotations, cmd.getStartIndex(), cmd.getPageSizeVal());
         return (paginated != null) ? new Pair<>(paginated, annotations.size()) :
                 new Pair<>(annotations, annotations.size());
+    }
+
+    private List<AnnotationVO> getAnnotationsByEntityIdAndType(String entityType, String entityUuid, String userUuid,
+                                                               boolean isCallerAdmin, String annotationFilter,
+                                                               String callingUserUuid, String keyword, UserVO callingUser) {
+        if (!isCallerAdmin) {
+            ensureEntityIsOwnedByTheUser(entityType, entityUuid, callingUser);
+        }
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("getting annotations for entity: " + entityUuid);
+        }
+        return annotationDao.listByEntity(entityType, entityUuid, userUuid, isCallerAdmin,
+                annotationFilter, callingUserUuid, keyword);
     }
 
     private void ensureEntityIsOwnedByTheUser(String entityType, String entityUuid, UserVO callingUser) {
