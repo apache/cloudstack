@@ -92,7 +92,8 @@ public class KvmHaHelper {
         List<HostVO> hostsInCluster = resourceManager.listAllHostsInCluster(host.getClusterId());
         List<HostVO> problematicNeighbors = listProblematicHosts(hostsInCluster);
         int problematicHosts = problematicNeighbors.size();
-        int problematicHostsRatioAccepted = (int) (hostsInCluster.size() * KVMHAConfig.KvmHaAcceptedProblematicHostsRatio.value());
+        double acceptedProblematicHostsRatio = KVMHAConfig.KvmHaAcceptedProblematicHostsRatio.valueIn(host.getClusterId());
+        int problematicHostsRatioAccepted = (int) (hostsInCluster.size() * acceptedProblematicHostsRatio);
 
         if (problematicHosts > problematicHostsRatioAccepted) {
             ClusterVO cluster = clusterDao.findById(host.getClusterId());
