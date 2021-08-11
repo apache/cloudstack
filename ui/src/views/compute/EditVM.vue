@@ -26,7 +26,7 @@
         <span slot="label">
           {{ $t('label.name') }}
           <a-tooltip :title="apiParams.name.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-input
@@ -37,7 +37,7 @@
         <span slot="label">
           {{ $t('label.displayname') }}
           <a-tooltip :title="apiParams.displayname.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-input
@@ -47,7 +47,7 @@
         <span slot="label">
           {{ $t('label.ostypeid') }}
           <a-tooltip :title="apiParams.ostypeid.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-select
@@ -67,7 +67,7 @@
         <span slot="label">
           {{ $t('label.isdynamicallyscalable') }}
           <a-tooltip :title="apiParams.isdynamicallyscalable.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-switch
@@ -78,7 +78,7 @@
         <span slot="label">
           {{ $t('label.haenable') }}
           <a-tooltip :title="apiParams.haenable.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-switch
@@ -89,7 +89,7 @@
         <span slot="label">
           {{ $t('label.group') }}
           <a-tooltip :title="apiParams.group.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-auto-complete

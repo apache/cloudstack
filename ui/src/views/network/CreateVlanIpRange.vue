@@ -38,7 +38,7 @@
             <span slot="label">
               {{ $t('label.gateway') }}
               <a-tooltip :title="apiParams.gateway.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -52,7 +52,7 @@
             <span slot="label">
               {{ $t('label.netmask') }}
               <a-tooltip :title="apiParams.netmask.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -67,7 +67,7 @@
                 <span slot="label">
                   {{ $t('label.startipv4') }}
                   <a-tooltip :title="apiParams.startip.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                    <a-icon type="info-circle" />
                   </a-tooltip>
                 </span>
                 <a-input
@@ -89,7 +89,7 @@
                 <span slot="label">
                   {{ $t('label.endipv4') }}
                   <a-tooltip :title="apiParams.endip.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                    <a-icon type="info-circle" />
                   </a-tooltip>
                 </span>
                 <a-input
@@ -111,7 +111,7 @@
             <span slot="label">
               {{ $t('label.ip6cidr') }}
               <a-tooltip :title="apiParams.ip6cidr.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -122,7 +122,7 @@
             <span slot="label">
               {{ $t('label.ip6gateway') }}
               <a-tooltip :title="apiParams.ip6gateway.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -135,7 +135,7 @@
                 <span slot="label">
                   {{ $t('label.startipv6') }}
                   <a-tooltip :title="apiParams.startipv6.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                    <a-icon type="info-circle" />
                   </a-tooltip>
                 </span>
                 <a-input
@@ -156,7 +156,7 @@
                 <span slot="label">
                   {{ $t('label.endipv6') }}
                   <a-tooltip :title="apiParams.endipv6.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                    <a-icon type="info-circle" />
                   </a-tooltip>
                 </span>
                 <a-input

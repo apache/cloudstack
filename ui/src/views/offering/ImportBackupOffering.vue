@@ -25,7 +25,7 @@
         <span slot="label">
           {{ $t('label.name') }}
           <a-tooltip :title="apiParams.name.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-input
@@ -38,7 +38,7 @@
         <span slot="label">
           {{ $t('label.description') }}
           <a-tooltip :title="apiParams.description.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-input
@@ -50,7 +50,7 @@
         <span slot="label">
           {{ $t('label.zoneid') }}
           <a-tooltip :title="apiParams.zoneid.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-select
@@ -70,7 +70,7 @@
         <span slot="label">
           {{ $t('label.externalid') }}
           <a-tooltip :title="apiParams.externalid.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-select
@@ -88,7 +88,7 @@
         <span slot="label">
           {{ $t('label.allowuserdrivenbackups') }}
           <a-tooltip :title="apiParams.allowuserdrivenbackups.description">
-            <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+            <a-icon type="info-circle" />
           </a-tooltip>
         </span>
         <a-switch

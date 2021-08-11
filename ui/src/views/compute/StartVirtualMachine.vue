@@ -31,7 +31,7 @@
             <span slot="label">
               {{ $t('label.podid') }}
               <a-tooltip :title="apiParams.podid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
@@ -54,7 +54,7 @@
             <span slot="label">
               {{ $t('label.clusterid') }}
               <a-tooltip :title="apiParams.clusterid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
@@ -77,7 +77,7 @@
             <span slot="label">
               {{ $t('label.hostid') }}
               <a-tooltip :title="apiParams.hostid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
@@ -101,7 +101,7 @@
           <span slot="label">
             {{ $t('label.bootintosetup') }}
             <a-tooltip :title="apiParams.bootintosetup.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-switch

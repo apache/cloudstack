@@ -26,7 +26,7 @@
           <span slot="label">
             {{ $t('label.currentpassword') }}
             <a-tooltip :title="apiParams.currentpassword.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input-password
@@ -40,7 +40,7 @@
           <span slot="label">
             {{ $t('label.new.password') }}
             <a-tooltip :title="apiParams.password.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input-password
@@ -53,7 +53,7 @@
           <span slot="label">
             {{ $t('label.confirmpassword') }}
             <a-tooltip :title="apiParams.password.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input-password

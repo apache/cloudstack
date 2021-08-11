@@ -26,7 +26,7 @@
           <span slot="label" :title="apiParams.volumeid.description">
             {{ $t('label.volumeid') }}
             <a-tooltip>
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -49,7 +49,7 @@
           <span slot="label" :title="apiParams.name.description">
             {{ $t('label.name') }}
             <a-tooltip>
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -60,7 +60,7 @@
           <span slot="label" :title="apiParams.quiescevm.description">
             {{ $t('label.quiescevm') }}
             <a-tooltip>
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-switch v-decorator="['quiescevm', { initialValue: false }]"/>
@@ -69,7 +69,7 @@
           <span slot="label" :title="apiParams.asyncbackup.description">
             {{ $t('label.asyncbackup') }}
             <a-tooltip>
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-switch v-decorator="['asyncbackup', { initialValue: false }]"/>

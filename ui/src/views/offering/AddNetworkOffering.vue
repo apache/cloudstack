@@ -26,7 +26,7 @@
           <span slot="label">
             {{ $t('label.name') }}
             <a-tooltip :title="apiParams.name.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -40,7 +40,7 @@
           <span slot="label">
             {{ $t('label.displaytext') }}
             <a-tooltip :title="apiParams.displaytext.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -53,7 +53,7 @@
           <span slot="label">
             {{ $t('label.networkrate') }}
             <a-tooltip :title="apiParams.networkrate.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -73,7 +73,7 @@
           <span slot="label">
             {{ $t('label.guestiptype') }}
             <a-tooltip :title="apiParams.guestiptype.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-radio-group
@@ -97,7 +97,7 @@
           <span slot="label">
             {{ $t('label.ispersistent') }}
             <a-tooltip :title="apiParams.ispersistent.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-switch v-decorator="['ispersistent', {initialValue: false}]" />
@@ -106,7 +106,7 @@
           <span slot="label">
             {{ $t('label.specifyvlan') }}
             <a-tooltip :title="apiParams.specifyvlan.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-switch v-decorator="['specifyvlan', {initialValue: true}]" :defaultChecked="true" />
@@ -115,7 +115,7 @@
           <span slot="label">
             {{ $t('label.vpc') }}
             <a-tooltip :title="apiParams.forvpc.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-switch v-decorator="['forvpc', {initialValue: this.forVpc}]" :defaultChecked="this.forVpc" @change="val => { this.handleForVpcChange(val) }" />
@@ -195,7 +195,7 @@
           <span slot="label">
             {{ $t('label.supportedservices') }}
             <a-tooltip :title="apiParams.supportedservices.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <div class="supported-services-container" scroll-to="last-child">
@@ -217,7 +217,7 @@
           <span slot="label">
             {{ $t('label.serviceofferingid') }}
             <a-tooltip :title="apiParams.serviceofferingid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -326,7 +326,7 @@
           <span slot="label">
             {{ $t('label.conservemode') }}
             <a-tooltip :title="apiParams.conservemode.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-switch v-decorator="['conservemode', {initialValue: true}]" :defaultChecked="true" />
@@ -335,7 +335,7 @@
           <span slot="label">
             {{ $t('label.tags') }}
             <a-tooltip :title="apiParams.tags.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-input
@@ -346,7 +346,7 @@
           <span slot="label">
             {{ $t('label.availability') }}
             <a-tooltip :title="apiParams.availability.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-radio-group
@@ -366,7 +366,7 @@
           <span slot="label">
             {{ $t('label.egressdefaultpolicy') }}
             <a-tooltip :title="apiParams.egressdefaultpolicy.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-radio-group
@@ -389,7 +389,7 @@
           <span slot="label">
             {{ $t('label.domainid') }}
             <a-tooltip :title="apiParams.domainid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -418,7 +418,7 @@
           <span slot="label">
             {{ $t('label.zoneid') }}
             <a-tooltip :title="apiParams.zoneid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-select
@@ -452,7 +452,7 @@
           <span slot="label">
             {{ $t('label.enable.network.offering') }}
             <a-tooltip :title="apiParams.enable.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+              <a-icon type="info-circle" />
             </a-tooltip>
           </span>
           <a-switch v-decorator="['enable', {initialValue: false}]" />

@@ -26,7 +26,7 @@
             <span slot="label">
               {{ $t('label.account') }}
               <a-tooltip :title="apiParams.addAccountToProject.account.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -38,7 +38,7 @@
             <span slot="label">
               {{ $t('label.email') }}
               <a-tooltip :title="apiParams.addAccountToProject.email.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -49,7 +49,7 @@
             <span slot="label">
               {{ $t('label.project.role') }}
               <a-tooltip :title="apiParams.addAccountToProject.projectroleid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
@@ -67,7 +67,7 @@
             <span slot="label">
               {{ $t('label.roletype') }}
               <a-tooltip :title="apiParams.addAccountToProject.roletype.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
@@ -96,7 +96,7 @@
             <span slot="label">
               {{ $t('label.user') }}
               <a-tooltip :title="apiParams.addUserToProject.username.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -108,7 +108,7 @@
             <span slot="label">
               {{ $t('label.email') }}
               <a-tooltip :title="apiParams.addUserToProject.email.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-input
@@ -119,7 +119,7 @@
             <span slot="label">
               {{ $t('label.project.role') }}
               <a-tooltip :title="apiParams.addUserToProject.roletype.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
@@ -137,7 +137,7 @@
             <span slot="label">
               {{ $t('label.roletype') }}
               <a-tooltip :title="apiParams.addUserToProject.roletype.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                <a-icon type="info-circle" />
               </a-tooltip>
             </span>
             <a-select
