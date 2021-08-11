@@ -218,7 +218,7 @@
           </a-alert>
           <div :span="24" class="action-button">
             <a-button @click="showCreateNetworkModal = false">{{ $t('label.cancel') }}</a-button>
-            <a-button type="primary" @click="handleAddNetworkSubmit">{{ $t('label.ok') }}</a-button>
+            <a-button type="primary" ref="submit" @click="handleAddNetworkSubmit">{{ $t('label.ok') }}</a-button>
           </div>
         </a-form>
       </a-spin>
@@ -274,7 +274,7 @@
 
           <div :span="24" class="action-button">
             <a-button @click="showAddInternalLB = false">{{ $t('label.cancel') }}</a-button>
-            <a-button type="primary" @click="handleAddInternalLBSubmit">{{ $t('label.ok') }}</a-button>
+            <a-button type="primary" ref="submit" @click="handleAddInternalLBSubmit">{{ $t('label.ok') }}</a-button>
           </div>
         </a-form>
       </a-spin>
@@ -398,7 +398,7 @@ export default {
           scopedSlots: { customRender: 'ip' }
         }
       ],
-      customStyle: 'margin-bottom: -10px; border-bottom-style: none',
+      customStyle: 'margin-bottom: 0; border: none',
       page: 1,
       pageSize: 10,
       itemCounts: {

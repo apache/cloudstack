@@ -48,7 +48,7 @@
           <a-input v-model="newRule.icmpcode"></a-input>
         </div>
         <div class="form__item" style="margin-left: auto;">
-          <a-button :disabled="!('createFirewallRule' in $store.getters.apis)" type="primary" @click="addRule">{{ $t('label.add') }}</a-button>
+          <a-button :disabled="!('createFirewallRule' in $store.getters.apis)" type="primary" ref="submit" @click="addRule">{{ $t('label.add') }}</a-button>
         </div>
       </div>
     </div>
