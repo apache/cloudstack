@@ -135,8 +135,9 @@
       </span>
       <span v-else>{{ text }}</span>
     </span>
-    <template slot="state" slot-scope="text">
-      <status :text="text ? text : ''" displayText />
+    <template slot="state" slot-scope="text, record">
+      <status v-if="$route.path.startsWith('/host')" :text="getHostState(record)" displayText />
+      <status v-else :text="text ? text : ''" displayText />
     </template>
     <template slot="allocationstate" slot-scope="text">
       <status :text="text ? text : ''" displayText />
@@ -578,6 +579,12 @@ export default {
       }
 
       return record.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ') || text
+    },
+    getHostState (host) {
+      if (host && host.hypervisor === 'KVM' && host.state === 'Up' && host.details && host.details.secured !== 'true') {
+        return 'Unsecure'
+      }
+      return host.state
     }
   }
 }

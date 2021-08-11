@@ -949,34 +949,38 @@ export default {
       })
     },
     handleResponse (response, resourceName, action, showLoading = true) {
-      for (const obj in response) {
-        if (obj.includes('response')) {
-          if (response[obj].jobid) {
-            return new Promise(resolve => {
-              const jobid = response[obj].jobid
-              resolve(this.pollActionCompletion(jobid, action, resourceName, showLoading))
-            })
-          } else {
-            var message = action.successMessage ? this.$t(action.successMessage) : this.$t(action.label) +
-              (resourceName ? ' - ' + resourceName : '')
-            var duration = 2
-            if (action.additionalMessage) {
-              message = message + ' - ' + this.$t(action.successMessage)
-              duration = 5
+      return new Promise(resolve => {
+        let jobId = null
+        for (const obj in response) {
+          if (obj.includes('response')) {
+            if (response[obj].jobid) {
+              jobId = response[obj].jobid
+            } else {
+              var message = action.successMessage ? this.$t(action.successMessage) : this.$t(action.label) +
+                (resourceName ? ' - ' + resourceName : '')
+              var duration = 2
+              if (action.additionalMessage) {
+                message = message + ' - ' + this.$t(action.successMessage)
+                duration = 5
+              }
+              this.$message.success({
+                content: message,
+                key: action.label + resourceName,
+                duration: duration
+              })
             }
-            this.$message.success({
-              content: message,
-              key: action.label + resourceName,
-              duration: duration
-            })
+            break
           }
-          break
         }
-      }
-      if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
-        this.$store.dispatch('UpdateConfiguration')
-      }
-      return false
+        if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
+          this.$store.dispatch('UpdateConfiguration')
+        }
+        if (jobId) {
+          return resolve(this.pollActionCompletion(jobId, action, resourceName, showLoading))
+        }
+
+        return resolve(false)
+      })
     },
     execSubmit (e) {
       e.preventDefault()
