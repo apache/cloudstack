@@ -577,7 +577,8 @@ class TestVPCNetworkInternalLBRules(cloudstackTestCase):
             self.create_Internal_LB_Rule(internal_tier, vm_array=[public_vm])
         self.debug("Internal LB Rule creation failed as the VM belongs to a different network")
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    # tags=["advanced", "intervlan"]
+    @attr(tags=["TODO"], required_hardware="true")
     def test_02_internallb_rules_traffic(self):
         """Test VPC Network Internal LB functionality by performing (wget) traffic tests within a VPC
         """
@@ -749,7 +750,8 @@ class TestVPCNetworkInternalLBRules(cloudstackTestCase):
                               http_rule["publicport"]
                               )
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    # tags=["advanced", "intervlan"]
+    @attr(tags=["TODO"], required_hardware="true")
     def test_03_internallb_rules_vpc_network_restarts_traffic(self):
         """Test VPC Network Internal LB functionality with restarts of VPC network components by performing (wget)
         traffic tests within a VPC
@@ -1005,7 +1007,8 @@ class TestVPCNetworkInternalLBRules(cloudstackTestCase):
                               self.test_data["http_rule"]["publicport"]
                               )
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    # tags=["advanced", "intervlan"]
+    @attr(tags=["TODO"], required_hardware="true")
     def test_04_internallb_appliance_operations_traffic(self):
         """Test VPC Network Internal LB functionality with InternalLbVm appliance operations by performing (wget)
         traffic tests within a VPC

@@ -535,7 +535,8 @@ class TestMultipleChildDomain(cloudstackTestCase):
                 self.fail("Failure: %s" % e)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_04_create_template_snapshot(self):
         """Test create snapshot and templates from volume
 

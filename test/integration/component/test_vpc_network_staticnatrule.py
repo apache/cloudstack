@@ -500,7 +500,8 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_2, public_ip_2, testnegative=False)
         return
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    # was tags=["advanced", "intervlan"]
+    @attr(tags=["TODO"], required_hardware="true")
     def test_05_network_services_VPC_DeleteAllPF(self):
         """ Test case no 232: Delete all Static NAT Rules for a single virtual network of 
             a VPC belonging to a single Public IP Address when the Virtual Router is in Running State
@@ -532,7 +533,8 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
         return
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    # was tags=["advanced", "intervlan"]
+    @attr(tags=["TODO"], required_hardware="true")
     def test_06_network_services_VPC_DeleteAllMultiplePF(self):
         """ Test case no 233: Delete all Static NAT rules for two/multiple virtual networks of a VPC. 
             Observe the status of the Public IP Addresses of the rules when the Virtual Router is in Running State.

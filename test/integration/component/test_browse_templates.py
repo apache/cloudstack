@@ -47,7 +47,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cls.apiclient = cls.testClient.getApiClient()
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls._cleanup = []
-        cls.cleanup = []
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.unsupportedHypervisor = False
@@ -70,6 +69,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             cls.testdata["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.template = get_template(
             cls.apiclient,
@@ -83,23 +83,20 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             cls.apiclient, 
             cls.testdata["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.disk_offering = DiskOffering.create(
             cls.apiclient,
             cls.testdata["resized_disk_offering"],
             custom=True
         )
+        cls._cleanup.append(cls.disk_offering)
         cls.project = Project.create(
                                  cls.apiclient,
                                  cls.testdata["project"],
                                  account=cls.account.name,
                                  domainid=cls.account.domainid
                                  )
-        cls._cleanup = [
-            cls.project,
-            cls.account,
-            cls.service_offering,
-            cls.disk_offering
-        ]
+        cls._cleanup.append(cls.project)
 
     def setUp(self):
 
@@ -148,6 +145,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         if self.unsupportedHypervisor:
             self.skipTest("Skipping test because unsupported hypervisor\
                             %s" % self.hypervisor)
+
+        self.cleanup = []
 
     def getOsType(self, param):
         cmd = listOsTypes.listOsTypesCmd()
@@ -1728,8 +1727,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.fail("Exception occurred  : %s" % e)
         return
 
-
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    # @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    @attr(tags = ["TODO"], required_hardware="false")
     def test_browser_upload_template_incomplete(self):
         """
         Test browser based incomplete template upload, followed by SSVM destroy. Template should go to UploadAbandoned state and get cleaned up.
@@ -1774,9 +1773,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(self):
-        try:
-            self.apiclient = super(TestBrowseUploadVolume,self).getClsTestClient().getApiClient()
-            cleanup_resources(self.apiclient, self._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestBrowseUploadVolume, self).tearDownClass()
+
+    def tearDown(self):
+        super(TestBrowseUploadVolume, self).tearDown()

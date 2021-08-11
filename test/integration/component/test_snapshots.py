@@ -294,14 +294,15 @@ class TestSnapshots(cloudstackTestCase):
                 snapshot.id))
         return
 
-    @attr(speed="slow")
-    @attr(
-        tags=[
-            "advanced",
-            "advancedns",
-            "basic",
-            "sg"],
-        required_hardware="true")
+    # @attr(speed="slow")
+    # @attr(
+    #     tags=[
+    #         "advanced",
+    #         "advancedns",
+    #         "basic",
+    #         "sg"],
+    #     required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_01_volume_from_snapshot(self):
         """Test Creating snapshot from volume having spaces in name(KVM)
         # Validate the following
@@ -751,14 +752,15 @@ class TestSnapshots(cloudstackTestCase):
         )
         return
 
-    @attr(speed="slow")
-    @attr(
-        tags=[
-            "advanced",
-            "advancedns",
-            "smoke",
-            "xen"],
-        required_hardware="true")
+    # @attr(speed="slow")
+    # @attr(
+    #     tags=[
+    #         "advanced",
+    #         "advancedns",
+    #         "smoke",
+    #         "xen"],
+    #     required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_07_template_from_snapshot(self):
         """Create Template from snapshot
         # 1. Login to machine; create temp/test directories on data volume

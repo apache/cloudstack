@@ -592,7 +592,8 @@ class TestAssociatePublicIp(cloudstackTestCase):
             publicipaddress.delete(self.apiclient)
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_associate_ip_address_services_enable_disable(self):
         """ Test enabling and disabling NAT, Firewall services on portable ip
         """

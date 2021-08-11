@@ -597,7 +597,8 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_06_create_network_in_vpc(self):
         """
         @Desc: Test create network in vpc and verify VPC name
@@ -1269,7 +1270,8 @@ class TestNetworks_1(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_11_update_vpc(self):
         """
         @Desc: Test create vpc with network domain as parameter
@@ -2362,7 +2364,8 @@ class TestNetworks_2(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_19_create_list_reset_delete_vpnconnections(self):
         """
         @Desc: Test to List Create Reset and Delete VPN Customer
