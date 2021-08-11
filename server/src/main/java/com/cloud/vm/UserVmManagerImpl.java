@@ -841,7 +841,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
         Long vmId = cmd.getId();
-        
         UserVmVO userVm = _vmDao.findById(cmd.getId());
         if (userVm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine by id" + cmd.getId());
@@ -864,15 +863,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String keypairnames = "";
 
         List<SSHKeyPairVO> s_list = null;
+
         if (cmd.getNames() != null) {
             s_list = _sshKeyPairDao.findByNames(owner.getAccountId(), owner.getDomainId(), cmd.getNames());
-            for (String keypairname : cmd.getNames()) {
-                if (keypairnames != "") {
-                    keypairnames = keypairnames + ", ";
-                }
-                keypairnames = keypairnames + keypairname;
-            }
+            keypairnames = String.join(", ", cmd.getNames());
         }
+
         if (s_list == null) {
             throw new InvalidParameterValueException("Any key pair with the given names does not exist for account " + owner.getAccountName()
                     + " in specified domain id");
@@ -895,7 +891,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         UserVmVO vm = _vmDao.findById(vmId);
         _vmDao.loadDetails(vm);
-        _vmDao.saveDetails(vm);
         if (!result) {
             throw new CloudRuntimeException("Failed to reset SSH Key for the virtual machine ");
         }
@@ -949,7 +944,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 s_logger.debug("Vm " + vmInstance + " is stopped, not rebooting it as a part of SSH Key reset");
                 return true;
             }
-            s_logger.info("bb " + userVm.getDetail(VmDetailConstants.KEY_PAIR_NAMES));
             if (rebootVirtualMachine(userId, vmId, false, false) == null) {
                 s_logger.warn("Failed to reboot the vm " + vmInstance);
                 return false;
@@ -3813,12 +3807,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String keypairnames = "";
 
         if (sshKeyPairs != null) {
-            for (String sshkeypair : sshKeyPairs) {
-                if (keypairnames != "") {
-                    keypairnames = keypairnames + ", ";
-                }
-                keypairnames = keypairnames + sshkeypair;
-            }
+            keypairnames = String.join(", ", sshKeyPairs);
             List<SSHKeyPairVO> pairs = _sshKeyPairDao.findByNames(owner.getAccountId(), owner.getDomainId(), sshKeyPairs);
             for (SSHKeyPairVO pair : pairs) {
                 if (pair == null) {

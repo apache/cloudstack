@@ -346,11 +346,13 @@
             <router-link :to="{ path: '/vmgroup/' + resource.groupid }">{{ resource.group || resource.groupid }}</router-link>
           </div>
         </div>
-        <div class="resource-detail-item" v-if="resource.keypair">
-          <div class="resource-detail-item__label">{{ $t('label.keypair') }}</div>
+        <div class="resource-detail-item" v-if="resource.keypairs">
+          <div class="resource-detail-item__label">{{ $t('SSH Key Pairs') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="key" />
-            <router-link :to="{ path: '/ssh/' + resource.keypair }">{{ resource.keypair }}</router-link>
+            <li v-for="keypair in keypairs" :key="keypair">
+              <router-link :to="{ path: '/ssh/' + keypair }"><a-tag>{{ keypair }}</a-tag></router-link>
+            </li>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.virtualmachineid">
@@ -798,6 +800,12 @@ export default {
         return this.resource.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ')
       }
 
+      return null
+    },
+    keypairs () {
+      if (this.resource.keypairs && this.resource.keypairs !== '') {
+        return this.resource.keypairs.split(', ')
+      }
       return null
     }
   },

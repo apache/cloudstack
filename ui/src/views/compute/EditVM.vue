@@ -122,6 +122,9 @@ export default {
   created () {
     this.fetchData()
   },
+  destroyed () {
+    console.log('updated')
+  },
   methods: {
     fetchData () {
       this.fetchOsTypes()

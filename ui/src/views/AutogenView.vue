@@ -627,6 +627,7 @@ export default {
       })
     },
     fetchData (params = {}) {
+      console.log('fetch')
       if (this.$route.name === 'deployVirtualMachine') {
         return
       }

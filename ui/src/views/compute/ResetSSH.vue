@@ -91,6 +91,9 @@ export default {
   created () {
     this.fetchData()
   },
+  beforeUpdate () {
+    this.$emit('refresh-data')
+  },
   methods: {
     fetchData () {
       this.loading = true
@@ -122,9 +125,6 @@ export default {
       this.options.pageSize = pagination.pageSize
       this.fetchData()
     },
-    closeAction () {
-      this.$emit('close-action')
-    },
     handleSubmit () {
       if (this.loading) return
       this.loading = true
@@ -141,7 +141,10 @@ export default {
       }).finally(() => {
         this.loading = false
       })
-      window.location.reload()
+      console.log('api')
+    },
+    closeAction () {
+      this.$emit('close-action')
     }
   }
 }
