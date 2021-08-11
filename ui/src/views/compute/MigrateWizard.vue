@@ -46,7 +46,9 @@
           v-else />
       </div>
       <div slot="memused" slot-scope="record">
-        {{ record.memoryused | byteToGigabyte }} GB
+        <span v-if="record.memoryused | byteToGigabyte">
+          {{ record.memoryused | byteToGigabyte }} GB
+        </span>
       </div>
       <div slot="memoryallocatedpercentage" slot-scope="record">
         {{ record.memoryallocatedpercentage }}
@@ -169,6 +171,12 @@ export default {
         this.hosts.sort((a, b) => {
           return b.suitableformigration - a.suitableformigration
         })
+        for (const key in this.hosts) {
+          if (this.hosts[key].suitableformigration && !this.hosts[key].requiresstoragemigration) {
+            this.hosts.unshift({ id: -1, name: this.$t('label.migrate.auto.select'), suitableformigration: true, requiresstoragemigration: false })
+            break
+          }
+        }
         this.totalCount = response.findhostsformigrationresponse.count
       }).catch(error => {
         this.$message.error(`${this.$t('message.load.host.failed')}: ${error}`)
@@ -186,10 +194,9 @@ export default {
       var migrateApi = isUserVm
         ? this.selectedHost.requiresStorageMotion ? 'migrateVirtualMachineWithVolume' : 'migrateVirtualMachine'
         : 'migrateSystemVm'
-      api(migrateApi, {
-        hostid: this.selectedHost.id,
-        virtualmachineid: this.resource.id
-      }).then(response => {
+      var migrateParams = this.selectedHost.id === -1 ? { autoselect: true, virtualmachineid: this.resource.id }
+        : { hostid: this.selectedHost.id, virtualmachineid: this.resource.id }
+      api(migrateApi, migrateParams).then(response => {
         const jobid = this.selectedHost.requiresStorageMotion ? response.migratevirtualmachinewithvolumeresponse.jobid : response.migratevirtualmachineresponse.jobid
         this.$pollJob({
           jobId: jobid,

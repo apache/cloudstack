@@ -95,7 +95,7 @@
         {{ record.publicport }} - {{ record.publicendport }}
       </template>
       <template slot="protocol" slot-scope="record">
-        {{ record.protocol | capitalise }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template slot="vm" slot-scope="record">
         <div><a-icon type="desktop"/>
@@ -161,7 +161,7 @@
           </a-form-item>
         </div>
 
-        <a-button type="primary" @click="handleAddTag">{{ $t('label.add') }}</a-button>
+        <a-button type="primary" ref="submit" @click="handleAddTag">{{ $t('label.add') }}</a-button>
       </a-form>
 
       <a-divider></a-divider>
@@ -264,7 +264,7 @@
       </div>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" @click="addRule">{{ $t('label.ok') }}</a-button>
+        <a-button type="primary" ref="submit" @click="addRule">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
 
@@ -434,12 +434,6 @@ export default {
       this.fetchData()
     }
   },
-  filters: {
-    capitalise: val => {
-      if (val === 'all') return this.$t('label.all')
-      return val.toUpperCase()
-    }
-  },
   methods: {
     fetchData () {
       this.fetchListTiers()
@@ -528,6 +522,10 @@ export default {
       for (const rule of this.selectedItems) {
         this.deleteRule(rule)
       }
+    },
+    getCapitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
     },
     deleteRule (rule) {
       this.loading = true

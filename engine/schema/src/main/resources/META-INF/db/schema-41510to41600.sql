@@ -422,6 +422,7 @@ SELECT
     `vm_instance`.`limit_cpu_use` AS `limit_cpu_use`,
     `vm_instance`.`created` AS `created`,
     `vm_instance`.`state` AS `state`,
+    `vm_instance`.`update_time` AS `update_time`,
     `vm_instance`.`removed` AS `removed`,
     `vm_instance`.`ha_enabled` AS `ha_enabled`,
     `vm_instance`.`hypervisor_type` AS `hypervisor_type`,
