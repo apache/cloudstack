@@ -477,4 +477,12 @@ export default {
   background-color: #f9f9f9;
 }
 
+.card-footer {
+  text-align: right;
+
+  button + button {
+    margin-left: 8px;
+  }
+}
+
 </style>

@@ -20,6 +20,10 @@
 
     <translation-menu class="action"/>
     <header-notice class="action"/>
+    <label class="user-menu-server-info action" v-if="$config.multipleServer">
+      <a-icon slot="prefix" type="database" />
+      {{ server.name || server.apiBase || 'Local-Server' }}
+    </label>
     <a-dropdown>
       <span class="user-menu-dropdown action">
         <span v-if="image">
@@ -62,12 +66,14 @@
 </template>
 
 <script>
+import Vue from 'vue'
 import { api } from '@/api'
 import HeaderNotice from './HeaderNotice'
 import TranslationMenu from './TranslationMenu'
 import { mapActions, mapGetters } from 'vuex'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import eventBus from '@/config/eventBus'
+import { SERVER_MANAGER } from '@/store/mutation-types'
 
 export default {
   name: 'UserMenu',
@@ -90,6 +96,11 @@ export default {
   watch: {
     image () {
       this.getIcon()
+    }
+  },
+  computed: {
+    server () {
+      return Vue.ls.get(SERVER_MANAGER) || this.$config.servers[0]
     }
   },
   methods: {
@@ -149,6 +160,12 @@ export default {
   &-item-icon i {
     min-width: 12px;
     margin-right: 8px;
+  }
+
+  &-server-info {
+    .anticon {
+      margin-right: 5px;
+    }
   }
 }
 </style>

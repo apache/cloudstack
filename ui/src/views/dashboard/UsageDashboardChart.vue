@@ -24,7 +24,7 @@
       v-for="stat in stats"
       :key="stat.type">
       <a-card
-        class="usage-dashboard-chart-card"
+        :class="['usage-dashboard-chart-card', stat.bgcolor ? 'usage-chart-text' : '']"
         :bordered="false"
         :loading="loading"
         :style="stat.bgcolor ? { 'background-color': stat.bgcolor } : {}">

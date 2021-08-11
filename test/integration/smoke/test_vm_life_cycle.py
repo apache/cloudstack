@@ -1226,7 +1226,7 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
 
     def get_target_host(self, virtualmachineid):
         target_hosts = Host.listForMigration(self.apiclient,
-                                             virtualmachineid=virtualmachineid)[0]
+                                             virtualmachineid=virtualmachineid)
         if len(target_hosts) < 1:
             self.skipTest("No target hosts found")
 
@@ -1252,7 +1252,8 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
             serviceofferingid=self.small_offering.id,
             mode=self.services["mode"])
 
-    def migrate_vm_with_pools(self, target_pool, id):
+    def migrate_vm_to_pool(self, target_pool, id):
+
         cmd = migrateVirtualMachine.migrateVirtualMachineCmd()
 
         cmd.storageid = target_pool.id
@@ -1273,17 +1274,17 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
         )
 
     """
-    BVT for Vmware Offline VM and Volume Migration
+    BVT for Vmware Offline and Live VM and Volume Migration
     """
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "security"], required_hardware="false")
-    def test_01_migrate_VM_and_root_volume(self):
+    def test_01_offline_migrate_VM_and_root_volume(self):
         """Test VM will be migrated with it's root volume"""
         # Validate the following
         # 1. Deploys a VM
-        # 2. Finds suitable host for migration
+        # 2. Stops the VM
         # 3. Finds suitable storage pool for root volume
-        # 4. Migrate the VM to new host and storage pool and assert migration successful
+        # 4. Migrate the VM to new storage pool and assert migration successful
 
         vm = self.deploy_vm()
 
@@ -1293,19 +1294,19 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
 
         vm.stop(self.apiclient)
 
-        self.migrate_vm_with_pools(target_pool, vm.id)
+        self.migrate_vm_to_pool(target_pool, vm.id)
 
         root_volume = self.get_vm_volumes(vm.id)[0]
         self.assertEqual(root_volume.storageid, target_pool.id, "Pool ID was not as expected")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "security"], required_hardware="false")
-    def test_02_migrate_VM_with_two_data_disks(self):
+    def test_02_offline_migrate_VM_with_two_data_disks(self):
         """Test VM will be migrated with it's root volume"""
         # Validate the following
         # 1. Deploys a VM and attaches 2 data disks
-        # 2. Finds suitable host for migration
+        # 2. Stops the VM
         # 3. Finds suitable storage pool for volumes
-        # 4. Migrate the VM to new host and storage pool and assert migration successful
+        # 4. Migrate the VM to new storage pool and assert migration successful
 
         vm = self.deploy_vm()
 
@@ -1321,7 +1322,7 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
 
         vm.stop(self.apiclient)
 
-        self.migrate_vm_with_pools(target_pool, vm.id)
+        self.migrate_vm_to_pool(target_pool, vm.id)
 
         volume1 = Volume.list(self.apiclient, id=volume1.id)[0]
         volume2 = Volume.list(self.apiclient, id=volume2.id)[0]
@@ -1332,7 +1333,54 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
         self.assertEqual(volume2.storageid, target_pool.id, "Pool ID was not as expected")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "security"], required_hardware="false")
-    def test_03_migrate_detached_volume(self):
+    def test_03_live_migrate_VM_with_two_data_disks(self):
+        """Test VM will be migrated with it's root volume"""
+        # Validate the following
+        # 1. Deploys a VM and attaches 2 data disks
+        # 2. Finds suitable host for migration
+        # 3. Finds suitable storage pool for volumes
+        # 4. Migrate the VM to new host and storage pool and assert migration successful
+
+        vm = self.deploy_vm()
+
+        root_volume = self.get_vm_volumes(vm.id)[0]
+        volume1 = self.create_volume()
+        volume2 = self.create_volume()
+        vm.attach_volume(self.apiclient, volume1)
+        vm.attach_volume(self.apiclient, volume2)
+
+        target_host = self.get_target_host(vm.id)
+        target_pool = self.get_target_pool(root_volume.id)
+        volume1.target_pool = self.get_target_pool(volume1.id)
+        volume2.target_pool = self.get_target_pool(volume2.id)
+
+        cmd = migrateVirtualMachineWithVolume.migrateVirtualMachineWithVolumeCmd()
+        cmd.migrateto = [{"volume": str(root_volume.id), "pool": str(target_pool.id)},
+                         {"volume": str(volume1.id), "pool": str(volume1.target_pool.id)},
+                         {"volume": str(volume2.id), "pool": str(volume2.target_pool.id)}]
+        cmd.virtualmachineid = vm.id
+        cmd.hostid = target_host.id
+
+        response = self.apiclient.migrateVirtualMachineWithVolume(cmd)
+
+        self.assertEqual(Volume.list(self.apiclient, id=root_volume.id)[0].storageid,
+                         target_pool.id,
+                         "Pool ID not as expected")
+
+        self.assertEqual(Volume.list(self.apiclient, id=volume1.id)[0].storageid,
+                         volume1.target_pool.id,
+                         "Pool ID not as expected")
+
+        self.assertEqual(Volume.list(self.apiclient, id=volume2.id)[0].storageid,
+                         volume2.target_pool.id,
+                         "Pool ID not as expected")
+
+        self.assertEqual(response.hostid,
+                         target_host.id,
+                         "HostID not as expected")
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "security"], required_hardware="false")
+    def test_04_migrate_detached_volume(self):
         """Test VM will be migrated with it's root volume"""
         # Validate the following
         # 1. Deploys a VM and attaches 1 data disk
