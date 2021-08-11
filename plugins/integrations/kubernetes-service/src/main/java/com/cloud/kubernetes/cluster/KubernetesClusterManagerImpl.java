@@ -947,8 +947,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     private void validateKubernetesClusterUpgradeParameters(UpgradeKubernetesClusterCmd cmd) {
-        validateEndpointUrl();
-
         // Validate parameters
         validateEndpointUrl();
 
