@@ -1891,6 +1891,7 @@ export default {
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.zoneSelected = true
       this.form.setFieldsValue({
+        zoneid: this.zoneId,
         clusterid: undefined,
         podid: undefined,
         hostid: undefined,
