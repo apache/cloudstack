@@ -525,7 +525,8 @@ CREATE PROCEDURE `cloud`.`ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` (
 )
 BEGIN	
 	INSERT  INTO cloud.guest_os (uuid, category_id, display_name, created) 
-	SELECT 	UUID(), guest_os_category_id, guest_os_display_name, now()	
+	SELECT 	UUID(), guest_os_category_id, guest_os_display_name, now()
+	FROM    DUAL
 	WHERE 	not exists( SELECT  1 
 	                    FROM    cloud.guest_os
 	                    WHERE   cloud.guest_os.category_id = guest_os_category_id
