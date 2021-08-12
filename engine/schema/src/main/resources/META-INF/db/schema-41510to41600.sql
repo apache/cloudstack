@@ -697,8 +697,7 @@ CREATE VIEW `cloud`.`host_view` AS
         `host`.`id`;
 
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
-CREATE
-VIEW `user_vm_view` AS
+CREATE VIEW `cloud`.`user_vm_view` AS
     SELECT
         `vm_instance`.`id` AS `id`,
         `vm_instance`.`name` AS `name`,

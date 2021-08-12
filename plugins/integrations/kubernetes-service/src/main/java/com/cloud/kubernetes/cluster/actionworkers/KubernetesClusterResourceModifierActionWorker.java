@@ -146,9 +146,9 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         final String clusterTokenKey = "{{ k8s_control_node.cluster.token }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
-        List<String> sshKeyPairs = null;
+        List<String> sshKeyPairs = new ArrayList<String>();
         sshKeyPairs.add(kubernetesCluster.getKeyPair());
-        if (!Strings.isNullOrEmpty(sshKeyPairs.get(0))) {
+        if (!sshKeyPairs.isEmpty() && !Strings.isNullOrEmpty(sshKeyPairs.get(0))) {
             SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPairs.get(0));
             if (sshkp != null) {
                 pubKey += "\n  - \"" + sshkp.getPublicKey() + "\"";
@@ -372,7 +372,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             logAndThrow(Level.ERROR, "Failed to read Kubernetes node configuration file", e);
         }
         String base64UserData = Base64.encodeBase64String(k8sNodeConfig.getBytes(StringUtils.getPreferredCharset()));
-        List<String> keypairs = null;
+        List<String> keypairs = new ArrayList<String>();
         keypairs.add(kubernetesCluster.getKeyPair());
         nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,

@@ -264,7 +264,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logAndThrow(Level.ERROR, "Failed to read Kubernetes control configuration file", e);
         }
         String base64UserData = Base64.encodeBase64String(k8sControlNodeConfig.getBytes(StringUtils.getPreferredCharset()));
-        List<String> keypairs = null;
+        List<String> keypairs = new ArrayList<String>();
         keypairs.add(kubernetesCluster.getKeyPair());
         additionalControlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,

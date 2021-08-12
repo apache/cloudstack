@@ -842,6 +842,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
         Long vmId = cmd.getId();
         UserVmVO userVm = _vmDao.findById(cmd.getId());
+
         if (userVm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine by id" + cmd.getId());
         }
@@ -862,10 +863,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         String keypairnames = "";
 
-        List<SSHKeyPairVO> s_list = null;
+        List<SSHKeyPairVO> s_list = new ArrayList<>();
 
-        if (cmd.getNames() != null) {
+        if (!cmd.getNames().isEmpty()) {
             s_list = _sshKeyPairDao.findByNames(owner.getAccountId(), owner.getDomainId(), cmd.getNames());
+            for (SSHKeyPairVO s : s_list) {
+                if (s == null) {
+                    throw new InvalidParameterValueException("Keypair given does not exist");
+                }
+            }
             keypairnames = String.join(", ", cmd.getNames());
         }
 

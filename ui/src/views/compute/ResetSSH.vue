@@ -91,9 +91,6 @@ export default {
   created () {
     this.fetchData()
   },
-  beforeUpdate () {
-    this.$emit('refresh-data')
-  },
   methods: {
     fetchData () {
       this.loading = true
@@ -136,12 +133,12 @@ export default {
           message: this.$t('SSH Key(s) resetted sucessfully')
         })
         this.$parent.$parent.close()
+        this.$emit('refresh-data')
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.loading = false
       })
-      console.log('api')
     },
     closeAction () {
       this.$emit('close-action')
