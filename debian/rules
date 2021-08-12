@@ -96,7 +96,7 @@ override_dh_auto_install:
 	# cloudstack-ui
 	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/ui
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-ui
-	cd ui && npm install && npm run build && cd ..
+	cd ui && npm config set unsafe-perm true && npm install && npm run build && cd ..
 	cp -r ui/dist/config.json $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/ui/
 	cp -r ui/dist/* $(DESTDIR)/usr/share/$(PACKAGE)-ui/
 	rm -f $(DESTDIR)/usr/share/$(PACKAGE)-ui/config.json
