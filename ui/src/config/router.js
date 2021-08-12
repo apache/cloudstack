@@ -20,7 +20,7 @@ import { UserLayout, BasicLayout, RouteView } from '@/layouts'
 import AutogenView from '@/views/AutogenView.vue'
 import IFramePlugin from '@/views/plugins/IFramePlugin.vue'
 
-import { shallowRef } from 'vue'
+import { shallowRef, defineAsyncComponent } from 'vue'
 
 import compute from '@/config/section/compute'
 import storage from '@/config/section/storage'
@@ -192,12 +192,12 @@ export function asyncRouterMap () {
           tabs: [
             {
               name: 'dashboard',
-              component: () => import('@/views/dashboard/UsageDashboardChart')
+              component: shallowRef(defineAsyncComponent(() => import('@/views/dashboard/UsageDashboardChart')))
             },
             {
               name: 'accounts',
               show: (record, route, user) => { return record.account === user.account || ['Admin', 'DomainAdmin'].includes(user.roletype) },
-              component: () => import('@/views/project/AccountsTab')
+              component: shallowRef(defineAsyncComponent(() => import('@/views/project/AccountsTab')))
             },
             {
               name: 'limits',
@@ -205,7 +205,7 @@ export function asyncRouterMap () {
                 projectid: 'id'
               },
               show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
-              component: () => import('@/components/view/ResourceLimitTab.vue')
+              component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceLimitTab.vue')))
             }
           ]
         },

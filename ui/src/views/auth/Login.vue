@@ -31,28 +31,27 @@
       :animated="false"
     >
       <a-tab-pane key="cs">
-        <span slot="tab">
-          <a-icon type="safety" />
-          {{ $t('label.login.portal') }}
-        </span>
-        <a-form-item v-if="$config.multipleServer">
+        <template #tab>
+          <span>
+            <safety-outlined />
+            {{ $t('label.login.portal') }}
+          </span>
+        </template>
+        <a-form-item v-if="$config.multipleServer" name="server" ref="server">
           <a-select
             size="large"
             :placeholder="$t('server')"
-            v-decorator="[
-              'server',
-              {
-                initialValue: (server.apiHost || '') + server.apiBase
-              }
-            ]"
+            v-model:value="form.server"
             @change="onChangeServer">
             <a-select-option v-for="item in $config.servers" :key="(item.apiHost || '') + item.apiBase">
-              <a-icon slot="prefix" type="database" :style="{ color: 'rgba(0,0,0,.25)' }"></a-icon>
+              <template #prefix>
+                <database-outlined />
+              </template>
               {{ item.name }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
+        <a-form-item ref="username" name="username">
           <a-input
             size="large"
             type="text"
@@ -60,7 +59,9 @@
             :placeholder="$t('label.username')"
             v-model:value="form.username"
           >
-            <a-icon slot="prefix" type="user" />
+            <template #prefix>
+              <user-outlined />
+            </template>
           </a-input>
         </a-form-item>
         <a-form-item ref="password" name="password">
@@ -71,7 +72,9 @@
             :placeholder="$t('label.password')"
             v-model:value="form.password"
           >
-            <a-icon slot="prefix" type="lock" />
+            <template #prefix>
+              <lock-outlined />
+            </template>
           </a-input-password>
         </a-form-item>
         <a-form-item ref="domain" name="domain">
@@ -81,33 +84,34 @@
             :placeholder="$t('label.domain')"
             v-model:value="form.domain"
           >
-            <a-icon slot="prefix" type="block" />
+            <template #prefix>
+              <block-outlined />
+            </template>
           </a-input>
         </a-form-item>
       </a-tab-pane>
       <a-tab-pane key="saml" :disabled="idps.length === 0">
-        <span slot="tab">
-          <a-icon type="audit" />
-          {{ $t('label.login.single.signon') }}
-        </span>
-        <a-form-item v-if="$config.multipleServer">
+        <template #tab>
+          <span>
+            <audit-outlined />
+            {{ $t('label.login.single.signon') }}
+          </span>
+        </template>
+        <a-form-item v-if="$config.multipleServer" name="server" ref="server">
           <a-select
             size="large"
             :placeholder="$t('server')"
-            v-decorator="[
-              'server',
-              {
-                initialValue: (server.apiHost || '') + server.apiBase
-              }
-            ]"
+            v-model:value="form.server"
             @change="onChangeServer">
             <a-select-option v-for="item in $config.servers" :key="(item.apiHost || '') + item.apiBase">
-              <a-icon slot="prefix" type="database" :style="{ color: 'rgba(0,0,0,.25)' }"></a-icon>
+              <template #prefix>
+                <database-outlined />
+              </template>
               {{ item.name }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
+        <a-form-item name="idp" ref="idp">
           <a-select v-model:value="form.idp">
             <a-select-option v-for="(idp, idx) in idps" :key="idx" :value="idp.id">
               {{ idp.orgName }}
@@ -133,7 +137,6 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import Vue from 'vue'
 import { api } from '@/api'
 import store from '@/store'
 import { mapActions } from 'vuex'
@@ -160,7 +163,7 @@ export default {
   },
   created () {
     if (this.$config.multipleServer) {
-      this.server = Vue.ls.get(SERVER_MANAGER) || this.$config.servers[0]
+      this.server = this.$localStorage.get(SERVER_MANAGER) || this.$config.servers[0]
     }
     this.initForm()
     this.fetchData()
@@ -169,7 +172,9 @@ export default {
     ...mapActions(['Login', 'Logout']),
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({
+        server: (this.server.apiHost || '') + this.server.apiBase
+      })
       this.rules = reactive({
         username: [
           {

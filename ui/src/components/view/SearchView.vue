@@ -35,81 +35,80 @@
         :placeholder="$t('label.search')"
         v-model:value="searchQuery"
         @search="onSearch">
-        <a-popover
-          placement="bottomRight"
-          slot="addonBefore"
-          trigger="click"
-          v-model="visibleFilter">
-          <template slot="content" v-if="visibleFilter">
-            <a-form
-              style="min-width: 170px"
-              :form="form"
-              layout="vertical"
-              @submit="handleSubmit">
-              <a-form-item
-                v-for="(field, index) in fields"
-                :key="index"
-                :label="field.name==='keyword' ? $t('label.name') : $t('label.' + field.name)">
-                <a-select
-                  allowClear
-                  v-if="field.type==='list'"
-                  v-decorator="[field.name, {
-                    initialValue: fieldValues[field.name] || null
-                  }]"
-                  :loading="field.loading">
-                  <a-select-option
-                    v-for="(opt, idx) in field.opts"
-                    :key="idx"
-                    :value="opt.id">{{ $t(opt.name) }}</a-select-option>
-                </a-select>
-                <a-input
-                  v-else-if="field.type==='input'"
-                  v-decorator="[field.name, {
-                    initialValue: fieldValues[field.name] || null
-                  }]" />
-                <div v-else-if="field.type==='tag'">
-                  <div>
-                    <a-input-group
-                      type="text"
+        <template #addonBefore>
+          <a-popover
+            placement="bottomRight"
+            trigger="click"
+            v-model="visibleFilter">
+            <template #content>
+              <div v-if="visibleFilter">
+                <a-form
+                  style="min-width: 170px"
+                  :ref="formRef"
+                  :model="form"
+                  :rules="rules"
+                  layout="vertical"
+                  @submit="handleSubmit">
+                  <a-form-item
+                    v-for="(field, index) in fields"
+                    :key="index"
+                    :label="field.name==='keyword' ? $t('label.name') : $t('label.' + field.name)">
+                    <a-select
+                      allowClear
+                      v-if="field.type==='list'"
+                      v-model:value="form[field.name]"
+                      :loading="field.loading">
+                      <a-select-option
+                        v-for="(opt, idx) in field.opts"
+                        :key="idx"
+                        :value="opt.id">{{ $t(opt.name) }}</a-select-option>
+                    </a-select>
+                    <a-input
+                      v-else-if="field.type==='input'"
+                      v-model:value="form[field.name]" />
+                    <div v-else-if="field.type==='tag'">
+                      <a-input-group
+                        type="text"
+                        size="small"
+                        compact>
+                        <a-input ref="input" v-model:value="inputKey" @change="e => inputKey = e.target.value" style="width: 50px; text-align: center" :placeholder="$t('label.key')" />
+                        <a-input
+                          class="tag-disabled-input"
+                          style=" width: 20px; border-left: 0; pointer-events: none; text-align: center"
+                          placeholder="="
+                          disabled />
+                        <a-input v-model:value="inputValue" @change="handleValueChange" style="width: 50px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
+                        <tooltip-button :tooltip="$t('label.clear')" icon="close-outlined" size="small" @click="inputKey = inputValue = ''" />
+                      </a-input-group>
+                    </div>
+                  </a-form-item>
+                  <div class="filter-group-button">
+                    <a-button
+                      class="filter-group-button-clear"
+                      type="default"
                       size="small"
-                      compact>
-                      <a-input ref="input" :value="inputKey" @change="e => inputKey = e.target.value" style="width: 50px; text-align: center" :placeholder="$t('label.key')" />
-                      <a-input
-                        class="tag-disabled-input"
-                        style=" width: 20px; border-left: 0; pointer-events: none; text-align: center"
-                        placeholder="="
-                        disabled />
-                      <a-input :value="inputValue" @change="handleValueChange" style="width: 50px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-                      <tooltip-button :tooltip="$t('label.clear')" icon="close" size="small" @click="inputKey = inputValue = ''" />
-                    </a-input-group>
+                      @click="onClear">
+                      <template #icon><stop-outlined /></template>
+                      {{ $t('label.reset') }}
+                    </a-button>
+                    <a-button
+                      class="filter-group-button-search"
+                      type="primary"
+                      size="small"
+                      html-type="submit">
+                      <template #icon><search-outlined /></template>
+                      {{ $t('label.search') }}
+                    </a-button>
                   </div>
-                </a-form-item>
-                <div class="filter-group-button">
-                  <a-button
-                    class="filter-group-button-clear"
-                    type="default"
-                    size="small"
-                    @click="onClear">
-                    <template #icon><StopOutlined /></template>
-                    {{ $t('label.reset') }}
-                  </a-button>
-                  <a-button
-                    class="filter-group-button-search"
-                    type="primary"
-                    size="small"
-                    html-type="submit">
-                    <template #icon><SearchOutlined /></template>
-                    {{ $t('label.search') }}
-                  </a-button>
-                </div>
-              </a-form>
+                </a-form>
+              </div>
             </template>
             <a-button
               class="filter-button"
               size="small"
               @click="() => { searchQuery = null }">
-              <FilterTwoTone v-if="isFiltered" />
-              <FilterOutlined v-else />
+              <filter-two-tone v-if="isFiltered" />
+              <filter-outlined v-else />
             </a-button>
           </a-popover>
         </template>

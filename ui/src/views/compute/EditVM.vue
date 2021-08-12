@@ -98,8 +98,8 @@
       </a-form-item>
 
       <div :span="24" class="action-button">
-        <a-button :loading="loading" @click="onCloseAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" html-type="submit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading" @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
+        <a-button :loading="loading" type="primary" html-type="submit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </a-spin>

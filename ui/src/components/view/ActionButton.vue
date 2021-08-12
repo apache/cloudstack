@@ -182,8 +182,8 @@ export default {
 
         Promise.all(arrAsync).then(response => {
           for (let j = 0; j < response.length; j++) {
-            this.$set(this.actionBadge, response[j].api, {})
-            this.$set(this.actionBadge[response[j].api], 'badgeNum', response[j].count)
+            this.actionBadge[response[j].api] = {}
+            this.actionBadge[response[j].api].badgeNum = response[j].count
           }
         }).catch(() => {})
       }

@@ -165,7 +165,7 @@
                 <template #label>
                   {{ $t('label.' + field.name) }}
                   <a-tooltip :title="field.description">
-                    <InfoCircleOutlined style="color: rgba(0,0,0,.45)"/>
+                    <info-circle-outlined />
                   </a-tooltip>
                 </template>
 

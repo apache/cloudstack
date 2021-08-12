@@ -61,7 +61,7 @@
       </a-descriptions>
     </template>
     <template #networkname="text, item">
-      <a-icon type="apartment" />
+      <apartment-outlined />
       <router-link :to="{ path: '/guestnetwork/' + item.networkid }">
         {{ text }}
       </router-link>

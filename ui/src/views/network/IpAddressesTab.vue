@@ -62,7 +62,7 @@
         </template>
 
         <template #virtualmachineid="{ record }">
-          <a-icon type="desktop" v-if="record.virtualmachineid" />
+          <desktop-outlined v-if="record.virtualmachineid" />
           <router-link :to="{ path: '/vm/' + record.virtualmachineid }" > {{ record.virtualmachinename || record.virtualmachineid }} </router-link>
         </template>
 

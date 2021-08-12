@@ -103,7 +103,7 @@ const app = {
       state.usebrowsertimezone = bool
     },
     SET_SERVER: (state, server) => {
-      Vue.ls.set(SERVER_MANAGER, server)
+      window.ls.set(SERVER_MANAGER, server)
       state.server = server
     }
   },

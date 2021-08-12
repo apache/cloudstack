@@ -24,7 +24,6 @@ import 'ant-design-vue/dist/antd.min.css'
 import '@/style/vars.less'
 
 // ext library
-import VueClipboard from 'vue3-clipboard'
 import PermissionHelper from '@/utils/helper/permission'
 
 // customisation
@@ -38,7 +37,6 @@ Spin.setDefaultIndicator({
 
 export default {
   install: (app) => {
-    app.use(VueClipboard, { autoSetContainer: true })
     app.use(PermissionHelper)
     app.use(VueCropper)
     app.use(componentsUse)

@@ -62,16 +62,17 @@
       </a-drawer>
     </template>
 
-    <template>
-      <drawer :visible="showSetting" placement="right">
-        <div slot="handler">
-          <a-button type="primary" size="large">
-            <a-icon :type="showSetting ? 'close' : 'setting'"/>
-          </a-button>
-        </div>
-        <setting slot="drawer" :visible="showSetting" />
-      </drawer>
-    </template>
+    <drawer :visible="showSetting" placement="right">
+      <template #handler>
+        <a-button type="primary" size="large">
+          <close-outlined v-if="showSetting" />
+          <setting-outlined v-else />
+        </a-button>
+      </template>
+      <template #drawer>
+        <setting :visible="showSetting" />
+      </template>
+    </drawer>
 
     <a-layout :class="[layoutMode, `content-width-${contentWidth}`]" :style="{ paddingLeft: contentPaddingLeft, minHeight: '100vh' }">
       <!-- layout header -->
@@ -176,7 +177,7 @@ export default {
       })
     }
   },
-  beforeDestroy () {
+  beforeUnmount () {
     document.body.classList.remove('dark')
   },
   methods: {
@@ -210,7 +211,7 @@ export default {
 <style lang="less">
 .layout-content {
   &.is-header-fixed {
-    margin: 78px 12px 0;
+    margin: 78px 20px 0;
   }
 }
 

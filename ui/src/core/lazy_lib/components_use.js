@@ -32,7 +32,6 @@ import {
   Modal,
   Table,
   Tabs,
-  Icon,
   Badge,
   Popover,
   Dropdown,
@@ -66,6 +65,7 @@ import {
   AutoComplete,
   Collapse
 } from 'ant-design-vue'
+import VueClipboard from 'vue3-clipboard'
 
 export default {
   install: (app) => {
@@ -77,6 +77,7 @@ export default {
     app.config.globalProperties.$error = Modal.error
     app.config.globalProperties.$warning = Modal.warning
 
+    app.use(VueClipboard, { autoSetContainer: true })
     app.use(ConfigProvider)
     app.use(Layout)
     app.use(Input)
@@ -93,7 +94,6 @@ export default {
     app.use(Modal)
     app.use(Table)
     app.use(Tabs)
-    app.use(Icon)
     app.use(Badge)
     app.use(Popover)
     app.use(Dropdown)

@@ -27,7 +27,6 @@
 </template>
 
 <script>
-import Vue from 'vue'
 import { SERVER_MANAGER } from '@/store/mutation-types'
 
 export default {
@@ -47,7 +46,7 @@ export default {
       if (!this.$config.multipleServer) {
         return this.$config.apiBase.replace('/api', '')
       }
-      const serverStorage = Vue.ls.get(SERVER_MANAGER)
+      const serverStorage = this.$localStorage.get(SERVER_MANAGER)
       const apiBase = serverStorage.apiBase.replace('/api', '')
       if (!serverStorage.apiHost || serverStorage.apiHost === '/') {
         return [location.origin, apiBase].join('')

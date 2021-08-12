@@ -21,7 +21,7 @@
     <translation-menu class="action"/>
     <header-notice class="action"/>
     <label class="user-menu-server-info action" v-if="$config.multipleServer">
-      <a-icon slot="prefix" type="database" />
+      <database-outlined />
       {{ server.name || server.apiBase || 'Local-Server' }}
     </label>
     <a-dropdown>
@@ -44,7 +44,7 @@
               <a-switch :checked="$store.getters.usebrowsertimezone" />
             </a>
           </a-menu-item>
-          <a-menu-item class="user-menu-item" key="2" disabled>
+          <a-menu-item class="user-menu-item" key="2">
             <a :href="$config.docBase" target="_blank">
               <QuestionCircleOutlined class="user-menu-item-icon" />
               <span class="user-menu-item-name">{{ $t('label.help') }}</span>
@@ -64,7 +64,6 @@
 </template>
 
 <script>
-import Vue from 'vue'
 import HeaderNotice from './HeaderNotice'
 import TranslationMenu from './TranslationMenu'
 import { mapActions, mapGetters } from 'vuex'
@@ -78,7 +77,7 @@ export default {
   },
   computed: {
     server () {
-      return Vue.ls.get(SERVER_MANAGER) || this.$config.servers[0]
+      return this.$localStorage.get(SERVER_MANAGER) || this.$config.servers[0]
     }
   },
   methods: {

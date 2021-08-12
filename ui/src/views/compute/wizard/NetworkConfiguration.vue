@@ -16,57 +16,58 @@
 // under the License.
 
 <template>
-  <a-table
-    :columns="columns"
-    :dataSource="dataItems"
-    :pagination="false"
-    :rowSelection="rowSelection"
-    :customRow="onClickRow"
-    :rowKey="record => record.id"
-    size="middle"
-    :scroll="{ y: 225 }"
-  >
-    <template slot="name" slot-scope="text, record">
-      <div>{{ text }}</div>
-      <small v-if="record.type!=='L2'">{{ $t('label.cidr') + ': ' + record.cidr }}</small>
-    </template>
-    <template slot="ipAddress" slot-scope="text, record, index">
-      <a-form-item v-if="record.type!=='L2' && index === 0">
-        <a-input
-          style="width: 150px;"
-          v-decorator="['ipAddress' + record.id, {
-            rules: [{
-              validator: validatorIpAddress,
-              cidr: record.cidr,
-              networkType: record.type
-            }]
-          }]"
-          :placeholder="record.cidr"
-          @change="($event) => updateNetworkData('ipAddress', record.id, $event.target.value)">
-          <a-tooltip v-if="record.type !== 'L2'" slot="suffix" :title="getIpRangeDescription(record)">
-            <a-icon type="info-circle" />
-          </a-tooltip>
-        </a-input>
-      </a-form-item>
-    </template>
-    <template slot="macAddress" slot-scope="text, record">
-      <a-form-item>
-        <a-input
-          style="width: 150px;"
-          :placeholder="$t('label.macaddress')"
-          v-decorator="[`macAddress` + record.id, {
-            rules: [{
-              validator: validatorMacAddress
-            }]
-          }]"
-          @change="($event) => updateNetworkData('macAddress', record.id, $event.target.value)">
-          <a-tooltip slot="suffix" :title="$t('label.macaddress.example')">
-            <a-icon type="info-circle" />
-          </a-tooltip>
-        </a-input>
-      </a-form-item>
-    </template>
-  </a-table>
+  <a-form
+    :ref="formRef"
+    :model="form"
+    :rules="rules">
+    <a-table
+      :columns="columns"
+      :dataSource="dataItems"
+      :pagination="false"
+      :rowSelection="rowSelection"
+      :customRow="onClickRow"
+      :rowKey="record => record.id"
+      size="middle"
+      :scroll="{ y: 225 }">
+      <template #name="{ text, record }">
+        <div>{{ text }}</div>
+        <small v-if="record.type!=='L2'">{{ $t('label.cidr') + ': ' + record.cidr }}</small>
+      </template>
+      <template #ipAddress="{ record, index }">
+        <a-form-item
+          style="display: block"
+          v-if="record.type !== 'L2' && index === 0"
+          :name="'ipAddress' + record.id">
+          <a-input
+            style="width: 150px;"
+            v-model:value="form['ipAddress' + record.id]"
+            :placeholder="record.cidr"
+            @change="($event) => updateNetworkData('ipAddress', record.id, $event.target.value)">
+            <template #suffix>
+              <a-tooltip :title="getIpRangeDescription(record)">
+                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              </a-tooltip>
+            </template>
+          </a-input>
+        </a-form-item>
+      </template>
+      <template #macAddress="{ record }">
+        <a-form-item style="display: block" :name="'macAddress' + record.id">
+          <a-input
+            style="width: 150px;"
+            :placeholder="$t('label.macaddress')"
+            v-model:value="form[`macAddress` + record.id]"
+            @change="($event) => updateNetworkData('macAddress', record.id, $event.target.value)">
+            <template #suffix>
+              <a-tooltip :title="$t('label.macaddress.example')">
+                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              </a-tooltip>
+            </template>
+          </a-input>
+        </a-form-item>
+      </template>
+    </a-table>
+  </a-form>
 </template>
 
 <script>

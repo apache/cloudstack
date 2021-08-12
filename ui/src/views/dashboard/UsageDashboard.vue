@@ -18,26 +18,27 @@
 <template>
   <a-row class="usage-dashboard" :gutter="12">
     <a-col :xl="16">
-      <a-row :gutter="12">
-        <a-card>
+      <a-row :gutter="24">
+        <a-card style="width: 100%">
           <a-tabs
             v-if="showProject"
             :animated="false"
             @change="onTabChange">
-            <div
-              v-for="tab in $route.meta.tabs"
-              :key="tab.name">
+            <template v-for="tab in $route.meta.tabs" :key="tab.name">
               <a-tab-pane
+                v-if="'show' in tab ? tab.show(project, $route, $store.getters.userInfo) : true"
                 :tab="$t('label.' + tab.name)"
-                v-if="'show' in tab ? tab.show(project, $route, $store.getters.userInfo) : true">
-                <component
-                  :is="tab.component"
-                  :resource="project"
-                  :loading="loading"
-                  :bordered="false"
-                  :stats="stats" />
+                :key="tab.name">
+                <keep-alive>
+                  <component
+                    :is="tab.component"
+                    :resource="project"
+                    :loading="loading"
+                    :bordered="false"
+                    :stats="stats" />
+                </keep-alive>
               </a-tab-pane>
-            </div>
+            </template>
           </a-tabs>
           <a-col
             v-else
@@ -56,7 +57,7 @@
                   class="usage-dashboard-chart-card-inner">
                   <h3>{{ stat.name }}</h3>
                   <h2>
-                    <a-icon :type="stat.icon" />
+                    <render-icon :icon="stat.icon" />
                     {{ stat.count == undefined ? 0 : stat.count }}
                   </h2>
                 </div>
@@ -98,6 +99,7 @@
 <script>
 import { api } from '@/api'
 import store from '@/store'
+import RenderIcon from '@/utils/renderIcon'
 
 import ChartCard from '@/components/widgets/ChartCard'
 import UsageDashboardChart from '@/views/dashboard/UsageDashboardChart'
@@ -106,7 +108,8 @@ export default {
   name: 'UsageDashboard',
   components: {
     ChartCard,
-    UsageDashboardChart
+    UsageDashboardChart,
+    RenderIcon
   },
   props: {
     resource: {
@@ -129,9 +132,6 @@ export default {
       stats: [],
       project: {}
     }
-  },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
   },
   created () {
     this.project = store.getters.project
@@ -168,42 +168,42 @@ export default {
         if (json && json.listvirtualmachinesresponse) {
           count = json.listvirtualmachinesresponse.count
         }
-        this.stats.splice(0, 1, { name: this.$t('label.running'), count: count, icon: 'desktop', bgcolor: '#dfe9cc', path: '/vm?state=running&filter=running' })
+        this.stats.splice(0, 1, { name: this.$t('label.running'), count: count, icon: 'desktop-outlined', bgcolor: '#dfe9cc', path: '/vm?state=running&filter=running' })
       })
       api('listVirtualMachines', { state: 'Stopped', listall: true }).then(json => {
         var count = 0
         if (json && json.listvirtualmachinesresponse) {
           count = json.listvirtualmachinesresponse.count
         }
-        this.stats.splice(1, 1, { name: this.$t('label.stopped'), count: count, icon: 'poweroff', bgcolor: '#edcbce', path: '/vm?state=stopped&filter=stopped' })
+        this.stats.splice(1, 1, { name: this.$t('label.stopped'), count: count, icon: 'poweroff-outlined', bgcolor: '#edcbce', path: '/vm?state=stopped&filter=stopped' })
       })
       api('listVirtualMachines', { listall: true }).then(json => {
         var count = 0
         if (json && json.listvirtualmachinesresponse) {
           count = json.listvirtualmachinesresponse.count
         }
-        this.stats.splice(2, 1, { name: this.$t('label.total.vms'), count: count, icon: 'number', path: '/vm' })
+        this.stats.splice(2, 1, { name: this.$t('label.total.vms'), count: count, icon: 'number-outlined', path: '/vm' })
       })
       api('listVolumes', { listall: true }).then(json => {
         var count = 0
         if (json && json.listvolumesresponse) {
           count = json.listvolumesresponse.count
         }
-        this.stats.splice(3, 1, { name: this.$t('label.total.volume'), count: count, icon: 'database', path: '/volume' })
+        this.stats.splice(3, 1, { name: this.$t('label.total.volume'), count: count, icon: 'database-outlined', path: '/volume' })
       })
       api('listNetworks', { listall: true }).then(json => {
         var count = 0
         if (json && json.listnetworksresponse) {
           count = json.listnetworksresponse.count
         }
-        this.stats.splice(4, 1, { name: this.$t('label.total.network'), count: count, icon: 'apartment', path: '/guestnetwork' })
+        this.stats.splice(4, 1, { name: this.$t('label.total.network'), count: count, icon: 'apartment-outlined', path: '/guestnetwork' })
       })
       api('listPublicIpAddresses', { listall: true }).then(json => {
         var count = 0
         if (json && json.listpublicipaddressesresponse) {
           count = json.listpublicipaddressesresponse.count
         }
-        this.stats.splice(5, 1, { name: this.$t('label.public.ip.addresses'), count: count, icon: 'environment', path: '/publicip' })
+        this.stats.splice(5, 1, { name: this.$t('label.public.ip.addresses'), count: count, icon: 'environment-outlined', path: '/publicip' })
       })
       this.listEvents()
     },

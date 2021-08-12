@@ -98,6 +98,7 @@ import {
   MinusSquareOutlined,
   MoreOutlined,
   NotificationOutlined,
+  NumberOutlined,
   PaperClipOutlined,
   PauseCircleOutlined,
   PictureOutlined,
@@ -129,6 +130,7 @@ import {
   TeamOutlined,
   ThunderboltOutlined,
   TranslationOutlined,
+  UndoOutlined,
   UsbOutlined,
   UserAddOutlined,
   UserOutlined,
@@ -230,6 +232,7 @@ export default {
     app.component('MinusSquareOutlined', MinusSquareOutlined)
     app.component('MoreOutlined', MoreOutlined)
     app.component('NotificationOutlined', NotificationOutlined)
+    app.component('NumberOutlined', NumberOutlined)
     app.component('PaperClipOutlined', PaperClipOutlined)
     app.component('PauseCircleOutlined', PauseCircleOutlined)
     app.component('PictureOutlined', PictureOutlined)
@@ -261,6 +264,7 @@ export default {
     app.component('TeamOutlined', TeamOutlined)
     app.component('ThunderboltOutlined', ThunderboltOutlined)
     app.component('TranslationOutlined', TranslationOutlined)
+    app.component('UndoOutlined', UndoOutlined)
     app.component('UsbOutlined', UsbOutlined)
     app.component('UserAddOutlined', UserAddOutlined)
     app.component('UserOutlined', UserOutlined)

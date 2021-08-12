@@ -30,7 +30,7 @@
           <template #title>
             <span>{{ $t('label.domain') }}</span>
           </template>
-          <span style="font-size: 20px; color: #999; margin-top: -5px">
+          <span class="custom-suffix-icon">
             <BlockOutlined v-if="!loading" />
             <LoadingOutlined v-else />
           </span>
@@ -122,5 +122,13 @@ export default {
     padding-top: 5px;
     padding-right: 5px;
   }
+}
+
+.custom-suffix-icon {
+  font-size: 20px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin-top: -5px;
 }
 </style>

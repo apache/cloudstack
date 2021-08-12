@@ -21,7 +21,7 @@
       <a-radio-group
         class="setting-group"
         name="themeGroup"
-        v-model="layoutMode"
+        v-model:value="layoutMode"
         @change="switchLayoutMode">
         <setting-item
           view-type="radio-group"
@@ -58,7 +58,7 @@
               <a-input
                 :disabled="layoutMode === 'dark'"
                 type="color"
-                v-model="navBgColorPick"
+                v-model:value="navBgColorPick"
                 @blur="(e) => updateSetting('@navigation-background-color', e.target.value)" />
             </div>
           </div>
@@ -70,7 +70,7 @@
               <a-input
                 :disabled="layoutMode === 'dark'"
                 type="color"
-                v-model="navBgColorPick"
+                v-model:value="navBgColorPick"
                 @blur="(e) => updateSetting('@navigation-text-color', e.target.value)" />
             </div>
           </div>
@@ -89,7 +89,7 @@
             <div class="color-picker" :style="{ backgroundColor: projectNavBgColorPick }">
               <a-input
                 type="color"
-                v-model="projectNavBgColorPick"
+                v-model:value="projectNavBgColorPick"
                 @blur="(e) => updateSetting('@project-nav-background-color', e.target.value)" />
             </div>
           </div>
@@ -100,7 +100,7 @@
             <div class="color-picker" :style="{ backgroundColor: projectNavTextColorPick }">
               <a-input
                 type="color"
-                v-model="projectNavTextColorPick"
+                v-model:value="projectNavTextColorPick"
                 @blur="(e) => updateSetting('@project-nav-text-color', e.target.value)" />
             </div>
           </div>
@@ -113,12 +113,16 @@
       <a-alert class="setting-action-alert" :message="$t('label.theme.alert')" type="warning" show-icon />
       <a-button
         class="setting-action-btn"
-        icon="copy"
-        @click="saveSetting">{{ $t('label.save.setting') }}</a-button>
+        @click="saveSetting">
+        <template #icon><copy-outlined /></template>
+        {{ $t('label.save.setting') }}
+      </a-button>
       <a-button
         class="setting-action-btn"
-        icon="undo"
-        @click="resetSetting">{{ $t('label.reset.to.default') }}</a-button>
+        @click="resetSetting">
+        <template #icon><undo-outlined /></template>
+        {{ $t('label.reset.to.default') }}
+      </a-button>
     </div>
   </div>
 </template>
@@ -158,12 +162,12 @@ export default {
         {
           name: 'light',
           type: 'image-checkbox',
-          component: () => import('@/assets/icons/light.svg?inline')
+          icon: 'light'
         },
         {
           name: 'dark',
           type: 'image-checkbox',
-          component: () => import('@/assets/icons/dark.svg?inline')
+          icon: 'dark'
         }
       ]
       return arrStyle
@@ -394,8 +398,15 @@ export default {
   padding: 0 24px;
 
   &-alert {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
     margin: 20px 0 8px;
     word-break: break-word;
+    position: relative;
+
+    :deep(.ant-alert-icon) {
+    }
   }
 
   &-btn {

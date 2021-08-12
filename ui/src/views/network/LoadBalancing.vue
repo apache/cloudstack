@@ -355,7 +355,7 @@
             <span>
               {{ text }}
             </span>
-            <a-icon v-if="addVmModalNicLoading" type="loading"></a-icon>
+            <loading-outlined v-if="addVmModalNicLoading" />
             <a-select
               style="display: block"
               v-else-if="!addVmModalNicLoading && newRule.virtualmachineid[index] === record.id"

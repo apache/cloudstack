@@ -162,6 +162,10 @@ a {
 .ant-menu-submenu-title:hover
 {
   color: @primary-color;
+
+  .custom-icon path {
+    color: @primary-color;
+  }
 }
 
 .ant-menu-submenu-vertical > .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
@@ -247,6 +251,34 @@ a {
 
   .custom-icon path {
     color: @primary-color;
+  }
+}
+
+.ant-menu {
+  &-inline-collapsed {
+    .ant-menu-item,
+    .ant-menu-submenu-title {
+      left: 0;
+      padding: 0 32px !important;
+      text-overflow: clip;
+      margin-right: 10px;
+
+      .ant-menu-submenu-arrow {
+        display: none;
+      }
+    }
+  }
+
+  &-inline-collapsed-tooltip {
+    .ant-tooltip-inner {
+      a {
+        color: #c6c3c3;
+      }
+
+      .anticon {
+        margin-right: 5px;
+      }
+    }
   }
 }
 
@@ -353,4 +385,8 @@ a {
   .input-group .color-picker {
     border-color: @primary-color;
   }
+}
+
+.custom-suffix-icon {
+  color: #999;
 }

@@ -39,7 +39,7 @@
               <a-col :md="6" :lg="6">
                 <a-radio class="card-form-item" value="Advanced" v-if="$config.basicZoneEnabled">{{ $t('label.advanced') }}</a-radio>
                 <span style="margin-top: 20px;" class="card-form-item" v-else>
-                  <a-icon type="setting" style="margin-right: 10px" />
+                  <setting-outlined style="margin-right: 10px" />
                   {{ $t('label.advanced') }}
                 </span>
               </a-col>

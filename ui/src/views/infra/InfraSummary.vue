@@ -55,7 +55,7 @@
                 <template #label>
                   {{ $t('label.root.certificate') }}
                   <a-tooltip placement="bottom" :title="apiParams.name.description">
-                    <InfoCircleOutlined />
+                    <info-circle-outlined />
                   </a-tooltip>
                 </template>
                 <a-textarea
@@ -78,7 +78,7 @@
                   <template #label>
                     {{ $t('label.intermediate.certificate') + ` ${index + 1} ` }}
                     <a-tooltip placement="bottom" :title="apiParams.id.description">
-                      <InfoCircleOutlined />
+                      <info-circle-outlined />
                     </a-tooltip>
                   </template>
                   <a-textarea
@@ -102,7 +102,7 @@
                 <template #label>
                   {{ $t('label.server.certificate') }}
                   <a-tooltip placement="bottom" :title="apiParams.certificate.description">
-                    <InfoCircleOutlined />
+                    <info-circle-outlined />
                   </a-tooltip>
                 </template>
                 <a-textarea
@@ -118,7 +118,7 @@
                 <template #label>
                   {{ $t('label.pkcs.private.certificate') }}
                   <a-tooltip placement="bottom" :title="apiParams.privatekey.description">
-                    <InfoCircleOutlined />
+                    <info-circle-outlined />
                   </a-tooltip>
                 </template>
                 <a-textarea
@@ -134,7 +134,7 @@
                 <template #label>
                   {{ $t('label.domain.suffix') }}
                   <a-tooltip placement="bottom" :title="apiParams.domainsuffix.description">
-                    <InfoCircleOutlined />
+                    <info-circle-outlined />
                   </a-tooltip>
                 </template>
                 <a-input

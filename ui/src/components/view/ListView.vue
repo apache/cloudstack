@@ -144,8 +144,8 @@
         <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
       </span>
       <span v-else>{{ text }}</span>
-    </span>
-    <template slot="state" slot-scope="text, record">
+    </template>
+    <template #state="{ text, record }">
       <status v-if="$route.path.startsWith('/host')" :text="getHostState(record)" displayText />
       <status v-else :text="text ? text : ''" displayText />
     </template>

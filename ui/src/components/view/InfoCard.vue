@@ -637,7 +637,7 @@
               class="btn-add-tag"
               style="borderStyle: dashed;"
               v-else-if="isAdminOrOwner() && 'createTags' in $store.getters.apis">
-              <a-icon type="plus" /> {{ $t('label.new.tag') }}
+              <plus-outlined  /> {{ $t('label.new.tag') }}
             </a-tag>
           </div>
         </a-spin>

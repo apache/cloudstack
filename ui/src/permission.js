@@ -25,7 +25,7 @@ import 'nprogress/nprogress.css' // progress bar style
 import message from 'ant-design-vue/es/message'
 import notification from 'ant-design-vue/es/notification'
 import { setDocumentTitle } from '@/utils/domUtil'
-import { ACCESS_TOKEN, APIS } from '@/store/mutation-types'
+import { ACCESS_TOKEN, APIS, SERVER_MANAGER } from '@/store/mutation-types'
 
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
@@ -43,6 +43,19 @@ export default {
       }
 
       const ls = app.config.globalProperties.$localStorage
+      if (app.config.globalProperties.$config.multipleServer) {
+        const servers = app.config.globalProperties.$config.servers
+        const serverStorage = ls.get(SERVER_MANAGER)
+        let apiFullPath = ''
+        if (serverStorage) {
+          apiFullPath = (serverStorage.apiHost || '') + serverStorage.apiBase
+        }
+        const serverFilter = servers.filter(ser => (ser.apiHost || '') + ser.apiBase === apiFullPath)
+        const server = serverFilter[0] || servers[0]
+        app.config.globalProperties.axios.defaults.baseURL = (server.apiHost || '') + server.apiBase
+        store.dispatch('SetServer', server)
+      }
+
       const validLogin = ls.get(ACCESS_TOKEN) || Cookies.get('userid') || Cookies.get('userid', { path: '/client' })
       if (validLogin) {
         if (to.path === '/user/login') {

@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-icon v-if="loadingTable" type="loading" class="main-loading-spinner"></a-icon>
+  <loading-outlined v-if="loadingTable" class="main-loading-spinner"></loading-outlined>
   <div v-else>
     <div v-if="updateTable" class="loading-overlay">
       <loading-outlined />

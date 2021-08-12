@@ -92,7 +92,7 @@
         {{ getCapitalise(record.protocol) }}
       </template>
       <template #vm="{record}">
-        <div><a-icon type="desktop"/>
+        <div><desktop-outlined/>
           <router-link
             :to="{ path: '/vm/' + record.virtualmachineid }">
             {{ record.virtualmachinename }}</router-link> ({{ record.vmguestip }})</div>
@@ -134,7 +134,7 @@
       :maskClosable="false"
       :afterClose="closeModal">
       <span v-show="tagsModalLoading" class="tags-modal-loading">
-        <a-icon type="loading"></a-icon>
+        <loading-outlined />
       </span>
 
       <div class="add-tags">
@@ -212,7 +212,7 @@
             <span>
               {{ text }}
             </span>
-            <a-icon v-if="addVmModalNicLoading" type="loading"></a-icon>
+            <loading-outlined v-if="addVmModalNicLoading"></loading-outlined>
             <a-select
               style="display: block"
               v-else-if="!addVmModalNicLoading && newRule.virtualmachineid === record.id"

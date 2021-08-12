@@ -35,7 +35,6 @@
 </template>
 
 <script>
-import Vue from 'vue'
 import RouteView from '@/layouts/RouteView'
 import { mixinDevice } from '@/utils/mixin.js'
 import { DARK_MODE } from '@/store/mutation-types'
@@ -58,7 +57,7 @@ export default {
   },
   mounted () {
     document.body.classList.add('userLayout')
-    const darkMode = Vue.ls.get(DARK_MODE, false)
+    const darkMode = this.$localStorage.get(DARK_MODE, false)
     if (this.$store.getters.darkMode || darkMode) {
       document.body.classList.add('dark-mode')
     }

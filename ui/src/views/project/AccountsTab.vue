@@ -25,15 +25,16 @@
           :columns="columns"
           :dataSource="dataSource"
           :pagination="false"
-          :rowKey="record => record.userid ? record.userid : (record.accountid || record.account)">
-          <template #user="text, record" v-if="record.userid">
-            {{ record.username }}
+          :rowKey="rowItem => rowItem.userid ? rowItem.userid : (rowItem.accountid || rowItem.account)">
+          <template #user="{ record }">
+            <span v-if="record.userid">{{ record.username }}</span>
           </template>
-          <template #projectrole="text, record" v-if="record.projectroleid">
-            {{ getProjectRole(record) }}
+          <template #projectrole="{ record }">
+            <span v-if="record.projectroleid">{{ getProjectRole(record) }}</span>
           </template>
-          <template #action="text, record" v-if="record.projectroleid">
-            <span v-if="imProjectAdmin && dataSource.length > 1" class="account-button-action">
+          <template #action="{ record }">
+            <div v-if="record.projectroleid">
+              <span v-if="imProjectAdmin && dataSource.length > 1" class="account-button-action">
               <tooltip-button
                 tooltipPlacement="top"
                 :tooltip="record.userid ? $t('label.make.user.project.owner') : $t('label.make.project.owner')"
@@ -60,6 +61,7 @@
                 :disabled="!('deleteAccountFromProject' in $store.getters.apis)"
                 @onClick="onShowConfirmDelete(record)" />
             </span>
+            </div>
           </template>
         </a-table>
         <a-pagination

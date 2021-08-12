@@ -113,11 +113,11 @@ const user = {
     },
     SET_DARK_MODE (state, darkMode) {
       state.darkMode = darkMode
-      Vue.ls.set(DARK_MODE, darkMode)
+      window.ls.set(DARK_MODE, darkMode)
     },
     SET_THEME_SETTING (state, setting) {
       state.themeSetting = setting
-      Vue.ls.set(THEME_SETTING, setting)
+      window.ls.set(THEME_SETTING, setting)
     }
   },
 
@@ -143,9 +143,9 @@ const user = {
 
           const cachedUseBrowserTimezone = window.ls.get(USE_BROWSER_TIMEZONE, false)
           commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
-          const darkMode = Vue.ls.get(DARK_MODE, false)
+          const darkMode = window.ls.get(DARK_MODE, false)
           commit('SET_DARK_MODE', darkMode)
-          const themeSetting = Vue.ls.get(THEME_SETTING, {})
+          const themeSetting = window.ls.get(THEME_SETTING, {})
           commit('SET_THEME_SETTING', themeSetting)
 
           commit('SET_APIS', {})
@@ -175,8 +175,8 @@ const user = {
         const cachedTimezoneOffset = window.ls.get(TIMEZONE_OFFSET, 0.0)
         const cachedUseBrowserTimezone = window.ls.get(USE_BROWSER_TIMEZONE, false)
         const domainStore = window.ls.get(DOMAIN_STORE, {})
-        const darkMode = Vue.ls.get(DARK_MODE, false)
-        const themeSetting = Vue.ls.get(THEME_SETTING, {})
+        const darkMode = window.ls.get(DARK_MODE, false)
+        const themeSetting = window.ls.get(THEME_SETTING, {})
         const hasAuth = Object.keys(cachedApis).length > 0
 
         commit('SET_DOMAIN_STORE', domainStore)

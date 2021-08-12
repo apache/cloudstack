@@ -27,16 +27,16 @@
       <template #icon="{ record }">
         <label class="interval-icon">
           <span v-if="record.intervaltype===0">
-            <a-icon type="clock-circle" />
+            <clock-circle-outlined />
           </span>
           <span class="custom-icon icon-daily" v-else-if="record.intervaltype===1">
-            <a-icon type="calendar" />
+            <calendar-outlined />
           </span>
           <span class="custom-icon icon-weekly" v-else-if="record.intervaltype===2">
-            <a-icon type="calendar" />
+            <calendar-outlined />
           </span>
           <span class="custom-icon icon-monthly" v-else-if="record.intervaltype===3">
-            <a-icon type="calendar" />
+            <calendar-outlined />
           </span>
         </label>
       </template>
