@@ -573,6 +573,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         List<NicProfile> vmNics = profile.getNics();
         s_logger.debug(String.format("Cleaning up NICS [%s] of %s.", vmNics.stream().map(nic -> nic.toString()).collect(Collectors.joining(", ")),vm.toString()));
+        final List<Command> nicExpungeCommands = hvGuru.finalizeExpungeNics(vm, profile.getNics());
         _networkMgr.cleanupNics(profile);
 
         s_logger.debug(String.format("Cleaning up hypervisor data structures (ex. SRs in XenServer) for managed storage. Data from %s.", vm.toString()));
@@ -611,6 +612,33 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         userVmDetailsDao.removeDetails(vm.getId());
 
         userVmDeployAsIsDetailsDao.removeDetails(vm.getId());
+
+        // send hypervisor-dependent commands before removing
+        final List<Command> finalizeExpungeCommands = hvGuru.finalizeExpunge(vm);
+        if (finalizeExpungeCommands != null && finalizeExpungeCommands.size() > 0) {
+            if (hostId != null) {
+                final Commands cmds = new Commands(Command.OnError.Stop);
+                for (final Command command : finalizeExpungeCommands) {
+                    command.setBypassHostMaintenance(expungeCommandCanBypassHostMaintenance(vm));
+                    cmds.addCommand(command);
+                }
+                if (nicExpungeCommands != null) {
+                    for (final Command command : nicExpungeCommands) {
+                        command.setBypassHostMaintenance(expungeCommandCanBypassHostMaintenance(vm));
+                        cmds.addCommand(command);
+                    }
+                }
+                _agentMgr.send(hostId, cmds);
+                if (!cmds.isSuccessful()) {
+                    for (final Answer answer : cmds.getAnswers()) {
+                        if (!answer.getResult()) {
+                            s_logger.warn("Failed to expunge vm due to: " + answer.getDetails());
+                            throw new CloudRuntimeException("Unable to expunge " + vm + " due to " + answer.getDetails());
+                        }
+                    }
+                }
+            }
+        }
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Expunged " + vm);
