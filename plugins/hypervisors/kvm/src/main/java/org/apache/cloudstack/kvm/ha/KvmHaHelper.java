@@ -47,7 +47,6 @@ public class KvmHaHelper {
     protected ClusterDao clusterDao;
 
     private static final Logger LOGGER = Logger.getLogger(KvmHaHelper.class);
-    private static final double PROBLEMATIC_HOSTS_RATIO_ACCEPTED = 0.3;
     private static final int CAUTIOUS_MARGIN_OF_VMS_ON_HOST = 1;
 
     private static final Set<Status> PROBLEMATIC_HOST_STATUS = new HashSet<>(Arrays.asList(Status.Alert, Status.Disconnected, Status.Down, Status.Error));
