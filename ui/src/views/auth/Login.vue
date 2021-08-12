@@ -31,13 +31,28 @@
       :animated="false"
     >
       <a-tab-pane key="cs">
-        <template #tab>
-          <span>
-            <SafetyOutlined />
-            {{ $t('label.login.portal') }}
-          </span>
-        </template>
-        <a-form-item ref="username" name="username">
+        <span slot="tab">
+          <a-icon type="safety" />
+          {{ $t('label.login.portal') }}
+        </span>
+        <a-form-item v-if="$config.multipleServer">
+          <a-select
+            size="large"
+            :placeholder="$t('server')"
+            v-decorator="[
+              'server',
+              {
+                initialValue: (server.apiHost || '') + server.apiBase
+              }
+            ]"
+            @change="onChangeServer">
+            <a-select-option v-for="item in $config.servers" :key="(item.apiHost || '') + item.apiBase">
+              <a-icon slot="prefix" type="database" :style="{ color: 'rgba(0,0,0,.25)' }"></a-icon>
+              {{ item.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item>
           <a-input
             size="large"
             type="text"
@@ -45,9 +60,7 @@
             :placeholder="$t('label.username')"
             v-model:value="form.username"
           >
-            <template #prefix>
-              <UserOutlined :style="{ color: 'rgba(0,0,0,.25)' }" />
-            </template>
+            <a-icon slot="prefix" type="user" />
           </a-input>
         </a-form-item>
         <a-form-item ref="password" name="password">
@@ -58,9 +71,7 @@
             :placeholder="$t('label.password')"
             v-model:value="form.password"
           >
-            <template #prefix>
-              <LockOutlined :style="{ color: 'rgba(0,0,0,.25)' }" />
-            </template>
+            <a-icon slot="prefix" type="lock" />
           </a-input-password>
         </a-form-item>
         <a-form-item ref="domain" name="domain">
@@ -70,19 +81,32 @@
             :placeholder="$t('label.domain')"
             v-model:value="form.domain"
           >
-            <template #prefix>
-              <BlockOutlined :style="{ color: 'rgba(0,0,0,.25)' }" />
-            </template>
+            <a-icon slot="prefix" type="block" />
           </a-input>
         </a-form-item>
       </a-tab-pane>
       <a-tab-pane key="saml" :disabled="idps.length === 0">
-        <template #tab>
-          <span>
-            <AuditOutlined />
-            {{ $t('label.login.single.signon') }}
-          </span>
-        </template>
+        <span slot="tab">
+          <a-icon type="audit" />
+          {{ $t('label.login.single.signon') }}
+        </span>
+        <a-form-item v-if="$config.multipleServer">
+          <a-select
+            size="large"
+            :placeholder="$t('server')"
+            v-decorator="[
+              'server',
+              {
+                initialValue: (server.apiHost || '') + server.apiBase
+              }
+            ]"
+            @change="onChangeServer">
+            <a-select-option v-for="item in $config.servers" :key="(item.apiHost || '') + item.apiBase">
+              <a-icon slot="prefix" type="database" :style="{ color: 'rgba(0,0,0,.25)' }"></a-icon>
+              {{ item.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item>
           <a-select v-model:value="form.idp">
             <a-select-option v-for="(idp, idx) in idps" :key="idx" :value="idp.id">
@@ -109,8 +133,11 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
+import Vue from 'vue'
 import { api } from '@/api'
+import store from '@/store'
 import { mapActions } from 'vuex'
+import { SERVER_MANAGER } from '@/store/mutation-types'
 import TranslationMenu from '@/components/header/TranslationMenu'
 
 export default {
@@ -127,10 +154,14 @@ export default {
         time: 60,
         loginBtn: false,
         loginType: 0
-      }
+      },
+      server: ''
     }
   },
   created () {
+    if (this.$config.multipleServer) {
+      this.server = Vue.ls.get(SERVER_MANAGER) || this.$config.servers[0]
+    }
     this.initForm()
     this.fetchData()
   },
@@ -188,6 +219,10 @@ export default {
         this.state.loginBtn = true
 
         const values = toRaw(this.form)
+        if (this.$config.multipleServer) {
+          this.axios.defaults.baseURL = (this.server.apiHost || '') + this.server.apiBase
+          store.dispatch('SetServer', this.server)
+        }
         if (this.customActiveKey === 'cs') {
           const loginParams = { ...values }
           delete loginParams.username
@@ -223,6 +258,11 @@ export default {
       } else {
         this.$message.error(this.$t('message.login.failed'))
       }
+    },
+    onChangeServer (server) {
+      const servers = this.$config.servers || []
+      const serverFilter = servers.filter(ser => (ser.apiHost || '') + ser.apiBase === server)
+      this.server = serverFilter[0] || {}
     }
   }
 }

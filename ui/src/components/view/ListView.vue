@@ -144,9 +144,10 @@
         <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
       </span>
       <span v-else>{{ text }}</span>
-    </template>
-    <template #state="{ text }">
-      <status :text="text ? text : ''" displayText />
+    </span>
+    <template slot="state" slot-scope="text, record">
+      <status v-if="$route.path.startsWith('/host')" :text="getHostState(record)" displayText />
+      <status v-else :text="text ? text : ''" displayText />
     </template>
     <template #allocationstate="{ text }">
       <status :text="text ? text : ''" displayText />
@@ -608,6 +609,12 @@ export default {
       }
 
       return record.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ') || text
+    },
+    getHostState (host) {
+      if (host && host.hypervisor === 'KVM' && host.state === 'Up' && host.details && host.details.secured !== 'true') {
+        return 'Unsecure'
+      }
+      return host.state
     }
   }
 }
@@ -620,14 +627,6 @@ export default {
 
 :deep(.ant-table-small) > .ant-table-content > .ant-table-body {
   margin: 0;
-}
-
-:deep(.light-row) {
-  background-color: #fff;
-}
-
-:deep(.dark-row) {
-  background-color: #f9f9f9;
 }
 </style>
 

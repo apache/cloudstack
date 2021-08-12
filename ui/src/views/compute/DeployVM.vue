@@ -167,7 +167,7 @@
                       <template #label>
                         {{ $t('label.configuration') }}
                         <a-tooltip :title="$t('message.ovf.configurations')">
-                          <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+                          <info-circle-outlined />
                         </a-tooltip>
                       </template>
                       <a-select
@@ -301,7 +301,7 @@
                         <template #label>
                           {{ nic.elementName + ' - ' + nic.name }}
                           <a-tooltip :title="nic.networkDescription">
-                            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+                            <info-circle-outlined />
                           </a-tooltip>
                         </template>
                         <a-select
@@ -393,7 +393,7 @@
                         <template #label style="text-transform: capitalize">
                           {{ property.label }}
                           <a-tooltip :title="property.description">
-                            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+                            <info-circle-outlined />
                           </a-tooltip>
                         </template>
 

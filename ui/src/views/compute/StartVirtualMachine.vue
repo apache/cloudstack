@@ -33,7 +33,7 @@
             <template #label>
               {{ $t('label.podid') }}
               <a-tooltip :title="apiParams.podid.description">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+                <info-circle-outlined />
               </a-tooltip>
             </template>
             <a-select
@@ -56,7 +56,7 @@
             <template #label>
               {{ $t('label.clusterid') }}
               <a-tooltip :title="apiParams.clusterid.description">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+                <info-circle-outlined />
               </a-tooltip>
             </template>
             <a-select
@@ -79,7 +79,7 @@
             <template #label>
               {{ $t('label.hostid') }}
               <a-tooltip :title="apiParams.hostid.description">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+                <info-circle-outlined />
               </a-tooltip>
             </template>
             <a-select
@@ -103,7 +103,7 @@
           <template #label>
             {{ $t('label.bootintosetup') }}
             <a-tooltip :title="apiParams.bootintosetup.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-switch v-model:checked="form.bootintosetup" />

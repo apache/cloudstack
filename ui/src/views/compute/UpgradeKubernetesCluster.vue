@@ -32,7 +32,7 @@
           <template #label>
             {{ $t('label.kubernetesversionid') }}
             <a-tooltip :title="apiParams.kubernetesversionid.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-select

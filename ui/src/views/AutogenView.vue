@@ -433,7 +433,7 @@ export default {
         }
       }
     },
-    '$i18n.global.locale' (to, from) {
+    '$i18n.locale' (to, from) {
       if (to !== from) {
         this.fetchData()
       }

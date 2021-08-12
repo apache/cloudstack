@@ -29,7 +29,7 @@
           <template #label>
             {{ $t('label.expunge') }}
             <a-tooltip placement="bottom" :title="apiParams.expunge.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-switch v-model:checked="form.expunge" :auto-focus="true" />
@@ -39,7 +39,7 @@
           <template #label>
             {{ $t('label.delete.volumes') }}
             <a-tooltip placement="bottom" :title="apiParams.volumeids.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-select

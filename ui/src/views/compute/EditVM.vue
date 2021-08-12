@@ -28,7 +28,7 @@
         <template #label>
           {{ $t('label.name') }}
           <a-tooltip :title="apiParams.name.description">
-            <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+            <info-circle-outlined />
           </a-tooltip>
         </template>
         <a-input
@@ -39,7 +39,7 @@
         <template #label>
           {{ $t('label.displayname') }}
           <a-tooltip :title="apiParams.displayname.description">
-             <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+             <info-circle-outlined />
           </a-tooltip>
         </template>
         <a-input v-model:value="form.displayname" />
@@ -48,7 +48,7 @@
         <template #label>
           {{ $t('label.ostypeid') }}
           <a-tooltip :title="apiParams.ostypeid.description">
-             <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+             <info-circle-outlined />
           </a-tooltip>
         </template>
         <a-select
@@ -68,7 +68,7 @@
         <template #label>
           {{ $t('label.isdynamicallyscalable') }}
           <a-tooltip :title="apiParams.isdynamicallyscalable.description">
-             <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+             <info-circle-outlined />
           </a-tooltip>
         </template>
         <a-switch v-model:checked="form.isdynamicallyscalable" />
@@ -77,7 +77,7 @@
         <template #label>
           {{ $t('label.haenable') }}
           <a-tooltip :title="apiParams.haenable.description">
-             <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+             <info-circle-outlined />
           </a-tooltip>
         </template>
         <a-switch v-model:checked="form.haenable" />
@@ -86,7 +86,7 @@
         <template #label>
           {{ $t('label.group') }}
           <a-tooltip :title="apiParams.group.description">
-             <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+             <info-circle-outlined />
           </a-tooltip>
         </template>
         <a-auto-complete

@@ -28,7 +28,7 @@
           <template #label :title="apiParams.volumeid.description">
             {{ $t('label.volumeid') }}
             <a-tooltip :title="apiParams.volumeid.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-select
@@ -49,7 +49,7 @@
           <template #label :title="apiParams.name.description">
             {{ $t('label.name') }}
             <a-tooltip :title="apiParams.name.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-input
@@ -60,7 +60,7 @@
           <template #label :title="apiParams.quiescevm.description">
             {{ $t('label.quiescevm') }}
             <a-tooltip :title="apiParams.quiescevm.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-switch v-model:checked="form.quiescevm"/>
@@ -69,7 +69,7 @@
           <template #label :title="apiParams.asyncbackup.description">
             {{ $t('label.asyncbackup') }}
             <a-tooltip :title="apiParams.asyncbackup.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-switch v-model:checked="form.asyncbackup"/>

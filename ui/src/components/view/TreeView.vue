@@ -600,8 +600,6 @@ export default {
 }
 
 :deep(.ant-tree-icon__customize) {
-  color: rgba(0, 0, 0, 0.45);
-  background: #fff;
   padding-right: 5px;
 }
 

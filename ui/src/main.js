@@ -50,6 +50,12 @@ fetch('config.json').then(response => response.json()).then(config => {
   // set global localStorage for using
   window.ls = app.config.globalProperties.$localStorage
   window.appPrototype = app.config.globalProperties
+  let basUrl = config.apiBase
+  if (config.multipleServer) {
+    basUrl = (config.servers[0].apiHost || '') + config.servers[0].apiBase
+  }
+
+  Vue.axios.defaults.baseURL = basUrl
 
   loadLanguageAsync().then(() => {
     app.use(store)

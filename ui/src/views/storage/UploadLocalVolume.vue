@@ -48,7 +48,7 @@
           <template #label>
             {{ $t('label.name') }}
             <a-tooltip :title="apiParams.name.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-input
@@ -60,7 +60,7 @@
           <template #label>
             {{ $t('label.zone') }}
             <a-tooltip :title="apiParams.zoneid.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-select
@@ -74,7 +74,7 @@
           <template #label>
             {{ $t('label.format') }}
             <a-tooltip :title="apiParams.format.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-select
@@ -88,7 +88,7 @@
           <template #label>
             {{ $t('label.volumechecksum') }}
             <a-tooltip :title="apiParams.checksum.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-input

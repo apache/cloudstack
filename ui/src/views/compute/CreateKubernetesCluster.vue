@@ -28,7 +28,7 @@
           <template #label>
             {{ $t('label.name') }}
             <a-tooltip :title="apiParams.name.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-input
@@ -40,7 +40,7 @@
           <template #label>
             {{ $t('label.description') }}
             <a-tooltip :title="apiParams.description.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-input
@@ -51,7 +51,7 @@
           <template #label>
             {{ $t('label.zoneid') }}
             <a-tooltip :title="apiParams.zoneid.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-select
@@ -74,7 +74,7 @@
           <template #label>
             {{ $t('label.kubernetesversionid') }}
             <a-tooltip :title="apiParams.kubernetesversionid.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-select
@@ -97,7 +97,7 @@
           <template #label>
             {{ $t('label.serviceofferingid') }}
             <a-tooltip :title="apiParams.serviceofferingid.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-select
@@ -119,7 +119,7 @@
           <template #label>
             {{ $t('label.noderootdisksize') }}
             <a-tooltip :title="apiParams.noderootdisksize.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-input
@@ -130,7 +130,7 @@
           <template #label>
             {{ $t('label.networkid') }}
             <a-tooltip :title="apiParams.networkid.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-select
@@ -161,7 +161,7 @@
           <template #label>
             {{ $t('label.masternodes') }}
             <a-tooltip :title="apiParams.masternodes.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-input
@@ -172,7 +172,7 @@
           <template #label>
             {{ $t('label.externalloadbalanceripaddress') }}
             <a-tooltip :title="apiParams.externalloadbalanceripaddress.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-input
@@ -183,7 +183,7 @@
           <template #label>
             {{ $t('label.cks.cluster.size') }}
             <a-tooltip :title="apiParams.size.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-input
@@ -194,7 +194,7 @@
           <template #label>
             {{ $t('label.keypair') }}
             <a-tooltip :title="apiParams.keypair.description">
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+              <info-circle-outlined />
             </a-tooltip>
           </template>
           <a-select
@@ -227,7 +227,7 @@
               <template #label>
                 {{ $t('label.username') }}
                 <a-tooltip :title="apiParams.dockerregistryusername.description">
-                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+                  <info-circle-outlined />
                 </a-tooltip>
               </template>
               <a-input
@@ -238,7 +238,7 @@
               <template #label>
                 {{ $t('label.password') }}
                 <a-tooltip :title="apiParams.dockerregistrypassword.description">
-                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+                  <info-circle-outlined />
                 </a-tooltip>
               </template>
               <a-input-password
@@ -249,7 +249,7 @@
               <template #label>
                 {{ $t('label.url') }}
                 <a-tooltip :title="apiParams.dockerregistryurl.description">
-                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+                  <info-circle-outlined />
                 </a-tooltip>
               </template>
               <a-input
@@ -260,7 +260,7 @@
               <template #label>
                 {{ $t('label.email') }}
                 <a-tooltip :title="apiParams.dockerregistryemail.description">
-                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+                  <info-circle-outlined />
                 </a-tooltip>
               </template>
               <a-input
