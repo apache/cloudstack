@@ -34,14 +34,13 @@ from marvin.lib.base import (Account,
                              NATRule,
                              FireWallRule,
                              Host,
-                             StaticNATRule, Cluster)
+                             StaticNATRule)
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
                                verifyNetworkState,
                                add_netscaler,
-                               wait_for_cleanup, list_routers, list_hosts, list_clusters)
-from marvin.lib.vcenter import Vcenter
+                               wait_for_cleanup, list_routers, list_hosts)
 from nose.plugins.attrib import attr
 from marvin.codes import PASS, FAIL, FAILED
 from marvin.sshClient import SshClient
@@ -49,98 +48,6 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 import unittest
 from ddt import ddt, data
 import time
-
-import logging
-
-logger = logging.getLogger('TestPesistentNetwork')
-stream_handler = logging.StreamHandler()
-logger.setLevel(logging.DEBUG)
-logger.addHandler(stream_handler)
-
-"""
-class TestHelper():
-    def __init__(self, api_client):
-        self.api_client = api_client
-
-    @staticmethod
-    def get_ssh_client(ip, username, password, retries=10):
-        try:
-            ssh_client = SshClient(ip, 22, username, password, retries)
-        except Exception as e:
-            raise unittest.SkipTest("Unable to create ssh connection: " % e)
-
-        # self.assertIsNotNone(
-        #    ssh_client, "Failed to setup ssh connection to ip=%s" % ip)
-        return ssh_client
-
-    @staticmethod
-    def verify_vlan_network_creation(vlan_id, ssh_client):
-        try:
-            res = ssh_client.execute(
-                "xe vlan-list | grep -x  \"^\s*tag ( RO): \"" + str(vlan_id) + "> /dev/null 2>&1; echo $?")
-            return res[0]
-        except Exception as e:
-            return False
-
-    @staticmethod
-    def verify_bridge_creation(vlan_id, ssh_client):
-        try:
-            res = ssh_client.execute("ip addr | grep breth0-" + str(vlan_id) + " > /dev/null 2>&1; echo $?")
-            return res[0]
-        except Exception as e:
-            return False
-
-    def validate_persistent_network_resources_created_on_host(self, network_vlan, zone_id, hypervisor):
-        hosts = self.list_all_hosts_in_zone(zone_id)
-
-        if hypervisor in "kvm":
-            for host in hosts:
-                result = self.verify_bridge_creation(host, network_vlan)
-                self.assertEqual(
-                    int(result),
-                    0,
-                    "Failed to find bridge on the breth0-" + str(network_vlan))
-        elif self.hypervisor.lower() in ["xenserver", "vmware"]:
-            self.verify_network_setup_on_host_per_cluster(self.hypervisor.lower(), network_vlan)
-
-    def verify_network_setup_on_host_per_cluster(hypervisor, vlan_id):
-        clusters = Cluster.list(
-            self.apiclient,
-            zoneid=self.zone.id,
-            allocationstate="Enabled",
-            listall=True
-        )
-        for cluster in clusters:
-            hosts = Host.list(self.apiclient,
-                              clusterid=cluster.id,
-                              type="Routing",
-                              state="Up",
-                              resourcestate="Enabled")
-            host = hosts[0]
-            if hypervisor == "xenserver":
-                result = self.verify_vlan_network_creation(host, vlan_id)
-                self.assertEqual(
-                    int(result),
-                    0,
-                    "Failed to find vlan on host: " + host.name + " in cluster: " + cluster.name)
-            # if hypervisor == "vmware":
-            #   result = self.verify_port_group_creation(vlan_id)
-            #  self.assertEqual(
-            #         result,
-            #        True,
-            #       "Failed to find port group on hosts of cluster: " + cluster.name)
-
-    def list_all_hosts_in_zone(self, zone_id):
-        hosts = Host.list(
-            self.api_client,
-            type='Routing',
-            resourcestate='Enabled',
-            state='Up',
-            zoneid=zone_id
-        )
-        return hosts
-"""
-
 
 @ddt
 class TestPersistentNetworks(cloudstackTestCase):
@@ -378,7 +285,6 @@ class TestPersistentNetworks(cloudstackTestCase):
         # 1. Persistent network state should be implemented before adding the host
         # 2. Host should be added back in successfully
         # 3. Host should have the persistent networks resources after being added
-        logger.info("pls goddammit")
         l2_persistent_network_offering = self.createNetworkOffering("nw_off_L2_persistent")
         hosts = list_hosts(self.apiclient, clusterid=self.cluster.id)
         host = hosts[0]
