@@ -61,9 +61,6 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     @Column(name = "use_local_storage")
     private boolean useLocalStorage;
 
-    @Column(name = "system_use")
-    private boolean systemUse;
-
     @Column(name = "customized")
     private boolean customized;
 
@@ -199,10 +196,6 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
 
     public boolean isUseLocalStorage() {
         return useLocalStorage;
-    }
-
-    public boolean isSystemUse() {
-        return systemUse;
     }
 
     public boolean isCustomized() {
