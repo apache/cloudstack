@@ -5783,18 +5783,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (dataCenter.getNetworkType() == NetworkType.Basic) {
                 vmResult = createBasicSecurityGroupVirtualMachine(dataCenter, serviceOffering, template, securityGroupIdList, curAccount, hostName, displayName, diskOfferingId,
                         size, group, hypervisorType, cmd.getHttpMethod(), userData, sshKeyPair, ipToNetoworkMap, addr, isDisplayVM, keyboard, affinityGroupIdList,
-                        curVm.getDetails() == null ? new HashMap<>() : curVm.getDetails(), cmd.getCustomId(), new HashMap<>(),
+                        curVm.getDetails() == null ? new HashMap<>() : curVm.getDetails(), null, new HashMap<>(),
                         null, new HashMap<>(), dynamicScalingEnabled);
             } else {
                 if (dataCenter.isSecurityGroupEnabled()) {
                     vmResult = createAdvancedSecurityGroupVirtualMachine(dataCenter, serviceOffering, template, networkIds, securityGroupIdList, curAccount, hostName,
                             displayName, diskOfferingId, size, group, hypervisorType, cmd.getHttpMethod(), userData, sshKeyPair, ipToNetoworkMap, addr, isDisplayVM, keyboard,
-                            affinityGroupIdList, curVm.getDetails() == null ? new HashMap<>() : curVm.getDetails(), cmd.getCustomId(), new HashMap<>(),
+                            affinityGroupIdList, curVm.getDetails() == null ? new HashMap<>() : curVm.getDetails(), null, new HashMap<>(),
                             null, new HashMap<>(), dynamicScalingEnabled);
                 } else {
                     vmResult = createAdvancedVirtualMachine(dataCenter, serviceOffering, template, networkIds, curAccount, hostName, displayName, diskOfferingId, size, group,
                             hypervisorType, cmd.getHttpMethod(), userData, sshKeyPair, ipToNetoworkMap, addr, isDisplayVM, keyboard, affinityGroupIdList, curVm.getDetails() == null ? new HashMap<>() : curVm.getDetails(),
-                            cmd.getCustomId(), new HashMap<>(), null, new HashMap<>(), dynamicScalingEnabled);
+                            null, new HashMap<>(), null, new HashMap<>(), dynamicScalingEnabled);
                 }
             }
         } catch (CloudRuntimeException e) {
