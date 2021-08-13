@@ -16,8 +16,10 @@
 // under the License.
 package org.apache.cloudstack.network.lb;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -218,6 +220,14 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                     buf.append(" localgw=").append(dest.getPod().getGateway());
                 }
             }
+
+            String MsPublicKey = _configDao.getValue("ssh.publickey");
+            String base64EncodedPublicKey = null;
+            if (MsPublicKey != null) {
+                base64EncodedPublicKey = Base64.getEncoder().encodeToString(MsPublicKey.getBytes(StandardCharsets.UTF_8));
+            }
+
+            buf.append(" authorized_key=").append(base64EncodedPublicKey);
         }
 
         if (controlNic == null) {
