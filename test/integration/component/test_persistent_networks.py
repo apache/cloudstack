@@ -34,13 +34,14 @@ from marvin.lib.base import (Account,
                              NATRule,
                              FireWallRule,
                              Host,
-                             StaticNATRule)
+                             StaticNATRule, Cluster)
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
                                verifyNetworkState,
                                add_netscaler,
-                               wait_for_cleanup,list_routers,list_hosts)
+                               wait_for_cleanup, list_routers, list_hosts, list_clusters)
+from marvin.lib.vcenter import Vcenter
 from nose.plugins.attrib import attr
 from marvin.codes import PASS, FAIL, FAILED
 from marvin.sshClient import SshClient
@@ -49,13 +50,104 @@ import unittest
 from ddt import ddt, data
 import time
 
+import logging
+
+logger = logging.getLogger('TestPesistentNetwork')
+stream_handler = logging.StreamHandler()
+logger.setLevel(logging.DEBUG)
+logger.addHandler(stream_handler)
+
+"""
+class TestHelper():
+    def __init__(self, api_client):
+        self.api_client = api_client
+
+    @staticmethod
+    def get_ssh_client(ip, username, password, retries=10):
+        try:
+            ssh_client = SshClient(ip, 22, username, password, retries)
+        except Exception as e:
+            raise unittest.SkipTest("Unable to create ssh connection: " % e)
+
+        # self.assertIsNotNone(
+        #    ssh_client, "Failed to setup ssh connection to ip=%s" % ip)
+        return ssh_client
+
+    @staticmethod
+    def verify_vlan_network_creation(vlan_id, ssh_client):
+        try:
+            res = ssh_client.execute(
+                "xe vlan-list | grep -x  \"^\s*tag ( RO): \"" + str(vlan_id) + "> /dev/null 2>&1; echo $?")
+            return res[0]
+        except Exception as e:
+            return False
+
+    @staticmethod
+    def verify_bridge_creation(vlan_id, ssh_client):
+        try:
+            res = ssh_client.execute("ip addr | grep breth0-" + str(vlan_id) + " > /dev/null 2>&1; echo $?")
+            return res[0]
+        except Exception as e:
+            return False
+
+    def validate_persistent_network_resources_created_on_host(self, network_vlan, zone_id, hypervisor):
+        hosts = self.list_all_hosts_in_zone(zone_id)
+
+        if hypervisor in "kvm":
+            for host in hosts:
+                result = self.verify_bridge_creation(host, network_vlan)
+                self.assertEqual(
+                    int(result),
+                    0,
+                    "Failed to find bridge on the breth0-" + str(network_vlan))
+        elif self.hypervisor.lower() in ["xenserver", "vmware"]:
+            self.verify_network_setup_on_host_per_cluster(self.hypervisor.lower(), network_vlan)
+
+    def verify_network_setup_on_host_per_cluster(hypervisor, vlan_id):
+        clusters = Cluster.list(
+            self.apiclient,
+            zoneid=self.zone.id,
+            allocationstate="Enabled",
+            listall=True
+        )
+        for cluster in clusters:
+            hosts = Host.list(self.apiclient,
+                              clusterid=cluster.id,
+                              type="Routing",
+                              state="Up",
+                              resourcestate="Enabled")
+            host = hosts[0]
+            if hypervisor == "xenserver":
+                result = self.verify_vlan_network_creation(host, vlan_id)
+                self.assertEqual(
+                    int(result),
+                    0,
+                    "Failed to find vlan on host: " + host.name + " in cluster: " + cluster.name)
+            # if hypervisor == "vmware":
+            #   result = self.verify_port_group_creation(vlan_id)
+            #  self.assertEqual(
+            #         result,
+            #        True,
+            #       "Failed to find port group on hosts of cluster: " + cluster.name)
+
+    def list_all_hosts_in_zone(self, zone_id):
+        hosts = Host.list(
+            self.api_client,
+            type='Routing',
+            resourcestate='Enabled',
+            state='Up',
+            zoneid=zone_id
+        )
+        return hosts
+"""
+
 
 @ddt
 class TestPersistentNetworks(cloudstackTestCase):
-
     '''
     Test Persistent Networks without running VMs
     '''
+
     @classmethod
     def setUpClass(cls):
         cls.testClient = super(TestPersistentNetworks, cls).getClsTestClient()
@@ -66,6 +158,7 @@ class TestPersistentNetworks(cloudstackTestCase):
         cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][
             0].__dict__
         # Get Zone, Domain and templates
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
@@ -86,11 +179,11 @@ class TestPersistentNetworks(cloudstackTestCase):
         )
         cls.isolated_persistent_network_offering = cls.createNetworkOffering(
             "nw_off_isolated_persistent")
-        cls.isolated_persistent_network_offering_netscaler =\
+        cls.isolated_persistent_network_offering_netscaler = \
             cls.createNetworkOffering(
                 "nw_off_isolated_persistent_netscaler"
             )
-        cls.isolated_persistent_network_offering_RVR =\
+        cls.isolated_persistent_network_offering_RVR = \
             cls.createNetworkOffering(
                 "nw_off_persistent_RVR"
             )
@@ -99,7 +192,7 @@ class TestPersistentNetworks(cloudstackTestCase):
         cls.isolated_network_offering_netscaler = cls.createNetworkOffering(
             "nw_off_isolated_netscaler")
 
-        cls.services["configurableData"]["netscaler"]["lbdevicededicated"] =\
+        cls.services["configurableData"]["netscaler"]["lbdevicededicated"] = \
             False
 
         # Configure Netscaler device
@@ -229,6 +322,115 @@ class TestPersistentNetworks(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
+
+    '''
+    Verifies creation of bridge on KVM host
+    '''
+    def verify_bridge_creation(self, host, vlan_id):
+        username = self.hostConfig["username"]
+        password = self.hostConfig["password"]
+        try:
+            ssh_client = self.get_ssh_client(host.ipaddress, username, password)
+            res = ssh_client.execute("ip addr | grep breth0-" + str(vlan_id) + " > /dev/null 2>&1; echo $?")
+            return res[0]
+        except Exception as e:
+            self.fail(e)
+
+    def validate_persistent_network_resources_created_on_host(self, network_vlan):
+        hosts = self.list_all_hosts_in_zone(self.zone.id)
+        for host in hosts:
+            result = self.verify_bridge_creation(host, network_vlan)
+            self.assertEqual(
+                int(result),
+                0,
+                "Failed to find bridge on the breth0-" + str(network_vlan))
+
+    def list_all_hosts_in_zone(self, zone_id):
+        hosts = Host.list(
+            self.apiclient,
+            type='Routing',
+            resourcestate='Enabled',
+            state='Up',
+            zoneid=zone_id
+        )
+        return hosts
+
+    def get_ssh_client(self, ip, username, password, retries=10):
+        """ Setup ssh client connection and return connection """
+        try:
+            ssh_client = SshClient(ip, 22, username, password, retries)
+        except Exception as e:
+            raise unittest.SkipTest("Unable to create ssh connection: " % e)
+
+        self.assertIsNotNone(
+            ssh_client, "Failed to setup ssh connection to ip=%s" % ip)
+
+        return ssh_client
+
+    @attr(tags=["advanced"], required_hardware="false")
+    def test_newly_added_host_for_persistent_network_resources(self):
+        # steps
+        # 1. identify hosts in the zone, and remove the first
+        # 2. create a L2 persistent network
+        # 3. add the host back to the zone
+        #
+        # validation
+        # 1. Persistent network state should be implemented before adding the host
+        # 2. Host should be added back in successfully
+        # 3. Host should have the persistent networks resources after being added
+        logger.info("pls goddammit")
+        l2_persistent_network_offering = self.createNetworkOffering("nw_off_L2_persistent")
+        hosts = list_hosts(self.apiclient, clusterid=self.cluster.id)
+        host = hosts[0]
+
+        Host(hosts[0].__dict__).delete(self.apiclient)  # remove host from zone before creating network
+
+        network = Network.create(
+            self.apiclient,
+            self.services["l2_network"],
+            networkofferingid=l2_persistent_network_offering.id,
+            accountid=self.account.name,
+            domainid=self.domain.id,
+            zoneid=self.zone.id
+        )
+
+        self.cleanup.append(network)
+        self.cleanup.append(l2_persistent_network_offering)
+
+        response = verifyNetworkState(
+            self.apiclient,
+            network.id,
+            "implemented")
+        exceptionOccurred = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if exceptionOccurred or (not isNetworkInDesiredState):
+            self.fail(exceptionMessage)
+        self.assertIsNotNone(
+            network.vlan,
+            "vlan must not be null for persistent network")
+
+        newHost = {
+            "username": "root",
+            "password": "P@ssword123",
+            "url": "http://" + host.ipaddress,
+            "podid": host.podid,
+            "zoneid": host.zoneid
+        }
+
+        # add host back to the zone after creating network
+        try:
+            Host.create(
+                self.apiclient,
+                self.cluster,
+                newHost,
+                hypervisor=host.hypervisor
+            )
+        except Exception as e:
+            self.fail("Host creation failed: %s" % e)
+
+        self.validate_persistent_network_resources_created_on_host(network.vlan)
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_network_state_after_destroying_vms(self):
@@ -1540,14 +1742,14 @@ class TestPersistentNetworks(cloudstackTestCase):
                         state='Up',
                         id=router.hostid
                     )
-                    self.assertEqual(validateList(hosts)[0],PASS,"Check list host returns a valid list")
+                    self.assertEqual(validateList(hosts)[0], PASS, "Check list host returns a valid list")
                     host = hosts[0]
                     result = get_process_status(
-                        host.ipaddress,22,
+                        host.ipaddress, 22,
                         self.hostConfig["username"],
                         self.hostConfig["password"],
                         router.linklocalip,
-                    "iptables -I INPUT 1 -j DROP"
+                        "iptables -I INPUT 1 -j DROP"
                     )
                 except Exception as e:
                     raise Exception("Exception raised in accessing/running the command on hosts  : %s " % e)
@@ -1563,23 +1765,23 @@ class TestPersistentNetworks(cloudstackTestCase):
                 serviceofferingid=self.service_offering.id,
                 accountid=self.account.name,
                 domainid=self.domain.id)
-        #self.assertTrue('This is broken' in context.exception)
+        # self.assertTrue('This is broken' in context.exception)
         try:
             account.delete(self.api_client)
         except Exception as e:
             self.cleanup.append(account)
         qresultset = self.dbclient.execute(
-             "select id from usage_event where type = '%s' ORDER BY id DESC LIMIT 1;" %
-             str("VOLUME.DELETE"))
+            "select id from usage_event where type = '%s' ORDER BY id DESC LIMIT 1;" %
+            str("VOLUME.DELETE"))
         self.assertNotEqual(
-             len(qresultset),
-             0,
-             "Check DB Query result set")
+            len(qresultset),
+            0,
+            "Check DB Query result set")
         return
+
 
 @ddt
 class TestAssignVirtualMachine(cloudstackTestCase):
-
     """Test Persistent Network creation with
     assigning VM to different account/domain
     """
@@ -1613,14 +1815,14 @@ class TestAssignVirtualMachine(cloudstackTestCase):
         )
         cls.isolated_persistent_network_offering = cls.createNetworkOffering(
             "nw_off_isolated_persistent")
-        cls.isolated_persistent_network_offering_RVR =\
+        cls.isolated_persistent_network_offering_RVR = \
             cls.createNetworkOffering(
                 "nw_off_persistent_RVR"
             )
         cls.persistent_network_offering_netscaler = cls.createNetworkOffering(
             "nw_off_isolated_persistent_netscaler")
 
-        cls.services["configurableData"]["netscaler"]["lbdevicededicated"] =\
+        cls.services["configurableData"]["netscaler"]["lbdevicededicated"] = \
             False
 
         # Configure Netscaler device
@@ -1790,7 +1992,6 @@ class TestAssignVirtualMachine(cloudstackTestCase):
 
 @ddt
 class TestProjectAccountOperations(cloudstackTestCase):
-
     """Test suspend/disable/lock account/project operations
     when they have persistent network
     """
@@ -1913,7 +2114,7 @@ class TestProjectAccountOperations(cloudstackTestCase):
             accounts)
         self.assertEqual(str(accounts[0].state).lower(
         ), value, "account state should be %s, it is %s"
-            % (value, accounts[0].state))
+                  % (value, accounts[0].state))
 
         # Wait for network cleanup interval
         wait_for_cleanup(
@@ -2037,7 +2238,6 @@ class TestProjectAccountOperations(cloudstackTestCase):
 
 @ddt
 class TestRestartPersistentNetwork(cloudstackTestCase):
-
     """Test restart persistent network with cleanup parameter true and false
     """
 
@@ -2074,7 +2274,7 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
             cls.services["nw_off_isolated_persistent_lb"],
             conservemode=False)
 
-        cls.isolated_persistent_network_offering_netscaler =\
+        cls.isolated_persistent_network_offering_netscaler = \
             NetworkOffering.create(
                 cls.api_client,
                 cls.services["nw_off_isolated_persistent_netscaler"],
@@ -2088,7 +2288,7 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
             cls.api_client,
             state="enabled")
 
-        cls.services["configurableData"]["netscaler"]["lbdevicededicated"] =\
+        cls.services["configurableData"]["netscaler"]["lbdevicededicated"] = \
             False
 
         # Configure Netscaler device
@@ -2446,7 +2646,6 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
 
 @ddt
 class TestVPCNetworkOperations(cloudstackTestCase):
-
     """Test VPC network operations consisting persistent networks
     """
 
@@ -3095,11 +3294,11 @@ class TestVPCNetworkOperations(cloudstackTestCase):
 
             # Create network ACL for both ther persistent networks (tiers of
             # VPC)
-            ingressAclNetwork1, egressAclNetwork1 =\
+            ingressAclNetwork1, egressAclNetwork1 = \
                 self.CreateIngressEgressNetworkACLForNetwork(
                     persistent_network_1.id
                 )
-            ingressAclNetwork2, egressAclNetwork2 =\
+            ingressAclNetwork2, egressAclNetwork2 = \
                 self.CreateIngressEgressNetworkACLForNetwork(
                     persistent_network_2.id
                 )
@@ -3310,11 +3509,11 @@ class TestVPCNetworkOperations(cloudstackTestCase):
         lb_rule.assign(self.api_client, [virtual_machine_3, virtual_machine_4])
 
         # Create network ACL for both ther persistent networks (tiers of VPC)
-        ingressAclNetwork1, egressAclNetwork1 =\
+        ingressAclNetwork1, egressAclNetwork1 = \
             self.CreateIngressEgressNetworkACLForNetwork(
                 persistent_network_1.id
             )
-        ingressAclNetwork2, egressAclNetwork2 =\
+        ingressAclNetwork2, egressAclNetwork2 = \
             self.CreateIngressEgressNetworkACLForNetwork(
                 persistent_network_2.id
             )
