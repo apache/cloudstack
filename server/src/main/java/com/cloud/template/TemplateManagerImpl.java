@@ -137,9 +137,9 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.storage.DataStoreRole;
@@ -298,7 +298,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private StorageCacheManager cacheMgr;
     @Inject
     private EndPointSelector selector;
-
 
     private TemplateAdapter getAdapter(HypervisorType type) {
         TemplateAdapter adapter = null;
@@ -1165,10 +1164,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Unable to find an ISO with id " + isoId);
         }
 
-        long dcId = vm.getDataCenterId();
-        VMTemplateZoneVO exists = _tmpltZoneDao.findByZoneTemplate(dcId, isoId);
-        if (null == exists) {
-            throw new InvalidParameterValueException("ISO is not available in the zone the VM is in.");
+        if (!TemplateType.PERHOST.equals(iso.getTemplateType())) {
+            VMTemplateZoneVO exists = _tmpltZoneDao.findByZoneTemplate(vm.getDataCenterId(), isoId);
+            if (null == exists) {
+                throw new InvalidParameterValueException("ISO is not available in the zone the VM is in.");
+            }
         }
 
         // check permissions
@@ -1185,11 +1185,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
         }
 
-        if ("xen-pv-drv-iso".equals(iso.getDisplayText()) && vm.getHypervisorType() != Hypervisor.HypervisorType.XenServer) {
+        if (XS_TOOLS_ISO.equals(iso.getUniqueName()) && vm.getHypervisorType() != Hypervisor.HypervisorType.XenServer) {
             throw new InvalidParameterValueException("Cannot attach Xenserver PV drivers to incompatible hypervisor " + vm.getHypervisorType());
         }
 
-        if ("vmware-tools.iso".equals(iso.getName()) && vm.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
+        if (VMWARE_TOOLS_ISO.equals(iso.getUniqueName()) && vm.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
             throw new InvalidParameterValueException("Cannot attach VMware tools drivers to incompatible hypervisor " + vm.getHypervisorType());
         }
         boolean result = attachISOToVM(vmId, userId, isoId, true, forced);

@@ -18,7 +18,7 @@
 <template>
   <a-spin :spinning="fetchLoading">
     <a-list size="small">
-      <a-list-item>
+      <a-list-item v-if="host.hypervisorversion || (host.details && host.details['Host.OS'])">
         <div>
           <strong>{{ $t('label.hypervisorversion') }}</strong>
           <div>
@@ -26,11 +26,8 @@
             <span v-if="host.hypervisorversion">
               {{ host.hypervisorversion }}
             </span>
-            <span v-else-if="host.details">
+            <span v-else-if="host.details && host.details['Host.OS']">
               {{ host.details['Host.OS'] + ' ' + host.details['Host.OS.Version'] }}
-            </span>
-            <span v-else>
-              {{ host.version }}
             </span>
           </div>
         </div>
@@ -130,15 +127,16 @@ export default {
   },
   watch: {
     resource (newItem, oldItem) {
-      if (this.resource && this.resource.id && newItem && newItem.id !== oldItem.id) {
-        this.fetchData()
+      if (this.resource) {
+        this.host = this.resource
+        if (this.resource.id && newItem && newItem.id !== oldItem.id) {
+          this.fetchData()
+        }
       }
     }
   },
   methods: {
     fetchData () {
-      this.dataSource = []
-      this.itemCount = 0
       this.fetchLoading = true
       api('listHosts', { id: this.resource.id }).then(json => {
         this.host = json.listhostsresponse.host[0]

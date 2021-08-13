@@ -80,8 +80,13 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
 
     @Parameter(name = ApiConstants.USER_DATA,
                type = CommandType.STRING,
-               description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Using HTTP GET (via querystring), you can send up to 2KB of data after base64 encoding. Using HTTP POST(via POST body), you can send up to 32K of data after base64 encoding.",
-               length = 32768)
+               description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. " +
+                       "This binary data must be base64 encoded before adding it to the request. " +
+                       "Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. " +
+                       "Using HTTP POST(via POST body), you can send up to 1MB of data after base64 encoding." +
+                       "You also need to change vm.userdata.max.length value",
+               length = 1048576,
+               since = "4.16.0")
     private String userData;
 
     @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vm to the end user or not.", authorized = {RoleType.Admin})
