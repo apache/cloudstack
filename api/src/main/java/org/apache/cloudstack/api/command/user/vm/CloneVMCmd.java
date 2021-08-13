@@ -41,7 +41,7 @@ public class CloneVMCmd extends BaseAsyncCreateCmd implements UserCmd {
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType=UserVmResponse.class,
             required = true, description = "The ID of the virtual machine")
-    private Long id;
+    private Long virtualmachineid;
 
     //Owner information
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the virtual machine. Must be used with domainId.")
@@ -63,7 +63,7 @@ public class CloneVMCmd extends BaseAsyncCreateCmd implements UserCmd {
     }
 
     public Long getId() {
-        return this.id;
+        return this.virtualmachineid;
     }
     @Override
     public String getEventType() {
