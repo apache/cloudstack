@@ -925,7 +925,8 @@ export default {
             account: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.account,
             page: 1,
             pageSize: 10,
-            keyword: undefined
+            keyword: undefined,
+            showIcon: true
           }
         },
         pods: {
