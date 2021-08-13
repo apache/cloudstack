@@ -94,7 +94,7 @@ public interface VolumeApiService {
 
     Volume detachVolumeViaDestroyVM(long vmId, long volumeId);
 
-    Volume cloneDataVolume(CloneVMCmd cmd, long snapshotId, Volume volume) throws StorageUnavailableException;
+    Volume cloneDataVolume(long vmId, long snapshotId, Volume volume) throws StorageUnavailableException;
 
     Volume detachVolumeFromVM(DetachVolumeCmd cmd);
 
@@ -105,7 +105,7 @@ public interface VolumeApiService {
 
     Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume, String customId, long owner, String chainInfo);
 
-    Volume attachVolumeToVm(CloneVMCmd cmd, Long volumeId, Long deviceId);
+    Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId);
 
     /**
      * Extracts the volume to a particular location.

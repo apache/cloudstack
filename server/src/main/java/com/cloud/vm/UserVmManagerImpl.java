@@ -532,6 +532,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private BackupDao backupDao;
     @Inject
     private BackupManager backupManager;
+    @Inject
+    private SnapshotApiService _snapshotService;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -4631,6 +4633,30 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
+    public void prepareCloneVirtualMachine(CloneVMCmd cmd) throws ResourceAllocationException, ResourceUnavailableException, InsufficientCapacityException {
+        try {
+            VirtualMachineTemplate template = _tmplService.createPrivateTemplateRecord(cmd, _accountService.getAccount(cmd.getEntityOwnerId()), _volumeService);
+            if (template == null) {
+                throw new CloudRuntimeException("failed to create a template to db");
+            }
+            s_logger.info("The template id recorded is: " + template.getId());
+            cmd.setTemporaryTemlateId(template.getId());
+            _tmplService.createPrivateTemplate(cmd);
+            UserVm vmRecord = recordVirtualMachineToDB(cmd);
+            if (vmRecord == null) {
+                throw new CloudRuntimeException("Unable to record the VM to DB!");
+            }
+            cmd.setEntityUuid(vmRecord.getUuid());
+            cmd.setEntityId(vmRecord.getId());
+        } finally {
+            if (cmd.getTemporarySnapShotId() != null) {
+                _snapshotService.deleteSnapshot(cmd.getTemporarySnapShotId());
+                s_logger.warn("clearing the temporary snapshot: " + cmd.getTemporarySnapShotId());
+            }
+        }
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_CLONE, eventDescription = "clone vm", async = true)
     public Optional<UserVm> cloneVirtualMachine(CloneVMCmd cmd, VolumeApiService volumeService, SnapshotApiService snapshotService) throws ResourceUnavailableException, ConcurrentOperationException, CloudRuntimeException, InsufficientCapacityException, ResourceAllocationException {
         long vmId = cmd.getEntityId();
@@ -4672,12 +4698,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     VolumeVO parentVolume = _volsDao.findByIdIncludingRemoved(snapshotEntity.getVolumeId());
                     newDatadisk = saveDataDiskVolumeFromSnapShot(curVmAccount, true, zoneId,
                             diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, volumeName, _uuidMgr.generateUuid(Volume.class, null), new HashMap<>());
-                    VolumeVO volumeEntity = (VolumeVO) volumeService.cloneDataVolume(cmd, snapshotEntity.getId(), newDatadisk);
+                    VolumeVO volumeEntity = (VolumeVO) volumeService.cloneDataVolume(cmd.getEntityId(), snapshotEntity.getId(), newDatadisk);
                     createdVolumes.add(volumeEntity);
                 }
 
                 for (VolumeVO createdVol : createdVolumes) {
-                    volumeService.attachVolumeToVm(cmd, createdVol.getId(), createdVol.getDeviceId());
+//                    volumeService.attachVolumeToVm(cmd, createdVol.getId(), createdVol.getDeviceId());
+                    volumeService.attachVolumeToVM(cmd.getEntityId(), createdVol.getId(), createdVol.getDeviceId());
                 }
             } catch (CloudRuntimeException e){
                 s_logger.warn("data disk process failed during clone, clearing the temporary resources...");
