@@ -17,22 +17,21 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-//import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import java.util.Optional;
 
-@APICommand(name = "cloneVirtualMachine", responseObject = UserVmResponse.class, description = "clone a virtual VM in full clone mode",
-        responseView = ResponseObject.ResponseView.Restricted, requestHasSensitiveInfo = false, responseHasSensitiveInfo = true, entityType = {VirtualMachine.class})
-public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
+@APICommand(name = "cloneVirtualMachine", responseObject = UserVmResponse.class, description = "clone a virtual VM",
+        responseView = ResponseObject.ResponseView.Restricted, requestHasSensitiveInfo = false, responseHasSensitiveInfo = true, entityType = {VirtualMachine.class}, since="4.16.0")
+public class CloneVMCmd extends BaseAsyncCreateCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(CloneVMCmd.class.getName());
     private static final String s_name = "clonevirtualmachineresponse";
 
@@ -102,19 +101,7 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
     public void create() throws ResourceAllocationException {
         try {
             _userVmService.checkCloneCondition(this);
-            VirtualMachineTemplate template = _templateService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()), _volumeService);
-            if (template == null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "failed to create a template to db");
-            }
-            s_logger.info("The template id recorded is: " + template.getId());
-            setTemporaryTemlateId(template.getId());
-            _templateService.createPrivateTemplate(this);
-            UserVm vmRecord = _userVmService.recordVirtualMachineToDB(this);
-            if (vmRecord == null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "unable to record a new VM to db!");
-            }
-            setEntityId(vmRecord.getId());
-            setEntityUuid(vmRecord.getUuid());
+            _userVmService.prepareCloneVirtualMachine(this);
         }
         catch (ResourceUnavailableException | InsufficientCapacityException e) {
             s_logger.warn("Exception: ", e);
@@ -126,11 +113,6 @@ public class CloneVMCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
             throw new ServerApiException(e.getErrorCode(), e.getDescription());
         } catch (CloudRuntimeException e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
-        } finally {
-            if (getTemporarySnapShotId() != null) {
-                _snapshotService.deleteSnapshot(getTemporarySnapShotId());
-                s_logger.warn("clearing the temporary snapshot: " + getTemporarySnapShotId());
-            }
         }
     }
 
