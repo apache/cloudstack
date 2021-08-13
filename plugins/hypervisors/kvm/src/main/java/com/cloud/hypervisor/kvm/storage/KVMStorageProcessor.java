@@ -106,6 +106,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DeviceType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiscardType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiskProtocol;
+import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.Storage.ImageFormat;
@@ -1496,8 +1497,9 @@ public class KVMStorageProcessor implements StorageProcessor {
      * 1st parameter: VM's name;<br>
      * 2nd parameter: disk's label (target.dev tag from VM's XML);<br>
      * 3rd parameter: the absolute path of the base file;
+     * 4th parameter: the flag '--delete', if Libvirt supports it. Libvirt started to support it on version <b>6.0.0</b>;
      */
-    private static final String COMMAND_MERGE_SNAPSHOT = "virsh blockcommit %s %s --base %s --active --wait --delete --pivot";
+    private static final String COMMAND_MERGE_SNAPSHOT = "virsh blockcommit %s %s --base %s --active --wait %s --pivot";
 
     /**
      * Flag to take disk-only snapshots from VM.<br><br>
@@ -1547,7 +1549,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                 String diskLabel = takeVolumeSnapshot(resource.getDisks(conn, vmName), snapshotName, diskPath, vm);
                 snapshotPath = getSnapshotPathInPrimaryStorage(primaryPool.getLocalPath(), snapshotName);
                 String copyResult = copySnapshotToPrimaryStorageDir(primaryPool, diskPath, snapshotPath, volume);
-                mergeSnapshotIntoBaseFile(vm, diskLabel, diskPath, snapshotName, volume);
+
+                mergeSnapshotIntoBaseFile(vm, diskLabel, diskPath, snapshotName, volume, conn);
 
                 validateCopyResult(copyResult, snapshotPath);
 
@@ -1635,13 +1638,16 @@ public class KVMStorageProcessor implements StorageProcessor {
      * @param snapshotName Name of the snapshot;
      * @throws LibvirtException
      */
-    protected void mergeSnapshotIntoBaseFile(Domain vm, String diskLabel, String baseFilePath, String snapshotName, VolumeObjectTO volume) throws LibvirtException {
+    protected void mergeSnapshotIntoBaseFile(Domain vm, String diskLabel, String baseFilePath, String snapshotName, VolumeObjectTO volume,
+            Connect conn) throws LibvirtException {
+        boolean isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit = LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(conn);
         String vmName = vm.getName();
-        String mergeCommand = String.format(COMMAND_MERGE_SNAPSHOT, vmName, diskLabel, baseFilePath);
+        String mergeCommand = String.format(COMMAND_MERGE_SNAPSHOT, vmName, diskLabel, baseFilePath, isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit ? "--delete" : "");
         String mergeResult = Script.runSimpleBashScript(mergeCommand);
 
         if (mergeResult == null) {
             s_logger.debug(String.format("Successfully merged snapshot [%s] into VM [%s] %s base file.", snapshotName, vmName, volume));
+            manuallyDeleteUnusedSnapshotFile(isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit, getSnapshotTemporaryPath(baseFilePath, snapshotName));
             return;
         }
 
@@ -1651,6 +1657,31 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         s_logger.warn(String.format("%s VM XML: [%s].", errorMsg, vm.getXMLDesc(0)));
         throw new CloudRuntimeException(errorMsg);
+    }
+
+    /**
+     * Manually deletes the unused snapshot file.<br/>
+     * This method is necessary due to Libvirt created the tag '--delete' on command 'virsh blockcommit' on version <b>1.2.9</b>, however it was only implemented on version
+     *  <b>6.0.0</b>.
+     * @param snapshotPath The unused snapshot file to manually delete.
+     */
+    protected boolean manuallyDeleteUnusedSnapshotFile(boolean isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit, String snapshotPath) {
+        if (isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit) {
+            s_logger.debug(String.format("The current Libvirt's version supports the flag '--delete' on command 'virsh blockcommit', we will skip the manually deletion of the"
+                    + " unused snapshot file [%s] as it already was automatically deleted.", snapshotPath));
+            return false;
+        }
+
+        s_logger.debug(String.format("The current Libvirt's version does not supports the flag '--delete' on command 'virsh blockcommit', therefore we will manually delete the"
+                + " unused snapshot file [%s].", snapshotPath));
+
+        try {
+            Files.deleteIfExists(Paths.get(snapshotPath));
+            s_logger.debug(String.format("Manually deleted unused snapshot file [%s].", snapshotPath));
+            return true;
+        } catch (IOException ex) {
+            throw new CloudRuntimeException(String.format("Unable to manually delete unused snapshot file [%s] due to [%s].", snapshotPath, ex.getMessage()));
+        }
     }
 
     /**
