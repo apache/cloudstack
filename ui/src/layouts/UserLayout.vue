@@ -35,8 +35,10 @@
 </template>
 
 <script>
+import Vue from 'vue'
 import RouteView from '@/layouts/RouteView'
 import { mixinDevice } from '@/utils/mixin.js'
+import { DARK_MODE } from '@/store/mutation-types'
 
 export default {
   name: 'UserLayout',
@@ -45,11 +47,25 @@ export default {
   data () {
     return {}
   },
+  watch: {
+    '$store.getters.darkMode' (darkMode) {
+      if (darkMode) {
+        document.body.classList.add('dark-mode')
+      } else {
+        document.body.classList.remove('dark-mode')
+      }
+    }
+  },
   mounted () {
     document.body.classList.add('userLayout')
+    const darkMode = Vue.ls.get(DARK_MODE, false)
+    if (this.$store.getters.darkMode || darkMode) {
+      document.body.classList.add('dark-mode')
+    }
   },
   beforeDestroy () {
     document.body.classList.remove('userLayout')
+    document.body.classList.remove('dark-mode')
   }
 }
 </script>
@@ -57,7 +73,6 @@ export default {
 <style lang="less" scoped>
 .user-layout {
   height: 100%;
-  background: #fff;
 
   &-container {
     padding: 3rem 0;
