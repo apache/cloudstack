@@ -22,7 +22,6 @@ import java.net.MalformedURLException;
 import java.util.Map;
 
 import com.cloud.exception.StorageUnavailableException;
-import org.apache.cloudstack.api.command.user.vm.CloneVMCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
