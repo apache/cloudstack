@@ -737,3 +737,23 @@ CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (9, 'pfSense 2.4', 'KVM', 'default', 'p
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (9, 'OpenBSD 6.7', 'KVM', 'default', 'OpenBSD 6.7');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (9, 'OpenBSD 6.8', 'KVM', 'default', 'OpenBSD 6.8');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'AlmaLinux 8.3', 'KVM', 'default', 'AlmaLinux 8.3');
+
+-- Alter value column of *_details table to prevent NULL values
+UPDATE cloud.account_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.account_details MODIFY value varchar(255) NOT NULL;
+UPDATE cloud.cluster_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.cluster_details MODIFY value varchar(255) NOT NULL;
+UPDATE cloud.data_center_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.data_center_details MODIFY value varchar(1024) NOT NULL;
+UPDATE cloud.domain_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.domain_details MODIFY value varchar(255) NOT NULL;
+UPDATE cloud.image_store_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.image_store_details MODIFY value varchar(255) NOT NULL;
+UPDATE cloud.storage_pool_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.storage_pool_details MODIFY value varchar(255) NOT NULL;
+UPDATE cloud.template_deploy_as_is_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.template_deploy_as_is_details MODIFY value text NOT NULL;
+UPDATE cloud.user_vm_deploy_as_is_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.user_vm_deploy_as_is_details MODIFY value text NOT NULL;
+UPDATE cloud.user_vm_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.user_vm_details MODIFY value varchar(5120) NOT NULL;
