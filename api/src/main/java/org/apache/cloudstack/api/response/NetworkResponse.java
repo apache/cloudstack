@@ -251,6 +251,14 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @Param(description = "the date this network was created", since = "4.16.0")
     private Date created;
 
+    @SerializedName(ApiConstants.RECEIVED_BYTES)
+    @Param(description = "the total number of network traffic bytes received")
+    private Long bytesReceived;
+
+    @SerializedName(ApiConstants.SENT_BYTES)
+    @Param(description = "the total number of network traffic bytes sent")
+    private Long bytesSent;
+
     public Boolean getDisplayNetwork() {
         return displayNetwork;
     }
@@ -494,5 +502,13 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     public void setCreated(Date created) {
         this.created = created;
+    }
+
+    public void setBytesReceived(Long bytesReceived) {
+        this.bytesReceived = bytesReceived;
+    }
+
+    public void setBytesSent(final Long bytesSent) {
+        this.bytesSent = bytesSent;
     }
 }
