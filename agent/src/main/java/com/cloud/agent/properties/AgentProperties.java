@@ -39,7 +39,7 @@ public class AgentProperties{
      */
     public static final Property<Integer> VM_MIGRATE_DOMAIN_RETRIEVE_TIMEOUT = new Property<Integer>("vm.migrate.domain.retrieve.timeout", 10);
 
-     /**
+    /**
      * Enable manually setting CPU's topology on KVM's VM. <br>
      * Data type: boolean.<br>
      * Default value: true.
