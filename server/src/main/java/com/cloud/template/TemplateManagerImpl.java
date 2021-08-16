@@ -1722,7 +1722,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 });
 
             }
-            snapshotHelper.expungeTemporarySnapshot(kvmSnapshotOnlyInPrimaryStorage, snapInfo);
+
+            if (snapshotId != null) {
+                snapshotHelper.expungeTemporarySnapshot(kvmSnapshotOnlyInPrimaryStorage, snapInfo);
+            }
         }
 
         if (privateTemplate != null) {
