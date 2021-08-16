@@ -36,6 +36,23 @@
           <a-icon type="safety" />
           {{ $t('label.login.portal') }}
         </span>
+        <a-form-item v-if="$config.multipleServer">
+          <a-select
+            size="large"
+            :placeholder="$t('server')"
+            v-decorator="[
+              'server',
+              {
+                initialValue: (server.apiHost || '') + server.apiBase
+              }
+            ]"
+            @change="onChangeServer">
+            <a-select-option v-for="item in $config.servers" :key="(item.apiHost || '') + item.apiBase">
+              <a-icon slot="prefix" type="database" :style="{ color: 'rgba(0,0,0,.25)' }"></a-icon>
+              {{ item.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item>
           <a-input
             size="large"
@@ -47,7 +64,7 @@
               {rules: [{ required: true, message: $t('message.error.username') }, { validator: handleUsernameOrEmail }], validateTrigger: 'change'}
             ]"
           >
-            <a-icon slot="prefix" type="user" :style="{ color: 'rgba(0,0,0,.25)' }"/>
+            <a-icon slot="prefix" type="user" />
           </a-input>
         </a-form-item>
 
@@ -62,7 +79,7 @@
               {rules: [{ required: true, message: $t('message.error.password') }], validateTrigger: 'blur'}
             ]"
           >
-            <a-icon slot="prefix" type="lock" :style="{ color: 'rgba(0,0,0,.25)' }"/>
+            <a-icon slot="prefix" type="lock" />
           </a-input-password>
         </a-form-item>
 
@@ -76,7 +93,7 @@
               {rules: [{ required: false, message: $t('message.error.domain') }], validateTrigger: 'change'}
             ]"
           >
-            <a-icon slot="prefix" type="block" :style="{ color: 'rgba(0,0,0,.25)' }"/>
+            <a-icon slot="prefix" type="block" />
           </a-input>
         </a-form-item>
 
@@ -86,6 +103,23 @@
           <a-icon type="audit" />
           {{ $t('label.login.single.signon') }}
         </span>
+        <a-form-item v-if="$config.multipleServer">
+          <a-select
+            size="large"
+            :placeholder="$t('server')"
+            v-decorator="[
+              'server',
+              {
+                initialValue: (server.apiHost || '') + server.apiBase
+              }
+            ]"
+            @change="onChangeServer">
+            <a-select-option v-for="item in $config.servers" :key="(item.apiHost || '') + item.apiBase">
+              <a-icon slot="prefix" type="database" :style="{ color: 'rgba(0,0,0,.25)' }"></a-icon>
+              {{ item.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item>
           <a-select v-decorator="['idp', { initialValue: selectedIdp } ]">
             <a-select-option v-for="(idp, idx) in idps" :key="idx" :value="idp.id">
@@ -112,8 +146,11 @@
 </template>
 
 <script>
+import Vue from 'vue'
 import { api } from '@/api'
+import store from '@/store'
 import { mapActions } from 'vuex'
+import { SERVER_MANAGER } from '@/store/mutation-types'
 import TranslationMenu from '@/components/header/TranslationMenu'
 
 export default {
@@ -132,10 +169,15 @@ export default {
         time: 60,
         loginBtn: false,
         loginType: 0
-      }
+      },
+      server: ''
     }
   },
   created () {
+    if (this.$config.multipleServer) {
+      this.server = Vue.ls.get(SERVER_MANAGER) || this.$config.servers[0]
+    }
+
     this.fetchData()
   },
   methods: {
@@ -179,6 +221,11 @@ export default {
 
       validateFields(validateFieldsKey, { force: true }, (err, values) => {
         if (!err) {
+          if (this.$config.multipleServer) {
+            this.axios.defaults.baseURL = (this.server.apiHost || '') + this.server.apiBase
+            store.dispatch('SetServer', this.server)
+          }
+
           if (customActiveKey === 'cs') {
             const loginParams = { ...values }
             delete loginParams.username
@@ -219,6 +266,11 @@ export default {
       } else {
         this.$message.error(this.$t('message.login.failed'))
       }
+    },
+    onChangeServer (server) {
+      const servers = this.$config.servers || []
+      const serverFilter = servers.filter(ser => (ser.apiHost || '') + ser.apiBase === server)
+      this.server = serverFilter[0] || {}
     }
   }
 }

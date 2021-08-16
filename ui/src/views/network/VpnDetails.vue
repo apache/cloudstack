@@ -67,7 +67,7 @@
 
       <div class="actions">
         <a-button @click="() => enableVpn = false">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" @click="handleCreateVpn">{{ $t('label.yes') }}</a-button>
+        <a-button type="primary" ref="submit" @click="handleCreateVpn">{{ $t('label.yes') }}</a-button>
       </div>
     </a-modal>
 

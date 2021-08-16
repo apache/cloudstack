@@ -18,7 +18,7 @@
 <template>
   <a
     v-if="['vm', 'systemvm', 'router', 'ilbvm'].includes($route.meta.name) && 'updateVirtualMachine' in $store.getters.apis"
-    :href="'/client/console?cmd=access&vm=' + resource.id"
+    :href="server + '/console?cmd=access&vm=' + resource.id"
     target="_blank">
     <a-button style="margin-left: 5px" shape="circle" type="dashed" :size="size" :disabled="['Stopped', 'Error', 'Destroyed'].includes(resource.state)" >
       <a-icon type="code" />
@@ -27,6 +27,9 @@
 </template>
 
 <script>
+import Vue from 'vue'
+import { SERVER_MANAGER } from '@/store/mutation-types'
+
 export default {
   name: 'Console',
   props: {
@@ -37,6 +40,19 @@ export default {
     size: {
       type: String,
       default: 'small'
+    }
+  },
+  computed: {
+    server () {
+      if (!this.$config.multipleServer) {
+        return this.$config.apiBase.replace('/api', '')
+      }
+      const serverStorage = Vue.ls.get(SERVER_MANAGER)
+      const apiBase = serverStorage.apiBase.replace('/api', '')
+      if (!serverStorage.apiHost || serverStorage.apiHost === '/') {
+        return [location.origin, apiBase].join('')
+      }
+      return [serverStorage.apiHost, apiBase].join('')
     }
   }
 }

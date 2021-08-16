@@ -96,6 +96,10 @@ if [ -d "$BINARIES_DIR" ]; then
         docker load < "${BINARIES_DIR}/docker/$line"
     done <<< "$output"
   fi
+  if [ -e "${BINARIES_DIR}/provider.yaml" ]; then
+    mkdir -p /opt/provider
+    cp "${BINARIES_DIR}/provider.yaml" /opt/provider/provider.yaml
+  fi
 
   tar -f "${BINARIES_DIR}/cni/cni-plugins-amd64.tgz" -C /opt/cni/bin -xz
   tar -f "${BINARIES_DIR}/cri-tools/crictl-linux-amd64.tar.gz" -C /opt/bin -xz
