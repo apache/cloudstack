@@ -109,6 +109,8 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.dao.impl.PropertiesStorage;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
@@ -410,6 +412,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected CPUStat _cpuStat = new CPUStat();
     protected MemStat _memStat = new MemStat(_dom0MinMem, _dom0OvercommitMem);
     private final LibvirtUtilitiesHelper libvirtUtilitiesHelper = new LibvirtUtilitiesHelper();
+
+    protected Boolean enableManuallySettingCpuTopologyOnKvmVm = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM);
 
     protected long getHypervisorLibvirtVersion() {
         return _hypervisorLibvirtVersion;
@@ -4502,6 +4506,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private void setCpuTopology(CpuModeDef cmd, int vcpus, Map<String, String> details) {
+        if (!enableManuallySettingCpuTopologyOnKvmVm) {
+            s_logger.debug(String.format("Skipping manually setting CPU topology on VM's XML due to it is disabled in agent.properties {\"property\": \"%s\", \"value\": %s}.",
+              AgentProperties.ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM.getName(), enableManuallySettingCpuTopologyOnKvmVm));
+            return;
+        }
         // multi cores per socket, for larger core configs
         int numCoresPerSocket = -1;
         if (details != null) {
