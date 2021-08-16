@@ -1699,7 +1699,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         StoragePoolVO existingStoragePool = _storagePoolDao.findById(volume.getPoolId());
 
-        Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForMigrationOfVolumeInternal(volume.getId(), newDiskOffering.getId(), true);
+        Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForMigrationOfVolumeInternal(volume.getId(), newDiskOffering.getId(), newSize, newMinIops, newMaxIops, true);
         List<? extends StoragePool> suitableStoragePools = poolsPair.second();
 
         if (!suitableStoragePools.stream().anyMatch(p -> (p.getId() == existingStoragePool.getId()))) {

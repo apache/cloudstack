@@ -1484,7 +1484,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(final Long volumeId) {
 
-        Pair<List<? extends StoragePool>, List<? extends StoragePool>> allPoolsAndSuitablePoolsPair = listStoragePoolsForMigrationOfVolumeInternal(volumeId, null, false);
+        Pair<List<? extends StoragePool>, List<? extends StoragePool>> allPoolsAndSuitablePoolsPair = listStoragePoolsForMigrationOfVolumeInternal(volumeId, null, null, null, null, false);
         List<? extends StoragePool> allPools = allPoolsAndSuitablePoolsPair.first();
         List<? extends StoragePool> suitablePools = allPoolsAndSuitablePoolsPair.second();
         List<StoragePool> avoidPools = new ArrayList<>();
@@ -1500,7 +1500,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
     }
 
-    public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolumeInternal(final Long volumeId, Long newDiskOfferingId, boolean keepSourceStoragePool) {
+    public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolumeInternal(final Long volumeId, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean keepSourceStoragePool) {
         final Account caller = getCaller();
         if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (s_logger.isDebugEnabled()) {
@@ -1580,7 +1580,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             avoid.addPool(srcVolumePool.getId());
         }
         if (vm != null) {
-            suitablePools = findAllSuitableStoragePoolsForVm(volume, diskOfferingId, vm, vmHost, avoid,
+            suitablePools = findAllSuitableStoragePoolsForVm(volume, diskOfferingId, newSize, newMinIops, newMaxIops, vm, vmHost, avoid,
                     CollectionUtils.isNotEmpty(clusters) ? clusters.get(0) : null, hypervisorType);
         } else {
             suitablePools = findAllSuitableStoragePoolsForDetachedVolume(volume, diskOfferingId, allPools);
@@ -1672,7 +1672,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      *
      *  Side note: the idea behind this method is to provide power for administrators of manually overriding deployments defined by CloudStack.
      */
-    private List<StoragePool> findAllSuitableStoragePoolsForVm(final VolumeVO volume, Long diskOfferingId, VMInstanceVO vm, Host vmHost, ExcludeList avoid, Cluster srcCluster, HypervisorType hypervisorType) {
+    private List<StoragePool> findAllSuitableStoragePoolsForVm(final VolumeVO volume, Long diskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, VMInstanceVO vm, Host vmHost, ExcludeList avoid, Cluster srcCluster, HypervisorType hypervisorType) {
         List<StoragePool> suitablePools = new ArrayList<>();
         Long clusterId = null;
         Long podId = null;
@@ -1688,7 +1688,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
         DiskProfile diskProfile = new DiskProfile(volume, diskOffering, hypervisorType);
         if (volume.getDiskOfferingId() != diskOfferingId) {
-            diskProfile.setSize(diskOffering.getDiskSize());
+            diskProfile.setSize(newSize);
+            diskProfile.setMinIops(newMinIops);
+            diskProfile.setMaxIops(newMaxIops);
         }
 
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
