@@ -379,17 +379,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     }
 
     private boolean hostSupportsServiceOffering(HostVO host, ServiceOffering serviceOffering) {
-        if (host == null) {
-            return false;
-        }
-        if (serviceOffering == null) {
-            return false;
-        }
-        if (Strings.isNullOrEmpty(serviceOffering.getHostTag())) {
-            return true;
-        }
         hostDao.loadHostTags(host);
-        return host.getHostTags() != null && host.getHostTags().contains(serviceOffering.getHostTag());
+        return host.checkHostServiceOfferingTags(serviceOffering);
     }
 
     private boolean storagePoolSupportsDiskOffering(StoragePool pool, DiskOffering diskOffering) {

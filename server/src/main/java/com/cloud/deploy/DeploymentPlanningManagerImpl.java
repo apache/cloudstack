@@ -678,7 +678,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         ServiceOffering offering = vmProfile.getServiceOffering();
         if (offering.getHostTag() != null) {
             _hostDao.loadHostTags(host);
-            if (!(host.getHostTags() != null && host.getHostTags().contains(offering.getHostTag()))) {
+            if (!host.checkHostServiceOfferingTags(offering)) {
                 s_logger.debug("Service Offering host tag does not match the last host of this VM");
                 return false;
             }
