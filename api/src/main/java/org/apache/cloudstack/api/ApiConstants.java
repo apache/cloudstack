@@ -29,6 +29,7 @@ public class ApiConstants {
     public static final String ANNOTATION = "annotation";
     public static final String API_KEY = "apikey";
     public static final String ASYNC_BACKUP = "asyncbackup";
+    public static final String AUTO_SELECT = "autoselect";
     public static final String USER_API_KEY = "userapikey";
     public static final String APPLIED = "applied";
     public static final String LIST_LB_VMIPS = "lbvmips";
@@ -156,6 +157,7 @@ public class ApiConstants {
     public static final String FIRSTNAME = "firstname";
     public static final String FORCED = "forced";
     public static final String FORCED_DESTROY_LOCAL_STORAGE = "forcedestroylocalstorage";
+    public static final String FORCE_DELETE_HOST = "forcedeletehost";
     public static final String FORMAT = "format";
     public static final String FOR_VIRTUAL_NETWORK = "forvirtualnetwork";
     public static final String FOR_SYSTEM_VMS = "forsystemvms";
@@ -357,6 +359,7 @@ public class ApiConstants {
     public static final String SWAP_OWNER = "swapowner";
     public static final String SYSTEM_VM_TYPE = "systemvmtype";
     public static final String TAGS = "tags";
+    public static final String STORAGE_TAGS = "storagetags";
     public static final String TARGET_IQN = "targetiqn";
     public static final String TEMPLATE_FILTER = "templatefilter";
     public static final String TEMPLATE_ID = "templateid";

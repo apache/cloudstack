@@ -76,7 +76,7 @@ public class ServiceOfferingResponse extends BaseResponse {
     @Param(description = "true if the vm needs to be volatile, i.e., on every reboot of vm from API root disk is discarded and creates a new root disk")
     private Boolean isVolatile;
 
-    @SerializedName("tags")
+    @SerializedName("storagetags")
     @Param(description = "the tags for the service offering")
     private String tags;
 

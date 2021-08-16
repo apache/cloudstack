@@ -158,7 +158,10 @@
       v-model="showCreateNetworkModal"
       :title="$t('label.add.new.tier')"
       :maskClosable="false"
-      @ok="handleAddNetworkSubmit">
+      :closable="true"
+      :footer="null"
+      @cancel="showCreateNetworkModal = false"
+      v-ctrl-enter="handleAddNetworkSubmit">
       <a-spin :spinning="modalLoading">
         <a-form @submit.prevent="handleAddNetworkSubmit" :form="form">
           <a-form-item :label="$t('label.name')">
@@ -177,12 +180,7 @@
             </a-select>
           </a-form-item>
           <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan">
-            <span slot="label">
-              {{ $t('label.vlan') }}
-              <a-tooltip :title="$t('label.vlan')">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+            <tooltip-label slot="label" :title="$t('label.vlan')" :tooltip="$t('label.vlan')"/>
             <a-input
               v-decorator="['vlan', {
                 rules: [{ required: true, message: $t('message.please.enter.value') }]
@@ -218,6 +216,10 @@
           <a-alert v-else-if="this.selectedNetworkAcl.name==='default_deny'" type="warning" show-icon>
             <span slot="message" v-html="$t('message.network.acl.default.deny')" />
           </a-alert>
+          <div :span="24" class="action-button">
+            <a-button @click="showCreateNetworkModal = false">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" ref="submit" @click="handleAddNetworkSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-spin>
     </a-modal>
@@ -226,7 +228,10 @@
       v-model="showAddInternalLB"
       :title="$t('label.add.internal.lb')"
       :maskClosable="false"
-      @ok="handleAddInternalLBSubmit">
+      :closable="true"
+      :footer="null"
+      @cancel="showAddInternalLB = false"
+      v-ctrl-enter="handleAddInternalLBSubmit">
       <a-spin :spinning="modalLoading">
         <a-form @submit.prevent="handleAddInternalLBSubmit" :form="form">
           <a-form-item :label="$t('label.name')">
@@ -266,6 +271,11 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+
+          <div :span="24" class="action-button">
+            <a-button @click="showAddInternalLB = false">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" ref="submit" @click="handleAddInternalLBSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-spin>
     </a-modal>
@@ -275,11 +285,13 @@
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'VpcTiersTab',
   components: {
-    Status
+    Status,
+    TooltipLabel
   },
   props: {
     resource: {
@@ -386,7 +398,7 @@ export default {
           scopedSlots: { customRender: 'ip' }
         }
       ],
-      customStyle: 'margin-bottom: -10px; border-bottom-style: none',
+      customStyle: 'margin-bottom: 0; border: none',
       page: 1,
       pageSize: 10,
       itemCounts: {
@@ -568,11 +580,14 @@ export default {
       this.networkid = id
     },
     handleAddNetworkSubmit () {
+      if (this.modalLoading) return
       this.fetchLoading = true
+      this.modalLoading = true
 
       this.form.validateFields((errors, values) => {
         if (errors) {
           this.fetchLoading = false
+          this.modalLoading = false
           return
         }
 
@@ -605,15 +620,18 @@ export default {
           this.parentFetchData()
           this.fetchData()
           this.fetchLoading = false
+          this.modalLoading = false
         })
       })
     },
     handleAddInternalLBSubmit () {
+      if (this.modalLoading) return
       this.fetchLoading = true
       this.modalLoading = true
       this.form.validateFields((errors, values) => {
         if (errors) {
           this.fetchLoading = false
+          this.modalLoading = false
           return
         }
         api('createLoadBalancer', {
@@ -625,31 +643,31 @@ export default {
           sourceipaddressnetworkid: this.networkid,
           scheme: 'Internal'
         }).then(response => {
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('message.create.internallb'),
-            jobid: response.createloadbalancerresponse.jobid,
-            description: values.name,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId: response.createloadbalancerresponse.jobid,
+            title: this.$t('message.create.internallb'),
+            description: values.name,
             successMessage: this.$t('message.success.create.internallb'),
             successMethod: () => {
               this.fetchData()
+              this.modalLoading = false
             },
             errorMessage: `${this.$t('message.create.internallb.failed')} ` + response,
             errorMethod: () => {
               this.fetchData()
+              this.modalLoading = false
             },
             loadingMessage: this.$t('message.create.internallb.processing'),
             catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.fetchData()
+              this.modalLoading = false
             }
           })
         }).catch(error => {
           console.error(error)
           this.$message.error(this.$t('message.create.internallb.failed'))
+          this.modalLoading = false
         }).finally(() => {
           this.modalLoading = false
           this.fetchLoading = false

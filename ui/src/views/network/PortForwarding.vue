@@ -18,7 +18,7 @@
 <template>
   <div>
     <div>
-      <div class="form">
+      <div class="form" v-ctrl-enter="openAddVMModal">
         <div class="form__item">
           <div class="form__label">{{ $t('label.privateport') }}</div>
           <a-input-group class="form__item__input-container" compact>
@@ -30,7 +30,8 @@
             <a-input
               placeholder="-"
               disabled
-              style="width: 30px; border-left: 0; border-right: 0; pointer-events: none; backgroundColor: #fff; text-align:
+              class="tag-disabled-input"
+              style="width: 30px; border-left: 0; border-right: 0; pointer-events: none; text-align:
               center; margin-right: 0;"></a-input>
             <a-input
               v-model="newRule.privateendport"
@@ -48,7 +49,8 @@
             <a-input
               placeholder="-"
               disabled
-              style="width: 30px; border-left: 0; border-right: 0; pointer-events: none; backgroundColor: #fff;
+              class="tag-disabled-input"
+              style="width: 30px; border-left: 0; border-right: 0; pointer-events: none;
               text-align: center; margin-right: 0;"></a-input>
             <a-input
               v-model="newRule.publicendport"
@@ -71,7 +73,14 @@
     </div>
 
     <a-divider/>
-
+    <a-button
+      v-if="(('deletePortForwardingRule' in $store.getters.apis) && this.selectedItems.length > 0)"
+      type="danger"
+      icon="delete"
+      style="width: 100%; margin-bottom: 15px"
+      @click="bulkActionConfirmation()">
+      {{ $t('label.action.bulk.delete.portforward.rules') }}
+    </a-button>
     <a-table
       size="small"
       style="overflow-y: auto"
@@ -79,6 +88,7 @@
       :columns="columns"
       :dataSource="portForwardRules"
       :pagination="false"
+      :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
       <template slot="privateport" slot-scope="record">
         {{ record.privateport }} - {{ record.privateendport }}
@@ -87,7 +97,7 @@
         {{ record.publicport }} - {{ record.publicendport }}
       </template>
       <template slot="protocol" slot-scope="record">
-        {{ record.protocol | capitalise }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template slot="vm" slot-scope="record">
         <div><a-icon type="desktop"/>
@@ -128,23 +138,33 @@
       :title="$t('label.edit.tags')"
       v-model="tagsModalVisible"
       :footer="null"
+      :closable="true"
       :maskClosable="false"
-      :afterClose="closeModal">
+      :afterClose="closeModal"
+      @cancel="tagsModalVisible = false"
+      v-ctrl-enter="handleAddTag">
       <span v-show="tagsModalLoading" class="tags-modal-loading">
         <a-icon type="loading"></a-icon>
       </span>
 
-      <div class="add-tags">
+      <a-form :form="newTagsForm" class="add-tags" @submit="handleAddTag">
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.key') }}</p>
-          <a-input autoFocus v-model="newTag.key"></a-input>
+          <a-form-item>
+            <a-input
+              autoFocus
+              v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
+          </a-form-item>
         </div>
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.value') }}</p>
-          <a-input v-model="newTag.value"></a-input>
+          <a-form-item>
+            <a-input v-decorator="['value', { rules: [{ required: true, message: this.$t('message.specifiy.tag.value')}] }]" />
+          </a-form-item>
         </div>
-        <a-button type="primary" @click="() => handleAddTag()">{{ $t('label.add') }}</a-button>
-      </div>
+
+        <a-button type="primary" ref="submit" @click="handleAddTag">{{ $t('label.add') }}</a-button>
+      </a-form>
 
       <a-divider></a-divider>
 
@@ -162,22 +182,21 @@
     <a-modal
       :title="$t('label.add.vm')"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
+      :closable="true"
       v-model="addVmModalVisible"
       class="vm-modal"
       width="60vw"
-      @ok="addRule"
       :okButtonProps="{ props:
         {disabled: newRule.virtualmachineid === null } }"
       @cancel="closeModal"
+      v-ctrl-enter="addRule"
     >
       <div>
         <span
           v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
           <strong>{{ $t('label.select.tier') }} </strong>
           <a-select
-            :autoFocu="'vpcid' in resource && !('associatednetworkid' in resource)"
+            :autoFocus="'vpcid' in resource && !('associatednetworkid' in resource)"
             v-model="selectedTier"
             @change="fetchVirtualMachines()"
             :placeholder="$t('label.select.tier')" >
@@ -190,7 +209,7 @@
           </a-select>
         </span>
         <a-input-search
-          :autoFocu="!('vpcid' in resource && !('associatednetworkid' in resource))"
+          :autoFocus="!('vpcid' in resource && !('associatednetworkid' in resource))"
           class="input-search"
           :placeholder="$t('label.search')"
           v-model="searchQuery"
@@ -245,19 +264,43 @@
           </template>
         </a-pagination>
       </div>
+      <div :span="24" class="action-button">
+        <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
+        <a-button type="primary" ref="submit" @click="addRule">{{ $t('label.ok') }}</a-button>
+      </div>
     </a-modal>
+
+    <bulk-action-view
+      v-if="showConfirmationAction || showGroupActionModal"
+      :showConfirmationAction="showConfirmationAction"
+      :showGroupActionModal="showGroupActionModal"
+      :items="portForwardRules"
+      :selectedRowKeys="selectedRowKeys"
+      :selectedItems="selectedItems"
+      :columns="columns"
+      :selectedColumns="selectedColumns"
+      :filterColumns="filterColumns"
+      action="deletePortForwardingRule"
+      :loading="loading"
+      :message="message"
+      @group-action="deleteRules"
+      @handle-cancel="handleCancel"
+      @close-modal="closeModal" />
   </div>
 </template>
 
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
+import BulkActionView from '@/components/view/BulkActionView'
+import eventBus from '@/config/eventBus'
 
 export default {
   components: {
     Status,
-    TooltipButton
+    TooltipButton,
+    BulkActionView
   },
   props: {
     resource: {
@@ -268,6 +311,16 @@ export default {
   inject: ['parentFetchData', 'parentToggleLoading'],
   data () {
     return {
+      selectedRowKeys: [],
+      showGroupActionModal: false,
+      selectedItems: [],
+      selectedColumns: [],
+      filterColumns: ['State', 'Action'],
+      showConfirmationAction: false,
+      message: {
+        title: this.$t('label.action.bulk.delete.portforward.rules'),
+        confirmMessage: this.$t('label.confirm.delete.portforward.rules')
+      },
       loading: true,
       portForwardRules: [],
       newRule: {
@@ -284,10 +337,6 @@ export default {
       selectedRule: null,
       selectedTier: null,
       tags: [],
-      newTag: {
-        key: null,
-        value: null
-      },
       tagsModalLoading: false,
       addVmModalVisible: false,
       addVmModalLoading: false,
@@ -366,7 +415,13 @@ export default {
       vmPage: 1,
       vmPageSize: 10,
       vmCount: 0,
-      searchQuery: null
+      searchQuery: null,
+      newTagsForm: this.$form.createForm(this)
+    }
+  },
+  computed: {
+    hasSelected () {
+      return this.selectedRowKeys.length > 0
     }
   },
   created () {
@@ -379,12 +434,6 @@ export default {
       }
       this.resource = newItem
       this.fetchData()
-    }
-  },
-  filters: {
-    capitalise: val => {
-      if (val === 'all') return this.$t('label.all')
-      return val.toUpperCase()
     }
   },
   methods: {
@@ -429,18 +478,84 @@ export default {
         this.loading = false
       })
     },
+    setSelection (selection) {
+      this.selectedRowKeys = selection
+      this.$emit('selection-change', this.selectedRowKeys)
+      this.selectedItems = (this.portForwardRules.filter(function (item) {
+        return selection.indexOf(item.id) !== -1
+      }))
+    },
+    resetSelection () {
+      this.setSelection([])
+    },
+    onSelectChange (selectedRowKeys, selectedRows) {
+      this.setSelection(selectedRowKeys)
+    },
+    bulkActionConfirmation () {
+      this.showConfirmationAction = true
+      this.selectedColumns = this.columns.filter(column => {
+        return !this.filterColumns.includes(column.title)
+      })
+      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
+    },
+    handleCancel () {
+      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      this.showGroupActionModal = false
+      this.selectedItems = []
+      this.selectedColumns = []
+      this.selectedRowKeys = []
+      this.parentFetchData()
+    },
+    deleteRules (e) {
+      this.showConfirmationAction = false
+      this.selectedColumns.splice(0, 0, {
+        dataIndex: 'status',
+        title: this.$t('label.operation.status'),
+        scopedSlots: { customRender: 'status' },
+        filters: [
+          { text: 'In Progress', value: 'InProgress' },
+          { text: 'Success', value: 'success' },
+          { text: 'Failed', value: 'failed' }
+        ]
+      })
+      if (this.selectedRowKeys.length > 0) {
+        this.showGroupActionModal = true
+      }
+      for (const rule of this.selectedItems) {
+        this.deleteRule(rule)
+      }
+    },
+    getCapitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
+    },
     deleteRule (rule) {
       this.loading = true
       api('deletePortForwardingRule', { id: rule.id }).then(response => {
+        const jobId = response.deleteportforwardingruleresponse.jobid
+        eventBus.$emit('update-job-details', jobId, null)
         this.$pollJob({
-          jobId: response.deleteportforwardingruleresponse.jobid,
+          title: this.$t('label.portforwarding.rule'),
+          description: rule.id,
+          jobId: jobId,
           successMessage: this.$t('message.success.remove.port.forward'),
-          successMethod: () => this.fetchData(),
+          successMethod: () => {
+            if (this.selectedItems.length > 0) {
+              eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'success')
+            }
+            this.fetchData()
+          },
           errorMessage: this.$t('message.remove.port.forward.failed'),
-          errorMethod: () => this.fetchData(),
+          errorMethod: () => {
+            if (this.selectedItems.length > 0) {
+              eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'failed')
+            }
+            this.fetchData()
+          },
           loadingMessage: this.$t('message.delete.port.forward.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
-          catchMethod: () => this.fetchData()
+          catchMethod: () => this.fetchData(),
+          bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal
         })
       }).catch(error => {
         this.$notifyError(error)
@@ -448,6 +563,7 @@ export default {
       })
     },
     addRule () {
+      if (this.loading) return
       this.loading = true
       this.addVmModalVisible = false
       const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
@@ -461,13 +577,11 @@ export default {
           successMessage: this.$t('message.success.add.port.forward'),
           successMethod: () => {
             this.closeModal()
-            this.parentFetchData()
             this.fetchData()
           },
           errorMessage: this.$t('message.add.port.forward.failed'),
           errorMethod: () => {
             this.closeModal()
-            this.parentFetchData()
             this.fetchData()
           },
           loadingMessage: this.$t('message.add.port.forward.processing'),
@@ -493,8 +607,7 @@ export default {
       this.newRule.virtualmachineid = null
     },
     resetTagInputs () {
-      this.newTag.key = null
-      this.newTag.value = null
+      this.newTagsForm.resetFields()
     },
     closeModal () {
       this.selectedRule = null
@@ -503,6 +616,7 @@ export default {
       this.newRule.virtualmachineid = null
       this.addVmModalLoading = false
       this.addVmModalNicLoading = false
+      this.showConfirmationAction = false
       this.nics = []
       this.resetTagInputs()
     },
@@ -524,38 +638,44 @@ export default {
         this.closeModal()
       })
     },
-    handleAddTag () {
+    handleAddTag (e) {
+      if (this.tagsModalLoading) return
       this.tagsModalLoading = true
-      api('createTags', {
-        'tags[0].key': this.newTag.key,
-        'tags[0].value': this.newTag.value,
-        resourceIds: this.selectedRule,
-        resourceType: 'PortForwardingRule'
-      }).then(response => {
-        this.$pollJob({
-          jobId: response.createtagsresponse.jobid,
-          successMessage: this.$t('message.success.add.tag'),
-          successMethod: () => {
-            this.parentFetchData()
-            this.parentToggleLoading()
-            this.openTagsModal(this.selectedRule)
-          },
-          errorMessage: this.$t('message.add.tag.failed'),
-          errorMethod: () => {
-            this.parentFetchData()
-            this.parentToggleLoading()
-            this.closeModal()
-          },
-          loadingMessage: this.$t('message.add.tag.processing'),
-          catchMessage: this.$t('error.fetching.async.job.result'),
-          catchMethod: () => {
-            this.parentFetchData()
-            this.parentToggleLoading()
-            this.closeModal()
-          }
+
+      e.preventDefault()
+      this.newTagsForm.validateFields((err, values) => {
+        if (err) {
+          this.tagsModalLoading = false
+          return
+        }
+
+        api('createTags', {
+          'tags[0].key': values.key,
+          'tags[0].value': values.value,
+          resourceIds: this.selectedRule,
+          resourceType: 'PortForwardingRule'
+        }).then(response => {
+          this.$pollJob({
+            jobId: response.createtagsresponse.jobid,
+            successMessage: this.$t('message.success.add.tag'),
+            successMethod: () => {
+              this.parentToggleLoading()
+              this.openTagsModal(this.selectedRule)
+            },
+            errorMessage: this.$t('message.add.tag.failed'),
+            errorMethod: () => {
+              this.parentToggleLoading()
+              this.closeModal()
+            },
+            loadingMessage: this.$t('message.add.tag.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            catchMethod: () => {
+              this.parentFetchData()
+              this.parentToggleLoading()
+              this.closeModal()
+            }
+          })
         })
-      }).catch(error => {
-        this.$notifyError(error)
       })
     },
     handleDeleteTag (tag) {
@@ -570,13 +690,11 @@ export default {
           jobId: response.deletetagsresponse.jobid,
           successMessage: this.$t('message.success.delete.tag'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
           errorMessage: this.$t('message.delete.tag.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },
@@ -593,6 +711,7 @@ export default {
       })
     },
     openAddVMModal () {
+      if (this.addVmModalLoading) return
       this.addVmModalVisible = true
       this.fetchVirtualMachines()
     },

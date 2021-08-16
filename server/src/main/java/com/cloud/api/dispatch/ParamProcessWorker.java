@@ -159,6 +159,9 @@ public class ParamProcessWorker implements DispatchWorker {
                 }
                 continue;
             }
+            if (parameterAnnotation.required()){
+                validateNonEmptyString(paramObj, parameterAnnotation.name());
+            }
 
             // marshall the parameter into the correct type and set the field value
             try {
