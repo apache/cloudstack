@@ -3381,7 +3381,7 @@ public class VirtualMachineMO extends BaseMO {
         virtualHardwareVersion = getVirtualHardwareVersion();
 
         // Check if guest operating system supports cpu hotadd
-        if (guestOsDescriptor.isSupportsCpuHotAdd()) {
+        if (guestOsDescriptor != null && guestOsDescriptor.isSupportsCpuHotAdd()) {
             guestOsSupportsCpuHotAdd = true;
         }
 
