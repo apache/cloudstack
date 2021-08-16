@@ -21,10 +21,10 @@ import Vue from 'vue'
 
 const ShortKey = {}
 const mapFunctions = {}
-let objAvoided = []
 const elementAvoided = ['input', 'textarea']
-let keyPressed = false
 const definedCharKeys = []
+let objAvoided = []
+let keyPressed = false
 let charKeyPressed = false
 
 const parseValue = (value) => {

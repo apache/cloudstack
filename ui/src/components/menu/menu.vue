@@ -273,17 +273,18 @@ export default {
 }
 </script>
 <style scoped>
-.show-shortkey {
-  font-size: 10px;
-  background-color: rgba(0, 0, 0, 0.9);
-  padding: 2px 6px 2px 6px;
-  border-radius: 4px;
-  color: #e9e9e9;
-  margin: 5px;
-  text-shadow: 2px 2px 3px rgba(255,255,255,0.1);
-  box-shadow: 3px 2px 1px rgba(0, 0, 0, 0.5), -1px -1px 2px  rgba(0, 0, 0, 0.9);
-}
-.none {
-  display: none;
-}
+  .show-shortkey {
+    font-size: 10px;
+    background-color: rgba(0, 0, 0, 0.9);
+    padding: 2px 6px 2px 6px;
+    border-radius: 4px;
+    color: #e9e9e9;
+    margin: 5px;
+    border: solid .1em transparent;
+    text-shadow: 2px 2px 2px rgba(255,255,255,0.1);
+    box-shadow: -2px 2px 4px rgba(0, 0, 0, 0.8), -1px -1px 1px  rgba(0, 0, 0, 0.9);
+  }
+  .none {
+    display: none;
+  }
 </style>

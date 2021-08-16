@@ -49,7 +49,7 @@
         </a-select>
       </a-form-item>
       <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description"/>
+        <tooltip-label slot="label" :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description || 'Disk Offering'"/>
         <a-select
           v-decorator="['diskofferingid', {
             initialValue: selectedDiskOfferingId,

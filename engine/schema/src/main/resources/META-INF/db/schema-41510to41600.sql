@@ -422,6 +422,7 @@ SELECT
     `vm_instance`.`limit_cpu_use` AS `limit_cpu_use`,
     `vm_instance`.`created` AS `created`,
     `vm_instance`.`state` AS `state`,
+    `vm_instance`.`update_time` AS `update_time`,
     `vm_instance`.`removed` AS `removed`,
     `vm_instance`.`ha_enabled` AS `ha_enabled`,
     `vm_instance`.`hypervisor_type` AS `hypervisor_type`,
@@ -695,3 +696,64 @@ CREATE VIEW `cloud`.`host_view` AS
         `cloud`.`user` ON `user`.`uuid` = `last_annotation_view`.`user_uuid`
     GROUP BY
         `host`.`id`;
+
+-- PR#4699 Drop the procedure `ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` if it already exist.
+DROP PROCEDURE IF EXISTS `cloud`.`ADD_GUEST_OS_AND_HYPERVISOR_MAPPING`;
+
+-- PR#4699 Create the procedure `ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` to add guest_os and guest_os_hypervisor mapping.
+CREATE PROCEDURE `cloud`.`ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` (
+    IN guest_os_category_id bigint(20) unsigned,
+    IN guest_os_display_name VARCHAR(255),
+    IN guest_os_hypervisor_hypervisor_type VARCHAR(32),
+    IN guest_os_hypervisor_hypervisor_version VARCHAR(32),
+    IN guest_os_hypervisor_guest_os_name VARCHAR(255)
+)
+BEGIN	
+	INSERT  INTO cloud.guest_os (uuid, category_id, display_name, created) 
+	SELECT 	UUID(), guest_os_category_id, guest_os_display_name, now()
+	FROM    DUAL
+	WHERE 	not exists( SELECT  1 
+	                    FROM    cloud.guest_os
+	                    WHERE   cloud.guest_os.category_id = guest_os_category_id
+	                    AND     cloud.guest_os.display_name = guest_os_display_name)	
+						
+;	INSERT  INTO cloud.guest_os_hypervisor (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created) 
+	SELECT 	UUID(), guest_os_hypervisor_hypervisor_type, guest_os_hypervisor_hypervisor_version, guest_os_hypervisor_guest_os_name, guest_os.id, now()
+	FROM 	cloud.guest_os
+	WHERE 	guest_os.category_id = guest_os_category_id
+	AND 	guest_os.display_name = guest_os_display_name
+	AND	NOT EXISTS (SELECT  1 
+	                    FROM    cloud.guest_os_hypervisor as hypervisor
+	                    WHERE   hypervisor_type = guest_os_hypervisor_hypervisor_type			
+	                    AND     hypervisor_version = guest_os_hypervisor_hypervisor_version
+	                    AND     hypervisor.guest_os_id = guest_os.id
+	                    AND     hypervisor.guest_os_name = guest_os_hypervisor_guest_os_name)    
+;END;
+
+-- PR#4699 Call procedure `ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` to add new data to guest_os and guest_os_hypervisor.
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (10, 'Ubuntu 20.04 LTS', 'KVM', 'default', 'Ubuntu 20.04 LTS');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (10, 'Ubuntu 21.04', 'KVM', 'default', 'Ubuntu 21.04');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (9, 'pfSense 2.4', 'KVM', 'default', 'pfSense 2.4');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (9, 'OpenBSD 6.7', 'KVM', 'default', 'OpenBSD 6.7');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (9, 'OpenBSD 6.8', 'KVM', 'default', 'OpenBSD 6.8');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'AlmaLinux 8.3', 'KVM', 'default', 'AlmaLinux 8.3');
+
+-- Alter value column of *_details table to prevent NULL values
+UPDATE cloud.account_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.account_details MODIFY value varchar(255) NOT NULL;
+UPDATE cloud.cluster_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.cluster_details MODIFY value varchar(255) NOT NULL;
+UPDATE cloud.data_center_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.data_center_details MODIFY value varchar(1024) NOT NULL;
+UPDATE cloud.domain_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.domain_details MODIFY value varchar(255) NOT NULL;
+UPDATE cloud.image_store_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.image_store_details MODIFY value varchar(255) NOT NULL;
+UPDATE cloud.storage_pool_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.storage_pool_details MODIFY value varchar(255) NOT NULL;
+UPDATE cloud.template_deploy_as_is_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.template_deploy_as_is_details MODIFY value text NOT NULL;
+UPDATE cloud.user_vm_deploy_as_is_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.user_vm_deploy_as_is_details MODIFY value text NOT NULL;
+UPDATE cloud.user_vm_details SET value='' WHERE value IS NULL;
+ALTER TABLE cloud.user_vm_details MODIFY value varchar(5120) NOT NULL;
