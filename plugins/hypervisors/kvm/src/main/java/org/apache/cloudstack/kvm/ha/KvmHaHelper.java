@@ -31,6 +31,7 @@ import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -47,8 +48,8 @@ public class KvmHaHelper {
     protected ClusterDao clusterDao;
 
     private static final Logger LOGGER = Logger.getLogger(KvmHaHelper.class);
-    private static final double PROBLEMATIC_HOSTS_RATIO_ACCEPTED = 0.3;
     private static final int CAUTIOUS_MARGIN_OF_VMS_ON_HOST = 1;
+    private static final int MAXIMUM_IS_HOST_REACHABLE_RETRIES = 3;
 
     private static final Set<Status> PROBLEMATIC_HOST_STATUS = new HashSet<>(Arrays.asList(Status.Alert, Status.Disconnected, Status.Down, Status.Error));
 
@@ -112,11 +113,15 @@ public class KvmHaHelper {
      */
     protected boolean isHostAgentReachableByNeighbour(Host host) {
         List<HostVO> neighbors = resourceManager.listHostsInClusterByStatus(host.getClusterId(), Status.Up);
-        for (HostVO neighbor : neighbors) {
-            boolean isReachable = kvmHaAgentClient.isHostReachableByNeighbour(neighbor, host);
+        neighbors.remove(host);
+        Random random = new Random();
+
+        for (int i = 1; i < MAXIMUM_IS_HOST_REACHABLE_RETRIES; i++) {
+            Host neighbour = neighbors.get(random.nextInt(neighbors.size()));
+            boolean isReachable = kvmHaAgentClient.isHostReachableByNeighbour(neighbour, host);
             if (isReachable) {
                 String.format("%s is reachable by neighbour %s. If CloudStack is failing to reach the respective host then it is probably a network issue between the host "
-                        + "and CloudStack management server.", host, neighbor);
+                        + "and CloudStack management server.", host, neighbour);
                 return true;
             }
         }
