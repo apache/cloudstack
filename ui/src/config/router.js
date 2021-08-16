@@ -192,6 +192,7 @@ export function asyncRouterMap () {
         meta: {
           title: 'label.dashboard',
           icon: 'dashboard',
+          shortKey: ['shift', 'd'],
           tabs: [
             {
               name: 'dashboard',
