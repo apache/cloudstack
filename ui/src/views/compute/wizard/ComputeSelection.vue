@@ -298,8 +298,8 @@ export default {
         this.$emit('handler-error', true)
         return
       }
-      this.$emit('update-iops-value', 'minIOPs', this.minIOps)
-      this.$emit('update-iops-value', 'maxIOPs', this.maxIOps)
+      this.$emit('update-iops-value', 'minIops', this.minIOps)
+      this.$emit('update-iops-value', 'maxIops', this.maxIOps)
       this.$emit('handler-error', false)
     }
   }

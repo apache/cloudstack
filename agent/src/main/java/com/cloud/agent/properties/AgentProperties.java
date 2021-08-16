@@ -40,6 +40,13 @@ public class AgentProperties{
     public static final Property<Boolean> REBOOT_HOST_AND_ALERT_MANAGEMENT_ON_HEARTBEAT_TIMEOUT
         = new Property<Boolean>("reboot.host.and.alert.management.on.heartbeat.timeout", true);
 
+    /**
+     * Enable manually setting CPU's topology on KVM's VM. <br>
+     * Data type: boolean.<br>
+     * Default value: true.
+     */
+    public static final Property<Boolean> ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM = new Property<Boolean>("enable.manually.setting.cpu.topology.on.kvm.vm", true);
+
     public static class Property <T>{
         private final String name;
         private final T defaultValue;
