@@ -138,6 +138,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         userVmResponse.setDomainName(userVm.getDomainName());
 
         userVmResponse.setCreated(userVm.getCreated());
+        userVmResponse.setLastUpdated(userVm.getLastUpdated());
         userVmResponse.setDisplayVm(userVm.isDisplayVm());
 
         if (userVm.getState() != null) {
@@ -277,6 +278,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                     nicResponse.setType(userVm.getGuestType().toString());
                 }
                 nicResponse.setIsDefault(userVm.isDefaultNic());
+                nicResponse.setDeviceId(String.valueOf(userVm.getNicDeviceId()));
                 List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(userVm.getNicId());
                 if (secondaryIps != null) {
                     List<NicSecondaryIpResponse> ipList = new ArrayList<NicSecondaryIpResponse>();
@@ -437,6 +439,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             }
             /*17: default*/
             nicResponse.setIsDefault(uvo.isDefaultNic());
+            nicResponse.setDeviceId(String.valueOf(uvo.getNicDeviceId()));
             List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(uvo.getNicId());
             if (secondaryIps != null) {
                 List<NicSecondaryIpResponse> ipList = new ArrayList<NicSecondaryIpResponse>();

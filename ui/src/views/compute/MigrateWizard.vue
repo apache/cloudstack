@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form">
+  <div class="form" v-ctrl-enter="submitForm">
     <a-input-search
       :placeholder="$t('label.search')"
       v-model="searchQuery"
@@ -46,7 +46,9 @@
           v-else />
       </div>
       <div slot="memused" slot-scope="record">
-        {{ record.memoryused | byteToGigabyte }} GB
+        <span v-if="record.memoryused | byteToGigabyte">
+          {{ record.memoryused | byteToGigabyte }} GB
+        </span>
       </div>
       <div slot="memoryallocatedpercentage" slot-scope="record">
         {{ record.memoryallocatedpercentage }}
@@ -85,7 +87,7 @@
     </a-pagination>
 
     <div style="margin-top: 20px; display: flex; justify-content:flex-end;">
-      <a-button type="primary" :disabled="!selectedHost.id" @click="submitForm">
+      <a-button type="primary" ref="submit" :disabled="!selectedHost.id" @click="submitForm">
         {{ $t('label.ok') }}
       </a-button>
     </div>
@@ -169,6 +171,12 @@ export default {
         this.hosts.sort((a, b) => {
           return b.suitableformigration - a.suitableformigration
         })
+        for (const key in this.hosts) {
+          if (this.hosts[key].suitableformigration && !this.hosts[key].requiresstoragemigration) {
+            this.hosts.unshift({ id: -1, name: this.$t('label.migrate.auto.select'), suitableformigration: true, requiresstoragemigration: false })
+            break
+          }
+        }
         this.totalCount = response.findhostsformigrationresponse.count
       }).catch(error => {
         this.$message.error(`${this.$t('message.load.host.failed')}: ${error}`)
@@ -177,6 +185,7 @@ export default {
       })
     },
     submitForm () {
+      if (this.loading) return
       this.loading = true
       var isUserVm = true
       if (this.$route.meta.name !== 'vm') {
@@ -185,21 +194,14 @@ export default {
       var migrateApi = isUserVm
         ? this.selectedHost.requiresStorageMotion ? 'migrateVirtualMachineWithVolume' : 'migrateVirtualMachine'
         : 'migrateSystemVm'
-      api(migrateApi, {
-        hostid: this.selectedHost.id,
-        virtualmachineid: this.resource.id
-      }).then(response => {
-        var migrateResponse = isUserVm
-          ? this.selectedHost.requiresStorageMotion ? response.migratevirtualmachinewithvolumeresponse : response.migratevirtualmachineresponse
-          : response.migratesystemvmresponse
-        this.$store.dispatch('AddAsyncJob', {
-          title: `${this.$t('label.migrating')} ${this.resource.name}`,
-          jobid: migrateResponse.jobid,
-          description: this.resource.name,
-          status: 'progress'
-        })
+      var migrateParams = this.selectedHost.id === -1 ? { autoselect: true, virtualmachineid: this.resource.id }
+        : { hostid: this.selectedHost.id, virtualmachineid: this.resource.id }
+      api(migrateApi, migrateParams).then(response => {
+        const jobid = this.selectedHost.requiresStorageMotion ? response.migratevirtualmachinewithvolumeresponse.jobid : response.migratevirtualmachineresponse.jobid
         this.$pollJob({
-          jobId: migrateResponse.jobid,
+          jobId: jobid,
+          title: `${this.$t('label.migrating')} ${this.resource.name}`,
+          description: this.resource.name,
           successMessage: `${this.$t('message.success.migrating')} ${this.resource.name}`,
           successMethod: () => {
             this.$emit('close-action')

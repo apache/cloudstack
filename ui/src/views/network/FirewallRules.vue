@@ -18,7 +18,7 @@
 <template>
   <div>
     <div>
-      <div class="form">
+      <div class="form" v-ctrl-enter="addRule">
         <div class="form__item">
           <div class="form__label">{{ $t('label.sourcecidr') }}</div>
           <a-input autoFocus v-model="newRule.cidrlist"></a-input>
@@ -48,13 +48,20 @@
           <a-input v-model="newRule.icmpcode"></a-input>
         </div>
         <div class="form__item" style="margin-left: auto;">
-          <a-button :disabled="!('createFirewallRule' in $store.getters.apis)" type="primary" @click="addRule">{{ $t('label.add') }}</a-button>
+          <a-button :disabled="!('createFirewallRule' in $store.getters.apis)" type="primary" ref="submit" @click="addRule">{{ $t('label.add') }}</a-button>
         </div>
       </div>
     </div>
 
     <a-divider/>
-
+    <a-button
+      v-if="(('deleteFirewallRule' in $store.getters.apis) && this.selectedItems.length > 0)"
+      type="danger"
+      icon="delete"
+      style="width: 100%; margin-bottom: 15px"
+      @click="bulkActionConfirmation()">
+      {{ $t('label.action.bulk.delete.firewall.rules') }}
+    </a-button>
     <a-table
       size="small"
       style="overflow-y: auto"
@@ -62,9 +69,10 @@
       :columns="columns"
       :dataSource="firewallRules"
       :pagination="false"
+      :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
       <template slot="protocol" slot-scope="record">
-        {{ record.protocol | capitalise }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template slot="startport" slot-scope="record">
         {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : $t('label.all') }}
@@ -105,19 +113,35 @@
       :title="$t('label.edit.tags')"
       v-model="tagsModalVisible"
       :footer="null"
+      :closable="true"
       :afterClose="closeModal"
-      :maskClosable="false">
-      <div class="add-tags">
-        <div class="add-tags__input">
-          <p class="add-tags__label">{{ $t('label.key') }}</p>
-          <a-input autoFocus v-model="newTag.key"></a-input>
+      :maskClosable="false"
+      @cancel="tagsModalVisible = false"
+      v-ctrl-enter="handleAddTag">
+      <a-form :form="newTagsForm" @submit="handleAddTag">
+        <div class="add-tags">
+          <div class="add-tags__input">
+            <p class="add-tags__label">{{ $t('label.key') }}</p>
+            <a-form-item>
+              <a-input
+                autoFocus
+                v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
+            </a-form-item>
+          </div>
+          <div class="add-tags__input">
+            <p class="add-tags__label">{{ $t('label.value') }}</p>
+            <a-form-item>
+              <a-input v-decorator="['value', { rules: [{ required: true, message: this.$t('message.specifiy.tag.value')}] }]" />
+            </a-form-item>
+          </div>
+          <a-button
+            html-type="submit"
+            type="primary"
+            :disabled="!('createTags' in $store.getters.apis)"
+            @click="handleAddTag"
+            :loading="addTagLoading">{{ $t('label.add') }}</a-button>
         </div>
-        <div class="add-tags__input">
-          <p class="add-tags__label">{{ $t('label.value') }}</p>
-          <a-input v-model="newTag.value"></a-input>
-        </div>
-        <a-button type="primary" :disabled="!('createTags' in $store.getters.apis)" @click="() => handleAddTag()" :loading="addTagLoading">{{ $t('label.add') }}</a-button>
-      </div>
+      </a-form>
 
       <a-divider></a-divider>
 
@@ -132,16 +156,36 @@
       <a-button class="add-tags-done" @click="tagsModalVisible = false" type="primary">{{ $t('label.done') }}</a-button>
     </a-modal>
 
+    <bulk-action-view
+      v-if="showConfirmationAction || showGroupActionModal"
+      :showConfirmationAction="showConfirmationAction"
+      :showGroupActionModal="showGroupActionModal"
+      :items="firewallRules"
+      :selectedRowKeys="selectedRowKeys"
+      :selectedItems="selectedItems"
+      :columns="columns"
+      :selectedColumns="selectedColumns"
+      action="deleteFirewallRule"
+      :loading="loading"
+      :message="message"
+      @group-action="deleteRules"
+      @handle-cancel="handleCancel"
+      @close-modal="closeModal" />
   </div>
 </template>
 
 <script>
 import { api } from '@/api'
+import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import BulkActionView from '@/components/view/BulkActionView'
+import eventBus from '@/config/eventBus'
 
 export default {
   components: {
-    TooltipButton
+    Status,
+    TooltipButton,
+    BulkActionView
   },
   props: {
     resource: {
@@ -152,6 +196,16 @@ export default {
   inject: ['parentFetchData', 'parentToggleLoading'],
   data () {
     return {
+      selectedRowKeys: [],
+      showGroupActionModal: false,
+      selectedItems: [],
+      selectedColumns: [],
+      filterColumns: ['State', 'Action'],
+      showConfirmationAction: false,
+      message: {
+        title: this.$t('label.action.bulk.delete.firewall.rules'),
+        confirmMessage: this.$t('label.confirm.delete.firewall.rules')
+      },
       loading: true,
       addTagLoading: false,
       firewallRules: [],
@@ -167,10 +221,6 @@ export default {
       tagsModalVisible: false,
       selectedRule: null,
       tags: [],
-      newTag: {
-        key: null,
-        value: null
-      },
       totalCount: 0,
       page: 1,
       pageSize: 10,
@@ -199,17 +249,17 @@ export default {
           title: this.$t('label.action'),
           scopedSlots: { customRender: 'actions' }
         }
-      ]
+      ],
+      newTagsForm: this.$form.createForm(this)
+    }
+  },
+  computed: {
+    hasSelected () {
+      return this.selectedRowKeys.length > 0
     }
   },
   created () {
     this.fetchData()
-  },
-  filters: {
-    capitalise: val => {
-      if (val === 'all') return 'All'
-      return val.toUpperCase()
-    }
   },
   watch: {
     resource: function (newItem, oldItem) {
@@ -237,18 +287,84 @@ export default {
         this.loading = false
       })
     },
+    setSelection (selection) {
+      this.selectedRowKeys = selection
+      this.$emit('selection-change', this.selectedRowKeys)
+      this.selectedItems = (this.firewallRules.filter(function (item) {
+        return selection.indexOf(item.id) !== -1
+      }))
+    },
+    resetSelection () {
+      this.setSelection([])
+    },
+    onSelectChange (selectedRowKeys, selectedRows) {
+      this.setSelection(selectedRowKeys)
+    },
+    bulkActionConfirmation () {
+      this.showConfirmationAction = true
+      this.selectedColumns = this.columns.filter(column => {
+        return !this.filterColumns.includes(column.title)
+      })
+      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
+    },
+    handleCancel () {
+      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      this.showGroupActionModal = false
+      this.selectedItems = []
+      this.selectedColumns = []
+      this.selectedRowKeys = []
+      this.parentFetchData()
+    },
+    deleteRules (e) {
+      this.showConfirmationAction = false
+      this.selectedColumns.splice(0, 0, {
+        dataIndex: 'status',
+        title: this.$t('label.operation.status'),
+        scopedSlots: { customRender: 'status' },
+        filters: [
+          { text: 'In Progress', value: 'InProgress' },
+          { text: 'Success', value: 'success' },
+          { text: 'Failed', value: 'failed' }
+        ]
+      })
+      if (this.selectedRowKeys.length > 0) {
+        this.showGroupActionModal = true
+      }
+      for (const rule of this.selectedItems) {
+        this.deleteRule(rule)
+      }
+    },
+    getCapitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
+    },
     deleteRule (rule) {
       this.loading = true
       api('deleteFirewallRule', { id: rule.id }).then(response => {
+        const jobId = response.deletefirewallruleresponse.jobid
+        eventBus.$emit('update-job-details', jobId, null)
         this.$pollJob({
-          jobId: response.deletefirewallruleresponse.jobid,
+          title: this.$t('label.action.delete.firewall'),
+          description: rule.id,
+          jobId: jobId,
           successMessage: this.$t('message.success.remove.firewall.rule'),
-          successMethod: () => this.fetchData(),
+          successMethod: () => {
+            if (this.selectedItems.length > 0) {
+              eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'success')
+            }
+            this.fetchData()
+          },
           errorMessage: this.$t('message.remove.firewall.rule.failed'),
-          errorMethod: () => this.fetchData(),
+          errorMethod: () => {
+            if (this.selectedItems.length > 0) {
+              eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'failed')
+            }
+            this.fetchData()
+          },
           loadingMessage: this.$t('message.remove.firewall.rule.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
-          catchMethod: () => this.fetchData()
+          catchMethod: () => this.fetchData(),
+          bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal
         })
       }).catch(error => {
         this.$notifyError(error)
@@ -256,6 +372,7 @@ export default {
       })
     },
     addRule () {
+      if (this.loading) return
       this.loading = true
       api('createFirewallRule', { ...this.newRule }).then(response => {
         this.$pollJob({
@@ -300,10 +417,13 @@ export default {
       this.tagsModalVisible = false
       this.newTag.key = null
       this.newTag.value = null
+      this.showConfirmationAction = false
     },
     openTagsModal (id) {
       this.selectedRule = id
       this.tagsModalVisible = true
+      this.newTagsForm.resetFields()
+
       api('listTags', {
         resourceId: id,
         resourceType: 'FirewallRule',
@@ -315,40 +435,48 @@ export default {
         this.closeModal()
       })
     },
-    handleAddTag () {
+    handleAddTag (e) {
+      e.preventDefault()
+      if (this.addTagLoading) return
       this.addTagLoading = true
-      api('createTags', {
-        'tags[0].key': this.newTag.key,
-        'tags[0].value': this.newTag.value,
-        resourceIds: this.selectedRule,
-        resourceType: 'FirewallRule'
-      }).then(response => {
-        this.$pollJob({
-          jobId: response.createtagsresponse.jobid,
-          successMessage: this.$t('message.success.add.tag'),
-          successMethod: () => {
-            this.parentFetchData()
-            this.parentToggleLoading()
-            this.openTagsModal(this.selectedRule)
-          },
-          errorMessage: this.$t('message.add.tag.failed'),
-          errorMethod: () => {
-            this.parentFetchData()
-            this.parentToggleLoading()
-            this.closeModal()
-          },
-          loadingMessage: this.$t('message.add.tag.processing'),
-          catchMessage: this.$t('error.fetching.async.job.result'),
-          catchMethod: () => {
-            this.parentFetchData()
-            this.parentToggleLoading()
-            this.closeModal()
-          }
+
+      this.newTagsForm.validateFields((err, values) => {
+        if (err) {
+          this.tagsLoading = false
+          return
+        }
+
+        api('createTags', {
+          'tags[0].key': values.key,
+          'tags[0].value': values.value,
+          resourceIds: this.selectedRule,
+          resourceType: 'FirewallRule'
+        }).then(response => {
+          this.$pollJob({
+            jobId: response.createtagsresponse.jobid,
+            successMessage: this.$t('message.success.add.tag'),
+            successMethod: () => {
+              this.parentToggleLoading()
+              this.openTagsModal(this.selectedRule)
+            },
+            errorMessage: this.$t('message.add.tag.failed'),
+            errorMethod: () => {
+              this.parentToggleLoading()
+              this.closeModal()
+            },
+            loadingMessage: this.$t('message.add.tag.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            catchMethod: () => {
+              this.parentFetchData()
+              this.parentToggleLoading()
+              this.closeModal()
+            }
+          })
+        }).catch(error => {
+          this.$notifyError(error)
+        }).finally(() => {
+          this.addTagLoading = false
         })
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.addTagLoading = false
       })
     },
     handleDeleteTag (tag) {
@@ -362,13 +490,11 @@ export default {
           jobId: response.deletetagsresponse.jobid,
           successMessage: this.$t('message.success.delete.tag'),
           successMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.openTagsModal(this.selectedRule)
           },
           errorMessage: this.$t('message.delete.tag.failed'),
           errorMethod: () => {
-            this.parentFetchData()
             this.parentToggleLoading()
             this.closeModal()
           },

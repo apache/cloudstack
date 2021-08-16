@@ -29,6 +29,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.template.TemplateManager;
 
 @RunWith(MockitoJUnitRunner.class)
 public class XcpServerDiscovererTest {
@@ -42,13 +43,13 @@ public class XcpServerDiscovererTest {
 
     @Test
     public void createXenServerToolsIsoEntryInDatabaseTestNoEntryFound() {
-        Mockito.when(vmTemplateDao.findByTemplateName("xs-tools.iso")).thenReturn(null);
+        Mockito.when(vmTemplateDao.findByTemplateName(TemplateManager.XS_TOOLS_ISO)).thenReturn(null);
         Mockito.when(vmTemplateDao.getNextInSequence(Long.class, "id")).thenReturn(1L);
 
         xcpServerDiscoverer.createXenServerToolsIsoEntryInDatabase();
 
         InOrder inOrder = Mockito.inOrder(vmTemplateDao);
-        inOrder.verify(vmTemplateDao).findByTemplateName("xs-tools.iso");
+        inOrder.verify(vmTemplateDao).findByTemplateName(TemplateManager.XS_TOOLS_ISO);
         inOrder.verify(vmTemplateDao).getNextInSequence(Long.class, "id");
         inOrder.verify(vmTemplateDao).persist(Mockito.any(VMTemplateVO.class));
     }
@@ -56,13 +57,13 @@ public class XcpServerDiscovererTest {
     @Test
     public void createXenServerToolsIsoEntryInDatabaseTestEntryAlreadyExist() {
         VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
-        Mockito.when(vmTemplateDao.findByTemplateName("xs-tools.iso")).thenReturn(vmTemplateVOMock);
+        Mockito.when(vmTemplateDao.findByTemplateName(TemplateManager.XS_TOOLS_ISO)).thenReturn(vmTemplateVOMock);
         Mockito.when(vmTemplateVOMock.getId()).thenReturn(1L);
 
         xcpServerDiscoverer.createXenServerToolsIsoEntryInDatabase();
 
         InOrder inOrder = Mockito.inOrder(vmTemplateDao, vmTemplateVOMock);
-        inOrder.verify(vmTemplateDao).findByTemplateName("xs-tools.iso");
+        inOrder.verify(vmTemplateDao).findByTemplateName(TemplateManager.XS_TOOLS_ISO);
         inOrder.verify(vmTemplateDao, Mockito.times(0)).getNextInSequence(Long.class, "id");
         inOrder.verify(vmTemplateVOMock).setTemplateType(TemplateType.PERHOST);
         inOrder.verify(vmTemplateVOMock).setUrl(null);

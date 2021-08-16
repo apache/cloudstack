@@ -125,6 +125,10 @@ write-files:
           done <<< "$output"
           setup_complete=true
         fi
+        if [ -e "${BINARIES_DIR}/provider.yaml" ]; then
+          mkdir -p /opt/provider
+          cp "${BINARIES_DIR}/provider.yaml" /opt/provider/provider.yaml
+        fi
         umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"
         if [ "$EJECT_ISO_FROM_OS" = true ] && [ "$iso_drive_path" != "" ]; then
           eject "${iso_drive_path}"

@@ -144,54 +144,71 @@
       :visible="showAddNetworkModal"
       :title="$t('label.network.addvm')"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
+      :closable="true"
+      :footer="null"
       @cancel="closeModals"
-      @ok="submitAddNetwork">
+      v-ctrl-enter="submitAddNetwork">
       {{ $t('message.network.addvm.desc') }}
-      <div class="modal-form">
-        <p class="modal-form__label">{{ $t('label.network') }}:</p>
-        <a-select :defaultValue="addNetworkData.network" @change="e => addNetworkData.network = e" autoFocus>
-          <a-select-option
-            v-for="network in addNetworkData.allNetworks"
-            :key="network.id"
-            :value="network.id">
-            {{ network.name }}
-          </a-select-option>
-        </a-select>
-        <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
-        <a-input v-model="addNetworkData.ip"></a-input>
-      </div>
+      <a-form @submit="submitAddNetwork">
+        <div class="modal-form">
+          <p class="modal-form__label">{{ $t('label.network') }}:</p>
+          <a-select
+            :defaultValue="addNetworkData.network"
+            @change="e => addNetworkData.network = e"
+            autoFocus>
+            <a-select-option
+              v-for="network in addNetworkData.allNetworks"
+              :key="network.id"
+              :value="network.id">
+              {{ network.name }}
+            </a-select-option>
+          </a-select>
+          <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
+          <a-input v-model="addNetworkData.ip"></a-input>
+        </div>
+
+        <div :span="24" class="action-button">
+          <a-button @click="closeModals">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="submitAddNetwork">{{ $t('label.ok') }}</a-button>
+        </div>
+      </a-form>
     </a-modal>
 
     <a-modal
       :visible="showUpdateIpModal"
       :title="$t('label.change.ipaddress')"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
+      :closable="true"
+      :footer="null"
       @cancel="closeModals"
-      @ok="submitUpdateIP"
+      v-ctrl-enter="submitUpdateIP"
     >
       {{ $t('message.network.updateip') }}
 
-      <div class="modal-form">
-        <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
-        <a-select
-          showSearch
-          v-if="editNicResource.type==='Shared'"
-          v-model="editIpAddressValue"
-          :loading="listIps.loading"
-          :autoFocus="editNicResource.type==='Shared'">
-          <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
-            {{ ip.ipaddress }}
-          </a-select-option>
-        </a-select>
-        <a-input
-          v-else
-          v-model="editIpAddressValue"
-          :autoFocus="editNicResource.type!=='Shared'"></a-input>
-      </div>
+      <a-form @submit="submitUpdateIP">
+        <div class="modal-form">
+          <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
+          <a-select
+            showSearch
+            v-if="editNicResource.type==='Shared'"
+            v-model="editIpAddressValue"
+            :loading="listIps.loading"
+            :autoFocus="editNicResource.type==='Shared'">
+            <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
+              {{ ip.ipaddress }}
+            </a-select-option>
+          </a-select>
+          <a-input
+            v-else
+            v-model="editIpAddressValue"
+            :autoFocus="editNicResource.type!=='Shared'"></a-input>
+        </div>
+
+        <div :span="24" class="action-button">
+          <a-button @click="closeModals">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="submitUpdateIP">{{ $t('label.ok') }}</a-button>
+        </div>
+      </a-form>
     </a-modal>
 
     <a-modal
@@ -201,6 +218,8 @@
       :footer="null"
       :closable="false"
       class="wide-modal"
+      @cancel="closeModals"
+      v-ctrl-enter="submitSecondaryIP"
     >
       <p>
         {{ $t('message.network.secondaryip') }}
@@ -212,7 +231,8 @@
           showSearch
           v-if="editNicResource.type==='Shared'"
           v-model="newSecondaryIp"
-          :loading="listIps.loading">
+          :loading="listIps.loading"
+          :autoFocus="editNicResource.type==='Shared'">
           <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
             {{ ip.ipaddress }}
           </a-select-option>
@@ -220,11 +240,12 @@
         <a-input
           v-else
           :placeholder="$t('label.new.secondaryip.description')"
-          v-model="newSecondaryIp"></a-input>
+          v-model="newSecondaryIp"
+          :autoFocus="editNicResource.type!=='Shared'"></a-input>
       </div>
 
       <div style="margin-top: 10px; display: flex; justify-content:flex-end;">
-        <a-button @click="submitSecondaryIP" type="primary" style="margin-right: 10px;">{{ $t('label.add.secondary.ip') }}</a-button>
+        <a-button @click="submitSecondaryIP" ref="submit" type="primary" style="margin-right: 10px;">{{ $t('label.add.secondary.ip') }}</a-button>
         <a-button @click="closeModals">{{ $t('label.close') }}</a-button>
       </div>
 
@@ -462,6 +483,7 @@ export default {
       this.fetchSecondaryIPs(record.nic.id)
     },
     submitAddNetwork () {
+      if (this.loadingNic) return
       const params = {}
       params.virtualmachineid = this.vm.id
       params.networkid = this.addNetworkData.network
@@ -477,13 +499,11 @@ export default {
           successMethod: () => {
             this.loadingNic = false
             this.closeModals()
-            this.parentFetchData()
           },
           errorMessage: this.$t('message.add.network.failed'),
           errorMethod: () => {
             this.loadingNic = false
             this.closeModals()
-            this.parentFetchData()
           },
           loadingMessage: this.$t('message.add.network.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
@@ -509,12 +529,10 @@ export default {
           successMessage: `${this.$t('label.success.set')} ${item.networkname} ${this.$t('label.as.default')}. ${this.$t('message.set.default.nic.manual')}.`,
           successMethod: () => {
             this.loadingNic = false
-            this.parentFetchData()
           },
           errorMessage: `${this.$t('label.error.setting')} ${item.networkname} ${this.$t('label.as.default')}`,
           errorMethod: () => {
             this.loadingNic = false
-            this.parentFetchData()
           },
           loadingMessage: `${this.$t('label.setting')} ${item.networkname} ${this.$t('label.as.default')}...`,
           catchMessage: this.$t('error.fetching.async.job.result'),
@@ -529,6 +547,7 @@ export default {
       })
     },
     submitUpdateIP () {
+      if (this.loadingNic) return
       this.loadingNic = true
       this.showUpdateIpModal = false
       api('updateVmNicIp', {
@@ -541,13 +560,11 @@ export default {
           successMethod: () => {
             this.loadingNic = false
             this.closeModals()
-            this.parentFetchData()
           },
           errorMessage: this.$t('label.error'),
           errorMethod: () => {
             this.loadingNic = false
             this.closeModals()
-            this.parentFetchData()
           },
           loadingMessage: this.$t('message.update.ipaddress.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
@@ -575,12 +592,10 @@ export default {
           successMessage: this.$t('message.success.remove.nic'),
           successMethod: () => {
             this.loadingNic = false
-            this.parentFetchData()
           },
           errorMessage: this.$t('message.error.remove.nic'),
           errorMethod: () => {
             this.loadingNic = false
-            this.parentFetchData()
           },
           loadingMessage: this.$t('message.remove.nic.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
@@ -596,6 +611,7 @@ export default {
         })
     },
     submitSecondaryIP () {
+      if (this.loadingNic) return
       this.loadingNic = true
 
       const params = {}
@@ -611,13 +627,11 @@ export default {
           successMethod: () => {
             this.loadingNic = false
             this.fetchSecondaryIPs(this.selectedNicId)
-            this.parentFetchData()
           },
           errorMessage: this.$t('message.error.add.secondary.ipaddress'),
           errorMethod: () => {
             this.loadingNic = false
             this.fetchSecondaryIPs(this.selectedNicId)
-            this.parentFetchData()
           },
           loadingMessage: this.$t('message.add.secondary.ipaddress.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
@@ -646,13 +660,11 @@ export default {
             this.loadingNic = false
             this.fetchSecondaryIPs(this.selectedNicId)
             this.fetchPublicIps(this.editNetworkId)
-            this.parentFetchData()
           },
           errorMessage: this.$t('message.error.remove.secondary.ipaddress'),
           errorMethod: () => {
             this.loadingNic = false
             this.fetchSecondaryIPs(this.selectedNicId)
-            this.parentFetchData()
           },
           loadingMessage: this.$t('message.remove.secondary.ipaddress.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),

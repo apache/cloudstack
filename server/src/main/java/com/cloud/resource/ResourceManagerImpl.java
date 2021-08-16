@@ -50,11 +50,14 @@ import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
 import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
+
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -860,7 +863,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
         _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), host.getDataCenterId());
 
-        if (!isForced && host.getResourceState() != ResourceState.Maintenance) {
+        if (!canDeleteHost(host) && !isForced) {
             throw new CloudRuntimeException("Host " + host.getUuid() +
                     " cannot be deleted as it is not in maintenance mode. Either put the host into maintenance or perform a forced deletion.");
         }
@@ -971,6 +974,14 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         return true;
+    }
+
+    /**
+     * Returns true if host can be deleted.</br>
+     * A host can be deleted either if it is in Maintenance or "Degraded" state.
+     */
+    protected boolean canDeleteHost(HostVO host) {
+        return host.getResourceState() == ResourceState.Maintenance || host.getResourceState() == ResourceState.Degraded;
     }
 
     @Override
@@ -1446,6 +1457,89 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             return true;
         }
         return false;
+    }
+
+    /**
+     * Declares host as Degraded. This method is used in critical situations; e.g. if it is not possible to start host, not even via out-of-band.
+     */
+    @Override
+    public Host declareHostAsDegraded(final DeclareHostAsDegradedCmd cmd) throws NoTransitionException {
+        Long hostId = cmd.getId();
+        HostVO host = _hostDao.findById(hostId);
+
+        if (host == null || StringUtils.isBlank(host.getName())) {
+            throw new InvalidParameterValueException(String.format("Host [id:%s] does not exist.", hostId));
+        } else if (host.getRemoved() != null){
+            throw new InvalidParameterValueException(String.format("Host [id:%s, name:%s] does not exist or it has been removed.", hostId, host.getName()));
+        }
+
+        if (host.getResourceState() == ResourceState.Degraded) {
+            throw new NoTransitionException(String.format("Host [id:%s] was already marked as Degraded.", host.getId()));
+        }
+
+        if (host.getStatus() != Status.Alert && host.getStatus() != Status.Disconnected) {
+            throw new InvalidParameterValueException(
+                    String.format("Cannot perform declare host [id=%s, name=%s] as 'Degraded' when host is in %s status", host.getId(), host.getName(), host.getStatus()));
+        }
+
+        try {
+            resourceStateTransitTo(host, ResourceState.Event.DeclareHostDegraded, _nodeId);
+            host.setResourceState(ResourceState.Degraded);
+        } catch (NoTransitionException e) {
+            s_logger.error(String.format("Cannot transmit host [id:%s, name:%s, state:%s, status:%s] to %s state", host.getId(), host.getName(), host.getState(), host.getStatus(),
+                    ResourceState.Event.DeclareHostDegraded), e);
+            throw e;
+        }
+
+        scheduleVmsRestart(hostId);
+
+        return host;
+    }
+
+    /**
+     * This method assumes that the host is Degraded; therefore it schedule VMs to be re-started by the HA manager.
+     */
+    private void scheduleVmsRestart(Long hostId) {
+        List<VMInstanceVO> allVmsOnHost = _vmDao.listByHostId(hostId);
+        if (CollectionUtils.isEmpty(allVmsOnHost)) {
+            s_logger.debug(String.format("Host [id=%s] was marked as Degraded with no allocated VMs, no need to schedule VM restart", hostId));
+        }
+
+        s_logger.debug(String.format("Host [id=%s] was marked as Degraded with a total of %s allocated VMs. Triggering HA to start VMs that have HA enabled.", hostId, allVmsOnHost.size()));
+        for (VMInstanceVO vm : allVmsOnHost) {
+            State vmState = vm.getState();
+            if (vmState == State.Starting || vmState == State.Running || vmState == State.Stopping) {
+                _haMgr.scheduleRestart(vm, false);
+            }
+        }
+    }
+
+    /**
+     * Changes a host from 'Degraded' to 'Enabled' ResourceState.
+     */
+    @Override
+    public Host cancelHostAsDegraded(final CancelHostAsDegradedCmd cmd) throws NoTransitionException {
+        Long hostId = cmd.getId();
+        HostVO host = _hostDao.findById(hostId);
+
+        if (host == null || host.getRemoved() != null) {
+            throw new InvalidParameterValueException(String.format("Host [id=%s] does not exist", host.getId()));
+        }
+
+        if (host.getResourceState() != ResourceState.Degraded) {
+            throw new NoTransitionException(
+                    String.format("Cannot perform cancelHostAsDegraded on host [id=%s, name=%s] when host is in %s state", host.getId(), host.getName(), host.getResourceState()));
+        }
+
+        try {
+            resourceStateTransitTo(host, ResourceState.Event.EnableDegradedHost, _nodeId);
+            host.setResourceState(ResourceState.Enabled);
+        } catch (NoTransitionException e) {
+            throw new NoTransitionException(
+                    String.format("Cannot transmit host [id=%s, name=%s, state=%s, status=%s] to %s state", host.getId(), host.getName(), host.getResourceState(), host.getStatus(),
+                            ResourceState.Enabled));
+        }
+        return host;
     }
 
     /**

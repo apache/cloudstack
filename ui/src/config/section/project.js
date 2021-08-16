@@ -104,7 +104,10 @@ export default {
       dataView: true,
       show: (record, store) => {
         return ((['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) || record.isCurrentUserProjectAdmin) && record.state === 'Suspended'
-      }
+      },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     },
     {
       api: 'suspendProject',
@@ -116,7 +119,10 @@ export default {
       show: (record, store) => {
         return ((['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) ||
         record.isCurrentUserProjectAdmin) && record.state !== 'Suspended'
-      }
+      },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     },
     {
       api: 'addAccountToProject',
@@ -139,7 +145,10 @@ export default {
       dataView: true,
       show: (record, store) => {
         return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) || record.isCurrentUserProjectAdmin
-      }
+      },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     }
   ]
 }

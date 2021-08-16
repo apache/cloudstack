@@ -27,11 +27,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
-import com.vmware.vim25.ManagedObjectReference;
-
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -75,9 +72,11 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
+import com.vmware.vim25.ManagedObjectReference;
 
 public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(VmwareServerDiscoverer.class);
@@ -563,7 +562,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
     }
 
     private void createVmwareToolsIso() {
-        String isoName = "vmware-tools.iso";
+        String isoName = TemplateManager.VMWARE_TOOLS_ISO;
         VMTemplateVO tmplt = _tmpltDao.findByTemplateName(isoName);
         Long id;
         if (tmplt == null) {

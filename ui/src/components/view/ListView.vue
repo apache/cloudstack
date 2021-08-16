@@ -23,8 +23,7 @@
     :dataSource="items"
     :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
     :pagination="false"
-    :rowSelection="['vm', 'alert'].includes($route.name) || $route.name === 'event' && $store.getters.userInfo.roletype === 'Admin'
-      ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
+    :rowSelection=" enableGroupAction() || $route.name === 'event' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
     :rowClassName="getRowClassName"
     style="overflow-y: auto"
   >
@@ -135,8 +134,9 @@
       </span>
       <span v-else>{{ text }}</span>
     </span>
-    <template slot="state" slot-scope="text">
-      <status :text="text ? text : ''" displayText />
+    <template slot="state" slot-scope="text, record">
+      <status v-if="$route.path.startsWith('/host')" :text="getHostState(record)" displayText />
+      <status v-else :text="text ? text : ''" displayText />
     </template>
     <template slot="allocationstate" slot-scope="text">
       <status :text="text ? text : ''" displayText />
@@ -233,6 +233,9 @@
     <a slot="readonly" slot-scope="text, record">
       <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" displayText />
     </a>
+    <span slot="current" slot-scope="text, record">
+      <status :text="record.current ? record.current.toString() : 'false'" />
+    </span>
     <span slot="created" slot-scope="text">
       {{ $toLocaleDate(text) }}
     </span>
@@ -422,6 +425,13 @@ export default {
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering'].join('|'))
         .test(this.$route.path)
     },
+    enableGroupAction () {
+      return ['vm', 'alert', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot',
+        'vmsnapshot', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway',
+        'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
+        'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes'
+      ].includes(this.$route.name)
+    },
     fetchColumns () {
       if (this.isOrderUpdatable()) {
         return this.columns
@@ -575,6 +585,12 @@ export default {
       }
 
       return record.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ') || text
+    },
+    getHostState (host) {
+      if (host && host.hypervisor === 'KVM' && host.state === 'Up' && host.details && host.details.secured !== 'true') {
+        return 'Unsecure'
+      }
+      return host.state
     }
   }
 }
@@ -587,14 +603,6 @@ export default {
 
 /deep/ .ant-table-small > .ant-table-content > .ant-table-body {
   margin: 0;
-}
-
-/deep/ .light-row {
-  background-color: #fff;
-}
-
-/deep/ .dark-row {
-  background-color: #f9f9f9;
 }
 </style>
 
