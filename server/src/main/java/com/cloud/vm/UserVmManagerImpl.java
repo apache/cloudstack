@@ -867,12 +867,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (!cmd.getNames().isEmpty()) {
             s_list = _sshKeyPairDao.findByNames(owner.getAccountId(), owner.getDomainId(), cmd.getNames());
-            for (SSHKeyPairVO s : s_list) {
-                if (s == null) {
-                    throw new InvalidParameterValueException("Keypair given does not exist");
-                }
-            }
             keypairnames = String.join(", ", cmd.getNames());
+        }
+        else {
+            throw new InvalidParameterValueException("No keypair given as input");
         }
 
         if (s_list == null) {
@@ -3812,7 +3810,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String sshPublicKey = "";
         String keypairnames = "";
 
-        if (sshKeyPairs != null) {
+        if (!sshKeyPairs.isEmpty()) {
             keypairnames = String.join(", ", sshKeyPairs);
             List<SSHKeyPairVO> pairs = _sshKeyPairDao.findByNames(owner.getAccountId(), owner.getDomainId(), sshKeyPairs);
             for (SSHKeyPairVO pair : pairs) {

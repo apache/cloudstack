@@ -146,10 +146,9 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         final String clusterTokenKey = "{{ k8s_control_node.cluster.token }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
-        List<String> sshKeyPairs = new ArrayList<String>();
-        sshKeyPairs.add(kubernetesCluster.getKeyPair());
-        if (!sshKeyPairs.isEmpty() && !Strings.isNullOrEmpty(sshKeyPairs.get(0))) {
-            SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPairs.get(0));
+        String sshKeyPair = kubernetesCluster.getKeyPair();
+        if (!Strings.isNullOrEmpty(sshKeyPair)) {
+            SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
             if (sshkp != null) {
                 pubKey += "\n  - \"" + sshkp.getPublicKey() + "\"";
             }
