@@ -23,7 +23,7 @@
       ],
       "boot_wait": "5s",
       "disk_interface": "virtio",
-      "disk_size": "2500M",
+      "disk_size": "4000M",
       "format": "qcow2",
       "headless": true,
       "http_directory": "http",
