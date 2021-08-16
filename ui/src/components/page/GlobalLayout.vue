@@ -63,6 +63,17 @@
       </a-drawer>
     </template>
 
+    <template>
+      <drawer :visible="showSetting" placement="right">
+        <div slot="handler">
+          <a-button type="primary" size="large">
+            <a-icon :type="showSetting ? 'close' : 'setting'"/>
+          </a-button>
+        </div>
+        <setting slot="drawer" :visible="showSetting" />
+      </drawer>
+    </template>
+
     <a-layout :class="[layoutMode, `content-width-${contentWidth}`]" :style="{ paddingLeft: contentPaddingLeft, minHeight: '100vh' }">
       <!-- layout header -->
       <global-header
@@ -94,19 +105,24 @@ import GlobalFooter from '@/components/page/GlobalFooter'
 import { triggerWindowResizeEvent } from '@/utils/util'
 import { mapState, mapActions } from 'vuex'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
+import Drawer from '@/components/widgets/Drawer'
+import Setting from '@/components/view/Setting.vue'
 
 export default {
   name: 'GlobalLayout',
   components: {
     SideMenu,
     GlobalHeader,
-    GlobalFooter
+    GlobalFooter,
+    Drawer,
+    Setting
   },
   mixins: [mixin, mixinDevice],
   data () {
     return {
       collapsed: false,
-      menus: []
+      menus: [],
+      showSetting: false
     }
   },
   computed: {
@@ -129,6 +145,18 @@ export default {
     },
     mainMenu (newMenu) {
       this.menus = newMenu.find((item) => item.path === '/').children
+    },
+    '$store.getters.darkMode' (darkMode) {
+      if (darkMode) {
+        document.body.classList.add('dark-mode')
+      } else {
+        document.body.classList.remove('dark-mode')
+      }
+    }
+  },
+  provide: function () {
+    return {
+      parentToggleSetting: this.toggleSetting
     }
   },
   created () {
@@ -136,6 +164,9 @@ export default {
     this.collapsed = !this.sidebarOpened
   },
   mounted () {
+    if (this.$store.getters.darkMode) {
+      document.body.classList.add('dark-mode')
+    }
     const userAgent = navigator.userAgent
     if (userAgent.indexOf('Edge') > -1) {
       this.$nextTick(() => {
@@ -145,6 +176,9 @@ export default {
         }, 16)
       })
     }
+  },
+  beforeDestroy () {
+    document.body.classList.remove('dark')
   },
   methods: {
     ...mapActions(['setSidebar']),
@@ -166,6 +200,9 @@ export default {
       if (!this.isDesktop()) {
         this.collapsed = false
       }
+    },
+    toggleSetting (showSetting) {
+      this.showSetting = showSetting
     }
   }
 }

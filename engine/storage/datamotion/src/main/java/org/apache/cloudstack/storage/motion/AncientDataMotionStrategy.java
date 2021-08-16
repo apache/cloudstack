@@ -19,6 +19,7 @@
 package org.apache.cloudstack.storage.motion;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -44,6 +45,8 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.log4j.Logger;
@@ -85,6 +88,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     DataStoreManager dataStoreMgr;
     @Inject
     StorageCacheManager cacheMgr;
+    @Inject
+    VolumeDataStoreDao volumeDataStoreDao;
 
     @Inject
     StorageManager storageManager;
@@ -324,6 +329,15 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         }
     }
 
+    private void deleteVolumeOnSecondaryStore(DataObject objectInStore) {
+        ImageStoreEntity store = (ImageStoreEntity) objectInStore.getDataStore();
+        store.delete(objectInStore);
+        List<VolumeDataStoreVO> volumesOnStore =  volumeDataStoreDao.listByVolume(objectInStore.getId(), store.getId());
+        for (VolumeDataStoreVO volume : volumesOnStore) {
+            volumeDataStoreDao.remove(volume.getId());
+        }
+    }
+
     protected Answer copyVolumeBetweenPools(DataObject srcData, DataObject destData) {
         String value = configDao.getValue(Config.CopyVolumeWait.key());
         int _copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
@@ -359,10 +373,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
 
             DataObject objOnImageStore = imageStore.create(srcData);
-            objOnImageStore.processEvent(Event.CreateOnlyRequested);
-
             Answer answer = null;
             try {
+                objOnImageStore.processEvent(Event.CreateOnlyRequested);
                 answer = copyObject(srcData, objOnImageStore);
 
                 if (answer == null || !answer.getResult()) {
@@ -401,11 +414,12 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                     objOnImageStore.processEvent(Event.OperationFailed);
                     imageStore.delete(objOnImageStore);
                 }
+                s_logger.error("Failed to perform operation: "+ e.getLocalizedMessage());
                 throw e;
             }
 
             objOnImageStore.processEvent(Event.OperationSuccessed);
-            imageStore.delete(objOnImageStore);
+            deleteVolumeOnSecondaryStore(objOnImageStore);
             return answer;
         } else {
             DataObject cacheData = cacheMgr.createCacheObject(srcData, destScope);
