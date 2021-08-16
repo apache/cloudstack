@@ -36,8 +36,8 @@ function add_backports() {
   sed -i '/deb-src/d' /etc/apt/sources.list
   sed -i '/backports/d' /etc/apt/sources.list
   sed -i '/security/d' /etc/apt/sources.list
-  echo 'deb http://http.debian.net/debian buster-backports main' >> /etc/apt/sources.list
-  echo 'deb http://security.debian.org/debian-security buster/updates main' >> /etc/apt/sources.list
+  echo 'deb http://http.debian.net/debian bullseye-backports main' >> /etc/apt/sources.list
+  echo 'deb http://security.debian.org/debian-security bullseye/updates main' >> /etc/apt/sources.list
 }
 
 function apt_upgrade() {
@@ -56,8 +56,6 @@ function apt_upgrade() {
 
   apt-get -q -y upgrade
   apt-get -q -y dist-upgrade
-  apt-get -q -y upgrade -t buster-backports
-  apt-get -q -y dist-upgrade -t buster-backports
 
   apt-get -y autoremove --purge
   apt-get autoclean

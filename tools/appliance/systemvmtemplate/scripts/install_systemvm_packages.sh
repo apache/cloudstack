@@ -42,7 +42,7 @@ function install_packages() {
 
   debconf_packages
 
-  local apt_get="apt-get --no-install-recommends -q -y -t buster-backports"
+  local apt_get="apt-get --no-install-recommends -q -y"
 
   ${apt_get} install grub-legacy \
     rsyslog logrotate cron net-tools ifupdown tmux vim-tiny htop netbase iptables nftables \
