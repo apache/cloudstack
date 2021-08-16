@@ -165,9 +165,7 @@ export default {
         if (this.arrayHasItems(this.serviceOfferings)) {
           for (var i = 0; i < this.serviceOfferings.length; i++) {
             if (this.serviceOfferings[i].id === this.resource.serviceofferingid) {
-              this.form.setFieldsValue({
-                serviceofferingid: i
-              })
+              this.form.serviceofferingid = i
               break
             }
           }

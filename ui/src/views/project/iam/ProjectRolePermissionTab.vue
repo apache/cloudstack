@@ -51,7 +51,7 @@
             :tooltip="$t('label.save.new.rule')"
             icon="plus-outlined"
             type="primary"
-            @click="onRuleSave" />
+            @onClick="onRuleSave" />
         </div>
       </div>
 

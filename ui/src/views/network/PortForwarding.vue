@@ -99,7 +99,7 @@
       </template>
       <template #actions="{record}">
         <div class="actions">
-          <tooltip-button :tooltip="$t('label.tags')" icon="tag" buttonClass="rule-action" @click="() => openTagsModal(record.id)" />
+          <tooltip-button :tooltip="$t('label.tags')" icon="tag-outlined" buttonClass="rule-action" @onClick="() => openTagsModal(record.id)" />
           <tooltip-button
             :tooltip="$t('label.remove.rule')"
             type="primary"

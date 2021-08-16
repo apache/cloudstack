@@ -16,7 +16,8 @@
 // under the License.
 <template>
   <div>
-    <a-button type="dashed" icon="plus" style="width: 100%; margin-bottom: 15px" @click="openCreateModal">
+    <a-button type="dashed" style="width: 100%; margin-bottom: 15px" @click="openCreateModal">
+      <template #icon><plus-outlined /></template>
       {{ $t('label.create.project.role') }}
     </a-button>
     <a-row :gutter="12">

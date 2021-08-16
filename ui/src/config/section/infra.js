@@ -93,7 +93,7 @@ export default {
         },
         {
           api: 'deleteAlerts',
-          icon: 'DeleteOutlined',
+          icon: 'delete-outlined',
           label: 'label.delete.alerts',
           message: 'message.confirm.remove.selected.alerts',
           docHelp: 'adminguide/events.html#deleting-and-archiving-events-and-alerts',

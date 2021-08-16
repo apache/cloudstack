@@ -29,7 +29,7 @@
           <div>{{ route.cidr }}</div>
         </div>
         <div class="actions">
-          <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag" @click="() => openTagsModal(route)" />
+          <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag-outlined" @onClick="() => openTagsModal(route)" />
           <tooltip-button
             :tooltip="$t('label.delete')"
             :disabled="!('deleteStaticRoute' in $store.getters.apis)"
@@ -106,7 +106,6 @@ export default {
       componentLoading: false,
       selectedRule: null,
       tagsModalVisible: false,
-      newTagsForm: this.$form.createForm(this),
       tags: [],
       tagsLoading: false,
       newRoute: null

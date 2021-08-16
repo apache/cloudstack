@@ -202,7 +202,7 @@ export default {
       })
     },
     fetchData () {
-      this.form.resetFields()
+      this.formRef.value.resetFields()
       this.formLoading = true
       api('listDedicatedGuestVlanRanges', {
         physicalnetworkid: this.resource.id,
@@ -229,14 +229,10 @@ export default {
       }).then(response => {
         this.domains = response.listdomainsresponse.domain || []
         if (this.domains.length > 0) {
-          this.form.setFieldsValue({
-            domain: this.domains[0].id
-          })
-          this.fetchAccounts(this.form.getFieldValue('domain'))
+          this.form.domain = this.domains[0].id
+          this.fetchAccounts(this.form.domain)
         } else {
-          this.form.setFieldsValue({
-            domain: null
-          })
+          this.form.domain = null
         }
         this.formLoading = false
       }).catch(error => {
@@ -254,13 +250,9 @@ export default {
         this.accounts = response.listaccountsresponse.account
           ? response.listaccountsresponse.account : []
         if (this.accounts.length > 0) {
-          this.form.setFieldsValue({
-            account: this.accounts[0].name
-          })
+          this.form.account = this.accounts[0].name
         } else {
-          this.form.setFieldsValue({
-            account: null
-          })
+          this.form.account = null
         }
         this.formLoading = false
       }).catch(error => {

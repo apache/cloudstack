@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Vuex from 'vuex'
+import { createStore } from 'vuex'
 
 const mockStore = {
   state: {},
@@ -36,7 +36,7 @@ const mockStore = {
       actions = {}
     }
 
-    return new Vuex.Store({
+    return createStore({
       state: mockStore.state,
       getters: {
         apis: () => mockStore.state.user.apis,

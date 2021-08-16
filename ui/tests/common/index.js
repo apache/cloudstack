@@ -15,18 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import StoragePlugin from 'vue-web-storage'
+import { mount } from '@vue/test-utils'
+
 import mockI18n from '../mock/mockI18n'
 import mockStore from '../mock/mockStore'
 import mockRouter from '../mock/mockRouter'
 
-import localVue from '../setup'
-import { mount } from '@vue/test-utils'
-import { pollJobPlugin, notifierPlugin, configUtilPlugin, apiMetaUtilPlugin } from '@/utils/plugins'
-
-localVue.use(pollJobPlugin)
-localVue.use(notifierPlugin)
-localVue.use(configUtilPlugin)
-localVue.use(apiMetaUtilPlugin)
+import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin, apiMetaUtilPlugin } from '@/utils/plugins'
 
 function createMockRouter (newRoutes = []) {
   let routes = []
@@ -55,6 +51,7 @@ function decodeHtml (html) {
 }
 
 function createFactory (component, options) {
+  const plugins = []
   var {
     router = null,
     i18n = null,
@@ -64,17 +61,24 @@ function createFactory (component, options) {
     mocks = {}
   } = options
 
-  if (!router) router = createMockRouter()
-  if (!i18n) i18n = createMockI18n()
-  if (!store) store = createMockStore()
+  if (router) plugins.push(router)
+  if (i18n) plugins.push(i18n)
+  if (store) plugins.push(store)
 
   return mount(component, {
-    localVue,
-    router,
-    i18n,
-    store,
-    propsData: props,
-    mocks,
+    global: {
+      plugins: [
+        ...plugins,
+        pollJobPlugin,
+        notifierPlugin,
+        toLocaleDatePlugin,
+        configUtilPlugin,
+        apiMetaUtilPlugin,
+        StoragePlugin
+      ],
+      mocks
+    },
+    props,
     data () {
       return { ...data }
     }

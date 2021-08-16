@@ -28,7 +28,7 @@
     </template>
     <span @click="fetchNotice" class="header-notice">
       <a-badge count="12">
-        <BellOutlined style="font-size: 16px; padding: 4px" />
+        <bell-outlined style="font-size: 16px; padding: 4px" />
       </a-badge>
     </span>
   </a-popover>

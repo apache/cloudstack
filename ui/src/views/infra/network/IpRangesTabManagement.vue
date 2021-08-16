@@ -46,7 +46,7 @@
             icon="delete-outlined"
             type="primary"
             :danger="true"
-            @click="handleDeleteIpRange(record)" />
+            @onClick="handleDeleteIpRange(record)" />
         </div>
       </template>
     </a-table>

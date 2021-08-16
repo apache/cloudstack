@@ -20,10 +20,10 @@
     <div style="width: 100%; display: flex">
       <a-button
         type="dashed"
-        icon="plus"
         style="width: 100%; margin-right: 10px"
         :disabled="!('createNetworkACL' in $store.getters.apis)"
         @click="openAddRuleModal">
+        <template #icon><plus-outlined /></template>
         {{ $t('label.add') }} {{ $t('label.aclid') }}
       </a-button>
 

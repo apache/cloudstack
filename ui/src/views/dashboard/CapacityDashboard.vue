@@ -77,7 +77,7 @@
             </template>
             <a-button type="primary" danger shape="circle">
               <router-link :to="{ name: 'host', query: {'state': 'Alert'} }">
-                <DesktopOutlined class="capacity-dashboard-button-icon" />
+                <desktop-outlined class="capacity-dashboard-button-icon" />
               </router-link>
             </a-button>
           </a-tooltip>
@@ -87,7 +87,7 @@
             </template>
             <a-button shape="circle">
               <router-link :to="{ name: 'alert' }">
-                <FlagOutlined class="capacity-dashboard-button-icon" />
+                <flag-outlined class="capacity-dashboard-button-icon" />
               </router-link>
             </a-button>
           </a-tooltip>
@@ -97,7 +97,7 @@
             </template>
             <a-button shape="circle">
               <router-link :to="{ name: 'event' }">
-                <ScheduleOutlined class="capacity-dashboard-button-icon" />
+                <schedule-outlined class="capacity-dashboard-button-icon" />
               </router-link>
             </a-button>
           </a-tooltip>

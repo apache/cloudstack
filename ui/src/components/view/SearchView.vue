@@ -78,7 +78,7 @@
                           placeholder="="
                           disabled />
                         <a-input v-model:value="inputValue" @change="handleValueChange" style="width: 50px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-                        <tooltip-button :tooltip="$t('label.clear')" icon="close-outlined" size="small" @click="inputKey = inputValue = ''" />
+                        <tooltip-button :tooltip="$t('label.clear')" icon="close-outlined" size="small" @onClick="inputKey = inputValue = ''" />
                       </a-input-group>
                     </div>
                   </a-form-item>

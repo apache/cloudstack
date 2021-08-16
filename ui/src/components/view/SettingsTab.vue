@@ -50,7 +50,7 @@
             :tooltip="$t('label.edit')"
             :disabled="!('updateConfiguration' in $store.getters.apis)"
             v-if="editableValueKey !== index"
-            icon="EditOutlined"
+            icon="edit-outlined"
             @onClick="setEditableSetting(item, index)" />
           <tooltip-button
             :tooltip="$t('label.cancel')"

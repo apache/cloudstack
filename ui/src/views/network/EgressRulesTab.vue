@@ -53,7 +53,10 @@
           <a-input v-model:value="newRule.icmpcode"></a-input>
         </div>
         <div class="form__item">
-          <a-button :disabled="!('createEgressFirewallRule' in $store.getters.apis)" type="primary" icon="plus" @click="addRule">{{ $t('label.add') }}</a-button>
+          <a-button :disabled="!('createEgressFirewallRule' in $store.getters.apis)" type="primary" @click="addRule">
+            <template #icon><plus-outlined /></template>
+            {{ $t('label.add') }}
+          </a-button>
         </div>
       </div>
     </div>

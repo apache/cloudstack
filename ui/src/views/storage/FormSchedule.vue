@@ -382,14 +382,12 @@ export default {
       })
     },
     resetForm () {
-      this.form.setFieldsValue({
-        time: undefined,
-        timezone: undefined,
-        timeSelect: undefined,
-        maxsnaps: undefined,
-        'day-of-week': undefined,
-        'day-of-month': undefined
-      })
+      this.form.time = undefined
+      this.form.timezone = undefined
+      this.form.timeSelect = undefined
+      this.form.maxsnaps = undefined
+      this.form['day-of-week'] = undefined
+      this.form['day-of-month'] = undefined
       this.tags = []
     },
     closeAction () {

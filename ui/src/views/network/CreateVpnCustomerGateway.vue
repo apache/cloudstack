@@ -311,7 +311,7 @@ export default {
             }
           })
           this.closeModal()
-          this.form.resetFields()
+          this.formRef.value.resetFields()
         }).catch(error => {
           console.error(error)
           this.$message.error(this.$t('message.success.add.vpn.customer.gateway'))

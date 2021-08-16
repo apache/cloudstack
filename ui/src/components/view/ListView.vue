@@ -329,7 +329,7 @@
         :tooltip="$t('label.edit')"
         :disabled="!('updateConfiguration' in $store.getters.apis)"
         v-if="editableValueKey !== record.key"
-        icon="EditOutlined"
+        icon="edit-outlined"
         @onClick="editValue(record)" />
       <tooltip-button
         :tooltip="$t('label.cancel')"
@@ -350,7 +350,7 @@
         :tooltip="$t('label.edit')"
         v-if="editableValueKey !== record.key"
         :disabled="!('quotaTariffUpdate' in $store.getters.apis)"
-        icon="EditOutlined"
+        icon="edit-outlined"
         @onClick="editTariffValue(record)" />
       <slot></slot>
     </template>

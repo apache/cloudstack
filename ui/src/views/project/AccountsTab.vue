@@ -40,7 +40,7 @@
                 :tooltip="record.userid ? $t('label.make.user.project.owner') : $t('label.make.project.owner')"
                 v-if="record.role !== owner"
                 type="default"
-                icon="arrow-up"
+                icon="arrow-up-outlined"
                 size="small"
                 @onClick="promoteAccount(record)" />
               <tooltip-button
@@ -48,7 +48,7 @@
                 :tooltip="record.userid ? $t('label.demote.project.owner.user') : $t('label.demote.project.owner')"
                 v-if="updateProjectApi.params.filter(x => x.name === 'swapowner').length > 0 && record.role === owner"
                 type="default"
-                icon="arrow-down"
+                icon="arrow-down-outlined"
                 size="small"
                 @onClick="demoteAccount(record)" />
               <tooltip-button

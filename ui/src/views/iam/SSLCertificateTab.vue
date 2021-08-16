@@ -33,7 +33,7 @@
               tooltipPlacement="top"
               :tooltip="$t('label.quickview')"
               type="primary"
-              icon="eye"
+              icon="eye-outlined"
               size="small"
               @onClick="onQuickView(record.id)" />
             <tooltip-button

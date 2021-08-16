@@ -74,7 +74,7 @@
       </template>
       <template #actions="{ record }">
         <div class="actions">
-          <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag-outlined" buttonClass="rule-action" @click="() => openTagsModal(record.id)" />
+          <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag-outlined" buttonClass="rule-action" @onClick="() => openTagsModal(record.id)" />
           <tooltip-button
             :tooltip="$t('label.delete')"
             type="primary"

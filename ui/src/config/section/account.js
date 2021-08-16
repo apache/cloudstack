@@ -20,7 +20,7 @@ import { shallowRef, defineAsyncComponent } from 'vue'
 export default {
   name: 'account',
   title: 'label.accounts',
-  icon: 'TeamOutlined',
+  icon: 'team-outlined',
   docHelp: 'adminguide/accounts.html',
   permission: ['listAccounts'],
   columns: ['name', 'state', 'rolename', 'roletype', 'domainpath'],
@@ -39,7 +39,7 @@ export default {
   actions: [
     {
       api: 'createAccount',
-      icon: 'PlusOutlined',
+      icon: 'plus-outlined',
       label: 'label.add.account',
       listView: true,
       popup: true,
@@ -47,7 +47,7 @@ export default {
     },
     {
       api: 'ldapCreateAccount',
-      icon: 'UserAddOutlined',
+      icon: 'user-add-outlined',
       label: 'label.add.ldap.account',
       docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
       listView: true,
@@ -59,7 +59,7 @@ export default {
     },
     {
       api: 'updateAccount',
-      icon: 'EditOutlined',
+      icon: 'edit-outlined',
       label: 'label.action.edit.account',
       dataView: true,
       args: ['newname', 'account', 'domainid', 'networkdomain'],
@@ -74,7 +74,7 @@ export default {
     },
     {
       api: 'updateResourceCount',
-      icon: 'SyncOutlined',
+      icon: 'sync-outlined',
       label: 'label.action.update.resource.count',
       message: 'message.update.resource.count',
       dataView: true,
@@ -91,7 +91,7 @@ export default {
     },
     {
       api: 'enableAccount',
-      icon: 'PlayCircleOutlined',
+      icon: 'play-circle-outlined',
       label: 'label.action.enable.account',
       message: 'message.enable.account',
       dataView: true,
@@ -104,7 +104,7 @@ export default {
     },
     {
       api: 'disableAccount',
-      icon: 'PauseCircleOutlined',
+      icon: 'pause-circle-outlined',
       label: 'label.action.disable.account',
       message: 'message.disable.account',
       dataView: true,
@@ -157,7 +157,7 @@ export default {
     },
     {
       api: 'deleteAccount',
-      icon: 'DeleteOutlined',
+      icon: 'delete-outlined',
       label: 'label.action.delete.account',
       message: 'message.delete.account',
       dataView: true,

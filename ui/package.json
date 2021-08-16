@@ -68,10 +68,12 @@
     "@vue/cli-plugin-babel": "~4.5.0",
     "@vue/cli-plugin-eslint": "~4.5.0",
     "@vue/cli-plugin-router": "~4.5.0",
+    "@vue/cli-plugin-unit-jest": "~4.5.0",
     "@vue/cli-plugin-vuex": "~4.5.0",
     "@vue/cli-service": "~4.5.0",
     "@vue/compiler-sfc": "^3.0.0",
     "@vue/eslint-config-standard": "^5.1.2",
+    "@vue/test-utils": "^2.0.0-0",
     "babel-eslint": "^10.1.0",
     "babel-plugin-import": "^1.13.3",
     "eslint": "^6.7.2",
@@ -82,10 +84,11 @@
     "eslint-plugin-vue": "^7.0.0",
     "less": "^3.0.4",
     "less-loader": "^5.0.0",
-    "node-sass": "^6.0.0",
+    "node-sass": "^4.0.0",
     "sass": "^1.35.1",
     "sass-loader": "^8.0.2",
     "uglifyjs-webpack-plugin": "^2.2.0",
+    "vue-jest": "^5.0.0-0",
     "vue-svg-loader": "^0.17.0-beta.2",
     "webpack": "^4.46.0"
   },
@@ -148,7 +151,18 @@
           "ignoreReadBeforeAssign": false
         }
       ]
-    }
+    },
+    "overrides": [
+      {
+        "files": [
+          "**/__tests__/*.{j,t}s?(x)",
+          "**/tests/unit/**/*.spec.{j,t}s?(x)"
+        ],
+        "env": {
+          "jest": true
+        }
+      }
+    ]
   },
   "postcss": {
     "plugins": {

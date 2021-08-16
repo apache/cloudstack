@@ -128,7 +128,7 @@
         <div class="resource-detail-item" v-if="('cpunumber' in resource && 'cpuspeed' in resource) || resource.cputotal">
           <div class="resource-detail-item__label">{{ $t('label.cpu') }}</div>
           <div class="resource-detail-item__details">
-            <AppstoreOutlined />
+            <appstore-outlined />
             <span v-if="resource.cputotal">{{ resource.cputotal }}</span>
             <span v-else>{{ resource.cpunumber }} CPU x {{ parseFloat(resource.cpuspeed / 1000.0).toFixed(2) }} Ghz</span>
           </div>
@@ -156,7 +156,7 @@
         <div class="resource-detail-item" v-if="'memory' in resource">
           <div class="resource-detail-item__label">{{ $t('label.memory') }}</div>
           <div class="resource-detail-item__details">
-            <BulbOutlined />{{ resource.memory + ' ' + $t('label.mb.memory') }}
+            <bulb-outlined />{{ resource.memory + ' ' + $t('label.mb.memory') }}
           </div>
           <div>
             <span v-if="resource.memorykbs && resource.memoryintfreekbs">
@@ -173,7 +173,7 @@
         <div class="resource-detail-item" v-else-if="resource.memorytotalgb">
           <div class="resource-detail-item__label">{{ $t('label.memory') }}</div>
           <div class="resource-detail-item__details">
-            <BulbOutlined />{{ resource.memorytotalgb + ' ' + $t('label.memory') }}
+            <bulb-outlined />{{ resource.memorytotalgb + ' ' + $t('label.memory') }}
           </div>
           <div>
             <span v-if="resource.memoryusedgb">
@@ -201,7 +201,7 @@
 
             <div style="display: flex; flex-direction: column; width: 100%;">
               <div>
-                <BulbOutlined />{{ resource.memorytotal + ' ' + $t('label.memory') }}
+                <bulb-outlined />{{ resource.memorytotal + ' ' + $t('label.memory') }}
               </div>
               <div>
                 <span
@@ -229,7 +229,7 @@
         <div class="resource-detail-item" v-if="resource.volumes || resource.sizegb">
           <div class="resource-detail-item__label">{{ $t('label.disksize') }}</div>
           <div class="resource-detail-item__details">
-            <HddOutlined />
+            <hdd-outlined />
             <span style="width: 100%;" v-if="$route.meta.name === 'vm' && resource.volumes">{{ (resource.volumes.reduce((total, item) => total += item.size, 0) / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage</span>
             <span style="width: 100%;" v-else-if="resource.sizegb || resource.size">{{ resource.sizegb || (resource.size/1024.0) }}</span>
           </div>
@@ -243,7 +243,7 @@
         <div class="resource-detail-item" v-else-if="resource.disksizetotalgb">
           <div class="resource-detail-item__label">{{ $t('label.disksize') }}</div>
           <div class="resource-detail-item__details">
-            <DatabaseOutlined />{{ resource.disksizetotalgb }}
+            <database-outlined />{{ resource.disksizetotalgb }}
           </div>
           <div>
             <span v-if="resource.disksizeusedgb">
@@ -267,7 +267,7 @@
         <div class="resource-detail-item" v-if="resource.nic || ('networkkbsread' in resource && 'networkkbswrite' in resource)">
           <div class="resource-detail-item__label">{{ $t('label.network') }}</div>
           <div class="resource-detail-item__details resource-detail-item__details--start">
-            <WifiOutlined />
+            <wifi-outlined />
             <div>
               <div v-if="'networkkbsread' in resource && 'networkkbswrite' in resource">
                 <a-tag><ArrowDownOutlined />RX {{ toSize(resource.networkkbsread) }}</a-tag>
@@ -279,7 +279,7 @@
                 :key="eth.id"
                 style="margin-left: -24px; margin-top: 5px;">
                 <span v-if="resource.nic">
-                  <ApiOutlined />eth{{ index }} {{ eth.ipaddress }}
+                  <api-outlined />eth{{ index }} {{ eth.ipaddress }}
                   <router-link v-if="eth.networkname && eth.networkid" :to="{ path: '/guestnetwork/' + eth.networkid }">({{ eth.networkname }})</router-link>
                 </span>
               </div>
@@ -302,7 +302,7 @@
         <div class="resource-detail-item" v-if="resource.ipaddress">
           <div class="resource-detail-item__label">{{ $t('label.ip') }}</div>
           <div class="resource-detail-item__details">
-            <EnvironmentOutlined
+            <environment-outlined
               @click="$message.success(`${$t('label.copied.clipboard')} : ${ ipaddress }`)"
               v-clipboard:copy="ipaddress" />
             <router-link v-if="resource.ipaddressid" :to="{ path: '/publicip/' + resource.ipaddressid }">{{ ipaddress }}</router-link>
@@ -312,7 +312,7 @@
         <div class="resource-detail-item" v-if="ipV6Address && ipV6Address !== null">
           <div class="resource-detail-item__label">{{ $t('label.ip6address') }}</div>
           <div class="resource-detail-item__details">
-            <EnvironmentOutlined
+            <environment-outlined
               @click="$message.success(`${$t('label.copied.clipboard')} : ${ ipV6Address }`)"
               v-clipboard:copy="ipV6Address" />
             {{ ipV6Address }}
@@ -321,7 +321,7 @@
         <div class="resource-detail-item" v-if="resource.projectid || resource.projectname">
           <div class="resource-detail-item__label">{{ $t('label.project') }}</div>
           <div class="resource-detail-item__details">
-            <ProjectOutlined />
+            <project-outlined />
             <router-link v-if="resource.projectid" :to="{ path: '/project/' + resource.projectid }">{{ resource.project || resource.projectname || resource.projectid }}</router-link>
             <router-link v-else :to="{ path: '/project', query: { name: resource.projectname }}">{{ resource.projectname }}</router-link>
           </div>
@@ -335,21 +335,21 @@
         <div class="resource-detail-item" v-if="resource.groupid">
           <div class="resource-detail-item__label">{{ $t('label.group') }}</div>
           <div class="resource-detail-item__details">
-            <GoldOutlined />
+            <gold-outlined />
             <router-link :to="{ path: '/vmgroup/' + resource.groupid }">{{ resource.group || resource.groupid }}</router-link>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.keypair">
           <div class="resource-detail-item__label">{{ $t('label.keypair') }}</div>
           <div class="resource-detail-item__details">
-            <KeyOutlined />
+            <key-outlined />
             <router-link :to="{ path: '/ssh/' + resource.keypair }">{{ resource.keypair }}</router-link>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.virtualmachineid">
           <div class="resource-detail-item__label">{{ $t('label.vmname') }}</div>
           <div class="resource-detail-item__details">
-            <DesktopOutlined />
+            <desktop-outlined />
             <router-link :to="{ path: '/vm/' + resource.virtualmachineid }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
             <status class="status status--end" :text="resource.vmstate" v-if="resource.vmstate"/>
           </div>
@@ -357,7 +357,7 @@
         <div class="resource-detail-item" v-if="resource.volumeid">
           <div class="resource-detail-item__label">{{ $t('label.volume') }}</div>
           <div class="resource-detail-item__details">
-            <HddOutlined />
+            <hdd-outlined />
             <router-link :to="{ path: '/volume/' + resource.volumeid }">{{ resource.volumename || resource.volume || resource.volumeid }} </router-link>
           </div>
         </div>
@@ -371,21 +371,21 @@
         <div class="resource-detail-item" v-if="resource.sourceipaddressnetworkid">
           <div class="resource-detail-item__label">{{ $t('label.network') }}</div>
           <div class="resource-detail-item__details">
-            <WifiOutlined />
+            <wifi-outlined />
             <router-link :to="{ path: '/guestnetwork/' + resource.sourceipaddressnetworkid }">{{ resource.sourceipaddressnetworkname || resource.sourceipaddressnetworkid }} </router-link>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.guestnetworkid">
           <div class="resource-detail-item__label">{{ $t('label.guestnetwork') }}</div>
           <div class="resource-detail-item__details">
-            <GatewayOutlined />
+            <gateway-outlined />
             <router-link :to="{ path: '/guestnetwork/' + resource.guestnetworkid }">{{ resource.guestnetworkname || resource.guestnetworkid }} </router-link>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.vpcid">
           <div class="resource-detail-item__label">{{ $t('label.vpcname') }}</div>
           <div class="resource-detail-item__details">
-            <DeploymentUnitOutlined />
+            <deployment-unit-outlined />
             <router-link :to="{ path: '/vpc/' + resource.vpcid }">{{ resource.vpcname || resource.vpcid }}</router-link>
           </div>
         </div>
@@ -465,7 +465,7 @@
         <div class="resource-detail-item" v-if="resource.hostid">
           <div class="resource-detail-item__label">{{ $t('label.hostname') }}</div>
           <div class="resource-detail-item__details">
-            <DesktopOutlined />
+            <desktop-outlined />
             <router-link v-if="$router.resolve('/host/' + resource.hostid).name !== '404'" :to="{ path: '/host/' + resource.hostid }">{{ resource.hostname || resource.hostid }} </router-link>
             <span v-else>{{ resource.hostname || resource.hostid }}</span>
           </div>
@@ -481,7 +481,7 @@
         <div class="resource-detail-item" v-if="resource.podid">
           <div class="resource-detail-item__label">{{ $t('label.podid') }}</div>
           <div class="resource-detail-item__details">
-            <AppstoreOutlined />
+            <appstore-outlined />
             <router-link v-if="$router.resolve('/pod/' + resource.podid).name !== '404'" :to="{ path: '/pod/' + resource.podid }">{{ resource.podname || resource.pod || resource.podid }}</router-link>
             <span v-else>{{ resource.podname || resource.pod || resource.podid }}</span>
           </div>
@@ -489,7 +489,7 @@
         <div class="resource-detail-item" v-if="resource.zoneid">
           <div class="resource-detail-item__label">{{ $t('label.zone') }}</div>
           <div class="resource-detail-item__details">
-            <GlobalOutlined />
+            <global-outlined />
             <router-link v-if="$router.resolve('/zone/' + resource.zoneid).name !== '404'" :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
             <span v-else>{{ resource.zone || resource.zonename || resource.zoneid }}</span>
           </div>
@@ -497,7 +497,7 @@
         <div class="resource-detail-item" v-if="resource.owner">
           <div class="resource-detail-item__label">{{ $t('label.owners') }}</div>
           <div class="resource-detail-item__details">
-            <UserOutlined />
+            <user-outlined />
             <template v-for="(item, idx) in resource.owner" :key="idx">
               <span style="margin-right:5px">
                 <span v-if="$store.getters.userInfo.roletype !== 'User'">
@@ -512,7 +512,7 @@
         <div class="resource-detail-item" v-if="resource.account && !resource.account.startsWith('PrjAcct-')">
           <div class="resource-detail-item__label">{{ $t('label.account') }}</div>
           <div class="resource-detail-item__details">
-            <UserOutlined />
+            <user-outlined />
             <router-link v-if="$store.getters.userInfo.roletype !== 'User'" :to="{ path: '/account', query: { name: resource.account, domainid: resource.domainid } }">{{ resource.account }}</router-link>
             <span v-else>{{ resource.account }}</span>
           </div>
@@ -528,7 +528,7 @@
         <div class="resource-detail-item" v-if="resource.domainid">
           <div class="resource-detail-item__label">{{ $t('label.domain') }}</div>
           <div class="resource-detail-item__details">
-            <BlockOutlined />
+            <block-outlined />
             <router-link v-if="$store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + resource.domainid }">{{ resource.domain || resource.domainid }}</router-link>
             <span v-else>{{ resource.domain || resource.domainid }}</span>
           </div>
@@ -536,7 +536,7 @@
         <div class="resource-detail-item" v-if="resource.managementserverid">
           <div class="resource-detail-item__label">{{ $t('label.management.servers') }}</div>
           <div class="resource-detail-item__details">
-            <RocketOutlined />
+            <rocket-outlined />
             <router-link v-if="$router.resolve('/managementserver/' + resource.managementserverid).name !== '404'" :to="{ path: '/managementserver/' + resource.managementserverid }">{{ resource.managementserver || resource.managementserverid }}</router-link>
             <span v-else>{{ resource.managementserver || resource.managementserverid }}</span>
           </div>
@@ -544,7 +544,7 @@
         <div class="resource-detail-item" v-if="resource.created">
           <div class="resource-detail-item__label">{{ $t('label.created') }}</div>
           <div class="resource-detail-item__details">
-            <CalendarOutlined />{{ $toLocaleDate(resource.created) }}
+            <calendar-outlined />{{ $toLocaleDate(resource.created) }}
           </div>
         </div>
       </div>
@@ -568,7 +568,7 @@
       <div class="account-center-tags" v-if="showKeys">
         <a-divider/>
         <div class="user-keys">
-          <KeyOutlined />
+          <key-outlined />
           <strong>
             {{ $t('label.apikey') }}
             <tooltip-button
@@ -585,7 +585,7 @@
           </div>
         </div> <br/>
         <div class="user-keys">
-          <LockOutlined />
+          <lock-outlined />
           <strong>
             {{ $t('label.secretkey') }}
             <tooltip-button
@@ -628,8 +628,8 @@
                   placeholder="="
                   disabled />
                 <a-input :value="inputValue" @change="handleValueChange" style="width: 30%; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-                <tooltip-button :tooltip="$t('label.ok')" icon="CheckOutlined" size="small" @click="handleInputConfirm" />
-                <tooltip-button :tooltip="$t('label.cancel')" icon="CloseOutlined" size="small" @click="inputVisible=false" />
+                <tooltip-button :tooltip="$t('label.ok')" icon="CheckOutlined" size="small" @onClick="handleInputConfirm" />
+                <tooltip-button :tooltip="$t('label.cancel')" icon="CloseOutlined" size="small" @onClick="inputVisible=false" />
               </a-input-group>
             </div>
             <a-tag
@@ -678,7 +678,7 @@
           <a-comment v-if="'addAnnotation' in $store.getters.apis">
             <template #avatar>
             <a-avatar @click="showNotesInput = true">
-              <template #icon><EditOutlined /></template>
+              <template #icon><edit-outlined /></template>
             </a-avatar>
             </template>
             <template #content>

@@ -29,6 +29,7 @@
           icon="plus"
           :disabled="!('updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner())"
           @click="onShowAddDetail">
+          <template #icon><plus-outlined /></template>
           {{ $t('label.add.setting') }}
         </a-button>
       </div>
@@ -88,7 +89,7 @@
             <tooltip-button :tooltip="$t('label.ok')" @onClick="updateDetail(index)" v-if="item.edit" iconType="check-circle-two-tone" iconTwoToneColor="#52c41a" />
             <tooltip-button
               :tooltip="$t('label.edit')"
-              icon="edit"
+              icon="edit-outlined"
               :disabled="deployasistemplate === true"
               v-if="!item.edit"
               @onClick="showEditDetail(index)" />

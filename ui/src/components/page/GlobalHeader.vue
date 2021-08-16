@@ -19,12 +19,12 @@
   <a-layout-header v-if="!headerBarFixed" :class="[fixedHeader && 'ant-header-fixedHeader', sidebarOpened ? 'ant-header-side-opened' : 'ant-header-side-closed', theme ]" :style="{ padding: '0' }">
     <div v-if="mode === 'sidemenu'" class="header">
       <template v-if="device==='mobile'">
-        <MenuFoldOutlined class="trigger" v-if="collapsed" @click="toggle" />
-        <MenuUnfoldOutlined class="trigger" v-else @click="toggle" />
+        <menu-fold-outlined class="trigger" v-if="collapsed" @click="toggle" />
+        <menu-unfold-outlined class="trigger" v-else @click="toggle" />
       </template>
       <template v-else>
-        <MenuUnfoldOutlined class="trigger" v-if="collapsed" @click="toggle" />
-        <MenuFoldOutlined class="trigger" v-else @click="toggle" />
+        <menu-unfold-outlined class="trigger" v-if="collapsed" @click="toggle" />
+        <menu-fold-outlined class="trigger" v-else @click="toggle" />
       </template>
       <project-menu v-if="device !== 'mobile'" />
       <saml-domain-switcher style="margin-left: 20px" />
@@ -41,8 +41,8 @@
             :theme="theme"
           ></s-menu>
           <div v-else>
-            <MenuFoldOutlined class="trigger" v-if="collapsed" @click="toggle" />
-            <MenuUnfoldOutlined class="trigger" v-else @click="toggle" />
+            <menu-fold-outlined class="trigger" v-if="collapsed" @click="toggle" />
+            <menu-unfold-outlined class="trigger" v-else @click="toggle" />
           </div>
         </div>
         <project-menu v-if="device !== 'mobile'" />

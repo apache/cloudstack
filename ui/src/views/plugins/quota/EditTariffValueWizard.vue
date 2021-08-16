@@ -39,13 +39,13 @@
       <a-form-item name="value" ref="value" :label="$t('label.quota.value')">
         <a-input
           autoFocus
-          v-decorator="form.value"></a-input>
+          v-model:value="form.value"></a-input>
       </a-form-item>
       <a-form-item name="startdate" ref="startdate" :label="$t('label.quota.tariff.effectivedate')">
         <a-date-picker
           :disabledDate="disabledDate"
           style="width: 100%"
-          v-decorator="form.startdate"></a-date-picker>
+          v-model:value="form.startdate"></a-date-picker>
       </a-form-item>
     </a-form>
   </a-modal>

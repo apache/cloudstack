@@ -139,9 +139,7 @@ export default {
       }).finally(() => {
         this.kubernetesVersionLoading = false
         if (this.arrayHasItems(this.kubernetesVersions)) {
-          this.form.setFieldsValue({
-            kubernetesversionid: 0
-          })
+          this.form.kubernetesversionid = 0
         }
       })
     },

@@ -217,7 +217,6 @@ export default {
     },
     handleTabClick (key) {
       this.customActiveKey = key
-      // this.form.resetFields()
     },
     handleSubmit () {
       this.formRef.value.validate().then(() => {

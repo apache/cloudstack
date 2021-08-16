@@ -26,7 +26,7 @@
             v-model:value="searchQuery"
             @search="onSearch"
           >
-            <template #prefix><SearchOutlined /></template>
+            <template #prefix><search-outlined /></template>
           </a-input-search>
           <a-spin :spinning="loadingSearch">
             <a-tree
@@ -42,8 +42,8 @@
               @select="onSelect"
               @expand="onExpand"
               :expandedKeys="arrExpand">
-              <template #parent><FolderOutlined /></template>
-              <template #leaf><BlockOutlined /></template>
+              <template #parent><folder-outlined /></template>
+              <template #leaf><block-outlined /></template>
             </a-tree>
           </a-spin>
         </a-card>

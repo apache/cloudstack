@@ -62,7 +62,7 @@ export default {
   actions: [
     {
       api: 'createDomain',
-      icon: 'PlusOutlined',
+      icon: 'plus-outlined',
       label: 'label.add.domain',
       listView: true,
       dataView: false,
@@ -75,7 +75,7 @@ export default {
     },
     {
       api: 'updateDomain',
-      icon: 'EditOutlined',
+      icon: 'edit-outlined',
       label: 'label.action.edit.domain',
       listView: true,
       dataView: true,
@@ -93,7 +93,7 @@ export default {
     },
     {
       api: 'updateResourceCount',
-      icon: 'SyncOutlined',
+      icon: 'sync-outlined',
       label: 'label.action.update.resource.count',
       message: 'message.update.resource.count.domain',
       listView: true,
@@ -127,7 +127,7 @@ export default {
     },
     {
       api: 'deleteDomain',
-      icon: 'DeleteOutlined',
+      icon: 'delete-outlined',
       label: 'label.action.delete.domain',
       listView: true,
       dataView: true,

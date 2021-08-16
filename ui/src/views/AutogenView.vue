@@ -877,34 +877,33 @@ export default {
         }
       })
     },
-    handleSubmit () {
+    handleSubmit (e) {
       if (!this.dataView && this.currentAction.groupAction && this.selectedRowKeys.length > 0) {
-        this.form.validateFields((err, values) => {
-          if (!err) {
-            this.actionLoading = true
-            const itemsNameMap = {}
-            this.items.map(x => {
-              itemsNameMap[x.id] = x.name || x.displaytext || x.id
-            })
-            const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values)
-            for (const params of paramsList) {
-              var resourceName = itemsNameMap[params.id]
-              // Using a method for this since it's an async call and don't want wrong prarms to be passed
-              this.promises.push(this.callGroupApi(params, resourceName))
-            }
-            this.$message.info({
-              content: this.$t(this.currentAction.label),
-              key: this.currentAction.label,
-              duration: 3
-            })
-            Promise.all(this.promises).finally(() => {
-              this.actionLoading = false
-              this.fetchData()
-            })
+        this.formRef.value.validate().then(() => {
+          const values = toRaw(this.form)
+          this.actionLoading = true
+          const itemsNameMap = {}
+          this.items.map(x => {
+            itemsNameMap[x.id] = x.name || x.displaytext || x.id
+          })
+          const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values)
+          for (const params of paramsList) {
+            var resourceName = itemsNameMap[params.id]
+            // Using a method for this since it's an async call and don't want wrong prarms to be passed
+            this.promises.push(this.callGroupApi(params, resourceName))
           }
+          this.$message.info({
+            content: this.$t(this.currentAction.label),
+            key: this.currentAction.label,
+            duration: 3
+          })
+          Promise.all(this.promises).finally(() => {
+            this.actionLoading = false
+            this.fetchData()
+          })
         })
       } else {
-        this.execSubmit()
+        this.execSubmit(e)
       }
     },
     callGroupApi (params, resourceName) {
@@ -955,7 +954,8 @@ export default {
         return resolve(false)
       })
     },
-    execSubmit () {
+    execSubmit (e) {
+      e.preventDefault()
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         const params = {}
@@ -1027,7 +1027,7 @@ export default {
         api(...args).then(json => {
           this.handleResponse(json, resourceName, action).then(jobId => {
             hasJobId = jobId
-            if ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView) {
+            if ((['delete-outlined', 'DeleteOutlined'].includes(action.icon) || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView) {
               this.$router.go(-1)
             } else {
               if (!hasJobId) {
@@ -1074,8 +1074,8 @@ export default {
         }
       }
       query.filter = filter
-      query.page = 1
-      query.pagesize = this.pageSize
+      query.page = '1'
+      query.pagesize = this.pageSize.toString()
       this.$router.push({ query })
     },
     onSearch (opts) {
@@ -1109,8 +1109,8 @@ export default {
           Object.assign(query, opts)
         }
       }
-      query.page = 1
-      query.pagesize = this.pageSize
+      query.page = '1'
+      query.pagesize = this.pageSize.toString()
       if (JSON.stringify(query) === JSON.stringify(this.$route.query)) {
         this.fetchData(query)
         return
@@ -1156,35 +1156,41 @@ export default {
       const value = e.target.value
       this.confirmDirty = this.confirmDirty || !!value
     },
-    validateTwoPassword (rule, value, callback) {
+    async validateTwoPassword (rule, value) {
       if (!value || value.length === 0) {
-        callback()
+        return Promise.resolve()
       } else if (rule.field === 'confirmpassword') {
-        const form = this.form
         const messageConfirm = this.$t('message.validate.equalto')
-        const passwordVal = form.getFieldValue('password')
+        const passwordVal = this.form.password
         if (passwordVal && passwordVal !== value) {
-          callback(messageConfirm)
+          return Promise.reject(messageConfirm)
         } else {
-          callback()
+          return Promise.resolve()
         }
       } else if (rule.field === 'password') {
-        const form = this.form
-        const confirmPasswordVal = form.getFieldValue('confirmpassword')
+        const confirmPasswordVal = this.form.confirmpassword
         if (!confirmPasswordVal || confirmPasswordVal.length === 0) {
-          callback()
+          return Promise.resolve()
         } else if (value && this.confirmDirty) {
-          form.validateFields(['confirmpassword'], { force: true })
-          callback()
+          this.formRef.value.validateFields('confirmpassword')
+          return Promise.resolve()
         } else {
-          callback()
+          return Promise.resolve()
         }
       } else {
-        callback()
+        return Promise.resolve()
       }
     },
     setRules (field) {
       let rule = {}
+
+      if (!field || Object.keys(field).length === 0) {
+        return
+      }
+
+      if (!this.rules[field.name]) {
+        this.rules[field.name] = []
+      }
 
       switch (true) {
         case (field.type === 'boolean'):
@@ -1192,7 +1198,7 @@ export default {
           rule.message = this.$t('message.error.required.input')
           this.rules[field.name].push(rule)
           break
-        case (this.currentAction.mapping && field.name in this.currentAction.mapping && this.currentAction.mapping[field.name].options):
+        case (this.currentAction.mapping && field.name in this.currentAction.mapping && 'options' in this.currentAction.mapping[field.name]):
           rule.required = field.required
           rule.message = this.$t('message.error.select')
           this.rules[field.name].push(rule)

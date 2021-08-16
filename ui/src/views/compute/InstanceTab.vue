@@ -86,14 +86,14 @@
               :tooltip="$t('label.change.ip.addess')"
               icon="swap-outlined"
               :disabled="!('updateVmNicIp' in $store.getters.apis)"
-              @click="onChangeIPAddress(record)" />
+              @onClick="onChangeIPAddress(record)" />
             <tooltip-button
               v-if="record.nic.type !== 'L2'"
               tooltipPlacement="bottom"
               :tooltip="$t('label.edit.secondary.ips')"
               icon="environment-outlined"
               :disabled="(!('addIpToNic' in $store.getters.apis) && !('addIpToNic' in $store.getters.apis))"
-              @click="onAcquireSecondaryIPAddress(record)" />
+              @onClick="onAcquireSecondaryIPAddress(record)" />
             <a-popconfirm
               :title="$t('message.network.removenic')"
               @confirm="removeNIC(record.nic)"
