@@ -37,7 +37,8 @@ do
         case "$OPTION" in
                 p)USE_PODMAN=1;;
                 d)USE_DOCKER=1;;
-                *)echo "Please choose between -p for podman or -d for docker.";;
+                *)echo "Please choose between -p for podman or -d for docker."
+                  exit;;
         esac
 done
 if [[ $USE_PODMAN -eq 1 ]]; then
