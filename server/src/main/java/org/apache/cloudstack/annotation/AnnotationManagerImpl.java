@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -34,6 +35,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
@@ -188,6 +190,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         UserVO userVO = getCallingUserFromContext();
         String userUuid = userVO.getUuid();
         checkAnnotationPermissions(uuid, type, userVO);
+        isEntityOwnedByTheUser(type.name(), uuid, userVO);
 
         AnnotationVO annotation = new AnnotationVO(text, type, uuid, adminsOnly);
         annotation.setUserUuid(userUuid);
@@ -203,7 +206,6 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
             throw new CloudRuntimeException(String.format("User: %s is not allowed to add annotations on type: %s",
                     user.getUsername(), type.name()));
         }
-        ensureEntityIsOwnedByTheUser(type.name(), entityUuid, user);
     }
 
     @Override
@@ -280,74 +282,105 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     }
 
     private Pair<List<AnnotationVO>, Integer> getAnnotationsForApiCmd(ListAnnotationsCmd cmd) {
-        List<AnnotationVO> annotations = new ArrayList<>();
+        List<AnnotationVO> annotations;
         String userUuid = cmd.getUserUuid();
         String entityUuid = cmd.getEntityUuid();
         String entityType = cmd.getEntityType();
         String annotationFilter = isNotBlank(cmd.getAnnotationFilter()) ? cmd.getAnnotationFilter() : "all";
         boolean isCallerAdmin = isCallingUserAdmin();
-        if (org.apache.commons.lang3.StringUtils.isAllEmpty(entityUuid, entityType) &&
-                !isCallerAdmin && annotationFilter.equalsIgnoreCase("all")) {
-            throw new CloudRuntimeException("Only admins can filter all the annotations");
-        }
         UserVO callingUser = getCallingUserFromContext();
         String callingUserUuid = callingUser.getUuid();
         String keyword = cmd.getKeyword();
 
         if (cmd.getUuid() != null) {
-            String uuid = cmd.getUuid();
-            if(LOGGER.isDebugEnabled()) {
-                LOGGER.debug("getting single annotation by uuid: " + uuid);
-            }
-
-            AnnotationVO annotationVO = annotationDao.findByUuid(uuid);
-            if (annotationVO != null && annotationVO.getUserUuid().equals(userUuid) &&
-                    (annotationFilter.equalsIgnoreCase("all") ||
-                    (annotationFilter.equalsIgnoreCase("self") && annotationVO.getUserUuid().equals(callingUserUuid))) &&
-                annotationVO.isAdminsOnly() == isCallerAdmin) {
-                annotations.add(annotationVO);
-            }
+            annotations = getSingleAnnotationListByUuid(cmd.getUuid(), userUuid, annotationFilter, callingUserUuid, isCallerAdmin);
         } else if (isNotBlank(entityType)) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("getting annotations for type: " + entityType);
-            }
-            if (isNotBlank(entityUuid)) {
-                annotations = getAnnotationsByEntityIdAndType(entityType, entityUuid, userUuid, isCallerAdmin,
-                        annotationFilter, callingUserUuid, keyword, callingUser);
-            } else {
-                if (!isCallerAdmin) {
-                    throw new CloudRuntimeException("Only admins can filter all the annotations of a certain entity type");
-                }
-                annotations = annotationDao.listByEntityType(entityType, userUuid, true,
-                        annotationFilter, callingUserUuid, keyword);
-            }
+            annotations = getAnnotationsForSpecificEntityType(entityType, entityUuid, userUuid, isCallerAdmin,
+                    annotationFilter, callingUserUuid, keyword, callingUser);
         } else if (isNotBlank(entityUuid)) {
-            AnnotationVO annotation = annotationDao.findOneByEntityId(entityUuid);
-            if (annotation != null) {
-                String type = annotation.getEntityType().name();
-                annotations = getAnnotationsByEntityIdAndType(type, entityUuid, userUuid, isCallerAdmin,
-                        annotationFilter, callingUserUuid, keyword, callingUser);
-            }
+            annotations = getAnnotationsForSpecificEntityId(entityUuid, userUuid, isCallerAdmin,
+                    annotationFilter, callingUserUuid, keyword, callingUser);
         } else {
-            if(LOGGER.isDebugEnabled()) {
-                LOGGER.debug("getting all annotations");
-            }
-            if ("self".equalsIgnoreCase(annotationFilter) && isBlank(userUuid)) {
-                userUuid = callingUserUuid;
-            }
-            annotations = annotationDao.listAllAnnotations(userUuid, isCallerAdmin, annotationFilter, keyword);
+            annotations = getAllAnnotations(annotationFilter, userUuid, callingUserUuid, isCallerAdmin, keyword);
         }
         List<AnnotationVO> paginated = StringUtils.applyPagination(annotations, cmd.getStartIndex(), cmd.getPageSizeVal());
         return (paginated != null) ? new Pair<>(paginated, annotations.size()) :
                 new Pair<>(annotations, annotations.size());
     }
 
+    private List<AnnotationVO> getAllAnnotations(String annotationFilter, String userUuid, String callingUserUuid,
+                                                 boolean isCallerAdmin, String keyword) {
+        if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug("getting all annotations");
+        }
+        if ("self".equalsIgnoreCase(annotationFilter) && isBlank(userUuid)) {
+            userUuid = callingUserUuid;
+        }
+        List<AnnotationVO> annotations = annotationDao.listAllAnnotations(userUuid, isCallerAdmin, annotationFilter, keyword);
+        if (!isCallerAdmin) {
+            annotations = filterUserOwnedAnnotations(annotations);
+        }
+        return annotations;
+    }
+
+    private List<AnnotationVO> filterUserOwnedAnnotations(List<AnnotationVO> annotations) {
+        UserVO userVO = getCallingUserFromContext();
+        return annotations.stream()
+                .filter(x -> isEntityOwnedByTheUser(x.getEntityType().name(), x.getEntityUuid(), userVO))
+                .collect(Collectors.toList());
+    }
+
+    private List<AnnotationVO> getAnnotationsForSpecificEntityId(String entityUuid, String userUuid, boolean isCallerAdmin,
+                                                                 String annotationFilter, String callingUserUuid,
+                                                                 String keyword, UserVO callingUser) {
+        AnnotationVO annotation = annotationDao.findOneByEntityId(entityUuid);
+        if (annotation != null) {
+            String type = annotation.getEntityType().name();
+            return getAnnotationsByEntityIdAndType(type, entityUuid, userUuid, isCallerAdmin,
+                    annotationFilter, callingUserUuid, keyword, callingUser);
+        }
+        return new ArrayList<>();
+    }
+
+    private List<AnnotationVO> getAnnotationsForSpecificEntityType(String entityType, String entityUuid, String userUuid,
+                                                                   boolean isCallerAdmin, String annotationFilter,
+                                                                   String callingUserUuid, String keyword, UserVO callingUser) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("getting annotations for type: " + entityType);
+        }
+        if (isNotBlank(entityUuid)) {
+            return getAnnotationsByEntityIdAndType(entityType, entityUuid, userUuid, isCallerAdmin,
+                    annotationFilter, callingUserUuid, keyword, callingUser);
+        } else {
+            if (!isCallerAdmin) {
+                throw new CloudRuntimeException("Only admins can filter all the annotations of a certain entity type");
+            }
+            return annotationDao.listByEntityType(entityType, userUuid, true,
+                    annotationFilter, callingUserUuid, keyword);
+        }
+    }
+
+    private List<AnnotationVO> getSingleAnnotationListByUuid(String uuid, String userUuid, String annotationFilter,
+                                                             String callingUserUuid, boolean isCallerAdmin) {
+        List<AnnotationVO> annotations = new ArrayList<>();
+        if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug("getting single annotation by uuid: " + uuid);
+        }
+
+        AnnotationVO annotationVO = annotationDao.findByUuid(uuid);
+        if (annotationVO != null && annotationVO.getUserUuid().equals(userUuid) &&
+                (annotationFilter.equalsIgnoreCase("all") ||
+                        (annotationFilter.equalsIgnoreCase("self") && annotationVO.getUserUuid().equals(callingUserUuid))) &&
+                annotationVO.isAdminsOnly() == isCallerAdmin) {
+            annotations.add(annotationVO);
+        }
+        return annotations;
+    }
+
     private List<AnnotationVO> getAnnotationsByEntityIdAndType(String entityType, String entityUuid, String userUuid,
                                                                boolean isCallerAdmin, String annotationFilter,
                                                                String callingUserUuid, String keyword, UserVO callingUser) {
-        if (!isCallerAdmin) {
-            ensureEntityIsOwnedByTheUser(entityType, entityUuid, callingUser);
-        }
+        isEntityOwnedByTheUser(entityType, entityUuid, callingUser);
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("getting annotations for entity: " + entityUuid);
         }
@@ -355,27 +388,34 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
                 annotationFilter, callingUserUuid, keyword);
     }
 
-    private void ensureEntityIsOwnedByTheUser(String entityType, String entityUuid, UserVO callingUser) {
+    private boolean isEntityOwnedByTheUser(String entityType, String entityUuid, UserVO callingUser) {
         try {
-            EntityType type = EntityType.valueOf(entityType);
-            ControlledEntity entity = getEntityFromUuidAndType(entityUuid, type);
-            if (entity == null) {
-                String errMsg = String.format("Could not find an entity with type: %s and ID: %s", entityType, entityUuid);
-                LOGGER.error(errMsg);
-                throw new CloudRuntimeException(errMsg);
-            }
-            if (type == EntityType.NETWORK && entity instanceof NetworkVO &&
-                    ((NetworkVO) entity).getAclType() == ControlledEntity.ACLType.Domain) {
-                NetworkVO network = (NetworkVO) entity;
-                DomainVO domain = domainDao.findById(network.getDomainId());
-                AccountVO account = accountDao.findById(callingUser.getAccountId());
-                accountService.checkAccess(account, domain);
-            } else {
-                accountService.checkAccess(callingUser, entity);
+            if (!isCallingUserAdmin()) {
+                EntityType type = EntityType.valueOf(entityType);
+                ControlledEntity entity = getEntityFromUuidAndType(entityUuid, type);
+                if (entity == null) {
+                    String errMsg = String.format("Could not find an entity with type: %s and ID: %s", entityType, entityUuid);
+                    LOGGER.error(errMsg);
+                    throw new CloudRuntimeException(errMsg);
+                }
+                if (type == EntityType.NETWORK && entity instanceof NetworkVO &&
+                        ((NetworkVO) entity).getAclType() == ControlledEntity.ACLType.Domain) {
+                    NetworkVO network = (NetworkVO) entity;
+                    DomainVO domain = domainDao.findById(network.getDomainId());
+                    AccountVO account = accountDao.findById(callingUser.getAccountId());
+                    accountService.checkAccess(account, domain);
+                } else {
+                    accountService.checkAccess(callingUser, entity);
+                }
             }
         } catch (IllegalArgumentException e) {
             LOGGER.error("Could not parse entity type " + entityType, e);
+            return false;
+        } catch (PermissionDeniedException e) {
+            LOGGER.debug(e.getMessage(), e);
+            return false;
         }
+        return true;
     }
 
     private ControlledEntity getEntityFromUuidAndType(String entityUuid, EntityType type) {

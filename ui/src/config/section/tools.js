@@ -37,10 +37,7 @@ export default {
       searchFilters: ['annotation', 'username', 'keyword'],
       params: () => { return { annotationfilter: 'self' } },
       filters: () => {
-        const filters = ['self']
-        if (['Admin'].includes(store.getters.userInfo.roletype)) {
-          filters.push('all')
-        }
+        const filters = ['self', 'all']
         return filters
       },
       actions: [

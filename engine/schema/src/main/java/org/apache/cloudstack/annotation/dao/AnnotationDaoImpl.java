@@ -20,6 +20,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.apache.cloudstack.annotation.AnnotationService.EntityType;
 import org.apache.cloudstack.annotation.AnnotationVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -42,6 +43,7 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
         AnnotationSearchBuilder.and("userUuid", AnnotationSearchBuilder.entity().getUserUuid(), SearchCriteria.Op.EQ);
         AnnotationSearchBuilder.and("adminsOnly", AnnotationSearchBuilder.entity().getUserUuid(), SearchCriteria.Op.EQ);
         AnnotationSearchBuilder.and("annotation", AnnotationSearchBuilder.entity().getAnnotation(), SearchCriteria.Op.LIKE);
+        AnnotationSearchBuilder.and("entityTypeNotIn", AnnotationSearchBuilder.entity().getEntityType(), SearchCriteria.Op.NOTIN);
         AnnotationSearchBuilder.done();
     }
 
@@ -91,16 +93,19 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
 
     @Override
     public List<AnnotationVO> listAllAnnotations(String userUuid, boolean isCallerAdmin, String annotationFilter, String keyword) {
-        if (StringUtils.isBlank(userUuid) || "all".equalsIgnoreCase(annotationFilter)) {
-            return listAll(new Filter(AnnotationVO.class, "created", false, null, null));
-        }
         SearchCriteria<AnnotationVO> sc = AnnotationSearchBuilder.create();
-        sc.addAnd("userUuid", SearchCriteria.Op.EQ, userUuid);
-        if (!isCallerAdmin) {
-            sc.addAnd("adminsOnly", SearchCriteria.Op.EQ, false);
-        }
         if (StringUtils.isNotBlank(keyword)) {
             sc.setParameters("annotation", "%" + keyword + "%");
+        }
+        if (StringUtils.isNotBlank(userUuid)) {
+            sc.addAnd("userUuid", SearchCriteria.Op.EQ, userUuid);
+        }
+        if (!isCallerAdmin) {
+            sc.addAnd("adminsOnly", SearchCriteria.Op.EQ, false);
+            sc.setParameters("entityTypeNotIn", EntityType.SERVICE_OFFERING, EntityType.DISK_OFFERING,
+                    EntityType.NETWORK_OFFERING, EntityType.ZONE, EntityType.POD, EntityType.CLUSTER, EntityType.HOST,
+                    EntityType.DOMAIN, EntityType.PRIMARY_STORAGE, EntityType.SECONDARY_STORAGE,
+                    EntityType.VR, EntityType.SYSTEM_VM);
         }
         return listAnnotationsOrderedByCreatedDate(sc);
     }
