@@ -142,9 +142,8 @@ public class KvmHaHelper {
         boolean isKvmHaWebserviceEnabled = KVMHAConfig.IsKvmHaWebserviceEnabled.value();
         if (!isKvmHaWebserviceEnabled) {
             LOGGER.debug(String.format("Skipping KVM HA web-service verification for %s due to 'kvm.ha.webservice.enabled' not enabled.", host));
-            return false;
         }
-        return true;
+        return isKvmHaWebserviceEnabled;
     }
 
     /**
