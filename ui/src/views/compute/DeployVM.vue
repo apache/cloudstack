@@ -38,6 +38,7 @@
                             <a-radio-group
                               :key="idx"
                               v-decorator="['zoneid', {
+                                initialValue: selectedZone,
                                 rules: [{ required: true, message: `${$t('message.error.select')}` }]}]"
                               @change="onSelectZoneId(zoneItem.id)">
                               <a-col :span="8">
@@ -840,7 +841,8 @@ export default {
       diskIOpsMax: 0,
       minIops: 0,
       maxIops: 0,
-      zones: []
+      zones: [],
+      selectedZone: ''
     }
   },
   computed: {
@@ -1891,6 +1893,7 @@ export default {
       this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.zoneSelected = true
+      this.selectedZone = this.zoneId
       this.form.setFieldsValue({
         zoneid: this.zoneId,
         clusterid: undefined,
