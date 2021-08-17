@@ -98,7 +98,7 @@ public interface UserVmService {
      * */
     Optional<UserVm> cloneVirtualMachine(CloneVMCmd cmd, VolumeApiService volumeService, SnapshotApiService snapshotService) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
-    void checkCloneCondition(CloneVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException, ResourceAllocationException;
+    void validateCloneCondition(CloneVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException, ResourceAllocationException;
 
     void prepareCloneVirtualMachine(CloneVMCmd cmd) throws ResourceAllocationException, InsufficientCapacityException, ResourceUnavailableException;
     /**

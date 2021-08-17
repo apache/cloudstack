@@ -1871,6 +1871,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         _accountMgr.checkAccess(caller, null, true, templateOwner);
         String name = cmd.getTemplateName();
         if (name.length() > 32) {
+
             name = name.substring(5) + "-QA-Clone";
         }
 
@@ -1896,7 +1897,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 //            if (s_logger.isInfoEnabled()) {
 //                s_logger.info(msg);
 //            }
-//            throw new CloudRuntimeException(msg);
+//          /  throw new CloudRuntimeException(msg);
 //        }
 
         hyperType = _volumeDao.getHypervisorType(volumeId);
