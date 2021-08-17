@@ -26,11 +26,11 @@
       <a-step
         v-for="(step, index) in steps"
         :ref="`resourceStep${index}`"
-        :key="step.title"
+        :key="step.formKey"
         :title="$t(step.title)"></a-step>
     </a-steps>
     <static-inputs-form
-      v-if="currentStep === 0"
+      v-if="checkVisibleResource('clusterResource')"
       @nextPressed="nextPressed"
       @backPressed="handleBack"
       @fieldsChanged="fieldsChanged"
@@ -42,69 +42,19 @@
     />
 
     <div v-if="hypervisor !== 'VMware'">
-      <div v-if="localstorageenabled && localstorageenabledforsystemvm">
-        <static-inputs-form
-          v-if="currentStep === 1"
-          @nextPressed="nextPressed"
-          @backPressed="handleBack"
-          @fieldsChanged="fieldsChanged"
-          @submitLaunchZone="submitLaunchZone"
-          :fields="hostFields"
-          :prefillContent="prefillContent"
-          :description="steps[currentStep].description"
-          :isFixError="isFixError"
-        />
-        <static-inputs-form
-          v-if="currentStep === 2"
-          @nextPressed="nextPressed"
-          @backPressed="handleBack"
-          @fieldsChanged="fieldsChanged"
-          @submitLaunchZone="submitLaunchZone"
-          :fields="secondaryStorageFields"
-          :prefillContent="prefillContent"
-          :description="steps[currentStep].description"
-          :isFixError="isFixError"
-        />
-      </div>
-      <div v-else>
-        <static-inputs-form
-          v-if="currentStep === 1"
-          @nextPressed="nextPressed"
-          @backPressed="handleBack"
-          @fieldsChanged="fieldsChanged"
-          @submitLaunchZone="submitLaunchZone"
-          :fields="hostFields"
-          :prefillContent="prefillContent"
-          :description="steps[currentStep].description"
-          :isFixError="isFixError"
-        />
-        <static-inputs-form
-          v-if="currentStep === 2"
-          @nextPressed="nextPressed"
-          @backPressed="handleBack"
-          @fieldsChanged="fieldsChanged"
-          @submitLaunchZone="submitLaunchZone"
-          :fields="primaryStorageFields"
-          :prefillContent="prefillContent"
-          :description="steps[currentStep].description"
-          :isFixError="isFixError"
-        />
-        <static-inputs-form
-          v-if="currentStep === 3"
-          @nextPressed="nextPressed"
-          @backPressed="handleBack"
-          @fieldsChanged="fieldsChanged"
-          @submitLaunchZone="submitLaunchZone"
-          :fields="secondaryStorageFields"
-          :prefillContent="prefillContent"
-          :description="steps[currentStep].description"
-          :isFixError="isFixError"
-        />
-      </div>
-    </div>
-    <div v-else>
       <static-inputs-form
-        v-if="currentStep === 1"
+        v-if="checkVisibleResource('hostResource')"
+        @nextPressed="nextPressed"
+        @backPressed="handleBack"
+        @fieldsChanged="fieldsChanged"
+        @submitLaunchZone="submitLaunchZone"
+        :fields="hostFields"
+        :prefillContent="prefillContent"
+        :description="steps[currentStep].description"
+        :isFixError="isFixError"
+      />
+      <static-inputs-form
+        v-if="(!localstorageenabled || !localstorageenabledforsystemvm) && checkVisibleResource('primaryResource')"
         @nextPressed="nextPressed"
         @backPressed="handleBack"
         @fieldsChanged="fieldsChanged"
@@ -115,7 +65,31 @@
         :isFixError="isFixError"
       />
       <static-inputs-form
-        v-if="currentStep === 2"
+        v-if="checkVisibleResource('secondaryResource')"
+        @nextPressed="nextPressed"
+        @backPressed="handleBack"
+        @fieldsChanged="fieldsChanged"
+        @submitLaunchZone="submitLaunchZone"
+        :fields="secondaryStorageFields"
+        :prefillContent="prefillContent"
+        :description="steps[currentStep].description"
+        :isFixError="isFixError"
+      />
+    </div>
+    <div v-else>
+      <static-inputs-form
+        v-if="checkVisibleResource('primaryResource')"
+        @nextPressed="nextPressed"
+        @backPressed="handleBack"
+        @fieldsChanged="fieldsChanged"
+        @submitLaunchZone="submitLaunchZone"
+        :fields="primaryStorageFields"
+        :prefillContent="prefillContent"
+        :description="steps[currentStep].description"
+        :isFixError="isFixError"
+      />
+      <static-inputs-form
+        v-if="checkVisibleResource('secondaryResource')"
         @nextPressed="nextPressed"
         @backPressed="handleBack"
         @fieldsChanged="fieldsChanged"
@@ -956,6 +930,10 @@ export default {
     },
     submitLaunchZone () {
       this.$emit('submitLaunchZone')
+    },
+    checkVisibleResource (key) {
+      const formKey = this.steps[this.currentStep]?.fromKey || ''
+      return formKey === key
     }
   }
 }
