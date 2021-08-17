@@ -82,6 +82,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the date when this virtual machine was created")
     private Date created;
 
+    @SerializedName("lastupdated")
+    @Param(description="the date when this virtual machine was updated last time", since="4.16.0")
+    private Date lastUpdated;
+
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the state of the virtual machine")
     private String state;
@@ -315,6 +319,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName(ApiConstants.POOL_TYPE)
     @Param(description = "the pool type of the virtual machine", since = "4.16")
     private String poolType;
+
+    @SerializedName(ApiConstants.RECEIVED_BYTES)
+    @Param(description = "the total number of network traffic bytes received")
+    private Long bytesReceived;
+
+    @SerializedName(ApiConstants.SENT_BYTES)
+    @Param(description = "the total number of network traffic bytes sent")
+    private Long bytesSent;
 
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
@@ -911,4 +923,20 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     public String getPoolType() { return poolType; }
 
     public void setPoolType(String poolType) { this.poolType = poolType; }
+
+    public void setLastUpdated(Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setBytesReceived(Long bytesReceived) {
+        this.bytesReceived = bytesReceived;
+    }
+
+    public void setBytesSent(Long bytesSent) {
+        this.bytesSent = bytesSent;
+    }
 }

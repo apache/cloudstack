@@ -150,7 +150,9 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             + "The parameter is required and respected only when hypervisor info is not set on the ISO/Template passed to the call")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING, description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Using HTTP GET (via querystring), you can send up to 2KB of data after base64 encoding. Using HTTP POST(via POST body), you can send up to 32K of data after base64 encoding.", length = 32768)
+    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING,
+            description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. Using HTTP POST(via POST body), you can send up to 1MB of data after base64 encoding.",
+            length = 1048576)
     private String userData;
 
     @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING, description = "name of the ssh key pair used to login to the virtual machine")

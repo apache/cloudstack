@@ -30,7 +30,7 @@
       :error="domainError" />
     <div :span="24" class="action-button">
       <a-button @click="closeModal">{{ this.$t('label.cancel') }}</a-button>
-      <a-button type="primary" @click="handleDedicateForm">{{ this.$t('label.ok') }}</a-button>
+      <a-button type="primary" ref="submit" @click="handleDedicateForm">{{ this.$t('label.ok') }}</a-button>
     </div>
   </a-modal>
 </template>
