@@ -18,7 +18,7 @@
 <template>
   <div>
     <div>
-      <div class="form">
+      <div class="form" v-ctrl-enter="addRule">
         <div class="form__item">
           <div class="form__label">{{ $t('label.sourcecidr') }}</div>
           <a-input v-model="newRule.cidrlist" autoFocus></a-input>
@@ -53,7 +53,7 @@
           <a-input v-model="newRule.icmpcode"></a-input>
         </div>
         <div class="form__item">
-          <a-button :disabled="!('createEgressFirewallRule' in $store.getters.apis)" type="primary" icon="plus" @click="addRule">{{ $t('label.add') }}</a-button>
+          <a-button :disabled="!('createEgressFirewallRule' in $store.getters.apis)" ref="submit" type="primary" icon="plus" @click="addRule">{{ $t('label.add') }}</a-button>
         </div>
       </div>
     </div>
@@ -77,7 +77,7 @@
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
       <template slot="protocol" slot-scope="record">
-        {{ record.protocol | capitalise }}
+        {{ getCapitalise(record.protocol) }}
       </template>
       <template slot="startport" slot-scope="record">
         {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : 'All' }}
@@ -208,7 +208,6 @@ export default {
   },
   filters: {
     capitalise: val => {
-      if (val === 'all') return this.$t('label.all')
       return val.toUpperCase()
     }
   },
@@ -284,6 +283,10 @@ export default {
         this.deleteRule(rule)
       }
     },
+    getCapitalise (val) {
+      if (val === 'all') return this.$t('label.all')
+      return val.toUpperCase()
+    },
     deleteRule (rule) {
       this.loading = true
       api('deleteEgressFirewallRule', { id: rule.id }).then(response => {
@@ -320,6 +323,7 @@ export default {
       })
     },
     addRule () {
+      if (this.loading) return
       this.loading = true
       api('createEgressFirewallRule', { ...this.newRule }).then(response => {
         this.$pollJob({

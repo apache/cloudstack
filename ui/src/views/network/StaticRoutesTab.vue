@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="componentLoading">
-    <div class="new-route">
+    <div class="new-route" v-ctrl-enter="handleAdd">
       <a-input v-model="newRoute" icon="plus" :placeholder="$t('label.cidr.destination.network')" autoFocus></a-input>
       <a-button type="primary" :disabled="!('createStaticRoute' in $store.getters.apis)" @click="handleAdd">{{ $t('label.add.route') }}</a-button>
     </div>
@@ -35,7 +35,14 @@
       </div>
     </div>
 
-    <a-modal title="Edit Tags" v-model="tagsModalVisible" :footer="null" :maskClosable="false">
+    <a-modal
+      :title="$t('label.edit.tags')"
+      v-model="tagsModalVisible"
+      :footer="null"
+      :closable="true"
+      :maskClosable="false"
+      @cancel="tagsModalVisible = false"
+      v-ctrl-enter="handleAddTag">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>
@@ -127,6 +134,7 @@ export default {
       })
     },
     handleAdd () {
+      if (this.componentLoading) return
       if (!this.newRoute) return
 
       this.componentLoading = true
@@ -236,6 +244,7 @@ export default {
       })
     },
     handleAddTag (e) {
+      if (this.tagsLoading) return
       this.tagsLoading = true
 
       e.preventDefault()
