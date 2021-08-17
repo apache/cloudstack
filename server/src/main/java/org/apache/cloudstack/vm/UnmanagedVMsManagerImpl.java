@@ -379,17 +379,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     }
 
     private boolean hostSupportsServiceOffering(HostVO host, ServiceOffering serviceOffering) {
-        if (host == null) {
-            return false;
-        }
-        if (serviceOffering == null) {
-            return false;
-        }
-        if (Strings.isNullOrEmpty(serviceOffering.getHostTag())) {
-            return true;
-        }
         hostDao.loadHostTags(host);
-        return host.getHostTags() != null && host.getHostTags().contains(serviceOffering.getHostTag());
+        return host.checkHostServiceOfferingTags(serviceOffering);
     }
 
     private boolean storagePoolSupportsDiskOffering(StoragePool pool, DiskOffering diskOffering) {
@@ -956,6 +947,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import VM: %s. %s", unmanagedInstance.getName(), Strings.nullToEmpty(e.getMessage())));
         }
 
+        String internalCSName = unmanagedInstance.getInternalCSName();
+        if(StringUtils.isEmpty(internalCSName)){
+            internalCSName = instanceName;
+        }
         Map<String, String> allDetails = new HashMap<>(details);
         if (validatedServiceOffering.isDynamic()) {
             allDetails.put(VmDetailConstants.CPU_NUMBER, String.valueOf(validatedServiceOffering.getCpu()));
@@ -1002,7 +997,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             powerState = VirtualMachine.PowerState.PowerOn;
         }
         try {
-            userVm = userVmManager.importVM(zone, host, template, instanceName, displayName, owner,
+            userVm = userVmManager.importVM(zone, host, template, internalCSName, displayName, owner,
                     null, caller, true, null, owner.getAccountId(), userId,
                     validatedServiceOffering, null, hostName,
                     cluster.getHypervisorType(), allDetails, powerState);

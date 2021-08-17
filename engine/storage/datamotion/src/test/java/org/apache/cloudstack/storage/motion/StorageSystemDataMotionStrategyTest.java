@@ -19,6 +19,7 @@
 package org.apache.cloudstack.storage.motion;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -56,6 +57,8 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import java.util.AbstractMap;
+import java.util.HashSet;
+import java.util.Set;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StorageSystemDataMotionStrategyTest {
@@ -287,5 +290,59 @@ public class StorageSystemDataMotionStrategyTest {
         Mockito.when(dataStore.getId()).thenReturn(to);
 
         Assert.assertEquals(String.format("{volume: \"%s\", from: \"%s\", to:\"%s\"}", volume, from, to), strategy.formatEntryOfVolumesAndStoragesAsJsonToDisplayOnLog(new AbstractMap.SimpleEntry<>(volumeInfo, dataStore)));
+    }
+
+    @Test
+    public void validateSupportStoragePoolTypeDefaultValues() {
+        Set<StoragePoolType> supportedTypes = new HashSet<>();
+        supportedTypes.add(StoragePoolType.NetworkFilesystem);
+        supportedTypes.add(StoragePoolType.SharedMountPoint);
+
+        for (StoragePoolType poolType : StoragePoolType.values()) {
+            boolean isSupported = strategy.supportStoragePoolType(poolType);
+            if (supportedTypes.contains(poolType)) {
+                assertTrue(isSupported);
+            } else {
+                assertFalse(isSupported);
+            }
+        }
+    }
+
+    @Test
+    public void validateSupportStoragePoolTypeExtraValues() {
+        Set<StoragePoolType> supportedTypes = new HashSet<>();
+        supportedTypes.add(StoragePoolType.NetworkFilesystem);
+        supportedTypes.add(StoragePoolType.SharedMountPoint);
+        supportedTypes.add(StoragePoolType.Iscsi);
+        supportedTypes.add(StoragePoolType.CLVM);
+
+        for (StoragePoolType poolType : StoragePoolType.values()) {
+            boolean isSupported = strategy.supportStoragePoolType(poolType, StoragePoolType.Iscsi, StoragePoolType.CLVM);
+            if (supportedTypes.contains(poolType)) {
+                assertTrue(isSupported);
+            } else {
+                assertFalse(isSupported);
+            }
+        }
+    }
+
+    @Test
+    public void validateIsStoragePoolTypeInListReturnsTrue() {
+        StoragePoolType[] listTypes = new StoragePoolType[3];
+        listTypes[0] = StoragePoolType.LVM;
+        listTypes[1] = StoragePoolType.NetworkFilesystem;
+        listTypes[2] = StoragePoolType.SharedMountPoint;
+
+        assertTrue(strategy.isStoragePoolTypeInList(StoragePoolType.SharedMountPoint, listTypes));
+    }
+
+    @Test
+    public void validateIsStoragePoolTypeInListReturnsFalse() {
+        StoragePoolType[] listTypes = new StoragePoolType[3];
+        listTypes[0] = StoragePoolType.LVM;
+        listTypes[1] = StoragePoolType.NetworkFilesystem;
+        listTypes[2] = StoragePoolType.RBD;
+
+        assertFalse(strategy.isStoragePoolTypeInList(StoragePoolType.SharedMountPoint, listTypes));
     }
 }
