@@ -34,7 +34,7 @@ export default {
         }
         return cols
       },
-      searchFilters: ['annotation', 'username', 'keyword'],
+      searchFilters: ['entitytype', 'username', 'keyword'],
       params: () => { return { annotationfilter: 'self' } },
       filters: () => {
         const filters = ['self', 'all']

@@ -26,6 +26,8 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -61,6 +63,18 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
             sc.addAnd("userUuid", SearchCriteria.Op.EQ, userUuid);
         }
         if (!isCallerAdmin) {
+            List<EntityType> adminOnlyTypes = Arrays.asList(EntityType.SERVICE_OFFERING, EntityType.DISK_OFFERING,
+                    EntityType.NETWORK_OFFERING, EntityType.ZONE, EntityType.POD, EntityType.CLUSTER, EntityType.HOST,
+                    EntityType.DOMAIN, EntityType.PRIMARY_STORAGE, EntityType.SECONDARY_STORAGE,
+                    EntityType.VR, EntityType.SYSTEM_VM);
+            if (StringUtils.isBlank(entityType)) {
+                sc.setParameters("entityTypeNotIn", EntityType.SERVICE_OFFERING, EntityType.DISK_OFFERING,
+                        EntityType.NETWORK_OFFERING, EntityType.ZONE, EntityType.POD, EntityType.CLUSTER, EntityType.HOST,
+                        EntityType.DOMAIN, EntityType.PRIMARY_STORAGE, EntityType.SECONDARY_STORAGE,
+                        EntityType.VR, EntityType.SYSTEM_VM);
+            } else if (adminOnlyTypes.contains(EntityType.valueOf(entityType))) {
+                return new ArrayList<>();
+            }
             sc.addAnd("adminsOnly", SearchCriteria.Op.EQ, false);
         }
         if (StringUtils.isNotBlank(keyword)) {

@@ -348,15 +348,19 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("getting annotations for type: " + entityType);
         }
+        if ("self".equalsIgnoreCase(annotationFilter) && isBlank(userUuid)) {
+            userUuid = callingUserUuid;
+        }
         if (isNotBlank(entityUuid)) {
             return getAnnotationsByEntityIdAndType(entityType, entityUuid, userUuid, isCallerAdmin,
                     annotationFilter, callingUserUuid, keyword, callingUser);
         } else {
-            if (!isCallerAdmin) {
-                throw new CloudRuntimeException("Only admins can filter all the annotations of a certain entity type");
-            }
-            return annotationDao.listByEntityType(entityType, userUuid, true,
+            List<AnnotationVO> annotations = annotationDao.listByEntityType(entityType, userUuid, isCallerAdmin,
                     annotationFilter, callingUserUuid, keyword);
+            if (!isCallerAdmin) {
+                annotations = filterUserOwnedAnnotations(annotations);
+            }
+            return annotations;
         }
     }
 
