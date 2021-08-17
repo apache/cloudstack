@@ -817,7 +817,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
             final List<String> ipList = new ArrayList<String>();
             for (final Site2SiteVpnConnectionVO conn : conns) {
-                if (conn.getState() != Site2SiteVpnConnection.State.Connected && conn.getState() != Site2SiteVpnConnection.State.Disconnected  && conn.getState() != Site2SiteVpnConnection.State.Connecting) {
+                if (conn.getState() != Site2SiteVpnConnection.State.Connected && conn.getState() != Site2SiteVpnConnection.State.Disconnected
+                    && conn.getState() != Site2SiteVpnConnection.State.Connecting) {
                     continue;
                 }
                 final Site2SiteCustomerGateway gw = _s2sCustomerGatewayDao.findById(conn.getCustomerGatewayId());
