@@ -184,19 +184,19 @@ class CsDhcp(CsDataBag):
 
         if entry['default_entry']:
             self.dhcp_hosts.add("%s,%s,%s,%s" % (entry['mac_address'],
-                                            entry['ipv4_address'],
-                                            entry['host_name'],
-                                            lease))
+                                                 entry['ipv4_address'],
+                                                 entry['host_name'],
+                                                 lease))
             self.dhcp_leases.search(entry['mac_address'], "0 %s %s %s *" % (entry['mac_address'],
                                                                             entry['ipv4_address'],
                                                                             entry['host_name']))
         else:
             tag = entry['ipv4_address'].replace(".", "_")
             self.dhcp_hosts.add("%s,set:%s,%s,%s,%s" % (entry['mac_address'],
-                                                   tag,
-                                                   entry['ipv4_address'],
-                                                   entry['host_name'],
-                                                   lease))
+                                                        tag,
+                                                        entry['ipv4_address'],
+                                                        entry['host_name'],
+                                                        lease))
             self.dhcp_opts.add("%s,%s" % (tag, 3))
             self.dhcp_opts.add("%s,%s" % (tag, 6))
             self.dhcp_opts.add("%s,%s" % (tag, 15))
