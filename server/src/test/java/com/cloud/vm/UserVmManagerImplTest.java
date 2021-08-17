@@ -585,7 +585,7 @@ public class UserVmManagerImplTest {
         Mockito.when(cloneVMCommand.getDomainId()).thenReturn(null);
         Exception err = null;
         try {
-            userVmManagerImpl.checkCloneCondition(cloneVMCommand);
+            userVmManagerImpl.validateCloneCondition(cloneVMCommand);
         } catch (CloudRuntimeException | ResourceUnavailableException | ResourceAllocationException e) {
             err = e;
         }

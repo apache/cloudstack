@@ -4519,7 +4519,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public void checkCloneCondition(CloneVMCmd cmd) throws InvalidParameterValueException, ResourceUnavailableException, CloudRuntimeException, ResourceAllocationException {
+    public void validateCloneCondition(CloneVMCmd cmd) throws InvalidParameterValueException, ResourceUnavailableException, CloudRuntimeException, ResourceAllocationException {
 
         if (cmd.getAccountName() != null && cmd.getDomainId() == null) {
             throw new InvalidParameterValueException("You must input the domainId together with the account name");
