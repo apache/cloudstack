@@ -32,6 +32,13 @@ public class AgentProperties{
     */
     public static final Property<Integer> HEARTBEAT_UPDATE_TIMEOUT = new Property<Integer>("heartbeat.update.timeout", 60000);
 
+    /**
+     * Enable manually setting CPU's topology on KVM's VM. <br>
+     * Data type: boolean.<br>
+     * Default value: true.
+     */
+    public static final Property<Boolean> ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM = new Property<Boolean>("enable.manually.setting.cpu.topology.on.kvm.vm", true);
+
     public static class Property <T>{
         private final String name;
         private final T defaultValue;

@@ -320,6 +320,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the pool type of the virtual machine", since = "4.16")
     private String poolType;
 
+    @SerializedName(ApiConstants.RECEIVED_BYTES)
+    @Param(description = "the total number of network traffic bytes received")
+    private Long bytesReceived;
+
+    @SerializedName(ApiConstants.SENT_BYTES)
+    @Param(description = "the total number of network traffic bytes sent")
+    private Long bytesSent;
+
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
         nics = new TreeSet<>(Comparator.comparingInt(x -> Integer.parseInt(x.getDeviceId())));
@@ -922,5 +930,13 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public Date getLastUpdated() {
         return lastUpdated;
+    }
+
+    public void setBytesReceived(Long bytesReceived) {
+        this.bytesReceived = bytesReceived;
+    }
+
+    public void setBytesSent(Long bytesSent) {
+        this.bytesSent = bytesSent;
     }
 }
