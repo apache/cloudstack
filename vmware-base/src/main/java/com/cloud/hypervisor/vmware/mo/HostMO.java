@@ -579,8 +579,9 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 
                     if (s_logger.isTraceEnabled())
                         s_logger.trace("put " + vmName + " into host cache");
-
-                    _vmCache.put(vmName, new VirtualMachineMO(_context, oc.getObj()));
+                    VirtualMachineMO virtualMachine = new VirtualMachineMO(_context, oc.getObj());
+                    virtualMachine.setInternalCSName(vmName);
+                    _vmCache.put(vmName, virtualMachine);
                 }
             }
         }

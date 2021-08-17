@@ -1,58 +1,8 @@
 {
   "_license": "Apache License 2.0",
-  "description": "CloudStack SystemVM template",
-  "provisioners": [
-    {
-      "type": "shell",
-      "execute_command": "echo 'cloud' | sudo -u root -S bash {{.Path}}",
-      "scripts": [
-        "scripts/apt_upgrade.sh"
-      ],
-      "expect_disconnect": true
-    },
-    {
-      "type": "shell",
-      "execute_command": "echo 'cloud' | sudo -u root -S bash {{.Path}}",
-      "scripts": [
-        "scripts/configure_grub.sh",
-        "scripts/configure_locale.sh",
-        "scripts/configure_networking.sh",
-        "scripts/configure_acpid.sh",
-        "scripts/install_systemvm_packages.sh",
-        "scripts/configure_conntrack.sh",
-        "scripts/authorized_keys.sh",
-        "scripts/configure_persistent_config.sh",
-        "scripts/configure_login.sh",
-        "../cloud_scripts_shar_archive.sh",
-        "scripts/configure_systemvm_services.sh",
-        "scripts/cleanup.sh",
-        "scripts/finalize.sh"
-      ]
-    }
-  ],
   "builders": [
     {
-      "type": "qemu",
       "accelerator": "kvm",
-      "headless": true,
-      "qemuargs": [
-        [ "-m", "500M" ],
-        [ "-smp", "1" ]
-      ],
-      "format": "qcow2",
-      "disk_size": 3000,
-      "disk_interface": "virtio",
-      "net_device": "virtio-net",
-      "iso_url": "https://cdimage.debian.org/debian-cd/10.9.0/amd64/iso-cd/debian-10.9.0-amd64-netinst.iso",
-      "iso_checksum": "47d35187b4903e803209959434fb8b65ead3ad2a8f007eef1c3d3284f356ab9955aa7e15e24cb7af6a3859aa66837f5fa2e7441f936496ea447904f7dddfdc20",
-      "iso_checksum_type": "sha512",
-      "output_directory": "../dist",
-      "http_directory": "http",
-      "vm_name": "systemvmtemplate",
-      "ssh_username": "cloud",
-      "ssh_password": "cloud",
-      "ssh_wait_timeout": "30m",
-      "boot_wait": "5s",
       "boot_command": [
         "<esc><wait>",
         "install <wait>",
@@ -71,8 +21,56 @@
         "console-keymaps-at/keymap=us <wait>",
         "<enter><wait>"
       ],
-
-      "shutdown_command": "sudo halt -p"
+      "boot_wait": "5s",
+      "disk_interface": "virtio",
+      "disk_size": "2500M",
+      "format": "qcow2",
+      "headless": true,
+      "http_directory": "http",
+      "iso_checksum": "sha512:87b4c9dd135718304a1b3e68423fe1b03ed52eb67f60563ad14a846aeaaecf53c064dae0f128b2633041992bbc8124b68b6767b529d80487754959b38558e637",
+      "iso_url": "https://cdimage.debian.org/debian-cd/10.10.0/amd64/iso-cd/debian-10.10.0-amd64-netinst.iso",
+      "net_device": "virtio-net",
+      "output_directory": "../dist",
+      "qemuargs": [
+        [
+          "-m",
+          "500M"
+        ],
+        [
+          "-smp",
+          "1"
+        ]
+      ],
+      "shutdown_command": "sudo halt -p",
+      "ssh_password": "cloud",
+      "ssh_timeout": "30m",
+      "ssh_username": "cloud",
+      "type": "qemu",
+      "vm_name": "systemvmtemplate"
+    }
+  ],
+  "description": "CloudStack SystemVM template",
+  "provisioners": [
+    {
+      "execute_command": "echo 'cloud' | sudo -u root -S bash {{.Path}}",
+      "scripts": [
+        "scripts/apt_upgrade.sh",
+        "scripts/configure_grub.sh",
+        "scripts/configure_locale.sh",
+        "scripts/configure_networking.sh",
+        "scripts/configure_acpid.sh",
+        "scripts/install_systemvm_packages.sh",
+        "scripts/configure_conntrack.sh",
+        "scripts/authorized_keys.sh",
+        "scripts/configure_persistent_config.sh",
+        "scripts/configure_login.sh",
+        "../cloud_scripts_shar_archive.sh",
+        "scripts/configure_systemvm_services.sh",
+        "scripts/cleanup.sh",
+        "scripts/finalize.sh"
+      ],
+      "type": "shell"
     }
   ]
 }
+

@@ -130,6 +130,15 @@ public class VirtualMachineMO extends BaseMO {
     public static final String ANSWER_NO = "1";
 
     private ManagedObjectReference _vmEnvironmentBrowser = null;
+    private String internalCSName;
+
+    public String getInternalCSName() {
+        return internalCSName;
+    }
+
+    public void setInternalCSName(String internalVMName) {
+        this.internalCSName = internalVMName;
+    }
 
     public VirtualMachineMO(VmwareContext context, ManagedObjectReference morVm) {
         super(context, morVm);
@@ -3372,7 +3381,7 @@ public class VirtualMachineMO extends BaseMO {
         virtualHardwareVersion = getVirtualHardwareVersion();
 
         // Check if guest operating system supports cpu hotadd
-        if (guestOsDescriptor.isSupportsCpuHotAdd()) {
+        if (guestOsDescriptor != null && guestOsDescriptor.isSupportsCpuHotAdd()) {
             guestOsSupportsCpuHotAdd = true;
         }
 
