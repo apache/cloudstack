@@ -2801,6 +2801,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // root
 
         Filter searchFilter = new Filter(DiskOfferingJoinVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
+        searchFilter.addOrderBy(DiskOfferingJoinVO.class, "id", true);
         SearchCriteria<DiskOfferingJoinVO> sc = _diskOfferingJoinDao.createSearchCriteria();
         sc.addAnd("type", Op.EQ, DiskOfferingVO.Type.Disk);
 
@@ -2960,6 +2961,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // till
         // root
         Filter searchFilter = new Filter(ServiceOfferingJoinVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
+        searchFilter.addOrderBy(ServiceOfferingJoinVO.class, "id", true);
 
         Account caller = CallContext.current().getCallingAccount();
         Object name = cmd.getServiceOfferingName();
@@ -3182,6 +3184,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         Filter searchFilter = new Filter(DataCenterJoinVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
+        searchFilter.addOrderBy(DataCenterJoinVO.class, "id", true);
         SearchCriteria<DataCenterJoinVO> sc = sb.create();
 
         if (networkType != null) {
