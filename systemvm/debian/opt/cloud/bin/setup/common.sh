@@ -759,8 +759,9 @@ parse_cmd_line() {
         ntpserverlist)
             export NTP_SERVER_LIST=$VALUE
             ;;
-            authorized_key)
-              export AUTHORIZED_KEYS=$VALUE
+        authorized_key)
+            export AUTHORIZED_KEYS=$VALUE
+            ;;
       esac
   done
   echo -e "\n\t}\n}" >> ${CHEF_TMP_FILE}
