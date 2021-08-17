@@ -347,7 +347,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                 if (conn.isPassive()) {
                     conn.setState(State.Disconnected);
                 } else {
-                    conn.setState(State.Connected);
+                    conn.setState(State.Connecting);
                 }
                 _vpnConnectionDao.persist(conn);
                 return conn;
