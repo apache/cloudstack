@@ -759,6 +759,12 @@ parse_cmd_line() {
         ntpserverlist)
             export NTP_SERVER_LIST=$VALUE
             ;;
+        remoteloggingenabled)
+            export REMOTE_LOGGGING_ENABLED=$VALUE
+            ;;
+        remoteloggingaddress)
+            export REMOTE_LOGGGING_ADDRESS=$VALUE
+            ;;
       esac
   done
   echo -e "\n\t}\n}" >> ${CHEF_TMP_FILE}

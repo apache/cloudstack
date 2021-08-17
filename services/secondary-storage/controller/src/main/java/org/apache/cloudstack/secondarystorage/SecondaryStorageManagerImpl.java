@@ -266,6 +266,12 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     static final ConfigKey<Integer> MaxNumberOfSsvmsForMigration = new ConfigKey<Integer>("Advanced", Integer.class, "max.ssvm.count", "5",
             "Number of additional SSVMs to handle migration of data objects concurrently", true, ConfigKey.Scope.Global);
 
+    static final ConfigKey<Boolean> SecondaryStorageRemoteLoggingEnabled = new ConfigKey<>( "Advanced", Boolean.class,"secondary.storage.remote.logging.enabled", "false",
+            "If true, secondary storage will forward secondary storage logs to <secondary.storage.remote.logging.address>", false, ConfigKey.Scope.Global);
+
+    static final ConfigKey<String> SecondaryStorageRemoteLoggingAddress = new ConfigKey<>( "secondary.storage.remote.logging.address", String.class, "Advanced", "",
+            "Secondary storage forwards its logs to this address", true, ConfigKey.Scope.Global);
+
     public SecondaryStorageManagerImpl() {
     }
 
@@ -1080,6 +1086,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         buf.append(" zone=").append(dest.getDataCenter().getId());
         buf.append(" pod=").append(dest.getPod().getId());
+        buf.append(" remoteloggingenabled=").append(SecondaryStorageRemoteLoggingEnabled.value());
+        buf.append(" remoteloggingaddress=").append(SecondaryStorageRemoteLoggingAddress.value());
 
         buf.append(" guid=").append(profile.getVirtualMachine().getHostName());
 
@@ -1420,7 +1428,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {NTPServerConfig, MaxNumberOfSsvmsForMigration};
+        return new ConfigKey<?>[] {NTPServerConfig, MaxNumberOfSsvmsForMigration, SecondaryStorageRemoteLoggingEnabled, SecondaryStorageRemoteLoggingAddress};
     }
 
 }

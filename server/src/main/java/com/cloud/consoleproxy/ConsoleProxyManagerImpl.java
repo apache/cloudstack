@@ -1219,6 +1219,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
         buf.append(" zone=").append(dest.getDataCenter().getId());
         buf.append(" pod=").append(dest.getPod().getId());
+        buf.append(" remoteloggingenabled=").append(ConsoleProxyRemoteLoggingEnabled.value());
+        buf.append(" remoteloggingaddress=").append(ConsoleProxyRemoteLoggingAddress.value());
+
         buf.append(" guid=Proxy.").append(profile.getId());
         buf.append(" proxy_vm=").append(profile.getId());
         if (disableRpFilter) {
@@ -1580,7 +1583,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled };
+        return new ConfigKey<?>[] { NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled,
+                ConsoleProxyRemoteLoggingEnabled, ConsoleProxyRemoteLoggingAddress };
     }
 
     protected ConsoleProxyStatus parseJsonToConsoleProxyStatus(String json) throws JsonParseException {

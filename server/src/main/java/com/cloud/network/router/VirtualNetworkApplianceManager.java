@@ -114,6 +114,12 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     static final ConfigKey<Double> RouterHealthChecksMaxMemoryUsageThreshold = new ConfigKey<Double>(Double.class, "router.health.checks.max.memory.usage.threshold",
             "Advanced", "100", "Max Memory Usage threshold as % above which check is considered a failure.",
             true, ConfigKey.Scope.Zone, null);
+    static final ConfigKey<Boolean> RouterRemoteLoggingEnabled = new ConfigKey<>(Boolean.class, "router.remote.logging.enabled",
+            "Advanced", "false", "If true, Router VM will forward console proxy logs to <router.remote.logging.address>",
+            true, ConfigKey.Scope.Zone, null);
+    static final ConfigKey<String> RouterRemoteLoggingAddress = new ConfigKey<>(String.class, "router.remote.logging.address",
+            "Advanced",  "", "Router VMs forward their logs to this address",
+            true, ConfigKey.Scope.Zone, null);
 
     public static final int DEFAULT_ROUTER_VM_RAMSIZE = 256;            // 256M
     public static final int DEFAULT_ROUTER_CPU_MHZ = 500;                // 500 MHz

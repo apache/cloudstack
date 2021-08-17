@@ -2050,6 +2050,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         buf.append(" type=" + type + rpFilter);
 
+        buf.append(" remoteloggingenabled=").append(RouterRemoteLoggingEnabled.value());
+        buf.append(" remoteloggingaddress=").append(RouterRemoteLoggingAddress.value());
+
         final String domain_suffix = dc.getDetail(ZoneConfig.DnsSearchOrder.getName());
         if (domain_suffix != null) {
             buf.append(" dnssearchorder=").append(domain_suffix);
@@ -3239,7 +3242,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterHealthChecksFreeDiskSpaceThreshold,
                 RouterHealthChecksMaxCpuUsageThreshold,
                 RouterHealthChecksMaxMemoryUsageThreshold,
-                ExposeDnsAndBootpServer
+                ExposeDnsAndBootpServer,
+                RouterRemoteLoggingEnabled,
+                RouterRemoteLoggingAddress
         };
     }
 

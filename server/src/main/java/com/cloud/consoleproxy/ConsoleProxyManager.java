@@ -44,6 +44,12 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     public static final ConfigKey<Boolean> NoVncConsoleSourceIpCheckEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "novnc.console.sourceip.check.enabled", "false",
         "If true, The source IP to access novnc console must be same as the IP in request to management server for console URL. Needs to reconnect CPVM to management server when this changes (via restart CPVM, or management server, or cloud service in CPVM)", false);
 
+    static final ConfigKey<Boolean> ConsoleProxyRemoteLoggingEnabled = new ConfigKey<>("Advanced", Boolean.class, "consoleproxy.remote.logging.enabled", "false",
+            "If true, console proxy will forward console proxy logs to <consoleproxy.remote.logging.address>", true, ConfigKey.Scope.Global);
+
+    static final ConfigKey<String> ConsoleProxyRemoteLoggingAddress = new ConfigKey<>("Advanced", String.class, "consoleproxy.remote.logging.address", "",
+            "Console proxy forwards its logs to this address", true, ConfigKey.Scope.Global);
+
     public void setManagementState(ConsoleProxyManagementState state);
 
     public ConsoleProxyManagementState getManagementState();
