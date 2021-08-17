@@ -20,6 +20,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
@@ -32,6 +33,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URI;
 import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.Date;
@@ -61,7 +63,6 @@ public class SystemVmTemplateRegistration {
     private static final String TEMPORARY_SECONDARY_STORE = "/tmp/tmpSecStorage";
     private static final String PARENT_TEMPLATE_FOLDER = TEMPORARY_SECONDARY_STORE;
     private static final String PARTIAL_TEMPLATE_FOLDER = "/template/tmpl/1/";
-    // TODO: filter out only zones with NFS based 'Image' stores - to rule out image cache scenario
     private static final String FETCH_DISTINCT_ELIGIBLE_ZONES = "SELECT DISTINCT(data_center_id) FROM `cloud`.`image_store` WHERE protocol = \"nfs\"  AND role = \"Image\" AND removed is null";
     private static final String FETCH_DISTINCT_HYPERVISORS_IN_ZONE = "SELECT DISTINCT(hypervisor_type) FROM `cloud`.`cluster` where  data_center_id=? AND role = \"Image\" AND image_provider_name = \"NFS\" AND removed is null";
     private static final String FETCH_IMAGE_STORE_PER_ZONE = "SELECT url,id FROM `cloud`.`image_store` WHERE data_center_id=? AND removed IS NULL LIMIT 1";
@@ -268,7 +269,7 @@ public class SystemVmTemplateRegistration {
             LOGGER.info("SystemVM template not seeded");
             return false;
         } catch (Exception e) {
-            throw new CloudRuntimeException("Failed to verify if the template is seeded");
+            throw new CloudRuntimeException("Failed to verify if the template is seeded", e);
         } finally {
             unmountStore();
         }
@@ -406,10 +407,9 @@ public class SystemVmTemplateRegistration {
     public static void mountStore(String storeUrl) {
         try {
             if (storeUrl != null) {
-                String path = storeUrl.split("://")[1];
-                int index = path.indexOf('/');
-                String host = path.substring(0, index);
-                String mountPath = path.substring(index);
+                URI uri = new URI(UriUtils.encodeURIComponent(storeUrl));
+                String host = uri.getHost();
+                String mountPath = uri.getPath();
                 Script.runSimpleBashScript("mkdir -p " + TEMPORARY_SECONDARY_STORE);
                 String mount = String.format(mountCommand, host + ":" + mountPath, TEMPORARY_SECONDARY_STORE);
                 Script.runSimpleBashScript(mount);
