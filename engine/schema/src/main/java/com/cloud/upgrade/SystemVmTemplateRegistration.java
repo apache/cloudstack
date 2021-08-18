@@ -619,7 +619,7 @@ public class SystemVmTemplateRegistration {
             Hypervisor.HypervisorType hypervisor = hypervisorAndTemplateName.first();
             final String templateName = UUID.randomUUID().toString();
             Date created = new Date(DateUtil.currentGMTTime().getTime());
-            SystemVMTemplateDetails details = new SystemVMTemplateDetails(templateName, NewTemplateNameList.get(hypervisor), created,
+            SystemVMTemplateDetails details = new SystemVMTemplateDetails(templateName, hypervisorAndTemplateName.second(), created,
                     newTemplateUrl.get(hypervisor), newTemplateChecksum.get(hypervisor), hypervisorImageFormat.get(hypervisor), hypervisorGuestOsMap.get(hypervisor), hypervisor, storeUrlAndId.second());
             templateId = createTemplateObjectInDB(conn, details);
             if (templateId == null) {
