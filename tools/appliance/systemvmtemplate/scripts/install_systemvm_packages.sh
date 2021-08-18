@@ -84,6 +84,10 @@ function install_packages() {
   wget https://github.com/shapeblue/cloudstack-nonoss/raw/main/python-netaddr_0.7.19-1_all.deb
   dpkg -i python-netaddr_0.7.19-1_all.deb
 
+  # python2-netaddr workaround
+  wget https://github.com/shapeblue/cloudstack-nonoss/raw/main/python-netaddr_0.7.19-1_all.deb
+  dpkg -i python-netaddr_0.7.19-1_all.deb
+
   apt-get -y autoremove --purge
   apt-get clean
   apt-get autoclean
