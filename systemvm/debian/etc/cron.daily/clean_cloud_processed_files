@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# clear processed files in /var/cache/cloud/processed
+
+THRESHOLD=80
+DIRECTORY=/var/cache/cloud/processed
+DAYS=180
+MIN_DAYS=5
+
+if [ ! -d $DIRECTORY ];then
+    echo "$DIRECTORY not found"
+    exit 0
+fi
+
+percent=$(df --output=pcent $DIRECTORY | tr -dc '0-9')
+
+while [[ $percent -gt $THRESHOLD ]] && [[ $DAYS -gt $MIN_DAYS ]];do
+    echo "Removing files in $DIRECTORY older than $DAYS days"
+    find $DIRECTORY -type f -a -mtime +$DAYS -delete
+    DAYS=$((DAYS-1))
+    percent=$(df --output=pcent $DIRECTORY | tr -dc '0-9')
+done
